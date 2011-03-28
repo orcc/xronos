@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ORCC OpenForge Hardware Compiler
+Bundle-SymbolicName: net.sf.orc2hdl;singleton:=true
+Bundle-Version: 0.0.1
+Bundle-Activator: net.sf.orc2hdl.Activator
+Bundle-Vendor: EPFL
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.debug.core,
+ org.eclipse.debug.ui,
+ org.eclipse.pde.ui,
+ net.sf.orcc.backends;bundle-version="0.9.3",
+ net.sf.openforge.core;bundle-version="1.0.11",
+ net.sf.orcc.core;bundle-version="0.9.3",
+ org.ietr.libs;bundle-version="1.2.8",
+ org.eclipse.ui.ide;bundle-version="3.6.2"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ActivationPolicy: lazy
