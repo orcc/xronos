@@ -49,6 +49,7 @@ import static net.sf.orc2hdl.LaunchConstants.XDF_FILE;
 import java.io.File;
 
 import net.sf.orcc.OrccActivator;
+import net.sf.orcc.util.OrccUtil;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
@@ -178,7 +179,7 @@ public class Orc2HdlSettingsTab extends AbstractLaunchConfigurationTab
 		// opens the dialog
 		if (tree.open() == Window.OK) {
 			resource = (IResource) tree.getFirstResult();
-			textXDF.setText(resource.getLocation().toOSString());
+			textXDF.setText(OrccUtil.getQualifiedName((IFile) resource));
 			project = resource.getProject().getName();
 		}
 	}

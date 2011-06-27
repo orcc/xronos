@@ -28,6 +28,10 @@
  */
 package net.sf.orc2hdl.cli;
 
+import static net.sf.orcc.OrccLaunchConstants.OUTPUT_FOLDER;
+import static net.sf.orcc.OrccLaunchConstants.PROJECT;
+import static net.sf.orcc.OrccLaunchConstants.XDF_FILE;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -35,16 +39,26 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.sf.openforge.app.Forge;
 import net.sf.orcc.OrccException;
+import net.sf.orcc.backends.Backend;
 import net.sf.orcc.backends.xlim.XlimBackendImpl;
 import net.sf.orcc.network.Instance;
 import net.sf.orcc.network.Network;
 import net.sf.orcc.network.serialize.XDFParser;
+import net.sf.orcc.util.OrccUtil;
+import net.sf.orcc.util.WriteListener;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Platform;
 
 /**
@@ -98,8 +112,6 @@ public class Synthesizer {
 
 	private String inputXDF;
 
-	private List<String> vtlFolders;
-
 	private String outputFolder;
 
 	private List<String> forgeFlags;
@@ -108,30 +120,79 @@ public class Synthesizer {
 
 	private Boolean syncFifo;
 
-	public Synthesizer(String inputXDF, List<String> vtlFolders,
-			String outputFolder, List<String> forgeFlags, String fpgaType,
-			Boolean syncFifo) {
+	private IProject project;
+
+	private String projectName;
+
+	private WriteListener listener;
+
+	private IProgressMonitor monitor;
+
+	private String baseOutputFolder;
+
+	private IFile xdfFile;
+
+	public Synthesizer(String project, String inputXDF,
+			List<String> forgeFlags, String fpgaType, Boolean syncFifo,
+			String baseOutputFolder) {
+		this.projectName = project;
 		this.inputXDF = inputXDF;
-		this.vtlFolders = vtlFolders;
-		this.outputFolder = outputFolder;
 		this.forgeFlags = forgeFlags;
 		this.fpgaType = fpgaType;
 		this.syncFifo = syncFifo;
-
+		this.baseOutputFolder = baseOutputFolder;
 		init();
+	}
+
+	/**
+	 * 
+	 * @param clasz
+	 * @param filename
+	 * @param output
+	 */
+	private void createBackend(Class<? extends Backend> clasz,
+			Map<String, Object> options) {
+		Backend backend;
+		try {
+			backend = clasz.newInstance();
+			backend.setProgressMonitor(monitor);
+			backend.setWriteListener(listener);
+			backend.setOptions(options);
+			// backend.compileVTL();
+			backend.compileXDF();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void init() {
 		try {
+			// Get Project
+			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+			project = root.getProject(projectName);
 
-			network = new XDFParser(inputXDF).parseNetwork();
+			// Get Project Information
+			Map<String, Object> options = new HashMap<String, Object>();
+			options.put(PROJECT, projectName);
+			options.put(XDF_FILE, inputXDF);
+			options.put(OUTPUT_FOLDER, outputFolder);
+
+			// Parse the network
+			xdfFile = OrccUtil.getFile(project, inputXDF, "xdf");
+			network = new XDFParser(xdfFile).parseNetwork();
 			network.updateIdentifiers();
-			network.instantiate(vtlFolders);
+			network.instantiate(OrccUtil.getOutputFolders(project));
+			Network.clearActorPool();
 			network.flatten();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void createOutputFolder() {
+		outputFolder = baseOutputFolder + File.separator + network.getName();
+		new File(outputFolder).mkdir();
 	}
 
 	public void CopyFile(String InputFile, String OutputFile)
@@ -149,11 +210,34 @@ public class Synthesizer {
 		in.close();
 		out.close();
 	}
+	
+	public void setProgressMonitor(IProgressMonitor monitor) {
+		this.monitor = monitor;
+	}
+
+	/**
+	 * 
+	 * @param listener
+	 */
+	public void setWriteListener(WriteListener listener) {
+		this.listener = listener;
+	}
 
 	public void synthesize() throws OrccException, IOException {
+		// Create output Folder
+		createOutputFolder();
+		
+		// Backend Options
+		Map<String, Object> options = new HashMap<String, Object>();
+		options.put(PROJECT, projectName);
+		options.put(XDF_FILE, xdfFile);
+		options.put(OUTPUT_FOLDER, outputFolder);
 
-		XlimBackendImpl xlim = new XlimBackendImpl();
-		xlim.compileVTL(null, vtlFolders);
+		// Set the FPGA type
+		options.put("net.sf.orcc.backends.xlimFpgaType", fpgaType);
+
+		// Creat XLIM backend
+		createBackend(XlimBackendImpl.class, options);
 
 		// Create Output folder for the XLIM cache files and the destination
 		// folder for openForge
@@ -162,19 +246,6 @@ public class Synthesizer {
 
 		String xlimFolder = outputFolder + File.separator + "xlim";
 		new File(xlimFolder).mkdir();
-
-		// Set the XLIM Back-end to a HW XLIM code generation
-		xlim.setHardwareGen(true);
-
-		// Set the FPGA type
-		xlim.setFpgaType(fpgaType);
-
-		// Set the Output folder for the XLIM Back-end
-		xlim.setOutputFolder(xlimFolder);
-
-		// Write the flatten XDF to the XLIM generated output folder
-		// new XDFWriter(new File(XDFfilename), network);
-		xlim.compileXDF(null, inputXDF);
 
 		// Copy the Generated Top VHDL from xlim folder
 
@@ -201,8 +272,8 @@ public class Synthesizer {
 		}
 
 		// Get the current folder
-		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl")
-				.getEntry("/HdlLibraries");
+		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
+				"/HdlLibraries");
 
 		String hdlLibrariesPath = new File(FileLocator.resolve(hdlLibrariesURL)
 				.getFile()).getAbsolutePath();
@@ -217,31 +288,5 @@ public class Synthesizer {
 
 			CopyFile(inputFile, outputFile);
 		}
-	}
-
-	public static void main(String[] args) throws OrccException, IOException {
-
-		final String[] defaultForgeFlags = { "-vv", "-pipeline", "-noblockio",
-				"-no_block_sched", "-simple_arbitration", "-noedk", "-loopbal",
-				"-multdecomplimit", "2", "-comb_lut_mem_read", "-dplut",
-				"-nolog", "-noinclude" };
-
-		if (args.length == 3) {
-			String inputXDF = args[0];
-			List<String> vtlFolders = Arrays.asList(args[1]
-					.split(File.pathSeparator));
-			String outputFolder = args[2];
-			// The default execution should not contain syncFIFOs and should
-			// generate HW XLIM for a Virtex 2
-			new Synthesizer(inputXDF, vtlFolders, outputFolder,
-					new ArrayList<String>(Arrays.asList(defaultForgeFlags)),
-					"xc2vp30-7-ff1152", false).synthesize();
-
-		} else {
-			System.err.println("ORCC OpenForge Backend, usage:"
-					+ Synthesizer.class.getSimpleName()
-					+ " <input XDF network> <VTL folder> <output folder>");
-		}
-
 	}
 }
