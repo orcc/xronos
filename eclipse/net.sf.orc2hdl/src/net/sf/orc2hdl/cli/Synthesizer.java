@@ -86,6 +86,24 @@ public class Synthesizer {
 		}
 
 		public void synthesize() {
+			listener.writeText("\n");
+			listener.writeText("*********************************************"
+					+ "**********************************\n");
+
+			listener.writeText("Launching OpenForge");
+			listener.writeText("\n");
+			listener.writeText("*********************************************"
+					+ "**********************************\n");
+
+			int totalInstances = network.getInstances().size();
+
+			listener.writeText("Instances to compile: " + totalInstances);
+			listener.writeText("\n");
+
+			int countInstance = 0;
+			// Start Timer
+			long t0 = System.currentTimeMillis();
+			
 			for (Instance instance : network.getInstances()) {
 				List<String> flags = new ArrayList<String>(forgeFlags);
 				String id = instance.getId();
@@ -102,10 +120,19 @@ public class Synthesizer {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				countInstance++;
+				listener.writeText("\n");
+				listener.writeText("Compiling instance " + countInstance + "/"
+						+ totalInstances + " : " + id);
 				flags.addAll(Arrays.asList("-d", outputFolder, "-o", id, xlim));
 				Forge.runForge((String[]) flags.toArray(new String[0]));
 			}
+			//Stop Timer
+			long t1 = System.currentTimeMillis();
+			listener.writeText("\n\n");
+			listener.writeText("Done in " + ((float) (t1 - t0) / (float) 1000) + "s\n");
 		}
+
 	}
 
 	private Network network;
@@ -128,41 +155,17 @@ public class Synthesizer {
 
 	private IProgressMonitor monitor;
 
-	private String baseOutputFolder;
-
 	private IFile xdfFile;
 
-	public Synthesizer(String project, String inputXDF,
-			List<String> forgeFlags, String fpgaType, Boolean syncFifo,
-			String baseOutputFolder) {
+	public Synthesizer(String project, String inputXDF, String outputFolder,
+			List<String> forgeFlags, String fpgaType, Boolean syncFifo) {
 		this.projectName = project;
 		this.inputXDF = inputXDF;
+		this.outputFolder = outputFolder;
 		this.forgeFlags = forgeFlags;
 		this.fpgaType = fpgaType;
 		this.syncFifo = syncFifo;
-		this.baseOutputFolder = baseOutputFolder;
 		init();
-	}
-
-	/**
-	 * 
-	 * @param clasz
-	 * @param filename
-	 * @param output
-	 */
-	private void createBackend(Class<? extends Backend> clasz,
-			Map<String, Object> options) {
-		Backend backend;
-		try {
-			backend = clasz.newInstance();
-			backend.setProgressMonitor(monitor);
-			backend.setWriteListener(listener);
-			backend.setOptions(options);
-			// backend.compileVTL();
-			backend.compileXDF();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	private void init() {
@@ -170,12 +173,6 @@ public class Synthesizer {
 			// Get Project
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 			project = root.getProject(projectName);
-
-			// Get Project Information
-			Map<String, Object> options = new HashMap<String, Object>();
-			options.put(PROJECT, projectName);
-			options.put(XDF_FILE, inputXDF);
-			options.put(OUTPUT_FOLDER, outputFolder);
 
 			// Parse the network
 			xdfFile = OrccUtil.getFile(project, inputXDF, "xdf");
@@ -191,8 +188,23 @@ public class Synthesizer {
 	}
 
 	private void createOutputFolder() {
-		outputFolder = baseOutputFolder + File.separator + network.getName();
-		new File(outputFolder).mkdir();
+		try {
+			outputFolder = outputFolder + File.separator + network.getName();
+			new File(outputFolder).mkdir();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private String createFolderInOutputFolder(String folderName) {
+		try {
+			String folder = outputFolder + File.separator + folderName;
+			new File(folder).mkdir();
+			return folder;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public void CopyFile(String InputFile, String OutputFile)
@@ -210,7 +222,7 @@ public class Synthesizer {
 		in.close();
 		out.close();
 	}
-	
+
 	public void setProgressMonitor(IProgressMonitor monitor) {
 		this.monitor = monitor;
 	}
@@ -224,20 +236,32 @@ public class Synthesizer {
 	}
 
 	public void synthesize() throws OrccException, IOException {
+
 		// Create output Folder
 		createOutputFolder();
-		
-		// Backend Options
+
+		// Get Project Information
 		Map<String, Object> options = new HashMap<String, Object>();
 		options.put(PROJECT, projectName);
-		options.put(XDF_FILE, xdfFile);
-		options.put(OUTPUT_FOLDER, outputFolder);
-
-		// Set the FPGA type
+		options.put(XDF_FILE, inputXDF);
+		options.put(OUTPUT_FOLDER, createFolderInOutputFolder("xlim"));
 		options.put("net.sf.orcc.backends.xlimFpgaType", fpgaType);
 
-		// Creat XLIM backend
-		createBackend(XlimBackendImpl.class, options);
+		// Institiate XLIM HW Backend
+		Backend backend = new XlimBackendImpl();
+		backend.setProgressMonitor(monitor);
+		backend.setWriteListener(listener);
+		backend.setOptions(options);
+		// backend.compileVTL();
+
+		listener.writeText("\n");
+		listener.writeText("*********************************************"
+				+ "**********************************\n");
+		listener.writeText("Launching ORCC");
+		listener.writeText("\n");
+		listener.writeText("*********************************************"
+				+ "**********************************\n");
+		backend.compileXDF();
 
 		// Create Output folder for the XLIM cache files and the destination
 		// folder for openForge

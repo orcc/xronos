@@ -73,11 +73,13 @@ public class Orc2HdlLaunchConfigurationDelegate implements
 		Orc2HdlProcess process = new Orc2HdlProcess(launch, configuration,
 				monitor);
 
-		monitor.subTask("Launching Orc2HDL ...");
+		monitor.subTask("Launching Orc2HDL");
 		process.writeText("\n");
 		process.writeText("*********************************************"
 				+ "**********************************\n");
 		process.writeText("Launching Orc2HDL...\n");
+		process.writeText("*********************************************"
+				+ "**********************************\n");
 		launch.addProcess(process);
 		try {
 			String project = configuration.getAttribute(PROJECT, "");
@@ -177,8 +179,8 @@ public class Orc2HdlLaunchConfigurationDelegate implements
 				forgeFlags.add("-noinclude");
 			}
 
-			Synthesizer synthesizer = new Synthesizer(project, xdf, forgeFlags,
-					fpgaName, syncFifo, outputFolder);
+			Synthesizer synthesizer = new Synthesizer(project, xdf,
+					outputFolder, forgeFlags, fpgaName, syncFifo);
 			synthesizer.setProgressMonitor(monitor);
 			synthesizer.setWriteListener(process);
 			synthesizer.synthesize();
