@@ -74,12 +74,6 @@ public class Orc2HdlLaunchConfigurationDelegate implements
 				monitor);
 
 		monitor.subTask("Launching Orc2HDL");
-		process.writeText("\n");
-		process.writeText("*********************************************"
-				+ "**********************************\n");
-		process.writeText("Launching Orc2HDL...\n");
-		process.writeText("*********************************************"
-				+ "**********************************\n");
 		launch.addProcess(process);
 		try {
 			String project = configuration.getAttribute(PROJECT, "");

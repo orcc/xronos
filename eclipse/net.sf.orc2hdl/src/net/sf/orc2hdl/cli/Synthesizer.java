@@ -90,7 +90,7 @@ public class Synthesizer {
 			listener.writeText("*********************************************"
 					+ "**********************************\n");
 
-			listener.writeText("Launching OpenForge");
+			listener.writeText("Orc2HDL: Launching OpenForge");
 			listener.writeText("\n");
 			listener.writeText("*********************************************"
 					+ "**********************************\n");
@@ -123,7 +123,7 @@ public class Synthesizer {
 				countInstance++;
 				listener.writeText("\n");
 				listener.writeText("Compiling instance " + countInstance + "/"
-						+ totalInstances + " : " + id);
+						+ totalInstances + " \t: " + id);
 				flags.addAll(Arrays.asList("-d", outputFolder, "-o", id, xlim));
 				Forge.runForge((String[]) flags.toArray(new String[0]));
 			}
@@ -254,10 +254,9 @@ public class Synthesizer {
 		backend.setOptions(options);
 		// backend.compileVTL();
 
-		listener.writeText("\n");
 		listener.writeText("*********************************************"
 				+ "**********************************\n");
-		listener.writeText("Launching ORCC");
+		listener.writeText("Orc2HDL: Launching ORCC");
 		listener.writeText("\n");
 		listener.writeText("*********************************************"
 				+ "**********************************\n");
