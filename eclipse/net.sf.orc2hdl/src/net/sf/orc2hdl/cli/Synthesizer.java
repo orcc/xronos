@@ -246,7 +246,7 @@ public class Synthesizer {
 		options.put(XDF_FILE, inputXDF);
 		options.put(OUTPUT_FOLDER, createFolderInOutputFolder("xlim"));
 		options.put("net.sf.orcc.backends.xlimFpgaType", fpgaType);
-
+		options.put("net.sf.orcc.backends.multi2mono", true);
 		// Institiate XLIM HW Backend
 		Backend backend = new XlimBackendImpl();
 		backend.setProgressMonitor(monitor);
