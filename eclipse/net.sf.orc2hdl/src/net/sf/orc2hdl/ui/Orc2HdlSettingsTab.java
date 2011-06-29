@@ -52,6 +52,7 @@ import net.sf.orcc.OrccActivator;
 import net.sf.orcc.util.OrccUtil;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -128,6 +129,8 @@ public class Orc2HdlSettingsTab extends AbstractLaunchConfigurationTab
 
 	private boolean updateLaunchConfiguration;
 
+	private Text textProject;
+
 	private void browseDirectory(Shell shell, Text textOutput) {
 		DirectoryDialog dialog = new DirectoryDialog(shell, SWT.NONE);
 		if (getFolderFromText(textOutput)) {
@@ -137,6 +140,56 @@ public class Orc2HdlSettingsTab extends AbstractLaunchConfigurationTab
 		String dir = dialog.open();
 		if (dir != null) {
 			textOutput.setText(dir);
+		}
+	}
+
+	/**
+	 * Method called when the "Browse..." button is clicked. Shows a selection
+	 * dialog with projects available in the workspace.
+	 * 
+	 * @param shell
+	 *            a shell
+	 */
+	private void browseProject(Shell shell) {
+		ElementTreeSelectionDialog tree = new ElementTreeSelectionDialog(shell,
+				WorkbenchLabelProvider.getDecoratingWorkbenchLabelProvider(),
+				new WorkbenchContentProvider());
+		tree.setAllowMultiple(false);
+		tree.setInput(ResourcesPlugin.getWorkspace().getRoot());
+
+		IProject project = getProjectFromText();
+		if (project != null) {
+			tree.setInitialSelection(project);
+		}
+
+		tree.setMessage("Please select an existing project:");
+		tree.setTitle("Choose an existing project");
+
+		tree.setValidator(new ISelectionStatusValidator() {
+
+			@Override
+			public IStatus validate(Object[] selection) {
+				if (selection.length == 1) {
+					if (selection[0] instanceof IProject) {
+						return new Status(IStatus.OK, OrccActivator.PLUGIN_ID,
+								"");
+					} else {
+						return new Status(IStatus.ERROR,
+								OrccActivator.PLUGIN_ID,
+								"Only projects can be selected");
+					}
+				}
+
+				return new Status(IStatus.ERROR, OrccActivator.PLUGIN_ID,
+						"No project selected.");
+			}
+
+		});
+
+		// opens the dialog
+		if (tree.open() == Window.OK) {
+			project = (IProject) tree.getFirstResult();
+			textProject.setText(project.getName());
 		}
 	}
 
@@ -194,6 +247,15 @@ public class Orc2HdlSettingsTab extends AbstractLaunchConfigurationTab
 		return root.getFileForLocation(new Path(value));
 	}
 
+	public IProject getProjectFromText() {
+		String projectName = textProject.getText();
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		if (root.getFullPath().isValidSegment(projectName)) {
+			return root.getProject(projectName);
+		}
+		return null;
+	}
+
 	private boolean getFolderFromText(Text textOutput) {
 		String value = textOutput.getText();
 		File file = new File(value);
@@ -206,7 +268,7 @@ public class Orc2HdlSettingsTab extends AbstractLaunchConfigurationTab
 
 	@Override
 	public void createControl(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
+		Composite composite = new Composite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		setControl(composite);
 
 		Font font = parent.getFont();
@@ -218,11 +280,42 @@ public class Orc2HdlSettingsTab extends AbstractLaunchConfigurationTab
 		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
 		composite.setLayoutData(data);
 
+		createControlProject(font, composite);
 		createControlTopXDF(font, composite);
 		createControlOutputFolder(font, composite);
 		createControlFpgaType(font, composite);
 		createControlOpenForgeFlags(font, composite);
 		createControlSystemBuilder(font, composite);
+
+	}
+
+	private void createControlProject(Font font, Composite parent) {
+		final Group group = new Group(parent, SWT.NONE);
+		group.setFont(font);
+		group.setText("&Project:");
+		group.setLayout(new GridLayout(3, false));
+		GridData data = new GridData(SWT.FILL, SWT.TOP, true, false);
+		group.setLayoutData(data);
+
+		// createControlBrowseProject(font, group);
+		textProject = new Text(group, SWT.BORDER | SWT.SINGLE);
+		textProject.setFont(font);
+		data = new GridData(SWT.FILL, SWT.CENTER, true, false);
+		textProject.setLayoutData(data);
+		textProject.addModifyListener(this);
+
+		Button buttonBrowse = new Button(group, SWT.PUSH);
+		buttonBrowse.setFont(font);
+		data = new GridData(SWT.FILL, SWT.CENTER, false, false);
+		buttonBrowse.setLayoutData(data);
+		buttonBrowse.setText("&Browse...");
+		buttonBrowse.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				browseProject(group.getShell());
+			}
+		});
+
 	}
 
 	public void createControlTopXDF(Font font, Composite parent) {
@@ -308,6 +401,7 @@ public class Orc2HdlSettingsTab extends AbstractLaunchConfigurationTab
 		fpgaCombo = new Combo(group, SWT.BORDER | SWT.DROP_DOWN | SWT.READ_ONLY);
 		fpgaCombo
 				.setItems(new String[] { "Spartan 3", "Virtex 2", "Virtex 4" });
+		fpgaCombo.select(1);
 		fpgaCombo.setFont(font);
 		fpgaCombo.addModifyListener(this);
 	}
@@ -342,8 +436,6 @@ public class Orc2HdlSettingsTab extends AbstractLaunchConfigurationTab
 		openForgePipeline
 				.setToolTipText("Allow auto-insertion of registers based on max-gate-depth spec in the XLIM.");
 		openForgePipeline.setSelection(true);
-		// TODO: Add MouseListener
-		// openForgePipeline.addMouseListener(this);
 
 		Label lblNoBlockIO = new Label(group, SWT.NONE);
 		lblNoBlockIO.setFont(font);
