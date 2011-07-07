@@ -14,6 +14,7 @@ Require-Bundle: org.eclipse.ui,
  net.sf.openforge.core;bundle-version="1.0.11",
  net.sf.orcc.core;bundle-version="0.9.3",
  org.ietr.libs;bundle-version="1.2.8",
- org.eclipse.ui.ide;bundle-version="3.6.2"
+ org.eclipse.ui.ide;bundle-version="3.6.2",
+ org.eclipse.emf.ecore;bundle-version="2.7.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
