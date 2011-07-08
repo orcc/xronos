@@ -2,42 +2,6 @@
 <?eclipse version="3.4"?>
 <plugin>
    <extension
-         point="org.eclipse.debug.core.launchConfigurationTypes">
-      <launchConfigurationType
-            delegate="net.sf.orc2hdl.ui.Orc2HdlLaunchConfigurationDelegate"
-            id="net.sf.orc2hdl.Orc2HdlLaunchConfigurationType"
-            modes="run"
-            name="Open RVC-CAL to HDL Compilation"
-            public="true">
-      </launchConfigurationType>
-   </extension>
-   <extension
-         point="org.eclipse.debug.ui.launchConfigurationTypeImages">
-      <launchConfigurationTypeImage
-            configTypeID="net.sf.orc2hdl.Orc2HdlLaunchConfigurationType"
-            icon="icons/fpga.png"
-            id="net.sf.orc2hdl.Orc2HdlLaunchConfigurationTypeImage">
-      </launchConfigurationTypeImage>
-   </extension>
-   <extension
-         point="org.eclipse.debug.ui.launchConfigurationTabGroups">
-      <launchConfigurationTabGroup
-            class="net.sf.orc2hdl.ui.Orc2HdlLaunchConfigurationTabGroup"
-            description="Open RVC-CAL to HDL Compilation"
-            id="net.sf.orc2hdl.Orc2HdlLaunchConfigurationTabGroup"
-            type="net.sf.orc2hdl.Orc2HdlLaunchConfigurationType">
-      </launchConfigurationTabGroup>
-   </extension>
-   <extension
-         point="org.eclipse.debug.ui.launchShortcuts">
-      <shortcut
-            class="net.sf.orc2hdl.ui.Orc2HdlLaunchShortcut"
-            id="net.sf.openforge.cal2hdl.OrccOpenForgeShortcut"
-            label="Orc2HDL Compilation"
-            modes="run">
-      </shortcut>
-   </extension>
-   <extension
          point="net.sf.orcc.backends.backends">
       <backend
             class="net.sf.orc2hdl.backend.Orc2HDL"

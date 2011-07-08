@@ -96,52 +96,65 @@ public class Orc2HDL extends AbstractBackend {
 
 	private String FpgaType;
 
-	private Boolean Verbose;
+	private List<String> forgeFlags;
 
-	private Boolean Pipeline;
-
-	private Boolean NoBlockIO;
-
-	private Boolean NoBlockBasedScheduling;
-
-	private Boolean SimpleSharedMemoryArbitration;
-
-	private Boolean NoEDKGeneration;
-
-	private Boolean BalanceLoopLatency;
-
-	private Boolean MultiplierDecomposition;
-
-	private Boolean CombinationallyLUTReads;
-
-	private Boolean AllowDualPortLUT;
-
-	private Boolean NoLog;
-
-	private Boolean NoInclude;
-	
 	@Override
 	protected void doInitializeOptions() {
 
 		FpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "Virtex 2");
-		Verbose = getAttribute("net.sf.orc2hdl.Verbose", false);
-		Pipeline = getAttribute("net.sf.orc2hdl.Pipelining", true);
-		NoBlockIO = getAttribute("net.sf.orc2hdl.NoBlockIO", true);
-		NoBlockBasedScheduling = getAttribute(
-				"net.sf.orc2hdl.NoBlockBasedScheduling", true);
-		SimpleSharedMemoryArbitration = getAttribute(
-				"net.sf.orc2hdl.SimpleSharedMemoryArbitration", true);
-		NoEDKGeneration = getAttribute("net.sf.orc2hdl.NoEDKGeneration", true);
-		BalanceLoopLatency = getAttribute("net.sf.orc2hdl.BalanceLoopLatency",
-				true);
-		MultiplierDecomposition = getAttribute(
-				"net.sf.orc2hdl.MultiplierDecomposition", true);
-		CombinationallyLUTReads = getAttribute(
-				"net.sf.orc2hdl.CombinationallyLUTReads", true);
-		AllowDualPortLUT = getAttribute("net.sf.orc2hdl.AllowDualPortLUT", true);
-		NoLog = getAttribute("net.sf.orc2hdl.NoLog", true);
-		NoInclude = getAttribute("net.sf.orc2hdl.NoInclude", true);
 		debugMode = getAttribute(DEBUG_MODE, true);
+
+		// Populating ForgeFlags
+		forgeFlags = new ArrayList<String>();
+
+		if (getAttribute("net.sf.orc2hdl.Verbose", false)) {
+			forgeFlags.add("-vv");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.Pipelining", true)) {
+			forgeFlags.add("-pipeline");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.NoBlockIO", true)) {
+			forgeFlags.add("-noblockio");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.NoBlockBasedScheduling", true)) {
+			forgeFlags.add("-no_block_sched");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.SimpleSharedMemoryArbitration", true)) {
+			forgeFlags.add("-simple_arbitration");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.NoEDKGeneration", true)) {
+			forgeFlags.add("-noedk");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.BalanceLoopLatency", true)) {
+			forgeFlags.add("-loopbal");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.MultiplierDecomposition", true)) {
+			forgeFlags.add("-multdecomplimit");
+			forgeFlags.add("2");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.CombinationallyLUTReads", true)) {
+			forgeFlags.add("-comb_lut_mem_read");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.AllowDualPortLUT", true)) {
+			forgeFlags.add("-dplut");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.NoLog", true)) {
+			forgeFlags.add("-nolog");
+		}
+
+		if (getAttribute("net.sf.orc2hdl.NoInclude", true)) {
+			forgeFlags.add("-noinclude");
+		}
 	}
 
 	@Override
@@ -206,15 +219,11 @@ public class Orc2HDL extends AbstractBackend {
 		// Copy the systemBuilder libraries
 		write("Copying systemBuilder Library... \n");
 		copySystemBuilderLib();
-		
+
 		// Print the xlim files
 		printInstances(network);
-		
-		// Synthesize with OpenForge
-		write("Synthesizing Xlim files with OpenForge... \n");
-		synthesizer(network);
 	}
-	
+
 	private void printNetwork(Network network) {
 		// Get the current time
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -320,14 +329,15 @@ public class Orc2HDL extends AbstractBackend {
 		}
 
 	}
-	
+
 	@Override
 	protected boolean printInstance(Instance instance) {
+
 		InstancePrinter printer;
 		printer = new InstancePrinter("XLIM_hw_actor", !debugMode);
-		
+
 		String fpgaName = "xc2vp30-7-ff1152";
-		
+
 		if (FpgaType == "Spartan 3") {
 			fpgaName = "xc3s5000-5-fg1156";
 		} else if (FpgaType == "Virtex 2") {
@@ -336,103 +346,36 @@ public class Orc2HDL extends AbstractBackend {
 			fpgaName = "xc4vlx100-10-ff1513";
 		}
 		printer.getOptions().put("fpgaType", fpgaName);
-		
+
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
-		
+
 		String xlimPath = path + File.separator + "xlim";
 		new File(xlimPath).mkdir();
-		
-		return printer.print(instance.getId() + ".xlim", xlimPath, instance,
-				"instance");
-	}
-	
-	private void synthesizer(Network network) {
-		
-		int totalInstances = network.getInstances().size();
-		write("Instances to compile: "  + totalInstances + "\n");
-		
-		String xlimPath = path + File.separator + "xlim";
+
 		String SrcPath = path + File.separator + "src";
-		
-		// Populating ForgeFlags
-		List<String> forgeFlags = new ArrayList<String>();
-		if (Verbose) {
-			forgeFlags.add("-vv");
-		}
 
-		if (Pipeline) {
-			forgeFlags.add("-pipeline");
-		}
-
-		if (NoBlockIO) {
-			forgeFlags.add("-noblockio");
-		}
-
-		if (NoBlockBasedScheduling) {
-			forgeFlags.add("-no_block_sched");
-		}
-
-		if (SimpleSharedMemoryArbitration) {
-			forgeFlags.add("-simple_arbitration");
-		}
-
-		if (NoEDKGeneration) {
-			forgeFlags.add("-noedk");
-		}
-
-		if (BalanceLoopLatency) {
-			forgeFlags.add("-loopbal");
-		}
-
-		if (MultiplierDecomposition) {
-			forgeFlags.add("-multdecomplimit");
-			forgeFlags.add("2");
-		}
-
-		if (CombinationallyLUTReads) {
-			forgeFlags.add("-comb_lut_mem_read");
-		}
-
-		if (AllowDualPortLUT) {
-			forgeFlags.add("-dplut");
-		}
-
-		if (NoLog) {
-			forgeFlags.add("-nolog");
-		}
-
-		if (NoInclude) {
-			forgeFlags.add("-noinclude");
-		}
-		
-		int countInstance = 0;
-		// Start Timer
-		long t0 = System.currentTimeMillis();
-		for (Instance instance : network.getInstances()) {
-			List<String> flags = new ArrayList<String>(forgeFlags);
-			String id = instance.getId();
-			String xlim = null;
+		Boolean printOK = printer.print(instance.getId() + ".xlim", xlimPath,
+				instance, "instance");
+		if (printOK) {
+			
 			try {
+				String xlim = null;
+				String id = instance.getId();
 				File file = new File(xlimPath + File.separator + id + ".xlim");
 				if (file.exists()) {
 					xlim = file.getCanonicalPath();
 				}
+				List<String> flags = new ArrayList<String>(forgeFlags);
+				write("Compiling instance: " + id + "\n");
+				flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
+				Forge.runForge((String[]) flags.toArray(new String[0]));
+				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			countInstance++;
-	
-			write("Compiling instance " + countInstance + "/"
-					+ totalInstances + " \t: " + id + "\n");
-			flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
-			Forge.runForge((String[]) flags.toArray(new String[0]));
 		}
-		//Stop Timer
-		long t1 = System.currentTimeMillis();
-		write("Done in " + ((float) (t1 - t0) / (float) 1000) + "s\n");
-		
+
+		return printOK;
 	}
-
-
 }
