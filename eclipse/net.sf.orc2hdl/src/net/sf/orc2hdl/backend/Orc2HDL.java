@@ -37,12 +37,15 @@ import java.net.URI;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import net.sf.openforge.app.Forge;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
+import net.sf.orcc.backends.InstancePrinter;
 import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
@@ -69,13 +72,12 @@ import net.sf.orcc.ir.transformations.DeadGlobalElimination;
 import net.sf.orcc.ir.transformations.SSATransformation;
 import net.sf.orcc.ir.util.ActorVisitor;
 import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.network.Instance;
 import net.sf.orcc.network.Network;
 
 import org.eclipse.core.filesystem.EFS;
-import org.eclipse.core.filesystem.IFileInfo;
 import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.filesystem.IFileSystem;
-import org.eclipse.core.filesystem.provider.FileStore;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
@@ -117,9 +119,7 @@ public class Orc2HDL extends AbstractBackend {
 	private Boolean NoLog;
 
 	private Boolean NoInclude;
-
-	private List<String> forgeFlags;
-
+	
 	@Override
 	protected void doInitializeOptions() {
 
@@ -199,9 +199,22 @@ public class Orc2HDL extends AbstractBackend {
 
 		write("Printing Top VHDL network...\n");
 		printNetwork(network);
-
+		// Create the sim directory copy the glbl.v file in it and then print
+		// the "do file"
+		write("Printing Network Simulation Do file... \n");
+		printSimDoFile(network);
+		// Copy the systemBuilder libraries
+		write("Copying systemBuilder Library... \n");
+		copySystemBuilderLib();
+		
+		// Print the xlim files
+		printInstances(network);
+		
+		// Synthesize with OpenForge
+		write("Synthesizing Xlim files with OpenForge... \n");
+		synthesizer(network);
 	}
-
+	
 	private void printNetwork(Network network) {
 		// Get the current time
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -224,12 +237,6 @@ public class Orc2HDL extends AbstractBackend {
 		String SrcPath = path + File.separator + "src";
 		new File(SrcPath).mkdir();
 		printer.print(file, SrcPath, network, "network");
-
-		// Create the sim directory copy the glbl.v file in it and then print
-		// the "do file"
-		printSimDoFile(network);
-		// Copy the systemBuilder libraries
-		copySystemBuilderLib();
 	}
 
 	private void printSimDoFile(Network network) {
@@ -241,7 +248,6 @@ public class Orc2HDL extends AbstractBackend {
 
 		Orc2HDLNetworkPrinter printer;
 		String file = network.getName();
-		write("Printing Network Simulation Do file... \n");
 
 		printer = new Orc2HDLNetworkPrinter("Top_Sim_do");
 		printer.setExpressionPrinter(new XlimExprPrinter());
@@ -290,7 +296,6 @@ public class Orc2HDL extends AbstractBackend {
 				"/HdlLibraries/systemBuilder/vhdl");
 
 		try {
-
 			List<String> systemBuilderFifo = Arrays.asList("sbtypes.vhdl",
 					"sbfifo_behavioral.vhdl", "sbfifo.vhdl");
 			String hdlLibrariesPath = new File(FileLocator.resolve(
@@ -315,5 +320,119 @@ public class Orc2HDL extends AbstractBackend {
 		}
 
 	}
+	
+	@Override
+	protected boolean printInstance(Instance instance) {
+		InstancePrinter printer;
+		printer = new InstancePrinter("XLIM_hw_actor", !debugMode);
+		
+		String fpgaName = "xc2vp30-7-ff1152";
+		
+		if (FpgaType == "Spartan 3") {
+			fpgaName = "xc3s5000-5-fg1156";
+		} else if (FpgaType == "Virtex 2") {
+			fpgaName = "xc2vp30-7-ff1152";
+		} else if (FpgaType == "Virtex 4") {
+			fpgaName = "xc4vlx100-10-ff1513";
+		}
+		printer.getOptions().put("fpgaType", fpgaName);
+		
+		printer.setExpressionPrinter(new XlimExprPrinter());
+		printer.setTypePrinter(new XlimTypePrinter());
+		
+		String xlimPath = path + File.separator + "xlim";
+		new File(xlimPath).mkdir();
+		
+		return printer.print(instance.getId() + ".xlim", xlimPath, instance,
+				"instance");
+	}
+	
+	private void synthesizer(Network network) {
+		
+		int totalInstances = network.getInstances().size();
+		write("Instances to compile: "  + totalInstances + "\n");
+		
+		String xlimPath = path + File.separator + "xlim";
+		String SrcPath = path + File.separator + "src";
+		
+		// Populating ForgeFlags
+		List<String> forgeFlags = new ArrayList<String>();
+		if (Verbose) {
+			forgeFlags.add("-vv");
+		}
+
+		if (Pipeline) {
+			forgeFlags.add("-pipeline");
+		}
+
+		if (NoBlockIO) {
+			forgeFlags.add("-noblockio");
+		}
+
+		if (NoBlockBasedScheduling) {
+			forgeFlags.add("-no_block_sched");
+		}
+
+		if (SimpleSharedMemoryArbitration) {
+			forgeFlags.add("-simple_arbitration");
+		}
+
+		if (NoEDKGeneration) {
+			forgeFlags.add("-noedk");
+		}
+
+		if (BalanceLoopLatency) {
+			forgeFlags.add("-loopbal");
+		}
+
+		if (MultiplierDecomposition) {
+			forgeFlags.add("-multdecomplimit");
+			forgeFlags.add("2");
+		}
+
+		if (CombinationallyLUTReads) {
+			forgeFlags.add("-comb_lut_mem_read");
+		}
+
+		if (AllowDualPortLUT) {
+			forgeFlags.add("-dplut");
+		}
+
+		if (NoLog) {
+			forgeFlags.add("-nolog");
+		}
+
+		if (NoInclude) {
+			forgeFlags.add("-noinclude");
+		}
+		
+		int countInstance = 0;
+		// Start Timer
+		long t0 = System.currentTimeMillis();
+		for (Instance instance : network.getInstances()) {
+			List<String> flags = new ArrayList<String>(forgeFlags);
+			String id = instance.getId();
+			String xlim = null;
+			try {
+				File file = new File(xlimPath + File.separator + id + ".xlim");
+				if (file.exists()) {
+					xlim = file.getCanonicalPath();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			countInstance++;
+	
+			write("Compiling instance " + countInstance + "/"
+					+ totalInstances + " \t: " + id + "\n");
+			flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
+			Forge.runForge((String[]) flags.toArray(new String[0]));
+		}
+		//Stop Timer
+		long t1 = System.currentTimeMillis();
+		write("Done in " + ((float) (t1 - t0) / (float) 1000) + "s\n");
+		
+	}
+
 
 }
