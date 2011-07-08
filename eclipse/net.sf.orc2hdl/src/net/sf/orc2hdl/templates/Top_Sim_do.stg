@@ -1,0 +1,35 @@
+simulation(network, options) ::= <<
+## ############################################################################
+## Automatically generated ModelSim do file for  <network.name> Network
+## Generated : <options.currentTime>
+## ############################################################################
+
+## Create SystemBuilder Library
+vlib SystemBuilder
+
+## Compile the SystemBuilder Library from sources
+vcom -reportprogress 300 -work SystemBuilder ../systemBuilder/sbtypes.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../systemBuilder/sbfifo.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../systemBuilder/sbfifo_behavioral.vhdl
+
+## Map the SystemBuilder Library
+vmap SystemBuilder SystemBuilder
+
+## Create the work Library
+vlib work
+
+## Compile the glbl constans given by Xilinx 
+vlog glbl.v
+
+## Compile all the generated Verilog files by OpenForge
+vlog ../src/*.v
+
+## Compile the Top VHDL Network
+vcom -93 -check_synthesis -quiet -work work ../src/<network.name>.vhd
+
+## Start simulating the Top
+vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<network.name>
+
+## Change radix to decimal
+radix -decimal
+>>

@@ -27,18 +27,22 @@
  * SUCH DAMAGE.
  */
 
-
-
 package net.sf.orc2hdl.backend;
 
 import static net.sf.orcc.OrccLaunchConstants.DEBUG_MODE;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
-import net.sf.orcc.backends.NetworkPrinter;
 import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
@@ -67,7 +71,15 @@ import net.sf.orcc.ir.util.ActorVisitor;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.network.Network;
 
+import org.eclipse.core.filesystem.EFS;
+import org.eclipse.core.filesystem.IFileInfo;
+import org.eclipse.core.filesystem.IFileStore;
+import org.eclipse.core.filesystem.IFileSystem;
+import org.eclipse.core.filesystem.provider.FileStore;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Platform;
 
 /**
  * This class defines an XLIM and OpenForge based back-end
@@ -177,11 +189,11 @@ public class Orc2HDL extends AbstractBackend {
 		network.flatten();
 
 		transformActors(network.getActors());
-		
+
 		network.computeTemplateMaps();
-		
+
 		TopNetworkTemplateData data = new TopNetworkTemplateData();
-		
+
 		data.computeTemplateMaps(network);
 		network.setTemplateData(data);
 
@@ -189,26 +201,119 @@ public class Orc2HDL extends AbstractBackend {
 		printNetwork(network);
 
 	}
-	
+
 	private void printNetwork(Network network) {
+		// Get the current time
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		Date date = new Date();
+
+		String currentTime = dateFormat.format(date);
+
 		Orc2HDLNetworkPrinter printer;
 		String file = network.getName();
-		
+
 		file += ".vhd";
 		printer = new Orc2HDLNetworkPrinter("Top_VHDL_network");
-		
+
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("fifoSize", fifoSize);
-		
+		printer.getOptions().put("currentTime", currentTime);
+
 		// Create the src directory and print the network inside
 		String SrcPath = path + File.separator + "src";
 		new File(SrcPath).mkdir();
 		printer.print(file, SrcPath, network, "network");
-		
-		
-		
-		
+
+		// Create the sim directory copy the glbl.v file in it and then print
+		// the "do file"
+		printSimDoFile(network);
+		// Copy the systemBuilder libraries
+		copySystemBuilderLib();
+	}
+
+	private void printSimDoFile(Network network) {
+		// Get the current time
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		Date date = new Date();
+
+		String currentTime = dateFormat.format(date);
+
+		Orc2HDLNetworkPrinter printer;
+		String file = network.getName();
+		write("Printing Network Simulation Do file... \n");
+
+		printer = new Orc2HDLNetworkPrinter("Top_Sim_do");
+		printer.setExpressionPrinter(new XlimExprPrinter());
+		printer.setTypePrinter(new XlimTypePrinter());
+		printer.getOptions().put("currentTime", currentTime);
+		file = network.getName() + ".do";
+		String SimPath = path + File.separator + "sim";
+		new File(SimPath).mkdir();
+		printer.print(file, SimPath, network, "simulation");
+
+		// Copy the glbl.v file to the simulation "sim" folder
+
+		// Get the current folder
+		URL glblFileURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
+				"/HdlLibraries/glbl");
+
+		try {
+
+			String glblFilePath = new File(FileLocator.resolve(glblFileURL)
+					.getFile()).getAbsolutePath();
+			IFileSystem fileSystem = EFS.getLocalFileSystem();
+
+			IFileStore pluginDir = fileSystem.getStore(URI.create(glblFilePath
+					+ File.separator + "glbl.v"));
+
+			IFileStore copyDir = fileSystem.getStore(URI.create(SimPath
+					+ File.separator + "glbl.v"));
+
+			pluginDir.copy(copyDir, EFS.OVERWRITE, null);
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	private void copySystemBuilderLib() {
+		// Copy systemBuilder library to the output folder
+		String systemBuilderPath = path + File.separator + "systemBuilder";
+		new File(systemBuilderPath).mkdir();
+
+		// Get the current folder
+		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
+				"/HdlLibraries/systemBuilder/vhdl");
+
+		try {
+
+			List<String> systemBuilderFifo = Arrays.asList("sbtypes.vhdl",
+					"sbfifo_behavioral.vhdl", "sbfifo.vhdl");
+			String hdlLibrariesPath = new File(FileLocator.resolve(
+					hdlLibrariesURL).getFile()).getAbsolutePath();
+			IFileSystem fileSystem = EFS.getLocalFileSystem();
+
+			for (String files : systemBuilderFifo) {
+
+				IFileStore pluginDir = fileSystem.getStore(URI
+						.create(hdlLibrariesPath + File.separator + files));
+
+				IFileStore copyDir = fileSystem.getStore(URI
+						.create(systemBuilderPath + File.separator + files));
+
+				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 }
