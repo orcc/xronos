@@ -357,7 +357,7 @@ public class Orc2HDL extends AbstractBackend {
 
 		Boolean printOK = printer.print(instance.getId() + ".xlim", xlimPath,
 				instance, "instance");
-		if (printOK) {
+		if (!printOK) {
 			
 			try {
 				String xlim = null;
