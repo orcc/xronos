@@ -367,10 +367,13 @@ public class Orc2HDL extends AbstractBackend {
 					xlim = file.getCanonicalPath();
 				}
 				List<String> flags = new ArrayList<String>(forgeFlags);
-				write("Compiling instance: " + id + "\n");
+				write("Compiling instance: " + id);
 				flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
-				Forge.runForge((String[]) flags.toArray(new String[0]));
-				
+				if (Forge.runForge((String[]) flags.toArray(new String[0]))){
+					write(", Compiled\n");
+				} else {
+					write(" Openforge failed to compile: " + id +"\n");
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
