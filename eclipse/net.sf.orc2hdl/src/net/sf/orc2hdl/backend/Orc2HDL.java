@@ -358,7 +358,7 @@ public class Orc2HDL extends AbstractBackend {
 		Boolean printOK = printer.print(instance.getId() + ".xlim", xlimPath,
 				instance, "instance");
 		if (!printOK) {
-			
+
 			try {
 				String xlim = null;
 				String id = instance.getId();
@@ -369,10 +369,15 @@ public class Orc2HDL extends AbstractBackend {
 				List<String> flags = new ArrayList<String>(forgeFlags);
 				write("Compiling instance: " + id);
 				flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
-				if (Forge.runForge((String[]) flags.toArray(new String[0]))){
-					write(", Compiled\n");
+				long t0 = System.currentTimeMillis();
+				Boolean okForge = Forge.runForge((String[]) flags
+						.toArray(new String[0]));
+				long t1 = System.currentTimeMillis();
+				if (okForge) {
+					write(", Compiled in: " + ((float) (t1 - t0) / (float) 1000)
+							+ "s\n");
 				} else {
-					write(" Openforge failed to compile: " + id +"\n");
+					write(", Openforge failed to compile: " + id + "\n");
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
