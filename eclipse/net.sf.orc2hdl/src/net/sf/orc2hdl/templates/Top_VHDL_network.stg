@@ -21,8 +21,17 @@ Operations(actorInstance, numberOfReaders) ::=<<
 
 
 printActorsPortsInstantiation(actorInstance) ::=<<
--- <actorInstance.id>
-i_<actorInstance.id> : component <actorInstance.id>
+-- <actorInstance.id> (System Actor)
+<if(instance.actor.native)>
+i_<actorInstance.id> : entity SystemActors.<actorInstance.id>( behavioral )
+<if (actorInstance.actor.parameters)>
+generic map(
+ 	<actorInstance.actor.parameters : {parameter | <printActorsParameters(parameter=parameter.name,value=actorInstance.parameters.(parameter.name))>}; separator=",\n">
+)
+<endif>
+<else>
+i_<actorInstance.id> : component <actorInstance.id> 
+<endif>
 port map(
 	-- <instance.id> Input(s)
 	<actorInstance.actor.inputs: printActorsPortsInstantiationInputs(); separator="\n">
@@ -33,6 +42,10 @@ port map(
 	RESET	=\> resets(0)   
 );
 
+>>
+
+printActorsParameters(parameter, value) ::=<<
+<if (value.stringExpr)><parameter> =\> "<value>"<else><parameter> =\> <value><endif>
 >>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -305,6 +318,8 @@ PrintComponents(network) ::=<<
 // Print Actors Components
 
 printActorsComponents(instance) ::=<<
+<if(instance.actor.native)>
+<else>
 component <instance.id> is
 port(
 	-- <instance.id> Input(s)
@@ -315,7 +330,7 @@ port(
 	CLK: in std_logic;
 	RESET: in std_logic );
 end component <instance.id>;
-
+<endif>
 >>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -499,7 +514,7 @@ printArchitectureClockDomains(network) ::=<<
 network(network, options) ::= <<
 <printNetworkInformation(network)>
 
-library ieee, SystemBuilder;
+library ieee, SystemBuilder, SystemActors;
 use ieee.std_logic_1164.all;
 
 -- ----------------------------------------------------------------------------------

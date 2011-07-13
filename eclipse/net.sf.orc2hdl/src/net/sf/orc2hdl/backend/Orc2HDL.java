@@ -97,6 +97,8 @@ public class Orc2HDL extends AbstractBackend {
 	private String FpgaType;
 
 	private List<String> forgeFlags;
+	
+	private boolean haveSystemActors;
 
 	@Override
 	protected void doInitializeOptions() {
@@ -209,20 +211,23 @@ public class Orc2HDL extends AbstractBackend {
 
 		data.computeTemplateMaps(network);
 		network.setTemplateData(data);
-
 		write("Printing Top VHDL network...\n");
 		printNetwork(network);
 		// Create the sim directory copy the glbl.v file in it and then print
 		// the "do file"
+		
+		
 		write("Printing Network Simulation Do file... \n");
 		printSimDoFile(network);
 		// Copy the systemBuilder libraries
 		write("Copying systemBuilder Library... \n");
 		copySystemBuilderLib();
-
+		write("Copying systemActors Library... \n");
+		copySystemActorsLib();
 		// Print the xlim files
 		printInstances(network);
 	}
+
 
 	private void printNetwork(Network network) {
 		// Get the current time
@@ -295,6 +300,7 @@ public class Orc2HDL extends AbstractBackend {
 
 	}
 
+	
 	private void copySystemBuilderLib() {
 		// Copy systemBuilder library to the output folder
 		String systemBuilderPath = path + File.separator + "systemBuilder";
@@ -312,6 +318,42 @@ public class Orc2HDL extends AbstractBackend {
 			IFileSystem fileSystem = EFS.getLocalFileSystem();
 
 			for (String files : systemBuilderFifo) {
+
+				IFileStore pluginDir = fileSystem.getStore(URI
+						.create(hdlLibrariesPath + File.separator + files));
+
+				IFileStore copyDir = fileSystem.getStore(URI
+						.create(systemBuilderPath + File.separator + files));
+
+				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+
+	}
+	
+	private void copySystemActorsLib() {
+		// Copy systemBuilder library to the output folder
+		String systemBuilderPath = path + File.separator + "systemActors";
+		new File(systemBuilderPath).mkdir();
+		new File(systemBuilderPath + File.separator + "io").mkdir();
+		new File(systemBuilderPath + File.separator + "types").mkdir();
+		// Get the current folder
+		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
+				"/HdlLibraries/systemActors");
+
+		try {
+			List<String> systemActorsFileList = Arrays.asList("types/sa_types.vhd",
+					"io/Source.vhd");
+			String hdlLibrariesPath = new File(FileLocator.resolve(
+					hdlLibrariesURL).getFile()).getAbsolutePath();
+			IFileSystem fileSystem = EFS.getLocalFileSystem();
+
+			for (String files : systemActorsFileList) {
 
 				IFileStore pluginDir = fileSystem.getStore(URI
 						.create(hdlLibrariesPath + File.separator + files));
@@ -354,36 +396,39 @@ public class Orc2HDL extends AbstractBackend {
 		new File(xlimPath).mkdir();
 
 		String SrcPath = path + File.separator + "src";
+		Boolean printOK = true;
+		// Test if instance is Native
+		if (!instance.getActor().isNative()) {
+			printOK = printer.print(instance.getId() + ".xlim", xlimPath,
+					instance, "instance");
+			if (!printOK) {
 
-		Boolean printOK = printer.print(instance.getId() + ".xlim", xlimPath,
-				instance, "instance");
-		if (!printOK) {
-
-			try {
-				String xlim = null;
-				String id = instance.getId();
-				File file = new File(xlimPath + File.separator + id + ".xlim");
-				if (file.exists()) {
-					xlim = file.getCanonicalPath();
+				try {
+					String xlim = null;
+					String id = instance.getId();
+					File file = new File(xlimPath + File.separator + id
+							+ ".xlim");
+					if (file.exists()) {
+						xlim = file.getCanonicalPath();
+					}
+					List<String> flags = new ArrayList<String>(forgeFlags);
+					write("Compiling instance: " + id);
+					flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
+					long t0 = System.currentTimeMillis();
+					Boolean okForge = Forge.runForge((String[]) flags
+							.toArray(new String[0]));
+					long t1 = System.currentTimeMillis();
+					if (okForge) {
+						write(", Compiled in: "
+								+ ((float) (t1 - t0) / (float) 1000) + "s\n");
+					} else {
+						write(", Openforge failed to compile: " + id + "\n");
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-				List<String> flags = new ArrayList<String>(forgeFlags);
-				write("Compiling instance: " + id);
-				flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
-				long t0 = System.currentTimeMillis();
-				Boolean okForge = Forge.runForge((String[]) flags
-						.toArray(new String[0]));
-				long t1 = System.currentTimeMillis();
-				if (okForge) {
-					write(", Compiled in: " + ((float) (t1 - t0) / (float) 1000)
-							+ "s\n");
-				} else {
-					write(", Openforge failed to compile: " + id + "\n");
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
 		}
-
 		return printOK;
 	}
 }
