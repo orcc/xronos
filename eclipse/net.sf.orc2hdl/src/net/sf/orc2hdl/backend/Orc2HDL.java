@@ -82,6 +82,8 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 
 /**
  * This class defines an XLIM and OpenForge based back-end
@@ -97,7 +99,7 @@ public class Orc2HDL extends AbstractBackend {
 	private String FpgaType;
 
 	private List<String> forgeFlags;
-	
+
 	private boolean haveSystemActors;
 
 	@Override
@@ -157,6 +159,11 @@ public class Orc2HDL extends AbstractBackend {
 		if (getAttribute("net.sf.orc2hdl.NoInclude", true)) {
 			forgeFlags.add("-noinclude");
 		}
+
+		if (getAttribute("net.sf.orc2hdl.NoInclude", true)) {
+			forgeFlags.add("-report");
+		}
+
 	}
 
 	@Override
@@ -184,7 +191,8 @@ public class Orc2HDL extends AbstractBackend {
 
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
-			if (debugMode && !IrUtil.serializeActor(path, actor)) {
+			ResourceSet set = new ResourceSetImpl();
+			if (debugMode && !IrUtil.serializeActor(set,path, actor)) {
 				System.out.println("oops " + transformation + " "
 						+ actor.getName());
 			}
@@ -215,8 +223,7 @@ public class Orc2HDL extends AbstractBackend {
 		printNetwork(network);
 		// Create the sim directory copy the glbl.v file in it and then print
 		// the "do file"
-		
-		
+
 		write("Printing Network Simulation Do file... \n");
 		printSimDoFile(network);
 		// Copy the systemBuilder libraries
@@ -227,7 +234,6 @@ public class Orc2HDL extends AbstractBackend {
 		// Print the xlim files
 		printInstances(network);
 	}
-
 
 	private void printNetwork(Network network) {
 		// Get the current time
@@ -300,7 +306,6 @@ public class Orc2HDL extends AbstractBackend {
 
 	}
 
-	
 	private void copySystemBuilderLib() {
 		// Copy systemBuilder library to the output folder
 		String systemBuilderPath = path + File.separator + "systemBuilder";
@@ -335,7 +340,7 @@ public class Orc2HDL extends AbstractBackend {
 		}
 
 	}
-	
+
 	private void copySystemActorsLib() {
 		// Copy systemBuilder library to the output folder
 		String systemBuilderPath = path + File.separator + "systemActors";
@@ -347,8 +352,8 @@ public class Orc2HDL extends AbstractBackend {
 				"/HdlLibraries/systemActors");
 
 		try {
-			List<String> systemActorsFileList = Arrays.asList("types/sa_types.vhd",
-					"io/Source.vhd");
+			List<String> systemActorsFileList = Arrays.asList(
+					"types/sa_types.vhd", "io/Source.vhd");
 			String hdlLibrariesPath = new File(FileLocator.resolve(
 					hdlLibrariesURL).getFile()).getAbsolutePath();
 			IFileSystem fileSystem = EFS.getLocalFileSystem();

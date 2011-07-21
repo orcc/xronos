@@ -123,6 +123,13 @@
                   name="No Include">
                <checkBox></checkBox>
             </option>
+            <option
+                  defaultValue="true"
+                  description="Generate report."
+                  id="net.sf.orc2hdl.Report"
+                  name="Report">
+               <checkBox></checkBox>
+            </option>
          </checkBox>
       </option>
    </extension>
