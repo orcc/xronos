@@ -192,7 +192,7 @@ public class Orc2HDL extends AbstractBackend {
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
 			ResourceSet set = new ResourceSetImpl();
-			if (debugMode && !IrUtil.serializeActor(set,path, actor)) {
+			if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
 				System.out.println("oops " + transformation + " "
 						+ actor.getName());
 			}
@@ -290,11 +290,13 @@ public class Orc2HDL extends AbstractBackend {
 					.getFile()).getAbsolutePath();
 			IFileSystem fileSystem = EFS.getLocalFileSystem();
 
-			IFileStore pluginDir = fileSystem.getStore(URI.create(glblFilePath
-					+ File.separator + "glbl.v"));
+			String path = glblFilePath + "/glbl.v";
+			URI uri = new File(path).toURI();
+			IFileStore pluginDir = fileSystem.getStore(uri);
 
-			IFileStore copyDir = fileSystem.getStore(URI.create(SimPath
-					+ File.separator + "glbl.v"));
+			path = SimPath + "/glbl.v";
+			uri = new File(path).toURI();
+			IFileStore copyDir = fileSystem.getStore(uri);
 
 			pluginDir.copy(copyDir, EFS.OVERWRITE, null);
 
@@ -324,11 +326,13 @@ public class Orc2HDL extends AbstractBackend {
 
 			for (String files : systemBuilderFifo) {
 
-				IFileStore pluginDir = fileSystem.getStore(URI
-						.create(hdlLibrariesPath + File.separator + files));
+				String path = hdlLibrariesPath + File.separator + files;
+				URI uri = new File(path).toURI();
+				IFileStore pluginDir = fileSystem.getStore(uri);
 
-				IFileStore copyDir = fileSystem.getStore(URI
-						.create(systemBuilderPath + File.separator + files));
+				path = systemBuilderPath + File.separator + files;
+				uri = new File(path).toURI();
+				IFileStore copyDir = fileSystem.getStore(uri);
 
 				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
 			}
@@ -359,12 +363,13 @@ public class Orc2HDL extends AbstractBackend {
 			IFileSystem fileSystem = EFS.getLocalFileSystem();
 
 			for (String files : systemActorsFileList) {
+				String path = hdlLibrariesPath + File.separator + files;
+				URI uri = new File(path).toURI();
+				IFileStore pluginDir = fileSystem.getStore(uri);
 
-				IFileStore pluginDir = fileSystem.getStore(URI
-						.create(hdlLibrariesPath + File.separator + files));
-
-				IFileStore copyDir = fileSystem.getStore(URI
-						.create(systemBuilderPath + File.separator + files));
+				path = systemBuilderPath + File.separator + files;
+				uri = new File(path).toURI();
+				IFileStore copyDir = fileSystem.getStore(uri);
 
 				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
 			}
