@@ -115,7 +115,7 @@ public class TopNetworkTemplateData {
 	 * @param network
 	 */
 	public void computeNetworkInputPortBroadcast(Network network) {
-		OrderedMap<String, Port> inputs = network.getInputs();
+		List<Port> inputs = network.getInputs();
 		Set<Vertex> graphVertex = network.getGraph().vertexSet();
 
 		for (Vertex vertex : graphVertex) {
