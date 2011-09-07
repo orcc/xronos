@@ -45,7 +45,6 @@ import java.util.List;
 import net.sf.openforge.app.Forge;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
-import net.sf.orcc.backends.InstancePrinter;
 import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
@@ -246,7 +245,7 @@ public class Orc2HDL extends AbstractBackend {
 		String file = network.getName();
 
 		file += ".vhd";
-		printer = new Orc2HDLNetworkPrinter("Top_VHDL_network");
+		printer = new Orc2HDLNetworkPrinter("/net/sf/orc2hdl/templates/Top_VHDL_network.stg");
 
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
@@ -269,7 +268,7 @@ public class Orc2HDL extends AbstractBackend {
 		Orc2HDLNetworkPrinter printer;
 		String file = network.getName();
 
-		printer = new Orc2HDLNetworkPrinter("Top_Sim_do");
+		printer = new Orc2HDLNetworkPrinter("/net/sf/orc2hdl/templates/Top_Sim_do.stg");
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
@@ -386,7 +385,7 @@ public class Orc2HDL extends AbstractBackend {
 	protected boolean printInstance(Instance instance) {
 
 		InstancePrinter printer;
-		printer = new InstancePrinter("XLIM_hw_actor", !debugMode);
+		printer = new InstancePrinter("net/sf/orc2hdl/templates/XLIM_hw_actor.stg", !debugMode);
 
 		String fpgaName = "xc2vp30-7-ff1152";
 
