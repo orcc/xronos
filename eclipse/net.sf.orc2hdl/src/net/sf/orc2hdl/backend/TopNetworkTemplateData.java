@@ -121,7 +121,7 @@ public class TopNetworkTemplateData {
 		for (Vertex vertex : graphVertex) {
 			if (vertex.isPort()) {
 				Port port = vertex.getPort();
-				if (inputs.contains(port.getName())) {
+				if (inputs.contains(port)) {
 					countNetwokPortBroadcastMap.put(port, network.getGraph()
 							.outDegreeOf(vertex));
 				}
