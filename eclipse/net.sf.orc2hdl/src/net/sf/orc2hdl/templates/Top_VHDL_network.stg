@@ -514,7 +514,7 @@ printArchitectureClockDomains(network) ::=<<
 network(network, options) ::= <<
 <printNetworkInformation(network)>
 
-library ieee, SystemBuilder, SystemActors;
+library ieee, SystemBuilder;--, SystemActors;
 use ieee.std_logic_1164.all;
 
 -- ----------------------------------------------------------------------------------

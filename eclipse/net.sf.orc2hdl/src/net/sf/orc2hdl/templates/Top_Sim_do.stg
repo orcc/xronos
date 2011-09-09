@@ -16,15 +16,15 @@ vcom -reportprogress 300 -work SystemBuilder ../systemBuilder/sbfifo_behavioral.
 vmap SystemBuilder SystemBuilder
 
 ## Create SystemBuilder Library
-vlib SystemActors
+#vlib SystemActors
 
 ## Compile the SystemActors Library from sources
-vcom -reportprogress 300 -work SystemActors ../systemActors/types/sa_types.vhd
-vcom -reportprogress 300 -work SystemActors ../systemActors/io/Source.vhd
+#vcom -reportprogress 300 -work SystemActors ../systemActors/types/sa_types.vhd
+#vcom -reportprogress 300 -work SystemActors ../systemActors/io/Source.vhd
 
 
 ## Map the SystemActors Library
-vmap SystemActors SystemActors
+#vmap SystemActors SystemActors
 
 ## Create the work Library
 vlib work
@@ -39,7 +39,7 @@ vlog ../src/*.v
 vcom -93 -check_synthesis -quiet -work work ../src/<network.name>.vhd
 
 ## Start simulating the Top
-vsim -novopt -L unisims_ver -L simprims_ver -t ns work.glbl work.<network.name>
+vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<network.name>
 
 ## Change radix to decimal
 radix -decimal

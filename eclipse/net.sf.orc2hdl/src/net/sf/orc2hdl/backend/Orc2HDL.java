@@ -50,6 +50,7 @@ import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.Multi2MonoToken;
 import net.sf.orcc.backends.transformations.tac.ExpressionSplitter;
+import net.sf.orcc.backends.vhdl.transformations.StoreOnceTransformation;
 import net.sf.orcc.backends.xlim.XlimActorTemplateData;
 import net.sf.orcc.backends.xlim.XlimExprPrinter;
 import net.sf.orcc.backends.xlim.XlimTypePrinter;
@@ -174,19 +175,28 @@ public class Orc2HDL extends AbstractBackend {
 		new LocalArrayRemoval().doSwitch(actor);
 		new DivisionSubstitution().doSwitch(actor);
 
-		ActorVisitor<?>[] transformations = { new SSATransformation(),
-				new GlobalArrayInitializer(true), new InstTernaryAdder(),
-				new Inliner(true, true), new UnaryListRemoval(),
-				new CustomPeekAdder(), new DeadGlobalElimination(),
-				new DeadCodeElimination(), new XlimDeadVariableRemoval(),
-				new ListFlattener(), new ExpressionSplitter(true), /*
-																	 * new
-																	 * CopyPropagator
-																	 * (),
-																	 */
-				new BuildCFG(), new CastAdder(true, true),
-				new InstPhiTransformation(), new LiteralIntegersAdder(true),
-				new XlimVariableRenamer(), new BlockCombine() };
+		ActorVisitor<?>[] transformations = { 
+				new StoreOnceTransformation(),
+				new SSATransformation(),
+				new GlobalArrayInitializer(true), 
+				new InstTernaryAdder(),
+				new Inliner(true, true), 
+				new UnaryListRemoval(),
+				new CustomPeekAdder(), 
+				new DeadGlobalElimination(),
+				new DeadCodeElimination(), 
+				new XlimDeadVariableRemoval(),
+				new ListFlattener(), 
+				
+				new ExpressionSplitter(true), 
+				new BuildCFG(), 
+				/*new CastAdder(true, true), */
+				new InstPhiTransformation(), 
+				new LiteralIntegersAdder(true),
+				
+				new XlimVariableRenamer(),
+				new BlockCombine() 
+				};
 
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
