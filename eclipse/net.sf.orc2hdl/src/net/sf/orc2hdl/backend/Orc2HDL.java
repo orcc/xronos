@@ -61,6 +61,7 @@ import net.sf.orcc.backends.xlim.transformations.InstTernaryAdder;
 import net.sf.orcc.backends.xlim.transformations.ListFlattener;
 import net.sf.orcc.backends.xlim.transformations.LiteralIntegersAdder;
 import net.sf.orcc.backends.xlim.transformations.LocalArrayRemoval;
+import net.sf.orcc.backends.xlim.transformations.UintToInt;
 import net.sf.orcc.backends.xlim.transformations.UnaryListRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimVariableRenamer;
@@ -202,7 +203,7 @@ public class Orc2HDL extends AbstractBackend {
 		new ListFlattener(),
 
 		new ExpressionSplitter(true),
-
+		
 		/* new CopyPropagator(), */
 
 		new BuildCFG(),
@@ -211,11 +212,13 @@ public class Orc2HDL extends AbstractBackend {
 
 		new LiteralIntegersAdder(true),
 
-		/* new CastAdder(true, true), */
+		/*new CastAdder(true, true),*/
 
 		new XlimVariableRenamer(),
 
-		new BlockCombine() };
+		new BlockCombine()/*,
+		
+		new UintToInt()*/};
 
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
@@ -270,11 +273,11 @@ public class Orc2HDL extends AbstractBackend {
 
 		String currentTime = dateFormat.format(date);
 
-		StandardPrinter printer;
+		Orc2HDLNetworkPrinter printer;
 		String file = network.getName();
 
 		file += ".vhd";
-		printer = new StandardPrinter(
+		printer = new Orc2HDLNetworkPrinter(
 				"net/sf/orc2hdl/templates/Top_VHDL_network.stg");
 
 		printer.setExpressionPrinter(new XlimExprPrinter());
@@ -285,7 +288,7 @@ public class Orc2HDL extends AbstractBackend {
 		// Create the src directory and print the network inside
 		String SrcPath = path + File.separator + "src";
 		new File(SrcPath).mkdir();
-		printer.print(file, SrcPath, network);
+		printer.print(file, SrcPath, network, "network");
 	}
 
 	private void printSimDoFile(Network network) {
@@ -295,17 +298,18 @@ public class Orc2HDL extends AbstractBackend {
 
 		String currentTime = dateFormat.format(date);
 
-		StandardPrinter printer;
+		Orc2HDLNetworkPrinter printer;
 		String file = network.getName();
 
-		printer = new StandardPrinter("net/sf/orc2hdl/templates/Top_Sim_do.stg");
+		printer = new Orc2HDLNetworkPrinter(
+				"net/sf/orc2hdl/templates/Top_Sim_do.stg");
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
 		file = network.getName() + ".do";
 		String SimPath = path + File.separator + "sim";
 		new File(SimPath).mkdir();
-		printer.print(file, SimPath, network);
+		printer.print(file, SimPath, network, "simulation");
 
 		// Copy the glbl.v file to the simulation "sim" folder
 
