@@ -46,7 +46,6 @@ import net.sf.openforge.app.Forge;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.StandardPrinter;
-import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.Multi2MonoToken;
@@ -172,22 +171,52 @@ public class Orc2HDL extends AbstractBackend {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
 
-		ActorVisitor<?>[] transformations = {new StoreOnceTransformation(),
-				new Multi2MonoToken(),
-				new LocalArrayRemoval(),
-				new DivisionSubstitution(),
-				new SSATransformation(),
-				new GlobalArrayInitializer(true),
-				new InstTernaryAdder(), new Inliner(true, true),
-				new UnaryListRemoval(), new CustomPeekAdder(),
-				new DeadGlobalElimination(), new DeadCodeElimination(),
-				new XlimDeadVariableRemoval(), new ListFlattener(),
-				new ExpressionSplitter(true), /* new CopyPropagator(), */
-				new BuildCFG(), new InstPhiTransformation(),
-				new LiteralIntegersAdder(true), new CastAdder(true, true),
-				new XlimVariableRenamer(), new BlockCombine() };
-		
-		
+		ActorVisitor<?>[] transformations = {
+		/* One clock cycle per Output */
+		new StoreOnceTransformation(),
+		/* Transform Repeat to double action and adding states in the fsm */
+		new Multi2MonoToken(),
+
+		new LocalArrayRemoval(),
+
+		new DivisionSubstitution(),
+
+		new SSATransformation(),
+
+		new GlobalArrayInitializer(true),
+
+		new InstTernaryAdder(),
+
+		new Inliner(true, true),
+
+		new UnaryListRemoval(),
+
+		new CustomPeekAdder(),
+
+		new DeadGlobalElimination(),
+
+		new DeadCodeElimination(),
+
+		new XlimDeadVariableRemoval(),
+
+		new ListFlattener(),
+
+		new ExpressionSplitter(true),
+
+		/* new CopyPropagator(), */
+
+		new BuildCFG(),
+
+		new InstPhiTransformation(),
+
+		new LiteralIntegersAdder(true),
+
+		/* new CastAdder(true, true), */
+
+		new XlimVariableRenamer(),
+
+		new BlockCombine() };
+
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
 			ResourceSet set = new ResourceSetImpl();
@@ -241,11 +270,11 @@ public class Orc2HDL extends AbstractBackend {
 
 		String currentTime = dateFormat.format(date);
 
-		Orc2HDLNetworkPrinter printer;
+		StandardPrinter printer;
 		String file = network.getName();
 
 		file += ".vhd";
-		printer = new Orc2HDLNetworkPrinter(
+		printer = new StandardPrinter(
 				"net/sf/orc2hdl/templates/Top_VHDL_network.stg");
 
 		printer.setExpressionPrinter(new XlimExprPrinter());
@@ -256,7 +285,7 @@ public class Orc2HDL extends AbstractBackend {
 		// Create the src directory and print the network inside
 		String SrcPath = path + File.separator + "src";
 		new File(SrcPath).mkdir();
-		printer.print(file, SrcPath, network, "network");
+		printer.print(file, SrcPath, network);
 	}
 
 	private void printSimDoFile(Network network) {
@@ -266,18 +295,17 @@ public class Orc2HDL extends AbstractBackend {
 
 		String currentTime = dateFormat.format(date);
 
-		Orc2HDLNetworkPrinter printer;
+		StandardPrinter printer;
 		String file = network.getName();
 
-		printer = new Orc2HDLNetworkPrinter(
-				"net/sf/orc2hdl/templates/Top_Sim_do.stg");
+		printer = new StandardPrinter("net/sf/orc2hdl/templates/Top_Sim_do.stg");
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
 		file = network.getName() + ".do";
 		String SimPath = path + File.separator + "sim";
 		new File(SimPath).mkdir();
-		printer.print(file, SimPath, network, "simulation");
+		printer.print(file, SimPath, network);
 
 		// Copy the glbl.v file to the simulation "sim" folder
 
