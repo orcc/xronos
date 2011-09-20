@@ -45,6 +45,7 @@ import java.util.List;
 import net.sf.openforge.app.Forge;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
+import net.sf.orcc.backends.StandardPrinter;
 import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
@@ -171,33 +172,22 @@ public class Orc2HDL extends AbstractBackend {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
 
-		new Multi2MonoToken().doSwitch(actor);
-		new LocalArrayRemoval().doSwitch(actor);
-		new DivisionSubstitution().doSwitch(actor);
-
-		ActorVisitor<?>[] transformations = { 
-				new StoreOnceTransformation(),
+		ActorVisitor<?>[] transformations = {new StoreOnceTransformation(),
+				new Multi2MonoToken(),
+				new LocalArrayRemoval(),
+				new DivisionSubstitution(),
 				new SSATransformation(),
-				new GlobalArrayInitializer(true), 
-				new InstTernaryAdder(),
-				new Inliner(true, true), 
-				new UnaryListRemoval(),
-				new CustomPeekAdder(), 
-				new DeadGlobalElimination(),
-				new DeadCodeElimination(), 
-				new XlimDeadVariableRemoval(),
-				new ListFlattener(), 
-				
-				new ExpressionSplitter(true), 
-				new BuildCFG(), 
-				/*new CastAdder(true, true), */
-				new InstPhiTransformation(), 
-				new LiteralIntegersAdder(true),
-				
-				new XlimVariableRenamer(),
-				new BlockCombine() 
-				};
-
+				new GlobalArrayInitializer(true),
+				new InstTernaryAdder(), new Inliner(true, true),
+				new UnaryListRemoval(), new CustomPeekAdder(),
+				new DeadGlobalElimination(), new DeadCodeElimination(),
+				new XlimDeadVariableRemoval(), new ListFlattener(),
+				new ExpressionSplitter(true), /* new CopyPropagator(), */
+				new BuildCFG(), new InstPhiTransformation(),
+				new LiteralIntegersAdder(true), new CastAdder(true, true),
+				new XlimVariableRenamer(), new BlockCombine() };
+		
+		
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
 			ResourceSet set = new ResourceSetImpl();
@@ -255,7 +245,8 @@ public class Orc2HDL extends AbstractBackend {
 		String file = network.getName();
 
 		file += ".vhd";
-		printer = new Orc2HDLNetworkPrinter("/net/sf/orc2hdl/templates/Top_VHDL_network.stg");
+		printer = new Orc2HDLNetworkPrinter(
+				"net/sf/orc2hdl/templates/Top_VHDL_network.stg");
 
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
@@ -278,7 +269,8 @@ public class Orc2HDL extends AbstractBackend {
 		Orc2HDLNetworkPrinter printer;
 		String file = network.getName();
 
-		printer = new Orc2HDLNetworkPrinter("/net/sf/orc2hdl/templates/Top_Sim_do.stg");
+		printer = new Orc2HDLNetworkPrinter(
+				"net/sf/orc2hdl/templates/Top_Sim_do.stg");
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
@@ -393,9 +385,14 @@ public class Orc2HDL extends AbstractBackend {
 
 	@Override
 	protected boolean printInstance(Instance instance) {
+		/*
+		 * InstancePrinter printer; printer = new InstancePrinter(
+		 * "net/sf/orc2hdl/templates/XLIM_hw_actor.stg", !debugMode);
+		 */
 
-		InstancePrinter printer;
-		printer = new InstancePrinter("net/sf/orc2hdl/templates/XLIM_hw_actor.stg", !debugMode);
+		StandardPrinter printer = new StandardPrinter(
+				"net/sf/orcc/backends/xlim/hardware/XLIM_hw_actor.stg",
+				!debugMode);
 
 		String fpgaName = "xc2vp30-7-ff1152";
 
@@ -419,7 +416,7 @@ public class Orc2HDL extends AbstractBackend {
 		// Test if instance is Native
 		if (!instance.getActor().isNative()) {
 			printOK = printer.print(instance.getId() + ".xlim", xlimPath,
-					instance, "instance");
+					instance);
 			if (!printOK) {
 
 				try {
@@ -431,17 +428,17 @@ public class Orc2HDL extends AbstractBackend {
 						xlim = file.getCanonicalPath();
 					}
 					List<String> flags = new ArrayList<String>(forgeFlags);
-					write("Compiling instance: " + id);
 					flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
 					long t0 = System.currentTimeMillis();
 					Boolean okForge = Forge.runForge((String[]) flags
 							.toArray(new String[0]));
 					long t1 = System.currentTimeMillis();
 					if (okForge) {
-						write(", Compiled in: "
+						write("Compiling instance: " + id + ": Compiled in: "
 								+ ((float) (t1 - t0) / (float) 1000) + "s\n");
 					} else {
-						write(", Openforge failed to compile: " + id + "\n");
+						write("Compiling instance: " + id
+								+ ": OpenForge failed to compile" + "\n");
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
