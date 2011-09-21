@@ -213,7 +213,7 @@ public class Orc2HDL extends AbstractBackend {
 
 		new InstPhiTransformation(),
 
-		new LiteralIntegersAdder(true, true),
+		new LiteralIntegersAdder(true),
 
 		new CastAdder(true, false),
 
