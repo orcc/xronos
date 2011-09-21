@@ -46,9 +46,11 @@ import net.sf.openforge.app.Forge;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.StandardPrinter;
+import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.Multi2MonoToken;
+import net.sf.orcc.backends.transformations.UnitImporter;
 import net.sf.orcc.backends.transformations.tac.ExpressionSplitter;
 import net.sf.orcc.backends.vhdl.transformations.StoreOnceTransformation;
 import net.sf.orcc.backends.xlim.XlimActorTemplateData;
@@ -61,7 +63,6 @@ import net.sf.orcc.backends.xlim.transformations.InstTernaryAdder;
 import net.sf.orcc.backends.xlim.transformations.ListFlattener;
 import net.sf.orcc.backends.xlim.transformations.LiteralIntegersAdder;
 import net.sf.orcc.backends.xlim.transformations.LocalArrayRemoval;
-import net.sf.orcc.backends.xlim.transformations.UintToInt;
 import net.sf.orcc.backends.xlim.transformations.UnaryListRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimVariableRenamer;
@@ -182,6 +183,8 @@ public class Orc2HDL extends AbstractBackend {
 
 		new DivisionSubstitution(),
 
+		new UnitImporter(),
+
 		new SSATransformation(),
 
 		new GlobalArrayInitializer(true),
@@ -203,22 +206,20 @@ public class Orc2HDL extends AbstractBackend {
 		new ListFlattener(),
 
 		new ExpressionSplitter(true),
-		
+
 		/* new CopyPropagator(), */
 
 		new BuildCFG(),
 
 		new InstPhiTransformation(),
 
-		new LiteralIntegersAdder(true),
+		new LiteralIntegersAdder(true, true),
 
-		/*new CastAdder(true, true),*/
+		new CastAdder(true, false),
 
 		new XlimVariableRenamer(),
 
-		new BlockCombine(),
-		
-		new UintToInt(true)};
+		new BlockCombine() };
 
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
