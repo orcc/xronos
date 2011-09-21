@@ -216,9 +216,9 @@ public class Orc2HDL extends AbstractBackend {
 
 		new XlimVariableRenamer(),
 
-		new BlockCombine()/*,
+		new BlockCombine(),
 		
-		new UintToInt()*/};
+		new UintToInt(true)};
 
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
