@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: OpenForge Plug-in
+Bundle-SymbolicName: net.sf.openforge.core;singleton:=true
+Bundle-Version: 1.0.11
+Bundle-Activator: openforge.Activator
+Require-Bundle: org.eclipse.core.runtime
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: net.sf.openforge.app,
+ net.sf.openforge.frontend.xlim.builder,
+ net.sf.openforge.util.io,
+ net.sf.openforge.util.xml
+Bundle-ClassPath: source/xslt/,
+ .,
+ lib/saxon8-dom.jar,
+ lib/saxon8.jar
