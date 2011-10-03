@@ -164,6 +164,7 @@ public class Orc2HDL extends AbstractBackend {
 
 		if (getAttribute("net.sf.orc2hdl.NoInclude", true)) {
 			forgeFlags.add("-report");
+			forgeFlags.add("-Xdetailed_report");
 		}
 
 	}

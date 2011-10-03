@@ -53,7 +53,7 @@ printActorsParameters(parameter, value) ::=<<
 
 printActorsPortsInstantiationInputs(port) ::=<<
 <port.name>_DATA =\> ai_<actorInstance.id>_<port.name>_DATA,
-<port.name>_SEND =\>	ai_<actorInstance.id>_<port.name>_SEND,
+<port.name>_SEND =\> ai_<actorInstance.id>_<port.name>_SEND,
 <port.name>_ACK =\> ai_<actorInstance.id>_<port.name>_ACK,
 <port.name>_COUNT =\> ai_<actorInstance.id>_<port.name>_COUNT,
 
@@ -79,7 +79,11 @@ OutputPortFanOut(numberOfReaders) ::=<<
 >>
 
 printActorsFanOutOutput(port, numberOfReaders) ::=<<
+<if (port.native)>
+f_ao_<actorInstance.id>_<port.name> : entity SystemBuilder.Native( behavioral )
+<else>
 f_ao_<actorInstance.id>_<port.name> : entity SystemBuilder.Fanout( behavioral )
+<endif>
 generic map ( fanout =\> <length(numberOfReaders.(port))>, width =\> <if(port.type.size)><port.type.size><else>1<endif> )
 port map (
 <if(port.type.bool)>
@@ -112,7 +116,11 @@ NetworkInputFanoutInstantiation(network) ::=<<
 >>
 
 printNetworkFanOutInputInstantiation(port) ::=<<
+<if (port.native)>
+f_ni_<port.name> : entity SystemBuilder.Native( behavioral )
+<else>
 f_ni_<port.name> : entity SystemBuilder.Fanout( behavioral )
+<endif>
 generic map ( fanout =\> <network.templateData.countNetwokPortBroadcastMap.(port)>, width =\> <if(port.type.size)><port.type.size><else>1<endif> )
 port map (
 <if(port.type.bool)>
@@ -213,6 +221,7 @@ port map (
 >>
 
 assignIn(source, sourcePort) ::= <<
+<if (!tgt.port.native)>
 q_no_<tgt.port.name> : entity SystemBuilder.Queue( behavioral )
 generic map( length =\> <if(edge.size)><edge.size><else>1<endif>, width =\> <if(sourcePort.type.size)><sourcePort.type.size><else>1<endif> )
 port map (
@@ -238,10 +247,12 @@ port map (
 	clk =\> clocks(0),
 	reset =\> resets(0)
 );
+<endif>
 >>
 
 
 assignOut(target, targetPort) ::= <<
+<if (!targetPort.native)>
 q_ai_<target.id>_<targetPort.name> : entity SystemBuilder.Queue( behavioral )
 generic map( length =\> <if(edge.size)><edge.size><else>1<endif>, width =\> <if(targetPort.type.size)><targetPort.type.size><else>1<endif> )
 
@@ -269,7 +280,7 @@ port map (
 	clk =\> clocks(0),
 	reset =\> resets(0)
 );
-
+<endif>
 >>
 ///////////////////////////////////////////////////////////////////////////////
 // Print Network Port Instantiation 
@@ -288,10 +299,12 @@ PrintNetworkPortsInstantiation(network) ::=<<
 
 printNetworkOutputPortsInstantiation(port) ::=<<
 <port.name>_DATA \<= no_<port.name>_DATA;
+<if (!port.native)>
 <port.name>_SEND \<= no_<port.name>_SEND;
 no_<port.name>_ACK \<= <port.name>_ACK;
 <port.name>_COUNT \<= no_<port.name>_COUNT;
 no_<port.name>_RDY \<= <port.name>_RDY;<\n>
+<endif>
 >> 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -299,10 +312,12 @@ no_<port.name>_RDY \<= <port.name>_RDY;<\n>
 
 printNetworkInputPortsInstantiation(port) ::=<<
 ni_<port.name>_DATA \<= <port.name>_DATA;
+<if (!port.native)>
 ni_<port.name>_SEND \<= <port.name>_SEND;
 <port.name>_ACK \<= ni_<port.name>_ACK;
 ni_<port.name>_COUNT \<= <port.name>_COUNT;
 <port.name>_RDY \<= ni_<port.name>_RDY;<\n>
+<endif>
 >> 
 
 
@@ -479,10 +494,12 @@ printNetPorts(port, dir1, dir2) ::= <<
 <else>
 <port.name>_DATA : <dir1> std_logic_vector(<port.type.size> - 1 downto 0);<\n>
 <endif>
+<if (!port.native)>
 <port.name>_SEND : <dir1> std_logic;
 <port.name>_ACK : <dir2> std_logic;
 <port.name>_COUNT : <dir1> std_logic_vector(15 downto 0);
 <port.name>_RDY : <dir2> std_logic;
+<endif>
 
 >>
 

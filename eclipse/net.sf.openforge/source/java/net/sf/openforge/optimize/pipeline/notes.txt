@@ -1,0 +1,10 @@
+- each component has 3 gate depths:
+  - maxEntry -- max from an entry point in
+  - maxExit -- max leaving a compoenent
+  - maxGateDepth -- longest unbreakable path in component
+
+- maxComponentGateDepth is the largest of the three for all components in the graph; this
+becomes the max unbreakable gate depth for the design
+
+- getMaxInputGateDepth is pretty simple -- just the max gate depth
+- getInputPiple	

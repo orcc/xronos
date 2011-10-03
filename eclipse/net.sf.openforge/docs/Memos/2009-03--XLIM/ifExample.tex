@@ -1,0 +1,100 @@
+\chapter{If Example}
+\section{If/Then/Else}
+The example below shows an if/then/else structure.
+\subsection{Conditional pseudo-code}
+\begin{alltt}
+int a = portRead(A);
+int b = portRead(B);
+int x = a;
+int y = b;
+if (a > b) 
+\{
+  x = a + 1;
+  y = y * 2;
+\}
+else
+\{
+  x = a / 2;
+\}
+portWrite(O, x - y);
+\end{alltt}
+Note that in the example the variable {\tt y} is only modified in the {\it then} branch of the statement.  To account for the unmodified value of {\tt y} through this block, a {\tt noop} operation is inserted into the {\it else} branch in order to carry the unmodified value of {\tt y}.  Thus the PHI element which produces the result of {\tt y} merges the output of the multiply and the noop.
+
+\subsection{Generated XLIM}
+\begin{alltt}
+<?xml version="1.0" encoding="UTF-8"?>
+<design name="IfTest">
+  <actor-port dir="in" name="A" size="32" typeName="int"/>
+  <actor-port dir="in" name="B" size="32" typeName="int"/>
+  <actor-port dir="out" name="O" size="32" typeName="int"/>
+  <module autostart="false" kind="action" name="actionAtLine\_3">
+    <operation kind="pinRead" portName="A" removable="no">
+      <port dir="out" size="32" source="z7b1b1" typeName="int"/>
+    </operation>
+    <operation kind="pinRead" portName="B" removable="no">
+      <port dir="out" size="32" source="z7b3b1" typeName="int"/>
+    </operation>
+    
+    <module kind="if">
+      <module decision="1\$id\$y5b1" kind="test">
+        <operation kind="\$gt">
+          <port dir="in" source="z7b1b1"/>
+          <port dir="in" source="z7b3b1"/>
+          <port dir="out" size="1" source="1\$id\$y5b1" typeName="bool"/>
+        </operation>
+      </module>
+      <module kind="then">
+        <operation kind="\$literal\_Integer" value="1">
+          <port dir="out" size="2" source="1\$id\$y5b3b1b1b3b3" typeName="int"/>
+        </operation>
+        <operation kind="\$add">
+          <port dir="in" source="z7b1b1"/>
+          <port dir="in" source="1\$id\$y5b3b1b1b3b3"/>
+          <port dir="out" size="33" source="1\$id\$y5b3b1b1" typeName="int"/>
+        </operation>
+        <operation kind="\$literal\_Integer" value="2">
+          <port dir="out" size="3" source="1\$id\$y5b3b3b1b3b3" typeName="int"/>
+        </operation>
+        <operation kind="\$mul">
+          <port dir="in" source="z7b3b1"/>
+          <port dir="in" source="1\$id\$y5b3b3b1b3b3"/>
+          <port dir="out" size="35" source="1\$id\$y5b3b3b1" typeName="int"/>
+        </operation>
+      </module>
+      <module kind="else">
+        <operation kind="\$literal\_Integer" value="2">
+          <port dir="out" size="3" source="1\$id\$y5b5b1b1b3b3" typeName="int"/>
+        </operation>
+        <operation kind="\$div">
+          <port dir="in" source="z7b1b1"/>
+          <port dir="in" source="1\$id\$y5b5b1b1b3b3"/>
+          <port dir="out" size="32" source="1\$id\$y5b5b1b1" typeName="int"/>
+        </operation>
+        <operation kind="noop">
+          <port dir="in" source="z7b3b1"/>
+          <port dir="out" size="32" source="z7c17\$ELSE\$z7b9" typeName="int"/>
+        </operation>
+      </module>
+      <PHI>
+        <port dir="in" qualifier="then" source="1\$id\$y5b3b1b1"/>
+        <port dir="in" qualifier="else" source="1\$id\$y5b5b1b1"/>
+        <port dir="out" size="32" source="z7c17\$PHI\$z7b7" typeName="int"/>
+      </PHI>
+      <PHI>
+        <port dir="in" qualifier="then" source="1\$id\$y5b3b3b1"/>
+        <port dir="in" qualifier="else" source="z7c17\$ELSE\$z7b9"/>
+        <port dir="out" size="32" source="z7c17\$PHI\$z7b9" typeName="int"/>
+      </PHI>
+    </module>
+    <operation kind="\$sub">
+      <port dir="in" source="z7c17\$PHI\$z7b7"/>
+      <port dir="in" source="z7c17\$PHI\$z7b9"/>
+      <port dir="out" size="33" source="1\$id\$y7b1" typeName="int"/>
+    </operation>
+    <operation kind="pinWrite" portName="O" style="simple">
+      <port dir="in" source="1\$id\$y7b1"/>
+    </operation>
+  </module>
+
+</design>
+\end{alltt}

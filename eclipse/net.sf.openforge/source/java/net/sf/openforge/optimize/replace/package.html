@@ -1,0 +1,72 @@
+<html>
+<head>
+<title>Design Information for Operation Replacement Features</title>
+</head>
+<body>
+<h1>optimize.replace package</h1>
+<p>Documentation last modified: $Date: 2005-06-09 13:00:48 -0700 (Thu, 09 Jun 2005) $
+<p>This package groups together the classes and functionality responsible
+for replacing standard LIM operations with user defined functionality from
+source code libraries.
+
+<h2>Operations supported in replacement</h2>
+<p>The actual correlation between which operations are supported, and the
+method name to be implemented by a library for implementing that operation
+is maintained in the ReplacmentCorrelation class.
+<table>
+<tr><th>Operation</th><th>Library Method Name</th></tr>
+<tr><td>modulo (%)</td>rem<td></td></tr>
+<tr><td>division (/)</td><td>div</td></tr>
+<tr><td>multiplication (*)</td><td>mult</td></tr>
+<tr><td>subtraction (-)</td><td>sub</td></tr>
+<tr><td>addition (+)</td><td>add</td></tr>
+<tr><td>negation (-)</td><td>minus</td></tr>
+<tr><td>greater than equal (&gt;=)</td><td>greaterThanEqual</td></tr>
+<tr><td>greater than (&gt;)</td><td>greaterThan</td></tr>
+<tr><td>less than equal (&lt;=)</td><td>lessThanEqual</td></tr>
+<tr><td>less than (&lt;)</td><td>lessThan</td></tr>
+<tr><td>not equal(!=)</td><td>notEqual</td></tr>
+<tr><td>equal (==)</td><td>equal</td></tr>
+</table>
+
+<h2>Overview of replacement</h2>
+<p>The operation replacement code allows the user to write methods in a library
+that will be used to implement given operations in the LIM.  These methods
+must contain only forgeable code, as they are converted into LIM
+implementations by compiling (but not optimizing) the library class.
+Replacement is accomplished by creating a call to the uniquified (cloned)
+procedure and connecting the ports and buses of that call according to the
+connections of the operation being replaced.
+
+<h2>Replacments from libraries with fields</h2>
+<p>Operation replacement supports library implementations that contain object
+and static fields.  These resources (and any other accessed resources in the
+<b>libraries</b> design) are merged into the user's design when the first
+operation is replaced.  If the replacement method is non static, then
+each time an operation is replaced with that method, an entirely new tree of 
+fields is created by essentially cloning the root object of the users design.
+This new tree of logic is set as the target of the method by creation of a
+'deferred constant' whose value is the base address of that new tree in the
+design memory.  This has the effect of creating a new instance of the library
+class for each operation that is replaced.
+<p>IPCore objects in the library require a bit of special handling because
+Forge uses the user created IPCore object in building the IPCore instantiation.
+For this reason, the IPCore object itself must also be copied as well as any
+pins that are used by that IPCore object.
+<p>The end result of libraries that make use of fields is that any static field
+in the library represents a shared resource.  All replaced operations (that use
+an implementation from that library) will share the logic/hardware allocated by
+that static field.  Non static fields (object fields) represent unique hardware
+and any replaced operations using an implementation from that library will have
+a completely unique copy of that logic/hardware to operate on.  Consequently,
+an IPCore that is stored in a static field will only be allocated 1 instance
+that is shared by all replaced operations.  Whereas an IPCore allocated in a
+non static field will have one instance allocated for each replaced operation.
+
+
+<br>
+<center><hr width=60%</hr></center>
+
+<br><br><br><br>
+</body>
+</html>

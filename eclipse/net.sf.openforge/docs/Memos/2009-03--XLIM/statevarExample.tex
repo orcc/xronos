@@ -1,0 +1,36 @@
+\chapter{stateVar Examples}
+\section{Scalar}
+Scalar type variable
+\begin{alltt}
+<stateVar name="myScalar">
+  <initValue type="int" size="12" value="0"/>
+</stateVar>
+\end{alltt}
+
+\section{List}
+List type variable
+\begin{alltt}
+<stateVar name="myList">
+  <initValue type="int" size="12" value="0"/>
+  <initValue type="int" size="12" value="1"/>
+  <initValue type="int" size="12" value="2"/>
+  <initValue type="int" size="12" value="3"/>
+</stateVar>
+\end{alltt}
+
+\section{Multi-dimentional List}
+2-d list type variable
+\begin{alltt}
+<stateVar name="myList">
+  <initValue type="list">
+    <initValue type="int" size="12" value="1"/>
+    <initValue type="int" size="12" value="2"/>
+  </initValue>
+  <initValue type="list">
+    <initValue type="int" size="12" value="10"/>
+    <initValue type="int" size="12" value="20"/>
+  </initValue>
+</stateVar>
+\end{alltt}
+
+

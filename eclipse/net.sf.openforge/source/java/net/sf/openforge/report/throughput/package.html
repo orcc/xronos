@@ -1,0 +1,45 @@
+<html>
+<head>
+<title>throughput Package Info</title>
+</head>
+<body>
+<p>The throughput package contains classes related to reporting on the
+throughput of the design.
+<h2>Throughput Analyzer</h2>
+<p>Throughput analysis is the process of determining how often new data
+can be applied to a given design.  There are 3 criteria which factor into
+this determination:
+<ol>
+<li>Whether the design has been balanced during scheduling.
+<li>Loops in the design (explicit feedback)
+<li>Multiple accesses to any 'global' resource (implicit feedback)
+</ol>
+<p>If the design contains no feedback (explicit or implicit) and was
+balanced during scheduling, then it may accept new data every clock
+cycle.  If the design was not balanced, then data may be applied only
+after the previous done.  Any type of feedback mandates a pause in the
+assertion of new data until that feedback has been completely resolved.
+For loops this means the loop has completed iterating.  For implicit
+feedback, this is the number of clock cycles between the first and
+last access(es) to the resource.
+<p>The spacing of input data will fall into one of these categories:
+<ul>
+<li>Indeterminate.  Data may be applied only after the previous done
+has been received.
+<li>Fixed.  Data may be applied exactly every 'n' cycles.
+<li>Bounded.  Data may be applied at least every 'n' cycles, but based on
+knowledge of the design you may be able to apply it more often (criteria
+comes from bounded loops which may terminate earlier than max bound)
+</ul>
+<p>Development tasks
+<ul>
+<li>Characterize Loops.  Push knowledge of loop bounds out of
+LoopUnrollingVisitor and into Loop.
+<li>Add capacity to ScheduleVisitor to determine latency difference
+between multiple accesses to same resource.  All pins share a same
+'virtual' resource.
+<li>Add mechanism to report top 'n' critical paths that reduce throughput.
+<li>Annotate each task with minimum data/go spacing.
+</ul>
+</body>
+</html>

@@ -1,0 +1,315 @@
+\chapter{Loop Examples}
+
+\section{Basic Loop}
+
+Note that this loop contains all 3 methods of variable consuption/production:\\
+\begin{itemize}
+\item Variable consumed, not modified (variable {\tt a})
+\item Variable consumed and modified (variable {\tt i})
+\item Variable consumed, modified, and used again outside loop (variable {\tt b})
+\end{itemize}
+
+Take the following example:
+\subsection{Loop pseudo-code}
+\begin{alltt}
+int a = actorPortRead;
+int b = 9;
+int i = 0;
+while ( i < 7 )
+\{
+  i = i + a;
+  b++;
+\}
+actorPortWrite(b);
+\end{alltt}
+
+\subsection{Generated XLIM}
+\begin{alltt}
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<design name="Loop">
+  <actor-port dir="in" name="A" size="32" typeName="int"/>
+  <actor-port dir="out" name="B" size="32" typeName="int"/>
+  <module kind="block" name="actionAtLine\_4">
+    <operation kind="pinRead" portName="A" removable="no">
+      <port dir="out" size="32" source="0x\_5b1b1" typeName="int"/>
+    </operation>
+    <operation kind="\$literal\_Integer" value="9">
+      <port dir="out" size="5" source="1x\_3b3b3" typeName="int"/>
+    </operation>
+    <operation kind="cast">
+      <port dir="in" source="1x\_3b3b3"/>
+      <port dir="out" size="32" source="0x\_5b5" typeName="int"/>
+    </operation>
+    <operation kind="\$literal\_Integer" value="0">
+      <port dir="out" size="1" source="1x\_3b5b3" typeName="int"/>
+    </operation>
+    <operation kind="cast">
+      <port dir="in" source="1x\_3b5b3"/>
+      <port dir="out" size="32" source="0x\_5b7" typeName="int"/>
+    </operation>
+    <module kind="loop">
+      <PHI>
+        <port dir="in" source="0x\_5b7"/>
+        <port dir="in" source="0x\_5b9b3b1"/>
+        <port dir="out" size="32" source="0x\_5b9$PHI$0x\_5b7" typeName="int"/>
+      </PHI>
+      <PHI>
+        <port dir="in" source="0x\_5b5"/>
+        <port dir="in" source="0x\_5b9b3b3"/>
+        <port dir="out" size="32" source="0x\_5b9$PHI$0x\_5b5" typeName="int"/>
+      </PHI>
+      <module decision="1x\_3b7b1" kind="test">
+        <operation kind="noop">
+          <port dir="in" source="0x\_5b9$PHI$0x\_5b7"/>
+          <port dir="out" size="32" source="0x\_5b9b1b1" typeName="int"/>
+        </operation>
+        <operation kind="\$literal\_Integer" value="7">
+          <port dir="out" size="4" source="1x\_3b7b1b3b3" typeName="int"/>
+        </operation>
+        <operation kind="\$lt">
+          <port dir="in" source="0x\_5b9b1b1"/>
+          <port dir="in" source="1x\_3b7b1b3b3"/>
+          <port dir="out" size="1" source="1x\_3b7b1" typeName="bool"/>
+        </operation>
+      </module>
+      <module kind="block">
+        <operation kind="noop">
+          <port dir="in" source="0x\_5b9$PHI$0x\_5b7"/>
+          <port dir="out" size="32" source="0x\_5b9b3b1b1b1" typeName="int"/>
+        </operation>
+        <operation kind="noop">
+          <port dir="in" source="0x\_5b1b1"/>
+          <port dir="out" size="32" source="0x\_5b9b3b1b1b5" typeName="int"/>
+        </operation>
+        <operation kind="\$add">
+          <port dir="in" source="0x\_5b9b3b1b1b1"/>
+          <port dir="in" source="0x\_5b9b3b1b1b5"/>
+          <port dir="out" size="33" source="1x\_3b7b3b1b1" typeName="int"/>
+        </operation>
+        <operation kind="noop">
+          <port dir="in" source="1x\_3b7b3b1b1"/>
+          <port dir="out" size="32" source="0x\_5b9b3b1" typeName="int"/>
+        </operation>
+        <operation kind="noop">
+          <port dir="in" source="0x\_5b9\$PHI\$0x\_5b5"/>
+          <port dir="out" size="32" source="0x\_5b9b3b3b1b1" typeName="int"/>
+        </operation>
+        <operation kind="\$literal\_Integer" value="1">
+          <port dir="out" size="2" source="1x\_3b7b3b3b1b3b3" typeName="int"/>
+        </operation>
+        <operation kind="\$add">
+          <port dir="in" source="0x\_5b9b3b3b1b1"/>
+          <port dir="in" source="1x\_3b7b3b3b1b3b3"/>
+          <port dir="out" size="33" source="1x\_3b7b3b3b1" typeName="int"/>
+        </operation>
+        <operation kind="noop">
+          <port dir="in" source="1x\_3b7b3b3b1"/>
+          <port dir="out" size="32" source="0x\_5b9b3b3" typeName="int"/>
+        </operation>
+      </module>
+    </module>
+    <operation kind="noop">
+      <port dir="in" source="0x\_5b9\$PHI\$0x\_5b5"/>
+      <port dir="out" size="32" source="0x\_5b3b1" typeName="int"/>
+    </operation>
+    <operation kind="pinWrite" style="simple" portName="B">
+      <port dir="in" source="0x\_5b3b1"/>
+    </operation>
+  </module>
+</design>
+
+\end{alltt}
+
+
+\section{Example of a Nested Loop}
+
+Loop elements may be nested to arbitrary depth.  However, references
+to symbols generated in loop elements from outside any loop hierarchy
+must refer to a symbol defined at the highest level of the loop
+hierarchy.  Take the following example:
+
+\subsection{Nested loop pseudo-code}
+\begin{alltt}
+int a = actorPortRead;
+int b = 9;
+int i = 0;
+int j = 0;
+while ( i < 7 )
+\{
+  i = i + a;
+  j = 0;
+  while (j < 3)
+  \{
+    j++;
+    b++;
+  \}
+\}
+actorPortWrite(b);
+\end{alltt}
+
+\subsection{Generated XLIM}
+\begin{alltt}
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<design name="NestedLoop">
+  <actor-port dir="in" name="A" size="32" typeName="int"/>
+  <actor-port dir="out" name="B" size="32" typeName="int"/>
+  <module kind="block" name="actionAtLine\_4">
+    <operation kind="pinRead" portName="A" removable="no">
+      <port dir="out" size="32" source="0x\_7b1b1" typeName="int"/>
+    </operation>
+    <operation kind="\$literal\_Integer" value="9">
+      <port dir="out" size="5" source="1x\_4b3b3" typeName="int"/>
+    </operation>
+    <operation kind="cast">
+      <port dir="in" source="1x\_4b3b3"/>
+      <port dir="out" size="32" source="0x\_7b5" typeName="int"/>
+    </operation>
+    <operation kind="\$literal\_Integer" value="0">
+      <port dir="out" size="1" source="1x\_4b5b3" typeName="int"/>
+    </operation>
+    <operation kind="cast">
+      <port dir="in" source="1x\_4b5b3"/>
+      <port dir="out" size="32" source="0x\_7b7" typeName="int"/>
+    </operation>
+    <operation kind="\$literal\_Integer" value="0">
+      <port dir="out" size="1" source="1x\_4b7b3" typeName="int"/>
+    </operation>
+    <operation kind="cast">
+      <port dir="in" source="1x\_4b7b3"/>
+      <port dir="out" size="32" source="0x\_7b9" typeName="int"/>
+    </operation>
+    <module kind="loop">
+      <PHI>
+        <port dir="in" source="0x\_7b7"/>
+        <port dir="in" source="y\_b3b1"/>
+        <port dir="out" size="32" source="y\_\$PHI\$0x\_7b7" typeName="int"/>
+      </PHI>
+      <PHI>
+        <port dir="in" source="0x\_7b9"/>
+        <port dir="in" source="y\_b3b5\$PHI\$0x\_7b9"/>
+        <port dir="out" size="32" source="y\_\$PHI\$0x\_7b9" typeName="int"/>
+      </PHI>
+      <PHI>
+        <port dir="in" source="0x\_7b5"/>
+        <port dir="in" source="y\_b3b5\$PHI\$0x\_7b5"/>
+        <port dir="out" size="32" source="y\_\$PHI\$0x\_7b5" typeName="int"/>
+      </PHI>
+      <module decision="1x\_4b9b1" kind="test">
+        <operation kind="noop">
+          <port dir="in" source="y\_\$PHI\$0x\_7b7"/>
+          <port dir="out" size="32" source="y\_b1b1" typeName="int"/>
+        </operation>
+        <operation kind="\$literal\_Integer" value="7">
+          <port dir="out" size="4" source="1x\_4b9b1b3b3" typeName="int"/>
+        </operation>
+        <operation kind="\$lt">
+          <port dir="in" source="y\_b1b1"/>
+          <port dir="in" source="1x\_4b9b1b3b3"/>
+          <port dir="out" size="1" source="1x\_4b9b1" typeName="bool"/>
+        </operation>
+      </module>
+      <module kind="block">
+        <operation kind="noop">
+          <port dir="in" source="y\_\$PHI\$0x\_7b7"/>
+          <port dir="out" size="32" source="y\_b3b1b1b1" typeName="int"/>
+        </operation>
+        <operation kind="noop">
+          <port dir="in" source="0x\_7b1b1"/>
+          <port dir="out" size="32" source="y\_b3b1b1b5" typeName="int"/>
+        </operation>
+        <operation kind="\$add">
+          <port dir="in" source="y\_b3b1b1b1"/>
+          <port dir="in" source="y\_b3b1b1b5"/>
+          <port dir="out" size="33" source="1x\_4b9b3b1b1" typeName="int"/>
+        </operation>
+        <operation kind="noop">
+          <port dir="in" source="1x\_4b9b3b1b1"/>
+          <port dir="out" size="32" source="y\_b3b1" typeName="int"/>
+        </operation>
+        <operation kind="\$literal\_Integer" value="0">
+          <port dir="out" size="1" source="1x\_4b9b3b3b1" typeName="int"/>
+        </operation>
+        <operation kind="noop">
+          <port dir="in" source="1x\_4b9b3b3b1"/>
+          <port dir="out" size="32" source="y\_b3b3" typeName="int"/>
+        </operation>
+        <module kind="loop">
+          <PHI>
+            <port dir="in" source="y\_b3b3"/>
+            <port dir="in" source="y\_z\_b1"/>
+            <port dir="out" size="32" source="y\_b3b5\$PHI\$0x\_7b9" typeName="int"/>
+          </PHI>
+          <PHI>
+            <port dir="in" source="y\_\$PHI\$0x\_7b5"/>
+            <port dir="in" source="y\_z\_b3"/>
+            <port dir="out" size="32" source="y\_b3b5\$PHI\$0x\_7b5" typeName="int"/>
+          </PHI>
+          <module decision="1x\_4b9b3b5b1" kind="test">
+            <operation kind="noop">
+              <port dir="in" source="y\_b3b5\$PHI\$0x\_7b9"/>
+              <port dir="out" size="32" source="y\_b3b5b1b1" typeName="int"/>
+            </operation>
+            <operation kind="\$literal\_Integer" value="3">
+              <port dir="out" size="3" source="1x\_4b9b3b5b1b3b3" typeName="int"/>
+            </operation>
+            <operation kind="\$lt">
+              <port dir="in" source="y\_b3b5b1b1"/>
+              <port dir="in" source="1x\_4b9b3b5b1b3b3"/>
+              <port dir="out" size="1" source="1x\_4b9b3b5b1" typeName="bool"/>
+            </operation>
+          </module>
+          <module kind="block">
+            <operation kind="noop">
+              <port dir="in" source="y\_b3b5\$PHI\$0x\_7b9"/>
+              <port dir="out" size="32" source="y\_z\_b1b1b1" typeName="int"/>
+            </operation>
+            <operation kind="\$literal\_Integer" value="1">
+              <port dir="out" size="2" source="1x\_4b9z\_b1b1b3b3" typeName="int"/>
+            </operation>
+            <operation kind="\$add">
+              <port dir="in" source="y\_z\_b1b1b1"/>
+              <port dir="in" source="1x\_4b9z\_b1b1b3b3"/>
+              <port dir="out" size="33" source="1x\_4b9z\_b1b1" typeName="int"/>
+            </operation>
+            <operation kind="noop">
+              <port dir="in" source="1x\_4b9z\_b1b1"/>
+              <port dir="out" size="32" source="y\_z\_b1" typeName="int"/>
+            </operation>
+            <operation kind="noop">
+              <port dir="in" source="y\_b3b5\$PHI\$0x\_7b5"/>
+              <port dir="out" size="32" source="y\_z\_b3b1b1" typeName="int"/>
+            </operation>
+            <operation kind="\$literal\_Integer" value="1">
+              <port dir="out" size="2" source="1x\_4b9z\_b3b1b3b3" typeName="int"/>
+            </operation>
+            <operation kind="\$add">
+              <port dir="in" source="y\_z\_b3b1b1"/>
+              <port dir="in" source="1x\_4b9z\_b3b1b3b3"/>
+              <port dir="out" size="33" source="1x\_4b9z\_b3b1" typeName="int"/>
+            </operation>
+            <operation kind="noop">
+              <port dir="in" source="1x\_4b9z\_b3b1"/>
+              <port dir="out" size="32" source="y\_z\_b3" typeName="int"/>
+            </operation>
+          </module>
+        </module>
+      </module>
+    </module>
+    
+    <operation kind="noop">
+      <port dir="in" source="y\_\$PHI\$0x\_7b5"/>
+      <port dir="out" size="32" source="0x\_7b3b1" typeName="int"/>
+    </operation>
+    <operation kind="pinWrite" style="simple" portName="B">
+      <port dir="in" source="0x\_7b3b1"/>
+    </operation>
+  </module>
+</design>
+\end{alltt}
+
+Note that the pinWrite element is using the variable b.  The value for
+this variable is calculated in the inner loop.  However, to obtain the
+correct value for b, the symbolic reference must be to the merged
+value (the PHI output which is {\tt y\_\$PHI\$0x\_7b5}).
+
+

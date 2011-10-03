@@ -1,0 +1,290 @@
+<html>
+<head>
+<title>Design Information for LIM Memory Features</title>
+</head>
+<body>
+<h1>lim.memory package</h1>
+<p>Last modified: $Date: 2005-12-01 10:19:34 -0800 (Thu, 01 Dec 2005) $
+<p>This package is intended to group together all classes and functionality
+related to memory/array/object support in the LIM.
+
+<h2>Support for &lt;Array&gt;.Length operations</h2>
+<h3>Requirements:</h3>
+<p><ul>
+<li>Allow usage of &lt;array&gt;.length syntax in source
+<li>Allow dynamic usage of .length.  i.e. the access to .length
+does not need to be to a compile time determinate target.
+<li>Compile time determinate accesses to .length should resolve
+to constant values in LIM and as such can be used as loop bounds, etc.
+<li>Minimize overhead added to lim and/or array accesses in support of
+.length.
+</ul>
+<h3>Design:</h3>
+<p>The &lt;array&gt;.length operator is supported by adding an
+additional 'field' to each array allocated in the users design.  This field
+is located at offset 0 of the array when instantiated in memory and contains
+a constant primitive value that identifies the allocated length of the array.
+Array accesses add 1 to the index to access the correct element of the array.
+If all accesses to the &lt;array&gt;.length field have been removed (or there
+are no accesses) then the field is removed and the addition of 1 to the index
+to form a memory offset is removed.
+
+<center><hr width=60%</hr></center>
+<h2>Memory types and characteristics</h2>
+<p>In the Virtex2&reg; FPGA family there are 2 types of memory resources
+available to the designer.  These are Block RAM (BRAM) and LUT RAM (aka
+distributed RAM).
+<p>The BRAM are allocated in 18Kb blocks, organized as 18Kb
+(2<sup><font size=-2>14</font></sup>) by 1 bit.  The number of available BRAM
+is dependant on the specific part selected.  Each BRAM has 2 fully independent
+ports, thus there is no penalty for using a 2nd port on a BRAM.  Each BRAM
+<i>cannot</i> be divided into 2 independent memories.  Both the read and
+write accesses to a BRAM take 1 clock cycle.  Read accesses register the
+read address before driving the accessed data on the outputs.
+<p>The LUT RAM are implemented in the LUT's of each CLB.  Each LUT can be
+configured as a 16 element 1-bit wide (16x1) memory with a single access port.
+2 LUT's can be combined to create a dual port memory where 1 port is read/write
+and the other is a read-only port (memory shadowing technique).  Multiple
+LUT's can be stacked to created a memory up to 128 elements deep.  Write accesses
+to LUT RAM are synchronous and read accesses are fully combinational from
+address port to data out (0 cycles).
+<p>
+<table cols=5 width=80% border=1 align=center>
+<tr><td colspan=4 align=center>Memory Size &gt; LUT RAM limt?</td></tr>
+<tr><td colspan=2 align=center width=50%><font size=-2>true</font><br>Is ROM?</td><td colspan=2 align=center width=50%><font size=-2>false</font><br>Is ROM?</td></tr>
+<tr valign=top align=center>
+<td width=25%><font size=-2>true</font><br>Block ROM<br>Latency=1<br>Single or Dual Port Reads</td>
+<td width=25%><font size=-2>false</font><br>Block RAM<br>Latency=1<br>Single or Dual Port R/W</td>
+<td width=25%><font size=-2>true</font><br>LUT ROM<br>Latency=0<br>Single or Dual Port Reads</td>
+<td width=25%><font size=-2>false</font><br>LUT RAM<br>Latency=0 (read)<br>Latency=1 (write)<br>Single Port Write<br>Dual Port Read(2X LUT usage)</td>
+</tr></table>
+<h3>Design</h3>
+<p>Each LIM Memory component is annotated with 2 pieces of information that
+determine how it is scheduled and how it gets translated.  These are:
+<ul>
+<li>Implementation in LUT vs BRAM
+<li>is ROM
+</ul>
+<p>Based on these two criteria the criteria for scheduling (latency) can be
+determined.  The user has control over both of these criteria allowing them
+to specify the exact final implementation.  The LUT vs BRAM is a user
+preference while the ROM is based on their usage in the source code.
+<p>Since a dual port LUT ROM is 2X the size of a single Port and we replicate
+ROMS based on the number of accesses, there is no extra overhead to allocate
+dual ports to ANY type of ROM.  Thus all ROMS should allocate dual ports
+before replicating.
+<p>Currently we do not allow for dual port RAM's.  When this support is added
+we must be sure that if the implementation is LUT RAM that one port is marked
+as being a read-only port.
+<p><i><font color=FF4444>TBD FEATURE: </font></i>An API or preference tagging
+feature needs to be added to allow individualized control over different
+memories in the design so that 2 memories of equal size can be allocated
+to LUT or BRAM independently.  EG the user may want a 16x8 ROM in LUTs and a
+16x8 RAM in BRAM since it is written to by 2 different sources.
+<p>Tasks to implement combinational ROMS (please delete when accomplished):
+<ul type=square>
+<li>Add isLUT and isBRAM methods to Memory.  These need to make use of the
+information available in the mapper to determine what the implementation will
+be based on the size of the memory and the available technologies.
+<ul>
+<li>Since the Memory size may change during optimizations the lookup needs to
+be performed each time the method is called (or cached up based on the size,
+and re-looked up each time the size changes, perhaps at the end of the
+'buildMemory' method).
+<li>This means that the functionality in the memory mapper should be split into
+2 parts.  The first part only determines what type of memory the Memory should
+be implemented in.  The second part determines how to implement it (finding
+the correct primitive and doing the translation).  The first part is called by
+the Memory whenever it's size changes and sets the fields for lut/bram.  Then
+this annotated information is used by the 2nd part so that everything is working
+from the same sets of information.
+</ul>
+<li>Update the getLatency() method in MemoryPort such that it correctly
+reflects the particular implementation of the backing memory.  The latency for
+LUT RAMS differs based on the type of access (read vs write) so the latency
+reported for MemoryRead will differ from that of MemoryWrite based on the
+implementation.  To keep this information centrally located MemoryPort and/or
+Memory should implement a getLatency (MemoryAccess access) where the access can
+report if it is read or write and the method will return the appropriate
+Latency.
+<li>Update the translation engine to support the block and LUT ram correctly.
+LUT RAM should always be combinational and the Block RAM always sequential (registered).
+The LUT RAM implementation should <b>not</b> register the data output.  The
+DONE for the LUT memory implementation should be:<pre><kbd>
+          assign DONE = RE | we_reg;
+          FD reg_xxx(.D(WE), .Q(we_reg), .C(CLK));
+</kbd></pre>
+</ul>
+<p>Other memory implementation tasks:
+<ul type=square>
+<li>Update the gatedepth for any MemoryAccess to query the backing memory for
+entry and exit gatedepth.  Gatedepth of the memory is as follows, note that
+somewhere the depth associated with the gateways and referee's should be taken
+into account.
+<table align=center border=1>
+<tr align=center><th>&nbsp;</th><th>Entry Depth</th><th>Gate Depth</th><th>Exit Depth</th></tr>
+<tr align=center><td>Block RAM/ROM read</td><td>0</td><td>?</td><td>0(?latched)</td></tr>
+<tr align=center><td>Block RAM write</td><td>0</td><td>?</td><td>0</td></tr>
+<tr align=center><td>LUT RAM/ROM read</td><td>1</td><td>1</td><td>1</td></tr>
+<tr align=center><td>LUT RAM write</td><td>1</td><td>1</td><td>0</td></tr>
+</table>
+<li>Removed the distracting, non-used, getAccessLatency method in MemoryAccess.
+</ul>
+
+<center><hr width=60%</hr></center>
+
+<h2>'Unit' lane addressable memory</h2>
+In order to be compatible with C style memory accesses, as well as arbitrary
+bit width memory implementations, the backing memory implementation must allow
+for any given location to be accessed as any multiple of the addressing stride.
+The addressing stride is defined as the number of bits that make up one addressable
+location in the memory.  
+To further complicate the access characteristics, the 'base' of
+each access is not guaranteed to fall on any fixed boundry.  For example, in a
+C style, byta addressable memory, and given an integer (32 bit) with value
+0xabcdef10 in memory, the value may be accessed in the following ways:
+<table border=1>
+<tr><th>Offset</th><th>Access size</th><th>Returned Value</th></tr>
+<tr><td>0</td><td>8-bit</td><td>0x10</td></tr>
+<tr><td>1</td><td>8-bit</td><td>0xef</td></tr>
+<tr><td>2</td><td>8-bit</td><td>0xcd</td></tr>
+<tr><td>3</td><td>8-bit</td><td>0xab</td></tr>
+<tr><td>0</td><td>16-bit</td><td>0xef10</td></tr>
+<tr><td>2</td><td>16-bit</td><td>0xabcd</td></tr>
+<tr><td>0</td><td>32-bit</td><td>0xabcdef10</td></tr>
+</table>
+This dictates that each addressable unit of the memory must be individually
+addressable and modifiable.  However, the overhead involved in retrieving
+or modifying standard word sizes (eg 2, 4, or 8 addressable units at a time)
+is unacceptable.
+<p>This leads us to develop a memory structure which can be accessed in 
+multiples of the addressable unit in a single cycle.  Specifically, the
+allowable multiples are 1, 2, 4, or 8 units.  Additionally, the structure
+must accept an offset into the accessed location at which to 'base' the
+access.  The structure described here meets all those criteria and introduces
+a minimum of overhead (additional logic) to manage the data and enables.
+<p>First, lets define the signals that the memory will be supplied and produce.
+<table border=1>
+<tr><th>Signal</th><th>direction</th><th>meaning</th></tr>
+<tr><td>Din</td><td>input</td><td>Data input (write data)</td></tr>
+<tr><td>Addr</td><td>input</td><td>Address, in addressable units</td></tr>
+<tr><td>En</td><td>input</td><td>read enable</td></tr>
+<tr><td>We</td><td>input</td><td>write enable</td></tr>
+<tr><td>Size</td><td>input</td><td>access size (encoded)</td></tr>
+<tr><td>Dout</td><td>output</td><td>Data output (read data)</td></tr>
+</table>
+<p>The address signal is 'unit aligned', meaning that each incremental value
+represents one stride through memory.  This means that if a memory is 4
+addressable units wide, then each physical 'line' of memory will be
+accessed by every 4th address value (eg 0, 4, 8, ...).  The address will be
+managed according to the structure of the memory such that some of the LSB
+bits may (or may not) be used to define the offset into a given line of memory.
+<p>The size signal is an encoded value which defines the width of the read
+or write access.  The 2-bit encoding is as follows:
+<table border=1>
+<tr><th>Value</th><th>Number of Addressable Units Accessed</th></tr>
+<tr><td>0</td><td>4</td></tr>
+<tr><td>1</td><td>1</td></tr>
+<tr><td>2</td><td>2</td></tr>
+<tr><td>3</td><td>8</td></tr>
+</table>
+<p>The structure of the memory is to be built up of 'n' banks of individual
+memory elements in order to be independently accessible without modifying other
+elements in the same memory line.  The number of banks is determined by the
+width of the memory divided by the width of each bank.  Thus a 32 bit memory
+with 8 bit banks would require 4 memory banks.  Similarly a 26 bit memory with
+13 bit banks would require 2 memory banks.
+<p>Once each bank has been instantiated we must instantiate logic to generate
+enables to each bank and logic to ensure that the data is correctly aligned to
+each bank for writes and that read data is correctly aligned to the data bus
+for presentation to the accessor.
+<h3>Select Generation</h3>
+<p>Each memory bank requires an individualized enable signal that is used to
+qualify the read and/or write enable to the memory as a whole to determine
+whether the specific bank is being accessed.  This enable is based on a
+combination of the size and lsb bits of the address according to the following
+schematic:
+<br><img align="top" src="doc-files/ByteSel.png">
+<p>Given the example of a 32 bit memory with 8-bit banks (ie 4 banks) the
+constants are:
+<table border=1>
+<tr><td>C0</td><td>0x0F</td></tr>
+<tr><td>C1</td><td>0x01</td></tr>
+<tr><td>C2</td><td>0x03</td></tr>
+<tr><td>C3</td><td>0xFF</td></tr>
+</table>
+This encoded select value is then shifted by the LSB bits of the address to
+generate the memory bank enables.  The logic contained in the 'Bank Logic'
+section is simply a constant magnitude shift to generate a 1-bit enable signal
+(selection of the correct bit from the encoded select) which is then logically
+and'ed with the read and write enables for the memory.  Thus, only the 8-bit
+wide 4:1 mux (common to all banks), the left shift (common to all banks), and
+2 and gates (per memory bank) are functional logic.
+<h3>Data Movement</h3>
+<p>In order to ensure correct data alignment, the incoming and outgoing data
+must be shifted left and right respectively by a given number of bits based
+on the address being accessed.  The magnitude of this shift is taken directly
+from the least significant bits of the address bus and is based on the number
+of banks in the widest memory and the number of bits per addressable location.
+<p>The addressing scheme of all memories is addressable unit aligned, meaning
+that the number of address bits used to shift incoming/outgoing data will vary
+based on the width of the memory.  For example, in a 32 bit memory with 8 bit
+address stride only the lsb 2 bits of the address are used in shifting.  However
+in a 64 bit memory with 8 bit address stride, the lsb 3 bits of the address will
+be used.  The number of address bits used for aligning incoming/outgoing data
+in a given memory is 
+<code>log<sub><font size=-2>2</font></sub>(memory width/address stride)</code>
+<p>The data handling is detailed by this logic:
+<br><img align="top" src="doc-files/StructuralDataFlow.png">
+<p>The incoming data is shifted by the required number of <b>addressable units</b> as
+specified by the lsb bits of the address.  In our 32-bit/8-bit-bank memory,
+the address 0x0 is already aligned with the data bus (the lsb 2 bits of the
+address are 0, thus we shift by 0 bits).  However, the address 0x1 indicates
+the 2nd location in memory.  Incoming data will be LSB aligned, thus our SHL needs
+to move the data to the 2nd byte lane for a correctly aligned write.  So, we
+will shift it by 1 * 8 bits.  A corallary process happens during reads by
+shifting the data back to the right.
+<p><b>Note:Since the accessing instruction knows the number of addressalbe
+locations it is reading, we rely on that instruction to ignore any MSB bits
+ that are not desired.</b>
+<p>Additionally, each bank has logic to mask the data coming out of the bank
+and feeding that into a common 'or'.  This logic is all pass-through logic
+that is used to assemble (concatenate) the banks it a single bus before feeding
+it to the right shift operation.
+
+<p>The data for a 64 bit memory with byte addressing is included here for
+validation of this logic.
+<table cellspacing=0 border=1><tr><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></table>
+<table border=1>
+<tr align=center><th>Addr[2:0]</th><th>Size</th><th>Bytes Enabled</th><th>Data Shift</th></tr>
+<tr align=center><td>0</td><td>0</td><td>3:0</td><td>0</td></tr>
+<tr align=center><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+<tr align=center><td>0</td><td>2</td><td>1:0</td><td>0</td></tr>
+<tr align=center><td>0</td><td>3</td><td>7:0</td><td>0</td></tr>
+<tr align=center><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+<tr align=center><td>2</td><td>1</td><td>2</td><td>2</td></tr>
+<tr align=center><td>2</td><td>2</td><td>3:2</td><td>2</td></tr>
+<tr align=center><td>3</td><td>1</td><td>3</td><td>3</td></tr>
+<tr align=center><td>4</td><td>0</td><td>7:4</td><td>4</td></tr>
+<tr align=center><td>4</td><td>1</td><td>4</td><td>4</td></tr>
+<tr align=center><td>4</td><td>2</td><td>5:4</td><td>4</td></tr>
+<tr align=center><td>5</td><td>1</td><td>5</td><td>5</td></tr>
+<tr align=center><td>6</td><td>1</td><td>6</td><td>6</td></tr>
+<tr align=center><td>6</td><td>2</td><td>7:6</td><td>6</td></tr>
+<tr align=center><td>7</td><td>1</td><td>7</td><td>7</td></tr>
+</table>
+
+<br>
+
+
+<center><hr width=60%</hr></center>
+
+<h2>Memory Package class relationships</h2>
+<img align="top" src="doc-files/MemoryAllocation.png">
+
+
+<center><hr width=60%</hr></center>
+
+<br><br><br><br>
+</body>
+</html>

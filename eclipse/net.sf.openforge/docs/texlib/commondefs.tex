@@ -1,0 +1,68 @@
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amscd}
+\usepackage{amssymb}
+\usepackage{epsfig}
+\usepackage{alltt}
+\usepackage{fancybox}
+\usepackage[dvipdfm,usenames]{color}
+\usepackage{makeidx}
+\usepackage{tocbibind}
+\usepackage{longtable}
+\usepackage{palatino}
+\usepackage{fancyhdr}
+\usepackage{verbatim}
+\usepackage{graphicx}
+
+\usepackage[dvipdfm, backref, pagebackref, colorlinks=true,
+            urlcolor=blue, letterpaper=true]{hyperref}
+
+\usepackage{xspace}
+\usepackage{program}
+
+\input{colordvi}
+
+\newtheorem{example}{Example}
+
+\newcommand{\sidenote}[1]
+       {\mbox{}\marginpar{\raggedright\Blue{#1}}}
+
+\newcommand{\urlref}[1] {\href{#1}{{\tt #1}}}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.3mm}}
+
+\setlength{\parindent}{0mm}
+
+\widowpenalty = 10000
+\clubpenalty = 10000
+\raggedbottom
+
+\newcommand{\Cal}{{\sc Cal}\xspace}
+\newcommand{\CalML}{{\sc CalML}\xspace}
+\newcommand{\XDF}{XDF\xspace}
+\newcommand{\XLIM}{XLIM\xspace}
+\newcommand{\SLIM}{SLIM\xspace}
+
+
+\newcommand{\memotitlepage}[6]{
+    \pagestyle{empty}
+    \hspace*{0.1\textwidth}
+    \parbox[b][\textheight][s]{0.05\textwidth}{
+            {\color{Blue}
+        \rule{1pt}{\textheight}}
+    } %
+    % 
+    \parbox[b][\textheight][s]{0.80\textwidth}{
+        \vspace{\stretch{2}}
+        {\noindent\Huge #1}\\[2\baselineskip]
+        {\Large\itshape #2}\\[4\baselineskip]
+        {\Large #3}\par
+        \vspace{\stretch{4}}
+        {\noindent OpenForge Memo OFM-{#4} version #5}\\
+        {\noindent #6}\\
+        {\noindent \tt www.sf.net/projects/openforge}
+    }
+}
+
+

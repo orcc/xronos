@@ -1,0 +1,43 @@
+
+
+\chapter{XLIM Type and Structure}
+
+
+\section{Type System}
+
+XLIM allows for a flexible type system to be used by allowing attributes for typename (eg int or bool) and size (precision) on each port element within the graph.  These attributes are arbitrary and in their absence it is up to the particular XLIM consumer implementation to define a type system.  
+
+In one implementation, the default type system is as follows.  Integer values are represented with a type int.  This type is a signed (two's complement) value whose precision is determined by the size attribute thus ranging in value from $-2^{size-1}$ to $2^{size-1}-1$.  Unsigned values are implemented by increasing the size by one bit to allow for a leading 0.  Boolean values are represented with a type bool.  This type is unsigned and allowable values are 1 (true) and 0 (false).
+
+For consistency of the graph it is recommended that all operation output ports have an explicitly defined type and size.  For edges that connect ports of different type and/or size it is recommended that a cast operation be used to explicitly define the transition in type or size.  
+
+\section{Structure of XLIM document}
+
+\begin{alltt}
+<design>
+	<design attribute/>
+	<actorPort/>
+	...
+	<internalPort/>
+	...
+	<stateVar>
+		<initValue/>
+	</stateVar>
+	...
+	<module>
+		<operation>
+			<port/>
+		<operation/>
+		...
+				
+		<module>
+			<port/>
+			<operation/>
+			...
+		</module>
+		...
+
+	</module>
+	...
+</design>
+\end{alltt}

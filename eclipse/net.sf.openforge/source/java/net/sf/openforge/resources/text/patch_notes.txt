@@ -1,0 +1,3 @@
+
+There are no patch notes for version 4.1.  Please see the release_notes.txt
+for full details of the 4.1 release of Forge.

@@ -1,0 +1,28 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% Page Layout and Style
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setlength{\oddsidemargin}{0mm}
+\setlength{\topmargin}{-10mm}
+\setlength{\textwidth}{151mm}
+\setlength{\textheight}{220mm}
+
+\setlength{\marginparwidth}{30mm}
+
+%\pagestyle{fancy}
+\addtolength{\headwidth}{\marginparsep}
+\addtolength{\headwidth}{\marginparwidth}
+
+\renewcommand{\chaptermark}[1]{\markboth{\sc #1}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
+
+\fancyhf{}
+\fancyhead[LO]{\leftmark}
+\fancyhead[RO]{\rightmark}
+\fancyfoot[LE,RO]{\thepage}
+
+\renewcommand{\footrulewidth}{\headrulewidth}
+
+\fancypagestyle{plain}
+
+

@@ -1,0 +1,221 @@
+Xilinx Forge 4.1 Release Notes
+==================================
+
+This document covers various topics that are specific to release 4.1 of Forge.
+
+The 4.1 release of Forge includes all of the features of the 4.0 release with
+the following issues fixed:
+
+1. Forge crashes when a qualifier (eg 'const') is applied to the parameter of
+   an entry function.  This bug caused Forge to either 'hang' or crash with
+   a StackOverflowException.  This bug has been fixed and the const qualifier
+   may now be used with entry function parameters.
+
+2. An array or struct access in a function called from within the body of a
+   loop causes Forge to crash.  This bug has been fixed.  Arrays, structs
+   and pointers may be accessed from any hierarchy.
+
+3. Write only parameters are omitted from the input block IO FIFO interface
+   stream.  While acceptable for any write-only parameter in which all bytes
+   are written by a function, it is necessary for any non-modified bytes to
+   be supplied to the compiled function via the input block IO FIFO interface
+   so that the returned block of data consists of the correctly formatted data.
+   Forge now requires write-only parameters (thus all parameters) to be
+   supplied to the compiled implementation via the input block IO FIFO
+   interface.
+
+4. Forge implementation of compiled function gives wrong results with
+   pipelining turned on.  A bug in the pipelining algorithms has been fixed.
+
+5. Accesses to large (greater than 64 elements) arrays or structures within a
+   tight loop generates incorrect implementation results.  This bug has been
+   fixed.
+
+6. Forge crashes when comipiling source code which includes stdlib.h or stdio.h
+   under windows.  This bug has been fixed and both stdlib.h and stdio.h may
+   now be included in the compiled source code under both windows and
+   unix/linux platforms.
+   
+
+Major Features in 4.0
+---------------------
+
+1. ANSI C (89) source
+
+   Forge now takes in ANSI C (89) source code for the input language.  Java
+   is no longer a supported input format for Forge.  All ANSI C (89) features
+   are fully supported in Forge with a few notable exceptions.  Unsupported
+   features of the language include:
+			* float primitive type
+			* double primitive type
+			* bitfields
+			* unions
+			* goto
+			* local (stack) allocation of array or struct
+			* any operation taking the address of a stack variable
+			* pointer comparison (ie if (p1 == p2) ...)
+			* any pass/copy-by-value usage of a struct
+   With the exception of these features, all legal ANSI C (89) code will
+   generate functionally equivalent HDL implementations.
+
+2. Block data input and output
+
+   Data movement at the interface of a Forge generated design is now handled
+   via a FIFO type interface (FSL compliant).  This means that the types of
+   parameters and return values are no longer limited to simple primitive
+   types.  Further, modifications to non-primitive parameters of the entry
+   function will be returned as an output of the implemented design.  This
+   means that Forge generated designs are now capable of consuming and
+   producing blocks of data.  Legal parameter types are:
+			 * any primitive data type
+			 * any fixed size array
+			 * a pointer to a structure
+			 * a pointer to an array of fixed size
+			 * a pointer to a primitive value
+   Modifications to arrays or any pointer parameter (modification of the
+   backing 'object') will cause Forge to return the modified parameter along
+   with any explicitly declared return type.
+   Note, any 'struct' component of an input parameter may not contain a
+   pointer.  Similarly, pointer-to-pointer or arrays of pointers-to-pointers
+   are not allowed.
+
+3. EDK Compliant pcore generation
+
+   By default, Forge will generate all implementations as EDK compliant pcores.
+   This includes the appropriate directory structure and ancillary data files
+   associated with a pcore.  This default behavior can be changed with the
+   -noedk command line option, in which case only the HDL implementation will
+   be generated.
+
+4. Flexible memory endianness
+
+   Forge will generate, by default, a big-endian memory architecture for all
+   internal memories.  This means that the format of all structures and arrays
+   in memory will be big endian and that any 'smaller than defined type'
+   accesses to memory will return bytes in big endian order.  This also
+   affects the ordering of bytes coming across the block IO FIFO interface, as
+   they are expected to match the endianness of the internal memory
+   architecture.
+   Forge may be converted to a little endian memory architecture by the use of
+   the -littleendian command line argument.
+
+5. Flexible memory packing
+
+   Forge defaults to an 8 byte memory packing alignment.  This means that no
+   data element will span a multiple of 8 bytes.  Pad bytes are inserted to
+   ensure this proper data alignment, and any structures supplied via the
+   block IO interface are assumed to already have these pad bytes inserted in
+   the correct offsets.  The packing alignment size may also affect the defined
+   size of a given structure (due to the addition of padding bytes).
+   The default 8 byte packing rules may be modified to 4 byte packing rules
+   via the -align command line argument.
+
+6. Extensive optimization suite
+
+   Forge 4.0 includes the same suite of optimizations that were available in
+   the Java version.  Among others, these optimizations include:
+			* Loop unrolling: any bounded loop may be unrolled
+			* Memory splitting: Memories are subdivided according to usage to
+			  provide minimum contention and maximum throughput.
+			* Memory reduction: All unused elements are eliminated from
+			  memories
+			* Constant Propagation: All data paths are auto-reduced to minimum
+			  necessary precision for algorightm.  Logic is simplified based
+			  on constant values.  Dead code is removed.
+			* Parallelizing Scheduler: All operations that can execute in
+			  parallel are scheduled in the same clock cycle.  Only data & 
+			  control dependencies, as well as resource (eg memory) conflicts
+			  cause delays in schedule. 
+
+   
+Version 4.0 Known Issues
+------------
+
+1. Forge crashes with 'static' qualifier on local variables.
+
+   Details:
+     When a local variable (variable defined inside a function) is declared
+	 with the 'static' keyword, Forge will crash.
+
+   Workaround:
+     Define all static variables at the global level of your design.
+
+2. Accessing long long elements of structs when the memory packing alignment is
+   set to 4 bytes may cause incorrect results or a Forge crash.  Use default of
+   8 byte packing instead, or decompose long long accesses into 2 int accesses
+   and manually reconstruct the result.
+
+3. Recursive function calls will cause Forge to crash.
+
+4. Any ANSI-C 99 features may cause Forge to crash.  Notably, do not use //
+   style comments.
+
+5. Strings cannot be used to initialize a char array.
+
+6. the wchar_t data type (defined in stddef.h) is not supported
+
+
+
+
+Platform Specific Issues
+========================
+
+  Linux
+  -----
+
+  None
+ 
+  Windows 2000/XP
+  ------------
+
+  None 
+
+  Solaris
+  -------
+ 
+1. When running the installer you must use a path that starts with ./ such as:
+   ./Forge.bin, otherwise the installer will fail to run.
+ 
+ 
+Hints
+=====
+ 
+1. The normal installation of Windows 2000 does not create a link to a command
+shell prompt by default.  Execution of the Forge compiler requires a command
+shell prompt. Windows 2000 does ship with the command shell executable, so the
+work around is for the user to create their own shortcut to:
+  C:\WINNT\system32\cmd.exe
+and place it on the desktop or in the programs folder. Your path to the cmd.exe
+program might differ if you don't have a standard install of Windows 2000.  You
+can also create a command shell prompt by selecting Start->Run and entering cmd
+as the command.
+ 
+2. For large designs, Forge might require more memory than the 512 Megabytes
+the launcher scripts allocate by default.  On Solaris you can edit the forge
+launch script in $FORGE/bin, there are comments describing how to increase the
+default memory size.  On all platforms you can always run forge with the
+-J-Xmx{mem size in megs}m command line option to override the default memory
+size.  For Windows GUI users, edit the Forge shortcut properties by right
+clicking on the forge icon and selecting properties.  In the window that opens,
+choose the shortcut tab and in the target field after the -gui option add the
+memory command line switch (remember to put a space between the arguments).
+Select apply then close the window.  Forge will run the GUI with the selected
+memory starting with the next launch.
+ 
+3. Forge designs that contain memories and registers will map to the
+appropriate Xilinx unisim library components.  The {design}_sim.v and
+{design}_synth.v files Forge produces will include the correct simulation
+and synthesis components from the Xilinx ise5.1 installation or the latest
+WebPack release if the user's XILINX environment variable is correctly set.
+ 
+ 
+Contact Information
+===================
+http://www.xilinx.com
+ 
+http://toolbox.xilinx.com/cgi-bin/forum
+ 
+mailto:forge_support@xilinx.com
+ 
+ 
+Copyright (C) 2004 Xilinx   All Rights Reserved.

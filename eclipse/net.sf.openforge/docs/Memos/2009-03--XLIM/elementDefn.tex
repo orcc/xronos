@@ -1,0 +1,196 @@
+
+\chapter{Element Definitions}\label{elementdefs}
+This section describes the XML Elements which make up a well formed XLIM document.  Each element is intended to represent various facets of the structure of an imperative program such as looping, branching, and scoping constructs as well as more abstract elements such as input/output mechanisms and stateful variables.  The structure of the elements defines the `control flow' of the program as child elements are only relevent within the context of their ancestor elements.  
+
+\section{design}
+The {\it design} element is the root level element of an XLIM document and theremust be only one per document.  The {\it design} element contains the children which define both the interface and functionality of a design captured in XLIM.  The {\it design} element contains two categories of elements, those which contain the logic which defines the design, potentially consisting of multiple independent control domains/tasks/routines and those elements which represent resouces which are accessible by all of the control domains/tasks/routines.  
+
+The interface of an XLIM design is defined by {\it actor-port}(\ref{actorport}) elements.  State and persistent storage by {\it stateVar}(\ref{statevar}) elements, and logic by hierarchies of logic contained within {\it module}(\ref{module}) elements.
+
+Invariants for the {\it design} element are:\\
+\begin{enumerate}
+\item The {\it design} element contains only {\it actor-port}, {\it internal-port}, {\it stateVar}, and {\it module} elements.
+\item There must be only one Design element per XLIM document
+\end{enumerate}
+
+\section{module}\label{module}
+Modules are the containment structure which defines hierarchy within the XLIM design.  Modules contain operations and/or other modules to create a hierarchy of arbitrary depth.  Further, module structures are used to define control flow within the design.  Each module has a {\tt kind} attribute defining both its structure (number and type of child nodes) and its behavioral properties.  The basic module type (module with the {\tt kind} attribute with the value 'block') is simply a container and represents a collection of logic.
+
+Top-level modules are those {\it module} elements which are direct children of the {\it design} element.  These modules define independent control domains for the algorithm.  Conceptually these are similar to independent tasks, routines, or threads of execution.  Communication between top-level modules is achieved through shared resources existing at the design level (eg {\it stateVar}(\ref{statevar}) and {\it internal-port}(\ref{internalport}) elements).
+
+Invariants common to all modules are:\\
+\begin{enumerate}
+\item contains operation, {\it module}, and {\it PHI} elements
+\item has a {\tt kind} attribute with value of: [block $\mid$ mutex $\mid$ if $\mid$ then $\mid$ else $\mid$ loop $\mid$ decision]
+\end{enumerate}
+
+\subsection{module [kind=block]}
+A block is simply a collection of operations or other modules.  Top-level modules are blocks and contain an attribute which defines whether they are auto-starting or depend on enablement from a taskCall(\ref{taskcall}) operation.
+
+Invariants for the {\it block} module are:\\
+\begin{enumerate}
+\item top level block modules contain an {\tt autostart} attribute
+\end{enumerate}
+
+\subsection{module [kind=if]}\label{ifmodule}
+The {\it if} module has the following additional invariants:\\
+\begin{enumerate}
+\item contains one {\it decision} module and one {\it then} module and an optional {\it else} module
+\item contains one {\it PHI} element for each generated value
+\end{enumerate}
+
+An {\it if} module with no {\it else} block implies a structure which is equivalent to one with an empty {\it else} block.  An {\it if} with no {\it else} block implies a structure where the PHI for each generated value has one input from the {\it then} block and one from the initial value of the modified value.
+
+A generated value is any value modified within either the {\it then} or {\it else} block of the {\it if} module.
+
+\subsection{module [kind=loop]}\label{loopmodule}
+A {\it loop} module represents an iteratively executed block of functionality.  The functionality
+is iteratively executed so long as the decision module evaluates to a true condition.  The decision
+module is evaluated prior to the first execution of the body block and again subsequent to an
+iteration and prior to the execution of the following iteration.
+
+The {\it loop} module has the following additional invariants:\\
+\begin{enumerate}
+\item contains one {\it decision} module and one {\it block} module
+\item contains one {\it PHI} element for each modified value
+\end{enumerate}
+
+Result values from the loop are taken from the output of the PHI as the PHI always represents the most recently calculated value.
+
+One input to the PHI is the initial value of the var the other is the modified value generated in the body of the loop.
+
+\subsection{module [kind=decision]}
+The {\it decision} module contains logic necessary to calculate a fork in the control path (execution) of the algorithm.  An attribute is used to define the specific data value responsible for the final result of the decision.  The significance of the result of the decision is dependent on the context of the decision module.  (ie an {\it if} (\ref{ifmodule}) or a {\it loop} (\ref{loopmodule}) module)\\
+The {\it decision} module has the following additional invariants:\\
+\begin{enumerate}
+\item module has a {\tt decision} attribute
+\item contains an operation with an output port whose {\tt source} attribute value matches the module's {\tt decision} attribute value
+\end{enumerate}
+
+\subsection{module [kind=mutex]}
+The behavior and structure of a {\it mutex} module is the same as that of a {\it block} module.  However, the mutex block gives additional information to the implementation that there exist no dependencies between children ({\it operation} or {\it module}) for any stateful resource.  ie, two child nodes accessing the same stateful resource can execute in any arbitrary order regardless of their use or modification of the stateful resource.  However two accesses to the same stateful resource which are contained within the hierarchy of one child of that mutex block do maintain dependencies based on that stateful resource.
+
+\section{operation}
+An operation is the atomic unit of functionality in XLIM.  The specific types and behavior of operations is implementation dependent with the exception of the standard operations listed below.  The interface to an operation is defined by port elements that it contains.  The execution of an operation is dependent on availability of its data and enablement based on its context (ancestor module hierarchy).  There are no specific requirements on the specific implementation details of an operation (eg timing, latency, throughput, instruction count, etc).  The implementing backend manages these considerations during compilation.
+
+{\it operation}'s have the following invariants:\\
+\begin{enumerate}
+\item contain only port elements as children
+\item contain a {\tt kind} attribute which defines its function
+\item document order of child port elements may be significant based on the definintion of the operation's kind
+\end{enumerate}
+
+The set of pre-defined operation element kinds for XLIM are:\\
+\begin{itemize}
+\item pinRead\label{pinread} -- Contain a {\tt portname} attribute, the value of which is one of the actor-port or internal-port elements of the design.  This operation has no input ports and one output port which carries the current value of the specified actor-port or internal-port.  The pinRead operation immediately retrieves one valid (as defined by the implementing backend) value from the specified port and returns it via its output port.
+\item pinWrite\label{pinwrite} -- Contains a {\tt portname} attribute, the value of which is one of the actor-port or internal-port elements of the design.  This operation has one input port and no output ports.  The input port is a value which is sent immediately to the specified actor-port or internal-port.  The pinWrite operation immediately and reliably sends one value to the specified output port.
+\item assign\label{assignoperation} -- Contains a {\tt target} attribute which is the name of one of the stateVar(\ref{statevar}) elements of the design.  There are two forms of the assign.  If the stateVar is of scalar type (stateVar element contains a single initValue element) then there is a single input port which supplies the value to be assigned to the stateVar.  If the stateVar is of complex type then the first input port (document order) is the address port and the second input port is the data port.  
+\item taskCall\label{taskcall} -- Contains a {\tt target} attribute which is the name of one top level module (modules which are immediate children of the {\it design} module).  The taskCall contains no input ports and no output ports.  Functionally, the taskCall activates the execution of a given top-level module.  Scheduling against a taskCall is implementation dependent, but must ensure that shared resources are appropriately arbitrated among any simultaneously executing modules.
+\end{itemize}
+  
+\section{port}\label{port}
+port elements are the endpoints of data dependency relationships within the graph.  A port has
+a specific direction (in, out) to indicate the producer and consumer relationship.  All ports
+are children of operation elements and have a {\tt source} attribute.  The {\tt source} attribute
+of an output port must be unique across all output ports and defines the static single
+assignment (SSA) to that name.  Any number of input ports may depend on that value by using the
+same name as the value for their {\tt source} attribute.
+
+The invariants of a port element are:\\
+\begin{enumerate}
+\item ports have a specific direction specified by their {\tt dir} attribute
+\item ports have exactly one {\tt source} attribute specification.
+\item output ports define the production of a value tied to the name specified in its {\tt source} attribute.
+\item there is exactly one output port or stateVar (\ref{statevar})for each name used in port {\tt source} attribute fields
+\item zero or more input ports may depend on a value by specifying the name of that value in their {\tt source} attribute
+\item there are no many-to-one relationships with ports
+\end{enumerate}
+
+\section{PHI element}
+The PHI element resolves multiple generated values to a single named token.  Consequently, the PHI is used to merge many-to-one dependencies for ports such as occur when braches merge (eg from {\it if} module or feedback in a {\it loop} module).  The behavior of a PHI is to select the most recently modified value on its input ports.  
+
+Invariants for the PHI are:\\
+\begin{enumerate}
+\item A PHI contains exactly 2 input ports and 1 output port as child elements
+\item The PHI output is the most recently modified value of its two input ports
+\item document order of the ports is insignificant
+\item subsequent invocation of the PHI cannot happen until the current invocation is completed (output token dispatched).
+\end{enumerate}
+
+\section{stateVar}\label{statevar}
+A stateVar represents persistent storage for the design that is accessible from any portion of the design.  As such it is a shared resource available to the logic contained within any top-level module and accesses must be arbitrated accordingly by the impelementation.  The actual implementation of a stateVar may be implementation dependent.  stateVar elements have a specified initial value which is modified by execution of an assign operations (\ref{assignoperation}).  References to the stored value are achieved through symbolic reference to the name of the stateVar by an input port (\ref{port}) via its {\tt source} attribute.
+
+Invariants for the stateVar are:\\
+\begin{enumerate}
+\item exists only as child of {\it design}
+\item has a single initValue child (which may be scalar or complex)
+\end{enumerate}
+
+\section{initValue}
+initValue elements serve to specify exact numerical values for stateVars.  The initValue
+element has a {\tt typeName} attribute which is used to specify the type (type system is
+defined by the actual implementation of an XLIM backend) of the value.  The ``int'' type
+is specified to indicate a scalar value.  The ``list'' type is pre-defined in XLIM to
+indicate an ordered collection of distinctly addressable values.  The actual storage
+layout and mechanism for addressing is implementation dependent, however within a given
+{\it list} the addressing is defined to be document order.  {\it list} type initValues may
+be nested to arbitrary depth, however all 'leaf' elements must be of non-list type and
+must resolve to a numerical value.\\
+No provision is made at this point for symbolic or 'pointer' type initial values.\\
+Invariants for the initValue element are:\\
+\begin{enumerate}
+\item exist only as child of stateVar or other initValue elements
+\item non-compound types have a specified {\tt value} attribute
+\item {\it list} types have no {\tt value} attribute
+\item compound types have 0 or more children
+\end{enumerate}
+
+\section{actor-port}\label{actorport}
+An actor-port defines one element of the interface to the design.  This is a conceptual
+port and may be implemented as simple I/O or a port requiring a more complex protocol.
+Accesses to the port are achieved by pinRead(\ref{pinread}) and pinWrite(\ref{pinwrite})
+operations which are reliable operation (values are valid and not lost).
+
+\section{internal-port}\label{internalport}
+An internal-port defines a communication mechanism between two top-level modules.  The internal-port specifies the communication channel and is accessed by pinRead(\ref{pinread}) and pinWrite(\ref{pinwrite}) operations, both of which are reliable (values are valid and not lost).  The specific implementation of an inernal-port is impelementation dependent but must ensure that data/messages transmitted are never lost and that the listener always receives a valid data token/message.
+
+\section{Finite State Machines}
+{\it
+This section and XLIM structure is TBD...
+
+It is anticipated that XLIM will be augmented with an FSM structure in the near future.  The exact syntax and content of the FSM element will be defined in a future revision of this document.
+}
+
+\section{other invariants}
+There are a number of specific details which help to define the structure and functionality represented by an XLIM document but which cannot be directly tied to a specific element.  These are detailed here.
+\subsection{dependencies}
+The data dependencies represented by an output port and input port pair (or stateVar/input port
+pair) sharing the same value for their {\tt source} attribute are conceptually implemented
+by a queue or FIFO.  Data produced by the output port is sent to the input port in an ordered
+manner and that data leaves the queue only through consumption by the input port (eg via
+execution of the operation).  However, this does not restrict the backend consumer to a particular
+method of implementation.  Generally it is the case that these dependencies resolve to simple
+(non-stateful) data communication minimal control/overhead to ensure the values are valid and
+not lost.
+
+\subsection{document order}
+In general, document order does not have any effect on the functionality specified in XLIM except as noted for specific elements above.  eg, the {\it then} and {\it else} block of {\it if} module may occur in either order, howeve the port order of a subtract operation may be significant.
+
+\subsection{name tokens}
+Name tokens are globally unique.  Name tokens may appear as the {\tt name} attribute of
+a {\it module}, stateVar, actor-port, or internal-port.  Similarly, name tokens specified
+as the source of an output port are also globally unique.  Name tokens should be considered
+to be case sensitive.
+
+\subsection{graph cycles}
+The only place cycles are allowed is in the path from a loop body to the input of a PHI.
+
+\subsection{scheduling}
+The way in which the functionality of an algorithm specified in XLIM is implemented is largely impelementation dependent.  In particular, the way in which the operations are scheduled (ordered for execution) can be achieved in many ways.  However, the following invariants (derived from the invariants of elements above) must hold:\\
+\begin{enumerate}
+\item The graph is acyclic except for cycles that are broken by merges at PHI elements.
+\item At runtime a next token may not be received for processing at a PHI port until the current token has been processed and dispatched.
+\end{enumerate}
+These two conditions (intuitively) indicate that XLIM is scheduling invariant.  Meaning that
+regardless of how it is scheduled the resulting functionality will be the same.
+

@@ -1,0 +1,102 @@
+
+<html>
+<head>
+</head>
+<body>
+
+Provides the Language Independent Model for forge.
+
+<h2>Partial Constant Propagation Support Redesign</h2>
+<br>
+SGE
+<br>
+01-16-03
+
+<p>
+<i>Note that where necessary to avoid name clashes with existing working
+code, redesigned method and class names have been prefixed with an underscore.</i>
+
+<h3>Values and Bits</h3>
+
+As before, a {@link _Bit Bit} represents a single bit value in the LIM graph.  Its
+design has been simplified resulting in the removal of the package private
+BasicBit class.  Otherwise a Bit has most of the same methods, and its meaning
+is straightforward.  There are four global bits, {@link _Bit#ZERO ZERO},
+{@link _Bit#ONE ONE}, {@link _Bit#CARE CARE}, and {@link _Bit#DONT_CARE DONT_CARE},
+which can be used in any context.  All other bits are created as components of
+a {@link Bus}.
+<P>
+A {@link _Value Value} is an ordered list of any Bits.  It is created with
+a set width, which never changes.  Only the identities of the individual Bits
+may be changed using {@link _Value#setBit(int,_Bit)}.
+
+<h3>Ports and Buses</h3>
+
+Each {@link Port} and {@link Bus} has a {@link _Value Value} reference.  This
+reference is initially null.  The value is created when the method
+{@link Port#setSize(int,boolean)} or {@link Bus#_setSize(int,boolean)} is
+called.  The Value may only be created once.  From that point, it may only be
+modified by setting its individual Bits.  In particular, this means that
+the size of a Value will always be the native size of the data that it
+represents.  Data path narrowing will be indicated by the presence of
+constants and don't-care bits in the value.
+<p>
+The forward propagation of Values into a Port is supported by the
+method {@link Port#_pushValueForward()}.  This method updates the
+Port's Value based upon the Value of its connected Bus (or dependent
+Bus's, if prior to scheduling).  In addition, if an initial Value has
+not yet been created for the Port, one will be constructed using the
+attributes of the incoming Value.
+<p>
+The backward propagation of a Value into a Port (that is, from the inside
+of a {@link Component} to the outside) is supported with the
+{@link Port#_pushValueBackward(_Value)} method.  In this case the
+Value that updates the Port is provided by the component.
+<p>
+Similarly, the forward propagation of a Value into a {@link Bus} is
+supported by the {@link Bus#_pushValueForward(_Value)} method.  Again
+the update Value is provided by the component.  And if the Bus's Value
+does not yet exist, it will be created by this method via a call
+to {@link Bus#_setSize(int,boolean)}.
+<p>
+The backward propagation of Values into a {@link Bus} is supported
+by the method {@link Bus#_pushValueBackward()}.  This method looks at
+the Ports connected to the Bus (or dependent on the Bus, if prior to
+scheduling) to obtain a composit Value for updating.
+<p>
+In general, only don't-care values are propagated backwards, while
+only cares, constants, and bus bits are propagated forwards.
+
+<h3>Components</h3>
+
+The support for constant propagation at the Component level has not
+changed.  It will still be implemented in the methods
+{@link Component#forwardPropagate()} and {@link Component#reversePropagate()}.
+These methods will have to be reimplemented for all Component types to
+use the new methods in Port and Bus.
+<p>
+The higher level constant propagation algorithms should not require
+modification.
+
+<h3>Representation</h3>
+
+The data model for this new representation is shown here:
+<p>
+<img src="doc-files/Value.png">
+<p>
+Each Bus has its own unique list of component Bits, as well as
+an immutable Value reference (once created, it never changes).
+The Bits contained in this Value and any Value are completely
+arbitrary, and may be modified with a call to {@link _Value#setBit(int,_Bit)}.
+Each Port also has its own Value, which again is immutable after
+it is created.  These Values should only be modified by calls to
+the various <i>push-</i> methods.
+
+<h3>Open Issues</h3>
+
+Analysis must be performed to determine whether any changes must be
+made to reconcile this new representation with the specification
+expected by the Verilog translator package.
+
+</body>
+</html>

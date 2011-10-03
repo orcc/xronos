@@ -1,0 +1,58 @@
+TBD
+-------------------------
+
+- combine ID & IDNameAdapter. Leave showXXX as statics, but have thigs extend ID directly?
+- no, let's 
+- 
+- add infrastructure for ordinal naming of globals. Basicall, keep 2 hashtables:
+  type :: next id
+  identityHashCode :: id
+  
+  and use this to dislay bus[1] instead of bus[1213423423]
+
+  - let's rework this. keep just type::next id and use it only for things whih extend
+  ID.kava
+  
+- change identity hashcode to hex
+
+DONE
+-------------------------
+4/10/02 - Initial cut added 
+	Naming:	
+		GLobalID ("type"+identifier (id is hashcode))
+		LogicalID
+			- set by external force. else null
+		DebugInfo()
+			{ might be overwritten, but is generally just reflection inspection }
+
+	Classes:
+
+		Id.java (Root class of useful shit)
+		- static showGlobal(obj)
+		- static showLogical(obj)
+		- static showDebug(obj)
+		(plus PrintStream versions)
+	  	  
+	SourceInfo.java
+	  - getSourceFile
+	  - getSourcePackage
+	  - getSourceClass
+	  - getSourceLine
+	  - getSourceIdentifier
+	  
+	IdNamed.java (interface)
+	  - getTypeId() "type name"
+	  - getGlobalId() "system.identityHashcode() for now"
+	  - getLogicalId() "
+	  - getDebugInfo()
+	  - SourceInfo getSourceRelation()
+	  
+	IdNameAdaptor.java (skeleton implementation of IdNamed)
+	
+
+
+
+
+
+
+

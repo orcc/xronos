@@ -1,0 +1,389 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.75 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+</head>
+<body TEXT="#000000" BGCOLOR="#ffffff">
+Forge-specific classes for generating reports from a LIM.
+<p>Reports that Forge produces should provide some form of useful feedback
+to the user so they can
+<br>evaluate if their design is inferring what they intended.&nbsp; We
+have identified three areas that require
+<br>reporting during the HLLC design process:
+<ul>
+<li>
+Optimization results (i.e. constant prop, operation removal, loop unrolling,
+memory decomposition etc)</li>
+
+<li>
+Scheduling results (i.e. what is parallel, what is the latency, throughput,
+bottlenecks, etc)</li>
+
+<li>
+Resource Utilization (i.e. how many of each FPGA resource does my design
+use, and what part might it fit in)</li>
+</ul>
+<font color="#000000">Each report should be presented in a form that most
+concisely represents the data, while keeping all</font>
+<br><font color="#000000">pertinent information such that if the user deems
+it necessary to make source code changes to improve</font>
+<br><font color="#000000">their design, they know where to start based
+on the report.</font>
+<p><font color="#000000">&nbsp;&nbsp;&nbsp; For example, a report indicating
+that the total number of 18x18 multipliers in the design is 100 is</font>
+<br><font color="#000000">&nbsp;&nbsp;&nbsp; meaningless without the information
+of where each multiplier came from in the source code coupled</font>
+<br><font color="#000000">&nbsp;&nbsp;&nbsp; with the counts for each method
+and class since some multiply operations in the source will not</font>
+<br><font color="#000000">&nbsp;&nbsp;&nbsp; infer 18x18 resources.</font>
+<p><font color="#000000">With these requirements in mind the best reporting
+form for optimization results appears to be annotated source</font>
+<br><font color="#000000">language code.&nbsp; The output doesn't need
+to be the user's source program annotated, it can be the optimized</font>
+<br><font color="#000000">LIM written out in the source language in the
+original sequence the user coded so each operation can be correlated</font>
+<br><font color="#000000">back to the original source.&nbsp; Each operation
+can be written with comments identifying its input and output sizes and</font>
+<br><font color="#000000">if desired by the user with actual masking or
+shifting operations necessary to enforce the given sizing.&nbsp; Any operation</font>
+<br><font color="#000000">that received special handling due to a preference
+setting can be labeled and the preference captured using the source</font>
+<br><font color="#000000">language preference api.&nbsp; Loops can be annotated
+with their unrollable characteristics, i.e. if unrollable, number of iterations,</font>
+<br><font color="#000000">total operations, etc.&nbsp; Places in the code
+where user coding style prevented an optimization can also be tagged as
+Wizard Feedback</font>
+<br><font color="#000000">such as updating a loop variable inside a loop
+prevented the loop from being unrollable.&nbsp; A detailed list of desired
+report</font>
+<br><font color="#000000">items for optimization reporting in source language
+form are:</font>
+<ul>
+<li>
+<font color="#000000">only include code included in the forged design with
+explicit entry methods</font></li>
+
+<li>
+<font color="#000000">class and method boundaries respected and original
+names used with added uniquification IDs</font></li>
+
+<li>
+<font color="#000000">object fields pruned to only the ones used by the
+design</font></li>
+
+<li>
+<font color="#000000">pins pruned to only the ones included in the design</font></li>
+
+<li>
+<font color="#000000">each method annotated with its: latency, throughput,
+operation count, LUT count, global resource usage</font></li>
+
+<li>
+<font color="#000000">each operation annotated with its input and output
+bus sizes, (latency and throughput if not 0)</font></li>
+
+<li>
+<font color="#000000">each operation written with masking and/or shifting
+necessary to emulate the resulting constant prop optimizations</font></li>
+
+<li>
+<font color="#000000">only include operations that are forged, unused ones
+are not written, along with dead code</font></li>
+
+<li>
+<font color="#000000">loops are annotated with all loop unrolling information,
+unrollable, number of iterations, why not unrollable</font></li>
+
+<li>
+<font color="#000000">global accesses are annotated with scheduling information
+such as number of accesses, latency, any hints such as non-deterministic
+memory access</font></li>
+
+<li>
+<font color="#000000">global fields are annotated with decomposition information
+and size (width and depth if memory) and which memory group</font></li>
+
+<li>
+<font color="#000000">resulting report code should be forgeable and executable
+for user verification of the forging process</font></li>
+
+<li>
+<font color="#000000">output lines that were affected by the compilation
+preferences are annotated with a label and the preference api used to set
+the desired preference on the label</font></li>
+</ul>
+<font color="#000000">An example program and desired report output are
+shown below:</font>
+<p><tt><font color="#000000">public class example</font></tt>
+<br><tt><font color="#000000">{</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; public static int count
+= 0;</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp; public static int[] values
+= {10,20,30,40,50};</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp; public static int[] rom
+= {1,2,3,4,5};</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp; public static int test(int
+a)</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+a &amp;= 0x3;</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+count += a;</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+int sum = 0;</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+for(int i=0; i&lt;5; i++)</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+sum += rom[i];</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+values[a] = (values[a] &amp; 0xff) - sum;</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+return(count + values[a]);</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font color="#000000">}</font></tt>
+<p><font color="#000000">Desired ouptut:</font>
+<p><tt><font color="#000000">// report generated for example.java</font></tt>
+<br><tt><font color="#000000">public class example</font></tt>
+<br><tt><font color="#000000">{</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; // count is a 32 bit global
+register</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; public static int count
+= 0;</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp; // values is a 9 bit by
+8 deep memory</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; // implemented in 2 8x16
+LUT based RAMs</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; // This memory is independent
+of the HEAP</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; public static int[] values
+= {10,20,30,40,50};</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp; // args: a is 2 bits</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; // result is 32 bits</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; // Op Count:</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp; 2 - 32
+bit adds</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp; 1 - 9 bit
+add</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; // Resource Count:</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp; 45 LUTs</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+45 4-1 Look Up Tables</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0 RAM</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0 DPR</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0 ROM</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0 SRL16</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp; 45 Registers</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp; Latency:
+3</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; // Throughput: 1/3</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; public static int test(int
+a)</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+// 32 bits = 32 bits + 2 bits</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+count = count + (a &amp; 3);</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+// 9 bits = 8 bits - 5 bits</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+values[a &amp; 3] = (values[a &amp; 3] &amp; 0xff) - 15;</font></tt>
+<p><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+// 32 bits = 32 bits + 9 bits</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+return(count + values[a &amp; 3]);</font></tt>
+<br><tt><font color="#000000">&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font color="#000000">}</font></tt>
+<p><font color="#000000">For the scheduling report the user is interested
+in the how the data dependencies of their program affected the schedule.</font>
+<br><font color="#000000">A source code format will not be able to show
+what is executing when and what is executing in parallel a better representation</font>
+<br><font color="#000000">is akin to a spreadsheet with columns representing
+parallel tasks and rows representing 1 clock in time.&nbsp; Directed graph
+edges could</font>
+<br><font color="#000000">depict looping as well as accesses to global
+resources that cause scheduling problems.&nbsp; The contents of each cell
+could be source</font>
+<br><font color="#000000">language format, but would only include the combinational
+operations that execute during the given clock.&nbsp; Each column would
+start</font>
+<br><font color="#000000">at T=0 representing one entry method (explicit
+parallelism) and at the point of implicit parallelism (i.e. extracted by
+the compiler</font>
+<br><font color="#000000">based on data dependency analysis) the column
+would subdivide to show the extracted parallelism.</font>
+<p><font color="#000000">An example scheduling report for the previous
+example program is shown below:</font>
+<br>&nbsp;
+<TABLE FRAME=BOX CELLSPACING=0 COLS=3 RULES=GROUPS BORDER=1>
+        <COLGROUP><COL WIDTH=40></COLGROUP>
+        <COLGROUP><COL WIDTH=189></COLGROUP>
+        <COLGROUP><COL WIDTH=319></COLGROUP>
+        <TBODY>
+                <TR>
+                        <TD WIDTH=40 HEIGHT=20 ALIGN=CENTER><B>Clock</B></TD>
+                        <TD WIDTH=189 HEIGHT=20 ALIGN=CENTER><B>Entry test, parallel 1</B></TD>
+                        <TD WIDTH=319 HEIGHT=20 ALIGN=CENTER><B>Entry test, parallel 2</B></TD>
+                </TR>
+        </TBODY>
+        <TBODY>
+                <TR>
+                        <TD WIDTH=40 HEIGHT=20 ALIGN=RIGHT SDVAL="0" SDNUM="1033;">0</TD>
+                        <TD WIDTH=189 HEIGHT=20 ALIGN=LEFT>Count = count + (a &amp; 3)</TD>
+                        <TD WIDTH=319 HEIGHT=20 ALIGN=LEFT>Read values[a &amp; 3]</TD>
+                </TR>
+        </TBODY>
+        <TBODY>
+                <TR>
+                        <TD WIDTH=40 HEIGHT=20 ALIGN=RIGHT SDVAL="1" SDNUM="1033;">1</TD>
+                        <TD WIDTH=189 HEIGHT=20 ALIGN=LEFT><BR></TD>
+                        <TD WIDTH=319 HEIGHT=20 ALIGN=LEFT>values[a &amp; 3] = (values[a &amp; 3] &amp; 0xff) - 15</TD>
+                </TR>
+        </TBODY>
+        <TBODY>
+                <TR>
+                        <TD WIDTH=40 HEIGHT=20 ALIGN=RIGHT SDVAL="2" SDNUM="1033;">2</TD>
+                        <TD WIDTH=189 HEIGHT=20 ALIGN=LEFT><BR></TD>
+                        <TD WIDTH=319 HEIGHT=20 ALIGN=LEFT>Read values[a &amp; 3]</TD>
+                </TR>
+        </TBODY>
+        <TBODY>
+                <TR>
+                        <TD WIDTH=40 HEIGHT=20 ALIGN=RIGHT SDVAL="3" SDNUM="1033;">3</TD>
+                        <TD WIDTH=189 HEIGHT=20 ALIGN=LEFT><BR></TD>
+                        <TD WIDTH=319 HEIGHT=20 ALIGN=LEFT>Return(count + values[a &amp; 3])</TD>
+                </TR>
+        </TBODY>
+</TABLE>
+<!-- ************************************************************************** -->
+<p><font color="#000000">For resource utilization reporting, the user is
+interested in the total number of FPGA resources (by type) that their
+design uses</font>
+<br><font color="#000000">so they can identify a device that will accommodate
+their design, as well as resource usage by area of the design so large
+areas can</font>
+<br><font color="#000000">be evaluated and potentially fixed in the source
+code.&nbsp; The FPGA resources that are pertinent to count are:</font>
+<ul>
+<li>
+<font color="#000000">pin count along with types and attributes of each
+one (some devices don't support all IO types on all pins)</font></li>
+
+<li>
+<font color="#000000">clock and reset count</font></li>
+
+<li>
+<font color="#000000">LUT usage subdivided into LUT, SRL16, RAM, Dual Port
+RAM, ROM, MUX</font></li>
+
+<li>
+<font color="#000000">Register usage</font></li>
+
+<li>
+<font color="#000000">Block Ram usage subdivided into Dual Port, Single
+Port</font></li>
+
+<li>
+<font color="#000000">18x18 Multiplier usage</font></li>
+
+<li>
+<font color="#000000">DCM usage</font></li>
+
+<li>
+<font color="#000000">Internal Tri-State usage</font></li>
+</ul>
+<font color="#000000">The report should start with the Total counts for
+the entire design, then show a calling hierarchy for each Entry and detail</font>
+<br><font color="#000000">the resources counts at each level.&nbsp; The
+detailed view should add up to the total counts already reported.</font>
+<br>
+<br><fond color="#000000">Ian's very good suggestions:
+<br>
+1. Though you didn't explicitly say it, I get the feeling that there is
+<br>a distinction between reporting and logging (terminal I/O at runtime).
+<br>This is a good distinction to make and will help us keep the screen
+I/O
+<br>meaningful.&nbsp; My thoughts on screen I/O is that with -v you should
+see
+<br>each step that runs and a synopsis at the end of each step of what
+was
+<br>done (i.e removed x instrucitons, unrolled y loops, etc).&nbsp; With
+-vv we
+<br>should add in messages such as loop '&lt;source code line #?>' unrolled
+or
+<br>not unrolled because 'blah blah blah'.&nbsp; Short but meaningful messages.
+<br>Seeing what types of nodes were removed isn't useful.
+<p>2. The optimizations section looks good.&nbsp; I might add a 2nd type
+of
+<br>report that is a variable name to implemented size might be usefull.&nbsp;
+If
+<br>the same variable gets multiple sizes (due to re-use) then simply list
+<br>off the pertinant sizes.&nbsp; example:
+<br>public static int foo (int a)
+<br>{
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a &amp;= 0xFFF;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int temp = a + 19;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; temp -= a;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return temp ^ 0x55;
+<br>}
+<br>Report for method 'foo_1' (Note uniquified name)
+<br>a&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 32, 13
+<br>temp&nbsp;&nbsp;&nbsp; 13
+<br>return&nbsp; 13
+<br>This may be kind of redundant with the source code write-out, but I
+<br>think that it may be usefull to the user to be able to quickly scan
+<br>through and see what data sizes we've inferred.&nbsp; Just a thought.
+<p>3. For the scheduling section I'm not sure that the spread sheet can
+<br>quite capture all that is going on.&nbsp; Unfortunately, I don't have
+an
+<br>alternative to suggest.&nbsp; The problem is when you have unbounded
+loops,
+<br>or indeterminate memory accesses (due to an arbitrated memory) it
+<br>becomes difficult or impossible to show 2 threads in parallel with
+any
+<br>meaning.&nbsp; Since you'll have 2 blocks of code (1 in each thread)
+that
+<br>take an indeterminate number of clock cycles, how do you show them
+in a
+<br>spreadsheet?&nbsp; Which ends first?&nbsp; Where do you start your
+numbering after
+<br>them?, etc...&nbsp; [ could use color coding to indicate known parallel
+stuff, versus
+<br>non-lock-step operations when the above cases are found]
+<p>One possibility may be to do a throughput graph.&nbsp; Basically show
+blocks
+<br>of code at a high level of abstraction (eg methods/functions, loops,
+<br>branches, etc) and annotate each one with the identified throughput.
+<br>Perhaps we could really leverage html here as well and have a
+<br>'clickable' report.&nbsp; The top level is each entry method, annotated
+with
+<br>the total throughput.&nbsp; Click on that and you get a view of that
+method's
+<br>contents (simply in terms of blocks of code, loops, branches, etc).
+<br>Each loop, branch, and call is similarly annotated and clickable.&nbsp;
+That
+<br>way, if a user finds that their design doesn't meet throughput, they
+can
+<br>quickly traverse the 'graph' and find the constraining area.&nbsp;
+If we were
+<br>intelligent we could do 2 things.&nbsp; First, annotate the graph with
+source
+<br>code/line numbers to facilitate traversal.&nbsp; Second, annotate the
+blocks
+<br>with suggestions on how to improve throughput.&nbsp; eg, why the loop
+wasn't
+<br>unrollable, how to eliminate contention on a global memory (cache up
+<br>varialbes), suggested target pipelining level, etc.
+<p>[ Along the lines of clickable, maybe we can have a java source format
+<br>html document where everything is clickable and sends you to the schedule
+<br>and possibly the resource count reports.&nbsp; These reports would
+have hierarchy
+<br>up/down buttons and link to the others as appropriate.]
+</body>
+</html>

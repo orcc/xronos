@@ -1,0 +1,1113 @@
+/*******************************************************************************
+ * Copyright 2002-2009  Xilinx Inc.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
+/*
+ * 
+ *
+ * 
+ */
+package net.sf.openforge.verilog.translate;
+
+
+import java.util.*;
+import java.io.*;
+
+import net.sf.openforge.app.*;
+import net.sf.openforge.forge.api.internal.*;
+import net.sf.openforge.forge.api.ipcore.*;
+import net.sf.openforge.forge.api.pin.Buffer;
+import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.io.*;
+import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.op.*;
+import net.sf.openforge.util.*;
+import net.sf.openforge.util.naming.ID;
+import net.sf.openforge.verilog.mapping.*;
+import net.sf.openforge.verilog.mapping.memory.*;
+import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.pattern.*;
+
+/**
+ * VerilogTranslator visits a physically connected LIM. It creates
+ * a {link VerilogDocument} from a {@link Design}.
+ *
+ * @author    <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
+ * @version   $Id: VerilogTranslator.java 425 2007-03-07 19:17:39Z imiller $
+ */
+public class VerilogTranslator extends DefaultVisitor implements Visitor
+{
+    private final static String _RCS_ = "$Rev: 425 $";
+
+    /**
+     * A handle to the VerilogDocument which is where all pieces of
+     * the application will ultimately reside.
+     */
+    private VerilogDocument vDoc = null;
+    
+    /**
+     * A Map of all the Modules which were defined. Every Module which needs
+     * to get added to the VerilogDocument should be added to this map. Once
+     * all the visiting is done, an Iteration over this map inserts the Modules
+     * into the document in the right order. If modules just inserted themselves
+     * directly into the document (once they were completely defined) then the
+     * document would start with definitions from the lowest level, rather than
+     * from the top. 
+     * <P>
+     * Also, this map provides a convenient look-up for existing defintions related
+     * to a procedure (or really any LIM component related to a module).
+     */
+    private Map lim_module_map = new LinkedHashMap();
+    
+    /**
+     * The current Module being populated with calls.
+     */
+    private net.sf.openforge.verilog.model.Module current_vmodule;
+
+    /** A Map of MemoryBank.getSignature() to VerilogMemory used to
+     * instantiate that memory.  This eliminates duplicated memory
+     * definitions. */
+    private Map memoryMap = new HashMap();
+    
+    /**
+     * The stack of Modules being visited. This is used to keep a history
+     * of partially assembled modules, since each time a call is visited,
+     * the related procedure visit creates a new module. That new module
+     * becomes the current module to which component visits add their verilog.
+     * When that module definition is complete (control has passed back up
+     * to the procedure visit) the current module reverts back to whatever
+     * module was at the top of the stack.
+     */
+    private Stack module_stack = new Stack();
+
+    /**
+     * Whether an "application" module should be created for the Design.
+     */
+    private boolean suppress_application = false;
+
+    /** This is a set of Modules whose outbufs are to be translated. */
+    private Set xlatOutBufs = new HashSet();
+    
+    private Set topLevelComponents = Collections.EMPTY_SET;
+    
+    /** Set of user verilog modules for IP Core that has been written already */
+    Set userVerilog_names = new HashSet();
+
+    private ArrayList userSimIncludes = new ArrayList();
+
+    private Design design;
+    
+    /**
+     * Creates a new <code>VerilogTranslator</code> instance. Which
+     * is to say that it <b>constructs</b> a VerilogTranslator object
+     * which is capable of visiting a Design. After the visitor has
+     * been created, ask it to visit a Design using visit(Design d).
+     * During the visit, the visitor will construct a {@link VerilogDocument}
+     * which may be retrieved with getDocument(). The VerilogDocument has
+     * a few write methods which will output the verilog.
+     *  
+     */
+    public VerilogTranslator ()
+    {
+        current_vmodule = new net.sf.openforge.verilog.model.Module("genericApp");
+    }
+    
+    /**
+     * Creates a new <code>VerilogTranslator</code> instance, specifying
+     * whether a top-level "application" module should be generated
+     * for the {@link Design}.
+     * 
+     * @param suppress_application whether to generate a module for the Design
+     */
+    public VerilogTranslator (boolean suppress_application)
+    {
+        this.suppress_application = suppress_application;
+    }
+    
+    /**
+     * Creates a new <code>VerilogTranslator</code> instance, specifying
+     * whether a top-level "application" module should be generated
+     * for the {@link Design}.
+     * 
+     * @param suppress_application whether to generate a module for the Design
+     */
+    public VerilogTranslator (Design design, boolean suppress_application)
+    {
+        this.suppress_application = suppress_application;
+        design.accept(this);
+    }
+    
+    /**
+     * Creates a new VerilogTranslator which automatically
+     * translates a Design into a VerilogDocument, which may be
+     * retrieved with getDocument(), or sent to an output with
+     * writeDocument().
+     */
+    public VerilogTranslator (Design design)
+    {
+        this(design, false);
+    }
+
+    /**
+     * A convenience method which visits a Design with a new VerilogTranslator,
+     * and then outputs the verilog.
+     *
+     * @param design the design to translate
+     * @param writer output destination for the verilog
+     */
+    public static void translate(Design design, Writer writer)
+    {
+        VerilogTranslator vt = new VerilogTranslator(design);
+        vt.writeDocument(writer);
+    }
+
+    
+    /**
+     * A convenience method which visits a Design with a new VerilogTranslator,
+     * and then outputs the verilog.
+     *
+     * @param design the design to translate
+     * @param writer output destination for the verilog
+     */
+    public static void translate(Design design, OutputStream writer)
+    {
+        VerilogTranslator vt = new VerilogTranslator(design);
+        vt.writeDocument(writer);
+    }
+    
+    public void visit (Design design)
+    {
+        //_translate.d.launchXGraph(design, false);
+        
+        // store off the design for IPCore usage during writing of the document
+        this.design = design;
+
+        this.xlatOutBufs = new HashSet();
+        this.topLevelComponents = new HashSet(design.getDesignModule().getComponents());
+
+        /*
+         * Compact all the Values in the Design.
+         */
+        ValueCompactor.compact(design);
+
+        this.vDoc = new DesignDocument(design);
+        current_vmodule = null;
+        module_stack.clear();
+        lim_module_map.clear();
+        memoryMap.clear();
+        
+        if (!suppress_application)
+        {
+            net.sf.openforge.verilog.model.Module design_module = defineDesignModule(design);
+            this.vDoc.append(design_module);
+        }
+        else
+        {
+            current_vmodule = new DesignModule(design);
+            for (Iterator taskIter = design.getTasks().iterator(); taskIter.hasNext();)
+            {
+                Task task = (Task)taskIter.next();
+                task.accept(this);
+            }
+        }
+        
+        // the modules list should have been populated with Module definitions,
+        // so now add them to the document
+        for (Iterator mods = lim_module_map.entrySet().iterator(); mods.hasNext();)
+        {
+            Map.Entry me = (Map.Entry)mods.next();
+            net.sf.openforge.verilog.model.Module m = (net.sf.openforge.verilog.model.Module)me.getValue();
+            this.vDoc.append(m);
+        }
+    }
+
+    /**
+     * Constructs a new DesignModule based on a design, populating its contents
+     * by visiting the physical components for all top-level resources.
+     */
+    private net.sf.openforge.verilog.model.Module defineDesignModule(Design design)
+    {
+        current_vmodule = new DesignModule(design);
+
+        for (Iterator iter = design.getDesignModule().getComponents().iterator(); iter.hasNext();)
+        {
+            Visitable vis = (Visitable)iter.next();
+//             if (vis instanceof Kicker)
+//             {
+//                 vis.accept(this);
+//             }
+            if (vis instanceof net.sf.openforge.lim.Module)
+            {
+                instantiateModule((net.sf.openforge.lim.Module)vis);
+            }
+            else
+            {
+                vis.accept(this);
+            }
+        }
+        
+        // how about pins?
+        for (Iterator pins=design.getPins().iterator();pins.hasNext();)
+        {
+            Pin p=(Pin)pins.next();
+            if((p.getInPinBuf()!=null))
+                visit(p.getInPinBuf());
+            if((p.getOutPinBuf()!=null))
+                visit(p.getOutPinBuf());
+        }
+
+        return current_vmodule;
+    }
+
+    /**
+     * Constructs a new verilog module based on a generic LIM module,
+     * places an instantiation of the module in the current verilog
+     * module, then returns the newly created module.    
+     *
+     * @param module any generic LIM module
+     * @param instanceName the name to use for the generic instance
+     * @return a fully populated verilog module
+     */
+    private GenericModule instantiateModule(net.sf.openforge.lim.Module module)
+    {
+        return instantiateModule(module, ID.showLogical(module));
+    }
+
+    /**
+     * Constructs a new verilog module based on a generic LIM module,
+     * places an instantiation of the module in the current verilog
+     * module, then returns the newly created module.    
+     *
+     * @param module any generic LIM module
+     * @param name the name to use for the generic module
+     * @return a fully populated verilog module
+     */
+    private GenericModule instantiateModule(net.sf.openforge.lim.Module module,
+                                           String name)
+    {
+        module_stack.push(current_vmodule);
+        current_vmodule = new GenericModule(module, name);
+        xlatOutBufs.add(module);
+        for (Iterator iter = module.getComponents().iterator(); iter.hasNext();)
+        {
+            ((Visitable)iter.next()).accept(this);
+        }
+        lim_module_map.put(module, current_vmodule);
+        GenericModule generic = (GenericModule)current_vmodule;
+        current_vmodule = (net.sf.openforge.verilog.model.Module)module_stack.pop();
+        current_vmodule.state(generic.makeInstance());
+        return generic;
+    }
+    
+    /**
+     * Visits the {@link net.sf.openforge.lim.Module Modules}
+     * components as if they were instantiated in the current scope,
+     * by ignoring its in/out bufs.
+     */
+    private void popModuleComponents (net.sf.openforge.lim.Module mod)
+    {
+        Collection components = mod.getComponents();
+        components.remove(mod.getInBuf());
+        components.removeAll(mod.getOutBufs());
+        for (Iterator it = components.iterator(); it.hasNext();)
+        {
+            Visitable vis = (Visitable)it.next();
+            vis.accept(this);
+        }
+    }
+    
+    
+    public void visit (Task task)
+    {
+        if (task.getCall() != null)
+        {
+            task.getCall().accept(this);
+        }
+    }
+
+    /**
+     * only needs a module instantiation for an IPCore call.
+     * translation of module is not needed.
+     *
+     * @param call a value of type 'IPCoreCall'
+     */    
+    public void visit (IPCoreCall call)
+    {
+        IPCoreCallInstance ci = new IPCoreCallInstance(call);
+        current_vmodule.state(ci);
+    }
+
+    /**
+     * Except for top-level calls (identified by Calls without an owner),
+     * creates an instantiation of a Module, then visits the Procedure
+     * to produce the Module definition.
+     *
+     * @param call a value of type 'Call'
+     */
+    public void visit (Call call)
+    {
+        // first, visit the Procedure to create a Module which can be called
+        assert (call.getProcedure() != null) : "Call to non-existant procedure";
+
+        if (this.topLevelComponents.contains(call) || !isEmptyModuleCall(call))
+        {
+            call.getProcedure().accept(this);
+            assert (lim_module_map.get(call.getProcedure()) != null) : "Module not created for call's procedure";
+        }
+
+        if ((this.topLevelComponents.contains(call)) && suppress_application)
+        {
+            // presumed to be a call to a top-level entry method
+            this.vDoc.append(new Comment("Entry Method Call: " + Integer.toHexString(call.hashCode())));
+        } 
+        else
+        {
+            if (this.topLevelComponents.contains(call) || !isEmptyModuleCall(call))
+            {
+                //
+                // Add the instantiation to this module.
+                //
+            
+                //current_vmodule.state(new InlineComment("Call to: " + Integer.toHexString(call.hashCode())));
+
+                //
+                // Insert the actual 'instantiation' of the module into
+                // the current Module here.
+                //
+                CallInstance ci = new CallInstance(call);
+            
+                // Now instantiate the module
+                current_vmodule.state(ci);
+            
+                //
+                // End module instantiation
+            }
+        }
+        
+    } // visit(Call)
+    
+    
+    public void visit (Procedure procedure)
+    {
+        if (!lim_module_map.containsKey(procedure))
+        {
+            module_stack.push(current_vmodule);
+            current_vmodule = new ProcedureModule(procedure);
+            lim_module_map.put(procedure, current_vmodule);
+            xlatOutBufs.add(procedure.getBody());
+            procedure.getBody().accept(this);
+            current_vmodule = (net.sf.openforge.verilog.model.Module)module_stack.pop();
+        }
+    } // visit(Procedure)
+
+    public void visit (Reg reg)
+    {
+        reg.updateResetType();
+        if (reg.hardInstantiate())
+            current_vmodule.state(new RegVariant(reg));
+        else
+            current_vmodule.state(new InferredRegVariant(reg));
+    }
+
+    public void visit (SRL16 srl_16)
+    {
+        current_vmodule.state(new SRL16Variant(srl_16));
+    }
+
+    public void visit (Latch latch)
+    {
+        for(Iterator it=latch.getComponents().iterator();it.hasNext();)
+        {
+            ((Component)it.next()).accept(this);
+        }
+    }
+
+    public void visit (PinReferee pref)
+    {
+        for(Iterator it=pref.getComponents().iterator();it.hasNext();)
+        {
+            Component c=(Component)it.next();
+            c.accept(this);
+        }
+    }
+
+//     public void visit (Kicker kicker)
+//     {
+//         instantiateModule(kicker);
+//         assert false : "Kicker should be translated as generic module";
+        
+//         for(Iterator it=kicker.getComponents().iterator();it.hasNext();)
+//         {
+//             Component c = (Component)it.next();
+//             current_vmodule.state(new InlineComment("KICKER: "+c, Comment.SHORT));
+//             c.accept(this);
+//         }
+//     }
+
+    public void visit (Scoreboard scoreboard)
+    {
+        for(Iterator it=scoreboard.getComponents().iterator();it.hasNext();)
+        {
+            ((Component)it.next()).accept(this);
+        }
+    }
+
+    public void visit (EndianSwapper endianSwapper)
+    {
+        instantiateModule(endianSwapper);
+        /*
+        for(Iterator it=endianSwapper.getComponents().iterator();it.hasNext();)
+        {
+            Component c=(Component)it.next();
+            c.accept(this);
+        }
+        */
+    }
+    
+    public void visit (AddOp add)
+    {
+        if (add.hasMulti())
+            current_vmodule.state(new MathAssignment.AddMulti((AddMultiOp)add));
+        else
+            current_vmodule.state(new MathAssignment.Add(add));
+    }
+    
+    public void visit (AndOp and)
+    {
+        current_vmodule.state(new BitwiseAssignment.And(and));
+    } 
+
+    public void visit (NumericPromotionOp numericPromotion)
+    {
+        //current_vmodule.state(new UnaryOpAssignment.SignExtend(numericPromotion));
+    }
+    
+    public void visit (CastOp cast)
+    {
+        //current_vmodule.state(new UnaryOpAssignment.SignExtend(cast));
+    }
+
+    public void visit (ComplementOp complement)
+    {
+        current_vmodule.state(new UnaryOpAssignment.Negate(complement));
+    }
+
+    public void visit (ConditionalAndOp conditionalAnd)
+    {
+        current_vmodule.state(new LogicalAssignment.And(conditionalAnd));
+    }
+    
+    public void visit (ConditionalOrOp conditionalOr)
+    {
+        current_vmodule.state(new LogicalAssignment.Or(conditionalOr));
+    }
+    
+    public void visit (net.sf.openforge.lim.op.Constant constant)
+    {
+        // Constant is a no-op. The bus attached to the constant
+        // should have a constant value which will end up being
+        // used by a BusWire to represent the bus instead of a name
+    }
+    
+    public void visit (DivideOp divide)
+    {
+        current_vmodule.state(new MathAssignment.Divide(divide));
+    }
+    
+    public void visit (EqualsOp equals)
+    {
+        current_vmodule.state(new CompareOp.Equals(equals));
+    }
+
+    public void visit (EncodedMux mux)
+    {
+        if (mux.getDataPorts().size() == 2)
+        {
+            current_vmodule.state(new VMux(mux));
+        }
+        else
+        {
+            current_vmodule.state(new VEncodedMux(mux));
+        }
+    }
+
+    public void visit (GreaterThanEqualToOp greaterThanEqualTo)
+    {
+        current_vmodule.state(new CompareOp.GreaterThanEqualTo(greaterThanEqualTo));
+    }
+
+    public void visit (GreaterThanOp greaterThan)
+    {
+        current_vmodule.state(new CompareOp.GreaterThan(greaterThan));
+    }
+    
+    public void visit (LeftShiftOp leftShift)
+    {
+        current_vmodule.state(new net.sf.openforge.verilog.pattern.ShiftOp.Left(leftShift));
+    }
+
+    public void visit (LessThanEqualToOp lessThanEqualTo)
+    {
+        current_vmodule.state(new CompareOp.LessThanEqualTo(lessThanEqualTo));
+    }
+
+    public void visit (LessThanOp lessThan)
+    {
+        current_vmodule.state(new CompareOp.LessThan(lessThan));
+    }
+
+    public void visit (MinusOp minus)
+    {       
+        current_vmodule.state(new UnaryOpAssignment.Minus(minus));
+    }
+
+    public void visit (ModuloOp modulo)
+    {
+        current_vmodule.state(new MathAssignment.Modulo(modulo));
+    }
+
+    public void visit (MultiplyOp multiply)
+    {
+        current_vmodule.state(new MathAssignment.Multiply(multiply));
+    }
+    
+    public void visit (NoOp nop)
+    {
+    }
+    
+    public void visit (NotEqualsOp notEquals)
+    {
+        current_vmodule.state(new CompareOp.NotEquals(notEquals));
+    }
+
+    public void visit (NotOp not)
+    {
+        current_vmodule.state(new UnaryOpAssignment.Not(not));
+    }
+
+    public void visit (TriBuf tbuf)
+    {
+        current_vmodule.state(new TriBufOp(tbuf));
+    }
+
+    public void visit (OrOp or)
+    {
+        if (or instanceof OrOpMulti)
+        {
+            current_vmodule.state(new OrManyAssignment((OrOpMulti)or));
+        }
+        else
+        {
+            current_vmodule.state(new BitwiseAssignment.Or(or));
+        }
+    }
+
+    public void visit (PlusOp plus)
+    {
+        current_vmodule.state(new UnaryOpAssignment.SignExtend(plus));
+    }
+
+    public void visit (ReductionOrOp reductionOrOp)
+    {
+        current_vmodule.state(new UnaryOpAssignment.Or(reductionOrOp));
+    }
+
+    public void visit (RightShiftOp rightShift)
+    {
+        current_vmodule.state(new net.sf.openforge.verilog.pattern.ShiftOp.Right(rightShift));
+    }
+
+    public void visit (RightShiftUnsignedOp rightShiftUnsigned)
+    {
+        current_vmodule.state(new net.sf.openforge.verilog.pattern.ShiftOp.RightUnsigned(rightShiftUnsigned));
+    }
+
+    public void visit (SimplePinRead comp)
+    {
+        // We translate the simple pin read as a simple assignment of
+        // its result bus from its sideband pin.  This should never be
+        // necessary however because there is never any logic
+        // associated with this, constant prop should pass the bits
+        // straight through.
+        current_vmodule.state(new ForgeStatement(Collections.EMPTY_SET,
+                                  new Assign.Continuous(
+                                  		NetFactory.makeNet(comp.getResultBus()),
+                                      new PortWire((Port)comp.getDataPorts().get(0))
+                                      )));
+        
+        super.visit(comp);
+    }
+
+    /**
+     * Translates the {@link SimplePinWrite} according to the
+     * structure specified by the javadoc which is:
+     * <code>assign bus = {width{compGO}} &amp; compData;</code>
+     *
+     * @param comp a value of type 'SimplePinWrite'
+     */
+    public void visit (SimplePinWrite comp)
+    {
+        // According to the JavaDoc for SimplePinWrite the behavior is:
+        // assign bus = {width{compGO}} & compData;
+        // or, if the node does not consume GO:
+        // assign bus = compData;
+
+        //current_vmodule.state(new InlineComment("SIMPLEPINWRITE",Comment.SHORT));
+        final Net busWire = NetFactory.makeNet((Bus)comp.getExit(Exit.DONE).getDataBuses().get(0));
+        final PortWire portWire = new PortWire(comp.getDataPort());
+        final Expression rightHandSide;
+        if (comp.consumesGo())
+        {
+            final Replication mask = new Replication(portWire.getWidth(),
+                new PortWire(comp.getGoPort()));
+            rightHandSide = new Bitwise.And(portWire, mask);
+        }
+        else
+        {
+            rightHandSide = portWire;
+        }
+        
+        current_vmodule.state(
+            new ForgeStatement(Collections.singleton(busWire),
+                new Assign.Continuous(busWire,rightHandSide)
+                               )
+            );
+        super.visit(comp);
+    }
+    
+    public void visit (ShortcutIfElseOp shortcutIfElse)
+    {
+        current_vmodule.state(new VMux(shortcutIfElse));
+    }
+
+    public void visit (SubtractOp subtract)
+    {
+        current_vmodule.state(new MathAssignment.Subtract(subtract));
+    }
+
+    public void visit (XorOp xor)
+    {
+        current_vmodule.state(new BitwiseAssignment.Xor(xor));
+    }
+    
+    public void visit (Mux mux)
+    {
+        current_vmodule.state(new VMux(mux));
+    }
+    
+    public void visit (Or or)
+    {
+        current_vmodule.state(new PrimitiveAssignment.Or(or));   
+    }
+    
+    public void visit (And and)
+    {
+        current_vmodule.state(new PrimitiveAssignment.And(and));   
+    }
+    
+    public void visit (Not not)
+    {
+
+        current_vmodule.state(new PrimitiveAssignment.Not(not));   
+    }
+
+    public void visit (InPinBuf inPinBuf)
+    {
+        InPinBuf.Physical physical = inPinBuf.getPhysicalComponent();
+        if(physical!=null)
+        {
+            Collection components = physical.getComponents();
+            components.remove(physical.getInBuf());
+            components.removeAll(physical.getOutBufs());
+            for (Iterator it = components.iterator(); it.hasNext();)
+            {
+                ((Visitable)it.next()).accept(this);   
+            }
+        } 
+    }
+
+    public void visit (OutPinBuf outPinBuf)
+    {
+        OutPinBuf.Physical physical = outPinBuf.getPhysicalComponent();
+        if(physical!=null)
+        {
+            Collection components = physical.getComponents();
+            components.remove(physical.getInBuf());
+            components.removeAll(physical.getOutBufs());
+            for (Iterator it = components.iterator(); it.hasNext();)
+            {
+                Visitable v=(Visitable)it.next();
+                v.accept(this);   
+            }
+        }
+    }
+
+    public void visit (MemoryBank memBank)
+    {
+        Object sig = memBank.getSignature();
+        VerilogMemory vm = (VerilogMemory)memoryMap.get(memBank.getSignature());
+        if (vm == null)
+        {
+            vm = MemoryMapper.getMemoryType(memBank);
+            net.sf.openforge.verilog.model.Module memoryModule = vm.defineModule();
+            lim_module_map.put(memBank, memoryModule);
+            memoryMap.put(memBank.getSignature(), vm);
+        }
+        
+        current_vmodule.state(vm.instantiate(memBank));
+    }
+
+    public void visit (MemoryRead memoryRead)
+    {
+        MemoryRead.Physical physical = (MemoryRead.Physical)memoryRead.getPhysicalComponent();
+        Collection components = physical.getComponents();
+        components.remove(physical.getInBuf());
+        components.removeAll(physical.getOutBufs());
+        for (Iterator it = components.iterator(); it.hasNext();)
+        {
+            ((Visitable)it.next()).accept(this);   
+        }
+    }
+    
+    public void visit (MemoryWrite memoryWrite)
+    {
+        MemoryWrite.Physical physical = (MemoryWrite.Physical)memoryWrite.getPhysicalComponent();
+        Collection components = physical.getComponents();
+        components.remove(physical.getInBuf());
+        components.removeAll(physical.getOutBufs());
+        for (Iterator it = components.iterator(); it.hasNext();)
+        {
+            ((Visitable)it.next()).accept(this);   
+        }
+    }
+
+    public void visit (OutBuf ob)
+    {   
+        // ABK FIXME - This is ugly, but checking for instanceof is needed
+        // here because some ownerless modules are in the graph which are
+        // not a procedure body. Previously checked for getOwner().getOwner()
+        // being null. Perhaps isProcedureBody could get promoted to Module,
+        // and any Module (rather than just a block) can be a procedure's body?
+        // Also, fabricated Module (Register.Physical and such) should have a
+        // legitmate owner set.
+        net.sf.openforge.lim.Module owner = ob.getOwner();
+        //if ((owner instanceof Block) && (((Block)owner).isProcedureBody()))
+        if (xlatOutBufs.contains(owner))
+        {
+            for (Iterator ports = ob.getPorts().iterator(); ports.hasNext();)
+            {
+                Port ob_port = (Port)ports.next();
+                if (ob_port.isUsed())
+                {
+                    current_vmodule.state(new ForgeStatement(Collections.EMPTY_SET, 
+                        new Assign.Continuous(new BusOutput(ob_port.getPeer()), 
+                            new PortWire(ob_port))
+                            ));
+                }
+            }
+        }
+    }
+
+    /**
+     * Gets the VerilogDocument generated from the most recent visit
+     * of a Design.
+     *
+     * @return the translated Design as a VerilogDocument
+     */
+    public VerilogDocument getDocument()
+    {
+        if (vDoc == null)
+        {
+            this.vDoc = new VerilogDocument();
+            vDoc.append(new Comment("Verilog Document NOT generated from a Design"));            
+        }
+        return this.vDoc;
+    }
+    
+    /**
+     * Writes the generated VerilogDocument to an output.
+     *
+     * @param writer the output for the verilog
+     */
+    public void writeDocument(Writer writer)
+    {
+        PrettyPrinter pp = new PrettyPrinter(writer);
+        pp.print(getDocument());
+        writeIPCore(pp.writer);
+    }
+
+    /**
+     * Writes the generated VerilogDocument to an output.
+     *
+     * @param writer the output for the verilog
+     */
+    public void writeDocument(OutputStream writer)
+    {
+        PrettyPrinter pp = new PrettyPrinter(writer);
+        pp.print(getDocument());
+        writeIPCore(pp.writer);
+    }
+
+    public void outputSimInclude (File vFile, OutputStream simOS)
+    {
+        writeIncludeDocument(simOS, new IncludeStatement(vFile.getPath()), true);
+    }
+    
+    public void outputSynthInclude (File vFile, OutputStream simOS)
+    {
+        IncludeStatement inclStatement = (vFile == null) ? null:new IncludeStatement(vFile.getPath());
+        writeIncludeDocument(simOS, inclStatement, false);
+    }
+
+    private void writeIncludeDocument (OutputStream os, IncludeStatement hdlFile, boolean sim)
+    {
+        // create verilog doc
+        VerilogDocument includeDoc = new VerilogDocument();
+        //VerilogDocument synthdoc = new VerilogDocument();
+
+        if (hdlFile != null)
+        {
+            // include forge generated file intself
+            includeDoc.append (new Comment("Forge-generated Verilog", Comment.SHORT));
+            //includeDoc.append(new IncludeStatement(vFile.getPath()));
+            includeDoc.append(hdlFile);
+        }
+        includeDoc.append(new Comment(Comment.BLANK));
+
+        Map incls = getIncludes(sim);
+        
+        // generate the include statements
+        for(Iterator it=incls.keySet().iterator();it.hasNext();)
+        {
+            ArrayList mmList=(ArrayList)incls.get(it.next());
+            if(mmList.size()>0)
+            {
+                String comment = "primitive mapping for ";
+                MappedModule mm=null;
+                for(Iterator itInner=mmList.iterator();itInner.hasNext();)
+                {
+                    mm=(MappedModule)itInner.next();
+                    includeDoc.append(new Comment(comment + mm.getModuleName(), Comment.SHORT));
+                    comment = " and ";
+                }
+                if (sim)
+                    includeDoc.append(new IncludeStatement(mm.getSimInclude()));
+                else
+                    includeDoc.append(new IncludeStatement(mm.getSynthInclude()));
+
+                includeDoc.append(new Comment(Comment.BLANK));
+            }
+        }
+
+        if (sim)
+        {
+            // Always write out glbl.v include for _sim file so
+            // automatic test bench doesn't need to conditionally add
+            // logic to assert GSR. 
+            includeDoc.append(new Comment("global declarations",Comment.SHORT));
+            includeDoc.append(new IncludeStatement(VarFilename.parse("$XILINX/verilog/src/glbl.v")));
+            includeDoc.append(new Comment(Comment.BLANK));
+        }
+        
+        try
+        {       
+            PrintWriter pwSim=new PrintWriter(os);
+            (new PrettyPrinter(pwSim)).print(includeDoc);
+            pwSim.close();
+        }
+        catch(Exception e)
+        {
+        	EngineThread.getEngine().fatalError(e.getMessage());
+        }
+    }
+    
+    private Map getIncludes (boolean sim)
+    {
+        HashMap incls=new HashMap();
+        
+        MappedModuleSpecifier mms=(MappedModuleSpecifier)getDocument();
+
+        // this gets a set of sim and synth includes, uniquyfying them
+        for (Iterator it = mms.getMappedModules().iterator(); it.hasNext();)
+        {
+            MappedModule mm = (MappedModule)it.next();
+
+            // keep a list of everyone who used this
+            Object key = sim ? mm.getSimInclude():mm.getSynthInclude();
+            ArrayList mmList=(ArrayList)incls.get(key);
+            if(mmList==null)
+            {
+                mmList=new ArrayList(2);
+            }
+            mmList.add(mm);
+            incls.put(key,mmList);
+        }
+
+        // Deprecated???  
+        for(Iterator it = userSimIncludes.iterator(); it.hasNext();)
+        {
+            String usersim = (String)it.next();
+            
+            String sim_include_file = MemoryMapper.SIM_INCLUDE_PATH + usersim + ".v";
+            // doesn't hurt to include the unisim synth stuff for all
+            // the above cases.
+            String synth_include_file = MemoryMapper.SYNTH_INCLUDE_PATH + "unisim_comp.v";
+
+            if(usersim.startsWith("$"))
+            {
+                // assume environment variable, leave as a string so
+                // it will get expanded, also have it included for
+                // synthesis since it is a file
+                sim_include_file = usersim;
+                synth_include_file = usersim;
+            }
+            else
+            {
+                
+                File f = new File(usersim);
+                if(!f.getName().equals(usersim))
+                {
+                    // the supplied name has directory prefixes, use it
+                    // directly, don't pre-pend the sim include stuff
+                    // and also set the synth to include it.
+                    sim_include_file = f.getAbsolutePath();
+                    synth_include_file = f.getAbsolutePath();
+                }
+                else if(usersim.startsWith("X_"))
+                {
+                    // handle as a simprim, not a unisim
+                    sim_include_file = MemoryMapper.SIMPRIM_INCLUDE_PATH + usersim + ".v";
+                }
+            }
+
+            MappedModule mm = new MappedModule("HDLWriter", sim_include_file, synth_include_file);
+
+            // add our new mapped module to the list
+            Object key = sim ? mm.getSimInclude():mm.getSynthInclude();
+            ArrayList mmList=(ArrayList)incls.get(key);
+            if(mmList==null)
+            {
+                mmList=new ArrayList(2);
+            }
+            mmList.add(mm);
+            incls.put(key,mmList);
+        }
+        
+        return incls;
+    }
+
+    public void writeIPCore(IndentWriter printer)
+    {
+        // List of IPCores that has HDLWriters registered that were
+        // used in the design.  It is possible for the user's code to
+        // have instantiated many IPCores, but only reference a few,
+        // so we need to only call the writers for the cores that they
+        // did reference.
+        final ArrayList userVerilog_list = new ArrayList();
+
+        // all the IPCoreStorage that we created with user's IPCores
+        for(Iterator it = design.getPins().iterator(); it.hasNext();)
+        {
+            Pin p = (Pin)it.next();
+            Buffer buf = p.getApiPin();
+            
+            if(Core.hasThisPin(buf))
+            {
+                IPCoreStorage ipcs = Core.getIPCoreStorage(buf);
+                IPCore ipcore = Core.getIPCore(ipcs);
+                
+                // If IPCore's name exists in the user Verilog name list, 
+                // it means that multiple IPCore instantiation occurs so
+                // we just need to register the writer once.
+                
+                //if(Core.getFromHDLWriterMap(ipcs) != null && userVerilog_names.add(ipcs.getModuleName()))
+                if(ipcs.getHDLWriter() != null && userVerilog_names.add(ipcs.getModuleName()))
+                {
+                    //save those IPCores that has registered writers only
+                    userVerilog_list.add(ipcore);
+                }
+            }
+        }
+
+        if(!userVerilog_list.isEmpty())
+        {    
+            printer.println("// ========= User Verilog Module(s) ========= \n");
+        }
+        
+        // Iterate thru each IPCore that has registered HDLWriter
+        for(Iterator iter = userVerilog_list.iterator(); iter.hasNext();)
+        {
+            IPCore ipcore = (IPCore)iter.next();
+            
+            // Get the IPCoreStorage that is associated with this IPCore 
+            IPCoreStorage ipcs = Core.getIPCoreStorage(ipcore);
+
+            // Now yank out the HDLWriter
+            //HDLWriter hdlWriter = (HDLWriter)Core.getFromHDLWriterMap(ipcs);
+            HDLWriter hdlWriter = (HDLWriter)ipcs.getHDLWriter();
+            
+            // If there's a HDLWriter registered, write it
+            if(hdlWriter != null)
+            {
+                UserPrintWriter upw = new UserPrintWriter(printer);
+
+                List unisimlist = hdlWriter.writeVerilog(ipcore, upw);
+
+                if(unisimlist != null)
+                {
+                    
+                    // add the unisims if proper Strings to the includes
+                    // of the simulation Verilog file.
+                    
+                    for(Iterator unisims = unisimlist.iterator();
+                        unisims.hasNext(); )
+                    {
+                        Object o = null;
+                        
+                        try
+                        {
+                            o = unisims.next();
+                            
+                            String s = (String)o;
+                            
+                            userSimIncludes.add(s);
+                        }
+                        catch(Throwable t)
+                        {
+                        	EngineThread.getGenericJob().error("HDLWriter returned bad unisim: " +
+                                      o);
+                        }
+                    }
+                }
+
+                printer.println("");
+            }
+        } 
+    }
+
+    /**
+     * Checks whether a call references a empty module or not.
+     *
+     * @return true if there is at least one data port or one data
+     *         bus, else false
+     */
+    private boolean isEmptyModuleCall (Call call)
+    {
+        return call.getDataPorts().isEmpty() && call.getDataBuses().isEmpty() && !call.producesDone();
+    }
+    
+} // class VerilogTranslator
+
+
+

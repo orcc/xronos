@@ -1,0 +1,148 @@
+/*******************************************************************************
+ * Copyright 2002-2009  Xilinx Inc.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
+/*
+ * 
+ *
+ * 
+ */
+
+package net.sf.openforge.verilog.testbench;
+
+
+import java.util.*;
+
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.InputPin;
+import net.sf.openforge.lim.Pin;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Task;
+import net.sf.openforge.util.naming.ID;
+import net.sf.openforge.verilog.model.*;
+
+/**
+ * TestInstantiation is the instantiation of the design being tested
+ * and connecting the ports up to the correct logic (including clk and
+ * reset)
+ *
+ * <p>Created: Thu Jan  9 14:16:45 2003
+ *
+ * @author imiller, last modified by $Author: imiller $
+ * @version $Id: TestInstantiation.java 282 2006-08-14 21:25:33Z imiller $
+ */
+public class TestInstantiation 
+{
+    private static final String _RCS_ = "$Rev: 282 $";
+
+    private Design design;
+    private Set taskHandles;
+    
+    public TestInstantiation (Design design, Set taskHandles)
+    {
+        this.design = design;
+        this.taskHandles = taskHandles;
+    }
+
+    /**
+     * Creates the instantiation and connects up all the ports/buses.
+     */
+    public void stateLogic (Module module, StateMachine mach)
+    {
+        ModuleInstance instance = new ModuleInstance(
+            getVerilogName(this.design),"test");
+
+        /*
+         * Connect clock and reset if needed.
+         */
+        for (Design.ClockDomain domain : this.design.getAllocatedClockDomains())
+        {
+            instance.add(new PortConnection(
+                             new Input(getVerilogName(domain.getClockPin()), 1),
+                             mach.getClock()));
+            if (domain.getResetPin() != null)
+            {
+                instance.add(new PortConnection(
+                                 new Input(getVerilogName(domain.getResetPin()), 1),
+                                 mach.getReset()));
+            }
+        }
+        
+        for (Iterator iter = this.taskHandles.iterator(); iter.hasNext();)
+        {
+            TaskHandle th = (TaskHandle)iter.next();
+            Task task = th.getTask();
+            for (Iterator portIter = task.getCall().getPorts().iterator(); portIter.hasNext();)
+            {
+                Port port = (Port)portIter.next();
+                InputPin pin = (InputPin)this.design.getPin(port);
+                Wire portWire = th.getWireForConnection(port);
+                if (portWire == null)
+                {
+                    continue;
+                }
+                
+                // Use the Port's bus to agree with InputPinPort and
+                // VerilogNamer, but output pins use the actual pin.
+                PortConnection pc = new PortConnection(
+                    new Input(getVerilogName(pin.getBus()),
+                        pin.getWidth()), portWire);
+                instance.add(pc);
+            }
+
+            for (Iterator busIter = task.getCall().getExit(Exit.DONE).getBuses().iterator(); busIter.hasNext();)
+            {
+                Bus bus = (Bus)busIter.next();
+                Wire busWire = th.getWireForConnection(bus);
+                if (busWire == null)
+                {
+                    continue;
+                }
+                
+                Pin pin = this.design.getPin(bus);
+                PortConnection pc = new PortConnection(
+                    new Output(getVerilogName(pin), pin.getWidth()),
+                    busWire);
+                instance.add(pc);
+            }
+
+            Pin goPin = this.design.getPin(task.getCall().getGoPort());
+            if (goPin != null)
+            {
+                instance.add(
+                    new PortConnection(
+                        new Input(getVerilogName(((InputPin)goPin).getBus()), 1),
+                        th.getGoWire()));
+            }
+            
+            Pin donePin = this.design.getPin(task.getCall().getExit(Exit.DONE).getDoneBus());
+            if (donePin != null)
+            {
+                instance.add(new PortConnection(
+                                 new Output(getVerilogName(donePin), 1),
+                                 th.getDoneWire()));
+            }
+        }
+
+        module.state(instance);
+    }
+
+    private static String getVerilogName (Object obj)
+    {
+        return ID.toVerilogIdentifier(ID.showLogical(obj));
+    }
+    
+}// TestInstantiation
