@@ -31,7 +31,6 @@ public class XmlResourcePrinter {
 	private static DOMImplementationRegistry registry;
 
 	public XmlResourcePrinter(Design design, FileOutputStream fos) {
-		super();
 		this.design = design;
 		createDocument("Design");
 		populateResourceFile(document.getDocumentElement());
@@ -55,22 +54,21 @@ public class XmlResourcePrinter {
 	}
 
 	private void writeTasks(Element parent) {
-		
+
 		for (Task task : this.design.getTasks()) {
 			final Call topCall = task.getCall();
 			if (topCall instanceof IPCoreCall)
 				continue;
 			final Latency latency = topCall.getLatency();
-			
+
 			Element taskElt = document.createElement("Task");
 			parent.appendChild(taskElt);
-			
+
 			taskElt.setAttribute("name", topCall.sourceName);
-			
-			
-			Element  type = document.createElement("Resource");
+
+			Element type = document.createElement("Resource");
 			taskElt.appendChild(type);
-			
+
 			type.setAttribute("MaxGateDepth",
 					String.valueOf(task.getMaxGateDepth()));
 			type.setAttribute("MinLatency",
