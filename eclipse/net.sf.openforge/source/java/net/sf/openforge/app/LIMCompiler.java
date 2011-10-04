@@ -19,6 +19,11 @@
  * 
  */
 
+/*
+ * File modified by Endri Bezati
+ * Adding the XmlResourcePrinter
+ */
+
 package net.sf.openforge.app;
 
 import java.io.*;
