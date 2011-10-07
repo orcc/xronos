@@ -604,4 +604,27 @@ entity resetController is
     resets  : out  std_logic_vector( count-1 downto 0 ) );
 end entity resetController;
 
+-----------------------------------------------------------------------
+-- Natives
+
+-- native implementations using generic for number of outputs
+library ieee, SystemBuilder;
+use ieee.std_logic_1164.all;
+use SystemBuilder.sb_types.all;
+use SystemBuilder.fifo_utilities.all;
+
+entity natout is
+  generic( width );
+  port(
+    reset: in  std_logic;
+    clk: in  std_logic;
+    In_DATA:        in  int( width-1 downto 0 );
+    In_SEND:   in  std_logic;
+    In_ACK:    out std_logic;
+    In_COUNT: in std_logic_vector (15 downto 0);
+    In_RDY: out std_logic;
+    Out_DATA:        out int( width-1 downto 0 )
+    );
+end entity natout;
+
 --------------------------------------------------------
