@@ -614,7 +614,7 @@ use SystemBuilder.sb_types.all;
 use SystemBuilder.fifo_utilities.all;
 
 entity natout is
-  generic( width );
+  generic( width: positive );
   port(
     reset: in  std_logic;
     clk: in  std_logic;
