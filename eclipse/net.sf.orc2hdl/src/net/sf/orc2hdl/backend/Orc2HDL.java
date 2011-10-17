@@ -102,7 +102,7 @@ public class Orc2HDL extends AbstractBackend {
 
 	private List<String> forgeFlags;
 
-	private boolean haveSystemActors;
+	//private boolean haveSystemActors;
 
 	@Override
 	protected void doInitializeOptions() {
@@ -216,13 +216,13 @@ public class Orc2HDL extends AbstractBackend {
 
 		new LiteralIntegersAdder(true),
 
-	//	new CastAdder(true, false),
+				// new CastAdder(true, false),
 
-		new XlimVariableRenamer(),
-		
-		new EmptyElseNodeAdder(),
+				new XlimVariableRenamer(),
 
-		new BlockCombine() };
+				new EmptyElseNodeAdder(),
+
+				new BlockCombine() };
 
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
