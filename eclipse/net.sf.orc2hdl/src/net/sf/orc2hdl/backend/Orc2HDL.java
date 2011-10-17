@@ -46,7 +46,7 @@ import net.sf.openforge.app.Forge;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.StandardPrinter;
-import net.sf.orcc.backends.transformations.CastAdder;
+import net.sf.orcc.backends.llvm.transformations.EmptyElseNodeAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.InstPhiTransformation;
@@ -219,6 +219,8 @@ public class Orc2HDL extends AbstractBackend {
 	//	new CastAdder(true, false),
 
 		new XlimVariableRenamer(),
+		
+		new EmptyElseNodeAdder(),
 
 		new BlockCombine() };
 
