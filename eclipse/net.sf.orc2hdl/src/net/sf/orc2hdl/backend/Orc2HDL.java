@@ -47,6 +47,7 @@ import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.StandardPrinter;
 import net.sf.orcc.backends.llvm.transformations.EmptyElseNodeAdder;
+import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.InstPhiTransformation;
@@ -98,16 +99,25 @@ public class Orc2HDL extends AbstractBackend {
 
 	private boolean debugMode;
 
-	private String FpgaType;
+	private String fpgaName;
 
 	private List<String> forgeFlags;
 
-	//private boolean haveSystemActors;
+	// private boolean haveSystemActors;
 
 	@Override
 	protected void doInitializeOptions() {
 
-		FpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "Virtex 2");
+		String fpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "");
+
+		if (fpgaType.equals("Spartan 3")) {
+			fpgaName = "xc3s5000-5-fg1156";
+		} else if (fpgaType.equals("Virtex 2")) {
+			fpgaName = "xc2vp30-7-ff1152";
+		} else if (fpgaType.equals("Virtex 4")) {
+			fpgaName = "xc4vlx100-10-ff1513";
+		}
+
 		debugMode = getAttribute(DEBUG_MODE, true);
 
 		// Populating ForgeFlags
@@ -216,13 +226,13 @@ public class Orc2HDL extends AbstractBackend {
 
 		new LiteralIntegersAdder(true),
 
-				// new CastAdder(true, false),
+		new CastAdder(true, false),
 
-				new XlimVariableRenamer(),
+		new XlimVariableRenamer(),
 
-				new EmptyElseNodeAdder(),
+		new EmptyElseNodeAdder(),
 
-				new BlockCombine() };
+		new BlockCombine() };
 
 		for (ActorVisitor<?> transformation : transformations) {
 			transformation.doSwitch(actor);
@@ -430,15 +440,6 @@ public class Orc2HDL extends AbstractBackend {
 				"net/sf/orcc/backends/xlim/hardware/XLIM_hw_actor.stg",
 				!debugMode);
 
-		String fpgaName = "xc2vp30-7-ff1152";
-
-		if (FpgaType == "Spartan 3") {
-			fpgaName = "xc3s5000-5-fg1156";
-		} else if (FpgaType == "Virtex 2") {
-			fpgaName = "xc2vp30-7-ff1152";
-		} else if (FpgaType == "Virtex 4") {
-			fpgaName = "xc4vlx100-10-ff1513";
-		}
 		printer.getOptions().put("fpgaType", fpgaName);
 
 		printer.setExpressionPrinter(new XlimExprPrinter());
