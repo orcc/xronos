@@ -264,18 +264,17 @@ public class Orc2HDL extends AbstractBackend {
 
 		data.computeTemplateMaps(network);
 		network.setTemplateData(data);
-		write("Printing Top VHDL network...\n");
+
 		printNetwork(network);
 		// Create the sim directory copy the glbl.v file in it and then print
 		// the "do file"
 
-		write("Printing Network Simulation Do file... \n");
 		printSimDoFile(network);
 		// Copy the systemBuilder libraries
-		write("Copying systemBuilder Library... \n");
 		copySystemBuilderLib();
-		write("Copying systemActors Library... \n");
+
 		copySystemActorsLib();
+
 		// Print the xlim files
 		printInstances(network);
 	}
