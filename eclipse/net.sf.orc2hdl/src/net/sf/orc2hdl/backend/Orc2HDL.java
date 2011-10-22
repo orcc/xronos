@@ -40,11 +40,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 import net.sf.openforge.app.Forge;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
+import net.sf.orcc.backends.CustomPrinter;
 import net.sf.orcc.backends.StandardPrinter;
 import net.sf.orcc.backends.llvm.transformations.EmptyElseNodeAdder;
 import net.sf.orcc.backends.transformations.CastAdder;
@@ -104,6 +106,10 @@ public class Orc2HDL extends AbstractBackend {
 	private List<String> forgeFlags;
 
 	// private boolean haveSystemActors;
+
+	private List<String> entities;
+
+	private HashSet<String> entitySet;
 
 	@Override
 	protected void doInitializeOptions() {
@@ -279,12 +285,68 @@ public class Orc2HDL extends AbstractBackend {
 		printInstances(network);
 	}
 
+	private void printTestbench(StandardPrinter printer, Instance instance) {
+		printer.print(instance.getId() + "_tb.vhd", path + File.separator
+				+ "Testbench", instance);
+
+		if (instance.isNetwork()) {
+			Network network = instance.getNetwork();
+			for (Instance subInstance : network.getInstances()) {
+				printTestbench(printer, subInstance);
+			}
+		}
+	}
+
+	private void printTCL(Instance instance) {
+		CustomPrinter printer = new CustomPrinter(
+				"net/sf/orcc/backends/xlim/hardware/Verilog_TCLLists.stg");
+
+		entities = new ArrayList<String>();
+		entitySet = new HashSet<String>();
+		computeEntityList(instance);
+
+		printer.print("TCLLists.tcl", path, "TCLLists", "name", instance
+				.getNetwork().getName(), "entities", entities);
+	}
+
+	private void computeEntityList(Instance instance) {
+		if (instance.isActor()) {
+			String name = instance.getId();
+			if (!entitySet.contains(name)) {
+				entitySet.add(name);
+				entities.add(name);
+			}
+		} else if (instance.isNetwork()) {
+			String name = instance.getId();
+			Network network = instance.getNetwork();
+			if (!entitySet.contains(name)) {
+				for (Instance subInstance : network.getInstances()) {
+					computeEntityList(subInstance);
+				}
+
+				entitySet.add(name);
+			}
+		}
+	}
+
 	private void printNetwork(Network network) {
 		// Get the current time
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date date = new Date();
 
 		String currentTime = dateFormat.format(date);
+		// generate instances test bench
+		File folder = new File(path + File.separator + "Testbench");
+		if (!folder.exists()) {
+			folder.mkdir();
+		}
+		StandardPrinter instancePrinter = new StandardPrinter(
+				"net/sf/orcc/backends/xlim/hardware/Verilog_testbench.stg");
+		Instance instance = new Instance(network.getName(),
+				network.getName());
+		instance.setContents(network);
+		printTestbench(instancePrinter, instance);
+		printTCL(instance);
 
 		Orc2HDLNetworkPrinter printer;
 		String file = network.getName();
