@@ -48,7 +48,7 @@ import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.CustomPrinter;
 import net.sf.orcc.backends.StandardPrinter;
-import net.sf.orcc.backends.llvm.transformations.EmptyElseNodeAdder;
+import net.sf.orcc.backends.llvm.transformations.EmptyThenElseNodeAdder;
 import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.Inliner;
@@ -236,7 +236,7 @@ public class Orc2HDL extends AbstractBackend {
 
 		new XlimVariableRenamer(),
 
-		new EmptyElseNodeAdder(),
+		new EmptyThenElseNodeAdder(),
 
 		new BlockCombine() };
 
