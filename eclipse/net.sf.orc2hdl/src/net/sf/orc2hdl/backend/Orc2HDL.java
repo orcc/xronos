@@ -56,6 +56,7 @@ import net.sf.orcc.backends.transformations.InstPhiTransformation;
 import net.sf.orcc.backends.transformations.Multi2MonoToken;
 import net.sf.orcc.backends.transformations.UnitImporter;
 import net.sf.orcc.backends.transformations.tac.ExpressionSplitter;
+import net.sf.orcc.backends.tta.transformations.ActorTypeResizer;
 import net.sf.orcc.backends.vhdl.transformations.StoreOnceTransformation;
 import net.sf.orcc.backends.xlim.XlimActorTemplateData;
 import net.sf.orcc.backends.xlim.XlimExprPrinter;
@@ -66,6 +67,7 @@ import net.sf.orcc.backends.xlim.transformations.InstTernaryAdder;
 import net.sf.orcc.backends.xlim.transformations.ListFlattener;
 import net.sf.orcc.backends.xlim.transformations.LiteralIntegersAdder;
 import net.sf.orcc.backends.xlim.transformations.LocalArrayRemoval;
+import net.sf.orcc.backends.xlim.transformations.ThrityTwoBitCaster;
 import net.sf.orcc.backends.xlim.transformations.UnaryListRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimVariableRenamer;
@@ -114,7 +116,7 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected void doInitializeOptions() {
 
-		String fpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "");
+		String fpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "Virtex 2");
 
 		if (fpgaType.equals("Spartan 3")) {
 			fpgaName = "xc3s5000-5-fg1156";
@@ -204,6 +206,8 @@ public class Orc2HDL extends AbstractBackend {
 
 		new SSATransformation(),
 
+		new ThrityTwoBitCaster(),
+
 		new GlobalArrayInitializer(true),
 
 		new InstTernaryAdder(),
@@ -231,7 +235,7 @@ public class Orc2HDL extends AbstractBackend {
 		new InstPhiTransformation(),
 
 		new LiteralIntegersAdder(true),
-
+		
 		new CastAdder(true, false),
 
 		new XlimVariableRenamer(),
@@ -342,8 +346,7 @@ public class Orc2HDL extends AbstractBackend {
 		}
 		StandardPrinter instancePrinter = new StandardPrinter(
 				"net/sf/orcc/backends/xlim/hardware/Verilog_testbench.stg");
-		Instance instance = new Instance(network.getName(),
-				network.getName());
+		Instance instance = new Instance(network.getName(), network.getName());
 		instance.setContents(network);
 		printTestbench(instancePrinter, instance);
 		printTCL(instance);
