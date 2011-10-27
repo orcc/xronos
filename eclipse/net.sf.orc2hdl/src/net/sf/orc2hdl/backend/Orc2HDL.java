@@ -48,16 +48,15 @@ import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.CustomPrinter;
 import net.sf.orcc.backends.StandardPrinter;
-import net.sf.orcc.backends.llvm.transformations.EmptyThenElseNodeAdder;
 import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
+import net.sf.orcc.backends.transformations.EmptyThenElseNodeAdder;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.InstPhiTransformation;
 import net.sf.orcc.backends.transformations.Multi2MonoToken;
+import net.sf.orcc.backends.transformations.StoreOnceTransformation;
+import net.sf.orcc.backends.transformations.TypeResizer;
 import net.sf.orcc.backends.transformations.UnitImporter;
-import net.sf.orcc.backends.transformations.tac.ExpressionSplitter;
-import net.sf.orcc.backends.tta.transformations.ActorTypeResizer;
-import net.sf.orcc.backends.vhdl.transformations.StoreOnceTransformation;
 import net.sf.orcc.backends.xlim.XlimActorTemplateData;
 import net.sf.orcc.backends.xlim.XlimExprPrinter;
 import net.sf.orcc.backends.xlim.XlimTypePrinter;
@@ -67,7 +66,6 @@ import net.sf.orcc.backends.xlim.transformations.InstTernaryAdder;
 import net.sf.orcc.backends.xlim.transformations.ListFlattener;
 import net.sf.orcc.backends.xlim.transformations.LiteralIntegersAdder;
 import net.sf.orcc.backends.xlim.transformations.LocalArrayRemoval;
-import net.sf.orcc.backends.xlim.transformations.ThrityTwoBitCaster;
 import net.sf.orcc.backends.xlim.transformations.UnaryListRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimVariableRenamer;
@@ -77,6 +75,7 @@ import net.sf.orcc.ir.transformations.BuildCFG;
 import net.sf.orcc.ir.transformations.DeadCodeElimination;
 import net.sf.orcc.ir.transformations.DeadGlobalElimination;
 import net.sf.orcc.ir.transformations.SSATransformation;
+import net.sf.orcc.ir.transformations.TacTransformation;
 import net.sf.orcc.ir.util.ActorVisitor;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.network.Instance;
@@ -206,7 +205,7 @@ public class Orc2HDL extends AbstractBackend {
 
 		new SSATransformation(),
 
-		new ThrityTwoBitCaster(),
+		new TypeResizer(false,true),
 
 		new GlobalArrayInitializer(true),
 
@@ -226,7 +225,7 @@ public class Orc2HDL extends AbstractBackend {
 
 		new ListFlattener(),
 
-		new ExpressionSplitter(true),
+		new TacTransformation(true),
 
 		/* new CopyPropagator(), */
 
