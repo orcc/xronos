@@ -205,7 +205,7 @@ public class Orc2HDL extends AbstractBackend {
 
 		new SSATransformation(),
 
-		new TypeResizer(false,true),
+		new TypeResizer(false, true, true),
 
 		new GlobalArrayInitializer(true),
 
@@ -234,7 +234,7 @@ public class Orc2HDL extends AbstractBackend {
 		new InstPhiTransformation(),
 
 		new LiteralIntegersAdder(true),
-		
+
 		new CastAdder(true, false),
 
 		new XlimVariableRenamer(),
