@@ -31,7 +31,7 @@ package net.sf.orc2hdl.backend;
 import java.io.File;
 import java.io.IOException;
 
-import net.sf.orcc.network.Network;
+import net.sf.orcc.df.Network;
 
 import org.stringtemplate.v4.ST;
 

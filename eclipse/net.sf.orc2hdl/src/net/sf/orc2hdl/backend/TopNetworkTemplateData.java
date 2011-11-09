@@ -35,16 +35,14 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.orcc.OrccException;
+import net.sf.orcc.df.Attribute;
+import net.sf.orcc.df.Connection;
+import net.sf.orcc.df.Instance;
+import net.sf.orcc.df.Network;
+import net.sf.orcc.df.Port;
+import net.sf.orcc.df.Vertex;
 import net.sf.orcc.ir.ExprString;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.Port;
-import net.sf.orcc.network.Connection;
-import net.sf.orcc.network.Instance;
-import net.sf.orcc.network.Network;
-import net.sf.orcc.network.Vertex;
-import net.sf.orcc.network.attributes.IAttribute;
-import net.sf.orcc.network.attributes.IValueAttribute;
-import net.sf.orcc.util.OrderedMap;
 
 /**
  * This class is giving the necessary information for the XLIM Network
@@ -55,10 +53,15 @@ import net.sf.orcc.util.OrderedMap;
  * 
  */
 public class TopNetworkTemplateData {
-	
-	
+
 	public static final String DEFAULT_CLOCK_DOMAIN = "CLK";
-	
+
+	/**
+	 * Contains a Map which indicates the clock domain of each actor
+	 */
+
+	private Map<Instance, Integer> clockDomainMap;
+
 	/**
 	 * Contains a Map which indicates the number of the broadcasted actor
 	 */
@@ -72,26 +75,22 @@ public class TopNetworkTemplateData {
 	private Map<Port, Integer> countNetwokPortBroadcastMap;
 
 	/**
-	 * Contains a Map which indicates the clock domain of each actor
-	 */
-
-	private Map<Instance, Integer> clockDomainMap;
-
-	/**
-	 * build all informations needed in the template data.
+	 * Count the Broadcast of an Actor Output port
 	 * 
 	 * @param network
-	 *            a network
 	 */
-	public void computeTemplateMaps(Network network) {
-		countNetwokPortBroadcastMap = new HashMap<Port, Integer>();
-		countBroadcastConnectionsMap = new HashMap<Connection, Integer>();
-		clockDomainMap = new HashMap<Instance, Integer>();
 
-		computeNetworkInputPortBroadcast(network);
-		computeActorOutputPortBroadcast(network);
+	public void computeActorOutputPortBroadcast(Network network) {
+		for (Instance instance : network.getInstances()) {
+			Map<Port, List<Connection>> map = instance.getOutgoingPortMap();
+			for (List<Connection> ports : map.values()) {
+				int cp = 0;
+				for (Connection connection : ports) {
+					countBroadcastConnectionsMap.put(connection, cp++);
+				}
+			}
+		}
 
-		computeActorsClockDomains(network);
 	}
 
 	/**
@@ -116,18 +115,15 @@ public class TopNetworkTemplateData {
 	 */
 	public void computeNetworkInputPortBroadcast(Network network) {
 		List<Port> inputs = network.getInputs();
-		Set<Vertex> graphVertex = network.getGraph().vertexSet();
-
-		for (Vertex vertex : graphVertex) {
+		for (Vertex vertex : network.getVertices()) {
 			if (vertex.isPort()) {
-				Port port = vertex.getPort();
+				Port port = (Port) vertex;
 				if (inputs.contains(port)) {
-					countNetwokPortBroadcastMap.put(port, network.getGraph()
-							.outDegreeOf(vertex));
+					countNetwokPortBroadcastMap.put(port, vertex.getOutgoing()
+							.size());
 				}
 				int cp = 0;
-				for (Connection connection : network.getGraph()
-						.outgoingEdgesOf(vertex)) {
+				for (Connection connection : vertex.getOutgoing()) {
 					countBroadcastConnectionsMap.put(connection, cp++);
 				}
 
@@ -136,24 +132,20 @@ public class TopNetworkTemplateData {
 	}
 
 	/**
-	 * Count the Broadcast of an Actor Output port
+	 * build all informations needed in the template data.
 	 * 
 	 * @param network
+	 *            a network
 	 */
+	public void computeTemplateMaps(Network network) {
+		countNetwokPortBroadcastMap = new HashMap<Port, Integer>();
+		countBroadcastConnectionsMap = new HashMap<Connection, Integer>();
+		clockDomainMap = new HashMap<Instance, Integer>();
 
-	public void computeActorOutputPortBroadcast(Network network) {
-		Map<Instance, Map<Port, List<Connection>>> val = network
-				.getOutgoingMap();
-		for (Map<Port, List<Connection>> entry : val.values()) {
-			for (List<Connection> ports : entry.values()) {
-				int cp = 0;
-				for (Connection connection : ports) {
-					countBroadcastConnectionsMap.put(connection, cp++);
-				}
-			}
+		computeNetworkInputPortBroadcast(network);
+		computeActorOutputPortBroadcast(network);
 
-		}
-
+		computeActorsClockDomains(network);
 	}
 
 	/**
@@ -169,12 +161,12 @@ public class TopNetworkTemplateData {
 	public Map<Port, Integer> getCountNetwokPortBroadcastMap() {
 		return countNetwokPortBroadcastMap;
 	}
-	
+
 	private String getPartNameAttribute(Instance instance) throws OrccException {
 		String clockDomain = DEFAULT_CLOCK_DOMAIN;
-		IAttribute attr = instance.getAttribute("clockDomain");
+		Attribute attr = instance.getAttribute("clockDomain");
 		if (attr != null) {
-			Expression expr = ((IValueAttribute) attr).getValue();
+			Expression expr = (Expression) attr.getValue();
 			clockDomain = ((ExprString) expr).getValue();
 		}
 		return clockDomain;

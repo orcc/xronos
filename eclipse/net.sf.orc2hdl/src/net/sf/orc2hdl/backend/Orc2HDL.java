@@ -69,7 +69,10 @@ import net.sf.orcc.backends.xlim.transformations.LocalArrayRemoval;
 import net.sf.orcc.backends.xlim.transformations.UnaryListRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimVariableRenamer;
-import net.sf.orcc.ir.Actor;
+import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.DfFactory;
+import net.sf.orcc.df.Instance;
+import net.sf.orcc.df.Network;
 import net.sf.orcc.ir.transformations.BlockCombine;
 import net.sf.orcc.ir.transformations.BuildCFG;
 import net.sf.orcc.ir.transformations.DeadCodeElimination;
@@ -78,8 +81,6 @@ import net.sf.orcc.ir.transformations.SSATransformation;
 import net.sf.orcc.ir.transformations.TacTransformation;
 import net.sf.orcc.ir.util.ActorVisitor;
 import net.sf.orcc.ir.util.IrUtil;
-import net.sf.orcc.network.Instance;
-import net.sf.orcc.network.Network;
 
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
@@ -345,7 +346,8 @@ public class Orc2HDL extends AbstractBackend {
 		}
 		StandardPrinter instancePrinter = new StandardPrinter(
 				"net/sf/orcc/backends/xlim/hardware/Verilog_testbench.stg");
-		Instance instance = new Instance(network.getName(), network.getName());
+		Instance instance = DfFactory.eINSTANCE.createInstance(
+				network.getName(), network);
 		instance.setContents(network);
 		printTestbench(instancePrinter, instance);
 		printTCL(instance);

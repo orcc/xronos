@@ -36,10 +36,10 @@ vlog glbl.v
 vlog ../src/*.v
 
 ## Compile the Top VHDL Network
-vcom -93 -check_synthesis -quiet -work work ../src/<network.name>.vhd
+vcom -93 -check_synthesis -quiet -work work ../src/<network.simpleName>.vhd
 
 ## Start simulating the Top
-vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<network.name>
+vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<network.simpleName>
 
 ## Change radix to decimal
 radix -decimal
