@@ -1,5 +1,6 @@
 simulation(network, options) ::= <<
 ## ############################################################################
+## EPFL - Orc2HDL, CAL to HDL code generator 
 ## Automatically generated ModelSim do file for  <network.name> Network
 ## Generated : <options.currentTime>
 ## ############################################################################
@@ -8,9 +9,9 @@ simulation(network, options) ::= <<
 vlib SystemBuilder
 
 ## Compile the SystemBuilder Library from sources
-vcom -reportprogress 300 -work SystemBuilder ../systemBuilder/sbtypes.vhdl
-vcom -reportprogress 300 -work SystemBuilder ../systemBuilder/sbfifo.vhdl
-vcom -reportprogress 300 -work SystemBuilder ../systemBuilder/sbfifo_behavioral.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/sbtypes.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/sbfifo.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/sbfifo_behavioral.vhdl
 
 ## Map the SystemBuilder Library
 vmap SystemBuilder SystemBuilder
@@ -19,8 +20,8 @@ vmap SystemBuilder SystemBuilder
 #vlib SystemActors
 
 ## Compile the SystemActors Library from sources
-#vcom -reportprogress 300 -work SystemActors ../systemActors/types/sa_types.vhd
-#vcom -reportprogress 300 -work SystemActors ../systemActors/io/Source.vhd
+#vcom -reportprogress 300 -work SystemActors ../lib/systemActors/types/sa_types.vhd
+#vcom -reportprogress 300 -work SystemActors ../lib/systemActors/io/Source.vhd
 
 
 ## Map the SystemActors Library
@@ -43,4 +44,40 @@ vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<network.simpleName>
 
 ## Change radix to decimal
 radix -decimal
+
+## Add CLK and reset signal
+add wave sim:/<network.simpleName>/CLK
+add wave sim:/<network.simpleName>/RESET
+
+<printNetworkOutputPorts(network)>
+## Set CLK at 100 ns
+force -freeze sim:/<network.simpleName>/CLK 1 0, 0 {50 ns} -r 100
+
+## Reset for 500 ns
+force -freeze sim:/<network.simpleName>/RESET 1 0
+run 500ns
+force -freeze sim:/<network.simpleName>/RESET 0 0
+
+## Run for 1ms
+run 1ms
 >>
+
+printNetworkOutputPorts(network) ::=<<
+<if(network.outputs)>
+## Add Network Ouput signals
+<network.outputs: printOutputPorts(); separator="\n">
+<endif>
+>>
+
+printOutputPorts(port) ::=<<
+add wave sim:/<network.simpleName>/<port.name>_DATA 
+<if (!port.native)>
+add wave sim:/<network.simpleName>/<port.name>_SEND 
+add wave sim:/<network.simpleName>/<port.name>_ACK
+force -freeze sim:/<network.simpleName>/<port.name>_ACK 1 0
+add wave sim:/<network.simpleName>/<port.name>_RDY
+force -freeze sim:/<network.simpleName>/<port.name>_RDY 1 0
+<endif>
+>>
+
+

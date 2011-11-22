@@ -1,0 +1,301 @@
+architecture(network) ::= <<
+-- ----------------------------------------------------------------------------
+-- Architecture Declaration
+-- ----------------------------------------------------------------------------
+architecture rtl of <network.simpleName> is
+  <signalInstantiation(network)>
+  
+  <architectureComponents(network)>
+begin
+  rcon: entity SystemBuilder.resetController( behavioral )
+  generic map( count =\> 1 )
+  port map( clocks =\> clocks, reset_in =\> RESET, resets =\> resets );
+  
+  <actorsInstatiation(network)>
+  <networkConnections(network)>
+  <networkPortInstatiation(network)>
+end architecture rtl;
+>>
+
+signalInstantiation(network) ::= <<
+-- --------------------------------------------------------------------------
+-- Internal Signals
+-- --------------------------------------------------------------------------
+
+-- Clock(s) and Reset signal
+signal clocks, resets: std_logic_vector(0 downto 0);
+
+<internalSignals(network)>
+>>
+
+internalSignals(network) ::= <<
+-- Network Input Port and Input Port Fanout Signals 
+<network.inputs:{ port | <internalInputSignal(port=port)>}; separator="\n">
+
+-- Network Output Port Signals
+<network.outputs:{ port | <internalOutputSignal(port=port)>}; separator="\n">
+
+-- Actors Fanout and I/O Signals
+<network.instances:{ instance | <internalActorSignal(instance=instance)>}; separator="\n">
+>>
+
+internalInputSignal(port) ::= <<
+<ioSignal("ni",port,false)>
+
+<fanoutSignal("nif",port)>
+>>
+
+internalOutputSignal(port) ::= <<
+<ioSignal("no",port,false)>
+>>
+
+internalActorSignal(port) ::= <<
+<instance.actor.inputs: {port | <ioSignal("ai",port,true)>}; separator="\n">
+<instance.actor.outputs: {port | <fanoutSignal("aof",port)>}; separator="\n">
+
+<instance.actor.outputs: {port | <ioSignal("ao",port,false)>}; separator="\n">
+>>
+
+ioSignal(type,port,dir) ::= <<
+<if(port.type.bool)>
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_DATA : std_logic;
+<else>
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_DATA : std_logic_vector(<port.type.size> - 1 downto 0);
+<endif>
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_SEND : std_logic;
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_ACK : std_logic;
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_COUNT : std_logic_vector(15 downto 0);
+<if(!dir)>
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_RDY : std_logic;
+<endif>
+>>
+
+<fanoutSignal(type,port) ::= <<
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_DATA : std_logic_vector(<port.type.size> - 1 downto 0);
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_SEND : std_logic_vector(0 downto 0);
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_ACK : std_logic_vector(0 downto 0);
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_COUNT : std_logic_vector(15 downto 0);
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_RDY : std_logic_vector(0 downto 0);
+>>
+
+architectureComponents(network) ::= <<
+-- --------------------------------------------------------------------------
+-- Components of Actors found in the Network
+-- --------------------------------------------------------------------------
+
+<network.instances: actorsComponents(); separator="\n">
+>>
+
+actorsComponents(instance) ::=<<
+<if(instance.actor.native)>
+<else>
+component <instance.id> is
+port(
+  -- <instance.id> Input(s)
+  <instance.actor.inputs:{port | <componentPort(port=port,dir=true)>}; separator="\n">
+  -- <instance.id> Ouput(s)
+  <instance.actor.outputs:{port | <componentPort(port=port,dir=false)>}; separator="\n">
+  CLK: in std_logic;
+  RESET: in std_logic );
+end component <instance.id>;
+<endif>
+>>
+
+componentPort(port,dir) ::= <<
+<if(port.type.bool)>
+<port.name>_DATA : <if(dir)>in<else>out<endif> std_logic;
+<else>
+<port.name>_DATA : <if(dir)>in<else>out<endif> std_logic_vector(<port.type.size> - 1 downto 0);
+<endif>
+<port.name>_SEND : <if(dir)>in<else>out<endif> std_logic;
+<port.name>_ACK : <if(dir)>out<else>in<endif> std_logic;
+<port.name>_COUNT : <if(dir)>in<else>out<endif> std_logic_vector(15 downto 0);
+<if(!dir)>
+<port.name>_RDY : in std_logic;
+<endif>
+>>
+
+actorsInstatiation(network) ::= <<
+-- --------------------------------------------------------------------------
+-- Actor instances
+-- --------------------------------------------------------------------------
+<network.instances: {instance | <actorInstance(instance=instance)>}; separator="\n">
+>>
+
+actorInstance(instance) ::= <<
+<if(instance.native)>
+-- <instance.id> (System Actor)
+i_<instance.id> : entity SystemActors.<instance.id>( behavioral )
+<if (instance.parameters)>
+generic map(
+ 	<instance.parameters : {parameter | <systemActorParameter(parameter=parameter.name,value=instance.parameters.(parameter.name))>}; separator=",\n">
+)
+<endif>
+<else>
+i_<instance.id> : component <instance.id> 
+<endif>
+port map(
+  -- <instance.id> Input(s)
+  <instance.actor.inputs:{port | <actorIOPorts(port=port,dir=true)>}; separator="\n">
+  -- <instance.id> Ouput(s)
+  <instance.actor.inputs:{port | <actorIOPorts(port=port,dir=false)>}; separator="\n">
+  -- Clock domain and reset
+  CLK =\> clocks(0),
+  RESET	=\> resets(0)   
+);
+>>
+
+systemActorParameter(parameter, value) ::=<<
+<if (value.stringExpr)><parameter> =\> "<value>"<else><parameter> =\> <value><endif>
+>>
+
+actorIOPorts(port,dir) ::= <<
+<port.name>_DATA =\> <if(dir)>ai<else>ao<endif>_<instance.id>_<port.name>_DATA,
+<port.name>_SEND =\> <if(dir)>ai<else>ao<endif>_<instance.id>_<port.name>_SEND,
+<port.name>_ACK =\> <if(dir)>ai<else>ao<endif>_<instance.id>_<port.name>_ACK,
+<port.name>_COUNT =\> <if(dir)>ai<else>ao<endif>_<instance.id>_<port.name>_COUNT,
+<if(!dir)>
+<port.name>_RDY =\> <if(dir)>ai<else>ao<endif>_<instance.id>_<port.name>_RDY,
+<endif>
+>>
+
+networkConnections(network) ::= <<
+-- --------------------------------------------------------------------------
+-- Fanout and Queue Connections
+-- --------------------------------------------------------------------------
+<network.connections : connect(); separator="\n">
+>>
+
+connect(connection) ::= <<
+<if(connection.source.port)>
+<if(connection.target.instance)>
+<fanout("ni","nif",connection.source,connection.sourcePort)>
+<endif>
+<else>
+<if(connection.target.instance)>
+<fanout("ao","aof",connection.source,connection.sourcePort)>
+<else>
+<fanout("ao","aof",connection.source,connection.sourcePort)>
+<endif>
+<endif>
+>>
+
+<fanout(io,ioFanout,source,sourcePort) ::= <<
+f_<io>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif> : entity SystemBuilder.Fanout( behavioral )
+generic map ( fanout => 1, width => 32 )
+port map (
+  <fSignals(io,source,sourcePort,"In")>
+  
+  <fSignals(ioFanout,source,sourcePort,"Out")>
+  
+  CLK => clocks(0),
+  RESET => resets(0)
+);
+>>
+
+fSignals(type,source,sourcePort,dir) ::= <<
+<dir>_DATA =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_DATA,
+<dir>_SEND =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_SEND,
+<dir>_ACK =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_ACK,
+<dir>_COUNT =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_COUNT,
+<dir>_RDY =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_RDY,
+>>
+
+
+networkPortInstatiation(network) ::= <<
+-- --------------------------------------------------------------------------
+-- Network Ports Instantiation
+-- --------------------------------------------------------------------------
+
+-- Output Port(s) Instantiation
+<network.outputs:{port | <networkOutputPortInstatiation(port=port)>}; separator="\n">
+-- Intput Port(s) Instantiation
+<network.inputs:{port | <networkInputPortInstatiation(port=port)>}; separator="\n">
+>>
+
+networkOutputPortInstatiation(port) ::=<<
+<port.name>_DATA \<= no_<port.name>_DATA;
+<if (!port.native)>
+<port.name>_SEND \<= no_<port.name>_SEND;
+no_<port.name>_ACK \<= <port.name>_ACK;
+<port.name>_COUNT \<= no_<port.name>_COUNT;
+no_<port.name>_RDY \<= <port.name>_RDY;
+<endif>
+>> 
+
+networkInputPortInstatiation(port) ::=<<
+ni_<port.name>_DATA \<= <port.name>_DATA;
+<if (!port.native)>
+ni_<port.name>_SEND \<= <port.name>_SEND;
+<port.name>_ACK \<= ni_<port.name>_ACK;
+ni_<port.name>_COUNT \<= <port.name>_COUNT;
+<port.name>_RDY \<= ni_<port.name>_RDY;
+<endif>
+>> 
+
+entity(network) ::= <<
+-- ----------------------------------------------------------------------------
+-- Entity Declaration
+-- ----------------------------------------------------------------------------
+entity <network.simpleName> is
+port(
+  <networkPorts(network)>
+  -- Clock(s) and Reset
+  CLK: in std_logic;
+  RESET: in std_logic);
+end entity <network.simpleName>;
+>>
+
+networkPorts(network) ::= <<
+-- XDF Input port(s)
+<network.inputs: {port | <printPorts(port=port, dir1="in",dir2="out")>}; separator="\n">
+-- XDF Output port(s)
+<network.outputs: {port | <printPorts(port=port, dir1="out",dir2="in")>}; separator="\n">
+>>
+
+printPorts(port, dir1, dir2) ::= <<
+<if(port.type.bool)>
+<port.name>_DATA : <dir1> std_logic;
+<else>
+<port.name>_DATA : <dir1> std_logic_vector(<port.type.size> - 1 downto 0);
+<endif>
+<if (!port.native)>
+<port.name>_SEND : <dir1> std_logic;
+<port.name>_ACK : <dir2> std_logic;
+<port.name>_COUNT : <dir1> std_logic_vector(15 downto 0);
+<port.name>_RDY : <dir2> std_logic;
+<endif>
+>>
+
+networkInformation(network) ::= <<
+-- ----------------------------------------------------------------------------
+-- EPFL - Orc2HDL, CAL to HDL code generator
+-- Top level model for <network.simpleName>
+-- Generated: <options.currentTime>
+-- ----------------------------------------------------------------------------
+
+-- ----------------------------------------------------------------------------
+--
+--  All actor instances:
+<network.instances: insancesInformation(); separator="\n">
+--
+-- ----------------------------------------------------------------------------
+>>
+
+insancesInformation(instance) ::=<<
+--    <instance.id> (<instance.actor.simpleName>) --\> CLK
+>>
+
+network(network, options) ::= <<
+<networkInformation(network)>
+
+library ieee, SystemBuilder;--, SystemActors;
+use ieee.std_logic_1164.all;
+
+<entity(network)>
+
+<architecture(network)>
+-- ----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
+>>

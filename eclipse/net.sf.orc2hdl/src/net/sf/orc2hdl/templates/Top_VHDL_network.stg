@@ -509,6 +509,7 @@ printNetPorts(port, dir1, dir2) ::= <<
 
 printNetworkInformation(network) ::=<<
 -- ----------------------------------------------------------------------------------
+-- EPFL - Orc2HDL, CAL to HDL code generator
 -- Top level model for <network.simpleName>
 -- Generated: <options.currentTime>
 -- ----------------------------------------------------------------------------------
