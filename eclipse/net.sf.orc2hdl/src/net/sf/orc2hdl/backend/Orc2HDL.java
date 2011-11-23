@@ -53,7 +53,6 @@ import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.EmptyThenElseNodeAdder;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.InstPhiTransformation;
-import net.sf.orcc.backends.transformations.Multi2MonoToken;
 import net.sf.orcc.backends.transformations.StoreOnceTransformation;
 import net.sf.orcc.backends.transformations.TypeResizer;
 import net.sf.orcc.backends.transformations.UnitImporter;
@@ -73,13 +72,13 @@ import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.DfFactory;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.ir.transformations.BlockCombine;
 import net.sf.orcc.ir.transformations.BuildCFG;
 import net.sf.orcc.ir.transformations.DeadCodeElimination;
 import net.sf.orcc.ir.transformations.DeadGlobalElimination;
 import net.sf.orcc.ir.transformations.SSATransformation;
 import net.sf.orcc.ir.transformations.TacTransformation;
-import net.sf.orcc.ir.util.ActorVisitor;
 import net.sf.orcc.ir.util.IrUtil;
 
 import org.eclipse.core.filesystem.EFS;
@@ -192,11 +191,11 @@ public class Orc2HDL extends AbstractBackend {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
 
-		ActorVisitor<?>[] transformations = {
+		DfSwitch<?>[] transformations = {
 		/* One clock cycle per Output */
 		new StoreOnceTransformation(),
 		/* Transform Repeat to double action and adding states in the fsm */
-		new Multi2MonoToken(),
+		//new TokensScalarization(),
 
 		new LocalArrayRemoval(),
 
@@ -244,7 +243,7 @@ public class Orc2HDL extends AbstractBackend {
 
 		new BlockCombine() };
 
-		for (ActorVisitor<?> transformation : transformations) {
+		for (DfSwitch<?> transformation : transformations) {
 			transformation.doSwitch(actor);
 			ResourceSet set = new ResourceSetImpl();
 			if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
@@ -280,9 +279,10 @@ public class Orc2HDL extends AbstractBackend {
 		// the "do file"
 
 		printSimDoFile(network);
-		// Copy the systemBuilder libraries
+		// Create the lib folder
+		new File(path + File.separator + "lib").mkdir();
+		// Copy the systemBuilder and the systemActor libs into lib
 		copySystemBuilderLib();
-
 		copySystemActorsLib();
 
 		// Print the xlim files
@@ -353,11 +353,11 @@ public class Orc2HDL extends AbstractBackend {
 		printTCL(instance);
 
 		Orc2HDLNetworkPrinter printer;
-		String file = network.getName();
+		String file = network.getSimpleName();
 
 		file += ".vhd";
 		printer = new Orc2HDLNetworkPrinter(
-				"net/sf/orc2hdl/templates/Top_VHDL_network.stg");
+				"net/sf/orc2hdl/templates/Network.stg");
 
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
@@ -385,7 +385,7 @@ public class Orc2HDL extends AbstractBackend {
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
-		file = network.getName() + ".do";
+		file = "sim_" + network.getSimpleName() + ".do";
 		String SimPath = path + File.separator + "sim";
 		new File(SimPath).mkdir();
 		printer.print(file, SimPath, network, "simulation");
@@ -422,7 +422,7 @@ public class Orc2HDL extends AbstractBackend {
 
 	private void copySystemBuilderLib() {
 		// Copy systemBuilder library to the output folder
-		String systemBuilderPath = path + File.separator + "systemBuilder";
+		String systemBuilderPath = path + File.separator + "lib" + File.separator + "systemBuilder";
 		new File(systemBuilderPath).mkdir();
 
 		// Get the current folder
@@ -459,7 +459,7 @@ public class Orc2HDL extends AbstractBackend {
 
 	private void copySystemActorsLib() {
 		// Copy systemBuilder library to the output folder
-		String systemBuilderPath = path + File.separator + "systemActors";
+		String systemBuilderPath = path + File.separator + "lib" + File.separator + "systemActors";
 		new File(systemBuilderPath).mkdir();
 		new File(systemBuilderPath + File.separator + "io").mkdir();
 		new File(systemBuilderPath + File.separator + "types").mkdir();

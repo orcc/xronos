@@ -11,6 +11,8 @@ begin
   generic map( count =\> 1 )
   port map( clocks =\> clocks, reset_in =\> RESET, resets =\> resets );
   
+  clocks(0) \<= CLK;
+  
   <actorsInstatiation(network)>
   <networkConnections(network)>
   <networkPortInstatiation(network)>
@@ -34,48 +36,35 @@ internalSignals(network) ::= <<
 
 -- Network Output Port Signals
 <network.outputs:{ port | <internalOutputSignal(port=port)>}; separator="\n">
-
 -- Actors Fanout and I/O Signals
 <network.instances:{ instance | <internalActorSignal(instance=instance)>}; separator="\n">
 >>
 
 internalInputSignal(port) ::= <<
-<ioSignal("ni",port,false)>
+<iSignal("ni",port,true,false)>
 
-<fanoutSignal("nif",port)>
+<iSignal("nif",port,true,"0")>
 >>
 
 internalOutputSignal(port) ::= <<
-<ioSignal("no",port,false)>
+<iSignal("no",port,true,false)>
+
 >>
 
 internalActorSignal(port) ::= <<
-<instance.actor.inputs: {port | <ioSignal("ai",port,true)>}; separator="\n">
-<instance.actor.outputs: {port | <fanoutSignal("aof",port)>}; separator="\n">
+<instance.actor.inputs: {port | <iSignal("ai",port,false,false)>}; separator="\n">
+<instance.actor.outputs: {port | <iSignal("aof",port,true,"0")>}; separator="\n">
 
-<instance.actor.outputs: {port | <ioSignal("ao",port,false)>}; separator="\n">
+<instance.actor.outputs: {port | <iSignal("ao",port,true,false)>}; separator="\n">
+
 >>
 
-ioSignal(type,port,dir) ::= <<
-<if(port.type.bool)>
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_DATA : std_logic;
-<else>
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_DATA : std_logic_vector(<port.type.size> - 1 downto 0);
-<endif>
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_SEND : std_logic;
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_ACK : std_logic;
+iSignal(type,port,dir,nbrFanout) ::= <<
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_DATA : std_logic<if(!port.type.bool)>_vector(<port.type.size> - 1 downto 0)<endif>;
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_SEND : std_logic<if(nbrFanout)>_vector(<nbrFanout> downto 0)<endif>;
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_ACK : std_logic<if(nbrFanout)>_vector(<nbrFanout> downto 0)<endif>;
 signal <type>_<if(instance)><instance.id>_<endif><port.name>_COUNT : std_logic_vector(15 downto 0);
-<if(!dir)>
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_RDY : std_logic;
-<endif>
->>
-
-<fanoutSignal(type,port) ::= <<
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_DATA : std_logic_vector(<port.type.size> - 1 downto 0);
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_SEND : std_logic_vector(0 downto 0);
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_ACK : std_logic_vector(0 downto 0);
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_COUNT : std_logic_vector(15 downto 0);
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_RDY : std_logic_vector(0 downto 0);
+<if(dir)>signal <type>_<if(instance)><instance.id>_<endif><port.name>_RDY : std_logic<if(nbrFanout)>_vector(<nbrFanout> downto 0)<endif>;<endif>
 >>
 
 architectureComponents(network) ::= <<
@@ -102,11 +91,7 @@ end component <instance.id>;
 >>
 
 componentPort(port,dir) ::= <<
-<if(port.type.bool)>
-<port.name>_DATA : <if(dir)>in<else>out<endif> std_logic;
-<else>
-<port.name>_DATA : <if(dir)>in<else>out<endif> std_logic_vector(<port.type.size> - 1 downto 0);
-<endif>
+<port.name>_DATA : <if(dir)>in<else>out<endif> std_logic<if(!port.type.bool)>_vector(<port.type.size> - 1 downto 0)<endif>;
 <port.name>_SEND : <if(dir)>in<else>out<endif> std_logic;
 <port.name>_ACK : <if(dir)>out<else>in<endif> std_logic;
 <port.name>_COUNT : <if(dir)>in<else>out<endif> std_logic_vector(15 downto 0);
@@ -138,10 +123,10 @@ port map(
   -- <instance.id> Input(s)
   <instance.actor.inputs:{port | <actorIOPorts(port=port,dir=true)>}; separator="\n">
   -- <instance.id> Ouput(s)
-  <instance.actor.inputs:{port | <actorIOPorts(port=port,dir=false)>}; separator="\n">
+  <instance.actor.outputs:{port | <actorIOPorts(port=port,dir=false)>}; separator="\n">
   -- Clock domain and reset
   CLK =\> clocks(0),
-  RESET	=\> resets(0)   
+  RESET =\> resets(0)   
 );
 >>
 
@@ -163,42 +148,74 @@ networkConnections(network) ::= <<
 -- --------------------------------------------------------------------------
 -- Fanout and Queue Connections
 -- --------------------------------------------------------------------------
-<network.connections : connect(); separator="\n">
+-- Network Input Ports Fanout
+<network.inputs : {port | <fanout(io="ni",ioFanout="nif",port=port)> }; separator="\n">
+
+-- Actors Ouput Ports Fanout
+<network.instances : actorFanout(); separator="\n">
+
+-- Queues 
+<network.connections : queues(); separator="\n">
 >>
 
-connect(connection) ::= <<
-<if(connection.source.port)>
-<if(connection.target.instance)>
-<fanout("ni","nif",connection.source,connection.sourcePort)>
-<endif>
-<else>
-<if(connection.target.instance)>
-<fanout("ao","aof",connection.source,connection.sourcePort)>
-<else>
-<fanout("ao","aof",connection.source,connection.sourcePort)>
-<endif>
-<endif>
+actorFanout(instance) ::= <<
+<instance.actor.outputs : {port | <fanout(io="ao",ioFanout="aof",port=port)> }; separator="\n">
 >>
 
-<fanout(io,ioFanout,source,sourcePort) ::= <<
-f_<io>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif> : entity SystemBuilder.Fanout( behavioral )
-generic map ( fanout => 1, width => 32 )
+fanout(io,ioFanout,port) ::= <<
+f_<io>_<if(instance)><instance.id>_<endif><port.name> : entity SystemBuilder.Fanout( behavioral )
+generic map (fanout => 1, width => <if(port.type.size)><port.type.size><else>1<endif>)
 port map (
-  <fSignals(io,source,sourcePort,"In")>
+  <fSignals(io,port,"In")>
   
-  <fSignals(ioFanout,source,sourcePort,"Out")>
+  <fSignals(ioFanout,port,"Out")>
   
   CLK => clocks(0),
   RESET => resets(0)
 );
 >>
 
-fSignals(type,source,sourcePort,dir) ::= <<
+fSignals(type,port,dir) ::= <<
+<dir>_DATA =\> <type>_<if(instance)><instance.id>_<endif><port.name>_DATA,
+<dir>_SEND =\> <type>_<if(instance)><instance.id>_<endif><port.name>_SEND,
+<dir>_ACK =\> <type>_<if(instance)><instance.id>_<endif><port.name>_ACK,
+<dir>_COUNT =\> <type>_<if(instance)><instance.id>_<endif><port.name>_COUNT,
+<dir>_RDY =\> <type>_<if(instance)><instance.id>_<endif><port.name>_RDY,
+>>
+
+queues(connection) ::= <<
+<if(connection.source.port)>
+<if(connection.target.instance)>
+<queue("ai","nif",connection.source,connection.sourcePort,connection.target,connection.targetPort)>
+<endif>
+<else>
+<if(connection.target.instance)>
+<queue("ai","aof",connection.source,connection.sourcePort,connection.target,connection.targetPort)>
+<else>
+<queue("no","aof",connection.source,connection.sourcePort,connection.target,connection.targetPort)>
+<endif>
+<endif>
+>>
+
+queue(io,ioFanout,source,sourcePort,target,targetPort) ::= <<
+q_<io>_<if(target.instance)><target.id>_<targetPort.name><else><target.name><endif> : entity SystemBuilder.Queue(behavioral)
+generic map (length =\> <if(connection.size)><connection.size><else>1<endif>, width =\> <if(target.instance)><if(targetPort.type.size)><targetPort.type.size><else>1<endif><else><if(target.type.size)><target.type.size><else>1<endif><endif>)
+port map (
+  <qSignals("Out",io,target,targetPort,false,false)>
+  <qSignals("In",ioFanout,source,sourcePort,true,"0")>
+  clk => clocks(0),
+  reset => resets(0) 
+);
+>>
+
+qSignals(dir,type,source,sourcePort,io,nbrFanout) ::= <<
 <dir>_DATA =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_DATA,
-<dir>_SEND =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_SEND,
-<dir>_ACK =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_ACK,
+<dir>_SEND =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_SEND<if(nbrFanout)>(<nbrFanout>)<endif>,
+<dir>_ACK =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_ACK<if(nbrFanout)>(<nbrFanout>)<endif>,
 <dir>_COUNT =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_COUNT,
-<dir>_RDY =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_RDY,
+<if(io)>
+<dir>_RDY =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_RDY<if(nbrFanout)>(<nbrFanout>)<endif>,
+<endif>
 >>
 
 
