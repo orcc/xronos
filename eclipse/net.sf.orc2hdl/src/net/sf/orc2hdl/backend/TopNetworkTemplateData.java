@@ -32,17 +32,11 @@ package net.sf.orc2hdl.backend;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import net.sf.orcc.OrccException;
-import net.sf.orcc.df.Attribute;
 import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.Port;
-import net.sf.orcc.df.Vertex;
-import net.sf.orcc.ir.ExprString;
-import net.sf.orcc.ir.Expression;
 
 /**
  * This class is giving the necessary information for the XLIM Network
@@ -54,39 +48,30 @@ import net.sf.orcc.ir.Expression;
  */
 public class TopNetworkTemplateData {
 
-	public static final String DEFAULT_CLOCK_DOMAIN = "CLK";
-
-	/**
-	 * Contains a Map which indicates the clock domain of each actor
-	 */
-
-	private Map<Instance, Integer> clockDomainMap;
-
 	/**
 	 * Contains a Map which indicates the number of the broadcasted actor
 	 */
 
-	private Map<Connection, Integer> countBroadcastConnectionsMap;
+	private Map<Connection, Integer> networkPortConnectionFanout;
 
 	/**
 	 * Contains a Map which indicates the number of a Network Port broadcasted
 	 */
 
-	private Map<Port, Integer> countNetwokPortBroadcastMap;
+	private Map<Port, Integer> networkPortFanout;
 
 	/**
-	 * Count the Broadcast of an Actor Output port
+	 * Count the fanout of the actor's output port
 	 * 
 	 * @param network
 	 */
-
-	public void computeActorOutputPortBroadcast(Network network) {
+	public void computeActorOutputPortFanout(Network network) {
 		for (Instance instance : network.getInstances()) {
 			Map<Port, List<Connection>> map = instance.getOutgoingPortMap();
-			for (List<Connection> ports : map.values()) {
+			for (List<Connection> values : map.values()) {
 				int cp = 0;
-				for (Connection connection : ports) {
-					countBroadcastConnectionsMap.put(connection, cp++);
+				for (Connection connection : values) {
+					networkPortConnectionFanout.put(connection, cp++);
 				}
 			}
 		}
@@ -94,39 +79,20 @@ public class TopNetworkTemplateData {
 	}
 
 	/**
-	 * Store Actors clock domains
+	 * Count the fanout of the network's input port
 	 * 
 	 * @param network
 	 */
-	private void computeActorsClockDomains(Network network) {
-		List<Instance> networkInstances = network.getInstances();
 
-		for (Instance instance : networkInstances) {
-			if (instance.isActor()) {
-
-			}
-		}
-	}
-
-	/**
-	 * Count the Broadcast of an Network Input Port
-	 * 
-	 * @param network
-	 */
-	public void computeNetworkInputPortBroadcast(Network network) {
-		List<Port> inputs = network.getInputs();
-		for (Vertex vertex : network.getVertices()) {
-			if (vertex.isPort()) {
-				Port port = (Port) vertex;
-				if (inputs.contains(port)) {
-					countNetwokPortBroadcastMap.put(port, vertex.getOutgoing()
-							.size());
+	public void computeNetworkInputPortFanout(Network network) {
+		for (Port port : network.getInputs()) {
+			int cp = 0;
+			for (Connection connection : network.getConnections()) {
+				if (connection.getSource() == port) {
+					networkPortFanout.put(port, cp + 1);
+					networkPortConnectionFanout.put(connection, cp);
+					cp++;
 				}
-				int cp = 0;
-				for (Connection connection : vertex.getOutgoing()) {
-					countBroadcastConnectionsMap.put(connection, cp++);
-				}
-
 			}
 		}
 	}
@@ -138,37 +104,25 @@ public class TopNetworkTemplateData {
 	 *            a network
 	 */
 	public void computeTemplateMaps(Network network) {
-		countNetwokPortBroadcastMap = new HashMap<Port, Integer>();
-		countBroadcastConnectionsMap = new HashMap<Connection, Integer>();
-		clockDomainMap = new HashMap<Instance, Integer>();
+		networkPortFanout = new HashMap<Port, Integer>();
+		networkPortConnectionFanout = new HashMap<Connection, Integer>();
 
-		computeNetworkInputPortBroadcast(network);
-		computeActorOutputPortBroadcast(network);
-
-		computeActorsClockDomains(network);
+		computeNetworkInputPortFanout(network);
+		computeActorOutputPortFanout(network);
 	}
 
 	/**
 	 * Return a Map which contains a connection and an associated number
 	 */
-	public Map<Connection, Integer> getCountBroadcastConnectionsMap() {
-		return countBroadcastConnectionsMap;
+	public Map<Connection, Integer> getNetworkPortConnectionFanout() {
+		return networkPortConnectionFanout;
 	}
 
 	/**
 	 * Return a Map which contains a connection and an associated number
 	 */
-	public Map<Port, Integer> getCountNetwokPortBroadcastMap() {
-		return countNetwokPortBroadcastMap;
+	public Map<Port, Integer> getNetworkPortFanout() {
+		return networkPortFanout;
 	}
 
-	private String getPartNameAttribute(Instance instance) throws OrccException {
-		String clockDomain = DEFAULT_CLOCK_DOMAIN;
-		Attribute attr = instance.getAttribute("clockDomain");
-		if (attr != null) {
-			Expression expr = (Expression) attr.getValue();
-			clockDomain = ((ExprString) expr).getValue();
-		}
-		return clockDomain;
-	}
 }

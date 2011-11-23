@@ -43,7 +43,7 @@ internalSignals(network) ::= <<
 internalInputSignal(port) ::= <<
 <iSignal("ni",port,true,false)>
 
-<iSignal("nif",port,true,"0")>
+<iSignal("nif",port,true,true)>
 >>
 
 internalOutputSignal(port) ::= <<
@@ -53,7 +53,7 @@ internalOutputSignal(port) ::= <<
 
 internalActorSignal(port) ::= <<
 <instance.actor.inputs: {port | <iSignal("ai",port,false,false)>}; separator="\n">
-<instance.actor.outputs: {port | <iSignal("aof",port,true,"0")>}; separator="\n">
+<instance.actor.outputs: {port | <iSignal("aof",port,true,true)>}; separator="\n">
 
 <instance.actor.outputs: {port | <iSignal("ao",port,true,false)>}; separator="\n">
 
@@ -61,10 +61,10 @@ internalActorSignal(port) ::= <<
 
 iSignal(type,port,dir,nbrFanout) ::= <<
 signal <type>_<if(instance)><instance.id>_<endif><port.name>_DATA : std_logic<if(!port.type.bool)>_vector(<port.type.size> - 1 downto 0)<endif>;
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_SEND : std_logic<if(nbrFanout)>_vector(<nbrFanout> downto 0)<endif>;
-signal <type>_<if(instance)><instance.id>_<endif><port.name>_ACK : std_logic<if(nbrFanout)>_vector(<nbrFanout> downto 0)<endif>;
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_SEND : std_logic<if(nbrFanout)>_vector(<if(instance)><length(instance.outgoingPortMap.(port))><else><network.templateData.networkPortFanout.(port)><endif> - 1 downto 0)<endif>;
+signal <type>_<if(instance)><instance.id>_<endif><port.name>_ACK : std_logic<if(nbrFanout)>_vector(<if(instance)><length(instance.outgoingPortMap.(port))><else><network.templateData.networkPortFanout.(port)><endif> - 1 downto 0)<endif>;
 signal <type>_<if(instance)><instance.id>_<endif><port.name>_COUNT : std_logic_vector(15 downto 0);
-<if(dir)>signal <type>_<if(instance)><instance.id>_<endif><port.name>_RDY : std_logic<if(nbrFanout)>_vector(<nbrFanout> downto 0)<endif>;<endif>
+<if(dir)>signal <type>_<if(instance)><instance.id>_<endif><port.name>_RDY : std_logic<if(nbrFanout)>_vector(<if(instance)><length(instance.outgoingPortMap.(port))><else><network.templateData.networkPortFanout.(port)><endif> - 1 downto 0)<endif>;<endif>
 >>
 
 architectureComponents(network) ::= <<
@@ -164,7 +164,7 @@ actorFanout(instance) ::= <<
 
 fanout(io,ioFanout,port) ::= <<
 f_<io>_<if(instance)><instance.id>_<endif><port.name> : entity SystemBuilder.Fanout( behavioral )
-generic map (fanout => 1, width => <if(port.type.size)><port.type.size><else>1<endif>)
+generic map (fanout => <if(instance)><length(instance.outgoingPortMap.(port))><else><network.templateData.networkPortFanout.(port)><endif>, width => <if(port.type.size)><port.type.size><else>1<endif>)
 port map (
   <fSignals(io,port,"In")>
   
@@ -202,7 +202,7 @@ q_<io>_<if(target.instance)><target.id>_<targetPort.name><else><target.name><end
 generic map (length =\> <if(connection.size)><connection.size><else>1<endif>, width =\> <if(target.instance)><if(targetPort.type.size)><targetPort.type.size><else>1<endif><else><if(target.type.size)><target.type.size><else>1<endif><endif>)
 port map (
   <qSignals("Out",io,target,targetPort,false,false)>
-  <qSignals("In",ioFanout,source,sourcePort,true,"0")>
+  <qSignals("In",ioFanout,source,sourcePort,true,true)>
   clk => clocks(0),
   reset => resets(0) 
 );
@@ -210,11 +210,11 @@ port map (
 
 qSignals(dir,type,source,sourcePort,io,nbrFanout) ::= <<
 <dir>_DATA =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_DATA,
-<dir>_SEND =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_SEND<if(nbrFanout)>(<nbrFanout>)<endif>,
-<dir>_ACK =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_ACK<if(nbrFanout)>(<nbrFanout>)<endif>,
+<dir>_SEND =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_SEND<if(nbrFanout)>(<network.templateData.networkPortConnectionFanout.(connection)>)<endif>,
+<dir>_ACK =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_ACK<if(nbrFanout)>(<network.templateData.networkPortConnectionFanout.(connection)>)<endif>,
 <dir>_COUNT =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_COUNT,
 <if(io)>
-<dir>_RDY =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_RDY<if(nbrFanout)>(<nbrFanout>)<endif>,
+<dir>_RDY =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_RDY<if(nbrFanout)>(<network.templateData.networkPortConnectionFanout.(connection)>)<endif>,
 <endif>
 >>
 
