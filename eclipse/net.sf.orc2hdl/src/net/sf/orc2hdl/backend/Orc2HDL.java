@@ -53,6 +53,7 @@ import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.EmptyThenElseNodeAdder;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.InstPhiTransformation;
+import net.sf.orcc.backends.transformations.Multi2MonoToken;
 import net.sf.orcc.backends.transformations.StoreOnceTransformation;
 import net.sf.orcc.backends.transformations.TypeResizer;
 import net.sf.orcc.backends.transformations.UnitImporter;
@@ -195,7 +196,7 @@ public class Orc2HDL extends AbstractBackend {
 		/* One clock cycle per Output */
 		new StoreOnceTransformation(),
 		/* Transform Repeat to double action and adding states in the fsm */
-		//new TokensScalarization(),
+		new Multi2MonoToken(),
 
 		new LocalArrayRemoval(),
 
