@@ -8,10 +8,10 @@ architecture rtl of <network.simpleName> is
   <architectureComponents(network)>
 begin
   rcon: entity SystemBuilder.resetController( behavioral )
-  generic map( count =\> 1 )
+  generic map( count =\> <length(network.templateData.clockDomainsIndex)> )
   port map( clocks =\> clocks, reset_in =\> RESET, resets =\> resets );
   
-  clocks(0) \<= CLK;
+  <network.templateData.clockDomainsIndex.keys: {key | clocks(<network.templateData.clockDomainsIndex.(key)>) \<= <key>;}; separator="\n">
   
   <actorsInstatiation(network)>
   <networkConnections(network)>
@@ -85,7 +85,7 @@ port(
   -- <instance.id> Ouput(s)
   <instance.actor.outputs:{port | <componentPort(port=port,dir=false)>}; separator="\n">
   CLK: in std_logic;
-  RESET: in std_logic );
+  RESET: in std_logic);
 end component <instance.id>;
 <endif>
 >>
@@ -125,8 +125,8 @@ port map(
   -- <instance.id> Ouput(s)
   <instance.actor.outputs:{port | <actorIOPorts(port=port,dir=false)>}; separator="\n">
   -- Clock domain and reset
-  CLK =\> clocks(0),
-  RESET =\> resets(0)   
+  CLK =\> clocks(<getClkIndexInstance(instance)>),
+  RESET =\> resets(<getClkIndexInstance(instance)>)   
 );
 >>
 
@@ -142,6 +142,14 @@ actorIOPorts(port,dir) ::= <<
 <if(!dir)>
 <port.name>_RDY =\> <if(dir)>ai<else>ao<endif>_<instance.id>_<port.name>_RDY,
 <endif>
+>>
+
+getClkIndexInstance(instance) ::= <<
+<network.templateData.clockDomainsIndex.(network.templateData.instanceClockDomain.(instance))>
+>>
+
+getClkIndexPort(port) ::= <<
+<network.templateData.clockDomainsIndex.(network.templateData.portClockDomain.(port))>
 >>
 
 networkConnections(network) ::= <<
@@ -170,8 +178,8 @@ port map (
   
   <fSignals(ioFanout,port,"Out")>
   
-  CLK => clocks(0),
-  RESET => resets(0)
+  CLK => clocks(<if(instance)><getClkIndexInstance(instance)><else><getClkIndexPort(port)><endif>),
+  RESET => resets(<if(instance)><getClkIndexInstance(instance)><else><getClkIndexPort(port)><endif>)
 );
 >>
 
@@ -198,7 +206,7 @@ queues(connection) ::= <<
 >>
 
 queue(io,ioFanout,source,sourcePort,target,targetPort) ::= <<
-q_<io>_<if(target.instance)><target.id>_<targetPort.name><else><target.name><endif> : entity SystemBuilder.Queue(behavioral)
+q_<io>_<if(target.instance)><target.id>_<targetPort.name><else><target.name><endif> : entity SystemBuilder.Queue<if(network.templateData.connectionsClockDomain.(connection))>_Async<endif>(behavioral)
 generic map (length =\> <if(connection.size)><connection.size><else>1<endif>, width =\> <if(target.instance)><if(targetPort.type.size)><targetPort.type.size><else>1<endif><else><if(target.type.size)><target.type.size><else>1<endif><endif>)
 port map (
   <qSignals("Out",io,target,targetPort,false,false)>
@@ -258,7 +266,7 @@ entity <network.simpleName> is
 port(
   <networkPorts(network)>
   -- Clock(s) and Reset
-  CLK: in std_logic;
+  <network.templateData.clockDomainsIndex.keys: {key | <key> <map.(key)>: in std_logic;}; separator="\n">
   RESET: in std_logic);
 end entity <network.simpleName>;
 >>
@@ -292,15 +300,25 @@ networkInformation(network) ::= <<
 -- ----------------------------------------------------------------------------
 
 -- ----------------------------------------------------------------------------
+-- Clock Informations on the Network "<network.simpleName>"
 --
---  All actor instances:
+--  Network input port clock domain:
+<network.inputs: ioNetworkInformation(); separator="\n"> 
+--  Network output port clock domain:
+<network.outputs: ioNetworkInformation(); separator="\n">
+--
+--  All actor instances clock domains:
 <network.instances: insancesInformation(); separator="\n">
 --
 -- ----------------------------------------------------------------------------
 >>
 
+ioNetworkInformation(port) ::=<<
+--    <port.name> --\> <network.templateData.portClockDomain.(port)>
+>>
+
 insancesInformation(instance) ::=<<
---    <instance.id> (<instance.actor.simpleName>) --\> CLK
+--    <instance.id> (<instance.actor.simpleName>) --\> <network.templateData.instanceClockDomain.(instance)>
 >>
 
 network(network, options) ::= <<

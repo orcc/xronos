@@ -29,6 +29,7 @@
 
 package net.sf.orc2hdl.backend;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,17 +49,35 @@ import net.sf.orcc.df.Port;
  */
 public class TopNetworkTemplateData {
 
+	public static final String DEFAULT_CLOCK_DOMAIN = "CLK";
+
+	/**
+	 * Map which contains the Clock Domain of a port
+	 */
+	private Map<Port, String> portClockDomain;
+
+	/**
+	 * Map which contains the Clock Domain of an instance
+	 */
+	private Map<Instance, String> instanceClockDomain;
+
 	/**
 	 * Contains a Map which indicates the number of the broadcasted actor
 	 */
-
 	private Map<Connection, Integer> networkPortConnectionFanout;
 
 	/**
 	 * Contains a Map which indicates the number of a Network Port broadcasted
 	 */
-
 	private Map<Port, Integer> networkPortFanout;
+
+	/**
+	 * Contains a Map which indicates the index of the given clock
+	 */
+
+	private Map<String, Integer> clockDomainsIndex;
+
+	private Map<Connection, List<Integer>> connectionsClockDomain;
 
 	/**
 	 * Count the fanout of the actor's output port
@@ -76,6 +95,75 @@ public class TopNetworkTemplateData {
 			}
 		}
 
+	}
+
+	/**
+	 * This method fills up the portClockDomain and instanceClockDomain Map with
+	 * clock domains given by the Mapping configuration tab. By default
+	 * Input/Output ports of the network are being given the default clock
+	 * domain CLK.
+	 * 
+	 * @param network
+	 */
+	private void computeNetworkClockDomains(Network network,
+			Map<String, String> clockDomains) {
+
+		// Fill the the portClockDomain with "CLK" for the I/O of the network
+		for (Port port : network.getInputs()) {
+			portClockDomain.put(port, DEFAULT_CLOCK_DOMAIN);
+		}
+
+		for (Port port : network.getOutputs()) {
+			portClockDomain.put(port, DEFAULT_CLOCK_DOMAIN);
+		}
+
+		// For each instance on the network give the clock domain specified by
+		// the mapping configuration tab or if not give the default clock domain
+		int clkIndex = 0;
+		clockDomainsIndex.put(DEFAULT_CLOCK_DOMAIN, clkIndex++);
+
+		for (String string : clockDomains.values()) {
+			clockDomainsIndex.put(string, clkIndex++);
+		}
+
+		for (Instance instance : network.getInstances()) {
+			if (clockDomains.keySet().contains("/" + instance.getId())) { 
+				if(!clockDomains.get("/" + instance.getId()).isEmpty()){
+					
+				
+				instanceClockDomain.put(instance,
+						clockDomains.get("/" + instance.getId()));
+				}else{
+					instanceClockDomain.put(instance, DEFAULT_CLOCK_DOMAIN);
+				}
+			}
+		}
+		//TODO: Fix index problem
+		if (clockDomainsIndex.size() > 1){
+			connectionsClockDomain = new HashMap<Connection, List<Integer>>();
+			for(Connection connection: network.getConnections()){
+				if (connection.getSource().isPort()){
+					List<Integer> sourceTarget = new ArrayList<Integer>();
+					sourceTarget.add(0, clockDomainsIndex.get(portClockDomain.get(connection.getSource())));
+					sourceTarget.add(1, clockDomainsIndex.get(portClockDomain.get(connection.getTargetPort())));
+					connectionsClockDomain.put(connection, sourceTarget);
+				}else{
+					if (connection.getTarget().isPort()){
+						List<Integer> sourceTarget = new ArrayList<Integer>();
+						sourceTarget.add(0, clockDomainsIndex.get(portClockDomain.get(connection.getSourcePort())));
+						sourceTarget.add(1, clockDomainsIndex.get(portClockDomain.get(connection.getTarget())));
+						connectionsClockDomain.put(connection, sourceTarget);
+					}else{
+						List<Integer> sourceTarget = new ArrayList<Integer>();
+						sourceTarget.add(0, clockDomainsIndex.get(portClockDomain.get(connection.getSourcePort())));
+						sourceTarget.add(1, clockDomainsIndex.get(portClockDomain.get(connection.getTargetPort())));
+						connectionsClockDomain.put(connection, sourceTarget);
+					}
+						
+				}
+			}
+		}
+		
 	}
 
 	/**
@@ -103,16 +191,35 @@ public class TopNetworkTemplateData {
 	 * @param network
 	 *            a network
 	 */
-	public void computeTemplateMaps(Network network) {
+	public void computeTemplateMaps(Network network,
+			Map<String, String> clockDomains) {
 		networkPortFanout = new HashMap<Port, Integer>();
 		networkPortConnectionFanout = new HashMap<Connection, Integer>();
-
+		portClockDomain = new HashMap<Port, String>();
+		instanceClockDomain = new HashMap<Instance, String>();
+		clockDomainsIndex = new HashMap<String, Integer>();
 		computeNetworkInputPortFanout(network);
 		computeActorOutputPortFanout(network);
+		computeNetworkClockDomains(network, clockDomains);
+	}
+
+	public Map<String, Integer> getClockDomainsIndex() {
+		return clockDomainsIndex;
+	}
+
+	/**
+	 * Return a Map which contains the Clock Domain of an Instance
+	 * 
+	 * @return instanceClockDomain
+	 */
+	public Map<Instance, String> getInstanceClockDomain() {
+		return instanceClockDomain;
 	}
 
 	/**
 	 * Return a Map which contains a connection and an associated number
+	 * 
+	 * @return networkPortConnectionFanout
 	 */
 	public Map<Connection, Integer> getNetworkPortConnectionFanout() {
 		return networkPortConnectionFanout;
@@ -120,9 +227,29 @@ public class TopNetworkTemplateData {
 
 	/**
 	 * Return a Map which contains a connection and an associated number
+	 * 
+	 * @return networkPortFanout
 	 */
 	public Map<Port, Integer> getNetworkPortFanout() {
 		return networkPortFanout;
 	}
 
+	/**
+	 * Return a Map which contains the Clock Domain of a port
+	 * 
+	 * @return portClockDomain
+	 */
+	public Map<Port, String> getPortClockDomain() {
+		return portClockDomain;
+	}
+
+	/**
+	 * Return a Map which contains the Connection and the clock index of the I/O
+	 * 
+	 * @return portClockDomain
+	 */
+
+	public Map<Connection, List<Integer>> getConnectionsClockDomain() {
+		return connectionsClockDomain;
+	}
 }

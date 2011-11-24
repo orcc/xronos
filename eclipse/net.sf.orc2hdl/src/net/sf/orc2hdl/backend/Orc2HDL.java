@@ -30,6 +30,7 @@
 package net.sf.orc2hdl.backend;
 
 import static net.sf.orcc.OrccLaunchConstants.DEBUG_MODE;
+import static net.sf.orcc.OrccLaunchConstants.MAPPING;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,8 +41,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import net.sf.openforge.app.Forge;
 import net.sf.orcc.OrccException;
@@ -113,9 +116,107 @@ public class Orc2HDL extends AbstractBackend {
 
 	private HashSet<String> entitySet;
 
+	private Map<String, String> clkDomains;
+
+	private void computeEntityList(Instance instance) {
+		if (instance.isActor()) {
+			String name = instance.getId();
+			if (!entitySet.contains(name)) {
+				entitySet.add(name);
+				entities.add(name);
+			}
+		} else if (instance.isNetwork()) {
+			String name = instance.getId();
+			Network network = instance.getNetwork();
+			if (!entitySet.contains(name)) {
+				for (Instance subInstance : network.getInstances()) {
+					computeEntityList(subInstance);
+				}
+
+				entitySet.add(name);
+			}
+		}
+	}
+
+	private void copySystemActorsLib() {
+		// Copy systemBuilder library to the output folder
+		String systemBuilderPath = path + File.separator + "lib"
+				+ File.separator + "systemActors";
+		new File(systemBuilderPath).mkdir();
+		new File(systemBuilderPath + File.separator + "io").mkdir();
+		new File(systemBuilderPath + File.separator + "types").mkdir();
+		// Get the current folder
+		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
+				"/HdlLibraries/systemActors");
+
+		try {
+			List<String> systemActorsFileList = Arrays.asList(
+					"types/sa_types.vhd", "io/Source.vhd");
+			String hdlLibrariesPath = new File(FileLocator.resolve(
+					hdlLibrariesURL).getFile()).getAbsolutePath();
+			IFileSystem fileSystem = EFS.getLocalFileSystem();
+
+			for (String files : systemActorsFileList) {
+				String path = hdlLibrariesPath + File.separator + files;
+				URI uri = new File(path).toURI();
+				IFileStore pluginDir = fileSystem.getStore(uri);
+
+				path = systemBuilderPath + File.separator + files;
+				uri = new File(path).toURI();
+				IFileStore copyDir = fileSystem.getStore(uri);
+
+				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	private void copySystemBuilderLib() {
+		// Copy systemBuilder library to the output folder
+		String systemBuilderPath = path + File.separator + "lib"
+				+ File.separator + "systemBuilder";
+		new File(systemBuilderPath).mkdir();
+
+		// Get the current folder
+		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
+				"/HdlLibraries/systemBuilder/vhdl");
+
+		try {
+			List<String> systemBuilderFifo = Arrays.asList("sbtypes.vhdl",
+					"sbfifo_behavioral.vhdl", "sbfifo.vhdl");
+			String hdlLibrariesPath = new File(FileLocator.resolve(
+					hdlLibrariesURL).getFile()).getAbsolutePath();
+			IFileSystem fileSystem = EFS.getLocalFileSystem();
+
+			for (String files : systemBuilderFifo) {
+
+				String path = hdlLibrariesPath + File.separator + files;
+				URI uri = new File(path).toURI();
+				IFileStore pluginDir = fileSystem.getStore(uri);
+
+				path = systemBuilderPath + File.separator + files;
+				uri = new File(path).toURI();
+				IFileStore copyDir = fileSystem.getStore(uri);
+
+				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+
+	}
+
 	@Override
 	protected void doInitializeOptions() {
-
+		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
 		String fpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "Virtex 2");
 
 		if (fpgaType.equals("Spartan 3")) {
@@ -192,57 +293,19 @@ public class Orc2HDL extends AbstractBackend {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
 
-		DfSwitch<?>[] transformations = {
-		/* One clock cycle per Output */
-		new StoreOnceTransformation(),
-		/* Transform Repeat to double action and adding states in the fsm */
-		new Multi2MonoToken(),
-
-		new LocalArrayRemoval(),
-
-		new DivisionSubstitution(),
-
-		new UnitImporter(),
-
-		new SSATransformation(),
-
-		new TypeResizer(false, true, true),
-
-		new GlobalArrayInitializer(true),
-
-		new InstTernaryAdder(),
-
-		new Inliner(true, true),
-
-		new UnaryListRemoval(),
-
-		new CustomPeekAdder(),
-
-		new DeadGlobalElimination(),
-
-		new DeadCodeElimination(),
-
-		new XlimDeadVariableRemoval(),
-
-		new ListFlattener(),
-
-		new TacTransformation(true),
-
-		/* new CopyPropagator(), */
-
-		new BuildCFG(),
-
-		new InstPhiTransformation(),
-
-		new LiteralIntegersAdder(true),
-
-		new CastAdder(true, false),
-
-		new XlimVariableRenamer(),
-
-		new EmptyThenElseNodeAdder(),
-
-		new BlockCombine() };
+		DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
+				new Multi2MonoToken(), new LocalArrayRemoval(),
+				new DivisionSubstitution(), new UnitImporter(),
+				new SSATransformation(), new TypeResizer(false, true, true),
+				new GlobalArrayInitializer(true), new InstTernaryAdder(),
+				new Inliner(true, true), new UnaryListRemoval(),
+				new CustomPeekAdder(), new DeadGlobalElimination(),
+				new DeadCodeElimination(), new XlimDeadVariableRemoval(),
+				new ListFlattener(), new TacTransformation(true),
+				new BuildCFG(), new InstPhiTransformation(),
+				new LiteralIntegersAdder(true), new CastAdder(true, false),
+				new XlimVariableRenamer(), new EmptyThenElseNodeAdder(),
+				new BlockCombine() };
 
 		for (DfSwitch<?> transformation : transformations) {
 			transformation.doSwitch(actor);
@@ -259,7 +322,6 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected void doVtlCodeGeneration(List<IFile> files) throws OrccException {
 		// do not generate an XLIM VTL
-
 	}
 
 	@Override
@@ -272,7 +334,7 @@ public class Orc2HDL extends AbstractBackend {
 
 		TopNetworkTemplateData data = new TopNetworkTemplateData();
 
-		data.computeTemplateMaps(network);
+		data.computeTemplateMaps(network, clkDomains);
 		network.setTemplateData(data);
 
 		printNetwork(network);
@@ -290,48 +352,60 @@ public class Orc2HDL extends AbstractBackend {
 		printInstances(network);
 	}
 
-	private void printTestbench(StandardPrinter printer, Instance instance) {
-		printer.print(instance.getId() + "_tb.vhd", path + File.separator
-				+ "Testbench", instance);
+	@Override
+	protected boolean printInstance(Instance instance) {
+		/*
+		 * InstancePrinter printer; printer = new InstancePrinter(
+		 * "net/sf/orc2hdl/templates/XLIM_hw_actor.stg", !debugMode);
+		 */
 
-		if (instance.isNetwork()) {
-			Network network = instance.getNetwork();
-			for (Instance subInstance : network.getInstances()) {
-				printTestbench(printer, subInstance);
-			}
-		}
-	}
+		StandardPrinter printer = new StandardPrinter(
+				"net/sf/orcc/backends/xlim/hardware/XLIM_hw_actor.stg",
+				!debugMode);
 
-	private void printTCL(Instance instance) {
-		CustomPrinter printer = new CustomPrinter(
-				"net/sf/orcc/backends/xlim/hardware/Verilog_TCLLists.stg");
+		printer.getOptions().put("fpgaType", fpgaName);
 
-		entities = new ArrayList<String>();
-		entitySet = new HashSet<String>();
-		computeEntityList(instance);
+		printer.setExpressionPrinter(new XlimExprPrinter());
+		printer.setTypePrinter(new XlimTypePrinter());
 
-		printer.print("TCLLists.tcl", path, "TCLLists", "name", instance
-				.getNetwork().getName(), "entities", entities);
-	}
+		String xlimPath = path + File.separator + "xlim";
+		new File(xlimPath).mkdir();
 
-	private void computeEntityList(Instance instance) {
-		if (instance.isActor()) {
-			String name = instance.getId();
-			if (!entitySet.contains(name)) {
-				entitySet.add(name);
-				entities.add(name);
-			}
-		} else if (instance.isNetwork()) {
-			String name = instance.getId();
-			Network network = instance.getNetwork();
-			if (!entitySet.contains(name)) {
-				for (Instance subInstance : network.getInstances()) {
-					computeEntityList(subInstance);
+		String SrcPath = path + File.separator + "src";
+		Boolean printOK = true;
+		// Test if instance is Native
+		if (!instance.getActor().isNative()) {
+			printOK = printer.print(instance.getId() + ".xlim", xlimPath,
+					instance);
+			if (!printOK) {
+
+				try {
+					String xlim = null;
+					String id = instance.getId();
+					File file = new File(xlimPath + File.separator + id
+							+ ".xlim");
+					if (file.exists()) {
+						xlim = file.getCanonicalPath();
+					}
+					List<String> flags = new ArrayList<String>(forgeFlags);
+					flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
+					long t0 = System.currentTimeMillis();
+					Boolean okForge = Forge.runForge((String[]) flags
+							.toArray(new String[0]));
+					long t1 = System.currentTimeMillis();
+					if (okForge) {
+						write("Compiling instance: " + id + ": Compiled in: "
+								+ ((float) (t1 - t0) / (float) 1000) + "s\n");
+					} else {
+						write("Compiling instance: " + id
+								+ ": OpenForge failed to compile" + "\n");
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-
-				entitySet.add(name);
 			}
 		}
+		return printOK;
 	}
 
 	private void printNetwork(Network network) {
@@ -421,133 +495,27 @@ public class Orc2HDL extends AbstractBackend {
 
 	}
 
-	private void copySystemBuilderLib() {
-		// Copy systemBuilder library to the output folder
-		String systemBuilderPath = path + File.separator + "lib" + File.separator + "systemBuilder";
-		new File(systemBuilderPath).mkdir();
+	private void printTCL(Instance instance) {
+		CustomPrinter printer = new CustomPrinter(
+				"net/sf/orcc/backends/xlim/hardware/Verilog_TCLLists.stg");
 
-		// Get the current folder
-		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
-				"/HdlLibraries/systemBuilder/vhdl");
+		entities = new ArrayList<String>();
+		entitySet = new HashSet<String>();
+		computeEntityList(instance);
 
-		try {
-			List<String> systemBuilderFifo = Arrays.asList("sbtypes.vhdl",
-					"sbfifo_behavioral.vhdl", "sbfifo.vhdl");
-			String hdlLibrariesPath = new File(FileLocator.resolve(
-					hdlLibrariesURL).getFile()).getAbsolutePath();
-			IFileSystem fileSystem = EFS.getLocalFileSystem();
-
-			for (String files : systemBuilderFifo) {
-
-				String path = hdlLibrariesPath + File.separator + files;
-				URI uri = new File(path).toURI();
-				IFileStore pluginDir = fileSystem.getStore(uri);
-
-				path = systemBuilderPath + File.separator + files;
-				uri = new File(path).toURI();
-				IFileStore copyDir = fileSystem.getStore(uri);
-
-				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-
+		printer.print("TCLLists.tcl", path, "TCLLists", "name", instance
+				.getNetwork().getName(), "entities", entities);
 	}
 
-	private void copySystemActorsLib() {
-		// Copy systemBuilder library to the output folder
-		String systemBuilderPath = path + File.separator + "lib" + File.separator + "systemActors";
-		new File(systemBuilderPath).mkdir();
-		new File(systemBuilderPath + File.separator + "io").mkdir();
-		new File(systemBuilderPath + File.separator + "types").mkdir();
-		// Get the current folder
-		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
-				"/HdlLibraries/systemActors");
+	private void printTestbench(StandardPrinter printer, Instance instance) {
+		printer.print(instance.getId() + "_tb.vhd", path + File.separator
+				+ "Testbench", instance);
 
-		try {
-			List<String> systemActorsFileList = Arrays.asList(
-					"types/sa_types.vhd", "io/Source.vhd");
-			String hdlLibrariesPath = new File(FileLocator.resolve(
-					hdlLibrariesURL).getFile()).getAbsolutePath();
-			IFileSystem fileSystem = EFS.getLocalFileSystem();
-
-			for (String files : systemActorsFileList) {
-				String path = hdlLibrariesPath + File.separator + files;
-				URI uri = new File(path).toURI();
-				IFileStore pluginDir = fileSystem.getStore(uri);
-
-				path = systemBuilderPath + File.separator + files;
-				uri = new File(path).toURI();
-				IFileStore copyDir = fileSystem.getStore(uri);
-
-				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	@Override
-	protected boolean printInstance(Instance instance) {
-		/*
-		 * InstancePrinter printer; printer = new InstancePrinter(
-		 * "net/sf/orc2hdl/templates/XLIM_hw_actor.stg", !debugMode);
-		 */
-
-		StandardPrinter printer = new StandardPrinter(
-				"net/sf/orcc/backends/xlim/hardware/XLIM_hw_actor.stg",
-				!debugMode);
-
-		printer.getOptions().put("fpgaType", fpgaName);
-
-		printer.setExpressionPrinter(new XlimExprPrinter());
-		printer.setTypePrinter(new XlimTypePrinter());
-
-		String xlimPath = path + File.separator + "xlim";
-		new File(xlimPath).mkdir();
-
-		String SrcPath = path + File.separator + "src";
-		Boolean printOK = true;
-		// Test if instance is Native
-		if (!instance.getActor().isNative()) {
-			printOK = printer.print(instance.getId() + ".xlim", xlimPath,
-					instance);
-			if (!printOK) {
-
-				try {
-					String xlim = null;
-					String id = instance.getId();
-					File file = new File(xlimPath + File.separator + id
-							+ ".xlim");
-					if (file.exists()) {
-						xlim = file.getCanonicalPath();
-					}
-					List<String> flags = new ArrayList<String>(forgeFlags);
-					flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
-					long t0 = System.currentTimeMillis();
-					Boolean okForge = Forge.runForge((String[]) flags
-							.toArray(new String[0]));
-					long t1 = System.currentTimeMillis();
-					if (okForge) {
-						write("Compiling instance: " + id + ": Compiled in: "
-								+ ((float) (t1 - t0) / (float) 1000) + "s\n");
-					} else {
-						write("Compiling instance: " + id
-								+ ": OpenForge failed to compile" + "\n");
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+		if (instance.isNetwork()) {
+			Network network = instance.getNetwork();
+			for (Instance subInstance : network.getInstances()) {
+				printTestbench(printer, subInstance);
 			}
 		}
-		return printOK;
 	}
 }
