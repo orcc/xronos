@@ -123,7 +123,7 @@ public class TopNetworkTemplateData {
 		clockDomainsIndex.put(DEFAULT_CLOCK_DOMAIN, clkIndex++);
 
 		for (String string : clockDomains.values()) {
-			if (!string.isEmpty()) {
+			if (!string.isEmpty() && !clockDomainsIndex.containsKey(string)) {
 				clockDomainsIndex.put(string, clkIndex++);
 			}
 		}
