@@ -25,7 +25,7 @@ signalInstantiation(network) ::= <<
 -- --------------------------------------------------------------------------
 
 -- Clock(s) and Reset signal
-signal clocks, resets: std_logic_vector(0 downto 0);
+signal clocks, resets: std_logic_vector(<length(network.templateData.clockDomainsIndex)> - 1 downto 0);
 
 <internalSignals(network)>
 >>
@@ -211,9 +211,20 @@ generic map (length =\> <if(connection.size)><connection.size><else>1<endif>, wi
 port map (
   <qSignals("Out",io,target,targetPort,false,false)>
   <qSignals("In",ioFanout,source,sourcePort,true,true)>
-  clk => clocks(0),
-  reset => resets(0) 
+  <queueClocks(connection)>
 );
+>>
+
+queueClocks(connection) ::= <<
+<if(network.templateData.connectionsClockDomain.(connection))>
+clk_i =\>clocks(<first(network.templateData.connectionsClockDomain.(connection))>),
+reset_i =\>resets(<first(network.templateData.connectionsClockDomain.(connection))>),
+clk_o =\>clocks(<rest(network.templateData.connectionsClockDomain.(connection))>),
+reset_o =\>resets(<rest(network.templateData.connectionsClockDomain.(connection))>)
+<else>
+clk => clocks(0),
+reset => resets(0)
+<endif>
 >>
 
 qSignals(dir,type,source,sourcePort,io,nbrFanout) ::= <<

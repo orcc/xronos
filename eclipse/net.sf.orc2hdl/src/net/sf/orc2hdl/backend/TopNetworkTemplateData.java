@@ -123,47 +123,71 @@ public class TopNetworkTemplateData {
 		clockDomainsIndex.put(DEFAULT_CLOCK_DOMAIN, clkIndex++);
 
 		for (String string : clockDomains.values()) {
-			clockDomainsIndex.put(string, clkIndex++);
+			if (!string.isEmpty()) {
+				clockDomainsIndex.put(string, clkIndex++);
+			}
 		}
 
 		for (Instance instance : network.getInstances()) {
-			if (clockDomains.keySet().contains("/" + instance.getId())) { 
-				if(!clockDomains.get("/" + instance.getId()).isEmpty()){
-					
-				
-				instanceClockDomain.put(instance,
-						clockDomains.get("/" + instance.getId()));
-				}else{
+			if (clockDomains.keySet().contains("/" + instance.getId())) {
+				if (!clockDomains.get("/" + instance.getId()).isEmpty()) {
+
+					instanceClockDomain.put(instance,
+							clockDomains.get("/" + instance.getId()));
+				} else {
 					instanceClockDomain.put(instance, DEFAULT_CLOCK_DOMAIN);
 				}
 			}
 		}
-		//TODO: Fix index problem
-		if (clockDomainsIndex.size() > 1){
+
+		if (clockDomainsIndex.size() > 1) {
 			connectionsClockDomain = new HashMap<Connection, List<Integer>>();
-			for(Connection connection: network.getConnections()){
-				if (connection.getSource().isPort()){
+			for (Connection connection : network.getConnections()) {
+				if (connection.getSource().isPort()) {
 					List<Integer> sourceTarget = new ArrayList<Integer>();
-					sourceTarget.add(0, clockDomainsIndex.get(portClockDomain.get(connection.getSource())));
-					sourceTarget.add(1, clockDomainsIndex.get(portClockDomain.get(connection.getTargetPort())));
-					connectionsClockDomain.put(connection, sourceTarget);
-				}else{
-					if (connection.getTarget().isPort()){
-						List<Integer> sourceTarget = new ArrayList<Integer>();
-						sourceTarget.add(0, clockDomainsIndex.get(portClockDomain.get(connection.getSourcePort())));
-						sourceTarget.add(1, clockDomainsIndex.get(portClockDomain.get(connection.getTarget())));
-						connectionsClockDomain.put(connection, sourceTarget);
-					}else{
-						List<Integer> sourceTarget = new ArrayList<Integer>();
-						sourceTarget.add(0, clockDomainsIndex.get(portClockDomain.get(connection.getSourcePort())));
-						sourceTarget.add(1, clockDomainsIndex.get(portClockDomain.get(connection.getTargetPort())));
+					int srcIndex = clockDomainsIndex.get(portClockDomain
+							.get(connection.getSource()));
+					int tgtIndex = clockDomainsIndex.get(instanceClockDomain
+							.get(connection.getTarget()));
+					if (srcIndex != tgtIndex) {
+						sourceTarget.add(0, srcIndex);
+						sourceTarget.add(1, tgtIndex);
 						connectionsClockDomain.put(connection, sourceTarget);
 					}
-						
+				} else {
+					if (connection.getTarget().isPort()) {
+						List<Integer> sourceTarget = new ArrayList<Integer>();
+						int srcIndex = clockDomainsIndex
+								.get(instanceClockDomain.get(connection
+										.getSource()));
+						int tgtIndex = clockDomainsIndex.get(portClockDomain
+								.get(connection.getTarget()));
+						if (srcIndex != tgtIndex) {
+							sourceTarget.add(0, srcIndex);
+							sourceTarget.add(1, tgtIndex);
+							connectionsClockDomain
+									.put(connection, sourceTarget);
+						}
+					} else {
+						List<Integer> sourceTarget = new ArrayList<Integer>();
+						int srcIndex = clockDomainsIndex
+								.get(instanceClockDomain.get(connection
+										.getSource()));
+						int tgtIndex = clockDomainsIndex
+								.get(instanceClockDomain.get(connection
+										.getTarget()));
+						if (srcIndex != tgtIndex) {
+							sourceTarget.add(0, srcIndex);
+							sourceTarget.add(1, tgtIndex);
+							connectionsClockDomain
+									.put(connection, sourceTarget);
+						}
+					}
+
 				}
 			}
 		}
-		
+
 	}
 
 	/**
