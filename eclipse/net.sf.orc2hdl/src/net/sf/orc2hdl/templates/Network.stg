@@ -277,7 +277,7 @@ entity <network.simpleName> is
 port(
   <networkPorts(network)>
   -- Clock(s) and Reset
-  <network.templateData.clockDomainsIndex.keys: {key | <key> <map.(key)>: in std_logic;}; separator="\n">
+  <network.templateData.clockDomainsIndex.keys: {key | <key>: in std_logic;}; separator="\n">
   RESET: in std_logic);
 end entity <network.simpleName>;
 >>

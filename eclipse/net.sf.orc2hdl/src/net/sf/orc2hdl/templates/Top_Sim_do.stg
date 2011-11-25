@@ -1,7 +1,7 @@
 simulation(network, options) ::= <<
 ## ############################################################################
 ## EPFL - Orc2HDL, CAL to HDL code generator 
-## Automatically generated ModelSim do file for  <network.name> Network
+## Automatically generated ModelSim do file for <network.name> Network
 ## Generated : <options.currentTime>
 ## ############################################################################
 
@@ -45,21 +45,11 @@ vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<network.simpleName>
 ## Change radix to decimal
 radix -decimal
 
-## Add CLK and reset signal
-add wave sim:/<network.simpleName>/CLK
+## Add clock(s) and reset signal
+<printClocks(network)> 
 add wave sim:/<network.simpleName>/RESET
 
 <printNetworkOutputPorts(network)>
-## Set CLK at 100 ns
-force -freeze sim:/<network.simpleName>/CLK 1 0, 0 {50 ns} -r 100
-
-## Reset for 500 ns
-force -freeze sim:/<network.simpleName>/RESET 1 0
-run 500ns
-force -freeze sim:/<network.simpleName>/RESET 0 0
-
-## Run for 1ms
-run 1ms
 >>
 
 printNetworkOutputPorts(network) ::=<<
@@ -80,4 +70,7 @@ force -freeze sim:/<network.simpleName>/<port.name>_RDY 1 0
 <endif>
 >>
 
+printClocks(network) ::=<<
+<network.templateData.clockDomainsIndex.keys: {key | add wave sim:/<network.simpleName>/<key>}; separator="\n">
+>>
 
