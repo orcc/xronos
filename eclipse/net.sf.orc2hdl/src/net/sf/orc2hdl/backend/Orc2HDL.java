@@ -120,13 +120,13 @@ public class Orc2HDL extends AbstractBackend {
 
 	private void computeEntityList(Instance instance) {
 		if (instance.isActor()) {
-			String name = instance.getId();
+			String name = instance.getName();
 			if (!entitySet.contains(name)) {
 				entitySet.add(name);
 				entities.add(name);
 			}
 		} else if (instance.isNetwork()) {
-			String name = instance.getId();
+			String name = instance.getName();
 			Network network = instance.getNetwork();
 			if (!entitySet.contains(name)) {
 				for (Instance subInstance : network.getInstances()) {
@@ -375,13 +375,13 @@ public class Orc2HDL extends AbstractBackend {
 		Boolean printOK = true;
 		// Test if instance is Native
 		if (!instance.getActor().isNative()) {
-			printOK = printer.print(instance.getId() + ".xlim", xlimPath,
+			printOK = printer.print(instance.getName() + ".xlim", xlimPath,
 					instance);
 			if (!printOK) {
 
 				try {
 					String xlim = null;
-					String id = instance.getId();
+					String id = instance.getName();
 					File file = new File(xlimPath + File.separator + id
 							+ ".xlim");
 					if (file.exists()) {
@@ -423,7 +423,6 @@ public class Orc2HDL extends AbstractBackend {
 				"net/sf/orcc/backends/xlim/hardware/Verilog_testbench.stg");
 		Instance instance = DfFactory.eINSTANCE.createInstance(
 				network.getName(), network);
-		instance.setContents(network);
 		printTestbench(instancePrinter, instance);
 		printTCL(instance);
 
@@ -508,7 +507,7 @@ public class Orc2HDL extends AbstractBackend {
 	}
 
 	private void printTestbench(StandardPrinter printer, Instance instance) {
-		printer.print(instance.getId() + "_tb.vhd", path + File.separator
+		printer.print(instance.getName() + "_tb.vhd", path + File.separator
 				+ "Testbench", instance);
 
 		if (instance.isNetwork()) {

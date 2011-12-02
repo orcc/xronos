@@ -130,11 +130,11 @@ public class TopNetworkTemplateData {
 
 		for (Instance instance : network.getInstances()) {
 			if (!clockDomains.isEmpty()) {
-				if (clockDomains.keySet().contains("/" + instance.getId())) {
-					if (!clockDomains.get("/" + instance.getId()).isEmpty()) {
+				if (clockDomains.keySet().contains("/" + instance.getName())) {
+					if (!clockDomains.get("/" + instance.getName()).isEmpty()) {
 
 						instanceClockDomain.put(instance,
-								clockDomains.get("/" + instance.getId()));
+								clockDomains.get("/" + instance.getName()));
 					} else {
 						instanceClockDomain.put(instance, DEFAULT_CLOCK_DOMAIN);
 					}
