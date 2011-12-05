@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011, IRISA
+ * Copyright (c) 2011, IETR/INSA of Rennes
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -26,17 +27,16 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-package net.sf.orc2hdl.backend;
+package net.sf.orc2hdl.printer;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import net.sf.orcc.OrccException;
+import net.sf.orcc.df.Attribute;
+import net.sf.orcc.df.Connection;
+import net.sf.orcc.df.Instance;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.util.ExpressionPrinter;
@@ -49,24 +49,49 @@ import org.stringtemplate.v4.Interpreter;
 import org.stringtemplate.v4.ModelAdaptor;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.misc.ErrorManager;
+import org.stringtemplate.v4.misc.MapModelAdaptor;
+import org.stringtemplate.v4.misc.ObjectModelAdaptor;
 import org.stringtemplate.v4.misc.STNoSuchPropertyException;
 
 /**
- * This class defines a printer.
+ * This abstract class defines a printer that can be extended to provide
+ * model-specific print methods. It provides basic tools such as model adaptors
+ * and attribute renderers that may be used by classes that extend it.
  * 
  * @author Herve Yviquel
+ * @author Matthieu Wipliez
  * 
  */
-public class Orc2HDLPrinter {
+public abstract class AbstractPrinter {
 
-	protected static class EMapModelAdaptor implements ModelAdaptor {
+	protected static class ConnectionModelAdaptor extends ObjectModelAdaptor {
 
 		@Override
 		public Object getProperty(Interpreter interp, ST st, Object o,
 				Object property, String propertyName)
 				throws STNoSuchPropertyException {
-			return ((EMap<?, ?>) o).get(property);
+			String name = String.valueOf(property);
+			Attribute attribute = ((Connection) o).getAttribute(name);
+			if (attribute == null) {
+				return super.getProperty(interp, st, o, property, propertyName);
+			} else {
+				return attribute.getValue();
+			}
 		}
+
+	}
+
+	protected static class EMapModelAdaptor extends MapModelAdaptor {
+
+		@Override
+		public Object getProperty(Interpreter interp, ST st, Object o,
+				Object property, String propertyName)
+				throws STNoSuchPropertyException {
+			return super.getProperty(interp, st, ((EMap<?, ?>) o).map(),
+					property, propertyName);
+		}
+
 	}
 
 	protected class ExpressionRenderer implements AttributeRenderer {
@@ -78,6 +103,22 @@ public class Orc2HDLPrinter {
 
 	}
 
+	protected static class InstanceModelAdaptor extends ObjectModelAdaptor {
+
+		@Override
+		public Object getProperty(Interpreter interp, ST st, Object o,
+				Object property, String propertyName)
+				throws STNoSuchPropertyException {
+			String name = String.valueOf(property);
+			Attribute attribute = ((Instance) o).getAttribute(name);
+			if (attribute == null) {
+				return super.getProperty(interp, st, o, property, propertyName);
+			} else {
+				return attribute.getValue();
+			}
+		}
+	}
+
 	protected class TypeRenderer implements AttributeRenderer {
 
 		@Override
@@ -87,13 +128,9 @@ public class Orc2HDLPrinter {
 
 	}
 
-	protected Map<String, Object> customAttributes;
-
 	private ExpressionPrinter expressionPrinter;
 
 	protected STGroup group;
-
-	protected Map<String, Object> options;
 
 	private TypePrinter typePrinter;
 
@@ -103,51 +140,22 @@ public class Orc2HDLPrinter {
 	 * @param fullPath
 	 *            the full path of the template
 	 */
-	public Orc2HDLPrinter(String fullPath) {
-		group = OrccUtil.loadGroup(fullPath, Orc2HDLPrinter.class.getClassLoader());
+	public AbstractPrinter(String fullPath) {
+		group = OrccUtil.loadGroup(fullPath,
+				AbstractPrinter.class.getClassLoader());
 		group.registerRenderer(Expression.class, new ExpressionRenderer());
 		group.registerRenderer(Type.class, new TypeRenderer());
 
 		group.registerModelAdaptor(EMap.class, new EMapModelAdaptor());
-
-		options = new HashMap<String, Object>();
-		customAttributes = new HashMap<String, Object>();
+		group.registerModelAdaptor(Instance.class, new InstanceModelAdaptor());
+		group.registerModelAdaptor(Connection.class,
+				new ConnectionModelAdaptor());
 	}
 
-	public Map<String, Object> getCustomAttributes() {
-		return customAttributes;
-	}
-
-	public Map<String, Object> getOptions() {
-		return options;
-	}
-
-	/**
-	 * Prints the given network to a file whose name and path are given.
-	 * 
-	 * @param fileName
-	 *            name of the output file
-	 * @param path
-	 *            path of the output file
-	 * @param instanceName
-	 *            name of the root ST rule
-	 */
-	public void print(String fileName, String path, String instanceName) {
-		ST template = group.getInstanceOf(instanceName);
-		printTemplate(template, path + File.separator + fileName);
-	}
-
-	protected void printTemplate(ST template, String file) {
+	protected void printTemplate(ST template, String fileName) {
 		try {
-			template.add("options", options);
-			for (String attribute : customAttributes.keySet()) {
-				template.add(attribute, customAttributes.get(attribute));
-			}
-
-			byte[] b = template.render(80).getBytes();
-			OutputStream os = new FileOutputStream(file);
-			os.write(b);
-			os.close();
+			template.write(new File(fileName),
+					ErrorManager.DEFAULT_ERROR_LISTENER, "UTF-8", 80);
 		} catch (IOException e) {
 			new OrccException("I/O error", e);
 		}

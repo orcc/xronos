@@ -32,34 +32,34 @@ signal clocks, resets: std_logic_vector(<length(network.templateData.clockDomain
 
 internalSignals(network) ::= <<
 -- Network Input Port and Input Port Fanout Signals 
-<network.inputs:{ port | <internalInputSignal(port=port)>}; separator="\n">
+<network.inputs: internalInputSignal(); separator="\n">
 
 -- Network Output Port Signals
-<network.outputs:{ port | <internalOutputSignal(port=port)>}; separator="\n">
+<network.outputs: internalOutputSignal(); separator="\n">
 -- Actors Fanout and I/O Signals
-<network.instances:{ instance | <internalActorSignal(instance=instance)>}; separator="\n">
+<network.instances: internalActorSignal(); separator="\n">
 >>
 
 internalInputSignal(port) ::= <<
-<iSignal("ni",port,true,false)>
+<iSignal("ni",port,true,false,false)>
 
-<iSignal("nif",port,true,true)>
+<iSignal("nif",port,true,true,false)>
 >>
 
 internalOutputSignal(port) ::= <<
-<iSignal("no",port,true,false)>
+<iSignal("no",port,true,false,false)>
 
 >>
 
-internalActorSignal(port) ::= <<
-<instance.actor.inputs: {port | <iSignal("ai",port,false,false)>}; separator="\n">
-<instance.actor.outputs: {port | <iSignal("aof",port,true,true)>}; separator="\n">
+internalActorSignal(instance) ::= <<
+<instance.actor.inputs: {port | <iSignal("ai",port,false,false,instance)>}; separator="\n">
+<instance.actor.outputs: {port | <iSignal("aof",port,true,true,instance)>}; separator="\n">
 
-<instance.actor.outputs: {port | <iSignal("ao",port,true,false)>}; separator="\n">
+<instance.actor.outputs: {port | <iSignal("ao",port,true,false,instance)>}; separator="\n">
 
 >>
 
-iSignal(type,port,dir,nbrFanout) ::= <<
+iSignal(type,port,dir,nbrFanout,instance) ::= <<
 signal <type>_<if(instance)><instance.id>_<endif><port.name>_DATA : std_logic<if(!port.type.bool)>_vector(<port.type.size> - 1 downto 0)<endif>;
 signal <type>_<if(instance)><instance.id>_<endif><port.name>_SEND : std_logic<if(nbrFanout)>_vector(<if(instance)><length(instance.outgoingPortMap.(port))><else><network.templateData.networkPortFanout.(port)><endif> - 1 downto 0)<endif>;
 signal <type>_<if(instance)><instance.id>_<endif><port.name>_ACK : std_logic<if(nbrFanout)>_vector(<if(instance)><length(instance.outgoingPortMap.(port))><else><network.templateData.networkPortFanout.(port)><endif> - 1 downto 0)<endif>;
@@ -104,7 +104,7 @@ actorsInstatiation(network) ::= <<
 -- --------------------------------------------------------------------------
 -- Actor instances
 -- --------------------------------------------------------------------------
-<network.instances: {instance | <actorInstance(instance=instance)>}; separator="\n">
+<network.instances: actorInstance(); separator="\n">
 >>
 
 actorInstance(instance) ::= <<
@@ -157,7 +157,7 @@ networkConnections(network) ::= <<
 -- Fanout and Queue Connections
 -- --------------------------------------------------------------------------
 -- Network Input Ports Fanout
-<network.inputs : {port | <fanout(io="ni",ioFanout="nif",port=port)> }; separator="\n">
+<network.inputs : {port | <fanout(io="ni",ioFanout="nif",port=port,instance=false)> }; separator="\n">
 
 -- Actors Ouput Ports Fanout
 <network.instances : actorFanout(); separator="\n">
@@ -167,10 +167,10 @@ networkConnections(network) ::= <<
 >>
 
 actorFanout(instance) ::= <<
-<instance.actor.outputs : {port | <fanout(io="ao",ioFanout="aof",port=port)> }; separator="\n">
+<instance.actor.outputs : {port | <fanout(io="ao",ioFanout="aof",port=port,instance=instance)> }; separator="\n">
 >>
 
-fanout(io,ioFanout,port) ::= <<
+fanout(io,ioFanout,port,instance) ::= <<
 f_<io>_<if(instance)><instance.id>_<endif><port.name> : entity SystemBuilder.Fanout( behavioral )
 generic map (fanout => <if(instance)><length(instance.outgoingPortMap.(port))><else><network.templateData.networkPortFanout.(port)><endif>, width => <if(port.type.size)><port.type.size><else>1<endif>)
 port map (
@@ -332,7 +332,7 @@ insancesInformation(instance) ::=<<
 --    <instance.id> (<instance.actor.simpleName>) --\> <network.templateData.instanceClockDomain.(instance)>
 >>
 
-network(network, options) ::= <<
+printNetwork(network, options) ::= <<
 <networkInformation(network)>
 
 library ieee, SystemBuilder;--, SystemActors;

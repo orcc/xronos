@@ -1,4 +1,4 @@
-simulation(network, options) ::= <<
+printNetwork(network, options) ::= <<
 ## ############################################################################
 ## EPFL - Orc2HDL, CAL to HDL code generator 
 ## Automatically generated ModelSim do file for <network.name> Network

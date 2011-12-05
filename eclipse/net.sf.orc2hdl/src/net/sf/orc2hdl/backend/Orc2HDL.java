@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.openforge.app.Forge;
+import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.CustomPrinter;
@@ -76,6 +77,8 @@ import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.DfFactory;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.df.transformations.Instantiator;
+import net.sf.orcc.df.transformations.NetworkFlattener;
 import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.ir.transformations.BlockCombine;
 import net.sf.orcc.ir.transformations.BuildCFG;
@@ -326,7 +329,9 @@ public class Orc2HDL extends AbstractBackend {
 
 	@Override
 	protected void doXdfCodeGeneration(Network network) throws OrccException {
-		network.flatten();
+		// instantiate and flattens network
+		network = new Instantiator().doSwitch(network);
+		new NetworkFlattener().doSwitch(network);
 
 		transformActors(network.getActors());
 
@@ -354,11 +359,6 @@ public class Orc2HDL extends AbstractBackend {
 
 	@Override
 	protected boolean printInstance(Instance instance) {
-		/*
-		 * InstancePrinter printer; printer = new InstancePrinter(
-		 * "net/sf/orc2hdl/templates/XLIM_hw_actor.stg", !debugMode);
-		 */
-
 		StandardPrinter printer = new StandardPrinter(
 				"net/sf/orcc/backends/xlim/hardware/XLIM_hw_actor.stg",
 				!debugMode);
@@ -426,11 +426,11 @@ public class Orc2HDL extends AbstractBackend {
 		printTestbench(instancePrinter, instance);
 		printTCL(instance);
 
-		Orc2HDLNetworkPrinter printer;
+		Orc2HDLPrinter printer;
 		String file = network.getSimpleName();
 
 		file += ".vhd";
-		printer = new Orc2HDLNetworkPrinter(
+		printer = new Orc2HDLPrinter(
 				"net/sf/orc2hdl/templates/Network.stg");
 
 		printer.setExpressionPrinter(new XlimExprPrinter());
@@ -441,7 +441,7 @@ public class Orc2HDL extends AbstractBackend {
 		// Create the src directory and print the network inside
 		String SrcPath = path + File.separator + "src";
 		new File(SrcPath).mkdir();
-		printer.print(file, SrcPath, network, "network");
+		printer.print(file, SrcPath, network);
 	}
 
 	private void printSimDoFile(Network network) {
@@ -451,10 +451,10 @@ public class Orc2HDL extends AbstractBackend {
 
 		String currentTime = dateFormat.format(date);
 
-		Orc2HDLNetworkPrinter printer;
+		Orc2HDLPrinter printer;
 		String file = network.getName();
 
-		printer = new Orc2HDLNetworkPrinter(
+		printer = new Orc2HDLPrinter(
 				"net/sf/orc2hdl/templates/Top_Sim_do.stg");
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
@@ -462,7 +462,7 @@ public class Orc2HDL extends AbstractBackend {
 		file = "sim_" + network.getSimpleName() + ".do";
 		String SimPath = path + File.separator + "sim";
 		new File(SimPath).mkdir();
-		printer.print(file, SimPath, network, "simulation");
+		printer.print(file, SimPath, network);
 
 		// Copy the glbl.v file to the simulation "sim" folder
 
