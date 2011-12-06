@@ -304,12 +304,15 @@ public class Orc2HDL extends AbstractBackend {
 				new Inliner(true, true), new UnaryListRemoval(),
 				new CustomPeekAdder(), new DeadGlobalElimination(),
 				new DeadCodeElimination(), new XlimDeadVariableRemoval(),
-				new ListFlattener(), new TacTransformation(true),
+				new ListFlattener(), new TacTransformation(),
 				new BuildCFG(), new InstPhiTransformation(),
-				new LiteralIntegersAdder(true), new CastAdder(true, false),
+				new LiteralIntegersAdder(), new CastAdder(true),
 				new XlimVariableRenamer(), new EmptyThenElseNodeAdder(),
 				new BlockCombine() };
 
+	
+		
+		
 		for (DfSwitch<?> transformation : transformations) {
 			transformation.doSwitch(actor);
 			ResourceSet set = new ResourceSetImpl();
@@ -360,7 +363,7 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected boolean printInstance(Instance instance) {
 		StandardPrinter printer = new StandardPrinter(
-				"net/sf/orcc/backends/xlim/hardware/XLIM_hw_actor.stg",
+				"net/sf/orcc/backends/xlim/hw/Actor.stg",
 				!debugMode);
 
 		printer.getOptions().put("fpgaType", fpgaName);
@@ -420,7 +423,7 @@ public class Orc2HDL extends AbstractBackend {
 			folder.mkdir();
 		}
 		StandardPrinter instancePrinter = new StandardPrinter(
-				"net/sf/orcc/backends/xlim/hardware/Verilog_testbench.stg");
+				"net/sf/orcc/backends/xlim/hw/ModelSim_Testbench.stg");
 		Instance instance = DfFactory.eINSTANCE.createInstance(
 				network.getName(), network);
 		printTestbench(instancePrinter, instance);
@@ -496,7 +499,7 @@ public class Orc2HDL extends AbstractBackend {
 
 	private void printTCL(Instance instance) {
 		CustomPrinter printer = new CustomPrinter(
-				"net/sf/orcc/backends/xlim/hardware/Verilog_TCLLists.stg");
+				"net/sf/orcc/backends/xlim/hw/ModelSim_Script.stg");
 
 		entities = new ArrayList<String>();
 		entitySet = new HashSet<String>();
