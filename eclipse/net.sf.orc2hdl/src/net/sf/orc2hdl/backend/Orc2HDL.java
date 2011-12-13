@@ -304,15 +304,11 @@ public class Orc2HDL extends AbstractBackend {
 				new Inliner(true, true), new UnaryListRemoval(),
 				new CustomPeekAdder(), new DeadGlobalElimination(),
 				new DeadCodeElimination(), new XlimDeadVariableRemoval(),
-				new ListFlattener(), new TacTransformation(),
-				new BuildCFG(), new InstPhiTransformation(),
-				new LiteralIntegersAdder(), new CastAdder(true),
-				new XlimVariableRenamer(), new EmptyThenElseNodeAdder(),
-				new BlockCombine() };
+				new ListFlattener(), new TacTransformation(), new BuildCFG(),
+				new InstPhiTransformation(), new LiteralIntegersAdder(),
+				new CastAdder(true), new XlimVariableRenamer(),
+				new EmptyThenElseNodeAdder(), new BlockCombine() };
 
-	
-		
-		
 		for (DfSwitch<?> transformation : transformations) {
 			transformation.doSwitch(actor);
 			ResourceSet set = new ResourceSetImpl();
@@ -336,7 +332,7 @@ public class Orc2HDL extends AbstractBackend {
 		network = new Instantiator().doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
 
-		transformActors(network.getActors());
+		transformActors(network.getAllActors());
 
 		network.computeTemplateMaps();
 
@@ -363,8 +359,7 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected boolean printInstance(Instance instance) {
 		StandardPrinter printer = new StandardPrinter(
-				"net/sf/orcc/backends/xlim/hw/Actor.stg",
-				!debugMode);
+				"net/sf/orcc/backends/xlim/hw/Actor.stg", !debugMode);
 
 		printer.getOptions().put("fpgaType", fpgaName);
 
@@ -433,8 +428,7 @@ public class Orc2HDL extends AbstractBackend {
 		String file = network.getSimpleName();
 
 		file += ".vhd";
-		printer = new Orc2HDLPrinter(
-				"net/sf/orc2hdl/templates/Network.stg");
+		printer = new Orc2HDLPrinter("net/sf/orc2hdl/templates/Network.stg");
 
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
@@ -457,8 +451,7 @@ public class Orc2HDL extends AbstractBackend {
 		Orc2HDLPrinter printer;
 		String file = network.getName();
 
-		printer = new Orc2HDLPrinter(
-				"net/sf/orc2hdl/templates/Top_Sim_do.stg");
+		printer = new Orc2HDLPrinter("net/sf/orc2hdl/templates/Top_Sim_do.stg");
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
