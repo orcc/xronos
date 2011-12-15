@@ -109,6 +109,8 @@ public class Orc2HDL extends AbstractBackend {
 
 	private boolean debugMode;
 
+	private boolean goDoneSignal;
+
 	private String fpgaName;
 
 	private List<String> forgeFlags;
@@ -220,6 +222,7 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
+		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", false);
 		String fpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "Virtex 2");
 
 		if (fpgaType.equals("Spartan 3")) {
@@ -369,7 +372,11 @@ public class Orc2HDL extends AbstractBackend {
 		String xlimPath = path + File.separator + "xlim";
 		new File(xlimPath).mkdir();
 
-		String SrcPath = path + File.separator + "src";
+		String srcPath = path + File.separator + "src";
+		String goDonePath = path + File.separator + "srcGoDone";
+		if (goDoneSignal) {
+			new File(goDonePath).mkdir();
+		}
 		Boolean printOK = true;
 		// Test if instance is Native
 		if (!instance.getActor().isNative()) {
@@ -386,12 +393,17 @@ public class Orc2HDL extends AbstractBackend {
 						xlim = file.getCanonicalPath();
 					}
 					List<String> flags = new ArrayList<String>(forgeFlags);
-					flags.addAll(Arrays.asList("-d", SrcPath, "-o", id, xlim));
+					flags.addAll(Arrays.asList("-d", srcPath, "-o", id, xlim));
 					long t0 = System.currentTimeMillis();
 					Boolean okForge = Forge.runForge((String[]) flags
 							.toArray(new String[0]));
 					long t1 = System.currentTimeMillis();
 					if (okForge) {
+						if (goDoneSignal) {
+							VerilogAddGoDone instanceWithGoDone = new VerilogAddGoDone(
+									instance, srcPath, goDonePath);
+							instanceWithGoDone.addGoDone();
+						}
 						write("Compiling instance: " + id + ": Compiled in: "
 								+ ((float) (t1 - t0) / (float) 1000) + "s\n");
 					} else {
@@ -437,8 +449,16 @@ public class Orc2HDL extends AbstractBackend {
 
 		// Create the src directory and print the network inside
 		String SrcPath = path + File.separator + "src";
+		String goDonePath = path + File.separator + "srcGoDone";
+
 		new File(SrcPath).mkdir();
 		printer.print(file, SrcPath, network);
+
+		if (goDoneSignal) {
+			new File(goDonePath).mkdir();
+			printer.getOptions().put("goDoneSignal", goDoneSignal);
+			printer.print(file, goDonePath, network);
+		}
 	}
 
 	private void printSimDoFile(Network network) {
@@ -455,10 +475,18 @@ public class Orc2HDL extends AbstractBackend {
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
+
 		file = "sim_" + network.getSimpleName() + ".do";
 		String SimPath = path + File.separator + "sim";
 		new File(SimPath).mkdir();
 		printer.print(file, SimPath, network);
+
+		if (goDoneSignal) {
+			printer.getOptions().put("goDoneSignal", goDoneSignal);
+			file = "sim_" + network.getSimpleName() + "_goDone" + ".do";
+			new File(SimPath).mkdir();
+			printer.print(file, SimPath, network);
+		}
 
 		// Copy the glbl.v file to the simulation "sim" folder
 

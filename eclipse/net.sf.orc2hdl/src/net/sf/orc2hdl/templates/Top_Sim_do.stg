@@ -34,10 +34,10 @@ vlib work
 vlog glbl.v
 
 ## Compile all the generated Verilog files by OpenForge
-vlog ../src/*.v
+vlog ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/*.v
 
 ## Compile the Top VHDL Network
-vcom -93 -check_synthesis -quiet -work work ../src/<network.simpleName>.vhd
+vcom -93 -check_synthesis -quiet -work work ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/<network.simpleName>.vhd
 
 ## Start simulating the Top
 vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<network.simpleName>
@@ -48,7 +48,7 @@ radix -decimal
 ## Add clock(s) and reset signal
 <printClocks(network)> 
 add wave sim:/<network.simpleName>/RESET
-
+## Action(s) Go & Done Output Ports
 <printNetworkOutputPorts(network)>
 >>
 
@@ -57,6 +57,13 @@ printNetworkOutputPorts(network) ::=<<
 ## Add Network Ouput signals
 <network.outputs: printOutputPorts(); separator="\n">
 <endif>
+## Action(s) Go & Done Output Ports
+<network.instances: goDoneOutputPorts(); separator="\n">
+>>
+
+goDoneOutputPorts(instance) ::= <<
+<instance.actor.actions: {action | add wave sim:/<network.simpleName>/<instance.simpleName>_<action.name>_go}; separator="\n">
+<instance.actor.actions: {action | add wave sim:/<network.simpleName>/<instance.simpleName>_<action.name>_done}; separator="\n">
 >>
 
 printOutputPorts(port) ::=<<

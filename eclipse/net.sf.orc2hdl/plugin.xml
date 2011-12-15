@@ -10,6 +10,9 @@
                id="net.sf.orcc.plugins.compileXDF">
          </option>
          <option
+               id="net.sf.orc2hdl.goDoneSignal">
+         </option>
+         <option
                id="net.sf.orc2hdl.OpenForgeOptions">
          </option>
       </backend>
@@ -131,6 +134,13 @@
                <checkBox></checkBox>
             </option>
          </checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            description="Output the GO and DONE signal for each action"
+            id="net.sf.orc2hdl.goDoneSignal"
+            name="Output the GO and DONE signal for each action">
+         <checkBox></checkBox>
       </option>
    </extension>
 
