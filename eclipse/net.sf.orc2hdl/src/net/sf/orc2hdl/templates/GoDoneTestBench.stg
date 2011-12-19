@@ -1,0 +1,207 @@
+printInstanceActionName(instance, action) ::= <<
+<instance.simpleName>_<action.name>
+>>
+
+printOutputFiles(instance) ::= <<
+<instance.actor.actions: {action | file f_<printInstanceActionName(instance, action)>: TEXT;}; separator="\n">
+>>
+
+printComponent(network) ::= <<
+component <network.simpleName>
+port(
+	-- XDF Output Ports
+	<network.outputs: {port | <printPorts(port=port, signal=false, dir1="out",dir2="in")>}; separator="\n">
+	-- Actions Go Done Output Ports 
+	<network.instances:{instance| <goDoneOutputPorts(instance=instance, signal=false, out="out")>}; separator="\n">
+	
+	CLK : in std_logic;
+	RESET : in std_logic
+);
+end component;
+>>
+
+printPorts(port, signal, dir1, dir2) ::= <<
+<if(port.type.bool)>
+<if(signal)><signal> <endif><port.name>_DATA : <dir1> std_logic;
+<else>
+<if(signal)><signal> <endif><port.name>_DATA : <dir1> std_logic_vector(<port.type.size> - 1 downto 0);
+<endif>
+<if (!port.native)>
+<if(signal)><signal> <endif><port.name>_SEND : <dir1> std_logic;
+<if(signal)><signal> <endif><port.name>_ACK : <dir2> std_logic;
+<if(signal)><signal> <endif><port.name>_COUNT : <dir1> std_logic_vector(15 downto 0);
+<if(signal)><signal> <endif><port.name>_RDY : <dir2> std_logic;
+<endif>
+>>
+
+goDoneOutputPorts(instance, signal, out) ::= <<
+<instance.actor.actions: {action | <if(signal)><signal> <endif><instance.simpleName>_<action.name>_go : <if(out)><out><endif> std_logic;}; separator="\n">
+<instance.actor.actions: {action | <if(signal)><signal> <endif><instance.simpleName>_<action.name>_done : <if(out)><out><endif> std_logic;}; separator="\n">
+>>
+
+printOpenFile(instance) ::=<<
+<instance.actor.actions: {action | file_open(f_<instance.simpleName>_<action.name>, "../analysis/<instance.simpleName>_<action.name>.txt", WRITE_MODE);}; separator="\n">
+>>
+
+printInstantiateComponent(network) ::=<<
+m_<network.simpleName> : component <network.simpleName>
+port map(
+	<network.outputs: instantiatePortSignal(); separator="\n">
+	<network.instances: instantiateGoDonePortSignal(); separator="\n">
+	CLK =\> CLK,
+	RESET =\> RESET
+);
+>>
+
+
+instantiatePortSignal(port) ::= <<
+<port.name>_DATA =\> <port.name>_DATA,
+<port.name>_SEND =\> <port.name>_SEND,
+<port.name>_ACK =\> <port.name>_ACK,
+<port.name>_COUNT =\> <port.name>_COUNT,
+<port.name>_RDY =\> <port.name>_RDY,
+>>
+
+instantiateGoDonePortSignal(instance) ::= <<
+<instance.actor.actions: {action | <instance.simpleName>_<action.name>_go =\> <instance.simpleName>_<action.name>_go,}; separator="\n">
+<instance.actor.actions: {action | <instance.simpleName>_<action.name>_done =\> <instance.simpleName>_<action.name>_done,}; separator="\n">
+>>
+
+
+printInfiniteQueue(port) ::= <<
+<port.name>_ACK \<= <port.name>_SEND;
+<port.name>_RDY \<='1';
+>>
+
+printWrite(instance) ::= <<
+<instance.actor.actions:{action| <writeFile(instance, action)>}; separator="\n">
+>>
+
+writeFile(instance, action) ::= <<
+write(l, string'(integer'image(countClk)&";"&str(<instance.simpleName>_<action.name>_go)&";"&str(<instance.simpleName>_<action.name>_done)&";"));
+writeline(f_<instance.simpleName>_<action.name>, l );
+>>
+
+printNetwork(network, options) ::= <<
+------------------------------------------------------------------------------
+-- Generated from <network.simpleName>
+------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+use ieee.numeric_std.all;
+
+library std;
+use std.textio.all;
+
+library work;
+
+entity tb_<network.simpleName> is
+end tb_<network.simpleName>;
+
+architecture arch_tb of tb_<network.simpleName> is
+	----------------------------------------------------------------------------
+	-- Output Files
+	----------------------------------------------------------------------------
+	<network.instances: printOutputFiles(); separator="\n">
+	
+	----------------------------------------------------------------------------
+	-- Component declaration
+	----------------------------------------------------------------------------
+	<printComponent(network)>
+	
+	----------------------------------------------------------------------------
+	-- Network Output Signlas
+	----------------------------------------------------------------------------
+	<network.outputs: {port | <printPorts(port=port, signal="signal", dir1="",dir2="")>}; separator="\n">
+
+	----------------------------------------------------------------------------
+	-- Actions GO and DONE
+	----------------------------------------------------------------------------
+	<network.instances: {instance | <goDoneOutputPorts(instance=instance, signal="signal", out=false)>}; separator="\n">
+	
+	---------------------------------------------------------------------------
+	-- Constant and Clock, Reset declaration
+	--------------------------------------------------------------------------- 
+	constant PERIOD : time := 50 ns;
+	constant DUTY_CYCLE : real := 0.5;
+	constant OFFSET : time := 100 ns;
+
+	signal CLK : std_logic := '0';
+ 	signal RESET : std_logic := '0';
+	
+	---------------------------------------------------------------------------
+	-- Functions declaration
+	--------------------------------------------------------------------------- 
+	function chr(sl : std_logic) return character is
+		variable c : character;
+	begin
+		case sl is
+			when 'U' =\> c := 'U';
+			when 'X' =\> c := 'X';
+			when '0' =\> c := '0';
+			when '1' =\> c := '1';
+			when 'Z' =\> c := 'Z';
+			when 'W' =\> c := 'W';
+			when 'L' =\> c := 'L';
+			when 'H' =\> c := 'H';
+			when '-' =\> c := '-';
+		end case;
+		return c;
+	end chr;
+	
+	function str(sl : std_logic) return string is
+	variable 
+		s : string(1 to 1);
+	begin
+		s(1) := chr(sl);
+		return s;
+	end str;
+
+begin
+	-- Output Files 
+	<network.instances: printOpenFile(); separator="\n">
+	
+	-- Instantiate Network component with signals 	
+	<printInstantiateComponent(network)>
+
+	-- Make a virtual infinite queue for the Output(s)
+	<network.outputs: printInfiniteQueue(); separator="\n">
+
+	clKProcess : process
+	begin
+		wait for OFFSET;
+    clock_LOOP : loop
+      CLK \<= '0';
+      wait for (PERIOD - (PERIOD * DUTY_CYCLE));
+      CLK \<= '1';
+      wait for (PERIOD * DUTY_CYCLE);
+    end loop clock_LOOP;
+	end process;
+
+	resetProcess : process
+	begin		
+		wait for OFFSET;
+		-- reset state for 500 ns.
+    	RESET \<= '1';
+		wait for 500 ns;
+		RESET \<= '0';	
+		wait;
+	end process;
+	
+	writeProcess : process(CLK, RESET)
+	variable countClk: integer := 0;
+	variable l : line;
+	
+	begin
+		if (RESET = '1' ) then			
+			countClk := 0;
+		elsif (rising_edge(CLK)) then
+			<network.instances:{instance| <printWrite(instance)>}; separator="\n">
+			countClk := countClk + 100;			
+		end if;
+	end process;   
+	
+end architecture arch_tb;
+>>

@@ -29,6 +29,7 @@
 
 package net.sf.orc2hdl.backend;
 
+import static net.sf.orc2hdl.preference.Constants.P_MODELSIM;
 import static net.sf.orcc.OrccLaunchConstants.DEBUG_MODE;
 import static net.sf.orcc.OrccLaunchConstants.MAPPING;
 
@@ -47,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.openforge.app.Forge;
+import net.sf.orc2hdl.Activator;
+import net.sf.orc2hdl.analysis.ModelSimAnalysis;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
@@ -111,6 +114,10 @@ public class Orc2HDL extends AbstractBackend {
 
 	private boolean goDoneSignal;
 
+	private boolean modelsimAnalysis;
+
+	private String simTime;
+	
 	private String fpgaName;
 
 	private List<String> forgeFlags;
@@ -223,6 +230,15 @@ public class Orc2HDL extends AbstractBackend {
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
 		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", false);
+		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis",
+				false);
+		simTime = getAttribute("net.sf.orc2hdl.simTime",
+				"");
+
+		if (modelsimAnalysis) {
+			goDoneSignal = true;
+		}
+
 		String fpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "Virtex 2");
 
 		if (fpgaType.equals("Spartan 3")) {
@@ -357,6 +373,16 @@ public class Orc2HDL extends AbstractBackend {
 
 		// Print the xlim files
 		printInstances(network);
+
+		if (modelsimAnalysis) {
+			String exe = Activator.getDefault().getPreference(P_MODELSIM, "");
+			if (exe == null || exe.isEmpty()) {
+				write("Warning: The path to ModelSim executable is not set!\n"
+						+ "Go to Window > Preferences > Orc2HDL to edit them.\n");
+			} else {
+				ModelSimAnalysis analysis = new ModelSimAnalysis(exe);
+			}
+		}
 	}
 
 	@Override
@@ -454,10 +480,21 @@ public class Orc2HDL extends AbstractBackend {
 		new File(SrcPath).mkdir();
 		printer.print(file, SrcPath, network);
 
-		if (goDoneSignal) {
+		if (goDoneSignal || modelsimAnalysis) {
 			new File(goDonePath).mkdir();
 			printer.getOptions().put("goDoneSignal", goDoneSignal);
 			printer.print(file, goDonePath, network);
+			if (modelsimAnalysis) {
+				String analysis = path + File.separator + "analysis";
+				new File(analysis).mkdir();
+				printer = new Orc2HDLPrinter(
+						"net/sf/orc2hdl/templates/GoDoneTestBench.stg");
+				printer.setExpressionPrinter(new XlimExprPrinter());
+				printer.setTypePrinter(new XlimTypePrinter());
+				printer.getOptions().put("currentTime", currentTime);
+				file = "tb_" + network.getSimpleName() + ".vhd";
+				printer.print(file, goDonePath, network);
+			}
 		}
 	}
 
@@ -487,7 +524,15 @@ public class Orc2HDL extends AbstractBackend {
 			new File(SimPath).mkdir();
 			printer.print(file, SimPath, network);
 		}
-
+		
+		if (modelsimAnalysis){
+			printer.getOptions().put("goDoneSignal", goDoneSignal);
+			printer.getOptions().put("modelsimAnalysis", modelsimAnalysis);
+			printer.getOptions().put("simTime", simTime);
+			file = "sim_tb_" + network.getSimpleName() + ".do";
+			new File(SimPath).mkdir();
+			printer.print(file, SimPath, network);
+		}
 		// Copy the glbl.v file to the simulation "sim" folder
 
 		// Get the current folder

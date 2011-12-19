@@ -28,6 +28,9 @@
  */
 package net.sf.orc2hdl;
 
+import static org.eclipse.core.runtime.Platform.getPreferencesService;
+
+import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
@@ -43,30 +46,6 @@ public class Activator extends AbstractUIPlugin {
 	// The shared instance
 	private static Activator plugin;
 	
-	/**
-	 * The constructor
-	 */
-	public Activator() {
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
-	 */
-	public void start(BundleContext context) throws Exception {
-		super.start(context);
-		plugin = this;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#stop(org.osgi.framework.BundleContext)
-	 */
-	public void stop(BundleContext context) throws Exception {
-		plugin = null;
-		super.stop(context);
-	}
-
 	/**
 	 * Returns the shared instance
 	 *
@@ -86,4 +65,46 @@ public class Activator extends AbstractUIPlugin {
 	public static ImageDescriptor getImageDescriptor(String path) {
 		return imageDescriptorFromPlugin(PLUGIN_ID, path);
 	}
+
+	/**
+	 * The constructor
+	 */
+	public Activator() {
+	}
+	
+	private IScopeContext[] contexts;
+	
+	/**
+	 * Return the value stored in the preference store for the given key. If the
+	 * key is not defined then return the specified default value.
+	 * 
+	 * @param key
+	 *            the name of the preference
+	 * @param defaultValue
+	 *            the value to use if the preference is not defined
+	 * @return the value of the preference or the given default value
+	 */
+	public String getPreference(String key, String defaultValue) {
+		return getPreferencesService().getString(PLUGIN_ID, key, defaultValue,
+				contexts);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
+	 */
+	public void start(BundleContext context) throws Exception {
+		super.start(context);
+		plugin = this;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#stop(org.osgi.framework.BundleContext)
+	 */
+	public void stop(BundleContext context) throws Exception {
+		plugin = null;
+		super.stop(context);
+	}
+	
 }

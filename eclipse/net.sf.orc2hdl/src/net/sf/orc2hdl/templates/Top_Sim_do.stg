@@ -37,19 +37,22 @@ vlog glbl.v
 vlog ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/*.v
 
 ## Compile the Top VHDL Network
-vcom -93 -check_synthesis -quiet -work work ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/<network.simpleName>.vhd
+vcom -93 -check_synthesis -quiet -work work ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>.vhd
 
 ## Start simulating the Top
-vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<network.simpleName>
+vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>
 
 ## Change radix to decimal
 radix -decimal
 
 ## Add clock(s) and reset signal
 <printClocks(network)> 
-add wave sim:/<network.simpleName>/RESET
+add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/RESET
 ## Action(s) Go & Done Output Ports
 <printNetworkOutputPorts(network)>
+<if(options.modelsimAnalysis)>
+run <options.simTime>ns
+<endif>
 >>
 
 printNetworkOutputPorts(network) ::=<<
@@ -62,22 +65,22 @@ printNetworkOutputPorts(network) ::=<<
 >>
 
 goDoneOutputPorts(instance) ::= <<
-<instance.actor.actions: {action | add wave sim:/<network.simpleName>/<instance.simpleName>_<action.name>_go}; separator="\n">
-<instance.actor.actions: {action | add wave sim:/<network.simpleName>/<instance.simpleName>_<action.name>_done}; separator="\n">
+<instance.actor.actions: {action | add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<instance.simpleName>_<action.name>_go}; separator="\n">
+<instance.actor.actions: {action | add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<instance.simpleName>_<action.name>_done}; separator="\n">
 >>
 
 printOutputPorts(port) ::=<<
-add wave sim:/<network.simpleName>/<port.name>_DATA 
+add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_DATA 
 <if (!port.native)>
-add wave sim:/<network.simpleName>/<port.name>_SEND 
-add wave sim:/<network.simpleName>/<port.name>_ACK
-force -freeze sim:/<network.simpleName>/<port.name>_ACK 1 0
-add wave sim:/<network.simpleName>/<port.name>_RDY
-force -freeze sim:/<network.simpleName>/<port.name>_RDY 1 0
+add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_SEND 
+add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_ACK
+force -freeze sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_ACK 1 0
+add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_RDY
+force -freeze sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_RDY 1 0
 <endif>
 >>
 
 printClocks(network) ::=<<
-<network.templateData.clockDomainsIndex.keys: {key | add wave sim:/<network.simpleName>/<key>}; separator="\n">
+<network.templateData.clockDomainsIndex.keys: {key | add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<key>}; separator="\n">
 >>
 
