@@ -10,7 +10,7 @@
                id="net.sf.orcc.plugins.compileXDF">
          </option>
          <option
-               id="net.sf.orc2hdl.goDoneSignal">
+               id="net.sf.orc2hdl.simOptions">
          </option>
          <option
                id="net.sf.orc2hdl.OpenForgeOptions">
@@ -137,11 +137,40 @@
       </option>
       <option
             defaultValue="false"
-            description="Output the GO and DONE signal for each action"
-            id="net.sf.orc2hdl.goDoneSignal"
-            name="Output the GO and DONE signal for each action">
-         <checkBox></checkBox>
+            id="net.sf.orc2hdl.simOptions"
+            name="Modelsim Simulation">
+         <checkBox>
+            <option
+                  defaultValue="false"
+                  description="Analysis of the Top Network by Actions &quot;Go and Done&quot; and FIFO visualization"
+                  id="net.sf.orc2hdl.modelSimAnalysis"
+                  name="ModelSim Analysis and Simulation">
+               <checkBox></checkBox>
+            </option>
+            <option
+                  defaultValue="false"
+                  description="Output the GO and DONE signal for each action"
+                  id="net.sf.orc2hdl.goDoneSignal"
+                  name="Output the GO and DONE signal for each action">
+               <checkBox></checkBox>
+            </option>
+            <option
+                  id="net.sf.orc2hdl.simTime"
+                  name="Simulation Time in ns">
+               <textBox>
+                  
+               </textBox>
+            </option>
+         </checkBox>
       </option>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="net.sf.orc2hdl.ui.Orc2HDLPreferencePage"
+            id="net.sf.orc2hdl.ui.Orc2HDLPreferencePage"
+            name="Orc2HDL">
+      </page>
    </extension>
 
 </plugin>
