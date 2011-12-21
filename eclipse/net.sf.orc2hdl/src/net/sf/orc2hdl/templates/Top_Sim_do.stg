@@ -37,8 +37,10 @@ vlog glbl.v
 vlog ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/*.v
 
 ## Compile the Top VHDL Network
-vcom -93 -check_synthesis -quiet -work work ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>.vhd
-
+vcom -93 -check_synthesis -quiet -work work ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/<network.simpleName>.vhd
+<if(options.modelsimAnalysis)>
+vcom -93 -check_synthesis -quiet -work work ../srcGoDone/tb_<network.simpleName>.vhd
+<endif>
 ## Start simulating the Top
 vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>
 
@@ -52,6 +54,7 @@ add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/RESET
 <printNetworkOutputPorts(network)>
 <if(options.modelsimAnalysis)>
 run <options.simTime>ns
+quit -force
 <endif>
 >>
 
@@ -74,9 +77,13 @@ add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port
 <if (!port.native)>
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_SEND 
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_ACK
+<if(!options.modelsimAnalysis)>
 force -freeze sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_ACK 1 0
+<endif>
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_RDY
+<if(!options.modelsimAnalysis)>
 force -freeze sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_RDY 1 0
+<endif>
 <endif>
 >>
 

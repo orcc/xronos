@@ -107,6 +107,7 @@ public class VerilogAddGoDone {
 			int skip = 1;
 			String contains;
 			iBuffer.reset();
+			boolean stop = false;
 			while (iBuffer.ready()) {
 				if (skip == 1) {
 					iBuffer.readLine();
@@ -116,7 +117,11 @@ public class VerilogAddGoDone {
 				contains = iBuffer.readLine();
 				// Find <actionName>_go and <actionName>_done in the assign on
 				// the Top Module
-				if (contains.indexOf("assign") != -1) {
+				
+				if (contains.indexOf("endmodule") != -1) {
+					stop = true;
+				}
+				if (contains.indexOf("assign") != -1 && !stop) {
 					for (Action action : instance.getActor().getActions()) {
 
 						String actionNameGo = action.getName() + "_go";
@@ -142,6 +147,7 @@ public class VerilogAddGoDone {
 					verilogWriter.println(contains);
 				}
 			}
+
 			// Flush, close and write
 			verilogWriter.flush();
 			verilogWriter.close();

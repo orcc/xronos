@@ -29,36 +29,33 @@
 
 package net.sf.orc2hdl.analysis;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import net.sf.orcc.df.Action;
+import net.sf.orcc.df.Instance;
+import net.sf.orcc.df.Network;
 
 /**
  * This class does different Analysis based on the data retrieved by ModelSim
  * 
  * @author Endri Bezati
- *
+ * 
  */
 public class ModelSimAnalysis {
 
-	String modelSimExe;
+	private String analysisPath;
+	private Network network;
 
-	public ModelSimAnalysis(String modelSimExe) {
-		this.modelSimExe = modelSimExe;
-		try {
-			String line;
-			Process p = Runtime.getRuntime(). exec(modelSimExe);
-			 BufferedReader bri = new BufferedReader
-				        (new InputStreamReader(p.getInputStream()));
-			 while ((line = bri.readLine()) != null) {
-			        System.out.println(line);
-			      }
-		} catch (IOException e) {
-			e.printStackTrace();
+	public ModelSimAnalysis(String analysisPath, Network network) {
+		this.analysisPath = analysisPath;
+		this.network = network;
+	}
+
+	public void createMaps(){
+		for(Instance instance: network.getInstances()){
+			for(Action action: instance.getActor().getActions()){
+				
+			}
 		}
 	}
 	
-	
-	
-	
+
 }

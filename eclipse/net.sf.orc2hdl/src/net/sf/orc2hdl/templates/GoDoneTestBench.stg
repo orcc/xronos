@@ -44,7 +44,7 @@ printOpenFile(instance) ::=<<
 >>
 
 printInstantiateComponent(network) ::=<<
-m_<network.simpleName> : component <network.simpleName>
+n_<network.simpleName> : component <network.simpleName>
 port map(
 	<network.outputs: instantiatePortSignal(); separator="\n">
 	<network.instances: instantiateGoDonePortSignal(); separator="\n">

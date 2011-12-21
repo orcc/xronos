@@ -33,8 +33,10 @@ import static net.sf.orc2hdl.preference.Constants.P_MODELSIM;
 import static net.sf.orcc.OrccLaunchConstants.DEBUG_MODE;
 import static net.sf.orcc.OrccLaunchConstants.MAPPING;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
 import java.text.DateFormat;
@@ -49,7 +51,9 @@ import java.util.Map;
 
 import net.sf.openforge.app.Forge;
 import net.sf.orc2hdl.Activator;
-import net.sf.orc2hdl.analysis.ModelSimAnalysis;
+import net.sf.orc2hdl.analysis.ExecutionChart;
+import net.sf.orc2hdl.analysis.SimParser;
+import net.sf.orc2hdl.analysis.TimeGoDone;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
@@ -76,6 +80,7 @@ import net.sf.orcc.backends.xlim.transformations.LocalArrayRemoval;
 import net.sf.orcc.backends.xlim.transformations.UnaryListRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.transformations.XlimVariableRenamer;
+import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.DfFactory;
 import net.sf.orcc.df.Instance;
@@ -129,6 +134,12 @@ public class Orc2HDL extends AbstractBackend {
 	private HashSet<String> entitySet;
 
 	private Map<String, String> clkDomains;
+	
+	private String simPath;
+	
+	private String srcPath;
+	
+	private String srcGoDonePath;
 
 	private void computeEntityList(Instance instance) {
 		if (instance.isActor()) {
@@ -234,7 +245,18 @@ public class Orc2HDL extends AbstractBackend {
 				false);
 		simTime = getAttribute("net.sf.orc2hdl.simTime",
 				"");
-
+		srcPath = path + File.separator + "src";
+		new File(srcPath).mkdir();
+		
+		srcGoDonePath = path + File.separator + "srcGoDone";
+		if (goDoneSignal) {
+			new File(srcGoDonePath).mkdir();
+		}
+		
+		simPath = path + File.separator + "sim";
+		new File(simPath).mkdir();
+		
+		
 		if (modelsimAnalysis) {
 			goDoneSignal = true;
 		}
@@ -380,11 +402,42 @@ public class Orc2HDL extends AbstractBackend {
 				write("Warning: The path to ModelSim executable is not set!\n"
 						+ "Go to Window > Preferences > Orc2HDL to edit them.\n");
 			} else {
-				ModelSimAnalysis analysis = new ModelSimAnalysis(exe);
+				// Run ModelSim
+				
+				runModelSim(exe, network);
+				
+				//Parse Files
+				SimParser simParser = new SimParser(network, path + File.separator + "analysis"); 
+				simParser.createMaps();
+				Map<Instance, Map<Action, TimeGoDone>> execution = simParser.getExecutionMap();
+				ExecutionChart chart = new ExecutionChart(execution, network, path);
+				chart.saveChart();
+				
 			}
 		}
 	}
 
+	public void runModelSim(String modelSim, Network network) {
+		try {
+			String line;
+			File fPath = new File(simPath);
+
+			String arg = " -c -do sim_tb_" + network.getSimpleName() + ".do";
+			String cmd = modelSim + arg;
+			write("Launching Modelsim\n");
+			
+			Process p = Runtime.getRuntime().exec(cmd, null, fPath);
+
+			BufferedReader bri = new BufferedReader(new InputStreamReader(
+					p.getInputStream()));
+			while ((line = bri.readLine()) != null) {
+				write("Orc2HDL: " + line+ "\n");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	@Override
 	protected boolean printInstance(Instance instance) {
 		StandardPrinter printer = new StandardPrinter(
@@ -398,11 +451,7 @@ public class Orc2HDL extends AbstractBackend {
 		String xlimPath = path + File.separator + "xlim";
 		new File(xlimPath).mkdir();
 
-		String srcPath = path + File.separator + "src";
-		String goDonePath = path + File.separator + "srcGoDone";
-		if (goDoneSignal) {
-			new File(goDonePath).mkdir();
-		}
+	
 		Boolean printOK = true;
 		// Test if instance is Native
 		if (!instance.getActor().isNative()) {
@@ -427,7 +476,7 @@ public class Orc2HDL extends AbstractBackend {
 					if (okForge) {
 						if (goDoneSignal) {
 							VerilogAddGoDone instanceWithGoDone = new VerilogAddGoDone(
-									instance, srcPath, goDonePath);
+									instance, srcPath, srcGoDonePath);
 							instanceWithGoDone.addGoDone();
 						}
 						write("Compiling instance: " + id + ": Compiled in: "
@@ -473,17 +522,16 @@ public class Orc2HDL extends AbstractBackend {
 		printer.getOptions().put("fifoSize", fifoSize);
 		printer.getOptions().put("currentTime", currentTime);
 
-		// Create the src directory and print the network inside
-		String SrcPath = path + File.separator + "src";
-		String goDonePath = path + File.separator + "srcGoDone";
+		
+		
 
-		new File(SrcPath).mkdir();
-		printer.print(file, SrcPath, network);
+		
+		printer.print(file, srcPath, network);
 
 		if (goDoneSignal || modelsimAnalysis) {
-			new File(goDonePath).mkdir();
+			new File(srcGoDonePath).mkdir();
 			printer.getOptions().put("goDoneSignal", goDoneSignal);
-			printer.print(file, goDonePath, network);
+			printer.print(file, srcGoDonePath, network);
 			if (modelsimAnalysis) {
 				String analysis = path + File.separator + "analysis";
 				new File(analysis).mkdir();
@@ -493,7 +541,7 @@ public class Orc2HDL extends AbstractBackend {
 				printer.setTypePrinter(new XlimTypePrinter());
 				printer.getOptions().put("currentTime", currentTime);
 				file = "tb_" + network.getSimpleName() + ".vhd";
-				printer.print(file, goDonePath, network);
+				printer.print(file, srcGoDonePath, network);
 			}
 		}
 	}
@@ -514,15 +562,14 @@ public class Orc2HDL extends AbstractBackend {
 		printer.getOptions().put("currentTime", currentTime);
 
 		file = "sim_" + network.getSimpleName() + ".do";
-		String SimPath = path + File.separator + "sim";
-		new File(SimPath).mkdir();
-		printer.print(file, SimPath, network);
+		
+		printer.print(file, simPath, network);
 
 		if (goDoneSignal) {
 			printer.getOptions().put("goDoneSignal", goDoneSignal);
 			file = "sim_" + network.getSimpleName() + "_goDone" + ".do";
-			new File(SimPath).mkdir();
-			printer.print(file, SimPath, network);
+			new File(simPath).mkdir();
+			printer.print(file, simPath, network);
 		}
 		
 		if (modelsimAnalysis){
@@ -530,8 +577,8 @@ public class Orc2HDL extends AbstractBackend {
 			printer.getOptions().put("modelsimAnalysis", modelsimAnalysis);
 			printer.getOptions().put("simTime", simTime);
 			file = "sim_tb_" + network.getSimpleName() + ".do";
-			new File(SimPath).mkdir();
-			printer.print(file, SimPath, network);
+			new File(simPath).mkdir();
+			printer.print(file, simPath, network);
 		}
 		// Copy the glbl.v file to the simulation "sim" folder
 
@@ -549,7 +596,7 @@ public class Orc2HDL extends AbstractBackend {
 			URI uri = new File(path).toURI();
 			IFileStore pluginDir = fileSystem.getStore(uri);
 
-			path = SimPath + "/glbl.v";
+			path = simPath + "/glbl.v";
 			uri = new File(path).toURI();
 			IFileStore copyDir = fileSystem.getStore(uri);
 
