@@ -48,33 +48,73 @@ public class ExecutionChart {
 				TimeGoDone timeGoDone = actionsGoDone.get(action);
 				Map<Integer, List<Integer>> actionExecution = new TreeMap<Integer, List<Integer>>();
 				int idx = 0;
+
+				ArrayList<Integer> previousGoDone = timeGoDone.get(0);
+				Integer start = 0;
+				Integer stop = 0;
 				for (int i = 0; i < timeGoDone.size(); i++) {
+					Integer timeBy100 = i * 100;
+					ArrayList<Integer> goDone = timeGoDone.get(timeBy100);
 
-					ArrayList<Integer> goDone = timeGoDone.get(i * 100);
-					Integer start = 0;
-					Integer stop = 0;
-					Boolean minGoSpacing = false;
+					Integer state = actionState(previousGoDone, goDone);
 
-					if ((goDone.get(0).equals(1) && goDone.get(1).equals(0))) {
-						start = i * 100;
-						minGoSpacing = true;
-					} else if ((goDone.get(0).equals(1) && goDone.get(1)
-							.equals(1))) {
-						start = i * 100;
-						stop = i * 100;
-						if (minGoSpacing) {
-							start = i;
-							minGoSpacing = false;
-						}
+					switch (state) {
+					case 0:
+						break;
+					case 1:
+						stop = timeBy100;
 						actionExecution.put(idx, Arrays.asList(start, stop));
 						idx++;
-
-					} else if ((goDone.get(0).equals(0) && goDone.get(1)
-							.equals(1))) {
-						stop = i * 100;
+						break;
+					case 2:
+						start = timeBy100;
+						break;
+					case 3:
+						start = timeBy100;
+						break;
+					case 4:
+						stop = timeBy100;
 						actionExecution.put(idx, Arrays.asList(start, stop));
 						idx++;
+						break;
+					case 5:
+						stop = timeBy100;
+						actionExecution.put(idx, Arrays.asList(start, stop));
+						idx++;
+						break;
+					case 6:
+						stop = timeBy100;
+						actionExecution.put(idx, Arrays.asList(start, stop));
+						idx++;
+						break;
+					case 7:
+						stop = timeBy100;
+						actionExecution.put(idx, Arrays.asList(start, stop));
+						idx++;
+						start = stop;
+						break;
+					case 8:
+						stop = timeBy100;
+						actionExecution.put(idx, Arrays.asList(start, stop));
+						idx++;
+						break;
+					case 9:
+						stop = timeBy100;
+						actionExecution.put(idx, Arrays.asList(start, stop));
+						idx++;
+						start = stop;
+						break;
+					case 10:
+						stop = timeBy100;
+						actionExecution.put(idx, Arrays.asList(start, stop));
+						idx++;
+						start = stop;
+						break;
+					default:
+						break;
 					}
+
+					previousGoDone = goDone;
 
 				}
 				if (!actionExecution.isEmpty()) {
@@ -108,9 +148,9 @@ public class ExecutionChart {
 	 */
 	private JFreeChart createChart(IntervalCategoryDataset dataset,
 			Network network) {
-		final JFreeChart chart = ChartFactory.createGanttChart(
-				"Network:" + network.getSimpleName()+ " HW Execution", // chart
-												// title
+		final JFreeChart chart = ChartFactory.createGanttChart("Network:"
+				+ network.getSimpleName() + " HW Execution", // chart
+				// title
 				"Actions", // domain axis label
 				"Time(ns)", // range axis label
 				dataset, // data
@@ -119,6 +159,56 @@ public class ExecutionChart {
 				false // urls
 				);
 		return chart;
+
+	}
+
+	private Integer goDoneState(ArrayList<Integer> goDone) {
+		Integer state = 0;
+
+		if (goDone.get(0).equals(0) && goDone.get(1).equals(0)) {
+			state = 0;
+		} else if (goDone.get(0).equals(0) && goDone.get(1).equals(1)) {
+			state = 1;
+		} else if (goDone.get(0).equals(1) && goDone.get(1).equals(0)) {
+			state = 2;
+		} else if (goDone.get(0).equals(1) && goDone.get(1).equals(1)) {
+			state = 3;
+		}
+		return state;
+	}
+
+	private Integer actionState(ArrayList<Integer> previousGoDone,
+			ArrayList<Integer> goDone) {
+		Integer state = 0;
+
+		Integer previousState = goDoneState(previousGoDone);
+		Integer currentState = goDoneState(goDone);
+
+		if (previousState == 0 && currentState == 0) {
+			state = 0;
+		} else if (previousState == 0 && currentState == 1) {
+			state = 1;
+		} else if (previousState == 0 && currentState == 2) {
+			state = 2;
+		} else if (previousState == 0 && currentState == 3) {
+			state = 3;
+		} else if (previousState == 1 && currentState == 0) {
+			state = 4;
+		} else if (previousState == 2 && currentState == 0) {
+			state = 5;
+		} else if (previousState == 2 && currentState == 1) {
+			state = 6;
+		} else if (previousState == 2 && currentState == 3) {
+			state = 7;
+		} else if (previousState == 3 && currentState == 0) {
+			state = 8;
+		} else if (previousState == 3 && currentState == 1) {
+			state = 9;
+		} else if (previousState == 3 && currentState == 3) {
+			state = 10;
+		}
+
+		return state;
 
 	}
 
