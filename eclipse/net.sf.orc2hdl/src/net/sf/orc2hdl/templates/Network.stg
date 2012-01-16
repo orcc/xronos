@@ -196,7 +196,7 @@ port map (
 >>
 
 fSignals(type,port,dir) ::= <<
-<dir>_DATA =\> <type>_<if(instance)><instance.id>_<endif><port.name>_DATA,
+<dir>_DATA<if(port.type.bool)>(0)<endif> =\> <type>_<if(instance)><instance.id>_<endif><port.name>_DATA,
 <dir>_SEND =\> <type>_<if(instance)><instance.id>_<endif><port.name>_SEND,
 <dir>_ACK =\> <type>_<if(instance)><instance.id>_<endif><port.name>_ACK,
 <dir>_COUNT =\> <type>_<if(instance)><instance.id>_<endif><port.name>_COUNT,
@@ -240,7 +240,7 @@ reset => resets(0)
 >>
 
 qSignals(dir,type,source,sourcePort,io,nbrFanout) ::= <<
-<dir>_DATA =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_DATA,
+<dir>_DATA<if(sourcePort.type.bool)>(0)<endif> =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_DATA,
 <dir>_SEND =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_SEND<if(nbrFanout)>(<network.templateData.networkPortConnectionFanout.(connection)>)<endif>,
 <dir>_ACK =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_ACK<if(nbrFanout)>(<network.templateData.networkPortConnectionFanout.(connection)>)<endif>,
 <dir>_COUNT =\> <type>_<if(source.instance)><source.id>_<sourcePort.name><else><source.name><endif>_COUNT,

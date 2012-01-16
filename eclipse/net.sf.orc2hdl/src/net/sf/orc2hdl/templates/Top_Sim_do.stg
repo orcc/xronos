@@ -52,6 +52,7 @@ radix -decimal
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/RESET
 ## Action(s) Go & Done Output Ports
 <printNetworkOutputPorts(network)>
+<network.instances: printInstanceInputBuffer(); separator="\n">
 <if(options.modelsimAnalysis)>
 run <options.simTime>ns
 quit -force
@@ -63,13 +64,23 @@ printNetworkOutputPorts(network) ::=<<
 ## Add Network Ouput signals
 <network.outputs: printOutputPorts(); separator="\n">
 <endif>
+<if(options.modelsimAnalysis)
 ## Action(s) Go & Done Output Ports
 <network.instances: goDoneOutputPorts(); separator="\n">
+<endif>
 >>
 
 goDoneOutputPorts(instance) ::= <<
 <instance.actor.actions: {action | add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<instance.simpleName>_<action.name>_go}; separator="\n">
 <instance.actor.actions: {action | add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<instance.simpleName>_<action.name>_done}; separator="\n">
+>>
+
+printInstanceInputBuffer(instance) ::=<<
+<instance.actor.inputs: printInputQueues(); separator="\n">
+>>
+
+printInputQueues(port) ::=<<
+add wave sim:/<network.simpleName>/q_ai_<instance.simpleName>_<port.name>/fifo/msync_full 
 >>
 
 printOutputPorts(port) ::=<<
