@@ -64,7 +64,7 @@ printNetworkOutputPorts(network) ::=<<
 ## Add Network Ouput signals
 <network.outputs: printOutputPorts(); separator="\n">
 <endif>
-<if(options.modelsimAnalysis)
+<if(options.modelsimAnalysis)>
 ## Action(s) Go & Done Output Ports
 <network.instances: goDoneOutputPorts(); separator="\n">
 <endif>
