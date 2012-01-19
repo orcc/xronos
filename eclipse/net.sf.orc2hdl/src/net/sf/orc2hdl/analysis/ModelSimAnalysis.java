@@ -39,8 +39,10 @@ import net.sf.orcc.df.Network;
  * @author Endri Bezati
  * 
  */
+@SuppressWarnings("unused")
 public class ModelSimAnalysis {
 
+	
 	private String analysisPath;
 	private Network network;
 

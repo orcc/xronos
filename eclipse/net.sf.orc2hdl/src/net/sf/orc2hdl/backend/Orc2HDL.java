@@ -240,11 +240,11 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
-		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", false);
+		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", true);
 		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis",
-				false);
+				true);
 		simTime = getAttribute("net.sf.orc2hdl.simTime",
-				"");
+				"5000");
 		srcPath = path + File.separator + "src";
 		new File(srcPath).mkdir();
 		
