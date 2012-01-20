@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/net.sf.orc2hdl.feauture_0.9.9.v20120120.jar" id="net.sf.orc2hdl.feauture" version="0.9.9.v20120120">
+      <category name="net.sf.orc2hdl"/>
+   </feature>
+   <category-def name="net.sf.orc2hdl" label="Orc2HDL"/>
+</site>
