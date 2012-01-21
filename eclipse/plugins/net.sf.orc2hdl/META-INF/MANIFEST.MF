@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: ORCC OpenForge Hardware Compiler
 Bundle-SymbolicName: net.sf.orc2hdl;singleton:=true
-Bundle-Version: 0.9.9.v20120120
+Bundle-Version: 0.9.9.v20120121
 Bundle-Activator: net.sf.orc2hdl.Activator
 Bundle-Vendor: EPFL
 Require-Bundle: org.eclipse.ui,

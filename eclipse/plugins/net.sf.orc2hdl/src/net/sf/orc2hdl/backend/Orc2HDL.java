@@ -340,7 +340,7 @@ public class Orc2HDL extends AbstractBackend {
 		DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
 				new Multi2MonoToken(), new LocalArrayRemoval(),
 				new DivisionSubstitution(), new UnitImporter(),
-				new SSATransformation(), new TypeResizer(false, true, true),
+				new SSATransformation(), new TypeResizer(false, true, true, true),
 				new GlobalArrayInitializer(true), new InstTernaryAdder(),
 				new Inliner(true, true), new UnaryListRemoval(),
 				new CustomPeekAdder(), new DeadGlobalElimination(),
