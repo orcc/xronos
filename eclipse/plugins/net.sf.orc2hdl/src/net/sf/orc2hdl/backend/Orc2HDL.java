@@ -122,7 +122,7 @@ public class Orc2HDL extends AbstractBackend {
 	private boolean modelsimAnalysis;
 
 	private String simTime;
-	
+
 	private String fpgaName;
 
 	private List<String> forgeFlags;
@@ -134,11 +134,11 @@ public class Orc2HDL extends AbstractBackend {
 	private HashSet<String> entitySet;
 
 	private Map<String, String> clkDomains;
-	
+
 	private String simPath;
-	
+
 	private String srcPath;
-	
+
 	private String srcGoDonePath;
 
 	private void computeEntityList(Instance instance) {
@@ -241,22 +241,19 @@ public class Orc2HDL extends AbstractBackend {
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
 		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", true);
-		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis",
-				true);
-		simTime = getAttribute("net.sf.orc2hdl.simTime",
-				"5000");
+		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis", true);
+		simTime = getAttribute("net.sf.orc2hdl.simTime", "5000");
 		srcPath = path + File.separator + "src";
 		new File(srcPath).mkdir();
-		
+
 		srcGoDonePath = path + File.separator + "srcGoDone";
 		if (goDoneSignal) {
 			new File(srcGoDonePath).mkdir();
 		}
-		
+
 		simPath = path + File.separator + "sim";
 		new File(simPath).mkdir();
-		
-		
+
 		if (modelsimAnalysis) {
 			goDoneSignal = true;
 		}
@@ -403,16 +400,19 @@ public class Orc2HDL extends AbstractBackend {
 						+ "Go to Window > Preferences > Orc2HDL to edit them.\n");
 			} else {
 				// Run ModelSim
-				
+
 				runModelSim(exe, network);
-				
-				//Parse Files
-				SimParser simParser = new SimParser(network, path + File.separator + "analysis"); 
+
+				// Parse Files
+				SimParser simParser = new SimParser(network, path
+						+ File.separator + "analysis");
 				simParser.createMaps();
-				Map<Instance, Map<Action, TimeGoDone>> execution = simParser.getExecutionMap();
-				ExecutionChart chart = new ExecutionChart(execution, network, path);
+				Map<Instance, Map<Action, TimeGoDone>> execution = simParser
+						.getExecutionMap();
+				ExecutionChart chart = new ExecutionChart(execution, network,
+						path);
 				chart.saveChart();
-				
+
 			}
 		}
 	}
@@ -425,19 +425,19 @@ public class Orc2HDL extends AbstractBackend {
 			String arg = " -c -do sim_tb_" + network.getSimpleName() + ".do";
 			String cmd = modelSim + arg;
 			write("Launching Modelsim\n");
-			
+
 			Process p = Runtime.getRuntime().exec(cmd, null, fPath);
 
 			BufferedReader bri = new BufferedReader(new InputStreamReader(
 					p.getInputStream()));
 			while ((line = bri.readLine()) != null) {
-				write("Orc2HDL: " + line+ "\n");
+				write("Orc2HDL: " + line + "\n");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	protected boolean printInstance(Instance instance) {
 		StandardPrinter printer = new StandardPrinter(
@@ -451,7 +451,6 @@ public class Orc2HDL extends AbstractBackend {
 		String xlimPath = path + File.separator + "xlim";
 		new File(xlimPath).mkdir();
 
-	
 		Boolean printOK = true;
 		// Test if instance is Native
 		if (!instance.getActor().isNative()) {
@@ -522,10 +521,6 @@ public class Orc2HDL extends AbstractBackend {
 		printer.getOptions().put("fifoSize", fifoSize);
 		printer.getOptions().put("currentTime", currentTime);
 
-		
-		
-
-		
 		printer.print(file, srcPath, network);
 
 		if (goDoneSignal || modelsimAnalysis) {
@@ -562,7 +557,7 @@ public class Orc2HDL extends AbstractBackend {
 		printer.getOptions().put("currentTime", currentTime);
 
 		file = "sim_" + network.getSimpleName() + ".do";
-		
+
 		printer.print(file, simPath, network);
 
 		if (goDoneSignal) {
@@ -571,8 +566,8 @@ public class Orc2HDL extends AbstractBackend {
 			new File(simPath).mkdir();
 			printer.print(file, simPath, network);
 		}
-		
-		if (modelsimAnalysis){
+
+		if (modelsimAnalysis) {
 			printer.getOptions().put("goDoneSignal", goDoneSignal);
 			printer.getOptions().put("modelsimAnalysis", modelsimAnalysis);
 			printer.getOptions().put("simTime", simTime);
