@@ -33,8 +33,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 
+import net.sf.dftools.graph.Attribute;
 import net.sf.orcc.OrccException;
-import net.sf.orcc.df.Attribute;
 import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.ir.Expression;
@@ -98,7 +98,11 @@ public abstract class AbstractPrinter {
 
 		@Override
 		public String toString(Object o, String formatString, Locale locale) {
-			return expressionPrinter.doSwitch((Expression) o);
+			try {
+				return exprPrinterClass.newInstance().doSwitch((Expression) o);
+			} catch (Exception e) {
+				return "(no expression printed)";
+			}
 		}
 
 	}
@@ -123,16 +127,20 @@ public abstract class AbstractPrinter {
 
 		@Override
 		public String toString(Object o, String formatString, Locale locale) {
-			return typePrinter.doSwitch((Type) o);
+			try {
+				return typePrinterClass.newInstance().doSwitch((Type) o);
+			} catch (Exception e) {
+				return "(no type printed)";
+			}
 		}
 
 	}
 
-	private ExpressionPrinter expressionPrinter;
+	private Class<? extends ExpressionPrinter> exprPrinterClass;
 
 	protected STGroup group;
 
-	private TypePrinter typePrinter;
+	private Class<? extends TypePrinter> typePrinterClass;
 
 	/**
 	 * Creates a new printer.
@@ -188,11 +196,11 @@ public abstract class AbstractPrinter {
 	}
 
 	public void setExpressionPrinter(ExpressionPrinter printer) {
-		this.expressionPrinter = printer;
+		this.exprPrinterClass = printer.getClass();
 	}
 
 	public void setTypePrinter(TypePrinter printer) {
-		this.typePrinter = printer;
+		this.typePrinterClass = printer.getClass();
 	}
 
 }

@@ -240,8 +240,8 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
-		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", true);
-		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis", true);
+		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", false);
+		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis", false);
 		simTime = getAttribute("net.sf.orc2hdl.simTime", "5000");
 		srcPath = path + File.separator + "src";
 		new File(srcPath).mkdir();
@@ -335,7 +335,7 @@ public class Orc2HDL extends AbstractBackend {
 		actor.setTemplateData(data);
 
 		DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
-				new Multi2MonoToken(), new LocalArrayRemoval(),
+				new LocalArrayRemoval(),
 				new DivisionSubstitution(), new UnitImporter(),
 				new SSATransformation(), new TypeResizer(false, true, true, true),
 				new GlobalArrayInitializer(true), new InstTernaryAdder(),
