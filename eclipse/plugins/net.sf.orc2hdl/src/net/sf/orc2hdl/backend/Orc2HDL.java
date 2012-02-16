@@ -261,7 +261,8 @@ public class Orc2HDL extends AbstractBackend {
 		String fpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "Virtex 2");
 
 		if (fpgaType.equals("Spartan 3")) {
-			fpgaName = "xc3s5000-5-fg1156";
+			//fpgaName = "xc3s5000-5-fg1156";
+			fpgaName = "xc3s200-4-tq144C";
 		} else if (fpgaType.equals("Virtex 2")) {
 			fpgaName = "xc2vp30-7-ff1152";
 		} else if (fpgaType.equals("Virtex 4")) {
