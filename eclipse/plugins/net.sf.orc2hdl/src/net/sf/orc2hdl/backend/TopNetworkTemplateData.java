@@ -150,7 +150,7 @@ public class TopNetworkTemplateData {
 		if (clockDomainsIndex.size() > 1) {
 			connectionsClockDomain = new HashMap<Connection, List<Integer>>();
 			for (Connection connection : network.getConnections()) {
-				if (connection.getSource().isPort()) {
+				if (connection.getSource() instanceof Port ) {
 					List<Integer> sourceTarget = new ArrayList<Integer>();
 					int srcIndex = clockDomainsIndex.get(portClockDomain
 							.get(connection.getSource()));
@@ -162,7 +162,7 @@ public class TopNetworkTemplateData {
 						connectionsClockDomain.put(connection, sourceTarget);
 					}
 				} else {
-					if (connection.getTarget().isPort()) {
+					if (connection.getTarget() instanceof Port ) {
 						List<Integer> sourceTarget = new ArrayList<Integer>();
 						int srcIndex = clockDomainsIndex
 								.get(instanceClockDomain.get(connection
