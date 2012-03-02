@@ -13,43 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-/*
- * 
- *
- * 
- */
 
 package net.sf.openforge.verilog.model;
 
 /**
  * HexNumber is a number expressed in hexadecimal.
- *
+ * 
  * <P>
- *
+ * 
  * Created: Wed Feb 28 2001
- *
+ * 
  * @author abk
  * @version $Id: HexNumber.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class HexNumber extends BaseNumber
-{
+public class HexNumber extends BaseNumber {
 
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	public HexNumber(Constant n) {
+		super(n);
+	}
 
-    public HexNumber(Constant n)
-    {
-        super(n);
-    }
-    
-    public HexNumber(Number n)
-    {
-        this(new HexConstant(n));
-    }
-    
-    public HexNumber(long l, int size)
-    {
-        this(new HexConstant(l, size));
-    }
+	public HexNumber(Number n) {
+		this(new HexConstant(n));
+	}
+
+	public HexNumber(long l, int size) {
+		this(new HexConstant(l, size));
+	}
 
 } // end of class HexNumber

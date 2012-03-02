@@ -29,50 +29,43 @@ import java.util.*;
  * <CODE>
  * &#64; (posedge CLK)
  * </CODE>
- *
+ * 
  * <P>
- *
+ * 
  * Created: Fri Mar 02 2001
- *
+ * 
  * @author abk
  * @version $Id: EventControl.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class EventControl implements Expression
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class EventControl implements Expression {
 
-    EventExpression ee;
-    
-    public EventControl(EventExpression ee)
-    {
-        this.ee = ee;
-    }
-    
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Symbol.EVENT);
-        lex.append(Symbol.OPEN_PARENTHESIS);
-        lex.append(ee);
-        lex.append(Symbol.CLOSE_PARENTHESIS);
-        
-        return lex;
-    } // EventControl()
+	EventExpression ee;
 
-    public Collection getNets()
-    {
-        return ee.getNets();
-    }
+	public EventControl(EventExpression ee) {
+		this.ee = ee;
+	}
 
-    public int getWidth()
-    {
-        return ee.getWidth();
-    }
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
 
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
+		lex.append(Symbol.EVENT);
+		lex.append(Symbol.OPEN_PARENTHESIS);
+		lex.append(ee);
+		lex.append(Symbol.CLOSE_PARENTHESIS);
+
+		return lex;
+	} // EventControl()
+
+	public Collection getNets() {
+		return ee.getNets();
+	}
+
+	public int getWidth() {
+		return ee.getWidth();
+	}
+
+	public String toString() {
+		return lexicalify().toString();
+	}
 
 } // end of class EventControl

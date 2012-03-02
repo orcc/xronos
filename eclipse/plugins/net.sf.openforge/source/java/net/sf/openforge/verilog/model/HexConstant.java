@@ -25,52 +25,42 @@ import net.sf.openforge.util.HexString;
 
 /**
  * HexConstant is a part of Forge
- *
+ * 
  * <P>
- *
+ * 
  * Created: Thu Mar 01 2001
- *
+ * 
  * @author abk
  * @version $Id: HexConstant.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class HexConstant extends Constant
-{
+public class HexConstant extends Constant {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	public HexConstant(Number n) {
+		super(n);
+	}
 
-    public HexConstant(Number n)
-    {
-        super(n);
-    }
+	public HexConstant(String hex) {
+		super(Long.valueOf(hex, HEX));
+	} // HexConstant()
 
-    public HexConstant(String hex) 
-    {
-        super(Long.valueOf(hex, HEX));
-    } // HexConstant()
-    
-    public HexConstant(String hex, int size) 
-    {
-        super(Long.parseLong(hex, HEX), size);
-    } // HexConstant()
-    
-    public HexConstant(long l)
-    {
-        super(l);
-    }
-    
-    public HexConstant(long l, int size)
-    {
-        super(l, size);
-    }
-    
-    public int getRadix()
-    {
-        return HEX;
-    }
-    
-    public String getToken()
-    {       
-        return HexString.valueToHex(getValue(), getSize());
-    }
-    
+	public HexConstant(String hex, int size) {
+		super(Long.parseLong(hex, HEX), size);
+	} // HexConstant()
+
+	public HexConstant(long l) {
+		super(l);
+	}
+
+	public HexConstant(long l, int size) {
+		super(l, size);
+	}
+
+	public int getRadix() {
+		return HEX;
+	}
+
+	public String getToken() {
+		return HexString.valueToHex(getValue(), getSize());
+	}
+
 } // end of class HexConstant

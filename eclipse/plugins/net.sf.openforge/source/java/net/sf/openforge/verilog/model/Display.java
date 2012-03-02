@@ -34,7 +34,6 @@ import java.util.*;
  */
 public class Display implements Statement 
 {
-    private static final String _RCS_ = "$Rev: 2 $";
 
     protected Statement expr;
     
@@ -64,7 +63,7 @@ public class Display implements Statement
 
     public Collection getNets()
     {
-        HashSet nets = new HashSet();
+        Set nets = new HashSet();
 
         if (expr != null)
             nets.addAll(expr.getNets());

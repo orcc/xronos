@@ -25,54 +25,48 @@ import java.util.*;
 
 /**
  * InitialBlock is a Verilog 'initial' block.
+ * 
  * <pre>
  * initial
  *   <statement>
  * </pre>
- *
- * <p>Created: Thu Aug 22 15:08:25 2002
- *
+ * 
+ * <p>
+ * Created: Thu Aug 22 15:08:25 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: InitialBlock.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class InitialBlock implements Statement
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class InitialBlock implements Statement {
 
-    private SequentialBlock block = new SequentialBlock();
-    
-    public InitialBlock ()
-    {}
+	private SequentialBlock block = new SequentialBlock();
 
-    public InitialBlock (Statement statement)
-    {
-        this.add(statement);
-    }
+	public InitialBlock() {
+	}
 
-    public void add (Statement statement)
-    {
-        block.add(statement);
-    }
+	public InitialBlock(Statement statement) {
+		this.add(statement);
+	}
 
-    public Collection getNets ()
-    {
-        return block.getNets();
-    }
-    
-    public Lexicality lexicalify ()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Keyword.INITIAL);
-        lex.append(block);
-        return lex;
+	public void add(Statement statement) {
+		block.add(statement);
+	}
 
-    } // lexicalify()
-    
-    public String toString ()
-    {
-        return lexicalify().toString();
-    }
-    
-    
+	public Collection getNets() {
+		return block.getNets();
+	}
+
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(Keyword.INITIAL);
+		lex.append(block);
+		return lex;
+
+	} // lexicalify()
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 }// InitialBlock

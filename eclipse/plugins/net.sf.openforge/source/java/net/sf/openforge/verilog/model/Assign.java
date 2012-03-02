@@ -72,8 +72,8 @@ public abstract class Assign implements Statement {
 		return lex;
 	} // lexicalify()
 
-	public Collection<NetLValue> getNets() {
-		HashSet<NetLValue> nets = new HashSet<NetLValue>();
+	public Collection getNets() {
+		Set nets = new HashSet();
 
 		// Hack to work around MemoryElements which are NetLValues but
 		// are not nets.... This is an awful hack, we should re-work

@@ -24,7 +24,7 @@ import java.util.*;
 
 /**
  * SequentialBlock is a chunk of statements bounded by begin and end.
- *
+ * 
  * <P>
  * Example:<BR>
  * <CODE>
@@ -32,69 +32,55 @@ import java.util.*;
  *   result<=32'hFACE;<BR>
  * end<BR>
  * </CODE>
- *<P>
+ * <P>
  * Created: Fri Mar 02 2001
- *
+ * 
  * @author abk
  * @version $Id: SequentialBlock.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class SequentialBlock implements Statement
-{
+public class SequentialBlock implements Statement {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	List<Statement> body = new ArrayList<Statement>();
 
-    List body = new ArrayList();
+	public SequentialBlock() {
+		;
+	} // SequentialBlock()
 
-    public SequentialBlock()
-    {
-        ;
-    } // SequentialBlock()
+	public SequentialBlock(Statement s) {
+		body.add(s);
+	} // SequentialBlock()
 
-    public SequentialBlock(Statement s) 
-    {
-        body.add(s);
-    } // SequentialBlock()
+	public void add(Statement s) {
+		body.add(s);
+	}
 
-    public void add(Statement s)
-    {
-        body.add(s);
-    }
+	public Collection getNets() {
+		Set nets = new HashSet();
 
-    public Collection getNets()
-    {
-        HashSet nets = new HashSet();
-        
-        for (Iterator it = body.iterator(); it.hasNext();)
-        {
-            nets.addAll(((Statement)it.next()).getNets());
-        }
-        
-        return nets;
-    } // getNets()
-    
+		for (Statement statement : body) {
+			nets.addAll(statement.getNets());
+		}
 
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Keyword.BEGIN);
-        
-        for (Iterator it = body.iterator(); it.hasNext();)
-        {
-            Statement s = (Statement)it.next();
-            
-            lex.append(s);
-        }
+		return nets;
+	} // getNets()
 
-        lex.append(Keyword.END);
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
 
-        return lex;
+		lex.append(Keyword.BEGIN);
 
-    } // lexicalify()
-    
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-    
+		for (Statement statement : body) {
+			lex.append(statement);
+		}
+
+		lex.append(Keyword.END);
+
+		return lex;
+
+	} // lexicalify()
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 } // end of class SequentialBlock

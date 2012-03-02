@@ -23,52 +23,44 @@ package net.sf.openforge.verilog.model;
 import java.util.*;
 
 /**
- * Group is an expression wrapper which surrounds an expression in parenthesis symbols.
- *
+ * Group is an expression wrapper which surrounds an expression in parenthesis
+ * symbols.
+ * 
  * <P>
- *
+ * 
  * Created: Fri Mar 02 2001
- *
+ * 
  * @author abk
  * @version $Id: Group.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Group implements Expression
-{
+public class Group implements Expression {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	private Expression base;
 
-    private Expression base;
+	public Group(Expression base) {
+		this.base = base;
+	}
 
-    public Group(Expression base) 
-    {
-        this.base = base;
-    }
-    
-    public int getWidth()
-    {
-        return base.getWidth();
-    }
+	public int getWidth() {
+		return base.getWidth();
+	}
 
-    public Collection getNets()
-    {
-        return base.getNets();
-    }
-    
+	public Collection<Expression> getNets() {
+		return base.getNets();
+	}
 
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Symbol.OPEN_PARENTHESIS);
-        lex.append(base);
-        lex.append(Symbol.CLOSE_PARENTHESIS);
-        
-        return lex;
-    } // lexicalify()
-    
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(Symbol.OPEN_PARENTHESIS);
+		lex.append(base);
+		lex.append(Symbol.CLOSE_PARENTHESIS);
+
+		return lex;
+	} // lexicalify()
+
+	public String toString() {
+		return lexicalify().toString();
+	}
 
 } // end of class Group

@@ -45,6 +45,6 @@ public interface Expression extends VerilogElement
     /**
      * Gets all Nets which participate in this Expression.
      */
-    public Collection getNets();
+    public Collection<Expression> getNets();
     
 } // end of interface Expression

@@ -24,127 +24,106 @@ import java.util.*;
 
 /**
  * EventExpression is a part of Forge
- *
+ * 
  * <P>
- *
+ * 
  * Created: Mon Mar 05 2001
- *
+ * 
  * @author abk
  * @version $Id: EventExpression.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class EventExpression implements Expression
-{
+public class EventExpression implements Expression {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	List<Expression> events = new ArrayList<Expression>();
 
-    List events = new ArrayList();
-    
-    public EventExpression(SimpleExpression event)
-    {
-        events.add(event);
-    }
-    
-    /**
-     * Creates an event expression composed
-     * of one or more expressions, seperated by 'or'.
-     */
-    public EventExpression(EventExpression[] events) 
-    {
-        for (int i=0; i<events.length; i++)
-        {
-            this.events.add(events[i]);
-        } 
-    } // EventExpression()
-    
-    public void add(SimpleExpression event)
-    {
-        events.add(event);
-    }
+	public EventExpression(SimpleExpression event) {
+		events.add(event);
+	}
 
-    public int getWidth()
-    {
-        return 1;
-    }
-    
-    public Collection getNets()
-    {
-        HashSet nets = new HashSet();
-        
-        for (Iterator it = events.iterator(); it.hasNext();)
-        {
-            Expression e = (Expression)it.next();
-            nets.addAll(e.getNets());
-        }
+	/**
+	 * Creates an event expression composed of one or more expressions,
+	 * seperated by 'or'.
+	 */
+	public EventExpression(EventExpression[] events) {
+		for (int i = 0; i < events.length; i++) {
+			this.events.add(events[i]);
+		}
+	} // EventExpression()
 
-        return nets;
-    } // getNets()
-    
+	public void add(SimpleExpression event) {
+		events.add(event);
+	}
 
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        for (Iterator it = events.iterator(); it.hasNext();)
-        {
-            Expression e = (Expression)it.next();
-            
-            lex.append(e);
-            
-            if (it.hasNext()) 
-            {
-                lex.append(Keyword.OR);
-            }
-        }
+	public int getWidth() {
+		return 1;
+	}
 
-        return lex;
-    }
-    
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-    
-    ////////////////////////////////////////////////
-    //
-    // inner classes
-    //
-    
-    public static final class NegEdge extends EventExpression
-    {
-        public NegEdge(SimpleExpression e)
-        {
-            super(e);
-        }
-        
-        public Lexicality lexicalify()
-        {
-            Lexicality lex = super.lexicalify();
-            
-            lex.prepend(Keyword.NEGEDGE);
-            
-            return lex;
-            
-        } // lexicalify()
-        
-    } // end of class NegEdge
+	public Collection getNets() {
+		HashSet nets = new HashSet();
 
-    public static final class PosEdge extends EventExpression
-    {
-        public PosEdge(SimpleExpression e)
-        {
-            super(e);
-        }
-        
-        public Lexicality lexicalify()
-        {
-            Lexicality lex = super.lexicalify();
-            
-            lex.prepend(Keyword.POSEDGE);
-            
-            return lex;
+		for (Iterator it = events.iterator(); it.hasNext();) {
+			Expression e = (Expression) it.next();
+			nets.addAll(e.getNets());
+		}
 
-        } // lexicalify()
+		return nets;
+	} // getNets()
 
-    } // end of class PosEdge
-    
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		for (Iterator it = events.iterator(); it.hasNext();) {
+			Expression e = (Expression) it.next();
+
+			lex.append(e);
+
+			if (it.hasNext()) {
+				lex.append(Keyword.OR);
+			}
+		}
+
+		return lex;
+	}
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
+	// //////////////////////////////////////////////
+	//
+	// inner classes
+	//
+
+	public static final class NegEdge extends EventExpression {
+		public NegEdge(SimpleExpression e) {
+			super(e);
+		}
+
+		public Lexicality lexicalify() {
+			Lexicality lex = super.lexicalify();
+
+			lex.prepend(Keyword.NEGEDGE);
+
+			return lex;
+
+		} // lexicalify()
+
+	} // end of class NegEdge
+
+	public static final class PosEdge extends EventExpression {
+		public PosEdge(SimpleExpression e) {
+			super(e);
+		}
+
+		public Lexicality lexicalify() {
+			Lexicality lex = super.lexicalify();
+
+			lex.prepend(Keyword.POSEDGE);
+
+			return lex;
+
+		} // lexicalify()
+
+	} // end of class PosEdge
+
 } // end of class EventExpression
