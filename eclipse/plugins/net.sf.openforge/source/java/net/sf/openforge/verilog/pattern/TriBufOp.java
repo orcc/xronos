@@ -20,67 +20,74 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.lim.TriBuf;
+import net.sf.openforge.verilog.model.Assign;
+import net.sf.openforge.verilog.model.BinaryConstant;
+import net.sf.openforge.verilog.model.BinaryNumber;
+import net.sf.openforge.verilog.model.Conditional;
+import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.Group;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.NetFactory;
 
 /**
  * A simple conditional which output's z's if the enable is false.
  */
-public class TriBufOp extends StatementBlock implements ForgePattern
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-    
-    Set produced_nets = new HashSet();
-    Set consumed_nets = new HashSet();
+public class TriBufOp extends StatementBlock implements ForgePattern {
 
-    /**
-     * Constructs a TriBuf based on either of two selection Nets,
-     * which specify which input data Net will be assigned to the result Net.
-     *
-     * @param result  The result wire to which the 2-1 mux will be assigned
-     * @param sel     Expression which selects data_a if true and
-     * data_b if false as the output value
-     * @param data_a  The first input value
-     * @param data_b  The second input value
-     */
-    public TriBufOp(TriBuf tbuf)
-    {
-        Expression input_operand = new PortWire(tbuf.getInputPort());
-        Expression enable_operand = new PortWire(tbuf.getEnablePort());
+	Set<Expression> produced_nets = new HashSet<Expression>();
+	Set<Expression> consumed_nets = new HashSet<Expression>();
 
-        consumed_nets.add(input_operand);
-        consumed_nets.add(enable_operand);
-        
-        Net result_wire = NetFactory.makeNet(tbuf.getResultBus());
-        /*
-         * The boolean test expression is grouped in parens because ModelTech
-         * can't parse it when it's a literal value (ie, "1 'h 1?").
-         */
-        Conditional conditional = new Conditional(new Group(enable_operand),
-            input_operand,
-            new BinaryNumber(new BinaryConstant("z",tbuf.getResultBus().getValue().getSize())));
+	/**
+	 * Constructs a TriBuf based on either of two selection Nets, which specify
+	 * which input data Net will be assigned to the result Net.
+	 * 
+	 * @param result
+	 *            The result wire to which the 2-1 mux will be assigned
+	 * @param sel
+	 *            Expression which selects data_a if true and data_b if false as
+	 *            the output value
+	 * @param data_a
+	 *            The first input value
+	 * @param data_b
+	 *            The second input value
+	 */
+	public TriBufOp(TriBuf tbuf) {
+		Expression input_operand = new PortWire(tbuf.getInputPort());
+		Expression enable_operand = new PortWire(tbuf.getEnablePort());
 
-        produced_nets.add(result_wire);
-        
-        add(new Assign.Continuous(result_wire, conditional));
-    }
+		consumed_nets.add(input_operand);
+		consumed_nets.add(enable_operand);
 
-    public Collection getConsumedNets()
-    {
-        return consumed_nets;
-    }
-    
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * produces as output signals.
-     */
-    public Collection getProducedNets()
-    {
-        return produced_nets;
-    }
+		Net result_wire = NetFactory.makeNet(tbuf.getResultBus());
+		/*
+		 * The boolean test expression is grouped in parens because ModelTech
+		 * can't parse it when it's a literal value (ie, "1 'h 1?").
+		 */
+		Conditional conditional = new Conditional(new Group(enable_operand),
+				input_operand, new BinaryNumber(new BinaryConstant("z", tbuf
+						.getResultBus().getValue().getSize())));
+
+		produced_nets.add(result_wire);
+
+		add(new Assign.Continuous(result_wire, conditional));
+	}
+
+	public Collection getConsumedNets() {
+		return consumed_nets;
+	}
+
+	/**
+	 * Provides the collection of Nets which this statement of verilog produces
+	 * as output signals.
+	 */
+	public Collection getProducedNets() {
+		return produced_nets;
+	}
 
 } // TriBuf
-
 

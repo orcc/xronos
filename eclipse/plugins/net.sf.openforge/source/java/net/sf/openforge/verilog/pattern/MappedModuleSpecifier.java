@@ -20,19 +20,17 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Set;
 
 /**
- * An IncludeSpecifier specifies external verilog which must be
- * included for synthesis or simulation.
+ * An IncludeSpecifier specifies external Verilog which must be included for
+ * synthesis or simulation.
  */
-public interface MappedModuleSpecifier
-{
-    static final String _RCS_ = "$Rev: 2 $";
+public interface MappedModuleSpecifier {
 
-    /**
-     * Provides the Set of MappedModule objects need.
-     */
-    public Set getMappedModules();
-    
+	/**
+	 * Provides the Set of MappedModule objects need.
+	 */
+	public Set getMappedModules();
+
 } // interface MappedSpecifier

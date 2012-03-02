@@ -20,14 +20,27 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
-import net.sf.openforge.verilog.model.*;
-
+import net.sf.openforge.verilog.model.Always;
+import net.sf.openforge.verilog.model.Assign;
+import net.sf.openforge.verilog.model.ConditionalStatement;
+import net.sf.openforge.verilog.model.Constant;
+import net.sf.openforge.verilog.model.EventControl;
+import net.sf.openforge.verilog.model.EventExpression;
+import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.ProceduralTimingBlock;
+import net.sf.openforge.verilog.model.Register;
+import net.sf.openforge.verilog.model.SequentialBlock;
 
 /**
- * A SyncBlock is the traditional Forge pattern of a
- * an always block with Clock and Reset sensitivity list.
+ * A SyncBlock is the traditional Forge pattern of a an always block with Clock
+ * and Reset sensitivity list.
  * <P>
  * Example:<BR>
  * <CODE>
@@ -35,7 +48,7 @@ import net.sf.openforge.verilog.model.*;
  * begin<<BR>
  * if (RESET)<BR>
  *   begin<BR>
- *     iadd2_reg <=0;<BR>
+ *     iadd2_reg <= 0;<BR>
  *   end<BR>
  * else<BR>
  *   begin<BR>
@@ -43,140 +56,131 @@ import net.sf.openforge.verilog.model.*;
  *   end<BR>
  * end<BR>
  * </CODE>
- *
+ * 
  * <P>
- *
+ * 
  * Created: Tue Mar 12 09:46:58 2002
- *
+ * 
  * @author <a href="mailto:andreas.kollegger@xilinx.com">Andy Kollegger</a>
  * @version $Id: SyncBlock.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class SyncBlock implements ForgePattern  
-{
+public class SyncBlock implements ForgePattern {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	private Always always;
+	private Net clock;
+	private Net reset;
+	private EventControl control;
+	private SequentialBlock reset_block;
+	private SequentialBlock clock_block;
 
-    private Always always;
-    private Net clock;
-    private Net reset;
-    private EventControl control;
-    private SequentialBlock reset_block;
-    private SequentialBlock clock_block;
-    
-    private Set produced_nets = new LinkedHashSet();
-    private Set consumed_nets = new LinkedHashSet();
+	private Set<Object> produced_nets = new LinkedHashSet<Object>();
+	private Set<Object> consumed_nets = new LinkedHashSet<Object>();
 
-    public SyncBlock (Net clock, Net reset)
-    {
-        this.clock = clock;
-        this.reset = reset;
-        
-        consumed_nets.add(clock);
-        consumed_nets.add(reset);
+	public SyncBlock(Net clock, Net reset) {
+		this.clock = clock;
+		this.reset = reset;
 
-        EventExpression reset_event = new EventExpression.PosEdge(reset);
-        EventExpression clock_event = new EventExpression.PosEdge(clock);
-        EventExpression ee = new EventExpression(new EventExpression[] {clock_event, reset_event});
-        control = new EventControl(ee);
+		consumed_nets.add(clock);
+		consumed_nets.add(reset);
 
-        reset_block = new SequentialBlock();
-        clock_block = new SequentialBlock();
+		EventExpression reset_event = new EventExpression.PosEdge(reset);
+		EventExpression clock_event = new EventExpression.PosEdge(clock);
+		EventExpression ee = new EventExpression(new EventExpression[] {
+				clock_event, reset_event });
+		control = new EventControl(ee);
 
-        ConditionalStatement cs = new ConditionalStatement(reset, reset_block, clock_block);
+		reset_block = new SequentialBlock();
+		clock_block = new SequentialBlock();
 
-        SequentialBlock body = new SequentialBlock(cs);
-        
-        ProceduralTimingBlock ptb = new ProceduralTimingBlock(control, body);
-        
-        always = new Always(ptb);
+		ConditionalStatement cs = new ConditionalStatement(reset, reset_block,
+				clock_block);
 
-    } // SyncBlock
+		SequentialBlock body = new SequentialBlock(cs);
 
+		ProceduralTimingBlock ptb = new ProceduralTimingBlock(control, body);
 
-    /**
-     * Add sync code. Code can only be added in complementary pairs --
-     * a reset and a clock portion. This is to encourage correct coding.
-     *
-     * @param on_reset the statement which occurs during reset edges
-     * @param on_clock the statement which occurs during clock edges
-     */
-    public void add(ForgePattern on_reset, ForgePattern on_clock)
-    {
-        reset_block.add(on_reset);
-        clock_block.add(on_clock);
-        
-        consumed_nets.addAll(on_reset.getConsumedNets());
-        consumed_nets.addAll(on_clock.getConsumedNets());
-        produced_nets.addAll(on_reset.getProducedNets());
-        produced_nets.addAll(on_clock.getProducedNets());
-    } // add()
+		always = new Always(ptb);
 
-    /**
-     * Add sync code for a register. The explicit clock-edge statement
-     * is complimented by an auto-generated zero-assign to the given
-     * register.
-     *
-     * @param reg the register being synchronized
-     * @param on_clock the statement which occurs during clock edges
-     */
-    public void add(Register reg, ForgePattern on_clock)
-    {
-        add(new ForgeStatement(Collections.singleton(reg), 
-                new Assign.NonBlocking(reg, makeZero(reg))), 
-            on_clock);
-    } // add()
+	} // SyncBlock
 
-    private Constant makeZero(Net n)
-    {
-        return new Constant(0, n.getWidth());
-    }
+	/**
+	 * Add sync code. Code can only be added in complementary pairs -- a reset
+	 * and a clock portion. This is to encourage correct coding.
+	 * 
+	 * @param on_reset
+	 *            the statement which occurs during reset edges
+	 * @param on_clock
+	 *            the statement which occurs during clock edges
+	 */
+	public void add(ForgePattern on_reset, ForgePattern on_clock) {
+		reset_block.add(on_reset);
+		clock_block.add(on_clock);
 
-    /**
-     *
-     * @return <description>
-     */
-    public Lexicality lexicalify()
-    {
-        return always.lexicalify();
-    } // lexicalify()
+		consumed_nets.addAll(on_reset.getConsumedNets());
+		consumed_nets.addAll(on_clock.getConsumedNets());
+		produced_nets.addAll(on_reset.getProducedNets());
+		produced_nets.addAll(on_clock.getProducedNets());
+	} // add()
 
-    /**
-     *
-     * @return <description>
-     */
-    public Collection getNets()
-    {
-        HashSet nets = new HashSet();
-        
-        nets.addAll(control.getNets());
-        nets.addAll(reset_block.getNets());
-        nets.addAll(clock_block.getNets());
+	/**
+	 * Add sync code for a register. The explicit clock-edge statement is
+	 * complimented by an auto-generated zero-assign to the given register.
+	 * 
+	 * @param reg
+	 *            the register being synchronized
+	 * @param on_clock
+	 *            the statement which occurs during clock edges
+	 */
+	public void add(Register reg, ForgePattern on_clock) {
+		add(new ForgeStatement(Collections.singleton(reg),
+				new Assign.NonBlocking(reg, makeZero(reg))), on_clock);
+	} // add()
 
-        return nets;
-    } // getNets()
+	private Constant makeZero(Net n) {
+		return new Constant(0, n.getWidth());
+	}
 
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * uses as input signals.
-     */
-    public Collection getConsumedNets()
-    {
-        return consumed_nets;
-    }
-    
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * produces as output signals.
-     */
-    public Collection getProducedNets()
-    {
-        return produced_nets;
-    }
-    
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-    
+	/**
+	 * 
+	 * @return <description>
+	 */
+	public Lexicality lexicalify() {
+		return always.lexicalify();
+	} // lexicalify()
+
+	/**
+	 * 
+	 * @return <description>
+	 */
+	public Collection getNets() {
+		HashSet nets = new HashSet();
+
+		nets.addAll(control.getNets());
+		nets.addAll(reset_block.getNets());
+		nets.addAll(clock_block.getNets());
+
+		return nets;
+	} // getNets()
+
+	/**
+	 * Provides the collection of Nets which this statement of verilog uses as
+	 * input signals.
+	 */
+	public Collection getConsumedNets() {
+		return consumed_nets;
+	}
+
+	/**
+	 * Provides the collection of Nets which this statement of verilog produces
+	 * as output signals.
+	 */
+	public Collection getProducedNets() {
+		return produced_nets;
+	}
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 } // class SyncBlock

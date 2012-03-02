@@ -21,24 +21,21 @@
 
 package net.sf.openforge.verilog.pattern;
 
-import java.lang.RuntimeException;
-
 /**
- * UnknownRegConfigurationException is an exception that can be
- * thrown to indicate that the configuration of a Reg cannot be
- * recognized and inferred.
- *
- * <p>Created: Wed Dec 10 04:08:40 2003
- *
+ * UnknownRegConfigurationException is an exception that can be thrown to
+ * indicate that the configuration of a Reg cannot be recognized and inferred.
+ * 
+ * <p>
+ * Created: Wed Dec 10 04:08:40 2003
+ * 
  * @author imiller
- * @version $Id: UnknownRegConfigurationException.java 2 2005-06-09 20:00:48Z imiller $
+ * @version $Id: UnknownRegConfigurationException.java 2 2005-06-09 20:00:48Z
+ *          imiller $
  */
-public class UnknownRegConfigurationException extends RuntimeException 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+@SuppressWarnings("serial")
+public class UnknownRegConfigurationException extends RuntimeException {
 
-    public UnknownRegConfigurationException ()
-    {
-    }
-    
+	public UnknownRegConfigurationException() {
+	}
+
 }// UnknownRegConfigurationException

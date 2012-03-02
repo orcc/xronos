@@ -20,14 +20,27 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.lim.EncodedMux;
+import net.sf.openforge.verilog.model.Assign;
+import net.sf.openforge.verilog.model.BinaryNumber;
+import net.sf.openforge.verilog.model.CaseBlock;
+import net.sf.openforge.verilog.model.Control;
+import net.sf.openforge.verilog.model.EventControl;
+import net.sf.openforge.verilog.model.EventExpression;
+import net.sf.openforge.verilog.model.Keyword;
+import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.NetFactory;
+import net.sf.openforge.verilog.model.Symbol;
 
 /**
- * A VEncodedMux uses case block style implementations based on a LIM {@link EncodedMux}
- * object.
+ * A VEncodedMux uses case block style implementations based on a LIM
+ * {@link EncodedMux} object.
  * <P>
  * Example:<BR>
  * <CODE>
@@ -43,118 +56,110 @@ import net.sf.openforge.verilog.model.*;
  * </CODE>
  * <P>
  * Created: Tue Jun 25, 2002
- *
+ * 
  * @author cwu
  * @version $Id: VEncodedMux.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class VEncodedMux implements ForgePattern
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class VEncodedMux implements ForgePattern {
 
-    private EventControl eventControl;
-    private CaseBlock caseBlock;
-            
-    private Set produced_nets = new LinkedHashSet();
-    private Set consumed_nets = new LinkedHashSet();
+	private EventControl eventControl;
+	private CaseBlock caseBlock;
 
-    /**
-     * Constructs a VEncodedMux in the form of case block based on a LIM EncodedMux.
-     *
-     * @param enMux the LIM EncodedMux upon which to base the verilog implementation
-     */
-    public VEncodedMux (EncodedMux enMux)
-    {
-        PortWire caseController = new PortWire(enMux.getSelectPort());
-        consumed_nets.add(caseController);        
-        EventExpression sensitiveList = new EventExpression(caseController);
-        for (int i = 0; i < enMux.getSize()-1; i++)
-        {
-            //if (!enMux.getDataPort(i).getBus().getValue().isConstant())
-            if (!enMux.getDataPort(i).getValue().isConstant())
-            {
-                Net sensitiveNet = new PortWire(enMux.getDataPort(i));
-                sensitiveList.add(sensitiveNet);
-            }
-        }        
-        eventControl = new EventControl(sensitiveList);
-        caseBlock = new CaseBlock(caseController);        
-        Net result = NetFactory.makeNet(enMux.getResultBus());
-        produced_nets.add(result);
-        int caseCount = enMux.getSize()-1;
-        for (int i = 0; i < caseCount; i++)
-        {
-            Net selected = new PortWire(enMux.getDataPort(i));
-            BinaryNumber caseNumber = new BinaryNumber((long)i, caseController.getWidth());            
-            caseBlock.add(caseNumber.toString(), new Assign.Blocking(result, selected));
-            consumed_nets.add(selected);
-        }
-    } // EncodedMux()
-    
-    public EventControl getEventControl ()
-    {
-        return eventControl;
-    }
-    
-    public CaseBlock getCaseBlock ()
-    {
-        return caseBlock;
-    }
-    
-    public Lexicality lexicalify ()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Control.NEWLINE);
-        lex.append(Keyword.ALWAYS);
-        lex.append(Control.WHITESPACE);
-        //lex.append(eventControl);
-        lex.append(Symbol.EVENT);
-        lex.append(Symbol.OPEN_PARENTHESIS);
-        lex.append(Symbol.SENSITIVE_ALL);
-        lex.append(Symbol.CLOSE_PARENTHESIS);
-        
-        lex.append(Control.NEWLINE);
-        lex.append(Keyword.BEGIN);
-        lex.append(Control.NEWLINE);
-        lex.append(caseBlock);
-        lex.append(Control.NEWLINE);
-        lex.append(Keyword.END);
-        
-        return lex;
-    } // lexicalify()
-    
-    public Collection getNets ()
-    {
-        HashSet nets = new HashSet();
-        
-        nets.addAll(eventControl.getNets());
-        nets.addAll(caseBlock.getNets());
-        
-        return nets;
-    } // getNets()
+	private Set<Object> produced_nets = new LinkedHashSet<Object>();
+	private Set<Object> consumed_nets = new LinkedHashSet<Object>();
 
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * uses as input signals.
-     */
-    public Collection getConsumedNets ()
-    {
-        return consumed_nets;
-    }
-    
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * produces as output signals.
-     */
-    public Collection getProducedNets ()
-    {
-        return produced_nets;
-    }
+	/**
+	 * Constructs a VEncodedMux in the form of case block based on a LIM
+	 * EncodedMux.
+	 * 
+	 * @param enMux
+	 *            the LIM EncodedMux upon which to base the verilog
+	 *            implementation
+	 */
+	public VEncodedMux(EncodedMux enMux) {
+		PortWire caseController = new PortWire(enMux.getSelectPort());
+		consumed_nets.add(caseController);
+		EventExpression sensitiveList = new EventExpression(caseController);
+		for (int i = 0; i < enMux.getSize() - 1; i++) {
+			// if (!enMux.getDataPort(i).getBus().getValue().isConstant())
+			if (!enMux.getDataPort(i).getValue().isConstant()) {
+				Net sensitiveNet = new PortWire(enMux.getDataPort(i));
+				sensitiveList.add(sensitiveNet);
+			}
+		}
+		eventControl = new EventControl(sensitiveList);
+		caseBlock = new CaseBlock(caseController);
+		Net result = NetFactory.makeNet(enMux.getResultBus());
+		produced_nets.add(result);
+		int caseCount = enMux.getSize() - 1;
+		for (int i = 0; i < caseCount; i++) {
+			Net selected = new PortWire(enMux.getDataPort(i));
+			BinaryNumber caseNumber = new BinaryNumber((long) i,
+					caseController.getWidth());
+			caseBlock.add(caseNumber.toString(), new Assign.Blocking(result,
+					selected));
+			consumed_nets.add(selected);
+		}
+	} // EncodedMux()
 
-    public String toString ()
-    {
-        return lexicalify().toString();
-    }
-    
+	public EventControl getEventControl() {
+		return eventControl;
+	}
+
+	public CaseBlock getCaseBlock() {
+		return caseBlock;
+	}
+
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(Control.NEWLINE);
+		lex.append(Keyword.ALWAYS);
+		lex.append(Control.WHITESPACE);
+		// lex.append(eventControl);
+		lex.append(Symbol.EVENT);
+		lex.append(Symbol.OPEN_PARENTHESIS);
+		lex.append(Symbol.SENSITIVE_ALL);
+		lex.append(Symbol.CLOSE_PARENTHESIS);
+
+		lex.append(Control.NEWLINE);
+		lex.append(Keyword.BEGIN);
+		lex.append(Control.NEWLINE);
+		lex.append(caseBlock);
+		lex.append(Control.NEWLINE);
+		lex.append(Keyword.END);
+
+		return lex;
+	} // lexicalify()
+
+	public Collection getNets() {
+		HashSet nets = new HashSet();
+
+		nets.addAll(eventControl.getNets());
+		nets.addAll(caseBlock.getNets());
+
+		return nets;
+	} // getNets()
+
+	/**
+	 * Provides the collection of Nets which this statement of verilog uses as
+	 * input signals.
+	 */
+	public Collection getConsumedNets() {
+		return consumed_nets;
+	}
+
+	/**
+	 * Provides the collection of Nets which this statement of verilog produces
+	 * as output signals.
+	 */
+	public Collection getProducedNets() {
+		return produced_nets;
+	}
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 } // EecodedMux
 

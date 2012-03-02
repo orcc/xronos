@@ -21,80 +21,80 @@
 
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.Statement;
+import net.sf.openforge.verilog.model.Symbol;
+import net.sf.openforge.verilog.model.VerilogElement;
 
 /**
- * CommaDelimitedStatement represents a sequence of
- * {@link VerilogElement VerilogElements} seperated by commas.  This
- * is particularly usefull with the FStatement.FWrite class.
- *
- * <p>Created: Fri Aug 23 09:31:04 2002
- *
+ * CommaDelimitedStatement represents a sequence of {@link VerilogElement
+ * VerilogElements} seperated by commas. This is particularly usefull with the
+ * FStatement.FWrite class.
+ * 
+ * <p>
+ * Created: Fri Aug 23 09:31:04 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: CommaDelimitedStatement.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class CommaDelimitedStatement implements Statement
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class CommaDelimitedStatement implements Statement {
 
-    private List elements = new ArrayList();
-    
-    public CommaDelimitedStatement (Collection elements)
-    {
-        this.elements = new ArrayList(elements);
-    }
+	private List<VerilogElement> elements = new ArrayList<VerilogElement>();
 
-    public CommaDelimitedStatement ()
-    {
-    }
+	public CommaDelimitedStatement(Collection elements) {
+		this.elements = new ArrayList(elements);
+	}
 
-    /**
-     * Adds another element the sequence of comma delimited elements.
-     */
-    public void append (VerilogElement element)
-    {
-        this.elements.add(element);
-    }
+	public CommaDelimitedStatement() {
+	}
 
-    public void prepend (VerilogElement element)
-    {
-        this.elements.add(0, element);
-    }
-    
+	/**
+	 * Adds another element the sequence of comma delimited elements.
+	 */
+	public void append(VerilogElement element) {
+		this.elements.add(element);
+	}
 
-    public Collection getNets ()
-    {
-        HashSet nets = new HashSet();
-        for (Iterator iter = elements.iterator(); iter.hasNext();)
-        {
-            VerilogElement ve = (VerilogElement)iter.next();
-            if (ve instanceof Statement)
-                nets.addAll(((Statement)ve).getNets());
-            else if (ve instanceof Expression)
-                nets.addAll(((Expression)ve).getNets());
-            else if (ve instanceof Net)
-                nets.add(ve);
-        }
-        return nets;
-    }
+	public void prepend(VerilogElement element) {
+		this.elements.add(0, element);
+	}
 
-    public Lexicality lexicalify ()
-    {
-        Lexicality lex = new Lexicality();
-        for (Iterator iter = elements.iterator(); iter.hasNext();)
-        {
-            lex.append((VerilogElement)iter.next());
-            if (iter.hasNext())
-                lex.append(Symbol.COMMA);
-        }
-        return lex;
-    }
+	public Collection getNets() {
+		Set nets = new HashSet();
+		for (Iterator<VerilogElement> iter = elements.iterator(); iter.hasNext();) {
+			VerilogElement ve = (VerilogElement) iter.next();
+			if (ve instanceof Statement)
+				nets.addAll(((Statement) ve).getNets());
+			else if (ve instanceof Expression)
+				nets.addAll(((Expression) ve).getNets());
+			else if (ve instanceof Net)
+				nets.add(ve);
+		}
+		return nets;
+	}
 
-    public String toString ()
-    {
-        return lexicalify().toString();
-    }
-    
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+		for (Iterator<VerilogElement> iter = elements.iterator(); iter
+				.hasNext();) {
+			lex.append((VerilogElement) iter.next());
+			if (iter.hasNext())
+				lex.append(Symbol.COMMA);
+		}
+		return lex;
+	}
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 }// CommaDelimitedStatement

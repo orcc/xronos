@@ -23,23 +23,22 @@ package net.sf.openforge.verilog.pattern;
 import net.sf.openforge.lim.Bus;
 
 /**
- * A Verilog Net which is based on a LIM {@link Bus}.<P>
- *
- * Created:   May 7, 2002
- *
- * @author    <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
- * @version   $Id: BusNet.java 2 2005-06-09 20:00:48Z imiller $
+ * A Verilog Net which is based on a LIM {@link Bus}.
+ * <P>
+ * 
+ * Created: May 7, 2002
+ * 
+ * @author <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
+ * @version $Id: BusNet.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface BusNet
-{
-    static final String _RCS_ = "$Rev: 2 $";
+public interface BusNet {
 
-    /**
-     * Returns the Bus upon which the Net is based.
-     *
-     * @return The LIM Bus upon which the Net is based
-     */
-    public Bus getBus();
-    
+	/**
+	 * Returns the Bus upon which the Net is based.
+	 * 
+	 * @return The LIM Bus upon which the Net is based
+	 */
+	public Bus getBus();
+
 } // BusNet
 

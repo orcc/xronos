@@ -20,85 +20,84 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Collection;
 
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.Assign;
+import net.sf.openforge.verilog.model.Bitwise;
+import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.Group;
+import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.Replication;
+import net.sf.openforge.verilog.model.Statement;
 
 /**
- * An old favorite which or's together select/data pairs to produce an output Net.<P>
- * Takes the form:<P>
+ * An old favorite which or's together select/data pairs to produce an output
+ * Net.
+ * <P>
+ * Takes the form:
+ * <P>
  * <CODE><PRE>
  * assign result = ({32{sel_a}} & data_a[31:0]) |
  *                 ({32{sel_b}} & data_b[31:0]);
  * </PRE></CODE>
- *
- * Created:   May 7, 2002
- *
- * @author    <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
- * @version   $Id: Many2OneMux.java 2 2005-06-09 20:00:48Z imiller $
+ * 
+ * Created: May 7, 2002
+ * 
+ * @author <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
+ * @version $Id: Many2OneMux.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Many2OneMux implements Statement
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class Many2OneMux implements Statement {
 
-    Statement many2one_statement;
+	Statement many2one_statement;
 
+	/**
+	 * Constructs a Many2OneMux based on an array of paired select-data nets.
+	 * 
+	 * @param result
+	 *            The result wire to which the N-1 mux will be assigned
+	 * @param pairs
+	 *            An nx2 array of select/data pairs
+	 */
+	public Many2OneMux(Net result, Expression[][] pairs) {
+		assert pairs[0].length == 2;
 
-    /**
-     * Constructs a Many2OneMux based on an array of paired select-data nets.
-     *
-     * @param result  The result wire to which the N-1 mux will be assigned
-     * @param pairs An nx2 array of select/data pairs
-     */
-    public Many2OneMux(Net result, Expression[][] pairs)
-    {
-        assert pairs[0].length == 2;
-        
-        Expression all_pairs = null;
-        for (int i=0; i<pairs.length; i++)
-        {
-            Replication r = new Replication(pairs[i][1].getWidth(), pairs[i][0]);
-            Bitwise.And anded_pair = new Bitwise.And(r, pairs[i][1]);
-            Group g = new Group(anded_pair);
-        
-            if (all_pairs == null)
-            {
-                all_pairs = g;
-            }
-            else 
-            {
-                all_pairs = new Bitwise.Or(all_pairs, g);
-            }
-        }
-        many2one_statement = new Assign.Continuous(result, all_pairs);
-    }
+		Expression all_pairs = null;
+		for (int i = 0; i < pairs.length; i++) {
+			Replication r = new Replication(pairs[i][1].getWidth(), pairs[i][0]);
+			Bitwise.And anded_pair = new Bitwise.And(r, pairs[i][1]);
+			Group g = new Group(anded_pair);
 
+			if (all_pairs == null) {
+				all_pairs = g;
+			} else {
+				all_pairs = new Bitwise.Or(all_pairs, g);
+			}
+		}
+		many2one_statement = new Assign.Continuous(result, all_pairs);
+	}
 
-    /**
-     *  Gets the nets attribute of the Many2OneMux object
-     *
-     * @return   The nets value
-     */
-    public Collection getNets()
-    {
-        return many2one_statement.getNets();
-    } // getNets()
+	/**
+	 * Gets the nets attribute of the Many2OneMux object
+	 * 
+	 * @return The nets value
+	 */
+	public Collection getNets() {
+		return many2one_statement.getNets();
+	} // getNets()
 
+	/**
+	 * Description of the Method
+	 * 
+	 * @return Description of the Return Value
+	 */
+	public Lexicality lexicalify() {
+		return many2one_statement.lexicalify();
+	} // lexicalify()
 
-    /**
-     *  Description of the Method
-     *
-     * @return   Description of the Return Value
-     */
-    public Lexicality lexicalify()
-    {
-        return many2one_statement.lexicalify();
-    } // lexicalify()
+	public String toString() {
+		return lexicalify().toString();
+	}
 
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-    
 } // Many2OneMux
 

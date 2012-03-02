@@ -20,56 +20,54 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.NetFactory;
 
 /**
- * A verilog expression which is based on a contiguous set of LIM
- * {@link Bit Bits}. 
+ * A verilog expression which is based on a contiguous set of LIM {@link Bit
+ * Bits}.
  * 
- * Created:   August 6, 2002
- *
- * @author    <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
- * @version   $Id: BitWire.java 2 2005-06-09 20:00:48Z imiller $
+ * Created: August 6, 2002
+ * 
+ * @author <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
+ * @version $Id: BitWire.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class BitWire implements Expression
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class BitWire implements Expression {
 
-    Expression bitselect;
-    
-    public BitWire(Bit bit)
-    {
-        assert bit.getOwner() != null : "Getting owner of floating bit " + bit;
-        Bus source = bit.getOwner();
-        Net full_wire = NetFactory.makeNet(source);
-        bitselect = full_wire.getBitSelect(bit.getPosition());
-    }
-    
-    public BitWire(List bits)
-    {
-        Bit lsb = (Bit)bits.get(0);
-        Bit msb = (Bit)bits.get(bits.size() - 1);
-        assert lsb.getOwner() != null : "Getting owner of floating bit " + lsb;
-        Bus source = lsb.getOwner();
-        Net full_wire = NetFactory.makeNet(source); 
-        bitselect = full_wire.getRange(msb.getPosition(), lsb.getPosition());
-    }
-    
-    public int getWidth()
-    {
-        return bitselect.getWidth();
-    }
-    
-    public Collection getNets()
-    {
-        return bitselect.getNets();
-    }
-    
-    public Lexicality lexicalify()
-    {
-        return bitselect.lexicalify();
-    }
+	Expression bitselect;
+
+	public BitWire(Bit bit) {
+		assert bit.getOwner() != null : "Getting owner of floating bit " + bit;
+		Bus source = bit.getOwner();
+		Net full_wire = NetFactory.makeNet(source);
+		bitselect = full_wire.getBitSelect(bit.getPosition());
+	}
+
+	public BitWire(List<Bit> bits) {
+		Bit lsb = (Bit) bits.get(0);
+		Bit msb = (Bit) bits.get(bits.size() - 1);
+		assert lsb.getOwner() != null : "Getting owner of floating bit " + lsb;
+		Bus source = lsb.getOwner();
+		Net full_wire = NetFactory.makeNet(source);
+		bitselect = full_wire.getRange(msb.getPosition(), lsb.getPosition());
+	}
+
+	public int getWidth() {
+		return bitselect.getWidth();
+	}
+
+	public Collection getNets() {
+		return bitselect.getNets();
+	}
+
+	public Lexicality lexicalify() {
+		return bitselect.lexicalify();
+	}
 }

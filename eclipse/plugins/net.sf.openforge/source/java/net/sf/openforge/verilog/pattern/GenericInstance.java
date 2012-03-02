@@ -21,52 +21,55 @@
 
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.Input;
+import net.sf.openforge.verilog.model.Module;
+import net.sf.openforge.verilog.model.ModuleInstance;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.Output;
 
 /**
  * GenericInstance.java
- *
- *
- * <p>Created: Thu Feb 20 13:08:56 2003
- *
+ * 
+ * 
+ * <p>
+ * Created: Thu Feb 20 13:08:56 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: GenericInstance.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class GenericInstance extends ModuleInstance implements ForgePattern
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class GenericInstance extends ModuleInstance implements ForgePattern {
 
-    private HashSet produced = new HashSet();
-    private HashSet consumed = new HashSet();
-    
-    public GenericInstance (Module module, String id)
-    {
-        super(module, id);
-    }
+	private Set<Expression> produced = new HashSet<Expression>();
+	private Set<Expression> consumed = new HashSet<Expression>();
 
-    public void connect (Net port, Expression e)
-    {
-        super.connect(port, e);
-        if (port instanceof Input && e instanceof Net)
-            this.consumed.add(e);
-        if (port instanceof Output && e instanceof Net)
-            this.produced.add(e);
-    }
+	public GenericInstance(Module module, String id) {
+		super(module, id);
+	}
 
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * uses as input signals.
-     */
-    public Collection getConsumedNets()
-    {
-        return Collections.unmodifiableSet(this.consumed);
-    }
-    
-    public Collection getProducedNets ()
-    {
-        return Collections.unmodifiableSet(this.produced);
-    }
-    
+	public void connect(Net port, Expression e) {
+		super.connect(port, e);
+		if (port instanceof Input && e instanceof Net)
+			consumed.add(e);
+		if (port instanceof Output && e instanceof Net)
+			produced.add(e);
+	}
+
+	/**
+	 * Provides the collection of Nets which this statement of verilog uses as
+	 * input signals.
+	 */
+	public Collection<Expression> getConsumedNets() {
+		return Collections.unmodifiableSet(consumed);
+	}
+
+	public Collection<Expression> getProducedNets() {
+		return Collections.unmodifiableSet(produced);
+	}
+
 }// GenericInstance

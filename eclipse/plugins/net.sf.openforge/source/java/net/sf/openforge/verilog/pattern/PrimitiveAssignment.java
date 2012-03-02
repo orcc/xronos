@@ -20,88 +20,74 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.List;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.verilog.model.Expression;
 
 /**
- * A PrimitiveAssignment is a verilog math operation based on a LIM op which assigns the 
- * result to a wire. 
+ * A PrimitiveAssignment is a verilog math operation based on a LIM op which
+ * assigns the result to a wire.
  * <P>
- *
+ * 
  * Created: Tue Mar 12 09:46:58 2002
- *
+ * 
  * @author <a href="mailto:andreas.kollegger@xilinx.com">Andy Kollegger</a>
  * @version $Id: PrimitiveAssignment.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public abstract class PrimitiveAssignment extends ExpressionAssignment
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-    
-    public PrimitiveAssignment(Component c)
-    {
-        super(c);
-    }
-        
-    ////////////////////////////////////////////////
-    //
-    // inner classes
-    //
-    
-    public static final class And extends PrimitiveAssignment
-    {
-        public And(net.sf.openforge.lim.And and)
-        {
-            super(and);
-        }
-        
-        protected Expression makeExpression(List operands)
-        {
-	    Expression e=(Expression)operands.get(0);
-	    for(int i=1;i<operands.size();i++)
-	    {
-		e=new net.sf.openforge.verilog.model.Bitwise.And(e,(Expression)operands.get(i));
-	    }
-	    return e;
-        }
-    } // class And
-    
-    
-    public static final class Or extends PrimitiveAssignment
-    {
-        public Or(net.sf.openforge.lim.Or or)
-        {
-            super(or);
-        }
-        
-        protected Expression makeExpression(List operands)
-        {
-	    Expression e=(Expression)operands.get(0);
-	    for(int i=1;i<operands.size();i++)
-	    {
-		e=new net.sf.openforge.verilog.model.Bitwise.Or(e,(Expression)operands.get(i));
-	    }
-	    return e;
-        }
-    } // class Or
-    
-    public static final class Not extends PrimitiveAssignment
-    {
-        public Not(net.sf.openforge.lim.Not not)
-        {
-            super(not);
-        }
-        
-        protected Expression makeExpression(List operands)
-        {
-	    assert operands.size()==1 : "Logical NOT must have only 1 operand";
-	    Expression e=(Expression)operands.get(0);
-            return (new net.sf.openforge.verilog.model.Unary.Negate(e));
-        }
-    } // class Not
-    
-} // class PrimitiveAssignment
+public abstract class PrimitiveAssignment extends ExpressionAssignment {
 
+	public PrimitiveAssignment(Component c) {
+		super(c);
+	}
+
+	// //////////////////////////////////////////////
+	//
+	// inner classes
+	//
+
+	public static final class And extends PrimitiveAssignment {
+		public And(net.sf.openforge.lim.And and) {
+			super(and);
+		}
+
+		protected Expression makeExpression(List operands) {
+			Expression e = (Expression) operands.get(0);
+			for (int i = 1; i < operands.size(); i++) {
+				e = new net.sf.openforge.verilog.model.Bitwise.And(e,
+						(Expression) operands.get(i));
+			}
+			return e;
+		}
+	} // class And
+
+	public static final class Or extends PrimitiveAssignment {
+		public Or(net.sf.openforge.lim.Or or) {
+			super(or);
+		}
+
+		protected Expression makeExpression(List operands) {
+			Expression e = (Expression) operands.get(0);
+			for (int i = 1; i < operands.size(); i++) {
+				e = new net.sf.openforge.verilog.model.Bitwise.Or(e,
+						(Expression) operands.get(i));
+			}
+			return e;
+		}
+	} // class Or
+
+	public static final class Not extends PrimitiveAssignment {
+		public Not(net.sf.openforge.lim.Not not) {
+			super(not);
+		}
+
+		protected Expression makeExpression(List operands) {
+			assert operands.size() == 1 : "Logical NOT must have only 1 operand";
+			Expression e = (Expression) operands.get(0);
+			return (new net.sf.openforge.verilog.model.Unary.Negate(e));
+		}
+	} // class Not
+
+} // class PrimitiveAssignment
 

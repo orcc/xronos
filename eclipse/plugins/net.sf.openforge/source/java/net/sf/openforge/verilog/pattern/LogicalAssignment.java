@@ -20,59 +20,51 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import net.sf.openforge.lim.op.*;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.lim.op.BinaryOp;
+import net.sf.openforge.lim.op.ConditionalAndOp;
+import net.sf.openforge.lim.op.ConditionalOrOp;
+import net.sf.openforge.verilog.model.Expression;
 
 /**
- * A LogicalAssignment is a verilog math operation based on a LIM op which assigns the 
- * result to a wire. 
+ * A LogicalAssignment is a verilog math operation based on a LIM op which
+ * assigns the result to a wire.
  * <P>
- *
+ * 
  * Created: Tue Mar 12 09:46:58 2002
- *
+ * 
  * @author <a href="mailto:andreas.kollegger@xilinx.com">Andy Kollegger</a>
  * @version $Id: LogicalAssignment.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public abstract class LogicalAssignment extends BinaryOpAssignment
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-    
-    public LogicalAssignment(BinaryOp bo)
-    {
-        super(bo);
-    }
-        
-    ////////////////////////////////////////////////
-    //
-    // inner classes
-    //
-    
-    public static final class And extends LogicalAssignment
-    {
-        public And(ConditionalAndOp and)
-        {
-            super(and);
-        }
-        
-        protected Expression makeOpExpression(Expression left, Expression right)
-        {
-            return (new net.sf.openforge.verilog.model.Logical.And(left, right));
-        }
-    } // class And
-    
-    public static final class Or extends LogicalAssignment
-    {
-        public Or(ConditionalOrOp or)
-        {
-            super(or);
-        }
-        
-        protected Expression makeOpExpression(Expression left, Expression right)
-        {
-            return (new net.sf.openforge.verilog.model.Logical.Or(left, right));
-        }
-    } // class Or
-    
-    
+public abstract class LogicalAssignment extends BinaryOpAssignment {
+
+	public LogicalAssignment(BinaryOp bo) {
+		super(bo);
+	}
+
+	// //////////////////////////////////////////////
+	//
+	// inner classes
+	//
+
+	public static final class And extends LogicalAssignment {
+		public And(ConditionalAndOp and) {
+			super(and);
+		}
+
+		protected Expression makeOpExpression(Expression left, Expression right) {
+			return (new net.sf.openforge.verilog.model.Logical.And(left, right));
+		}
+	} // class And
+
+	public static final class Or extends LogicalAssignment {
+		public Or(ConditionalOrOp or) {
+			super(or);
+		}
+
+		protected Expression makeOpExpression(Expression left, Expression right) {
+			return (new net.sf.openforge.verilog.model.Logical.Or(left, right));
+		}
+	} // class Or
+
 } // class LogicalAssignment

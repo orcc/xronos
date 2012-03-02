@@ -25,176 +25,181 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import net.sf.openforge.app.*;
-import net.sf.openforge.lim.*;
+import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.app.GenericJob;
+import net.sf.openforge.lim.SRL16;
 import net.sf.openforge.util.naming.ID;
-import net.sf.openforge.verilog.mapping.*;
-import net.sf.openforge.verilog.model.*;
-
+import net.sf.openforge.verilog.mapping.MappedModule;
+import net.sf.openforge.verilog.mapping.MappingName;
+import net.sf.openforge.verilog.mapping.PrimitiveMappedModule;
+import net.sf.openforge.verilog.model.HexConstant;
+import net.sf.openforge.verilog.model.HexNumber;
+import net.sf.openforge.verilog.model.ModuleInstance;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.NetFactory;
+import net.sf.openforge.verilog.model.Wire;
 
 /**
- * There are 3 possible SRL16 varaints, all of which are used via the
- * primitive mapper
- *
-
+ * There are 3 possible SRL16 variants, all of which are used via the primitive
+ * mapper
+ * 
+ * 
  * @version $Id: SRL16Variant.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class SRL16Variant extends StatementBlock implements ForgePattern,MappedModuleSpecifier
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class SRL16Variant extends StatementBlock implements ForgePattern,
+		MappedModuleSpecifier {
 
-    private Set consumed_nets = new HashSet();
+	private Set<Object> consumed_nets = new HashSet<Object>();
 
-    private Net result_wire;
+	private Net result_wire;
 
-    private PortWire enable_wire;
-    private PortWire data_wire;
-    private PortWire clock_wire;
-    
-    private Set mappedModules=new HashSet();
+	private PortWire enable_wire;
+	private PortWire data_wire;
+	private PortWire clock_wire;
 
-    public SRL16Variant(SRL16 srl_16)
-    {
-        result_wire = NetFactory.makeNet(srl_16.getResultBus());
-        
-        GenericJob gj = EngineThread.getGenericJob();
+	private Set<MappedModule> mappedModules = new HashSet<MappedModule>();
 
-        // get the component we need
-        MappingName mappingName=getPrimitiveComponent(srl_16);
-        assert (mappingName!=null);
+	public SRL16Variant(SRL16 srl_16) {
+		result_wire = NetFactory.makeNet(srl_16.getResultBus());
 
-        if(mappingName==null)
-        {
-            gj.info("Unable to map: "+ID.showLogical(srl_16));
-            return;
-        }
+		GenericJob gj = EngineThread.getGenericJob();
 
-        // get the project
-        assert (gj!=null);
+		// get the component we need
+		MappingName mappingName = getPrimitiveComponent(srl_16);
+		assert (mappingName != null);
 
-        PrimitiveMappedModule pmm = gj.getPrimitiveMapper().getMappedModule(mappingName.getName());
-        if (pmm==null)
-        {
-            gj.info("No part found for: "+mappingName);
-            return;
-        }
+		if (mappingName == null) {
+			gj.info("Unable to map: " + ID.showLogical(srl_16));
+			return;
+		}
 
-        mappedModules.add(pmm);
+		// get the project
+		assert (gj != null);
 
-        unslice(srl_16,pmm);
-    }
+		PrimitiveMappedModule pmm = gj.getPrimitiveMapper().getMappedModule(
+				mappingName.getName());
+		if (pmm == null) {
+			gj.info("No part found for: " + mappingName);
+			return;
+		}
 
-    private void unslice(SRL16 srl_16, PrimitiveMappedModule pmm)
-    {
-        boolean isOneBit=(data_wire.getWidth()==1);
-        // create as many module instantiations as you have widths
-        for(int i=0;i<data_wire.getWidth();i++)
-        {
-            // create this instance
-            ModuleInstance mi;
-            if(isOneBit)
-            {
-                mi=new ModuleInstance(pmm.getModuleName(),ID.toVerilogIdentifier(ID.showLogical(srl_16)));
-                // first connect the input and out -- they must be there
-                mi.connect(new Wire("D",1), data_wire);
-                mi.connect(new Wire("Q",1), result_wire);
-            }
-            else
-            {
-                mi=new ModuleInstance(pmm.getModuleName(),ID.toVerilogIdentifier(ID.showLogical(srl_16)+"_slice"+i));
-                // first connect the input and out -- they must be there
-                mi.connect(new Wire("D",1), data_wire.getBitSelect(i));
-                mi.connect(new Wire("Q",1), result_wire.getBitSelect(i));
-            }
+		mappedModules.add(pmm);
 
-            // now the singletons ...
-            mi.connect(new Wire("CLK",1),clock_wire); // clock
-            final int stages = srl_16.getStages()-1;
-            assert stages >= 0 && stages <= 15 : "Illegal number of stages set for SRL16 " + (stages+1);
-            mi.connect(new Wire("A0",1),new HexNumber(new HexConstant(stages & 0x1, 1)));
-            mi.connect(new Wire("A1",1),new HexNumber(new HexConstant((stages >>> 1) & 0x1, 1)));
-            mi.connect(new Wire("A2",1),new HexNumber(new HexConstant((stages >>> 2) & 0x1, 1)));
-            mi.connect(new Wire("A3",1),new HexNumber(new HexConstant((stages >>> 3) & 0x1, 1)));
+		unslice(srl_16, pmm);
+	}
 
-            switch(srl_16.getType())
-            {
-                case SRL16.SRL16E:
-                    mi.connect(new Wire("CE",1),enable_wire); // enable
-                    break;
-                default:
-                    break;
-            }
-            add(mi);
-        }
-    }
+	private void unslice(SRL16 srl_16, PrimitiveMappedModule pmm) {
+		boolean isOneBit = (data_wire.getWidth() == 1);
+		// create as many module instantiations as you have widths
+		for (int i = 0; i < data_wire.getWidth(); i++) {
+			// create this instance
+			ModuleInstance mi;
+			if (isOneBit) {
+				mi = new ModuleInstance(pmm.getModuleName(),
+						ID.toVerilogIdentifier(ID.showLogical(srl_16)));
+				// first connect the input and out -- they must be there
+				mi.connect(new Wire("D", 1), data_wire);
+				mi.connect(new Wire("Q", 1), result_wire);
+			} else {
+				mi = new ModuleInstance(pmm.getModuleName(),
+						ID.toVerilogIdentifier(ID.showLogical(srl_16)
+								+ "_slice" + i));
+				// first connect the input and out -- they must be there
+				mi.connect(new Wire("D", 1), data_wire.getBitSelect(i));
+				mi.connect(new Wire("Q", 1), result_wire.getBitSelect(i));
+			}
 
-    private MappingName getPrimitiveComponent(SRL16 srl_16)
-    {
-        // ok, let's determine type... and handle the nets
-        // do some asserts for fun ...
-        // Build all the wires here, but don't add them to 'consumed'
-        // unless they are actually used by the SRL16 type.
-        if (srl_16.getInDataPort().isUsed())
-            data_wire=new PortWire(srl_16.getInDataPort());
-        if (srl_16.getClockPort().isUsed())
-            clock_wire=new PortWire(srl_16.getClockPort());
-        if (srl_16.getEnablePort().isUsed())
-            enable_wire=new PortWire(srl_16.getEnablePort());
+			// now the singletons ...
+			mi.connect(new Wire("CLK", 1), clock_wire); // clock
+			final int stages = srl_16.getStages() - 1;
+			assert stages >= 0 && stages <= 15 : "Illegal number of stages set for SRL16 "
+					+ (stages + 1);
+			mi.connect(new Wire("A0", 1), new HexNumber(new HexConstant(
+					stages & 0x1, 1)));
+			mi.connect(new Wire("A1", 1), new HexNumber(new HexConstant(
+					(stages >>> 1) & 0x1, 1)));
+			mi.connect(new Wire("A2", 1), new HexNumber(new HexConstant(
+					(stages >>> 2) & 0x1, 1)));
+			mi.connect(new Wire("A3", 1), new HexNumber(new HexConstant(
+					(stages >>> 3) & 0x1, 1)));
 
-        assert (srl_16.getInDataPort().isUsed());
-        assert (srl_16.getInDataPort().getValue() != null) : "unresolved data port value of SRL16 " + srl_16.toString() + " owned by " + srl_16.getOwner();
-        consumed_nets.add(data_wire);
-        
-        assert (srl_16.getClockPort().isUsed());
-        assert (srl_16.getClockPort().getValue() != null) : "unresolved clock port value of SRL16 " + srl_16.toString() + " owned by " + srl_16.getOwner();
-        consumed_nets.add(clock_wire);
-        
-        switch(srl_16.getType())
-        {
-            case SRL16.SRL16E:
+			switch (srl_16.getType()) {
+			case SRL16.SRL16E:
+				mi.connect(new Wire("CE", 1), enable_wire); // enable
+				break;
+			default:
+				break;
+			}
+			add(mi);
+		}
+	}
 
-                assert (srl_16.getEnablePort().isUsed());
-                assert (srl_16.getEnablePort().getValue() != null) : "unresolved enable port value of SRL16 " + srl_16.toString() + " owned by " + srl_16.getOwner();
-                consumed_nets.add(enable_wire);
+	private MappingName getPrimitiveComponent(SRL16 srl_16) {
+		// ok, let's determine type... and handle the nets
+		// do some asserts for fun ...
+		// Build all the wires here, but don't add them to 'consumed'
+		// unless they are actually used by the SRL16 type.
+		if (srl_16.getInDataPort().isUsed())
+			data_wire = new PortWire(srl_16.getInDataPort());
+		if (srl_16.getClockPort().isUsed())
+			clock_wire = new PortWire(srl_16.getClockPort());
+		if (srl_16.getEnablePort().isUsed())
+			enable_wire = new PortWire(srl_16.getEnablePort());
 
-                return MappingName.SHIFT_REGISTER_LUT_ENABLE;
+		assert (srl_16.getInDataPort().isUsed());
+		assert (srl_16.getInDataPort().getValue() != null) : "unresolved data port value of SRL16 "
+				+ srl_16.toString() + " owned by " + srl_16.getOwner();
+		consumed_nets.add(data_wire);
 
-            case SRL16.SRL16:
-                
-                return MappingName.SHIFT_REGISTER_LUT;
+		assert (srl_16.getClockPort().isUsed());
+		assert (srl_16.getClockPort().getValue() != null) : "unresolved clock port value of SRL16 "
+				+ srl_16.toString() + " owned by " + srl_16.getOwner();
+		consumed_nets.add(clock_wire);
 
-            case SRL16.SRL16_1:
-                
-                return MappingName.SHIFT_REGISTER_LUT_NEG_EDGE;
-    
-            default:
-                assert (false) : "No support for SRL16 " + srl_16.toString() + " of type " + srl_16.getType() +
-                " owned by " + srl_16.getOwner();
-                return null;
-        }
-    }
+		switch (srl_16.getType()) {
+		case SRL16.SRL16E:
 
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * uses as input signals.
-     */
-    public Collection getConsumedNets()
-    {
-        return consumed_nets;
-    }
-    
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * produces as output signals.
-     */
-    public Collection getProducedNets()
-    {
-        return Collections.singleton(result_wire);
-    }
+			assert (srl_16.getEnablePort().isUsed());
+			assert (srl_16.getEnablePort().getValue() != null) : "unresolved enable port value of SRL16 "
+					+ srl_16.toString() + " owned by " + srl_16.getOwner();
+			consumed_nets.add(enable_wire);
 
-    public Set getMappedModules()
-    {
-        return mappedModules;
-    }
+			return MappingName.SHIFT_REGISTER_LUT_ENABLE;
+
+		case SRL16.SRL16:
+
+			return MappingName.SHIFT_REGISTER_LUT;
+
+		case SRL16.SRL16_1:
+
+			return MappingName.SHIFT_REGISTER_LUT_NEG_EDGE;
+
+		default:
+			assert (false) : "No support for SRL16 " + srl_16.toString()
+					+ " of type " + srl_16.getType() + " owned by "
+					+ srl_16.getOwner();
+			return null;
+		}
+	}
+
+	/**
+	 * Provides the collection of Nets which this statement of verilog uses as
+	 * input signals.
+	 */
+	public Collection getConsumedNets() {
+		return consumed_nets;
+	}
+
+	/**
+	 * Provides the collection of Nets which this statement of verilog produces
+	 * as output signals.
+	 */
+	public Collection getProducedNets() {
+		return Collections.singleton(result_wire);
+	}
+
+	public Set<MappedModule> getMappedModules() {
+		return mappedModules;
+	}
 }

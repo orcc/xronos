@@ -195,8 +195,6 @@ public abstract class Net implements NetLValue, SimpleExpression {
 
 	public class IllegalNetWidth extends VerilogSyntaxException {
 
-		private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-
 		public IllegalNetWidth(int width, String id) {
 			super(new String("Illegal width for net " + width + " id: " + id));
 		} // IllegalNetWidth()
@@ -204,8 +202,6 @@ public abstract class Net implements NetLValue, SimpleExpression {
 	} // end of nested class IllegalNetWidth
 
 	public class IllegalBitRange extends VerilogSyntaxException {
-
-		private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
 
 		public IllegalBitRange(int msb, int lsb) {
 			super(new String("Illegal bit range -- msb:lsb " + msb + ":" + lsb));

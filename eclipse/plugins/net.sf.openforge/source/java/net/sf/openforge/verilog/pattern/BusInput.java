@@ -22,42 +22,40 @@ package net.sf.openforge.verilog.pattern;
 
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.util.naming.ID;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.Input;
 
 /**
- * A Verilog Input which is based on a LIM {@link Bus}.<P>
- *
- * Created:   May 7, 2002
- *
- * @author    <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
- * @version   $Id: BusInput.java 2 2005-06-09 20:00:48Z imiller $
+ * A Verilog Input which is based on a LIM {@link Bus}.
+ * <P>
+ * 
+ * Created: May 7, 2002
+ * 
+ * @author <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
+ * @version $Id: BusInput.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class BusInput extends Input implements BusNet
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-    
-    Bus bus;
-    
-    /**
-     * Constructs a BusInput based on a LIM Bus.
-     *
-     * @param bus  The LIM Bus upon which to base the Net
-     */
-    public BusInput(Bus bus)
-    {
-        super(ID.toVerilogIdentifier(ID.showLogical(bus)), bus.getValue().getSize());
-        this.bus = bus;
-    }
-    
-    
-    /**
-     * Returns the Bus upon which the Net is based.
-     *
-     * @return The LIM Bus upon which the Net is based
-     */
-    public Bus getBus()
-    {
-        return bus;
-    }
+public class BusInput extends Input implements BusNet {
+
+	Bus bus;
+
+	/**
+	 * Constructs a BusInput based on a LIM Bus.
+	 * 
+	 * @param bus
+	 *            The LIM Bus upon which to base the Net
+	 */
+	public BusInput(Bus bus) {
+		super(ID.toVerilogIdentifier(ID.showLogical(bus)), bus.getValue()
+				.getSize());
+		this.bus = bus;
+	}
+
+	/**
+	 * Returns the Bus upon which the Net is based.
+	 * 
+	 * @return The LIM Bus upon which the Net is based
+	 */
+	public Bus getBus() {
+		return bus;
+	}
 } // BusInput
 

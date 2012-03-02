@@ -20,56 +20,50 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.verilog.model.BinaryNumber;
+import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.Lexicality;
 
 /**
- * A verilog expression which is based on a contiguous set of LIM {@link Bit Bits},
- * which have constant values.
+ * A verilog expression which is based on a contiguous set of LIM {@link Bit
+ * Bits}, which have constant values.
  * 
- * Created:   August 6, 2002
- *
- * @author    <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
- * @version   $Id: BitConstant.java 2 2005-06-09 20:00:48Z imiller $
+ * Created: August 6, 2002
+ * 
+ * @author <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
+ * @version $Id: BitConstant.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class BitConstant implements Expression
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class BitConstant implements Expression {
 
-    Expression constant;
-    
-    public BitConstant(List bits)
-    {
-        long constant_value = 0;
-        int constant_size = 0;
-        long bitmask = 0x1;
-        for (Iterator it = bits.iterator(); it.hasNext();)
-        {
-            Bit bit = (Bit)it.next();
-            if (bit.isOn())
-            {
-                constant_value |= bitmask;
-            }
-            bitmask <<= 1;
-            constant_size++;
-        }
-        constant = new BinaryNumber(constant_value, constant_size);
-    }
-    
-    public int getWidth()
-    {
-        return constant.getWidth();
-    }
-    
-    public Collection getNets()
-    {
-        return constant.getNets();
-    }
-    
-    public Lexicality lexicalify()
-    {
-        return constant.lexicalify();
-    }
+	Expression constant;
+
+	public BitConstant(List<Bit> bits) {
+		long constant_value = 0;
+		int constant_size = 0;
+		long bitmask = 0x1;
+		for (Bit bit : bits) {
+			if (bit.isOn()) {
+				constant_value |= bitmask;
+			}
+			bitmask <<= 1;
+			constant_size++;
+		}
+		constant = new BinaryNumber(constant_value, constant_size);
+	}
+
+	public int getWidth() {
+		return constant.getWidth();
+	}
+
+	public Collection getNets() {
+		return constant.getNets();
+	}
+
+	public Lexicality lexicalify() {
+		return constant.lexicalify();
+	}
 }

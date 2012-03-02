@@ -20,80 +20,73 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import net.sf.openforge.verilog.model.Lexicality;
 import net.sf.openforge.verilog.model.Statement;
 import net.sf.openforge.verilog.model.VerilogElement;
 
-
 /**
  * A StatementBlock is a simple sequence of Statements.
  * <P>
- *
+ * 
  * Created: Tue Mar 12 09:46:58 2002
- *
+ * 
  * @author <a href="mailto:andreas.kollegger@xilinx.com">Andy Kollegger</a>
  * @version $Id: StatementBlock.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class StatementBlock implements Statement,  VerilogElement  
-{
+public class StatementBlock implements Statement, VerilogElement {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	protected List<Statement> statements = new ArrayList<Statement>();
 
-    protected List statements = new ArrayList();
+	public StatementBlock() {
+		;
+	} // StatementBlock
 
-    public StatementBlock ()
-    {
-        ;
-    } // StatementBlock
+	/**
+	 * Append a statement to the sequence.
+	 * 
+	 * @param s
+	 *            the statement to be appended
+	 */
+	public void add(Statement s) {
+		statements.add(s);
+	} // add()
 
+	/**
+	 * 
+	 * @return <description>
+	 */
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+		for (Statement stt : statements) {
+			lex.append(stt);
+		}
 
-    /**
-     * Append a statement to the sequence.
-     *
-     * @param s the statement to be appended
-     */
-    public void add(Statement s)
-    {
-        statements.add(s);
-    } // add()
+		return lex;
+	} // lexicalify()
 
-    /**
-     *
-     * @return <description>
-     */
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        for (Iterator it = statements.iterator(); it.hasNext();)
-        {
-            lex.append((Statement)it.next());
-        }
-        
-        return lex;
-    } // lexicalify()
+	/**
+	 * 
+	 * @return <description>
+	 */
+	public Collection getNets() {
+		Set nets = new HashSet();
 
-    /**
-     *
-     * @return <description>
-     */
-    public Collection getNets()
-    {
-        HashSet nets = new HashSet();
-        
-        for (Iterator it = statements.iterator(); it.hasNext();)
-        {
-            nets.addAll(((Statement)it.next()).getNets());
-        }
-        return nets;
-    } // getNets()
+		for (Iterator it = statements.iterator(); it.hasNext();) {
+			nets.addAll(((Statement) it.next()).getNets());
+		}
+		return nets;
+	} // getNets()
 
-    
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-    
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 } // class StatementBlock

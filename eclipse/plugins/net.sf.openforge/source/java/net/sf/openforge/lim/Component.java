@@ -1597,7 +1597,7 @@ public abstract class Component extends ID
      *
      * @return a 'List' of {@link Attribute Attributes}
      */
-    public List getAttributes ()
+    public List<Attribute> getAttributes ()
     {
         return this.attributes;
     }

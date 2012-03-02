@@ -21,24 +21,20 @@
 
 package net.sf.openforge.verilog.pattern;
 
-import java.lang.RuntimeException;
-
 /**
- * NonConstantInitialValueException is an exception that can be
- * thrown to indicate that the initial value of a BusRegister is
- * not a constant.
- *
- * <p>Created: Wed Dec 10 04:08:40 2003
- *
+ * NonConstantInitialValueException is an exception that can be thrown to
+ * indicate that the initial value of a BusRegister is not a constant.
+ * 
+ * <p>
+ * Created: Wed Dec 10 04:08:40 2003
+ * 
  * @author cwu
- * @version $Id: NonConstantInitialValueException.java 2 2005-06-09 20:00:48Z imiller $
+ * @version $Id: NonConstantInitialValueException.java 2 2005-06-09 20:00:48Z
+ *          imiller $
  */
-public class NonConstantInitialValueException extends RuntimeException 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class NonConstantInitialValueException extends RuntimeException {
 
-    public NonConstantInitialValueException ()
-    {
-    }
-    
+	public NonConstantInitialValueException() {
+	}
+
 }// NonConstantInitiaValueException

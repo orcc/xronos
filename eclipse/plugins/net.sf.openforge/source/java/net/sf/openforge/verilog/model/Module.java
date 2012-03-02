@@ -55,13 +55,13 @@ public class Module implements VerilogElement {
 	ModuleDeclaration module_declaration;
 
 	/** Internal port, net, and other declarations. */
-	List declarations;
+	List<NetDeclaration> declarations;
 
 	/** Collection of Identifiers for each declared Net */
 	HashMap declared_nets;
 
 	/** Statements which manipulate the nets, may be simple or compound. */
-	protected List statements;
+	protected List<Statement> statements;
 
 	/**
 	 * Constructs an unpopulated Module with the specified identifier.
@@ -85,7 +85,7 @@ public class Module implements VerilogElement {
 	 */
 	public Module(Identifier identifier, Net[] ports) {
 		this.identifier = identifier;
-		declarations = new ArrayList();
+		declarations = new ArrayList<NetDeclaration>();
 		declared_nets = new LinkedHashMap();
 		statements = new ArrayList();
 

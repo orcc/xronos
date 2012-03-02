@@ -20,47 +20,45 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Set;
 
-import net.sf.openforge.verilog.mapping.memory.*;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.mapping.MappedModule;
+import net.sf.openforge.verilog.mapping.memory.VerilogMemory;
+import net.sf.openforge.verilog.model.Module;
 
 /**
-* A MemoryModule is a Verilog Module of a {@link VerilogMemory}.
+ * A MemoryModule is a Verilog Module of a {@link VerilogMemory}.
  * <P>
- *
+ * 
  * Created: Thr Jul 27 11:26:43 2002
- *
+ * 
  * @author cwu
  * @version $Id: MemoryModule.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class MemoryModule extends Module implements MappedModuleSpecifier
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class MemoryModule extends Module implements MappedModuleSpecifier {
 
-    private Set mappedModules;
-    
-    /**
-     * Composes a <code>MemoryModule</code> based on a module name and
-     * a set of inferred xilinx memory modules.
-     *
-     * @param memory the Memory which is being instantiated
-     */
-    public MemoryModule (String moduleName, Set mappedModules)
-    {
-        super (moduleName);
-        this.mappedModules = mappedModules;
-    } // MemoryModule
-    
-    /**
-     * Gets the instantiated memory module name
-     *
-     * @return A String of memory module name
-     */
-    public Set getMappedModules()
-    {
-        return mappedModules;
-    }
+	private Set<MappedModule> mappedModules;
+
+	/**
+	 * Composes a <code>MemoryModule</code> based on a module name and a set of
+	 * inferred xilinx memory modules.
+	 * 
+	 * @param memory
+	 *            the Memory which is being instantiated
+	 */
+	public MemoryModule(String moduleName, Set<MappedModule> mappedModules) {
+		super(moduleName);
+		this.mappedModules = mappedModules;
+	} // MemoryModule
+
+	/**
+	 * Gets the instantiated memory module name
+	 * 
+	 * @return A String of memory module name
+	 */
+	public Set<MappedModule> getMappedModules() {
+		return mappedModules;
+	}
 
 } // class MemoryModule

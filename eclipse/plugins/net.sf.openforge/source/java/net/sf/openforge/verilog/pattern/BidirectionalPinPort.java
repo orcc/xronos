@@ -22,30 +22,28 @@ package net.sf.openforge.verilog.pattern;
 
 import net.sf.openforge.lim.BidirectionalPin;
 import net.sf.openforge.util.naming.ID;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.Inout;
 
 /**
- * A Verilog Inout which is based on a LIM {@link BidirectionalPin}.<P>
- *
- * Created:   May 7, 2002
- *
- * @author    <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
- * @version   $Id: BidirectionalPinPort.java 2 2005-06-09 20:00:48Z imiller $
+ * A Verilog Inout which is based on a LIM {@link BidirectionalPin}.
+ * <P>
+ * 
+ * Created: May 7, 2002
+ * 
+ * @author <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
+ * @version $Id: BidirectionalPinPort.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class BidirectionalPinPort extends Inout
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-    
-    /**
-     * Constructs a BidirectionalPinPort based on a LIM BidirectionalPin.
-     *
-     * @param bus  The LIM Pin upon which to base the Net
-     */
-    public BidirectionalPinPort(BidirectionalPin pin)
-    {
-        super(ID.toVerilogIdentifier(ID.showLogical(pin)), 
-            pin.getWidth());
-    }
-    
+public class BidirectionalPinPort extends Inout {
+
+	/**
+	 * Constructs a BidirectionalPinPort based on a LIM BidirectionalPin.
+	 * 
+	 * @param bus
+	 *            The LIM Pin upon which to base the Net
+	 */
+	public BidirectionalPinPort(BidirectionalPin pin) {
+		super(ID.toVerilogIdentifier(ID.showLogical(pin)), pin.getWidth());
+	}
+
 } // BidirectionalPinPort
 

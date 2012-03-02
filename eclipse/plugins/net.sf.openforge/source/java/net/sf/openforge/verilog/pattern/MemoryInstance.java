@@ -20,62 +20,61 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.ModuleInstance;
+import net.sf.openforge.verilog.model.Net;
 
 /**
- * The MemoryInstance is a Verilog statement of a Forge memory
- * instantiation.
+ * The MemoryInstance is a Verilog statement of a Forge memory instantiation.
  * <P>
- *
+ * 
  * Created: Tue Jul 27 15:01:08 2002
- *
+ * 
  * @author cwu
  * @version $Id: MemoryInstance.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class MemoryInstance extends ModuleInstance implements ForgePattern
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class MemoryInstance extends ModuleInstance implements ForgePattern {
 
-    private HashSet producedNets = new HashSet();
-    /**
-     * Composes a MemoryInstance based on the name of instantiated
-     * memory module and the name of instantiation.
-     *
-     * @param moduleName the name of a memory module which is being instantiated
-     * @param instanceName the name of a memory module instantiation
-     */
-    public MemoryInstance (String moduleName, String instanceName)
-    {
-        super (moduleName, instanceName);
-    } // MemoryInstance
+	private Set<Net> producedNets = new HashSet<Net>();
 
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * uses as input signals.
-     */
-    public Collection getConsumedNets()
-    {
-    return Collections.EMPTY_LIST;
-    };
-    
-    /**
-     * Provides the collection of Nets which this statement of verilog
-     * produces as output signals. These are any signals which need to
-     * be declared, even if the statement itself also consumes them.
-     */
-    public Collection getProducedNets()
-    {
-        //return Collections.EMPTY_LIST;
-        return this.producedNets;
-    }
+	/**
+	 * Composes a MemoryInstance based on the name of instantiated memory module
+	 * and the name of instantiation.
+	 * 
+	 * @param moduleName
+	 *            the name of a memory module which is being instantiated
+	 * @param instanceName
+	 *            the name of a memory module instantiation
+	 */
+	public MemoryInstance(String moduleName, String instanceName) {
+		super(moduleName, instanceName);
+	} // MemoryInstance
 
-    public void addProducedNet (Net net)
-    {
-        this.producedNets.add(net);
-    }
-    
-    
+	/**
+	 * Provides the collection of Nets which this statement of verilog uses as
+	 * input signals.
+	 */
+	public Collection getConsumedNets() {
+		return Collections.EMPTY_LIST;
+	};
+
+	/**
+	 * Provides the collection of Nets which this statement of verilog produces
+	 * as output signals. These are any signals which need to be declared, even
+	 * if the statement itself also consumes them.
+	 */
+	public Collection getProducedNets() {
+		// return Collections.EMPTY_LIST;
+		return this.producedNets;
+	}
+
+	public void addProducedNet(Net net) {
+		this.producedNets.add(net);
+	}
+
 } // class MemoryInstance

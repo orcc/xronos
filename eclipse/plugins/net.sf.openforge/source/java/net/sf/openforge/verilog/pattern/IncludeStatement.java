@@ -21,107 +21,100 @@
 
 package net.sf.openforge.verilog.pattern;
 
-
-import java.util.*;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 
 import net.sf.openforge.util.VarFilename;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.ArbitraryString;
+import net.sf.openforge.verilog.model.Directive;
+import net.sf.openforge.verilog.model.Token;
 
 /**
  * IncludeStatement is a include statement in Verilog.
- * <pre>`include "pipelined_sim.v"</pre>
- *
+ * 
+ * <pre>
+ * `include "pipelined_sim.v"
+ * </pre>
+ * 
  * In order to support xflow under wine in linux, we need to list include files
- * in "windows" format, even though we are running under linux.  Thus, $XILINX
- * is of the form C:\\Xilinx and not /opt/xilinx.  This obviously confuses File
- * to no end (why can't windows use a normal unix file system convention?).  So,
+ * in "windows" format, even though we are running under linux. Thus, $XILINX is
+ * of the form C:\\Xilinx and not /opt/xilinx. This obviously confuses File to
+ * no end (why can't windows use a normal unix file system convention?). So,
  * until Xilinx supports the xflow chain natively under linux (3Q03?), we have a
- * hack:  constructor IncludeStatement(String fileToInclude, boolean
- * dontMakeMeAFile) and 
- *
- * <p>Created: Mon Aug 26 13:47:38 2002
- *
+ * hack: constructor IncludeStatement(String fileToInclude, boolean
+ * dontMakeMeAFile) and
+ * 
+ * <p>
+ * Created: Mon Aug 26 13:47:38 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: IncludeStatement.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class IncludeStatement 
-    extends Directive.Include
-{
+public class IncludeStatement extends Directive.Include {
 
-    private static final String _RCS_ = "$Rev: 2 $";
+	private File file = null;
 
-    private File file=null;
+	/** to handle windows includes under Linux */
+	private String stringFile = null;
 
-    /** to handle windows includes under linux */
-    private String stringFile=null;
+	public IncludeStatement(File toInclude) {
+		file = toInclude;
+	}
 
-    public IncludeStatement (File toInclude)
-    {
-        this.file = toInclude;
-    }
+	/**
+	 * hack to keep a file in the "wrong" (windows) format on linux. Please
+	 * remove once xflow works natively under linux
+	 * 
+	 * @param fileToInclude
+	 * @param dontMakeMeAFile
+	 *            placeholder - to differentiate from 1 String constructor note:
+	 *            this is only to be called if XIL_LINUX_WINE is true!
+	 */
+	public IncludeStatement(String fileToInclude, boolean dontMakeMeAFile) {
+		stringFile = VarFilename.parse(fileToInclude);
+	}
 
-    /**
-     * hack to keep a file in the "wrong" (windows) format on linux.  Please
-     * remove once xflow works natively under linux
-     * @param fileToInclude
-     * @param dontMakeMeAFile placeholder - to differentiate from 1 String
-     * constructor
-     * note: this is only to be called if XIL_LINUX_WINE is true!
-     */
-    public IncludeStatement (String fileToInclude, boolean dontMakeMeAFile)
-    {
-        stringFile=VarFilename.parse(fileToInclude);
-    }
-    
-            
-    public IncludeStatement (String fileToInclude)
-    {
-        this(new File(VarFilename.parse(fileToInclude)));
-    }
+	public IncludeStatement(String fileToInclude) {
+		this(new File(VarFilename.parse(fileToInclude)));
+	}
 
-    public Collection getNets ()
-    {
-        return Collections.EMPTY_SET;
-    }
+	public Collection getNets() {
+		return Collections.EMPTY_SET;
+	}
 
-    protected Token getFilename()
-    {
-        if (file == null)
-        {
-            Token t=new ArbitraryString(stringFile);
-            return t;
-        }
-        else
-        {
-            assert stringFile == null:"Can't have both stringFile: "+stringFile+" and file: "+file+" in IncludeStatement";
-            try
-            {
-                String path = file.getCanonicalPath();
-                path = VarFilename.parse(path);
-                
-                Token t = new ArbitraryString(path);
-                return t;
-            }
-            catch (IOException e)
-            {
-                throw new BadIncludeFileException("Could not get path of include file " + file + " " + e.getMessage());
-            }
-        }
-    }
+	protected Token getFilename() {
+		if (file == null) {
+			Token t = new ArbitraryString(stringFile);
+			return t;
+		} else {
+			assert stringFile == null : "Can't have both stringFile: "
+					+ stringFile + " and file: " + file
+					+ " in IncludeStatement";
+			try {
+				String path = file.getCanonicalPath();
+				path = VarFilename.parse(path);
 
-    public String toString ()
-    {
-        return lexicalify().toString();
-    }
-    
+				Token t = new ArbitraryString(path);
+				return t;
+			} catch (IOException e) {
+				throw new BadIncludeFileException(
+						"Could not get path of include file " + file + " "
+								+ e.getMessage());
+			}
+		}
+	}
 
-    public static class BadIncludeFileException extends RuntimeException
-    {
-        public BadIncludeFileException (String excep)
-        {
-            super(excep);
-        }
-    }
-    
+	public String toString() {
+		return lexicalify().toString();
+	}
+
+	@SuppressWarnings("serial")
+	public static class BadIncludeFileException extends RuntimeException {
+		public BadIncludeFileException(String excep) {
+			super(excep);
+		}
+	}
+
 }// IncludeStatement

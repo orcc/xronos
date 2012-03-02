@@ -20,64 +20,61 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.Group;
+import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.NetFactory;
+import net.sf.openforge.verilog.model.Unary;
 
 /**
- * A verilog expression which is based on a contiguous set of LIM
- * {@link Bit Bits}. 
+ * A verilog expression which is based on a contiguous set of LIM {@link Bit
+ * Bits}.
  * 
- * Created:   Nov 20, 2002
- *
- * @author    Conor Wu
- * @version   $Id: InvertedBitWire.java 2 2005-06-09 20:00:48Z imiller $
+ * Created: Nov 20, 2002
+ * 
+ * @author Conor Wu
+ * @version $Id: InvertedBitWire.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class InvertedBitWire implements Expression
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class InvertedBitWire implements Expression {
 
-    Expression bitselect;
-    
-    public InvertedBitWire(Bit bit)
-    {
-        assert bit.getOwner() != null : "Getting owner of floating bit " + bit;
-        Bus source = bit.getOwner();
-        Net full_wire = NetFactory.makeNet(source);
-        bitselect = full_wire.getBitSelect(bit.getPosition());
-    }
-    
-    public InvertedBitWire(List bits)
-    {
-        Bit lsb = ((Bit)bits.get(0)).getInvertedBit();
-        Bit msb = ((Bit)bits.get(bits.size() - 1)).getInvertedBit();
-        //Bus source = lsb.getParent().getSource();
-        assert lsb.getOwner() != null : "Getting owner of floating bit " + lsb;
-        Bus source = lsb.getOwner();
-        Net full_wire = NetFactory.makeNet(source);
-        bitselect = full_wire.getRange(msb.getPosition(), lsb.getPosition());
-    }
-    
-    public int getWidth()
-    {
-        return bitselect.getWidth();
-    }
-    
-    public Collection getNets()
-    {
-        return bitselect.getNets();
-    }
-    
-    public Lexicality lexicalify()
-    {
-        if (bitselect.getWidth() > 1)
-        {
-            return new Group(new Unary.Negate(bitselect)).lexicalify();
-        }
-        else
-        {
-            return new Group(new Unary.Not(bitselect)).lexicalify();
-        }
-    }
+	Expression bitselect;
+
+	public InvertedBitWire(Bit bit) {
+		assert bit.getOwner() != null : "Getting owner of floating bit " + bit;
+		Bus source = bit.getOwner();
+		Net full_wire = NetFactory.makeNet(source);
+		bitselect = full_wire.getBitSelect(bit.getPosition());
+	}
+
+	public InvertedBitWire(List<Bit> bits) {
+		Bit lsb = ((Bit) bits.get(0)).getInvertedBit();
+		Bit msb = ((Bit) bits.get(bits.size() - 1)).getInvertedBit();
+		// Bus source = lsb.getParent().getSource();
+		assert lsb.getOwner() != null : "Getting owner of floating bit " + lsb;
+		Bus source = lsb.getOwner();
+		Net full_wire = NetFactory.makeNet(source);
+		bitselect = full_wire.getRange(msb.getPosition(), lsb.getPosition());
+	}
+
+	public int getWidth() {
+		return bitselect.getWidth();
+	}
+
+	public Collection getNets() {
+		return bitselect.getNets();
+	}
+
+	public Lexicality lexicalify() {
+		if (bitselect.getWidth() > 1) {
+			return new Group(new Unary.Negate(bitselect)).lexicalify();
+		} else {
+			return new Group(new Unary.Not(bitselect)).lexicalify();
+		}
+	}
 }
