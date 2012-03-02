@@ -187,7 +187,7 @@ public class MemoryBank extends Component
     /**
      * Gets the List of {@link BankPort} objects for this MemoryBank.
      */
-    public List getBankPorts ()
+    public List<BankPort> getBankPorts ()
     {
         return Collections.unmodifiableList(ports);
     }

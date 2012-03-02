@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import net.sf.openforge.lim.memory.MemoryBank;
+import net.sf.openforge.lim.memory.MemoryBank.BankPort;
 import net.sf.openforge.verilog.model.Expression;
 import net.sf.openforge.verilog.model.Input;
 import net.sf.openforge.verilog.model.ModuleInstance;
@@ -95,7 +96,7 @@ public abstract class DualPortWriter extends VerilogMemory {
 
 	private MemoryBank.BankPort getPortB(MemoryBank bank) {
 		assert bank.getBankPorts().size() == 2;
-		Set ports = new HashSet(bank.getBankPorts());
+		Set<BankPort> ports = new HashSet<BankPort>(bank.getBankPorts());
 		ports.remove(getPortA(bank));
 		assert ports.size() == 1;
 		return (MemoryBank.BankPort) ports.iterator().next();

@@ -68,7 +68,7 @@ public class SinglePortRomWriter extends SinglePortRamWriter {
 
 		// We assume speed mapping, but if the synth_opt flow is
 		// verilog_area.opt then put area as the highest priority
-		boolean opt_for_speed = true;
+		//boolean opt_for_speed = true;
 
 		Ram match = getLowestCost(Ram.getMappers(xd, isLUT()));
 
@@ -175,7 +175,7 @@ public class SinglePortRomWriter extends SinglePortRamWriter {
 		memoryModule.addPort(donePort);
 
 		// Declare internal wires
-		Net[] we = new Wire[result_depth];
+		//Net[] we = new Wire[result_depth];
 		Net[] pre_dout = new Wire[result_depth];
 
 		for (int d = 0; d < result_depth; d++) {

@@ -260,9 +260,9 @@ public abstract class VerilogMemory {
 	protected List<BigInteger> getInitValuesByLine() {
 		assert getDepth() == getMemBank().getInitValues().length;
 		AddressableUnit[][] initValues = getMemBank().getInitValues();
-		final int stride = getMemBank().getAddressStridePolicy().getStride();
+		//final int stride = getMemBank().getAddressStridePolicy().getStride();
 
-		final List<BigInteger> ret = new ArrayList();
+		final List<BigInteger> ret = new ArrayList<BigInteger>();
 		assert initValues.length == getDepth();
 		for (int line = 0; line < getDepth(); line++) {
 			AddressableUnit[] lineValue = initValues[line];
@@ -286,7 +286,7 @@ public abstract class VerilogMemory {
 					Comment.SHORT));
 			memoryModule.state(new InlineComment("Memory contents",
 					Comment.SHORT));
-			List initVals = getInitValuesByLine();
+			List<BigInteger> initVals = getInitValuesByLine();
 			for (int i = 0; i < initVals.size(); i++) {
 				memoryModule.state(new InlineComment(i + ": "
 						+ initVals.get(i).toString() + "("

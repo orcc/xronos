@@ -27,6 +27,7 @@ import java.util.Iterator;
 
 import net.sf.openforge.lim.memory.LogicalMemoryPort;
 import net.sf.openforge.lim.memory.MemoryBank;
+import net.sf.openforge.verilog.mapping.MappedModule;
 import net.sf.openforge.verilog.model.Always;
 import net.sf.openforge.verilog.model.Assign;
 import net.sf.openforge.verilog.model.ConditionalStatement;
@@ -68,7 +69,7 @@ public class DualPortInferredWriter extends DualPortWriter {
 
 	public Module defineModule() {
 		MemoryModule memoryModule = new MemoryModule(getName(),
-				Collections.EMPTY_SET);
+				Collections.<MappedModule> emptySet());
 
 		memoryModule.addPort(clkPort);
 		memoryModule.addPort(mpA.ren);
@@ -218,7 +219,7 @@ public class DualPortInferredWriter extends DualPortWriter {
 		// Memory initialization
 		SynopsysBlock initialBlock = new SynopsysBlock();
 		initialBlock.append("initial begin");
-		Iterator initValueIter = getInitValuesByLine().iterator();
+		Iterator<BigInteger> initValueIter = getInitValuesByLine().iterator();
 		for (int i = 0; i < getDepth() && initValueIter.hasNext(); i++) {
 			// Number initValue = (Number)initValueIter.next();
 			// String hexString = HexString.valueToHex(initValue,

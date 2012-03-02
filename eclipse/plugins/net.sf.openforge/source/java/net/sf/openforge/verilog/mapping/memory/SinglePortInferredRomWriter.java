@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Iterator;
 
 import net.sf.openforge.lim.memory.MemoryBank;
+import net.sf.openforge.verilog.mapping.MappedModule;
 import net.sf.openforge.verilog.model.Always;
 import net.sf.openforge.verilog.model.Assign;
 import net.sf.openforge.verilog.model.CaseBlock;
@@ -67,7 +68,7 @@ public class SinglePortInferredRomWriter extends SinglePortRamWriter {
 	}
 
 	public Module defineModule() {
-		Module memoryModule = new MemoryModule(getName(), Collections.EMPTY_SET);
+		Module memoryModule = new MemoryModule(getName(), Collections.<MappedModule> emptySet());
 
 		memoryModule.addPort(renPort);
 		memoryModule.addPort(adrPort);
@@ -85,7 +86,7 @@ public class SinglePortInferredRomWriter extends SinglePortRamWriter {
 
 		CaseBlock caseBlock = new CaseBlock(adrPort);
 
-		Iterator initValueIter = getInitValuesByLine().iterator();
+		Iterator<BigInteger> initValueIter = getInitValuesByLine().iterator();
 		for (int i = 0; i < getDepth() && initValueIter.hasNext(); i++) {
 			// Object initValue = initValueIter.next();
 			// String hex = HexString.valueToHex(initValue, getDataWidth());
