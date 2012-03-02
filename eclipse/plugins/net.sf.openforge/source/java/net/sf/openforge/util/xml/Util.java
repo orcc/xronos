@@ -199,6 +199,7 @@ public class Util {
         	//System.out.println("call1");
         	//Logging.user().info("call1");
             doc = applyTransform(doc, xf);
+            tmp = Util.nodeToString(doc);
         }
         tmp = Util.nodeToString(doc);
         //System.out.println(tmp);

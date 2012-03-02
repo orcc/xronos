@@ -215,9 +215,9 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor
         else
         {
             current_vmodule = new DesignModule(design);
-            for (Iterator taskIter = design.getTasks().iterator(); taskIter.hasNext();)
+          
+            for(Task task: design.getTasks())
             {
-                Task task = (Task)taskIter.next();
                 task.accept(this);
             }
         }
@@ -240,13 +240,10 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor
     {
         current_vmodule = new DesignModule(design);
 
-        for (Iterator iter = design.getDesignModule().getComponents().iterator(); iter.hasNext();)
-        {
-            Visitable vis = (Visitable)iter.next();
-//             if (vis instanceof Kicker)
-//             {
-//                 vis.accept(this);
-//             }
+        
+        for (Component comp: design.getDesignModule().getComponents()) {
+            Visitable vis = (Visitable)comp;
+
             if (vis instanceof net.sf.openforge.lim.Module)
             {
                 instantiateModule((net.sf.openforge.lim.Module)vis);
@@ -317,7 +314,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor
      */
     private void popModuleComponents (net.sf.openforge.lim.Module mod)
     {
-        Collection components = mod.getComponents();
+        Collection<Component> components = mod.getComponents();
         components.remove(mod.getInBuf());
         components.removeAll(mod.getOutBufs());
         for (Iterator it = components.iterator(); it.hasNext();)

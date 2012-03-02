@@ -140,7 +140,7 @@ public class OperationReplacementVisitor extends ReplacementVisitor implements O
         //
         final ReplacementCorrelation divCorr = ReplacementCorrelation.getCorrelation(DivideOp.class);
         final ReplacementCorrelation remCorr = ReplacementCorrelation.getCorrelation(ModuloOp.class);
-        final boolean isDivRem = (divCorr == correlation || remCorr == correlation);
+        final boolean isDivRem = false;//(divCorr == correlation || remCorr == correlation);
         
         if (libs.isEmpty())
         {

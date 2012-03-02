@@ -33,7 +33,8 @@ package net.sf.openforge.verilog.model;
  */
 public class BinaryConstant extends Constant
 {
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+    @SuppressWarnings("unused")
+	private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
 
     String bitstring = null;
     

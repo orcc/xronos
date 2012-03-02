@@ -44,7 +44,8 @@ import net.sf.openforge.verilog.model.VerilogElement;
 public class BaseNumber implements VerilogElement,  Expression
 {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+    @SuppressWarnings("unused")
+	private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
 
     private Constant number;
     

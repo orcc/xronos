@@ -24,7 +24,7 @@ import java.util.*;
 
 /**
  * Always is simply an always block with a related statement.
- *
+ * 
  * <P>
  * Example:<BR>
  * <CODE>
@@ -33,42 +33,36 @@ import java.util.*;
  * </CODE>
  * <P>
  * Created: Tue Mar 06 2001
- *
+ * 
  * @author abk
  * @version $Id: Always.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Always 
-    implements Statement
-{
+public class Always implements Statement {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	@SuppressWarnings("unused")
+	private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
 
-    Statement body;
+	Statement body;
 
+	public Collection getNets() {
+		return body.getNets();
+	}
 
-    public Collection getNets()
-    {
-        return body.getNets();
-    }
+	public Always(Statement body) {
+		this.body = body;
+	}
 
-    public Always(Statement body)
-    {
-        this.body = body;
-    }
-    
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Keyword.ALWAYS);
-        lex.append(body);
-        
-        return lex;
-    } // lexicalify()
-    
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(Keyword.ALWAYS);
+		lex.append(body);
+
+		return lex;
+	} // lexicalify()
+
+	public String toString() {
+		return lexicalify().toString();
+	}
 
 } // end of class Always

@@ -32,7 +32,7 @@ package net.sf.openforge.verilog.model;
  */
 public abstract class Bitwise extends Operation
 {
-
+	@SuppressWarnings("unused")
     private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
     public Bitwise(Symbol op, Expression left, Expression right) 

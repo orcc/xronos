@@ -35,7 +35,8 @@ package net.sf.openforge.verilog.model;
 public class BinaryNumber extends BaseNumber
 {
 
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+    @SuppressWarnings("unused")
+	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
     public BinaryNumber(Constant n)
     {

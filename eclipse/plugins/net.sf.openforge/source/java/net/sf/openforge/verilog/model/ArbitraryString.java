@@ -21,48 +21,39 @@
 
 package net.sf.openforge.verilog.model;
 
-
 /**
- * An ArbitraryString is a Token composed of an arbitraty sequence of characters.
+ * An ArbitraryString is a Token composed of an arbitraty sequence of
+ * characters.
  * <P>
- *
+ * 
  * Created: Wed Feb 07 2001
- *
+ * 
  * @author abk
  * @version $Id: ArbitraryString.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ArbitraryString 
-    extends Token
-{
+public class ArbitraryString extends Token {
 
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	public static final int TYPE = 7;
 
-    public static final int TYPE = 7;
+	String s;
 
-    String s;
-    
-    public ArbitraryString(String s)
-    {
-        super(); 
-        this.s = s;
-    }
- 
-    /**
-     * Gets the string representation of the token.
-     *
-     * 
-     */
-    public String getToken()
-    {
-        return s;
-    }
-    
-   
-    public int getType()
-    {
-        return TYPE;
-    }
-    
+	public ArbitraryString(String s) {
+		super();
+		this.s = s;
+	}
+
+	/**
+	 * Gets the string representation of the token.
+	 * 
+	 * 
+	 */
+	public String getToken() {
+		return s;
+	}
+
+	public int getType() {
+		return TYPE;
+	}
+
 } // end class ArbitraryString
-    
 

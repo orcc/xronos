@@ -43,11 +43,12 @@ import java.util.*;
 public class Concatenation implements Expression
 {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	@SuppressWarnings("unused")
+	private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
 
     int total_width = 0;
 
-    List elements = new ArrayList();
+    List<Expression> elements = new ArrayList<Expression>();
 
     public Concatenation()
     {

@@ -103,6 +103,9 @@ public abstract class XFactory
         {
             return false;
         }
+        else if (type.equals("uint")){
+        	return false;
+        }
         else
         {
             String tag = "unknown tag";
@@ -141,6 +144,10 @@ public abstract class XFactory
             if (type.equalsIgnoreCase("int"))
             {
                 width = 32;
+            }
+            else if (type.equalsIgnoreCase("uint"))
+            {
+                width = 1;
             }
             else if (type.equalsIgnoreCase("bool"))
             {

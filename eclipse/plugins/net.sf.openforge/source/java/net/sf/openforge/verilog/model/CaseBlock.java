@@ -43,7 +43,8 @@ import java.util.*;
 public class CaseBlock implements Statement
 {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	@SuppressWarnings("unused")
+	private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
 
     private Expression caseControl;
 
