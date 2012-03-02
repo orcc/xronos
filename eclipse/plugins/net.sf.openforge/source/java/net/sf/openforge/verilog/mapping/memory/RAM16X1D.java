@@ -21,32 +21,24 @@
 
 package net.sf.openforge.verilog.mapping.memory;
 
-   
-class RAM16X1D extends DualPortLutRam
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
-    
-    protected RAM16X1D ()
-    {
-    }
-    
-    public String getName ()
-    {
-        return("RAM16X1D");
-    }
-    
-    public int getWidth ()
-    {
-        return(1);
-    }
-    
-    public int getDepth ()
-    {
-        return(16);
-    }
-        
-    public int getCost ()
-    {
-            return(2);
-    }
+class RAM16X1D extends DualPortLutRam {
+
+	protected RAM16X1D() {
+	}
+
+	public String getName() {
+		return ("RAM16X1D");
+	}
+
+	public int getWidth() {
+		return (1);
+	}
+
+	public int getDepth() {
+		return (16);
+	}
+
+	public int getCost() {
+		return (2);
+	}
 }

@@ -21,36 +21,28 @@
 
 package net.sf.openforge.verilog.mapping.memory;
 
-class RAMB4_S8_S8 extends DualPortBlockRam
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+class RAMB4_S8_S8 extends DualPortBlockRam {
 
-    protected RAMB4_S8_S8 ()
-    {
-    }
-    
-    public String getName ()
-    {
-        return("RAMB4_S8_S8");
-    }
-        
-    public int getWidth ()
-    {
-        return(8);
-    }
-    
-    public int getDepth ()
-    {
-        return(512);
-    }
+	protected RAMB4_S8_S8() {
+	}
 
-    public int getCost ()
-    {
-        return(1);
-    }
+	public String getName() {
+		return ("RAMB4_S8_S8");
+	}
 
-    public boolean isBlockRam16 ()
-    {
-        return(false);
-    }
+	public int getWidth() {
+		return (8);
+	}
+
+	public int getDepth() {
+		return (512);
+	}
+
+	public int getCost() {
+		return (1);
+	}
+
+	public boolean isBlockRam16() {
+		return (false);
+	}
 }

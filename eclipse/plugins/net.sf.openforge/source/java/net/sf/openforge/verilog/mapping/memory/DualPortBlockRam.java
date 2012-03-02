@@ -21,8 +21,16 @@
 
 package net.sf.openforge.verilog.mapping.memory;
 
-import net.sf.openforge.verilog.model.*;
-import net.sf.openforge.verilog.pattern.*;
+import net.sf.openforge.verilog.model.BinaryNumber;
+import net.sf.openforge.verilog.model.Comment;
+import net.sf.openforge.verilog.model.Concatenation;
+import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.InlineComment;
+import net.sf.openforge.verilog.model.ModuleInstance;
+import net.sf.openforge.verilog.model.Net;
+import net.sf.openforge.verilog.model.ParameterSetting;
+import net.sf.openforge.verilog.model.Wire;
+import net.sf.openforge.verilog.pattern.StatementBlock;
 
 /**
  * A base class of all of the XST supported dual-port block ram models.
@@ -36,7 +44,6 @@ import net.sf.openforge.verilog.pattern.*;
 
 public abstract class DualPortBlockRam extends DualPortRam
 {
-    private static final String rcs_id = "RCS_REVISION: $Rev: 538 $";
     
     private static int instancecnt = 0;
     

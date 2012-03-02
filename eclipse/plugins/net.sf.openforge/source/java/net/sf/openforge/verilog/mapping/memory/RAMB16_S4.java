@@ -21,36 +21,28 @@
 
 package net.sf.openforge.verilog.mapping.memory;
 
-class RAMB16_S4 extends BlockRam
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+class RAMB16_S4 extends BlockRam {
 
-    protected RAMB16_S4 ()
-    {
-    }
-  
-    public String getName ()
-    {
-        return("RAMB16_S4");
-    }
-      
-    public int getWidth ()
-    {
-        return(4);
-    }
-    
-    public int getDepth ()
-    {
-        return(4096);
-    }
-    
-    public int getCost ()
-    {
-        return(1);
-    }
+	protected RAMB16_S4() {
+	}
 
-    public boolean isBlockRam16 ()
-    {
-        return(true);
-    }
+	public String getName() {
+		return ("RAMB16_S4");
+	}
+
+	public int getWidth() {
+		return (4);
+	}
+
+	public int getDepth() {
+		return (4096);
+	}
+
+	public int getCost() {
+		return (1);
+	}
+
+	public boolean isBlockRam16() {
+		return (true);
+	}
 }

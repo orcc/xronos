@@ -21,32 +21,24 @@
 
 package net.sf.openforge.verilog.mapping.memory;
 
-    
-class RAM32X4S extends LutRam
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
-    
-    protected RAM32X4S ()
-    {
-    }
-    
-    public String getName ()
-    {
-        return("RAM32X4S");
-    }
-       
-    public int getWidth ()
-    {
-        return(4);
-    }
-       
-    public int getDepth ()
-    {
-        return(32);
-    }
-    
-    public int getCost ()
-    {
-        return(8);
-    }
+class RAM32X4S extends LutRam {
+
+	protected RAM32X4S() {
+	}
+
+	public String getName() {
+		return ("RAM32X4S");
+	}
+
+	public int getWidth() {
+		return (4);
+	}
+
+	public int getDepth() {
+		return (32);
+	}
+
+	public int getCost() {
+		return (8);
+	}
 }
