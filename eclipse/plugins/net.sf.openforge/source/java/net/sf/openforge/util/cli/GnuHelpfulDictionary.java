@@ -20,14 +20,13 @@ package net.sf.openforge.util.cli;
  * @author Andreas Kollegger
  * @version $Id: GnuHelpfulDictionary.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class GnuHelpfulDictionary extends GnuOptionDictionary
-{
-    public static final GnuOptionDefinition HELP = new GnuOptionDefinition(
-            'h', "help", GnuOptionDefinition.NO_ARGUMENT, "Display this information.");
+public class GnuHelpfulDictionary extends GnuOptionDictionary {
+	public static final GnuOptionDefinition HELP = new GnuOptionDefinition('h',
+			"help", GnuOptionDefinition.NO_ARGUMENT,
+			"Display this information.");
 
-    public GnuHelpfulDictionary()
-    {
-        super();
-        add(HELP);
-    }
+	public GnuHelpfulDictionary() {
+		super();
+		add(HELP);
+	}
 }

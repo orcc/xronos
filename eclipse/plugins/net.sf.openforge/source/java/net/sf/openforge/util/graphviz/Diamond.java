@@ -20,24 +20,21 @@
  */
 package net.sf.openforge.util.graphviz;
 
-
 /**
  * A diamond node.
- *
- * @author  Stephen Edwards
+ * 
+ * @author Stephen Edwards
  * @version $Id: Diamond.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Diamond extends Node
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class Diamond extends Node {
 
-    /**
-     * Constructs a new Diamond node.
-     *
-     * @param id the identifier of the node
-     */
-    public Diamond (String id)
-    {
-        super(id, "diamond");
-    }
+	/**
+	 * Constructs a new Diamond node.
+	 * 
+	 * @param id
+	 *            the identifier of the node
+	 */
+	public Diamond(String id) {
+		super(id, "diamond");
+	}
 }

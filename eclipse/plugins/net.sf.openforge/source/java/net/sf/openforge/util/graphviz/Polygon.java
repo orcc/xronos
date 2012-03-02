@@ -20,40 +20,35 @@
  */
 package net.sf.openforge.util.graphviz;
 
-
 /**
  * A polygon node. (Doesn't seem to be implemented yet...).
- *
- * @author  Stephen Edwards
+ * 
+ * @author Stephen Edwards
  * @version $Id: Polygon.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Polygon extends Node
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class Polygon extends Node {
 
-    /**
-     * Constructs a new Polygon node.
-     *
-     * @param id the identifier of the node
-     */
-    public Polygon (String id)
-    {
-        super(id, "polygon");
-    }
+	/**
+	 * Constructs a new Polygon node.
+	 * 
+	 * @param id
+	 *            the identifier of the node
+	 */
+	public Polygon(String id) {
+		super(id, "polygon");
+	}
 
-    /**
-     * Sets the polygon's distortion.
-     */
-    public void setDistortion (float distortion)
-    {
-        setAttribute("distortion", Float.toString(distortion));
-    }
+	/**
+	 * Sets the polygon's distortion.
+	 */
+	public void setDistortion(float distortion) {
+		setAttribute("distortion", Float.toString(distortion));
+	}
 
-    /**
-     * Sets the number of sides in the polygon.
-     */
-    public void setSides (int sides)
-    {
-        setAttribute("sides", Integer.toString(sides));
-    }
+	/**
+	 * Sets the number of sides in the polygon.
+	 */
+	public void setSides(int sides) {
+		setAttribute("sides", Integer.toString(sides));
+	}
 }

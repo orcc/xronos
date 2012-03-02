@@ -28,173 +28,173 @@ import java.util.Set;
  * 
  * @author Andreas Kollegger
  */
-public class GnuOptionDictionary
-{
-    /** A map of short keys to GnuOptionDefinitions. */
-    Map shortMap;
-    
-    /** A map of long keys to GnuOptionDefinitions. */
-    Map longMap;
-    
-    /**
-     * Contructs an empty dictionary. Use @link #add to populate the
-     * dictionary with definitions.
-     */
-    public GnuOptionDictionary()
-    {
-    	shortMap = new HashMap();
-    	longMap = new HashMap();
-    }
-    
-    /**
-     * Contructs a new parser for a set of GnuOptionDefinitions.
-     *  
-     * @param definitions
-     */
-    public GnuOptionDictionary(Set definitions)
-    {
-    	this();
-        for (Iterator it = definitions.iterator(); it.hasNext();)
-        {
-        	GnuOptionDefinition definition = (GnuOptionDefinition)it.next();
-        	add(definition);
-        }
-    }
-    /**
-     * Adds a definition to the dictionary.
-     * 
-     * @param definition the definition to add
-     */
-    public void add(GnuOptionDefinition definition)
-    {
-    	Character shortKey = new Character(definition.getShortKey());
-    	shortMap.put(shortKey, definition);
-    	String longKey = definition.getLongKey();
-    	longMap.put(longKey, definition);
-    }
+public class GnuOptionDictionary {
+	/** A map of short keys to GnuOptionDefinitions. */
+	Map<Character, GnuOptionDefinition> shortMap;
 
-    /**
-     * Retrieves the option definition related to a long key.
-     * 
-     * @param longKey the long key
-     * @return the related definition, or null if there is no matching definition
-     */
-    public GnuOptionDefinition getDefinition(String longKey)
-    {
-        return (GnuOptionDefinition)longMap.get(longKey);
-    }
-    
-    /**
-     * Retrieves the option definition related to a short key.
-     * 
-     * @param shortKey the short key
-     * @return the related definition, or null if there is no matching definition
-     */
-    public GnuOptionDefinition getDefinition(char shortKey)
-    {
-        return (GnuOptionDefinition)shortMap.get(new Character(shortKey));
-    }
-    
-    /**
-     * Retrieves all the definitions.
-     * 
-     * @return the set of GnuOptionDefinitions.
-     */
-    public Collection getDefinitions()
-    {
-        return shortMap.values();
-    }
+	/** A map of long keys to GnuOptionDefinitions. */
+	Map<String, GnuOptionDefinition> longMap;
 
-    /**
-     * Gets the number of entries.
-     */
-    public int size()
-    {
-        return shortMap.size();
-    }
+	/**
+	 * Contructs an empty dictionary. Use @link #add to populate the dictionary
+	 * with definitions.
+	 */
+	public GnuOptionDictionary() {
+		shortMap = new HashMap<Character, GnuOptionDefinition>();
+		longMap = new HashMap<String, GnuOptionDefinition>();
+	}
 
-    /**
-     * Checks whether there are no entries.
-     */
-    public boolean isEmpty()
-    {
-        return shortMap.isEmpty();
-    }
+	/**
+	 * Contructs a new parser for a set of GnuOptionDefinitions.
+	 * 
+	 * @param definitions
+	 */
+	public GnuOptionDictionary(Set definitions) {
+		this();
+		for (Iterator it = definitions.iterator(); it.hasNext();) {
+			GnuOptionDefinition definition = (GnuOptionDefinition) it.next();
+			add(definition);
+		}
+	}
 
-    /**
-     * Checks whether the dictionary contains a definition for the given key.
-     * 
-     * @param key either the short key (as a Character) or the long key (as a String)
-     */
-    public boolean containsKey(Object key)
-    {
-        return (shortMap.containsKey(key) || longMap.containsKey(key));
-    }
+	/**
+	 * Adds a definition to the dictionary.
+	 * 
+	 * @param definition
+	 *            the definition to add
+	 */
+	public void add(GnuOptionDefinition definition) {
+		Character shortKey = new Character(definition.getShortKey());
+		shortMap.put(shortKey, definition);
+		String longKey = definition.getLongKey();
+		longMap.put(longKey, definition);
+	}
 
-    /* (non-Javadoc)
-     * @see java.util.Map#remove(java.lang.Object)
-     */
-    public Object remove(Object arg0)
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	/**
+	 * Retrieves the option definition related to a long key.
+	 * 
+	 * @param longKey
+	 *            the long key
+	 * @return the related definition, or null if there is no matching
+	 *         definition
+	 */
+	public GnuOptionDefinition getDefinition(String longKey) {
+		return (GnuOptionDefinition) longMap.get(longKey);
+	}
 
-    /* (non-Javadoc)
-     * @see java.util.Map#putAll(java.util.Map)
-     */
-    public void putAll(Map arg0)
-    {
-        // TODO Auto-generated method stub
-        
-    }
+	/**
+	 * Retrieves the option definition related to a short key.
+	 * 
+	 * @param shortKey
+	 *            the short key
+	 * @return the related definition, or null if there is no matching
+	 *         definition
+	 */
+	public GnuOptionDefinition getDefinition(char shortKey) {
+		return (GnuOptionDefinition) shortMap.get(new Character(shortKey));
+	}
 
-    /* (non-Javadoc)
-     * @see java.util.Map#clear()
-     */
-    public void clear()
-    {
-        shortMap.clear();
-        longMap.clear();
-    }
+	/**
+	 * Retrieves all the definitions.
+	 * 
+	 * @return the set of GnuOptionDefinitions.
+	 */
+	public Collection getDefinitions() {
+		return shortMap.values();
+	}
 
-    /* (non-Javadoc)
-     * @see java.util.Map#keySet()
-     */
-    public Set keySet()
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	/**
+	 * Gets the number of entries.
+	 */
+	public int size() {
+		return shortMap.size();
+	}
 
-    /* (non-Javadoc)
-     * @see java.util.Map#values()
-     */
-    public Collection values()
-    {
-        return shortMap.values();
-    }
+	/**
+	 * Checks whether there are no entries.
+	 */
+	public boolean isEmpty() {
+		return shortMap.isEmpty();
+	}
 
-    /* (non-Javadoc)
-     * @see java.util.Map#entrySet()
-     */
-    public Set entrySet()
-    {
-    	Set entries = new HashSet();
-    	entries.addAll(shortMap.entrySet());
-    	return entries;
-    }
+	/**
+	 * Checks whether the dictionary contains a definition for the given key.
+	 * 
+	 * @param key
+	 *            either the short key (as a Character) or the long key (as a
+	 *            String)
+	 */
+	public boolean containsKey(Object key) {
+		return (shortMap.containsKey(key) || longMap.containsKey(key));
+	}
 
-    /**
-     * @param err
-     */
-    public void printUsage(PrintStream printer)
-    {
-        for (Iterator it=values().iterator(); it.hasNext();)
-        {
-            printer.println("  " + it.next());
-        }
-    }
-    
-    
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.util.Map#remove(java.lang.Object)
+	 */
+	public Object remove(Object arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.util.Map#putAll(java.util.Map)
+	 */
+	public void putAll(Map arg0) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.util.Map#clear()
+	 */
+	public void clear() {
+		shortMap.clear();
+		longMap.clear();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.util.Map#keySet()
+	 */
+	public Set keySet() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.util.Map#values()
+	 */
+	public Collection values() {
+		return shortMap.values();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.util.Map#entrySet()
+	 */
+	public Set entrySet() {
+		Set entries = new HashSet();
+		entries.addAll(shortMap.entrySet());
+		return entries;
+	}
+
+	/**
+	 * @param err
+	 */
+	public void printUsage(PrintStream printer) {
+		for (Iterator it = values().iterator(); it.hasNext();) {
+			printer.println("  " + it.next());
+		}
+	}
+
 }

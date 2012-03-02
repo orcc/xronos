@@ -20,24 +20,21 @@
  */
 package net.sf.openforge.util.graphviz;
 
-
 /**
  * A circle node.
- *
- * @author  Stephen Edwards
+ * 
+ * @author Stephen Edwards
  * @version $Id: Circle.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Circle extends Node
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class Circle extends Node {
 
-    /**
-     * Constructs a new Circle node.
-     *
-     * @param id the identifier of the node
-     */
-    public Circle (String id)
-    {
-        super(id, "circle");
-    }
+	/**
+	 * Constructs a new Circle node.
+	 * 
+	 * @param id
+	 *            the identifier of the node
+	 */
+	public Circle(String id) {
+		super(id, "circle");
+	}
 }

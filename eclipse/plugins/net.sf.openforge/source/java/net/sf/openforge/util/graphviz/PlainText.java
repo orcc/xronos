@@ -20,24 +20,21 @@
  */
 package net.sf.openforge.util.graphviz;
 
-
 /**
  * A plaintext node.
- *
- * @author  Stephen Edwards
+ * 
+ * @author Stephen Edwards
  * @version $Id: PlainText.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class PlainText extends Node
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class PlainText extends Node {
 
-    /**
-     * Constructs a new Plaintext node.
-     *
-     * @param id the identifier of the node
-     */
-    public PlainText (String id)
-    {
-        super(id, "plaintext");
-    }
+	/**
+	 * Constructs a new Plaintext node.
+	 * 
+	 * @param id
+	 *            the identifier of the node
+	 */
+	public PlainText(String id) {
+		super(id, "plaintext");
+	}
 }

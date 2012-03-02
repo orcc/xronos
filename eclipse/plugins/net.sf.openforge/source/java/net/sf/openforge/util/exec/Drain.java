@@ -46,7 +46,6 @@ import java.io.*;
  */
 public class Drain
 {
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
     /** The anonymous thread in which the i/o occurs */
     private Thread thread;

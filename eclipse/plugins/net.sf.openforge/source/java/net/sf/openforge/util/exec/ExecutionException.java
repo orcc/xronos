@@ -21,30 +21,26 @@
 
 package net.sf.openforge.util.exec;
 
-
 /**
- * Thrown when an external program executed by one of the classes
- * in this package results in an error.
- *
+ * Thrown when an external program executed by one of the classes in this
+ * package results in an error.
+ * 
  * @version $Id: ExecutionException.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ExecutionException extends Exception
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+@SuppressWarnings("serial")
+public class ExecutionException extends Exception {
 
-    /**
-     * Constructs an ExecutionException with no error message.
-     */
-    public ExecutionException ()
-    {
-        this(null);
-    }
+	/**
+	 * Constructs an ExecutionException with no error message.
+	 */
+	public ExecutionException() {
+		this(null);
+	}
 
-    /**
-     * Constructs an ExecutionException with a given error message.
-     */
-    public ExecutionException (String msg)
-    {
-        super(msg);
-    }
+	/**
+	 * Constructs an ExecutionException with a given error message.
+	 */
+	public ExecutionException(String msg) {
+		super(msg);
+	}
 }

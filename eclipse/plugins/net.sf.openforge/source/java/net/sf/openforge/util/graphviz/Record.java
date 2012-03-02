@@ -20,237 +20,207 @@
  */
 package net.sf.openforge.util.graphviz;
 
-import java.util.*;
-
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
- * A record node.  A record may have zero or more ports, which are
- * nested records.  Ports may also be the sources/targets of edges.
- *
- * @author  Stephen Edwards
+ * A record node. A record may have zero or more ports, which are nested
+ * records. Ports may also be the sources/targets of edges.
+ * 
+ * @author Stephen Edwards
  * @version $Id: Record.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Record extends Node
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class Record extends Node {
 
-    protected List ports = new LinkedList();
-    protected String nodeLabel = null;
-    // title is printed below the ports if defined
-    private String title=null;
+	protected List<Port> ports = new LinkedList<Port>();
+	protected String nodeLabel = null;
+	// title is printed below the ports if defined
+	private String title = null;
 
-    /** True if a gap is to be inserted between this record and the next when nested */
-    private boolean isSeparated = true;
-    
-    /**
-     * Constructs a new record.
-     *
-     * @param id the identifier of the node
-     */
-    public Record (String id)
-    {
-        super(id, "record");
-        setLabel(id);
-    }
-    /**
-     * sets the title for the record
-     */
-    public void setTitle (String title)
-    {
-        this.title=title;
-    }
+	/**
+	 * True if a gap is to be inserted between this record and the next when
+	 * nested
+	 */
+	private boolean isSeparated = true;
 
-    public void setSeparated (boolean isSeparated)
-    {
-        this.isSeparated = isSeparated;
-    }
+	/**
+	 * Constructs a new record.
+	 * 
+	 * @param id
+	 *            the identifier of the node
+	 */
+	public Record(String id) {
+		super(id, "record");
+		setLabel(id);
+	}
 
-    public boolean isSeparated ()
-    {
-        return isSeparated;
-    }
-    
-    /**
-     * Creates and returns a new port.
-     *
-     * @param id the identifier of the port
-     * @return the new port
-     */
-    public Port getPort (String id)
-    {
-        Port port = new Port(id);
-        ports.add(port);
-        return port;
-    }
+	/**
+	 * sets the title for the record
+	 */
+	public void setTitle(String title) {
+		this.title = title;
+	}
 
-    /**
-     * Creates and returns a new anonymous port.
-     */
-    public Port getPort ()
-    {
-        return getPort(null);
-    }
+	public void setSeparated(boolean isSeparated) {
+		this.isSeparated = isSeparated;
+	}
 
-    /**
-     * A port within a record.
-     */
-    public class Port extends Record
-    {
-        /**
-         * Creates and returns a new port within this port.
-         *
-         * @param id the identifier of the new port
-         * @return the new port
-         */
-        public Port getPort (String id)
-        {
-            Record.Port port = Record.this.new Port(id);
-            ports.add(port);
-            return port;
-        }
+	public boolean isSeparated() {
+		return isSeparated;
+	}
 
-        public String getEdgeSourceId ()
-        {
-            return getEdgeTargetId();
-        }
+	/**
+	 * Creates and returns a new port.
+	 * 
+	 * @param id
+	 *            the identifier of the port
+	 * @return the new port
+	 */
+	public Port getPort(String id) {
+		Port port = new Port(id);
+		ports.add(port);
+		return port;
+	}
 
-        public String getEdgeTargetId ()
-        {
-            /*
-             * Gets the "name:port" form of the id, for use in connections.
-             */
-            return Record.this.getEdgeTargetId() + ":" + getId();
-        }
+	/**
+	 * Creates and returns a new anonymous port.
+	 */
+	public Port getPort() {
+		return getPort(null);
+	}
 
-        public Graph getGraph ()
-        {
-            return Record.this.getGraph();
-        }
+	/**
+	 * A port within a record.
+	 */
+	public class Port extends Record {
+		/**
+		 * Creates and returns a new port within this port.
+		 * 
+		 * @param id
+		 *            the identifier of the new port
+		 * @return the new port
+		 */
+		public Port getPort(String id) {
+			Record.Port port = Record.this.new Port(id);
+			ports.add(port);
+			return port;
+		}
 
-        String getEmbeddedLabel ()
-        {
-            StringBuffer buf = new StringBuffer();
-            if (!ports.isEmpty())
-            {
-                /*
-                 * Sub-record case.
-                 */
-                buf.append("{");
-                buf.append(getRecordLabel());
-                buf.append("}");
-            }
-            else
-            {
-                /*
-                 * Leaf record case.
-                 */
-                String id = getId();
+		public String getEdgeSourceId() {
+			return getEdgeTargetId();
+		}
 
-                /*
-                 * No default label for ports.
-                 */
-                String label = getNodeLabel();
-                label = label.replaceAll(">", "GT");
-                label = label.replaceAll("<", "LT");
-                if (id != null)
-                {
-                    buf.append("<");
-                    buf.append(id);
-                    buf.append(">");
-                    if (label != null)
-                    {
-                        buf.append(" ");
-                    }
-                }
-                if (label != null)
-                {
-                    buf.append(label);
-                }
-            }
-            return buf.toString();
-        }
+		public String getEdgeTargetId() {
+			/*
+			 * Gets the "name:port" form of the id, for use in connections.
+			 */
+			return Record.this.getEdgeTargetId() + ":" + getId();
+		}
 
-        private Port (String id)
-        {
-            super(id);
-            setLabel("");
-        }
+		public Graph getGraph() {
+			return Record.this.getGraph();
+		}
 
-    }
+		String getEmbeddedLabel() {
+			StringBuffer buf = new StringBuffer();
+			if (!ports.isEmpty()) {
+				/*
+				 * Sub-record case.
+				 */
+				buf.append("{");
+				buf.append(getRecordLabel());
+				buf.append("}");
+			} else {
+				/*
+				 * Leaf record case.
+				 */
+				String id = getId();
 
-    protected String getAttribute (String attr)
-    {
-        return (attr.equals("label")
-            ? getRecordLabel()
-            : super.getAttribute(attr));
-    }
+				/*
+				 * No default label for ports.
+				 */
+				String label = getNodeLabel();
+				label = label.replaceAll(">", "GT");
+				label = label.replaceAll("<", "LT");
+				if (id != null) {
+					buf.append("<");
+					buf.append(id);
+					buf.append(">");
+					if (label != null) {
+						buf.append(" ");
+					}
+				}
+				if (label != null) {
+					buf.append(label);
+				}
+			}
+			return buf.toString();
+		}
 
-    protected void setAttribute (String attr, String value)
-    {
-        if (attr.equals("label"))
-        {
-            nodeLabel = value;
-        }
-        super.setAttribute(attr, value);
-    }
+		private Port(String id) {
+			super(id);
+			setLabel("");
+		}
 
-    protected String getNodeLabel ()
-    {
-        return nodeLabel;
-    }
+	}
 
-    protected String getRecordLabel ()
-    {
-        if (ports.isEmpty())
-        {
-            return getNodeLabel();
-        }
-        else
-        {
-            StringBuffer buf = new StringBuffer();
-            if (title != null)
-            {
-                // these characters need to be quoted
-                char[] specialChars={'>','<', '|','}','{'};
-                for (int i=0; i<specialChars.length; i++)
-                {
-                    int start=0;
-                    int loc;
-                    
-                    while ((loc=title.indexOf(specialChars[i],start)) > -1)
-                    {
-                        String l="";
-                        if (loc > 0)
-                        {
-                            l=title.substring(0,loc);
-                        }
-                        l+="\\"+title.substring(loc);
-                        start=loc+2;
-                        title=l;
-                    }
-                }
-                
-                buf.append("{{");
-            }
-            for (Iterator iter = ports.iterator(); iter.hasNext();)
-            {
-                Port port = (Port)iter.next();
-                buf.append(port.getEmbeddedLabel());
-                if (iter.hasNext())
-                {
-                    buf.append("|");
-                    if (port.isSeparated())
-                    {
-                        buf.append("|");
-                    }
-                }
-            }
-            if (title != null)
-            {
-                buf.append("} | "+title+"}");
-            }
-            
-            return buf.toString();
-        }
-    }
+	protected String getAttribute(String attr) {
+		return (attr.equals("label") ? getRecordLabel() : super
+				.getAttribute(attr));
+	}
+
+	protected void setAttribute(String attr, String value) {
+		if (attr.equals("label")) {
+			nodeLabel = value;
+		}
+		super.setAttribute(attr, value);
+	}
+
+	protected String getNodeLabel() {
+		return nodeLabel;
+	}
+
+	protected String getRecordLabel() {
+		if (ports.isEmpty()) {
+			return getNodeLabel();
+		} else {
+			StringBuffer buf = new StringBuffer();
+			if (title != null) {
+				// these characters need to be quoted
+				char[] specialChars = { '>', '<', '|', '}', '{' };
+				for (int i = 0; i < specialChars.length; i++) {
+					int start = 0;
+					int loc;
+
+					while ((loc = title.indexOf(specialChars[i], start)) > -1) {
+						String l = "";
+						if (loc > 0) {
+							l = title.substring(0, loc);
+						}
+						l += "\\" + title.substring(loc);
+						start = loc + 2;
+						title = l;
+					}
+				}
+
+				buf.append("{{");
+			}
+			for (Iterator<Port> iter = ports.iterator(); iter.hasNext();) {
+				Port port = (Port) iter.next();
+				buf.append(port.getEmbeddedLabel());
+				if (iter.hasNext()) {
+					buf.append("|");
+					if (port.isSeparated()) {
+						buf.append("|");
+					}
+				}
+			}
+			if (title != null) {
+				buf.append("} | " + title + "}");
+			}
+
+			return buf.toString();
+		}
+	}
 }

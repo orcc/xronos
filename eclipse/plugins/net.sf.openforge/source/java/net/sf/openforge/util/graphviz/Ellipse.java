@@ -20,24 +20,21 @@
  */
 package net.sf.openforge.util.graphviz;
 
-
 /**
  * An ellipse node.
- *
- * @author  Stephen Edwards
+ * 
+ * @author Stephen Edwards
  * @version $Id: Ellipse.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Ellipse extends Node
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class Ellipse extends Node {
 
-    /**
-     * Constructs a new Ellipse node.
-     *
-     * @param id the identifier of the node
-     */
-    public Ellipse (String id)
-    {
-        super(id, "ellipse");
-    }
+	/**
+	 * Constructs a new Ellipse node.
+	 * 
+	 * @param id
+	 *            the identifier of the node
+	 */
+	public Ellipse(String id) {
+		super(id, "ellipse");
+	}
 }
