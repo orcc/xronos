@@ -20,9 +20,10 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
-import java.io.StringWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 

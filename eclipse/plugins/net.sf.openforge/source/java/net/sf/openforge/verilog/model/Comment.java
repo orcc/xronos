@@ -20,8 +20,10 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
-import java.io.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Comment represents a verilog comment.

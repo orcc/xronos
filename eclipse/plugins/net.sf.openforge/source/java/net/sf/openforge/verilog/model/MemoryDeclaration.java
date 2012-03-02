@@ -20,7 +20,7 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Iterator;
 
 /**
  * MemoryDeclaration declares a memory. All {@link Register Registers} added

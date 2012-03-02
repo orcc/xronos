@@ -20,7 +20,8 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * A ProceduralTimingBlock is a procedural timing control statement,

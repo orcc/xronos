@@ -20,7 +20,8 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * Constant is an unsigned decimal number of immutable size and value.

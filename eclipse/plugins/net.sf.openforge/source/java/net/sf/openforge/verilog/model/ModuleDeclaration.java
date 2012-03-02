@@ -20,7 +20,7 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
 
 /**
  * ModuleDeclaration is a verilog statement which declares a 

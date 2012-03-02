@@ -20,7 +20,11 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * A Concatenation is an expression which represents the

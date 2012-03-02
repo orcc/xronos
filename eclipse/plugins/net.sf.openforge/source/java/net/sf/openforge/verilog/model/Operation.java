@@ -20,7 +20,8 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * Operation is an expression which joins two sub-expression with an operator.

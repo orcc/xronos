@@ -20,7 +20,9 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * QualifiedNet is a fully qualfied Net expression, with explicit

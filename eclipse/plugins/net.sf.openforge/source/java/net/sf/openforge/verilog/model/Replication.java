@@ -20,8 +20,6 @@
  */
 package net.sf.openforge.verilog.model;
 
-import net.sf.openforge.verilog.model.Expression;
-import net.sf.openforge.verilog.model.Lexicality;
 
 
 /**

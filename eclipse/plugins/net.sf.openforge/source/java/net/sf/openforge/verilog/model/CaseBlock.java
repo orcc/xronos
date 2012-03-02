@@ -20,9 +20,11 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
-
-import net.sf.openforge.verilog.model.CaseBlock.CaseStatement;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * CaseBlock is a chunk of case statements bounded by case and endcase.

@@ -21,7 +21,7 @@
 
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
 
 /**
  * DelayStatement adds a relative delay to a statement of the form:

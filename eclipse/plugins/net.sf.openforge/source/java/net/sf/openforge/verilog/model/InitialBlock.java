@@ -21,7 +21,7 @@
 
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
 
 /**
  * InitialBlock is a Verilog 'initial' block.

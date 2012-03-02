@@ -20,8 +20,8 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Keyword provides all the named keywords in Verilog.

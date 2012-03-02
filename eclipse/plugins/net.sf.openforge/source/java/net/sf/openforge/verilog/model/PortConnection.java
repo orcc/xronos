@@ -20,7 +20,7 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
 
 /**
  * PortConnection represents a connection to a module

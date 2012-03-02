@@ -20,7 +20,8 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * MemoryElement is a NetLValue which represents a single word of memory.

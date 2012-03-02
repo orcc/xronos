@@ -20,7 +20,13 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * ModuleInstance is an instantiation of a module. It is

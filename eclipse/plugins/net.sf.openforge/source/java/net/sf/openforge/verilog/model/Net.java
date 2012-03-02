@@ -20,7 +20,9 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 
 /**
  * Net is an Expression represented by an Identifier which has a specific Type

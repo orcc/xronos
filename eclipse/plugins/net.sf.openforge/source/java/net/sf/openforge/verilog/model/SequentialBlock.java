@@ -20,7 +20,11 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * SequentialBlock is a chunk of statements bounded by begin and end.

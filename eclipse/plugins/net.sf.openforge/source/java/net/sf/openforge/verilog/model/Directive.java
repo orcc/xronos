@@ -20,7 +20,8 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Directive is the parent class for any Verilog directive. It is a

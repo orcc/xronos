@@ -20,7 +20,9 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Assign produces an assignment statement, setting a NetLValue to an

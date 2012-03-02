@@ -21,7 +21,6 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
 
 /**
  * ParameterSetting represents a parameter value specification in a

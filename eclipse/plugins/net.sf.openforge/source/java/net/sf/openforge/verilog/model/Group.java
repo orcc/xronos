@@ -20,7 +20,7 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
 
 /**
  * Group is an expression wrapper which surrounds an expression in parenthesis

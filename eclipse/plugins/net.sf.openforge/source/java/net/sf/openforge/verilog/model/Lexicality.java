@@ -21,8 +21,8 @@
 
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * 

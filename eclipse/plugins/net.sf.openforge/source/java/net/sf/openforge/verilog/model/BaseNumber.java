@@ -20,10 +20,8 @@
  */
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
-
-import net.sf.openforge.verilog.model.Lexicality;
-import net.sf.openforge.verilog.model.VerilogElement;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * A BaseNumber expression presents a fully qualified representation of a
