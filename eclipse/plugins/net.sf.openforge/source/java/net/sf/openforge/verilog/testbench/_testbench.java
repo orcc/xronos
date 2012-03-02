@@ -24,20 +24,19 @@ import net.sf.openforge.util.Debug;
 
 /**
  * _linker.java
- *
- *
+ * 
+ * 
  * Created: Mon May 13 11:06:46 2002
- *
+ * 
  * @author YS Yu
  * @version $Id: _testbench.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class _testbench
-{
-    private static final String _RCS_ = "$Rev: 2 $";
- 
-    public static boolean db=Debug.COMPILED_OUT;
-    public final static Debug d=new Debug(net.sf.openforge.verilog.testbench._testbench.class,
-        "Test Bench", db, Debug.VISIBLE,
-        net.sf.openforge.app.logging.ForgeLogger.consoleOut);
+public class _testbench {
+
+	public static boolean db = Debug.COMPILED_OUT;
+	public final static Debug d = new Debug(
+			net.sf.openforge.verilog.testbench._testbench.class, "Test Bench",
+			db, Debug.VISIBLE,
+			net.sf.openforge.app.logging.ForgeLogger.consoleOut);
 }

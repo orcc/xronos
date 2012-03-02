@@ -23,7 +23,11 @@ package net.sf.openforge.verilog.testbench;
 
 
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.app.OptionRegistry;
@@ -39,7 +43,30 @@ import net.sf.openforge.lim.Pin;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.util.naming.ID;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.Always;
+import net.sf.openforge.verilog.model.Assign;
+import net.sf.openforge.verilog.model.Bitwise;
+import net.sf.openforge.verilog.model.Comment;
+import net.sf.openforge.verilog.model.Concatenation;
+import net.sf.openforge.verilog.model.ConditionalStatement;
+import net.sf.openforge.verilog.model.Constant;
+import net.sf.openforge.verilog.model.Display;
+import net.sf.openforge.verilog.model.EventControl;
+import net.sf.openforge.verilog.model.EventExpression;
+import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.InitialBlock;
+import net.sf.openforge.verilog.model.InitializedMemory;
+import net.sf.openforge.verilog.model.InlineComment;
+import net.sf.openforge.verilog.model.Logical;
+import net.sf.openforge.verilog.model.MemoryElement;
+import net.sf.openforge.verilog.model.Module;
+import net.sf.openforge.verilog.model.ProceduralTimingBlock;
+import net.sf.openforge.verilog.model.Register;
+import net.sf.openforge.verilog.model.Replication;
+import net.sf.openforge.verilog.model.SequentialBlock;
+import net.sf.openforge.verilog.model.StringStatement;
+import net.sf.openforge.verilog.model.Unary;
+import net.sf.openforge.verilog.model.Wire;
 
 /**
  * TaskHandle is the class which ties together all the wires and logic
@@ -56,9 +83,7 @@ import net.sf.openforge.verilog.model.*;
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: TaskHandle.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class TaskHandle 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class TaskHandle {
 
     /** The task for which this class contains logic. */
     private Task task;

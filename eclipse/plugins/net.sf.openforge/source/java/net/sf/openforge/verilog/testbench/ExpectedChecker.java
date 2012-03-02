@@ -21,87 +21,97 @@
 
 package net.sf.openforge.verilog.testbench;
 
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.Always;
+import net.sf.openforge.verilog.model.Assign;
+import net.sf.openforge.verilog.model.Comment;
+import net.sf.openforge.verilog.model.Compare;
+import net.sf.openforge.verilog.model.ConditionalStatement;
+import net.sf.openforge.verilog.model.Constant;
+import net.sf.openforge.verilog.model.DelayStatement;
+import net.sf.openforge.verilog.model.EventControl;
+import net.sf.openforge.verilog.model.EventExpression;
+import net.sf.openforge.verilog.model.FStatement;
+import net.sf.openforge.verilog.model.InitialBlock;
+import net.sf.openforge.verilog.model.InlineComment;
+import net.sf.openforge.verilog.model.Logical;
+import net.sf.openforge.verilog.model.Module;
+import net.sf.openforge.verilog.model.ProceduralTimingBlock;
+import net.sf.openforge.verilog.model.Register;
+import net.sf.openforge.verilog.model.SequentialBlock;
+import net.sf.openforge.verilog.model.StringStatement;
 import net.sf.openforge.verilog.pattern.CommaDelimitedStatement;
 
-
 /**
- * ExpectedChecker contains the logic necessary to validate a received
- * result against the value contained in the results memory.
- *
- * <p>Created: Wed Jan  8 15:43:11 2003
- *
+ * ExpectedChecker contains the logic necessary to validate a received result
+ * against the value contained in the results memory.
+ * 
+ * <p>
+ * Created: Wed Jan 8 15:43:11 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: ExpectedChecker.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ExpectedChecker 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class ExpectedChecker {
 
-    // The TaskHandle which is to be validated with this checker.
-    private TaskHandle taskHandle;
-    // A signal indicating that this task has failed a validation.
-    private Register fail;
-    
-    public ExpectedChecker (TaskHandle handle)
-    {
-        this.taskHandle = handle;
-        this.fail = new Register(this.taskHandle.getBaseName()+"_fail", 1);
-    }
+	// The TaskHandle which is to be validated with this checker.
+	private TaskHandle taskHandle;
+	// A signal indicating that this task has failed a validation.
+	private Register fail;
 
-    /**
-     * Initializes the fail register.
-     */
-    public void stateInits (InitialBlock ib)
-    {
-        ib.add(new Assign.NonBlocking(fail, new Constant(0,fail.getWidth())));
-    }
+	public ExpectedChecker(TaskHandle handle) {
+		this.taskHandle = handle;
+		this.fail = new Register(this.taskHandle.getBaseName() + "_fail", 1);
+	}
 
-    /**
-     * States the checking logic and file write for failures.
-     */
-    public void stateLogic (Module module, StateMachine mach, Memories mems, SimFileHandle resultFile)
-    {
-        module.state(new InlineComment("Check expected result", Comment.SHORT));
-        stateCheck(module, mach, mems, resultFile);
-    }
-    
-    private void stateCheck (Module module, StateMachine mach,
-        Memories mems, SimFileHandle resultFile)
-    {
-        SequentialBlock block = new SequentialBlock();
-        Logical.And condition = new Logical.And(
-            new Compare.CASE_NEQ(
-                this.taskHandle.getExpectedResultWire(),
-                this.taskHandle.getResultWire()), mach.getExpectedValidWire());
+	/**
+	 * Initializes the fail register.
+	 */
+	public void stateInits(InitialBlock ib) {
+		ib.add(new Assign.NonBlocking(fail, new Constant(0, fail.getWidth())));
+	}
 
-        CommaDelimitedStatement cds = new CommaDelimitedStatement();
-        String fail = "FAIL: Incorrect result.  Iteration %d expected %x found %x\\n";
-        cds.append(new StringStatement(fail));
-        cds.append(mach.getResIndex());
-        cds.append(taskHandle.getExpectedResultWire());
-        cds.append(taskHandle.getResultWire());
-        block.add(new FStatement.FWrite(resultFile.getHandle(), cds));
-        block.add(new Assign.NonBlocking(this.fail, new Constant(1,1)));
-        block.add(new DelayStatement(new FStatement.Finish(), 500));
-        
-        ConditionalStatement test = new ConditionalStatement(condition, block);
-        
-        ConditionalStatement cs = new ConditionalStatement(this.taskHandle.getDoneWire(), test);
-        
-        ProceduralTimingBlock ptb = new ProceduralTimingBlock(
-            new EventControl(new EventExpression.PosEdge(mach.getClock())),
-            cs);
+	/**
+	 * States the checking logic and file write for failures.
+	 */
+	public void stateLogic(Module module, StateMachine mach, Memories mems,
+			SimFileHandle resultFile) {
+		module.state(new InlineComment("Check expected result", Comment.SHORT));
+		stateCheck(module, mach, mems, resultFile);
+	}
 
-        module.state(new Always(ptb));
-    }
+	private void stateCheck(Module module, StateMachine mach, Memories mems,
+			SimFileHandle resultFile) {
+		SequentialBlock block = new SequentialBlock();
+		Logical.And condition = new Logical.And(new Compare.CASE_NEQ(
+				this.taskHandle.getExpectedResultWire(),
+				this.taskHandle.getResultWire()), mach.getExpectedValidWire());
 
-    /**
-     * Returns the Register indicating a failure of this check
-     */
-    public Register getFailWire ()
-    {
-        return this.fail;
-    }
-    
+		CommaDelimitedStatement cds = new CommaDelimitedStatement();
+		String fail = "FAIL: Incorrect result.  Iteration %d expected %x found %x\\n";
+		cds.append(new StringStatement(fail));
+		cds.append(mach.getResIndex());
+		cds.append(taskHandle.getExpectedResultWire());
+		cds.append(taskHandle.getResultWire());
+		block.add(new FStatement.FWrite(resultFile.getHandle(), cds));
+		block.add(new Assign.NonBlocking(this.fail, new Constant(1, 1)));
+		block.add(new DelayStatement(new FStatement.Finish(), 500));
+
+		ConditionalStatement test = new ConditionalStatement(condition, block);
+
+		ConditionalStatement cs = new ConditionalStatement(
+				this.taskHandle.getDoneWire(), test);
+
+		ProceduralTimingBlock ptb = new ProceduralTimingBlock(new EventControl(
+				new EventExpression.PosEdge(mach.getClock())), cs);
+
+		module.state(new Always(ptb));
+	}
+
+	/**
+	 * Returns the Register indicating a failure of this check
+	 */
+	public Register getFailWire() {
+		return this.fail;
+	}
+
 }// ExpectedChecker

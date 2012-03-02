@@ -21,54 +21,53 @@
 
 package net.sf.openforge.verilog.testbench;
 
-
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 
 import net.sf.openforge.util.VarFilename;
-import net.sf.openforge.verilog.model.*;
+import net.sf.openforge.verilog.model.FStatement;
+import net.sf.openforge.verilog.model.IntegerWire;
+import net.sf.openforge.verilog.model.Statement;
+import net.sf.openforge.verilog.model.StringStatement;
 
 /**
  * ResultFile.java
- *
- *
- * <p>Created: Wed Oct 30 11:26:39 2002
- *
+ * 
+ * 
+ * <p>
+ * Created: Wed Oct 30 11:26:39 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: ResultFile.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ResultFile
-{
-    private File file;
-    private IntegerWire handle;
-    private static int uniqueID = 0;
-    
-    public ResultFile (File file)
-    {
-        this.file = file;
-        this.handle = new IntegerWire("FileHandle" + uniqueID++, 1);
-    }
+public class ResultFile {
+	private File file;
+	private IntegerWire handle;
+	private static int uniqueID = 0;
 
-    public Statement init ()
-    {
-        String path;
-        try 
-        {
-            path = this.file.getCanonicalPath();
-        }
-        catch (IOException e)
-        {
-            System.err.println("Internal error. Could not get path name for result file " + file + " using ''");
-            path = "";
-        }
-        
-        Statement state = new FStatement.FOpen(this.handle,
-            new StringStatement(VarFilename.parse(path)));
-        return state;
-    }
+	public ResultFile(File file) {
+		this.file = file;
+		this.handle = new IntegerWire("FileHandle" + uniqueID++, 1);
+	}
 
-    public Statement write (Statement toWrite)
-    {
-        return new FStatement.FWrite(this.handle, toWrite);
-    }
-    
+	public Statement init() {
+		String path;
+		try {
+			path = this.file.getCanonicalPath();
+		} catch (IOException e) {
+			System.err
+					.println("Internal error. Could not get path name for result file "
+							+ file + " using ''");
+			path = "";
+		}
+
+		Statement state = new FStatement.FOpen(this.handle,
+				new StringStatement(VarFilename.parse(path)));
+		return state;
+	}
+
+	public Statement write(Statement toWrite) {
+		return new FStatement.FWrite(this.handle, toWrite);
+	}
+
 }// ResultFile
