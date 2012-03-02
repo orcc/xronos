@@ -22,36 +22,30 @@ package net.sf.openforge.verilog.model;
 
 /**
  * Wire is a Net which of type "wire".
- *
+ * 
  * <P>
- *
+ * 
  * Created: Fri Feb 09 2001
- *
+ * 
  * @author abk
  * @version $Id: Wire.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Wire extends Net
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class Wire extends Net {
 
-    public Wire(Identifier id, int width) 
-    {
-        super(Keyword.WIRE, id, width);
-    } // Wire(Identifier, width)
-    
-    public Wire(String id, int width)
-    {
-        this(new Identifier(id), width);
-    } // Wire(String, width)
+	public Wire(Identifier id, int width) {
+		super(Keyword.WIRE, id, width);
+	} // Wire(Identifier, width)
 
-    public Wire(Identifier id, int msb, int lsb) 
-    {
-        super(Keyword.WIRE, id, msb, lsb);
-    } // Wire(Identifier, msb, lsb)
-    
-    public Wire(String id, int msb, int lsb)
-    {
-        this(new Identifier(id), msb, lsb);
-    } // Wire(String, msb, lsb)
+	public Wire(String id, int width) {
+		this(new Identifier(id), width);
+	} // Wire(String, width)
+
+	public Wire(Identifier id, int msb, int lsb) {
+		super(Keyword.WIRE, id, msb, lsb);
+	} // Wire(Identifier, msb, lsb)
+
+	public Wire(String id, int msb, int lsb) {
+		this(new Identifier(id), msb, lsb);
+	} // Wire(String, msb, lsb)
 
 } // end of class Wire

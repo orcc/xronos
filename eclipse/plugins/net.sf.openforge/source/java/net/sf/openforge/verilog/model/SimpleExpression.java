@@ -22,18 +22,17 @@
 package net.sf.openforge.verilog.model;
 
 /**
- * A SimpleExpression is an expression without any qualifications
- * or operations. In other words, just a wire name. This is useful
- * when the syntax allows for any expression, but synthesis or
- * simulation has trouble with anything other than a wire name.
+ * A SimpleExpression is an expression without any qualifications or operations.
+ * In other words, just a wire name. This is useful when the syntax allows for
+ * any expression, but synthesis or simulation has trouble with anything other
+ * than a wire name.
  * <P>
- * This was created directly in response to xst complaining about
- * wire ranges in a sensitivity list.s
+ * This was created directly in response to xst complaining about wire ranges in
+ * a sensitivity list.s
  * 
  * @author abk
  * @version $Id: SimpleExpression.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface SimpleExpression extends Expression 
-{
+public interface SimpleExpression extends Expression {
 
 }

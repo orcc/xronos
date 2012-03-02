@@ -21,27 +21,22 @@
 
 package net.sf.openforge.verilog.model;
 
-
 /**
- * VerilogElement is the interface for any structural element
- * of verilog. 
- *
+ * VerilogElement is the interface for any structural element of verilog.
+ * 
  * <P>
- *
+ * 
  * Created: Wed Jan 31 2001
- *
+ * 
  * @author abk
  * @version $Id: VerilogElement.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface VerilogElement
-{
+public interface VerilogElement {
 
-    // private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	/**
+	 * A Lexicality is an ordered collection of Tokens. This call retrieves the
+	 * lexically tokenized representation of a VerilogElement.
+	 */
+	public Lexicality lexicalify();
 
-    /**
-     * A Lexicality is an ordered collection of Tokens. This call retrieves
-     * the lexically tokenized representation of a VerilogElement.
-     */
-    public Lexicality lexicalify();
-    
 } // end of interface VerilogElement

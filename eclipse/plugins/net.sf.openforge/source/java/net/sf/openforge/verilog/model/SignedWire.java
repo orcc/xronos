@@ -24,35 +24,30 @@ package net.sf.openforge.verilog.model;
 /**
  * SignedWire is a Verilog (2001) wire with type 'signed', thus:
  * <code>wire signed xxxxx</code>
- *
- *
- * <p>Created: Fri Aug  6 09:40:25 2004
- *
+ * 
+ * 
+ * <p>
+ * Created: Fri Aug 6 09:40:25 2004
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: SignedWire.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class SignedWire extends Net
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class SignedWire extends Net {
 
-    public SignedWire(Identifier id, int width) 
-    {
-        super(Keyword.SIGNED_WIRE, id, width);
-    } // SignedWire(Identifier, width)
-    
-    public SignedWire(String id, int width)
-    {
-        this(new Identifier(id), width);
-    } // SignedWire(String, width)
+	public SignedWire(Identifier id, int width) {
+		super(Keyword.SIGNED_WIRE, id, width);
+	} // SignedWire(Identifier, width)
 
-    public SignedWire(Identifier id, int msb, int lsb) 
-    {
-        super(Keyword.SIGNED_WIRE, id, msb, lsb);
-    } // SignedWire(Identifier, msb, lsb)
-    
-    public SignedWire(String id, int msb, int lsb)
-    {
-        this(new Identifier(id), msb, lsb);
-    } // SignedWire(String, msb, lsb)
+	public SignedWire(String id, int width) {
+		this(new Identifier(id), width);
+	} // SignedWire(String, width)
 
-}// SignedWire
+	public SignedWire(Identifier id, int msb, int lsb) {
+		super(Keyword.SIGNED_WIRE, id, msb, lsb);
+	} // SignedWire(Identifier, msb, lsb)
+
+	public SignedWire(String id, int msb, int lsb) {
+		this(new Identifier(id), msb, lsb);
+	} // SignedWire(String, msb, lsb)
+
+}

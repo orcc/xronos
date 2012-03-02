@@ -21,75 +21,62 @@
 
 package net.sf.openforge.verilog.model;
 
-
 /**
- * Token is a verilog leaf element, an atomic object which has
- * a direct string representation.
- *
+ * Token is a verilog leaf element, an atomic object which has a direct string
+ * representation.
+ * 
  * <P>
- *
+ * 
  * Created: Wed Feb 07 2001
- *
+ * 
  * @author abk
  * @version $Id: Token.java 2 2005-06-09 20:00:48Z imiller $
  */
-public abstract class Token implements VerilogElement
-{
+public abstract class Token implements VerilogElement {
 
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	public static final int TYPE = -1;
 
-    public static final int TYPE = -1;
+	public Token() {
+		super();
+	}
 
-    public Token()
-    {
-        super(); 
-    }
- 
-    /**
-     * Gets the string representation of the token.
-     *
-     * 
-     */
-    public abstract String getToken();
-    
-   
-    public String toString()
-    {
-        return getToken();
-    }
+	/**
+	 * Gets the string representation of the token.
+	 * 
+	 * 
+	 */
+	public abstract String getToken();
 
-    public int hashCode()
-    {
-        return getToken().hashCode();
-    }
-        
-    public boolean equals(Object o)
-    {
-        if (super.equals(o)) return true;
-        
-        if (o instanceof Token)
-        {
-            return getToken().equals(((Token)o).getToken());
-        }
-        
-        return false;
-    }
-    
+	public String toString() {
+		return getToken();
+	}
 
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(this);
-        
-        return lex;
-    } // lexicalify()
-    
-    public int getType()
-    {
-        return TYPE;
-    }
-    
+	public int hashCode() {
+		return getToken().hashCode();
+	}
+
+	public boolean equals(Object o) {
+		if (super.equals(o))
+			return true;
+
+		if (o instanceof Token) {
+			return getToken().equals(((Token) o).getToken());
+		}
+
+		return false;
+	}
+
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(this);
+
+		return lex;
+	} // lexicalify()
+
+	public int getType() {
+		return TYPE;
+	}
+
 } // end class Token
-    
 

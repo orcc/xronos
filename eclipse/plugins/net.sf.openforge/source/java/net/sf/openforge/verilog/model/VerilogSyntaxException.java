@@ -22,27 +22,23 @@ package net.sf.openforge.verilog.model;
 
 /**
  * VerilogSyntaxException represents a verilog syntax violation.
- *
+ * 
  * <P>
- *
+ * 
  * Created: Fri Feb 02 2001
- *
+ * 
  * @author abk
  * @version $Id: VerilogSyntaxException.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class VerilogSyntaxException extends RuntimeException
-{
+@SuppressWarnings("serial")
+public class VerilogSyntaxException extends RuntimeException {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	public VerilogSyntaxException() {
+		super("Verilog syntax error");
+	}
 
-    public VerilogSyntaxException()
-    {
-        super("Verilog syntax error");
-    }   
+	public VerilogSyntaxException(String violation) {
+		super(violation);
+	} // VerilogSyntaxException()
 
-    public VerilogSyntaxException(String violation) 
-    {
-        super (violation);
-    } // VerilogSyntaxException()
-    
 } // end of class VerilogSyntaxException

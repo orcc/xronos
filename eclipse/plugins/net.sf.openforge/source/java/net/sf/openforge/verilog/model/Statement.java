@@ -23,23 +23,21 @@ package net.sf.openforge.verilog.model;
 import java.util.Collection;
 
 /**
-  * An element which represents a complete expression of verilog code. Statements
-  * are the actual code, comprised of a valid sequence of Tokens.
-  * Statements typically apply operations to nets.
-  * <P>
-  * Examples:<BR>
-  * <CODE>
-  * wire [31:0] a;
-  * assign a = 0xFACE;
-  * </CODE>
-  */
-public interface Statement extends VerilogElement
-{
-    static final String _RCS_ = "$Rev: 2 $";
+ * An element which represents a complete expression of verilog code. Statements
+ * are the actual code, comprised of a valid sequence of Tokens. Statements
+ * typically apply operations to nets.
+ * <P>
+ * Examples:<BR>
+ * <CODE>
+ * wire [31:0] a;
+ * assign a = 0xFACE;
+ * </CODE>
+ */
+public interface Statement extends VerilogElement {
 
-    /**
-     * Returns all Nets used in this statement.
-     */
-    public Collection getNets();
+	/**
+	 * Returns all Nets used in this statement.
+	 */
+	public Collection getNets();
 
 } // end of interface Statement

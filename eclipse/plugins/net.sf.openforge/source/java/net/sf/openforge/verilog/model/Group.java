@@ -45,7 +45,7 @@ public class Group implements Expression {
 		return base.getWidth();
 	}
 
-	public Collection<Expression> getNets() {
+	public Collection<Object> getNets() {
 		return base.getNets();
 	}
 

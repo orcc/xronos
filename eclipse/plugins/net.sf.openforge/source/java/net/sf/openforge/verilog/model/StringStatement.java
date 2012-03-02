@@ -21,72 +21,62 @@
 
 package net.sf.openforge.verilog.model;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * StringToken.java
- *
- *
- * <p>Created: Fri Aug 23 09:12:32 2002
- *
+ * 
+ * 
+ * <p>
+ * Created: Fri Aug 23 09:12:32 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: StringStatement.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class StringStatement implements Statement
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class StringStatement implements Statement {
 
-    private StringToken state;
-    
-    public StringStatement (String value)
-    {
-        super();
-        this.state = new StringToken(value);
-    }
+	private StringToken state;
 
-    public Collection getNets ()
-    {
-        return Collections.EMPTY_SET;
-    }
+	public StringStatement(String value) {
+		super();
+		this.state = new StringToken(value);
+	}
 
-    public Lexicality lexicalify ()
-    {
-        Lexicality lex = new Lexicality();
-        lex.append(Symbol.QUOTE);
-        lex.append(state);
-        lex.append(Symbol.QUOTE);
-        return lex;
-    }
+	public Collection getNets() {
+		return Collections.EMPTY_SET;
+	}
 
-    public String toString ()
-    {
-        return lexicalify().toString();
-    }
-    
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+		lex.append(Symbol.QUOTE);
+		lex.append(state);
+		lex.append(Symbol.QUOTE);
+		return lex;
+	}
 
-    public static final class StringToken extends Token
-    {
-        public static final int TYPE = 7;
-        
-        private String token;
-        
-        public StringToken(String value)
-        {
-            super();
-            this.token = value;
-        }
+	public String toString() {
+		return lexicalify().toString();
+	}
 
-        public String getToken ()
-        {
-            return this.token;
-        }
+	public static final class StringToken extends Token {
+		public static final int TYPE = 7;
 
-        public int getType ()
-        {
-            return TYPE;
-        }
-        
-    } // end of inner class StringToken
-    
-    
+		private String token;
+
+		public StringToken(String value) {
+			super();
+			this.token = value;
+		}
+
+		public String getToken() {
+			return this.token;
+		}
+
+		public int getType() {
+			return TYPE;
+		}
+
+	} // end of inner class StringToken
+
 }// StringStatement
