@@ -22,78 +22,62 @@
 package net.sf.openforge.util;
 
 /**
- * Stoppable describes an interface of an object representing a task
- * which can be stopped via outside request. The Task is required to
- * check for stoppage by calling the breathe() routine throughout its
- * course of execution, and by trapping for
- * Stoppable.InterruptExeption.
- *
+ * Stoppable describes an interface of an object representing a task which can
+ * be stopped via outside request. The Task is required to check for stoppage by
+ * calling the breathe() routine throughout its course of execution, and by
+ * trapping for Stoppable.InterruptExeption.
+ * 
  */
-public interface Stoppable
-{
-    /**
-     * This method is used to request the running Stoppable object
-     * discontinue execution ASAP
-     *
-     */
-    public void requestStop();
+public interface Stoppable {
+	/**
+	 * This method is used to request the running Stoppable object discontinue
+	 * execution ASAP
+	 * 
+	 */
+	public void requestStop();
 
-    /**
-     * This will allow a task to be reset.
-     *
-     */
-    public void requestStart();
+	/**
+	 * This will allow a task to be reset.
+	 * 
+	 */
+	public void requestStart();
 
-    /**
-     * Inside the thread of a task, call this periodically to check if
-     * execution should continue. If not, a Stoppable.InterruptException will
-     * be thrown.
-     */
-    public void takeBreath();
+	/**
+	 * Inside the thread of a task, call this periodically to check if execution
+	 * should continue. If not, a Stoppable.InterruptException will be thrown.
+	 */
+	public void takeBreath();
 
-    /**
-     * This is a simple default adapter class. You can use this as
-     * public class foo extends Stoppable.Adapter
-     */
-    class Adapter implements Stoppable
-    {
-        private boolean die=false;
-        
-        public void requestStop()
-        {
-            die=true;
-        }
+	/**
+	 * This is a simple default adapter class. You can use this as public class
+	 * foo extends Stoppable.Adapter
+	 */
+	class Adapter implements Stoppable {
+		private boolean die = false;
 
-        public void requestStart()
-        {
-            die=false;
-        }
+		public void requestStop() {
+			die = true;
+		}
 
-        public void takeBreath()
-        {
-            if(die)
-            {
-                throw new Stoppable.InterruptException("Requested Stop!");
-            }
-        }
+		public void requestStart() {
+			die = false;
+		}
 
-    }        
+		public void takeBreath() {
+			if (die) {
+				throw new Stoppable.InterruptException("Requested Stop!");
+			}
+		}
 
-    /**
-     * This is the exception that the Stoppable task should catch to indicate
-     * execution has stopped.
-     */
-    class InterruptException extends RuntimeException
-    {
-        public InterruptException(String msg)
-        {
-            super(msg);
-        }
-    }
+	}
+
+	/**
+	 * This is the exception that the Stoppable task should catch to indicate
+	 * execution has stopped.
+	 */
+	class InterruptException extends RuntimeException {
+		public InterruptException(String msg) {
+			super(msg);
+		}
+	}
 }
-
-
-
-
-
-

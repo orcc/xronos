@@ -34,7 +34,6 @@ public abstract class Stat
 {
 
     /** DOCUMENT ME! */
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
     private String name;
     private String typeName;
     private SoftCollection.LL tokens = new SoftCollection.LL();

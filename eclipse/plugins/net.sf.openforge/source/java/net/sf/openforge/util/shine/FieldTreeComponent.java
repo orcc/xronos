@@ -21,278 +21,256 @@
 
 package net.sf.openforge.util.shine;
 
-import javax.swing.*;   
-import javax.swing.tree.*;   
-import java.awt.*;
-import java.util.*;
-import java.lang.reflect.*;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.lang.reflect.Array;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
 
-class FieldTreeComponent extends JScrollPane
-{
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
-    static boolean oncet=false;
-    private ObjectInspector oi;
-    private ShineTreeFrame sFrame;
-    private JTree tree;
-    
-    FieldTreeComponent(ShineTreeFrame sFrame,ObjectInspector oi)
-    {
-        this.sFrame=sFrame;
-        this.oi=oi;
-        tree=new JTree(new MyTreeNode(oi));
-        tree.setToggleClickCount(2);
-        tree.setCellRenderer(new MyTreeCellRenderer());
-        tree.setLargeModel(true);
-        setViewportView(tree);	
-    }
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTree;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
-    Object getSelectedObject()
-    {
-        TreePath tp=tree.getLeadSelectionPath();
-        if(tp!=null)
-        {
-            MyTreeNode tn=(MyTreeNode)tp.getLastPathComponent();
-            Object o=tn.me();
-            if(tn.isInspector())
-            {
-                return ((ObjectInspector)o).getMyObject();
-            }
-            else
-                return o;
-        }
-        return null;
-    }
-    
-    class MyTreeNode implements TreeNode
-    {
-        Object me=null;
-        TreeNode parent=null;
-        ObjectInspector oi=null;
-        String fieldName;
-        boolean isInspector;
-        private final int ARRAY_GLOM=25;
-        private final int TOSTRING_MAX=80;
-        
-        public MyTreeNode(Object me)
-        {
-            this(null,me,true,"ROOT");
-        }
-        
-        public MyTreeNode(TreeNode parent,Object me,boolean isInspector,String fieldName)
-        {
-            this.me=me;
-            this.fieldName=fieldName;
-            this.parent=parent;
-            this.isInspector=isInspector;
-            if(isInspector)
-                this.oi=(ObjectInspector)me;
-        } 
+@SuppressWarnings("serial")
+class FieldTreeComponent extends JScrollPane {
+	static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	static boolean oncet = false;
+	@SuppressWarnings("unused")
+	private ObjectInspector oi;
+	@SuppressWarnings("unused")
+	private ShineTreeFrame sFrame;
+	private JTree tree;
 
-        public String getName()
-        {
-            return fieldName;
-        }
+	FieldTreeComponent(ShineTreeFrame sFrame, ObjectInspector oi) {
+		this.sFrame = sFrame;
+		this.oi = oi;
+		tree = new JTree(new MyTreeNode(oi));
+		tree.setToggleClickCount(2);
+		tree.setCellRenderer(new MyTreeCellRenderer());
+		tree.setLargeModel(true);
+		setViewportView(tree);
+	}
 
-        public String getData()
-        {
-            StringBuffer sb=new StringBuffer();
-            if(isInspector)
-            {
-                if(oi.isArray())
-                    sb.append(oi.getCount());
-                sb.append(oi.getMyObject().getClass().getName());
-            }
-            else
-                sb.append(me.getClass().getName());
-            sb.append(" :: ");
-            
+	Object getSelectedObject() {
+		TreePath tp = tree.getLeadSelectionPath();
+		if (tp != null) {
+			MyTreeNode tn = (MyTreeNode) tp.getLastPathComponent();
+			Object o = tn.me();
+			if (tn.isInspector()) {
+				return ((ObjectInspector) o).getMyObject();
+			} else
+				return o;
+		}
+		return null;
+	}
 
-            Object obj=(isInspector)?oi.getMyObject():me;
-            
-            // here we have a couple things. if it is non null, and an array
-            // of primitive types, glom ARRAY_GLOM things together.
-            if((obj.getClass().isArray())&&
-                (obj.getClass().getComponentType().isPrimitive()))
-            {
-                sb.append("[ ");
-                int arCount=Array.getLength(obj);
-                for(int i=0;(i<ARRAY_GLOM)&&(i<arCount);i++)
-                {
-                    if(i!=0)
-                        sb.append(" , ");
-                    sb.append(Array.get(obj,i).toString());
-                }
-                if(arCount>ARRAY_GLOM)
-                    sb.append(" ... ]");
-                else
-                    sb.append(" ]");
-            }
-            else
-            {
-                // choke the max length here...
-                String test=obj.toString();
-                if(test.length()>TOSTRING_MAX)
-                {
-                    sb.append(test.substring(0,TOSTRING_MAX));
-                    sb.append(" ...");
-                }
-                else
-                    sb.append(test);
-            }
-            return sb.toString();
-        }
+	class MyTreeNode implements TreeNode {
+		Object me = null;
+		TreeNode parent = null;
+		ObjectInspector oi = null;
+		String fieldName;
+		boolean isInspector;
+		private final int ARRAY_GLOM = 25;
+		private final int TOSTRING_MAX = 80;
 
-        public String toString()
-        {
-            return getName()+" :: "+getData();
-        }
-        
-        public boolean isInspector() { return isInspector; }
- 
-        public Object me() { return me; }
-         
-        public TreeNode getChildAt(int childIndex)
-        {
-            if(isInspector)
-            {
-                Object child=oi.getValue(childIndex);
-                if(child==null)
-                {
-                    return new MyTreeNode(this,"<null>",false,(String)oi.getName(childIndex));
-                }
-                if(oi.isRef(childIndex))
-                {
-                    return new MyTreeNode(this,new ObjectInspector(child),true,(String)oi.getName(childIndex));
-                }
-                else
-                    return new MyTreeNode(this,child,false,(String)oi.getName(childIndex));
-            }
-            return null;
-        }
-        
-        public int getChildCount()
-        {
-            if(isInspector)
-                return oi.getCount();
-            else
-                return 0;
-        }
+		public MyTreeNode(Object me) {
+			this(null, me, true, "ROOT");
+		}
 
-        public TreeNode getParent()
-        {
-            return parent;
-        }
+		public MyTreeNode(TreeNode parent, Object me, boolean isInspector,
+				String fieldName) {
+			this.me = me;
+			this.fieldName = fieldName;
+			this.parent = parent;
+			this.isInspector = isInspector;
+			if (isInspector)
+				this.oi = (ObjectInspector) me;
+		}
 
-        public int getIndex(TreeNode node)
-        {
-            if(isInspector)
-            {
-                MyTreeNode child=(MyTreeNode)node;
-                // target object value...
-                Object test=child.me();
-                for(int i=0;i<oi.getCount();i++)
-                {
-                    if(((oi.getValue(i)!=null)&&(oi.getValue(i).equals(test))))
-                        return i;
-                }
-            }
-            return -1;
-        }
-        
-        public boolean getAllowsChildren() { return true; }
+		public String getName() {
+			return fieldName;
+		}
 
-        public boolean isLeaf()
-        {
-            if(isInspector)
-            {
-                if(oi.getCount()>0)
-                    return false;
-            }
-            return true;
-        }
+		public String getData() {
+			StringBuffer sb = new StringBuffer();
+			if (isInspector) {
+				if (oi.isArray())
+					sb.append(oi.getCount());
+				sb.append(oi.getMyObject().getClass().getName());
+			} else
+				sb.append(me.getClass().getName());
+			sb.append(" :: ");
 
-        public Enumeration children()
-        {
-            if(isInspector)
-                return new myEnumeration();
-            else
-                return null;
-        }
-        
-        class myEnumeration implements Enumeration
-        {
-            int current=(-1);
-            
-            public Object nextElement()
-            {
-                if(++current>=getChildCount())
-                    throw new NoSuchElementException("Index: "+current);
-                return getChildAt(current);
-            }
-            
-            public boolean hasMoreElements()
-            {
-                return ((current+1)<getChildCount());
-            }        
-        }
-        
-    }
+			Object obj = (isInspector) ? oi.getMyObject() : me;
 
-    class MyTreeCellRenderer extends JPanel
-        implements TreeCellRenderer
-    {
-        private JLabel name;
-        private JLabel data;
-        
-        public MyTreeCellRenderer()
-        {
-            super(false);
-            setLayout(new FlowLayout(FlowLayout.LEFT,0,0));
+			// here we have a couple things. if it is non null, and an array
+			// of primitive types, glom ARRAY_GLOM things together.
+			if ((obj.getClass().isArray())
+					&& (obj.getClass().getComponentType().isPrimitive())) {
+				sb.append("[ ");
+				int arCount = Array.getLength(obj);
+				for (int i = 0; (i < ARRAY_GLOM) && (i < arCount); i++) {
+					if (i != 0)
+						sb.append(" , ");
+					sb.append(Array.get(obj, i).toString());
+				}
+				if (arCount > ARRAY_GLOM)
+					sb.append(" ... ]");
+				else
+					sb.append(" ]");
+			} else {
+				// choke the max length here...
+				String test = obj.toString();
+				if (test.length() > TOSTRING_MAX) {
+					sb.append(test.substring(0, TOSTRING_MAX));
+					sb.append(" ...");
+				} else
+					sb.append(test);
+			}
+			return sb.toString();
+		}
 
-            name=new JLabel();
-            name.setFont(new Font("Monospaced",Font.BOLD,12));
-            name.setHorizontalAlignment(SwingConstants.CENTER);
-            name.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
-            
-            data=new JLabel();
-            data.setFont(new Font("Monospaced",Font.PLAIN,12));
-            data.setHorizontalAlignment(SwingConstants.CENTER);
-            data.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+		public String toString() {
+			return getName() + " :: " + getData();
+		}
 
-            setOpaque(false);
+		public boolean isInspector() {
+			return isInspector;
+		}
 
-            add(name);
-            add(data);
-        }
+		public Object me() {
+			return me;
+		}
 
-        public Component getTreeCellRendererComponent(JTree tree,
-            Object value,
-            boolean selected,
-            boolean expanded,
-            boolean leaf,
-            int row,
-            boolean hasFocus)
-        {
-            if(selected)
-            {
-                name.setOpaque(true);
-                name.setForeground(UIManager.getColor("Tree.selectionForeground"));
-                data.setOpaque(true);
-                data.setForeground(UIManager.getColor("Tree.selectionForeground"));
-            }
-            else
-            {
-                name.setOpaque(false);
-                name.setForeground(UIManager.getColor("Tree.textForeground"));
-                data.setOpaque(false);
-                data.setForeground(UIManager.getColor("Tree.textForeground"));
-            }
-            MyTreeNode node=(MyTreeNode)value;
-            name.setText(node.getName()+": ");
-            data.setText(node.getData());
-            return this;
-        }
-    }
+		public TreeNode getChildAt(int childIndex) {
+			if (isInspector) {
+				Object child = oi.getValue(childIndex);
+				if (child == null) {
+					return new MyTreeNode(this, "<null>", false,
+							(String) oi.getName(childIndex));
+				}
+				if (oi.isRef(childIndex)) {
+					return new MyTreeNode(this, new ObjectInspector(child),
+							true, (String) oi.getName(childIndex));
+				} else
+					return new MyTreeNode(this, child, false,
+							(String) oi.getName(childIndex));
+			}
+			return null;
+		}
+
+		public int getChildCount() {
+			if (isInspector)
+				return oi.getCount();
+			else
+				return 0;
+		}
+
+		public TreeNode getParent() {
+			return parent;
+		}
+
+		public int getIndex(TreeNode node) {
+			if (isInspector) {
+				MyTreeNode child = (MyTreeNode) node;
+				// target object value...
+				Object test = child.me();
+				for (int i = 0; i < oi.getCount(); i++) {
+					if (((oi.getValue(i) != null) && (oi.getValue(i)
+							.equals(test))))
+						return i;
+				}
+			}
+			return -1;
+		}
+
+		public boolean getAllowsChildren() {
+			return true;
+		}
+
+		public boolean isLeaf() {
+			if (isInspector) {
+				if (oi.getCount() > 0)
+					return false;
+			}
+			return true;
+		}
+
+		public Enumeration children() {
+			if (isInspector)
+				return new myEnumeration();
+			else
+				return null;
+		}
+
+		class myEnumeration implements Enumeration {
+			int current = (-1);
+
+			public Object nextElement() {
+				if (++current >= getChildCount())
+					throw new NoSuchElementException("Index: " + current);
+				return getChildAt(current);
+			}
+
+			public boolean hasMoreElements() {
+				return ((current + 1) < getChildCount());
+			}
+		}
+
+	}
+
+	class MyTreeCellRenderer extends JPanel implements TreeCellRenderer {
+		private JLabel name;
+		private JLabel data;
+
+		public MyTreeCellRenderer() {
+			super(false);
+			setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+
+			name = new JLabel();
+			name.setFont(new Font("Monospaced", Font.BOLD, 12));
+			name.setHorizontalAlignment(SwingConstants.CENTER);
+			name.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+
+			data = new JLabel();
+			data.setFont(new Font("Monospaced", Font.PLAIN, 12));
+			data.setHorizontalAlignment(SwingConstants.CENTER);
+			data.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+
+			setOpaque(false);
+
+			add(name);
+			add(data);
+		}
+
+		public Component getTreeCellRendererComponent(JTree tree, Object value,
+				boolean selected, boolean expanded, boolean leaf, int row,
+				boolean hasFocus) {
+			if (selected) {
+				name.setOpaque(true);
+				name.setForeground(UIManager
+						.getColor("Tree.selectionForeground"));
+				data.setOpaque(true);
+				data.setForeground(UIManager
+						.getColor("Tree.selectionForeground"));
+			} else {
+				name.setOpaque(false);
+				name.setForeground(UIManager.getColor("Tree.textForeground"));
+				data.setOpaque(false);
+				data.setForeground(UIManager.getColor("Tree.textForeground"));
+			}
+			MyTreeNode node = (MyTreeNode) value;
+			name.setText(node.getName() + ": ");
+			data.setText(node.getData());
+			return this;
+		}
+	}
 }
-
-

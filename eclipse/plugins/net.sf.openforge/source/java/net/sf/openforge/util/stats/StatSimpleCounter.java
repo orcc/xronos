@@ -30,7 +30,6 @@ public class StatSimpleCounter
 {
 
     /** DOCUMENT ME! */
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
     private long count = 0L;
 
     private StatSimpleCounter ()

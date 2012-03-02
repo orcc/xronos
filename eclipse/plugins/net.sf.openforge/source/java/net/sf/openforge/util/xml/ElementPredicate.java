@@ -34,7 +34,7 @@ BEGINCOPYRIGHT X
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 ENDCOPYRIGHT
-*/
+ */
 
 package net.sf.openforge.util.xml;
 
@@ -47,9 +47,11 @@ import org.w3c.dom.Element;
  */
 
 public interface ElementPredicate {
-    boolean test(Element e);
+	boolean test(Element e);
 
-    public static final ElementPredicate TRUE = new ElementPredicate() {
-        public boolean test(Element e) { return true; }
-    };
+	public static final ElementPredicate TRUE = new ElementPredicate() {
+		public boolean test(Element e) {
+			return true;
+		}
+	};
 }

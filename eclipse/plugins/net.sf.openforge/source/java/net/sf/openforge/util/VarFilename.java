@@ -21,69 +21,54 @@
 
 package net.sf.openforge.util;
 
-import java.io.*;
+import java.io.File;
 
 /**
  * This class parse a filename of the formate [$envvarname]filespec to its
- * platform specific code. filespec is expected to use '/' as the path
- * separator
- *
- * @author <a href="mailto:Jonathan.Harris@xilinx.com">Jonathan
- * C. Harris</a>
+ * platform specific code. filespec is expected to use '/' as the path separator
+ * 
+ * @author <a href="mailto:Jonathan.Harris@xilinx.com">Jonathan C. Harris</a>
  * @version $Id
  */
-public class VarFilename
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class VarFilename {
 
-    private VarFilename()
-    {;}
-    
-    /**
-     * / to \ is tbd!
-     *
-     * @param name a value of type 'String'
-     */
-    public static String parse(String name)
-    {
-        // start with $
-        if(name.charAt(0)=='$')
-        {
-            // do we have an end
-            int i=name.indexOf('/');
-            String rest="";
-            // is there more? set rest if there is ...
-            if(i>=0)
-            {
-                rest=name.substring(i);
-            }
-            // get the env name
-            String env=name.substring(1,i);
-            // try
-            String s=Environment.getEnv(env);
-            if(s==null)
-            {
-                // try again, upper case
-                s=Environment.getEnv(env.toUpperCase());
-            }
-            // did we find it?
-            if(s!=null)
-            {
-                // mangle name for return
-                name=s+rest;
-            }
-            // if we don't find it --- pass it through
-            
-        }
-        return name.replace(File.separatorChar,'/');
-    }
-    
+	private VarFilename() {
+		;
+	}
+
+	/**
+	 * / to \ is tbd!
+	 * 
+	 * @param name
+	 *            a value of type 'String'
+	 */
+	public static String parse(String name) {
+		// start with $
+		if (name.charAt(0) == '$') {
+			// do we have an end
+			int i = name.indexOf('/');
+			String rest = "";
+			// is there more? set rest if there is ...
+			if (i >= 0) {
+				rest = name.substring(i);
+			}
+			// get the env name
+			String env = name.substring(1, i);
+			// try
+			String s = Environment.getEnv(env);
+			if (s == null) {
+				// try again, upper case
+				s = Environment.getEnv(env.toUpperCase());
+			}
+			// did we find it?
+			if (s != null) {
+				// mangle name for return
+				name = s + rest;
+			}
+			// if we don't find it --- pass it through
+
+		}
+		return name.replace(File.separatorChar, '/');
+	}
+
 }
-
-
-
-
-
-
-
-

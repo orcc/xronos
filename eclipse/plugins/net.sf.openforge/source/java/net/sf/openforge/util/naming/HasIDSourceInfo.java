@@ -21,15 +21,13 @@
 
 package net.sf.openforge.util.naming;
 
-
 /**
- * IDSourceInfo is used to hold all info relating the the original source
- * from which the object is derived. Any of the fields may be null.
- *
+ * IDSourceInfo is used to hold all info relating the the original source from
+ * which the object is derived. Any of the fields may be null.
+ * 
  * @author C. Schanck
  * @version $Id: HasIDSourceInfo.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface HasIDSourceInfo
-{
-    public IDSourceInfo getIDSourceInfo();
+public interface HasIDSourceInfo {
+	public IDSourceInfo getIDSourceInfo();
 }

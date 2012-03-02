@@ -20,28 +20,23 @@
  */
 package net.sf.openforge.util;
 
-import java.io.*;
+import java.io.PrintWriter;
 
 /**
- * Extends java.io.PrintWriter and overrides the close()
- * method to do nothing. This prevents users from
- * closing the file when they shouldn't.
- *
+ * Extends java.io.PrintWriter and overrides the close() method to do nothing.
+ * This prevents users from closing the file when they shouldn't.
+ * 
  * @author ysyu
  * @version $Id: UserPrintWriter.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class UserPrintWriter extends IndentWriter
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class UserPrintWriter extends IndentWriter {
 
-    public UserPrintWriter(PrintWriter pw)
-    {
-        super(pw);
-    }
+	public UserPrintWriter(PrintWriter pw) {
+		super(pw);
+	}
 
-    public void close()
-    {
-        // Do nothing, user shouldn't close file. 
-        // Forge will close it when done writing.
-    }
+	public void close() {
+		// Do nothing, user shouldn't close file.
+		// Forge will close it when done writing.
+	}
 }

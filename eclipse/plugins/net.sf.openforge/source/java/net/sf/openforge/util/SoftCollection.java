@@ -21,118 +21,98 @@
 
 package net.sf.openforge.util;
 
-import java.lang.ref.*;
-
-import java.util.*;
-
+import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 
 /**
  * This is a wrapper for an collection. The underlying object my be emptied at
  * any time when no one holds a reference for it. Be careful to keep only a
  * persistant reference to this object, not to the GETlIST() OBJECT...
- *
+ * 
  */
-public class SoftCollection
-{
-    private SoftReference softHeader = new SoftReference(new LinkedList());
-    private Class refClass;
+public class SoftCollection {
+	private SoftReference softHeader = new SoftReference(new LinkedList());
+	private Class refClass;
 
-    /**
-     * Constructs an empty list.
-     */
-    public SoftCollection (Class refClass)
-    {
-        if (!Collection.class.isAssignableFrom(refClass))
-        {
-            throw new IllegalArgumentException("Must be a collection");
-        }
+	/**
+	 * Constructs an empty list.
+	 */
+	public SoftCollection(Class refClass) {
+		if (!Collection.class.isAssignableFrom(refClass)) {
+			throw new IllegalArgumentException("Must be a collection");
+		}
 
-        this.refClass = refClass;
-    }
+		this.refClass = refClass;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @param c DOCUMENT ME!
-     */
-    public void addAll (Collection c)
-    {
-        getCollection().addAll(c);
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param c
+	 *            DOCUMENT ME!
+	 */
+	public void addAll(Collection c) {
+		getCollection().addAll(c);
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public final Collection getCollection ()
-    {
-        Object o = softHeader.get();
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public final Collection getCollection() {
+		Object o = softHeader.get();
 
-        if (o == null)
-        {
-            try
-            {
-                Collection c = (Collection)refClass.newInstance();
-                softHeader = new SoftReference(c);
-                return c;
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateException("Unable to new reference class instance");
-            }
-        }
-        else
-        {
-            return (Collection)o;
-        }
-    }
+		if (o == null) {
+			try {
+				Collection c = (Collection) refClass.newInstance();
+				softHeader = new SoftReference(c);
+				return c;
+			} catch (Exception e) {
+				throw new IllegalStateException(
+						"Unable to new reference class instance");
+			}
+		} else {
+			return (Collection) o;
+		}
+	}
 
-    /**
-     * Simple class, has constructors, and the getLinkedList()
-     * call which is the crux of the mattter
-     */
-    public static class LL
-        extends SoftCollection
-    {
-        public LL ()
-        {
-            super(LinkedList.class);
-        }
+	/**
+	 * Simple class, has constructors, and the getLinkedList() call which is the
+	 * crux of the mattter
+	 */
+	public static class LL extends SoftCollection {
+		public LL() {
+			super(LinkedList.class);
+		}
 
-        public LL (Collection c)
-        {
-            this();
-            addAll(c);
-        }
+		public LL(Collection c) {
+			this();
+			addAll(c);
+		}
 
-        public final LinkedList getLinkedList ()
-        {
-            return (LinkedList)getCollection();
-        }
-    }
+		public final LinkedList getLinkedList() {
+			return (LinkedList) getCollection();
+		}
+	}
 
+	/**
+	 * ArrayList version
+	 */
+	public static class AL extends SoftCollection {
+		public AL() {
+			super(ArrayList.class);
+		}
 
-    /**
-     * ArrayList version
-     */
-    public static class AL
-        extends SoftCollection
-    {
-        public AL ()
-        {
-            super(ArrayList.class);
-        }
+		public AL(Collection c) {
+			this();
+			addAll(c);
+		}
 
-        public AL (Collection c)
-        {
-            this();
-            addAll(c);
-        }
-
-        public final ArrayList getArrayList ()
-        {
-            return (ArrayList)getCollection();
-        }
-    }
+		public final ArrayList getArrayList() {
+			return (ArrayList) getCollection();
+		}
+	}
 }

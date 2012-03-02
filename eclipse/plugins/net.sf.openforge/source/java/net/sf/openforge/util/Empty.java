@@ -20,71 +20,71 @@
  */
 package net.sf.openforge.util;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Reusable, immutable, empty collection objects.
- *
+ * 
  * @version $Id: Empty.java 2 2005-06-09 20:00:48Z imiller $
- * @author  Stephen Edwards
+ * @author Stephen Edwards
  */
-public interface Empty
-{
-    static final String _RCS_ = "$Rev: 2 $";    
+public interface Empty {
+	static final String _RCS_ = "$Rev: 2 $";
 
-    /**
-     * Empty Set object.  Throws UnsupportedOperationException if an
-     * attempt is made to modify it.
-     */
-    public static final Set SET = Collections.EMPTY_SET;
+	/**
+	 * Empty Set object. Throws UnsupportedOperationException if an attempt is
+	 * made to modify it.
+	 */
+	public static final Set SET = Collections.EMPTY_SET;
 
-    /**
-     * Empty List object.  Throws UnsupportedOperationException if an
-     * attempt is made to modify it.
-     */
-    public static final List LIST = Collections.EMPTY_LIST;
+	/**
+	 * Empty List object. Throws UnsupportedOperationException if an attempt is
+	 * made to modify it.
+	 */
+	public static final List LIST = Collections.EMPTY_LIST;
 
-    /**
-     * Empty Collection object.  Throws UnsupportedOperationException if an
-     * attempt is made to modify it.
-     */
-    public static final Collection COLLECTION = LIST;
+	/**
+	 * Empty Collection object. Throws UnsupportedOperationException if an
+	 * attempt is made to modify it.
+	 */
+	public static final Collection COLLECTION = LIST;
 
-    /**
-     * Empty Map object.  Throws UnsupportedOperationException if an
-     * attempt is made to modify it.
-     */
-    public static final Map MAP = Collections.EMPTY_MAP;
+	/**
+	 * Empty Map object. Throws UnsupportedOperationException if an attempt is
+	 * made to modify it.
+	 */
+	public static final Map MAP = Collections.EMPTY_MAP;
 
+	/** Empty array of booleans. */
+	public static final boolean[] BOOLEAN_ARRAY = new boolean[0];
 
-    /** Empty array of booleans. */
-    public static final boolean[] BOOLEAN_ARRAY = new boolean[0];
+	/** Empty array of bytes. */
+	public static final byte[] BYTE_ARRAY = new byte[0];
 
-    /** Empty array of bytes. */
-    public static final byte[] BYTE_ARRAY = new byte[0];
+	/** Empty array of characters. */
+	public static final char[] CHAR_ARRAY = new char[0];
 
-    /** Empty array of characters. */
-    public static final char[] CHAR_ARRAY = new char[0];
+	/** Empty array of shorts. */
+	public static final short[] SHORT_ARRAY = new short[0];
 
-    /** Empty array of shorts. */
-    public static final short[] SHORT_ARRAY = new short[0];
+	/** Empty array of ints. */
+	public static final int[] INT_ARRAY = new int[0];
 
-    /** Empty array of ints. */
-    public static final int[] INT_ARRAY = new int[0];
+	/** Empty array of longs. */
+	public static final long[] LONG_ARRAY = new long[0];
 
-    /** Empty array of longs. */
-    public static final long[] LONG_ARRAY = new long[0];
+	/** Empty array of floats. */
+	public static final float[] FLOAT_ARRAY = new float[0];
 
-    /** Empty array of floats. */
-    public static final float[] FLOAT_ARRAY = new float[0];
+	/** Empty array of doubles. */
+	public static final double[] DOUBLE_ARRAY = new double[0];
 
-    /** Empty array of doubles. */
-    public static final double[] DOUBLE_ARRAY = new double[0];
+	/** Empty array of Objects. */
+	public static final Object[] OBJECT_ARRAY = new Object[0];
 
-    /** Empty array of Objects. */
-    public static final Object[] OBJECT_ARRAY = new Object[0];
-    
-
-    public static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	public static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 }
-

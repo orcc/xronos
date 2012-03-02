@@ -27,10 +27,7 @@ package net.sf.openforge.util;
  *
  * @version $Id: BitBuffer.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class BitBuffer
-{
-    /** Revision */
-    public static final String _RCS_ = "$Rev: 2 $";
+public class BitBuffer {
 
     private byte[] bits = new byte[0];
 

@@ -21,122 +21,115 @@
 
 package net.sf.openforge.util;
 
-import java.util.*;
-
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * A <code>SequenceIterator</code> represents the logical concatentation of
- * other {@link Iterator Iterators}.  When the elements of one iterator have
- * been exhausted, iteration proceeds with the next iterator, until all
- * iterators have been exhausted.
- *
+ * other {@link Iterator Iterators}. When the elements of one iterator have been
+ * exhausted, iteration proceeds with the next iterator, until all iterators
+ * have been exhausted.
+ * 
  * @version $Id: SequenceIterator.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class SequenceIterator implements Iterator
-{
-    /** Revision */
-    private static final String _RCS_ = "$Rev: 2 $";
+public class SequenceIterator implements Iterator {
 
 	/** Sequence of Iterators used to construct this iterator */
-    private LinkedList iterators = new LinkedList();
+	private LinkedList iterators = new LinkedList();
 
 	/** The current iterator being traversed */
-    private Iterator currentIterator = Collections.EMPTY_LIST.iterator();
+	private Iterator currentIterator = Collections.EMPTY_LIST.iterator();
 
-    /**
-	 * Constructs a new <code>SequenceIterator</code> with two
-	 * {@link Iterator Iterators} to be traversed in sequence.
-	 *
-	 * @param iter1 the first iterator to be traversed
-	 * @param iter2 the second iterator to be traversed
-	 * @throws NullPointerException if <code>iter1</code> or
-	 *           <code>iter2</code> is null
+	/**
+	 * Constructs a new <code>SequenceIterator</code> with two {@link Iterator
+	 * Iterators} to be traversed in sequence.
+	 * 
+	 * @param iter1
+	 *            the first iterator to be traversed
+	 * @param iter2
+	 *            the second iterator to be traversed
+	 * @throws NullPointerException
+	 *             if <code>iter1</code> or <code>iter2</code> is null
 	 */
-	public SequenceIterator (Iterator iter1, Iterator iter2)
-    {
-		if (iter1 == null || iter2 == null)
-		{
+	public SequenceIterator(Iterator iter1, Iterator iter2) {
+		if (iter1 == null || iter2 == null) {
 			throw new NullPointerException("null argument");
 		}
 
-        this.iterators.add(iter1);
-        this.iterators.add(iter2);
-        advanceToNext();
-    }
+		this.iterators.add(iter1);
+		this.iterators.add(iter2);
+		advanceToNext();
+	}
 
-    /**
-	 * Constructs a new <code>SequenceIterator</code> with
-	 * a list of {@link Iterator Iterators} to be traversed
-	 * in sequence.
-	 *
-	 * @param iterators a list of {@link Iterator}
-	 * @throws NullPointerException if <code>iterators</code> or any
-	 *           of its elements is null
-	 * @throws ClassCastException if any element of <code>iterators</code>
-	 *           is not an instance of {@link Iterator}
+	/**
+	 * Constructs a new <code>SequenceIterator</code> with a list of
+	 * {@link Iterator Iterators} to be traversed in sequence.
+	 * 
+	 * @param iterators
+	 *            a list of {@link Iterator}
+	 * @throws NullPointerException
+	 *             if <code>iterators</code> or any of its elements is null
+	 * @throws ClassCastException
+	 *             if any element of <code>iterators</code> is not an instance
+	 *             of {@link Iterator}
 	 */
-	public SequenceIterator (List iterators)
-    {
-		for (Iterator iter = iterators.iterator(); iter.hasNext();)
-		{
-			final Iterator nextIterator = (Iterator)iter.next();
-			if (nextIterator == null)
-			{
+	public SequenceIterator(List iterators) {
+		for (Iterator iter = iterators.iterator(); iter.hasNext();) {
+			final Iterator nextIterator = (Iterator) iter.next();
+			if (nextIterator == null) {
 				throw new NullPointerException("null iterator");
 			}
 			this.iterators.add(nextIterator);
 		}
-        advanceToNext();
-    }
+		advanceToNext();
+	}
 
-    /**
-	 * Returns <code>true</code> if the iteration has more elements.  (In
-	 * other words, returns <code>true</code> if {@link #next()} would
-	 * return an element rather than throwing an exception).
-	 *
+	/**
+	 * Returns <code>true</code> if the iteration has more elements. (In other
+	 * words, returns <code>true</code> if {@link #next()} would return an
+	 * element rather than throwing an exception).
+	 * 
 	 * @return <code>true</code> if the iterator has more elements
 	 */
-	public boolean hasNext ()
-    {
-        return currentIterator.hasNext();
-    }
+	public boolean hasNext() {
+		return currentIterator.hasNext();
+	}
 
-    /**
+	/**
 	 * Returns the next element in the iteration.
-	 *
+	 * 
 	 * @return the next element in the iteration
-	 * @throws NoSuchElementException if the iteration has no more elements
+	 * @throws NoSuchElementException
+	 *             if the iteration has no more elements
 	 */
-	public Object next ()
-    {
-        final Object nextObject = currentIterator.next();
-        advanceToNext();
-        return nextObject;
-    }
+	public Object next() {
+		final Object nextObject = currentIterator.next();
+		advanceToNext();
+		return nextObject;
+	}
 
-    /**
+	/**
 	 * An unsupported optional method.
-	 *
-	 * @throws UnsupportedOperationException always
+	 * 
+	 * @throws UnsupportedOperationException
+	 *             always
 	 */
-	public void remove ()
-    {
-        throw new UnsupportedOperationException();
-    }
+	public void remove() {
+		throw new UnsupportedOperationException();
+	}
 
-    /**
-	 * Advances <code>currentIterator</code> to the next element to
-	 * be returned.
+	/**
+	 * Advances <code>currentIterator</code> to the next element to be returned.
 	 */
-	private void advanceToNext ()
-    {
-        while (!currentIterator.hasNext() && !iterators.isEmpty())
-        {
-            currentIterator = (Iterator)iterators.removeFirst();
-            if (currentIterator.hasNext())
-            {
-                break;
-            }
-        }
-    }
+	private void advanceToNext() {
+		while (!currentIterator.hasNext() && !iterators.isEmpty()) {
+			currentIterator = (Iterator) iterators.removeFirst();
+			if (currentIterator.hasNext()) {
+				break;
+			}
+		}
+	}
 }

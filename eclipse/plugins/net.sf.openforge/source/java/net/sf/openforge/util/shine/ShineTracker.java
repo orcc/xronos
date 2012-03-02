@@ -21,29 +21,31 @@
 
 package net.sf.openforge.util.shine;
 
-class ShineTracker
-{
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
-    private int counter=0;
-    private int id=0;
-    
-    ShineTracker()
-    {
-    }
+class ShineTracker {
+	static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	private int counter = 0;
+	private int id = 0;
 
-    synchronized void inc()
-    {
-        counter++;
-    }
+	ShineTracker() {
+	}
 
-    synchronized void dec()
-    {
-        counter--;
-    }
+	synchronized void inc() {
+		counter++;
+	}
 
-    synchronized int getCounter() { return counter; }
+	synchronized void dec() {
+		counter--;
+	}
 
-    synchronized int getNextID() { return ++id; }
+	synchronized int getCounter() {
+		return counter;
+	}
 
-    synchronized void clear() { counter=0; }
+	synchronized int getNextID() {
+		return ++id;
+	}
+
+	synchronized void clear() {
+		counter = 0;
+	}
 }

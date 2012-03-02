@@ -21,72 +21,65 @@
 
 package net.sf.openforge.util.naming;
 
-
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * IDDb. Keeps small ids allocated.
- *
+ * 
  * @author C. Schanck
  * @version $Id: IDDb.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class IDDb
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class IDDb {
 
-    private HashMap idMap=new HashMap();
-    private HashMap typeMap=new HashMap();
+	private Map<String, Entry> idMap = new HashMap<String, Entry>();
+	private Map<Class<?>, String> typeMap = new HashMap<Class<?>, String>();
 
-    /**
-     * Return the next id
-     *
-     * @return allocated id
-     */
-    public long getNextID(String type)
-    {
-        Entry e=(Entry)idMap.get(type);
-        if(e==null)
-        {
-            e=new Entry();
-            idMap.put(type,e);
-        }
-        
-        return e.getNextID();
-    }
+	/**
+	 * Return the next id
+	 * 
+	 * @return allocated id
+	 */
+	public long getNextID(String type) {
+		Entry e = (Entry) idMap.get(type);
+		if (e == null) {
+			e = new Entry();
+			idMap.put(type, e);
+		}
 
-    /**
-     * Get the default idType for the object in question
-     *
-     * @return idType
-     */
-    private static String discernDefaultIdType (Class c)
-    {
-        // get the FQN
-        String temp=c.getName();
-        // peel off just the class name
-        int i=temp.lastIndexOf('.');
-        if(i>=0)
-            temp=temp.substring(i+1);
-        return temp.toLowerCase();
-    }
+		return e.getNextID();
+	}
 
-    public String getTypeName(Class c)
-    {
-        String s=(String)typeMap.get(c);
-        if(s==null)
-        {
-            s=discernDefaultIdType(c);
-            typeMap.put(c,s);            
-        }
-        return s;
-    }
-    
-    static class Entry
-    {
-        private long nextID=0;
-        
-        public final long getNextID() { return nextID++; }
-    }
-    
+	/**
+	 * Get the default idType for the object in question
+	 * 
+	 * @return idType
+	 */
+	private static String discernDefaultIdType(Class<?> c) {
+		// get the FQN
+		String temp = c.getName();
+		// peel off just the class name
+		int i = temp.lastIndexOf('.');
+		if (i >= 0)
+			temp = temp.substring(i + 1);
+		return temp.toLowerCase();
+	}
+
+	public String getTypeName(Class<?> c) {
+		String s = (String) typeMap.get(c);
+		if (s == null) {
+			s = discernDefaultIdType(c);
+			typeMap.put(c, s);
+		}
+		return s;
+	}
+
+	static class Entry {
+		private long nextID = 0;
+
+		public final long getNextID() {
+			return nextID++;
+		}
+	}
+
 }
-

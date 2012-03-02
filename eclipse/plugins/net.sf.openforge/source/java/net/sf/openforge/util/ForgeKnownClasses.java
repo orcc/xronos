@@ -22,77 +22,63 @@
 package net.sf.openforge.util;
 
 /**
- * ForgeKnownClasses provides utilities for identifying a
- * class/package as belonging to any of several known sets of classes
- * such as system, api, or simulation classes.
- *
+ * ForgeKnownClasses provides utilities for identifying a class/package as
+ * belonging to any of several known sets of classes such as system, api, or
+ * simulation classes.
+ * 
  * Created: Thu Jun 20 10:03:49 2002
- *
+ * 
  * @author imiller
  * @version $Id: ForgeKnownClasses.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ForgeKnownClasses 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class ForgeKnownClasses {
 
-    private static String[] systemClasses = 
-    {
-        "java.",
-        "javax.",
-        "org.omg."
-    };
-    private static String[] apiClassPackages = 
-    {
-        "net.sf.openforge.forge.api.", "net.sf.openforge.forge.api.hw.",
-        "net.sf.openforge.forge.internal.hw."
-    };
+	private static String[] systemClasses = { "java.", "javax.", "org.omg." };
+	private static String[] apiClassPackages = { "net.sf.openforge.forge.api.",
+			"net.sf.openforge.forge.api.hw.",
+			"net.sf.openforge.forge.internal.hw." };
 
-    /**
-     * Returns true if the given class name exists in one of the known
-     * api class Strings.
-     *
-     * @param name a value of type 'String'
-     * @return a value of type 'boolean'
-     */
-    public static boolean isAPIClass(String name)
-    {
-        for (int i=0; i < apiClassPackages.length; i++)
-        {
-            if (name.startsWith(apiClassPackages[i]))
-                return true;
-        }
-        return false;
-    }
+	/**
+	 * Returns true if the given class name exists in one of the known api class
+	 * Strings.
+	 * 
+	 * @param name
+	 *            a value of type 'String'
+	 * @return a value of type 'boolean'
+	 */
+	public static boolean isAPIClass(String name) {
+		for (int i = 0; i < apiClassPackages.length; i++) {
+			if (name.startsWith(apiClassPackages[i]))
+				return true;
+		}
+		return false;
+	}
 
-    /**
-     * Returns true if the class's name starts with any known system
-     * package.
-     *
-     * @param clazz a value of type 'Class'
-     * @return a value of type 'boolean'
-     */
-    public static boolean isSystemClass(Class clazz)
-    {
-        return isSystemClass(clazz.getName());
-    }
-    
-    /**
-     * Returns true if the class's name starts with any known system
-     * package.
-     *
-     * @param name a value of type 'String'
-     * @return a value of type 'boolean'
-     */
-    public static boolean isSystemClass(String name)
-    {
-        for (int i = 0; i < systemClasses.length; i++)
-        {
-            if (name.startsWith(systemClasses[i]))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-    
+	/**
+	 * Returns true if the class's name starts with any known system package.
+	 * 
+	 * @param clazz
+	 *            a value of type 'Class'
+	 * @return a value of type 'boolean'
+	 */
+	public static boolean isSystemClass(Class clazz) {
+		return isSystemClass(clazz.getName());
+	}
+
+	/**
+	 * Returns true if the class's name starts with any known system package.
+	 * 
+	 * @param name
+	 *            a value of type 'String'
+	 * @return a value of type 'boolean'
+	 */
+	public static boolean isSystemClass(String name) {
+		for (int i = 0; i < systemClasses.length; i++) {
+			if (name.startsWith(systemClasses[i])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 }// ForgeKnownClasses

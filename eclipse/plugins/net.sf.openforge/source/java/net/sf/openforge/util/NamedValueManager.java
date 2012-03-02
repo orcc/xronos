@@ -21,54 +21,45 @@
 
 package net.sf.openforge.util;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Provides simple named key :: object mappoing for classes that need to store complex
- * objects by name
- *
- * @author <a href="mailto:Jonathan.Harris@xilinx.com">Jonathan
- * C. Harris</a>
+ * Provides simple named key :: object mappoing for classes that need to store
+ * complex objects by name
+ * 
+ * @author <a href="mailto:Jonathan.Harris@xilinx.com">Jonathan C. Harris</a>
  * @version $Id
  */
-public class NamedValueManager
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class NamedValueManager {
 
-    private HashMap values=new HashMap();
-    
-    public NamedValueManager()
-    {
-	;
-    }
+	private HashMap values = new HashMap();
 
-    public Object getNamedValue(String name)
-    {
-	return values.get(name);
-    }
+	public NamedValueManager() {
+		;
+	}
 
-    public void putNamedValue(String name,Object o)
-    {
-	values.put(name,o);
-    }
+	public Object getNamedValue(String name) {
+		return values.get(name);
+	}
 
-    public boolean containsNamedValue(String name)
-    {
-	return values.containsKey(name);
-    }
+	public void putNamedValue(String name, Object o) {
+		values.put(name, o);
+	}
 
-    public void removeNamedValue(String name)
-    {
-	values.remove(name);
-    }
+	public boolean containsNamedValue(String name) {
+		return values.containsKey(name);
+	}
 
-    public void clearNamedValues()
-    {
-	values.clear();
-    }
-    
-    public Map getNamedValueMap()
-    {
-	return values;
-    }
+	public void removeNamedValue(String name) {
+		values.remove(name);
+	}
+
+	public void clearNamedValues() {
+		values.clear();
+	}
+
+	public Map getNamedValueMap() {
+		return values;
+	}
 }

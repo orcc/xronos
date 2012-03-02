@@ -21,136 +21,106 @@
 
 package net.sf.openforge.util.shine;
 
-import java.lang.reflect.*;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.lang.reflect.Array;
 
 /**
  * Goal here is to return a DB of all data elements
  */
-public class ArrayInspector
-{
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
-    private Object myArray;
-    private Class compType;
-    
-    public ArrayInspector(Object o)
-    {
-        reuse(o);
-    }
+public class ArrayInspector {
+	private Object myArray;
+	private Class<?> compType;
 
-    public ArrayInspector()
-    { ; }
-    
-    public void reuse(Object o)
-    {
-        if(!o.getClass().isArray())
-            throw new IllegalArgumentException("Must be array!");
-        myArray=o;
-        compType=o.getClass().getComponentType();
-    }
+	public ArrayInspector(Object o) {
+		reuse(o);
+	}
 
-    public int getElementCount()
-    {
-        return Array.getLength(myArray);
-    }
+	public ArrayInspector() {
+		;
+	}
 
-    public Object getMyArray()
-    {
-        return myArray;
-    }
+	public void reuse(Object o) {
+		if (!o.getClass().isArray())
+			throw new IllegalArgumentException("Must be array!");
+		myArray = o;
+		compType = o.getClass().getComponentType();
+	}
 
-    public boolean isElementRef(int eIndex)
-    {
-        return !compType.isPrimitive();
-    }
+	public int getElementCount() {
+		return Array.getLength(myArray);
+	}
 
-    public boolean isElementArray(int eIndex)
-    {
-        Class type=getElementType(eIndex);
-        if(type==null)
-            return false;
-        return type.isArray();
-    }
-    
-    public Object getElementName(int eIndex)
-    {
-        return "#"+eIndex;
-    }
-    
-    public Class getElementType(int eIndex)
-    {
-        if(compType.isPrimitive())
-            return compType;
-        Object obj=Array.get(myArray,eIndex);
-        return obj==null?null:obj.getClass();
-    }
+	public Object getMyArray() {
+		return myArray;
+	}
 
-    public Object getElementValue(int eIndex)
-    {
-        if(Array.get(myArray,eIndex)==null)
-            return "<null>";
-        if(compType.isPrimitive())
-        {
-            if (compType.equals(byte.class))
-            {
-                return Array.getByte(myArray,eIndex)+"";
-            }
-            else if (compType.equals(short.class))
-            {
-                return Array.getShort(myArray,eIndex)+"";
-            }
-            else if (compType.equals(int.class))
-            {
-                return Array.getInt(myArray,eIndex)+"";
-            }
-            else if (compType.equals(long.class))
-            {
-                return Array.getLong(myArray,eIndex)+"";
-            }
-            else if (compType.equals(float.class))
-            {
-                return Array.getFloat(myArray,eIndex)+"";
-            }
-            else if (compType.equals(double.class))
-            {
-                return Array.getDouble(myArray,eIndex)+"";
-            }
-            else if (compType.equals(char.class))
-            {
-                return Array.getChar(myArray,eIndex)+"";
-            }
-            else if (compType.equals(boolean.class))
-            {
-                return Array.getBoolean(myArray,eIndex)+"";
-            }
-        }
-        return Array.get(myArray,eIndex);
-    }
+	public boolean isElementRef(int eIndex) {
+		return !compType.isPrimitive();
+	}
 
-    public String toString()
-    {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        PrintWriter pw = new PrintWriter(bos);
+	public boolean isElementArray(int eIndex) {
+		Class<?> type = getElementType(eIndex);
+		if (type == null)
+			return false;
+		return type.isArray();
+	}
 
-        pw.println("ArrayInspector: " + myArray.getClass().getName());
+	public Object getElementName(int eIndex) {
+		return "#" + eIndex;
+	}
 
-        for(int i=0;i<getElementCount();i++)
-        {
-            pw.println("\t"+i+": " + getElementType(i)+ " == " + getElementValue(i));
-        }
+	public Class<?> getElementType(int eIndex) {
+		if (compType.isPrimitive())
+			return compType;
+		Object obj = Array.get(myArray, eIndex);
+		return obj == null ? null : obj.getClass();
+	}
 
-        pw.flush();
-        return bos.toString();
-    }
-    
-    public static void main(String args[])
-    {
-        int[] test1 = { 2,4,6,8,10 };
-        ArrayInspector ii1=new ArrayInspector(test1);
-        System.out.println(ii1);
-    }
+	public Object getElementValue(int eIndex) {
+		if (Array.get(myArray, eIndex) == null)
+			return "<null>";
+		if (compType.isPrimitive()) {
+			if (compType.equals(byte.class)) {
+				return Array.getByte(myArray, eIndex) + "";
+			} else if (compType.equals(short.class)) {
+				return Array.getShort(myArray, eIndex) + "";
+			} else if (compType.equals(int.class)) {
+				return Array.getInt(myArray, eIndex) + "";
+			} else if (compType.equals(long.class)) {
+				return Array.getLong(myArray, eIndex) + "";
+			} else if (compType.equals(float.class)) {
+				return Array.getFloat(myArray, eIndex) + "";
+			} else if (compType.equals(double.class)) {
+				return Array.getDouble(myArray, eIndex) + "";
+			} else if (compType.equals(char.class)) {
+				return Array.getChar(myArray, eIndex) + "";
+			} else if (compType.equals(boolean.class)) {
+				return Array.getBoolean(myArray, eIndex) + "";
+			}
+		}
+		return Array.get(myArray, eIndex);
+	}
+
+	public String toString() {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		PrintWriter pw = new PrintWriter(bos);
+
+		pw.println("ArrayInspector: " + myArray.getClass().getName());
+
+		for (int i = 0; i < getElementCount(); i++) {
+			pw.println("\t" + i + ": " + getElementType(i) + " == "
+					+ getElementValue(i));
+		}
+
+		pw.flush();
+		return bos.toString();
+	}
+
+	public static void main(String args[]) {
+		int[] test1 = { 2, 4, 6, 8, 10 };
+		ArrayInspector ii1 = new ArrayInspector(test1);
+		System.out.println(ii1);
+	}
 
 }
-
-
-

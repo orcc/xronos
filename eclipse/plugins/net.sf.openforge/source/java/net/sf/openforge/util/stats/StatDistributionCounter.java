@@ -25,7 +25,6 @@ public class StatDistributionCounter
 {
 
     /** DOCUMENT ME! */
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
     private long count;
     private float avg;
     private long min = Long.MAX_VALUE;

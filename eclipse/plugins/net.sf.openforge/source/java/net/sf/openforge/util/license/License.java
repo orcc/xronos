@@ -20,135 +20,121 @@
  */
 package net.sf.openforge.util.license;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import net.sf.openforge.app.ForgeFatalException;
 import net.sf.openforge.util.ForgeResource;
 
-
 /**
- * License has some convenient utility methods for dealing
- * with License issues.
- *
+ * License has some convenient utility methods for dealing with License issues.
+ * 
  * @version $Id: License.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class License
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class License {
+	//private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
-    // ************************************************************
-    // *                                                          *
-    // * Public Static methods (main at bottom)                   *
-    // *                                                          *
-    // ************************************************************
-    /**
-     * verify that the forge has not expired.
-     * @return true if ok, false if not
-     */
-    public static boolean isDateOK(long now)
-    {
-        long exptime=973054799485L;
-        int x=3;
-        long diff=exptime-now;
-        x*=3;           // 9
-        x++;            // 10
-        x*=3;           // 30
-        x*=5;           // 150
-        x*=2;           // 300  
-        x+=3;           // 303
-        x+=3;           // 306
-        x+=3;           // 309
-        x++;            // majic number is 310!
-        if (exptime%485 != x)
-        {
-            throw new ForgeFatalException("jar file modified!");
-        }
-        if (diff < (3600000*24*7) && diff > 0)
-        {
-            java.util.Date expDate=new java.util.Date(exptime);
-            /* 
-            System.err.println("Warning: Your Forge evaluation copy will expire in "+
-                diff/(3600000*24)+" day(s), on: "+expDate+"\n"); 
-                */
-        }
-        
-        return(diff > 0);
-    }
+	// ************************************************************
+	// * *
+	// * Public Static methods (main at bottom) *
+	// * *
+	// ************************************************************
+	/**
+	 * verify that the forge has not expired.
+	 * 
+	 * @return true if ok, false if not
+	 */
+	public static boolean isDateOK(long now) {
+		long exptime = 973054799485L;
+		int x = 3;
+		long diff = exptime - now;
+		x *= 3; // 9
+		x++; // 10
+		x *= 3; // 30
+		x *= 5; // 150
+		x *= 2; // 300
+		x += 3; // 303
+		x += 3; // 306
+		x += 3; // 309
+		x++; // majic number is 310!
+		if (exptime % 485 != x) {
+			throw new ForgeFatalException("jar file modified!");
+		}
+		if (diff < (3600000 * 24 * 7) && diff > 0) {
+			//java.util.Date expDate = new java.util.Date(exptime);
+			/*
+			 * System.err.println(
+			 * "Warning: Your Forge evaluation copy will expire in "+
+			 * diff/(3600000*24)+" day(s), on: "+expDate+"\n");
+			 */
+		}
 
-    /**
-     * function to return the license file as a String
-     *
-     *
-     * @return a string which is the license file
-     */
-    public static String getLicenseFile()
-    {
-        String licenseFile = "";
+		return (diff > 0);
+	}
 
-        InputStream is = ForgeResource.loadForgeResourceStream("LICENSE_FILE");
+	/**
+	 * function to return the license file as a String
+	 * 
+	 * 
+	 * @return a string which is the license file
+	 */
+	@SuppressWarnings("unused")
+	public static String getLicenseFile() {
+		String licenseFile = "";
 
-        if (is == null)
-        {
-            return "license file not found";
-        }
+		InputStream is = ForgeResource.loadForgeResourceStream("LICENSE_FILE");
 
-        InputStreamReader isr = new InputStreamReader(is);
+		if (is == null) {
+			return "license file not found";
+		}
 
-        if (isr == null)
-        {
-            return "license file not found";
-        }
+		InputStreamReader isr = new InputStreamReader(is);
 
-        BufferedReader br = new BufferedReader(isr);
+		if (isr == null) {
+			return "license file not found";
+		}
 
-        if (br == null)
-        {
-            return "license file not found";
-        }
+		BufferedReader br = new BufferedReader(isr);
 
-        try
-        {
-            while (br.ready())
-            {
-                licenseFile += br.readLine() + "\n";
-            }
-        }
-        catch (Exception ioe)
-        {
-            return licenseFile;
-        }
+		if (br == null) {
+			return "license file not found";
+		}
 
-        return(licenseFile);
-    }
+		try {
+			while (br.ready()) {
+				licenseFile += br.readLine() + "\n";
+			}
+		} catch (Exception ioe) {
+			return licenseFile;
+		}
 
-    public static boolean isLicenseCurrent (String key)
-    {
-        return Key.isLicenseCurrent(key);
-    }
-    
-    public static boolean isLicenseCurrent()
-    {
-        return isLicenseCurrent(getLicenseFile());
-    }
+		return (licenseFile);
+	}
 
-    public static String getLicenseInfo ()
-    {
-        return getLicenseInfo(getLicenseFile());
-    }
-    
-    public static String getLicenseInfo (String licenseString)
-    {
-        String result = "";
+	public static boolean isLicenseCurrent(String key) {
+		return Key.isLicenseCurrent(key);
+	}
 
-        if(licenseString.equals("license file not found"))
-        {
-            return("License Info:\n  Unable to locate license file: license.dat.\n" +
-                "  Please check your installation\n");
-        } else
-        {
-            return("License Info:\n         Key: " + Key.formatKey(licenseString) +
-                "\n  Expiration: " + Key.getExpirationAsString(licenseString) + "\n");
-        }
-    }
+	public static boolean isLicenseCurrent() {
+		return isLicenseCurrent(getLicenseFile());
+	}
+
+	public static String getLicenseInfo() {
+		return getLicenseInfo(getLicenseFile());
+	}
+
+	public static String getLicenseInfo(String licenseString) {
+		//String result = "";
+
+		if (licenseString.equals("license file not found")) {
+			return ("License Info:\n  Unable to locate license file: license.dat.\n"
+					+ "  Please check your installation\n");
+		} else {
+			return ("License Info:\n         Key: "
+					+ Key.formatKey(licenseString) + "\n  Expiration: "
+					+ Key.getExpirationAsString(licenseString) + "\n");
+		}
+	}
 
 }

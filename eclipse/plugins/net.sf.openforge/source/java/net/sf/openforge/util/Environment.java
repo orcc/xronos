@@ -20,261 +20,242 @@
  */
 package net.sf.openforge.util;
 
-import java.io.*;
-import java.util.*;
-
-
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Enumeration;
+import java.util.Properties;
 
 /**
  * Class to get the current OS environment settings.
  * 
- * Uses Runtime.exec to run a command to get the environment settings
- * then parses them. Under *nix variants, it uses "env". Under windoze
- * variants it uses "command /c set" (95/98) or "cmd /c set" (NT/2000/XP).
+ * Uses Runtime.exec to run a command to get the environment settings then
+ * parses them. Under *nix variants, it uses "env". Under windoze variants it
+ * uses "command /c set" (95/98) or "cmd /c set" (NT/2000/XP).
  * 
- * Alternatively, the command to get <name>=<value> pairs cen be set
- * as the system property "lava.env.cmd".
+ * Alternatively, the command to get <name>=<value> pairs cen be set as the
+ * system property "lava.env.cmd".
  * 
  * Names of properties are stored in upper case.
  * 
  * $Id: Environment.java 2 2005-06-09 20:00:48Z imiller $
  * 
  */
-public class Environment
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class Environment {
 
-    // ************************************************************
-    // *                                                          *
-    // * public fields                                            *
-    // *                                                          *
-    // ************************************************************
+	// ************************************************************
+	// * *
+	// * public fields *
+	// * *
+	// ************************************************************
 
-    public static final String FORGEHOME = "FORGEHOME";
+	public static final String FORGEHOME = "FORGEHOME";
 
-    // ************************************************************
-    // *                                                          *
-    // * private/protected fields                                 *
-    // *                                                          *
-    // ************************************************************
+	// ************************************************************
+	// * *
+	// * private/protected fields *
+	// * *
+	// ************************************************************
 
-    private static Properties envProps = new Properties();
+	private static Properties envProps = new Properties();
 
-    // ************************************************************
-    // *                                                          *
-    // * Constructors                                             *
-    // *                                                          *
-    // ************************************************************
+	// ************************************************************
+	// * *
+	// * Constructors *
+	// * *
+	// ************************************************************
 
-    /**
-     * Constructor declaration
-     *
-     *
-     * @see
-     */
-    private Environment()
-    {
-        ;
-    }
+	/**
+	 * Constructor declaration
+	 * 
+	 * 
+	 * @see
+	 */
+	private Environment() {
+		;
+	}
 
-    // ************************************************************
-    // *                                                          *
-    // * Public Static methods (main at bottom)                   *
-    // *                                                          *
-    // ************************************************************
+	// ************************************************************
+	// * *
+	// * Public Static methods (main at bottom) *
+	// * *
+	// ************************************************************
 
-    /**
-     * Get the setting of a specific operating system setting.
-     * Returns null if not found.
-     * 
-     * @param envName Name of the environment variable
-     * @return Value
-     */
-    public static String getEnv(String envName)
-    {
-        return (String)envProps.get(envName);
-    }
+	/**
+	 * Get the setting of a specific operating system setting. Returns null if
+	 * not found.
+	 * 
+	 * @param envName
+	 *            Name of the environment variable
+	 * @return Value
+	 */
+	public static String getEnv(String envName) {
+		return (String) envProps.get(envName);
+	}
 
-    /**
-     * Set an arbitrary value. Useful for testing.
-     *
-     * @param envName a value of type 'String'
-     * @param val a value of type 'String'
-     * @return a value of type 'String'
-     */
-    public static void setEnv(String envName,String val)
-    {
-        envProps.put(envName,val);
-    }
-    
-    /**
-     * Get the setting of a specific operating system setting.
-     * Returns defaultValue value if not found.
-     * 
-     * @param envName Name of the environment variable
-     * @param defaultValue Default value for this setting
-     * @return Value
-     */
-    public static String getEnv(String envName, String defaultValue)
-    {
-        String ret = (String)envProps.get(envName);
+	/**
+	 * Set an arbitrary value. Useful for testing.
+	 * 
+	 * @param envName
+	 *            a value of type 'String'
+	 * @param val
+	 *            a value of type 'String'
+	 * @return a value of type 'String'
+	 */
+	public static void setEnv(String envName, String val) {
+		envProps.put(envName, val);
+	}
 
-        if (ret == null)
-        {
-            ret = defaultValue;
-        }
+	/**
+	 * Get the setting of a specific operating system setting. Returns
+	 * defaultValue value if not found.
+	 * 
+	 * @param envName
+	 *            Name of the environment variable
+	 * @param defaultValue
+	 *            Default value for this setting
+	 * @return Value
+	 */
+	public static String getEnv(String envName, String defaultValue) {
+		String ret = (String) envProps.get(envName);
 
-        return ret;
-    }
+		if (ret == null) {
+			ret = defaultValue;
+		}
 
-    /**
-     * Return the Properties Object for the System environment space.
-     * This object is static for an instance of the VM
-     * 
-     * @return Properties object
-     */
-    public static Properties getProperties()
-    {
-        return envProps;
-    }
+		return ret;
+	}
 
-    // ************************************************************
-    // *                                                          *
-    // * Public Instance Accessor methods (get/set/is)            *
-    // *                                                          *
-    // ************************************************************
-    // NONE
+	/**
+	 * Return the Properties Object for the System environment space. This
+	 * object is static for an instance of the VM
+	 * 
+	 * @return Properties object
+	 */
+	public static Properties getProperties() {
+		return envProps;
+	}
 
-    // ************************************************************
-    // *                                                          *
-    // * Public Instance methods                                  *
-    // *                                                          *
-    // ************************************************************
-    // NONE
+	// ************************************************************
+	// * *
+	// * Public Instance Accessor methods (get/set/is) *
+	// * *
+	// ************************************************************
+	// NONE
 
-    // ************************************************************
-    // *                                                          *
-    // * Protected Static methods                                 *
-    // *                                                          *
-    // ************************************************************
-    // NONE
+	// ************************************************************
+	// * *
+	// * Public Instance methods *
+	// * *
+	// ************************************************************
+	// NONE
 
-    // ************************************************************
-    // *                                                          *
-    // * Protected Instance methods                               *
-    // *                                                          *
-    // ************************************************************
-    // NONE
+	// ************************************************************
+	// * *
+	// * Protected Static methods *
+	// * *
+	// ************************************************************
+	// NONE
 
-    // ************************************************************
-    // *                                                          *
-    // * Private Static methods                                   *
-    // *                                                          *
-    // ************************************************************
+	// ************************************************************
+	// * *
+	// * Protected Instance methods *
+	// * *
+	// ************************************************************
+	// NONE
 
-    /**
-     * Method declaration
-     *
-     *
-     * @see
-     */
-    private static void storeEnv()
-    {
-        try
-        {
-            String cmd = System.getProperty("lava.env.cmd");
+	// ************************************************************
+	// * *
+	// * Private Static methods *
+	// * *
+	// ************************************************************
 
-            if (cmd == null)
-            {
-                if (File.separator.equals("/"))
-                {
-                    cmd = "env";
-                }
-                else if (System.getProperty("os.name").equals("Windows NT"))
-                {
-                    cmd = "cmd.exe /c set";
-                }
-                else if (System.getProperty("os.name").equals("Windows 2000"))
-                {
-                    cmd = "cmd.exe /c set";
-                }
-                else if (System.getProperty("os.name").equals("Windows XP"))
-                {
-                    cmd = "cmd.exe /c set";
-                }
-                else
-                {
-                    cmd = "command.com /c set";
-                }
-            }
+	/**
+	 * Method declaration
+	 * 
+	 * 
+	 * @see
+	 */
+	private static void storeEnv() {
+		try {
+			String cmd = System.getProperty("lava.env.cmd");
 
-            InputStreamReader isr = new InputStreamReader(Runtime.getRuntime().exec(cmd).getInputStream());
-            BufferedReader br = new BufferedReader(isr);
+			if (cmd == null) {
+				if (File.separator.equals("/")) {
+					cmd = "env";
+				} else if (System.getProperty("os.name").equals("Windows NT")) {
+					cmd = "cmd.exe /c set";
+				} else if (System.getProperty("os.name").equals("Windows 2000")) {
+					cmd = "cmd.exe /c set";
+				} else if (System.getProperty("os.name").equals("Windows XP")) {
+					cmd = "cmd.exe /c set";
+				} else {
+					cmd = "command.com /c set";
+				}
+			}
 
-            String line;
+			InputStreamReader isr = new InputStreamReader(Runtime.getRuntime()
+					.exec(cmd).getInputStream());
+			BufferedReader br = new BufferedReader(isr);
 
-            // Read in the buffer
-            while ((line = br.readLine()) != null)
-            {
-                int index = line.indexOf("=");
+			String line;
 
-                // Make sure that there is an equals sign and at least 1
-                // character in the name and value fields prior to parsing
-                if ((index > 0) && ((index + 1) < line.length()))
-                {
-                    String name = line.substring(0, index).trim().toUpperCase();
-                    String val = line.substring(index + 1).trim();
+			// Read in the buffer
+			while ((line = br.readLine()) != null) {
+				int index = line.indexOf("=");
 
-                    envProps.put(name, val);
-                }
-            }
-        }
-        catch (IOException ioe)
-        {
-            System.err.println("Unable to read os environment settings " + ioe);
-        }
-    }
+				// Make sure that there is an equals sign and at least 1
+				// character in the name and value fields prior to parsing
+				if ((index > 0) && ((index + 1) < line.length())) {
+					String name = line.substring(0, index).trim().toUpperCase();
+					String val = line.substring(index + 1).trim();
 
-    // ************************************************************
-    // *                                                          *
-    // * Private Instance methods                                 *
-    // *                                                          *
-    // ************************************************************
-    // NONE
+					envProps.put(name, val);
+				}
+			}
+		} catch (IOException ioe) {
+			System.err.println("Unable to read os environment settings " + ioe);
+		}
+	}
 
-    // ************************************************************
-    // *                                                          *
-    // * Public static void main(String[])                        *
-    // *                                                          *
-    // ************************************************************
-    // NONE
+	// ************************************************************
+	// * *
+	// * Private Instance methods *
+	// * *
+	// ************************************************************
+	// NONE
 
-    static
-    {
-        storeEnv();
-    }
+	// ************************************************************
+	// * *
+	// * Public static void main(String[]) *
+	// * *
+	// ************************************************************
+	// NONE
 
-    /**
-     * Main entry, iterates over and displays all available Environment vars.
-     *
-     *
-     * @param args the command line args
-     *
-     */
-    public static void main(String args[])
-    {
-        for (Enumeration e = Environment.getProperties().keys();e.hasMoreElements();)
-        {
-            String name = (String)e.nextElement();
-            String val = getEnv(name);
+	static {
+		storeEnv();
+	}
 
-            System.out.println(name + " = " + val);
-        }
-    }
+	/**
+	 * Main entry, iterates over and displays all available Environment vars.
+	 * 
+	 * 
+	 * @param args
+	 *            the command line args
+	 * 
+	 */
+	public static void main(String args[]) {
+		for (Enumeration e = Environment.getProperties().keys(); e
+				.hasMoreElements();) {
+			String name = (String) e.nextElement();
+			String val = getEnv(name);
+
+			System.out.println(name + " = " + val);
+		}
+	}
 
 }
-
-
 
 /*--- formatting done in "Lavalogic Coding Convention" style on 11-23-1999 ---*/
 

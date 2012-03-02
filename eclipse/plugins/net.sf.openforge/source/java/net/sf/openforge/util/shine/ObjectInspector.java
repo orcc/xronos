@@ -21,150 +21,126 @@
 
 package net.sf.openforge.util.shine;
 
-import java.util.*;
+import java.util.HashMap;
 
 /**
  */
-public class ObjectInspector
-{
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
-    private ArrayInspector ai=new ArrayInspector();
-    private InstanceInspector ii=new InstanceInspector();
-    private boolean amArray=false;
-    private Object myObject;
-    
-    // Abstract, Final, Interface, Native, Private, pRotected,
-    // pUblic, Static, sYnchro, Transient, Volatile
-    private String sortOrder="";
-    
-    public ObjectInspector(Object o)
-    {
-        reuse(o);
-    }
+public class ObjectInspector {
+	private ArrayInspector ai = new ArrayInspector();
+	private InstanceInspector ii = new InstanceInspector();
+	private boolean amArray = false;
+	private Object myObject;
 
-    public void clear()
-    {
-        myObject=null;
-    }
-    
-    public void reuse(Object o)
-    {
-        clear();
-        myObject=o;
-        amArray=o.getClass().isArray();
-        if(amArray)
-            ai.reuse(myObject);
-        else
-        {
-            ii.reuse(myObject);
-            ii.setSortOrder(sortOrder);
-        }
-    }
+	// Abstract, Final, Interface, Native, Private, pRotected,
+	// pUblic, Static, sYnchro, Transient, Volatile
+	private String sortOrder = "";
 
-    public void setSortOrder(String order)
-    throws IllegalArgumentException
-    {
-        ii.setSortOrder(order);
-    }
+	public ObjectInspector(Object o) {
+		reuse(o);
+	}
 
-    public int getCount()
-    {
-        if(amArray)
-            return ai.getElementCount();
-        else
-            return ii.getFieldCount();
-    }
+	public void clear() {
+		myObject = null;
+	}
 
-    public Object getMyObject()
-    {
-        return myObject;
-    }
+	public void reuse(Object o) {
+		clear();
+		myObject = o;
+		amArray = o.getClass().isArray();
+		if (amArray)
+			ai.reuse(myObject);
+		else {
+			ii.reuse(myObject);
+			ii.setSortOrder(sortOrder);
+		}
+	}
 
-    public boolean isArray()
-    {
-        return amArray;
-    }
+	public void setSortOrder(String order) throws IllegalArgumentException {
+		ii.setSortOrder(order);
+	}
 
-    public boolean isArray(int eIndex)
-    {
-        if(amArray)
-            return ai.isElementArray(eIndex);
-        else
-            return ii.isFieldArray(eIndex);
-    }
-    
-    public boolean isRef(int eIndex)
-    {
-        if(amArray)
-            return ai.isElementRef(eIndex);
-        else
-            return ii.isFieldRef(eIndex);
-    }
-    
-    public String getModifierString(int eIndex)
-    {
-        String pat=isRef(eIndex)?"*":"_";
-        if(amArray)
-            return pat;
-        else
-            return pat+ii.getModifierString(eIndex);
-    }
+	public int getCount() {
+		if (amArray)
+			return ai.getElementCount();
+		else
+			return ii.getFieldCount();
+	}
 
-    public Object getType(int eIndex)
-    {
-        Class type;
-        if(amArray)
-            type=ai.getElementType(eIndex);
-        else
-            type=ii.getFieldType(eIndex);
-        return type==null?"<no type>":type.getName();
-    }
-    
-    public Object getName(int eIndex)
-    {
-        if(amArray)
-            return ai.getElementName(eIndex);
-        else
-            return ii.getFieldName(eIndex);
-    }
+	public Object getMyObject() {
+		return myObject;
+	}
 
-    public Object getValue(int eIndex)
-    {
-        if(amArray)
-            return ai.getElementValue(eIndex);
-        else
-            return ii.getFieldValue(eIndex);
-    }
+	public boolean isArray() {
+		return amArray;
+	}
 
-    public Object getValueString(int eIndex)
-    {
-        if(amArray)
-            return ai.getElementValue(eIndex)+"";
-        else
-            return ii.getFieldValue(eIndex)+"";
-    }
+	public boolean isArray(int eIndex) {
+		if (amArray)
+			return ai.isElementArray(eIndex);
+		else
+			return ii.isFieldArray(eIndex);
+	}
 
-    
-    public String toString()
-    {
-        if(amArray)
-            return ai.toString();
-        else
-            return ii.toString();
-    }
+	public boolean isRef(int eIndex) {
+		if (amArray)
+			return ai.isElementRef(eIndex);
+		else
+			return ii.isFieldRef(eIndex);
+	}
 
-    public static void main(String args[])
-    {
-        HashMap hm=new HashMap(11);
-        hm.put("Hello!","Goodbye");
+	public String getModifierString(int eIndex) {
+		String pat = isRef(eIndex) ? "*" : "_";
+		if (amArray)
+			return pat;
+		else
+			return pat + ii.getModifierString(eIndex);
+	}
 
-        ObjectInspector ii1=new ObjectInspector(hm);
-        System.out.println(ii1);
-        int[] test1 = { 2,4,6,8,10 };
-        ObjectInspector ii2=new ObjectInspector(test1);
-        System.out.println(ii2);
-    }
+	public Object getType(int eIndex) {
+		Class<?> type;
+		if (amArray)
+			type = ai.getElementType(eIndex);
+		else
+			type = ii.getFieldType(eIndex);
+		return type == null ? "<no type>" : type.getName();
+	}
+
+	public Object getName(int eIndex) {
+		if (amArray)
+			return ai.getElementName(eIndex);
+		else
+			return ii.getFieldName(eIndex);
+	}
+
+	public Object getValue(int eIndex) {
+		if (amArray)
+			return ai.getElementValue(eIndex);
+		else
+			return ii.getFieldValue(eIndex);
+	}
+
+	public Object getValueString(int eIndex) {
+		if (amArray)
+			return ai.getElementValue(eIndex) + "";
+		else
+			return ii.getFieldValue(eIndex) + "";
+	}
+
+	public String toString() {
+		if (amArray)
+			return ai.toString();
+		else
+			return ii.toString();
+	}
+
+	public static void main(String args[]) {
+		HashMap<String, String> hm = new HashMap<String, String>(11);
+		hm.put("Hello!", "Goodbye");
+
+		ObjectInspector ii1 = new ObjectInspector(hm);
+		System.out.println(ii1);
+		int[] test1 = { 2, 4, 6, 8, 10 };
+		ObjectInspector ii2 = new ObjectInspector(test1);
+		System.out.println(ii2);
+	}
 }
-
-
-

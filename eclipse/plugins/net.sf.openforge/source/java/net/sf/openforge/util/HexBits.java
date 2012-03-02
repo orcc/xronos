@@ -32,7 +32,6 @@ package net.sf.openforge.util;
  */
 public class HexBits 
 {
-    private static final String _RCS_ = "$Rev: 2 $";
     public HexBits ()
     {
     }

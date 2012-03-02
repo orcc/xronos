@@ -34,23 +34,21 @@ BEGINCOPYRIGHT X
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 ENDCOPYRIGHT
-*/
+ */
 
 package net.sf.openforge.util.xml;
 
-
 import org.w3c.dom.Element;
-
 
 public class TagNamePredicate implements ElementPredicate {
 
-        public boolean test(Element e) {
-            return tag.equals(e.getNodeName());
-        }
+	public boolean test(Element e) {
+		return tag.equals(e.getNodeName());
+	}
 
-        public TagNamePredicate(String tag) {
-            this.tag = tag;
-        }
+	public TagNamePredicate(String tag) {
+		this.tag = tag;
+	}
 
-        private String tag;
+	private String tag;
 }

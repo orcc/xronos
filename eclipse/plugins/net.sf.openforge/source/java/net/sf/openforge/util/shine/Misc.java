@@ -21,31 +21,27 @@
 
 package net.sf.openforge.util.shine;
 
-import javax.swing.*;
 import java.net.URL;
 
-public class Misc
-{
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+import javax.swing.ImageIcon;
 
-    public static ImageIcon getIconResource(String resName)
-    {
-	return getIconResource(resName,null);
-    }
-    
-    public static ImageIcon getIconResource(String resName,String descr)
-    {
-	ImageIcon icon = null;
-	URL iconURL = ClassLoader.getSystemResource(resName);
-	if (iconURL != null)
-	{
-	    if(descr!=null)
-		icon = new ImageIcon(iconURL,descr);
-	    else
-		icon = new ImageIcon(iconURL);
+public class Misc {
+
+	public static ImageIcon getIconResource(String resName) {
+		return getIconResource(resName, null);
 	}
 
-	return icon;
-    }
+	public static ImageIcon getIconResource(String resName, String descr) {
+		ImageIcon icon = null;
+		URL iconURL = ClassLoader.getSystemResource(resName);
+		if (iconURL != null) {
+			if (descr != null)
+				icon = new ImageIcon(iconURL, descr);
+			else
+				icon = new ImageIcon(iconURL);
+		}
+
+		return icon;
+	}
 
 }
