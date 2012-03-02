@@ -24,68 +24,55 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * InlineComment represents a verilog comment which is placed
- * anywhere that whitespace can appear. These styled comments
- * are usually short, and can be bounded by {@link Symbol#OPEN_COMMENT}
- * and {@link Symbol#CLOSE_COMMENT} or by a {@link Symbol#SHORT_COMMENT} 
- * depending on which constructor is being used.
+ * InlineComment represents a verilog comment which is placed anywhere that
+ * whitespace can appear. These styled comments are usually short, and can be
+ * bounded by {@link Symbol#OPEN_COMMENT} and {@link Symbol#CLOSE_COMMENT} or by
+ * a {@link Symbol#SHORT_COMMENT} depending on which constructor is being used.
  * <P>
- *
+ * 
  * Created: Mon Feb 12 2001
- *
+ * 
  * @author abk
  * @version $Id: InlineComment.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class InlineComment extends Token implements Statement
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-    
-    Comment comment;
-    
-    public static final int TYPE = 6;
- 
-    public InlineComment(String comment)
-    {
-        this.comment = new Comment(comment);
-    }
-    
-    public InlineComment(String comment, int type)
-    {
-        this.comment = new Comment(comment, type);
-    }
-    
-    public String getToken() 
-    {
-        if (comment.getType() == Comment.LONG)
-        {
-            return comment.toLongComment();
-        }
-        else
-        {
-            return comment.toShortComment();
-        }
-    }
+public class InlineComment extends Token implements Statement {
 
-    public void setWidth (int width)
-    {
-        comment.setWidth(width);
-    }
-    
-    public int getType()
-    {
-        return TYPE;
-    }
-    
-    public Collection getNets()
-    {
-        return Collections.EMPTY_LIST;
-    }
-    
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        lex.append(this);
-        return lex;
-    }
-       
+	Comment comment;
+
+	public static final int TYPE = 6;
+
+	public InlineComment(String comment) {
+		this.comment = new Comment(comment);
+	}
+
+	public InlineComment(String comment, int type) {
+		this.comment = new Comment(comment, type);
+	}
+
+	public String getToken() {
+		if (comment.getType() == Comment.LONG) {
+			return comment.toLongComment();
+		} else {
+			return comment.toShortComment();
+		}
+	}
+
+	public void setWidth(int width) {
+		comment.setWidth(width);
+	}
+
+	public int getType() {
+		return TYPE;
+	}
+
+	public Collection getNets() {
+		return Collections.EMPTY_LIST;
+	}
+
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+		lex.append(this);
+		return lex;
+	}
+
 } // class InlineComment

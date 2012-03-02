@@ -24,9 +24,9 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * A ProceduralTimingBlock is a procedural timing control statement,
- * containing a sub-statement triggered by event control.
- *
+ * A ProceduralTimingBlock is a procedural timing control statement, containing
+ * a sub-statement triggered by event control.
+ * 
  * <P>
  * Example:<BR>
  * <CODE>
@@ -35,47 +35,41 @@ import java.util.HashSet;
  * </CODE>
  * <P>
  * Created: Fri Mar 02 2001
- *
+ * 
  * @author abk
  * @version $Id: ProceduralTimingBlock.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ProceduralTimingBlock implements Statement
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class ProceduralTimingBlock implements Statement {
 
-    EventControl ec;
-    Statement body;
+	EventControl ec;
+	Statement body;
 
-    public ProceduralTimingBlock(EventControl ec, Statement body)
-    {
-        this.ec = ec;
-        this.body = body;
-        
-    } // ProceduralTimingBlock()
+	public ProceduralTimingBlock(EventControl ec, Statement body) {
+		this.ec = ec;
+		this.body = body;
 
-    public Collection getNets()
-    {
-        HashSet nets = new HashSet();
-        
-        nets.addAll(ec.getNets());
-        nets.addAll(body.getNets());
-        
-        return nets;
-    } // getNets()
+	} // ProceduralTimingBlock()
 
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(ec);
-        lex.append(body);
-        
-        return lex;
-    }
+	public Collection getNets() {
+		HashSet nets = new HashSet();
 
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-        
+		nets.addAll(ec.getNets());
+		nets.addAll(body.getNets());
+
+		return nets;
+	} // getNets()
+
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(ec);
+		lex.append(body);
+
+		return lex;
+	}
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 } // end of class ProceduralTimingBlock

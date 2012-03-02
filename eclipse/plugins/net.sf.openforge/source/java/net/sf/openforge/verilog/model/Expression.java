@@ -23,28 +23,25 @@ package net.sf.openforge.verilog.model;
 import java.util.Collection;
 
 /**
- * An Expression is a verilog element which represents a
- * value of specific width composed exclusively from
- * Identifiers and Symbols.  
+ * An Expression is a verilog element which represents a value of specific width
+ * composed exclusively from Identifiers and Symbols.
  * <P>
- *
+ * 
  * Created: Fri Feb 09 2001
- *
+ * 
  * @author abk
  * @version $Id: Expression.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface Expression extends VerilogElement
-{
-    //    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public interface Expression extends VerilogElement {
 
-    /**
-     * Gets the total number of bits resulting from this expression.
-     */
-    public int getWidth();
-    
-    /**
-     * Gets all Nets which participate in this Expression.
-     */
-    public Collection<Object> getNets();
-    
+	/**
+	 * Gets the total number of bits resulting from this expression.
+	 */
+	public int getWidth();
+
+	/**
+	 * Gets all Nets which participate in this Expression.
+	 */
+	public Collection getNets();
+
 } // end of interface Expression

@@ -28,9 +28,10 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * InitializedMemory is a representation of a Verilog array which,
- * when lexicalified will return a collection initialization
- * assignments, one for each location in the memory.
+ * InitializedMemory is a representation of a Verilog array which, when
+ * lexicalified will return a collection initialization assignments, one for
+ * each location in the memory.
+ * 
  * <pre>
  *  arg0_data[0]<=32 'h 80000000;
  *  arg0_data[1]<=32 'h 80000000;
@@ -38,57 +39,50 @@ import java.util.List;
  *  arg0_data[3]<=32 'h 80000000;
  *  arg0_data[4]<=32 'h 80000000;
  * </pre>
- *
- * <p>Created: Fri Aug 23 12:41:43 2002
- *
+ * 
+ * <p>
+ * Created: Fri Aug 23 12:41:43 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: InitializedMemory.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class InitializedMemory extends Register implements Statement
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class InitializedMemory extends Register implements Statement {
 
-    private List initialValues;
-    
-    public InitializedMemory (String name, int width)
-    {
-        super(name, width);
-        this.initialValues = new ArrayList();
-    }
+	private List initialValues;
 
-    /**
-     * Adds one more location to the memory and specifies it's
-     * initialization value via the given Expression.
-     */
-    public void addInitValue (Expression init)
-    {
-        this.initialValues.add(init);
-    }
+	public InitializedMemory(String name, int width) {
+		super(name, width);
+		this.initialValues = new ArrayList();
+	}
 
-    public Collection getNets ()
-    {
-        return Collections.singleton(this);
-    }
+	/**
+	 * Adds one more location to the memory and specifies it's initialization
+	 * value via the given Expression.
+	 */
+	public void addInitValue(Expression init) {
+		this.initialValues.add(init);
+	}
 
-    /**
-     * Returns the number of locations in this memory.
-     */
-    public int depth ()
-    {
-        return initialValues.size();
-    }
-    
+	public Collection getNets() {
+		return Collections.singleton(this);
+	}
 
-    public Lexicality lexicalify ()
-    {
-        Lexicality lex = new Lexicality();
-         int i=0;
-        for (Iterator iter = initialValues.iterator(); iter.hasNext();)
-        {
-            Expression right = (Expression)iter.next();
-            lex.append(new Assign.NonBlocking(new MemoryElement(this, i++), right));
-        }
-        return lex;
-    }    
-    
+	/**
+	 * Returns the number of locations in this memory.
+	 */
+	public int depth() {
+		return initialValues.size();
+	}
+
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+		int i = 0;
+		for (Iterator iter = initialValues.iterator(); iter.hasNext();) {
+			Expression right = (Expression) iter.next();
+			lex.append(new Assign.NonBlocking(new MemoryElement(this, i++),
+					right));
+		}
+		return lex;
+	}
+
 }// InitializedMemory

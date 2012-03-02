@@ -23,89 +23,74 @@ package net.sf.openforge.verilog.model;
 import java.util.Collection;
 
 /**
- * PortConnection represents a connection to a module
- * port in a ModuleInstance
- *
- *
+ * PortConnection represents a connection to a module port in a ModuleInstance
+ * 
+ * 
  * Created: Tue Mar 12 16:20:29 2002
- *
+ * 
  * @author <a href="mailto:abk@ladd">Andy Kollegger</a>
  * @version $Id: PortConnection.java 280 2006-08-11 17:00:32Z imiller $
  */
 
-public class PortConnection implements VerilogElement  
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 280 $";
+public class PortConnection implements VerilogElement {
 
-    Net port;
-    Expression e;
+	Net port;
+	Expression e;
 
-    /**
-     * Create a connection between the specified port and
-     * an expression.
-     *
-     * @param port the module instance port 
-     * @param e the expression connected to the port
-     */
-    public PortConnection (Net port, Expression e)
-    {
-        if (port.getWidth() == e.getWidth())
-        {
-            this.port = port;
-            this.e = e;
-        }
-        else 
-        {
-            throw new VerilogSyntaxException("Mismatched port assignment: " +
-                                             port.toString() + "(" + port.getWidth() + " bits)" +
-                                             " != " +
-                                             e.toString()  + "(" + e.getWidth() + " bits)"
-                                             );
-        }
-        
-    } // PortConnection()
+	/**
+	 * Create a connection between the specified port and an expression.
+	 * 
+	 * @param port
+	 *            the module instance port
+	 * @param e
+	 *            the expression connected to the port
+	 */
+	public PortConnection(Net port, Expression e) {
+		if (port.getWidth() == e.getWidth()) {
+			this.port = port;
+			this.e = e;
+		} else {
+			throw new VerilogSyntaxException("Mismatched port assignment: "
+					+ port.toString() + "(" + port.getWidth() + " bits)"
+					+ " != " + e.toString() + "(" + e.getWidth() + " bits)");
+		}
 
+	} // PortConnection()
 
-    public Identifier getPortID()
-    {
-        return port.getIdentifier();
-    } // getPort()
-    
-    public Net getPort()
-    {
-        return port;
-    }
+	public Identifier getPortID() {
+		return port.getIdentifier();
+	} // getPort()
 
-    public Expression getExpression()
-    {
-        return e;
-    }
+	public Net getPort() {
+		return port;
+	}
 
-    public Collection getNets ()
-    {
-        return getExpression().getNets();
-    }
+	public Expression getExpression() {
+		return e;
+	}
 
-    /**
-     *
-     * @return <description>
-     */
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Symbol.DOT);
-        lex.append(port.getIdentifier());
-        lex.append(Symbol.OPEN_PARENTHESIS);
-        lex.append(e);
-        lex.append(Symbol.CLOSE_PARENTHESIS);
-        
-        return lex;
-    } // lexicalify()
+	public Collection getNets() {
+		return getExpression().getNets();
+	}
 
-    public String toString() 
-    {
-        return lexicalify().toString();
-    }
-    
+	/**
+	 * 
+	 * @return <description>
+	 */
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(Symbol.DOT);
+		lex.append(port.getIdentifier());
+		lex.append(Symbol.OPEN_PARENTHESIS);
+		lex.append(e);
+		lex.append(Symbol.CLOSE_PARENTHESIS);
+
+		return lex;
+	} // lexicalify()
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 }// PortConnection

@@ -25,59 +25,52 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * QualifiedNet is a fully qualfied Net expression, with explicit
- * Module and ModuleInstance components in the name.
+ * QualifiedNet is a fully qualfied Net expression, with explicit Module and
+ * ModuleInstance components in the name.
  * <P>
  * Example...<BR>
  * foo.bar.RESULT
  * <P>
- * Where foo is a Module identifier, bar is a ModuleInstance identifier,
- * and RESULT is a wire name.
+ * Where foo is a Module identifier, bar is a ModuleInstance identifier, and
+ * RESULT is a wire name.
  * <P>
  * Created: Thu Feb 08 2001
- *
+ * 
  * @author abk
  * @version $Id: QualifiedNet.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class QualifiedNet extends Net
-{
+public class QualifiedNet extends Net {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	List qualified_identifiers = new ArrayList();
 
-    List qualified_identifiers = new ArrayList();
-    
-    /**
-     * Constructs a QualifiedNet.
-     */
-    public QualifiedNet(Module module, ModuleInstance[] instances, Net net)
-    {
-        super (net.getType(), net.getIdentifier(), net.getMSB(), net.getLSB());
-    
-        qualified_identifiers.add(module.getIdentifier());
-        
-        for (int i=0; i<instances.length; i++)
-        {
-            qualified_identifiers.add(instances[i].getIdentifier());
-        }
-        
-        qualified_identifiers.add(net.getIdentifier());
-        
-    } // QualifiedNet()
-    
-    public QualifiedNet(Module module, Net net)
-    {
-        this(module, new ModuleInstance[0], net);
-    }
-    
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        for (Iterator it = qualified_identifiers.iterator(); it.hasNext();)
-        {
-            lex.append((Identifier)it.next());
-            if (it.hasNext()) lex.append(Symbol.DOT);
-        }
-        return lex;
-    }
-    
+	/**
+	 * Constructs a QualifiedNet.
+	 */
+	public QualifiedNet(Module module, ModuleInstance[] instances, Net net) {
+		super(net.getType(), net.getIdentifier(), net.getMSB(), net.getLSB());
+
+		qualified_identifiers.add(module.getIdentifier());
+
+		for (int i = 0; i < instances.length; i++) {
+			qualified_identifiers.add(instances[i].getIdentifier());
+		}
+
+		qualified_identifiers.add(net.getIdentifier());
+
+	} // QualifiedNet()
+
+	public QualifiedNet(Module module, Net net) {
+		this(module, new ModuleInstance[0], net);
+	}
+
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+		for (Iterator it = qualified_identifiers.iterator(); it.hasNext();) {
+			lex.append((Identifier) it.next());
+			if (it.hasNext())
+				lex.append(Symbol.DOT);
+		}
+		return lex;
+	}
+
 } // end of class QualifiedNet

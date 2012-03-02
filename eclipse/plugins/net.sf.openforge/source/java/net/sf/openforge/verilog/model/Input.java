@@ -22,27 +22,22 @@ package net.sf.openforge.verilog.model;
 
 /**
  * Input is a Net which represents a Module input port.
- *
+ * 
  * <P>
- *
+ * 
  * Created: Fri Feb 09 2001
- *
+ * 
  * @author abk
  * @version $Id: Input.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Input extends Net
-{
+public class Input extends Net {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	public Input(Identifier id, int width) {
+		super(Keyword.INPUT, id, width);
+	} // Input(Identifier)
 
-    public Input(Identifier id, int width) 
-    {
-        super(Keyword.INPUT, id, width);
-    } // Input(Identifier)
-    
-    public Input(String id, int width)
-    {
-        this(new Identifier(id), width);
-    } // Input(String)
+	public Input(String id, int width) {
+		this(new Identifier(id), width);
+	} // Input(String)
 
 } // end of class Input

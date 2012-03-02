@@ -32,8 +32,6 @@ package net.sf.openforge.verilog.model;
  * @version $Id: Compare.java 2 2005-06-09 20:00:48Z imiller $
  */
 public abstract class Compare extends Operation {
-	@SuppressWarnings("unused")
-	private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
 
 	public Compare(Symbol op, Expression left, Expression right) {
 		super(op, left, right);

@@ -39,9 +39,6 @@ import java.util.HashSet;
  */
 public class BaseNumber implements VerilogElement, Expression {
 
-	@SuppressWarnings("unused")
-	private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-
 	private Constant number;
 
 	public BaseNumber(Constant number) {

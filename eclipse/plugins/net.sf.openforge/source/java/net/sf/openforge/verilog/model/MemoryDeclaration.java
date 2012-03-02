@@ -23,99 +23,89 @@ package net.sf.openforge.verilog.model;
 import java.util.Iterator;
 
 /**
- * MemoryDeclaration declares a memory. All {@link Register Registers} added
- * to the declaration must of the same bit-width and address depth.
+ * MemoryDeclaration declares a memory. All {@link Register Registers} added to
+ * the declaration must of the same bit-width and address depth.
  * <P>
  * Example:<BR>
  * <CODE>
  * reg [31:0] memA [255:0]; // declares a 32-bit wide memory which is 256 words deep
  * </CODE>
- *
+ * 
  * <P>
- *
+ * 
  * Created: Fri Feb 09 2001
- *
+ * 
  * @author abk
  * @version $Id: MemoryDeclaration.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class MemoryDeclaration extends NetDeclaration
-    implements Statement
-{
+public class MemoryDeclaration extends NetDeclaration implements Statement {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-    
-    int upper;
-    int lower;
-    
-    /**
-     * Constucts a new MemoryDeclaration for a Register with specified
-     * upper and lower addresses.
-     *
-     * @param memory the Register base for the memory
-     * @param upper the upper address limit
-     * @param lower the lower address limit
-     */
-    public MemoryDeclaration(Register memory, int upper, int lower) 
-    {
-        super(memory);
-      
-        this.upper = upper;
-        this.lower = lower;
-        
-    } // MemoryDeclaration()
+	int upper;
+	int lower;
 
-    public MemoryDeclaration(Register[] memories, int upper, int lower)
-    {
-        this(memories[0], upper, lower);
-        
-        for (int i=1; i<memories.length; i++)
-        {
-            add(memories[i]);
-        }
-    } // MemoryDeclaration()
+	/**
+	 * Constucts a new MemoryDeclaration for a Register with specified upper and
+	 * lower addresses.
+	 * 
+	 * @param memory
+	 *            the Register base for the memory
+	 * @param upper
+	 *            the upper address limit
+	 * @param lower
+	 *            the lower address limit
+	 */
+	public MemoryDeclaration(Register memory, int upper, int lower) {
+		super(memory);
 
-    public MemoryDeclaration (InitializedMemory mem)
-    {
-        this(mem, mem.depth()-1, 0);
-    }
+		this.upper = upper;
+		this.lower = lower;
 
-    public void add(Register memory)
-    {
-        super.add(memory);
-    }
+	} // MemoryDeclaration()
 
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(type);
+	public MemoryDeclaration(Register[] memories, int upper, int lower) {
+		this(memories[0], upper, lower);
 
-        //
-        // Only declare the net, output, input, wire, register, etc as
-        // a vector if the width is greater than 1 bit.
-        //
-        if (width > 1)
-        {
-            lex.append(new Range(msb, lsb));
-        }
-        
-        for (Iterator it = nets.iterator(); it.hasNext();)
-        {
-            lex.append(((Net)it.next()).getIdentifier());
-            lex.append(new Range(upper, lower));
-            if (it.hasNext()) lex.append(Symbol.COMMA);
-        }
+		for (int i = 1; i < memories.length; i++) {
+			add(memories[i]);
+		}
+	} // MemoryDeclaration()
 
-        lex.append(Symbol.SEMICOLON);
+	public MemoryDeclaration(InitializedMemory mem) {
+		this(mem, mem.depth() - 1, 0);
+	}
 
-        return lex;
-        
-    } // lexicalify()
+	public void add(Register memory) {
+		super.add(memory);
+	}
 
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-    
-    
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(type);
+
+		//
+		// Only declare the net, output, input, wire, register, etc as
+		// a vector if the width is greater than 1 bit.
+		//
+		if (width > 1) {
+			lex.append(new Range(msb, lsb));
+		}
+
+		for (Iterator it = nets.iterator(); it.hasNext();) {
+			lex.append(((Net) it.next()).getIdentifier());
+			lex.append(new Range(upper, lower));
+			if (it.hasNext())
+				lex.append(Symbol.COMMA);
+		}
+
+		lex.append(Symbol.SEMICOLON);
+
+		return lex;
+
+	} // lexicalify()
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 } // end of class MemoryDeclaration

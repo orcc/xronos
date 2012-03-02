@@ -21,52 +21,52 @@
 package net.sf.openforge.verilog.model;
 
 /**
- * Logical provides a collection of nested classes to represent comparison operations.
- * These operations return a single bit result of 0 or 1.
+ * Logical provides a collection of nested classes to represent comparison
+ * operations. These operations return a single bit result of 0 or 1.
  * <P>
- *
+ * 
  * Created: Fri Mar 02 2001
- *
+ * 
  * @author abk
  * @version $Id: Logical.java 2 2005-06-09 20:00:48Z imiller $
  */
-public abstract class Logical extends Operation
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public abstract class Logical extends Operation {
 
-    public Logical(Symbol op, Expression left, Expression right) 
-    {
-        super(op, left, right);
-    } // Logical()
-    
-    public int getWidth()
-    {
-        return 1;
-    }
-    
-    public boolean isOrdered() { return false; }
-    
-    ////////////////////////////////////////////////
-    //
-    // inner classes
-    //
-    
-    public static final class And extends Logical
-    {
-        public And(Expression left, Expression right)
-        {
-            super(Symbol.LOGICAL_AND, left, right);
-        }
-        public int precedence() { return LOGICAL_AND_PRECEDENCE; }
-    } // end of inner class And
+	public Logical(Symbol op, Expression left, Expression right) {
+		super(op, left, right);
+	} // Logical()
 
-    public static final class Or extends Logical
-    {
-        public Or(Expression left, Expression right)
-        {
-            super(Symbol.LOGICAL_OR, left, right);
-        }
-        public int precedence() { return LOGICAL_OR_PRECEDENCE; }
-    } // end of inner class Or
+	public int getWidth() {
+		return 1;
+	}
+
+	public boolean isOrdered() {
+		return false;
+	}
+
+	// //////////////////////////////////////////////
+	//
+	// inner classes
+	//
+
+	public static final class And extends Logical {
+		public And(Expression left, Expression right) {
+			super(Symbol.LOGICAL_AND, left, right);
+		}
+
+		public int precedence() {
+			return LOGICAL_AND_PRECEDENCE;
+		}
+	} // end of inner class And
+
+	public static final class Or extends Logical {
+		public Or(Expression left, Expression right) {
+			super(Symbol.LOGICAL_OR, left, right);
+		}
+
+		public int precedence() {
+			return LOGICAL_OR_PRECEDENCE;
+		}
+	} // end of inner class Or
 
 } // end of class Logical

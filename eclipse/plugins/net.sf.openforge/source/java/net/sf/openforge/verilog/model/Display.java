@@ -27,56 +27,50 @@ import java.util.Set;
 
 /**
  * Display.java
- *
- *
- * <p>Created: Wed Jan  8 12:20:09 2003
- *
+ * 
+ * 
+ * <p>
+ * Created: Wed Jan 8 12:20:09 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: Display.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Display implements Statement 
-{
+public class Display implements Statement {
 
-    protected Statement expr;
-    
-    public Display (Statement stat)
-    {
-        this.expr = stat;
-    }
+	protected Statement expr;
 
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Symbol.DOLLAR);
-        lex.append(Keyword.DISPLAY);
+	public Display(Statement stat) {
+		this.expr = stat;
+	}
 
-        if (this.expr != null)
-        {
-            lex.append(Symbol.OPEN_PARENTHESIS);
-            lex.append(expr);
-            lex.append(Symbol.CLOSE_PARENTHESIS);
-        }
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
 
-        lex.append(Symbol.SEMICOLON);
-        
-        return lex;
-    } // lexicalify()
+		lex.append(Symbol.DOLLAR);
+		lex.append(Keyword.DISPLAY);
 
-    public Collection getNets()
-    {
-        Set nets = new HashSet();
+		if (this.expr != null) {
+			lex.append(Symbol.OPEN_PARENTHESIS);
+			lex.append(expr);
+			lex.append(Symbol.CLOSE_PARENTHESIS);
+		}
 
-        if (expr != null)
-            nets.addAll(expr.getNets());
+		lex.append(Symbol.SEMICOLON);
 
-        return nets;
-    } // getNets();
-    
+		return lex;
+	} // lexicalify()
 
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
+	public Collection getNets() {
+		Set nets = new HashSet();
+
+		if (expr != null)
+			nets.addAll(expr.getNets());
+
+		return nets;
+	} // getNets();
+
+	public String toString() {
+		return lexicalify().toString();
+	}
 
 }// Display

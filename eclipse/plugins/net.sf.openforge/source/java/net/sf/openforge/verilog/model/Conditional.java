@@ -24,9 +24,9 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * Conditional selects an expression basd on the value of a condition expression.
- * If the given condition expression is multi-bit, then it will be wrapped in a
- * logical compare against non-zero.
+ * Conditional selects an expression basd on the value of a condition
+ * expression. If the given condition expression is multi-bit, then it will be
+ * wrapped in a logical compare against non-zero.
  * <P>
  * Example:<BR>
  * <CODE>
@@ -34,76 +34,75 @@ import java.util.HashSet;
  * </CODE>
  * <P>
  * Created: Fri Mar 02 2001
- *
+ * 
  * @author abk
  * @version $Id: Conditional.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Conditional implements Expression
-{
+public class Conditional implements Expression {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-    
-    private Expression condition;
-    private Expression left;
-    private Expression right;
+	private Expression condition;
+	private Expression left;
+	private Expression right;
 
-    public Conditional(Expression condition, Expression left, Expression right) 
-    {
-        this.left = left;
-        this.right = right;
-        
-        if (left.getWidth() != right.getWidth()) throw new Operation.UnbalancedOperationException(left, right);
-        
-        if (condition.getWidth() > 1) {
-            this.condition = new Group(new Compare.NEQ(condition, new HexNumber(0, condition.getWidth())));
-        } else {
-            this.condition = condition;
-        }
-    } // Conditional()
+	public Conditional(Expression condition, Expression left, Expression right) {
+		this.left = left;
+		this.right = right;
 
-    public int getWidth()
-    {
-        return left.getWidth(); // left and right are guaranteed to be the same size
-    } // getWidth()
+		if (left.getWidth() != right.getWidth())
+			throw new Operation.UnbalancedOperationException(left, right);
 
-    public Collection getNets()
-    {
-        HashSet nets = new HashSet();
-        
-        nets.addAll(condition.getNets());
-        nets.addAll(left.getNets());
-        nets.addAll(right.getNets());
+		if (condition.getWidth() > 1) {
+			this.condition = new Group(new Compare.NEQ(condition,
+					new HexNumber(0, condition.getWidth())));
+		} else {
+			this.condition = condition;
+		}
+	} // Conditional()
 
-        return nets;
-    } // getNets()
-    
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        lex.append(this.condition);
-        lex.append(Symbol.CONDITION);
-        lex.append(new Else(left, right));
-        return lex;
-    } // Conditional()
+	public int getWidth() {
+		return left.getWidth(); // left and right are guaranteed to be the same
+								// size
+	} // getWidth()
 
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
+	public Collection getNets() {
+		HashSet nets = new HashSet();
 
-    ////////////////////////////////////////////////
-    //
-    // inner classes
-    //
-    
-    public static final class Else extends Operation
-    {
-        public Else(Expression left, Expression right)
-        {
-            super(Symbol.CONDITION_ELSE, left, right);
-        }
-        public int precedence() { return CONDITIONAL_PRECEDENCE; }
-        public boolean isOrdered() { return true; }
-    } // end of inner class Else
-    
+		nets.addAll(condition.getNets());
+		nets.addAll(left.getNets());
+		nets.addAll(right.getNets());
+
+		return nets;
+	} // getNets()
+
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+		lex.append(this.condition);
+		lex.append(Symbol.CONDITION);
+		lex.append(new Else(left, right));
+		return lex;
+	} // Conditional()
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
+	// //////////////////////////////////////////////
+	//
+	// inner classes
+	//
+
+	public static final class Else extends Operation {
+		public Else(Expression left, Expression right) {
+			super(Symbol.CONDITION_ELSE, left, right);
+		}
+
+		public int precedence() {
+			return CONDITIONAL_PRECEDENCE;
+		}
+
+		public boolean isOrdered() {
+			return true;
+		}
+	} // end of inner class Else
+
 } // end of class Conditional

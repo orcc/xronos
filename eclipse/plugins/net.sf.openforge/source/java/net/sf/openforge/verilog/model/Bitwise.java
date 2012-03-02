@@ -21,91 +21,109 @@
 package net.sf.openforge.verilog.model;
 
 /**
- * Bitwise provides a collection of nested classes to represent bitwise operations.
- *
+ * Bitwise provides a collection of nested classes to represent bitwise
+ * operations.
+ * 
  * <P>
- *
+ * 
  * Created: Fri Mar 02 2001
- *
+ * 
  * @author abk
  * @version $Id: Bitwise.java 2 2005-06-09 20:00:48Z imiller $
  */
-public abstract class Bitwise extends Operation
-{
-	@SuppressWarnings("unused")
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public abstract class Bitwise extends Operation {
 
-    public Bitwise(Symbol op, Expression left, Expression right) 
-    {
-        super(op, left, right);
-    } // Bitwise()
+	public Bitwise(Symbol op, Expression left, Expression right) {
+		super(op, left, right);
+	} // Bitwise()
 
-    
-    ////////////////////////////////////////////////
-    //
-    // inner classes
-    //
-    
-    public static final class And extends Bitwise
-    {
-        public And(Expression left, Expression right)
-        {
-            super(Symbol.AND, left, right);
-        }
-        public int precedence() { return BITWISE_AND_PRECEDENCE; }
-        public boolean isOrdered() { return false; }
-    } // end of inner class And
-    
-    public static final class Or extends Bitwise
-    {
-        public Or(Expression left, Expression right)
-        {
-            super(Symbol.OR, left, right);
-        }
-        public int precedence() { return BITWISE_OR_PRECEDENCE; }
-        public boolean isOrdered() { return false; }
-    } // end of inner class Or
-    
-    public static final class Nand extends Bitwise
-    {
-        public Nand(Expression left, Expression right)
-        {
-            super(Symbol.NAND, left, right);
-        }
-        public int precedence() { return REDUCTION_NAND_PRECEDENCE; }
-        public boolean isOrdered() { return false; }
-    } // end of inner class Nand
-    
-    public static final class Nor extends Bitwise
-    {
-        public Nor(Expression left, Expression right)
-        {
-            super(Symbol.NOR, left, right);
-        }
-        public int precedence() { return REDUCTION_NOR_PRECEDENCE; }
-        public boolean isOrdered() { return false; }
-    } // end of inner class Nor
-    
-    public static final class Xor extends Bitwise
-    {
-        public Xor(Expression left, Expression right)
-        {
-            super(Symbol.XOR, left, right);
-        }
-        public int precedence() { return REDUCTION_XOR_PRECEDENCE; }
-        public boolean isOrdered() { return false; }
-    } // end of inner class Xor
-    
-    public static final class Xnor extends Bitwise
-    {
-        public Xnor(Expression left, Expression right)
-        {
-            super(Symbol.XNOR, left, right);
-        }
-        public int precedence() { return REDUCTION_XNOR_PRECEDENCE; }
-        public boolean isOrdered() { return false; }
-    } // end of inner class Xnor
-    
+	// //////////////////////////////////////////////
+	//
+	// inner classes
+	//
 
+	public static final class And extends Bitwise {
+		public And(Expression left, Expression right) {
+			super(Symbol.AND, left, right);
+		}
+
+		public int precedence() {
+			return BITWISE_AND_PRECEDENCE;
+		}
+
+		public boolean isOrdered() {
+			return false;
+		}
+	} // end of inner class And
+
+	public static final class Or extends Bitwise {
+		public Or(Expression left, Expression right) {
+			super(Symbol.OR, left, right);
+		}
+
+		public int precedence() {
+			return BITWISE_OR_PRECEDENCE;
+		}
+
+		public boolean isOrdered() {
+			return false;
+		}
+	} // end of inner class Or
+
+	public static final class Nand extends Bitwise {
+		public Nand(Expression left, Expression right) {
+			super(Symbol.NAND, left, right);
+		}
+
+		public int precedence() {
+			return REDUCTION_NAND_PRECEDENCE;
+		}
+
+		public boolean isOrdered() {
+			return false;
+		}
+	} // end of inner class Nand
+
+	public static final class Nor extends Bitwise {
+		public Nor(Expression left, Expression right) {
+			super(Symbol.NOR, left, right);
+		}
+
+		public int precedence() {
+			return REDUCTION_NOR_PRECEDENCE;
+		}
+
+		public boolean isOrdered() {
+			return false;
+		}
+	} // end of inner class Nor
+
+	public static final class Xor extends Bitwise {
+		public Xor(Expression left, Expression right) {
+			super(Symbol.XOR, left, right);
+		}
+
+		public int precedence() {
+			return REDUCTION_XOR_PRECEDENCE;
+		}
+
+		public boolean isOrdered() {
+			return false;
+		}
+	} // end of inner class Xor
+
+	public static final class Xnor extends Bitwise {
+		public Xnor(Expression left, Expression right) {
+			super(Symbol.XNOR, left, right);
+		}
+
+		public int precedence() {
+			return REDUCTION_XNOR_PRECEDENCE;
+		}
+
+		public boolean isOrdered() {
+			return false;
+		}
+	} // end of inner class Xnor
 
 } // end of class Bitwise

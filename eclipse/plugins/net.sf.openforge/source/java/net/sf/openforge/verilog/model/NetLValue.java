@@ -21,15 +21,13 @@
 package net.sf.openforge.verilog.model;
 
 /**
- * NetLValue designates a Net form which can appear
- * on the left hand side of assignments.
+ * NetLValue designates a Net form which can appear on the left hand side of
+ * assignments.
  * <P>
  * 
  * @author <a href="mailto:abk@ladd">Andy Kollegger</a>
  * @version $Id: NetLValue.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public interface NetLValue extends Expression 
-{
-    static final String _RCS_ = "$Rev: 2 $";
+public interface NetLValue extends Expression {
 } // NetLValue

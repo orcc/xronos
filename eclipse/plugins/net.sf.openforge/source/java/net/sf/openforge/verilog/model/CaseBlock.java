@@ -46,9 +46,6 @@ import java.util.List;
  */
 public class CaseBlock implements Statement {
 
-	@SuppressWarnings("unused")
-	private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-
 	private Expression caseControl;
 
 	private Group controlGroup;

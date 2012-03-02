@@ -22,27 +22,22 @@ package net.sf.openforge.verilog.model;
 
 /**
  * Inout a Net which represents a Module input port.
- *
+ * 
  * <P>
- *
+ * 
  * Created: Fri Feb 09 2001
- *
+ * 
  * @author abk
  * @version $Id: Inout.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Inout extends Net
-{
+public class Inout extends Net {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	public Inout(Identifier id, int width) {
+		super(Keyword.INOUT, id, width);
+	} // Inout(Identifier)
 
-    public Inout(Identifier id, int width) 
-    {
-        super(Keyword.INOUT, id, width);
-    } // Inout(Identifier)
-    
-    public Inout(String id, int width)
-    {
-        this(new Identifier(id), width);
-    } // Inout(String)
+	public Inout(String id, int width) {
+		this(new Identifier(id), width);
+	} // Inout(String)
 
 } // end of class Inout

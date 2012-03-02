@@ -22,27 +22,22 @@ package net.sf.openforge.verilog.model;
 
 /**
  * Output is a Net which represents a Module input port.
- *
+ * 
  * <P>
- *
+ * 
  * Created: Fri Feb 09 2001
- *
+ * 
  * @author abk
  * @version $Id: Output.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Output extends Net
-{
+public class Output extends Net {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	public Output(Identifier id, int width) {
+		super(Keyword.OUTPUT, id, width);
+	} // Output(Identifier)
 
-    public Output(Identifier id, int width) 
-    {
-        super(Keyword.OUTPUT, id, width);
-    } // Output(Identifier)
-    
-    public Output(String id, int width)
-    {
-        this(new Identifier(id), width);
-    } // Output(String)
+	public Output(String id, int width) {
+		this(new Identifier(id), width);
+	} // Output(String)
 
 } // end of class Output

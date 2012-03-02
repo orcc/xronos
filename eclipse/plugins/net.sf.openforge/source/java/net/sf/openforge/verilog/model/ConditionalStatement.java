@@ -24,9 +24,9 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * A ConditionalStatement is the traditional if-else branching construct. As with 
- * the simplified Conditional (a?b:c) construct, an expression with width>1 will
- * be grouped into a compare against non-zero.
+ * A ConditionalStatement is the traditional if-else branching construct. As
+ * with the simplified Conditional (a?b:c) construct, an expression with width>1
+ * will be grouped into a compare against non-zero.
  * <P>
  * Example:<BR>
  * <CODE>
@@ -37,72 +37,64 @@ import java.util.HashSet;
  * </CODe>
  * <P>
  * Created: Tue Jun 26 15:25:21 2001
- *
+ * 
  * @author <a href="mailto: ">Andy Kollegger</a>
  * @version $Id: ConditionalStatement.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class ConditionalStatement 
-     implements Statement
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class ConditionalStatement implements Statement {
 
-    Expression condition;
-    Statement trueBranch;
-    Statement falseBranch;
+	Expression condition;
+	Statement trueBranch;
+	Statement falseBranch;
 
-    public ConditionalStatement (Expression condition, Statement trueBranch)
-    {
-        this(condition, trueBranch, null);
-    }
+	public ConditionalStatement(Expression condition, Statement trueBranch) {
+		this(condition, trueBranch, null);
+	}
 
-    public ConditionalStatement (Expression condition, Statement trueBranch, Statement falseBranch)
-    {
-        if (condition.getWidth() > 1) {
-            this.condition = new Group(new Compare.NEQ(condition, new HexNumber(0, condition.getWidth())));
-        } else {
-            this.condition = condition;
-        }
+	public ConditionalStatement(Expression condition, Statement trueBranch,
+			Statement falseBranch) {
+		if (condition.getWidth() > 1) {
+			this.condition = new Group(new Compare.NEQ(condition,
+					new HexNumber(0, condition.getWidth())));
+		} else {
+			this.condition = condition;
+		}
 
-        this.trueBranch = trueBranch;
-        this.falseBranch = falseBranch;
-    }
-    
-    public Collection getNets()
-    {
-        HashSet nets = new HashSet();
-        
-        nets.addAll(condition.getNets());
-        nets.addAll(trueBranch.getNets());
-        if (falseBranch != null) 
-        {
-            nets.addAll(falseBranch.getNets());
-        }
-        
-        return nets;
-    }
-    
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Keyword.IF);
-        lex.append(Symbol.OPEN_PARENTHESIS);
-        lex.append(condition);
-        lex.append(Symbol.CLOSE_PARENTHESIS);
-        lex.append(trueBranch);
+		this.trueBranch = trueBranch;
+		this.falseBranch = falseBranch;
+	}
 
-        if (falseBranch != null)
-        {
-            lex.append(Keyword.ELSE);
-            lex.append(falseBranch);
-        }
-        return lex;
-    } // lexicalify()
+	public Collection getNets() {
+		HashSet nets = new HashSet();
 
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-    
+		nets.addAll(condition.getNets());
+		nets.addAll(trueBranch.getNets());
+		if (falseBranch != null) {
+			nets.addAll(falseBranch.getNets());
+		}
+
+		return nets;
+	}
+
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(Keyword.IF);
+		lex.append(Symbol.OPEN_PARENTHESIS);
+		lex.append(condition);
+		lex.append(Symbol.CLOSE_PARENTHESIS);
+		lex.append(trueBranch);
+
+		if (falseBranch != null) {
+			lex.append(Keyword.ELSE);
+			lex.append(falseBranch);
+		}
+		return lex;
+	} // lexicalify()
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 }// end of class ConditionalStatement

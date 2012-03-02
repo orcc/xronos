@@ -22,32 +22,26 @@ package net.sf.openforge.verilog.model;
 
 /**
  * Decimal represents a decimal value.
- *
+ * 
  * <P>
- *
+ * 
  * Created: Wed Feb 28 2001
- *
+ * 
  * @author abk
  * @version $Id: Decimal.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Decimal extends BaseNumber
-{
+public class Decimal extends BaseNumber {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	public Decimal(Number n) {
+		this(new Constant(n));
+	}
 
-    public Decimal(Number n)
-    {
-        this(new Constant(n));
-    }
-    
-    public Decimal(long l, int size)
-    {
-        this(new Constant(l, size));
-    }
+	public Decimal(long l, int size) {
+		this(new Constant(l, size));
+	}
 
-    public Decimal(Constant n) 
-    {
-        super(n);
-    } // Decimal()
-    
+	public Decimal(Constant n) {
+		super(n);
+	} // Decimal()
+
 } // end of class Decimal

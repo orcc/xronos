@@ -39,9 +39,6 @@ import java.util.Collection;
  */
 public class Always implements Statement {
 
-	@SuppressWarnings("unused")
-	private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-
 	Statement body;
 
 	public Collection getNets() {

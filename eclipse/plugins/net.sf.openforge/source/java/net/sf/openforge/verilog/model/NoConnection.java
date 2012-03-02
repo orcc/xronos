@@ -20,62 +20,53 @@
  */
 package net.sf.openforge.verilog.model;
 
-
 /**
- * NoConnection represents a no connection to a module
- * port in a ModuleInstance
- *
+ * NoConnection represents a no connection to a module port in a ModuleInstance
+ * 
  * Created: Tue Mar 12 16:20:29 2002
- *
+ * 
  * @author ysyu
  * @version $Id: NoConnection.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class NoConnection implements VerilogElement
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class NoConnection implements VerilogElement {
 
-    Net port;
+	Net port;
 
-    /**
-     * Create a no connection between the specified port
-     *
-     * @param port the module instance port 
-     */
-    public NoConnection (Net port)
-    {
-        this.port = port;        
-    }
+	/**
+	 * Create a no connection between the specified port
+	 * 
+	 * @param port
+	 *            the module instance port
+	 */
+	public NoConnection(Net port) {
+		this.port = port;
+	}
 
-    public Identifier getPortID()
-    {
-        return port.getIdentifier();
-    }
-    
-    public Net getPort()
-    {
-        return port;
-    }
+	public Identifier getPortID() {
+		return port.getIdentifier();
+	}
 
-    /**
-     *
-     * @return <description>
-     */
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Symbol.DOT);
-        lex.append(port.getIdentifier());
-        lex.append(Symbol.OPEN_PARENTHESIS);
-        lex.append(Symbol.CLOSE_PARENTHESIS);
-        
-        return lex;
-    }
+	public Net getPort() {
+		return port;
+	}
 
-    public String toString() 
-    {
-        return lexicalify().toString();
-    }
+	/**
+	 * 
+	 * @return <description>
+	 */
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(Symbol.DOT);
+		lex.append(port.getIdentifier());
+		lex.append(Symbol.OPEN_PARENTHESIS);
+		lex.append(Symbol.CLOSE_PARENTHESIS);
+
+		return lex;
+	}
+
+	public String toString() {
+		return lexicalify().toString();
+	}
 }
-

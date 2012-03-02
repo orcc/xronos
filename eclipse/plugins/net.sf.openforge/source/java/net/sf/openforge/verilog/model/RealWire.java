@@ -23,44 +23,33 @@ package net.sf.openforge.verilog.model;
 
 /**
  * 
- * RealWire is to enable the use of 'real' variables in the 
- * testbench for behavioural code. 'real' is not exactly a
- * net type but is used here as a hack !
+ * RealWire is to enable the use of 'real' variables in the testbench for
+ * behavioural code. 'real' is not exactly a net type but is used here as a hack
+ * !
  * 
- * <p>Created: Wed Jan  8 15:43:29 2003
- *
+ * <p>
+ * Created: Wed Jan 8 15:43:29 2003
+ * 
  * @author gandhij, last modified by $Author: imiller $
  * @version $Id: RealWire.java 2 2005-06-09 20:00:48Z imiller $
  */
 
 public class RealWire extends Net {
-	
-	/** Revision */
-    private static final String _RCS_ = "$Rev: 2 $";
 
+	public RealWire(Identifier id, int width) {
+		super(Keyword.REAL, id, width);
+	} // RealWire(Identifier, width)
 
-    public RealWire(Identifier id, int width) 
-    {
-        super(Keyword.REAL, id, width);
-    } // RealWire(Identifier, width)
+	public RealWire(String id, int width) {
+		this(new Identifier(id), width);
+	} // RealWire(String, width)
 
-    
-    public RealWire(String id, int width)
-    {
-        this(new Identifier(id), width);
-    } // RealWire(String, width)
+	public RealWire(Identifier id, int msb, int lsb) {
+		super(Keyword.REAL, id, msb, lsb);
+	} // RealWire(Identifier, msb, lsb)
 
-
-    public RealWire(Identifier id, int msb, int lsb) 
-    {
-        super(Keyword.REAL, id, msb, lsb);
-    } // RealWire(Identifier, msb, lsb)
-
-    
-    public RealWire(String id, int msb, int lsb)
-    {
-        this(new Identifier(id), msb, lsb);
-    } // RealWire(String, msb, lsb)
+	public RealWire(String id, int msb, int lsb) {
+		this(new Identifier(id), msb, lsb);
+	} // RealWire(String, msb, lsb)
 
 }
-

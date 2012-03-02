@@ -23,34 +23,27 @@ package net.sf.openforge.verilog.model;
 
 /**
  * BinaryNumber is a number expressed in hexadecimal.
- *
+ * 
  * <P>
- *
+ * 
  * Created: Wed Feb 28 2001
- *
+ * 
  * @author abk
  * @version $Id: BinaryNumber.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class BinaryNumber extends BaseNumber
-{
+public class BinaryNumber extends BaseNumber {
 
-    @SuppressWarnings("unused")
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	public BinaryNumber(Constant n) {
+		super(n);
+	}
 
-    public BinaryNumber(Constant n)
-    {
-        super(n);
-    }
-    
-    public BinaryNumber(Number n)
-    {
-        this(new BinaryConstant(n));
-    }
-    
-    public BinaryNumber(long l, int size)
-    {
-        this(new BinaryConstant(l, size));
-    }
+	public BinaryNumber(Number n) {
+		this(new BinaryConstant(n));
+	}
+
+	public BinaryNumber(long l, int size) {
+		this(new BinaryConstant(l, size));
+	}
 
 } // end of class BinaryNumber

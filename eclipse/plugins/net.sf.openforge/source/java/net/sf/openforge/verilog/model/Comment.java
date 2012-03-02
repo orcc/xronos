@@ -36,8 +36,6 @@ import java.util.Iterator;
  * @version $Id: Comment.java 284 2006-08-15 15:43:34Z imiller $
  */
 public class Comment extends PrintWriter {
-	@SuppressWarnings("unused")
-	private static final String _RCS_ = "RCS_REVISION: $Rev: 284 $";
 
 	/** A short comment. */
 	public static final int SHORT = 0;

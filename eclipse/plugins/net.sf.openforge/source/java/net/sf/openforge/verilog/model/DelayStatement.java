@@ -25,54 +25,52 @@ import java.util.Collection;
 
 /**
  * DelayStatement adds a relative delay to a statement of the form:
- * <pre>#<delay> <statement></pre>
- *
- * <p>Created: Thu Aug 22 15:01:52 2002
- *
+ * 
+ * <pre>
+ * #<delay> <statement>
+ * </pre>
+ * 
+ * <p>
+ * Created: Thu Aug 22 15:01:52 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: DelayStatement.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class DelayStatement implements Statement
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class DelayStatement implements Statement {
 
-    private int ticks;
-    private Statement statement;
-    
-    /**
-     * Creates a new delay statement with the given number of ticks by
-     * which to delay the statement
-     *
-     * @param toDelay a value of type 'Statement'
-     * @param ticksToDelay a value of type 'int'
-     */
-    public DelayStatement (Statement toDelay, int ticksToDelay)
-    {
-        this.ticks = ticksToDelay;
-        this.statement = toDelay;
-    }
+	private int ticks;
+	private Statement statement;
 
+	/**
+	 * Creates a new delay statement with the given number of ticks by which to
+	 * delay the statement
+	 * 
+	 * @param toDelay
+	 *            a value of type 'Statement'
+	 * @param ticksToDelay
+	 *            a value of type 'int'
+	 */
+	public DelayStatement(Statement toDelay, int ticksToDelay) {
+		this.ticks = ticksToDelay;
+		this.statement = toDelay;
+	}
 
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Symbol.DELAY);
-        lex.append(new Constant(ticks));
-        lex.append(statement);
-        
-        return lex;
-    }
-    
-    public Collection getNets ()
-    {
-        return statement.getNets();
-    }
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
 
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-    
+		lex.append(Symbol.DELAY);
+		lex.append(new Constant(ticks));
+		lex.append(statement);
+
+		return lex;
+	}
+
+	public Collection getNets() {
+		return statement.getNets();
+	}
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 }
-    

@@ -22,37 +22,32 @@
 package net.sf.openforge.verilog.model;
 
 /**
- * NetDeclarationReversed is a net declaration in which the vector bit
- * notation is in the form of LSB:MSB, ie [0:31].
- *
- *
- * <p>Created: Fri Aug  6 12:25:30 2004
- *
+ * NetDeclarationReversed is a net declaration in which the vector bit notation
+ * is in the form of LSB:MSB, ie [0:31].
+ * 
+ * 
+ * <p>
+ * Created: Fri Aug 6 12:25:30 2004
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: NetDeclarationReversed.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class NetDeclarationReversed extends NetDeclaration
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class NetDeclarationReversed extends NetDeclaration {
 
-    public NetDeclarationReversed ()
-    {
-        super();
-    }
-    
-    public NetDeclarationReversed (Net net)
-    {
-        super(net);
-    }
-    
-    public NetDeclarationReversed (Net[] nets)
-    {
-        super(nets);
-    }
-    
-    protected Range getRange ()
-    {
-        return new RangeReversed(msb, lsb);
-    }
-    
+	public NetDeclarationReversed() {
+		super();
+	}
+
+	public NetDeclarationReversed(Net net) {
+		super(net);
+	}
+
+	public NetDeclarationReversed(Net[] nets) {
+		super(nets);
+	}
+
+	protected Range getRange() {
+		return new RangeReversed(msb, lsb);
+	}
+
 }// NetDeclarationReversed

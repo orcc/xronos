@@ -35,151 +35,128 @@ import net.sf.openforge.verilog.pattern.BusRegister;
  * <CODE>
  * wire [31:0] a, b;
  * </CODE>
- *
+ * 
  * <P>
- *
+ * 
  * Created: Fri Feb 09 2001
- *
+ * 
  * @author abk
  * @version $Id: NetDeclaration.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class NetDeclaration 
-    implements Statement
-{
+public class NetDeclaration implements Statement {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	List nets;
+	HashSet names;
 
-    List nets;
-    HashSet names;
-    
-    Keyword type;
-    int width;
-    int msb;
-    int lsb;
-    
-    public NetDeclaration() 
-    {
-        this.nets = new ArrayList();
-        this.names = new HashSet();
-    }
-    
-    public NetDeclaration(Net net) 
-    {
-        this();
-        
-        nets.add(net);
-        names.add(net.getIdentifier().toString());
-        
-        this.width = net.getWidth();
-        this.lsb = net.getLSB();
-        this.msb = net.getMSB();
-        this.type = net.getType();
-        
-    } // NetDeclaration()
+	Keyword type;
+	int width;
+	int msb;
+	int lsb;
 
-    public NetDeclaration(Net[] nets)
-    {
-        this(nets[0]);
-        
-        for (int i=1; i<nets.length; i++)
-        {
-            add(nets[i]);
-        }
-    } // NetDeclaration()
+	public NetDeclaration() {
+		this.nets = new ArrayList();
+		this.names = new HashSet();
+	}
 
-    public void add(Net net)
-    {
-        if ((net.getWidth() == width) &&
-            (net.getType() == type) &&
-            (net.getLSB() == lsb) &&
-            (net.getMSB() == msb) 
-            )
-        {
-            if (!names.contains(net.getIdentifier().toString())) 
-            {
-                nets.add(net);
-                names.add(net.getIdentifier().toString());
-            } else 
-            {
-                throw new VerilogSyntaxException("Duplicate wire name in declaration.");
-            }
-        } else 
-        {
-            throw new VerilogSyntaxException("Mismatched nets in declaration.");
-        }
-    }
+	public NetDeclaration(Net net) {
+		this();
 
-    public void remove(Net net)
-    {
-        nets.remove(net);
-        names.remove(net.getIdentifier().toString());
-    }
-    
-    public Collection getNets()
-    {
-        return nets;
-    }
-    
-    public Keyword getType()
-    {
-        return type;
-    }
+		nets.add(net);
+		names.add(net.getIdentifier().toString());
 
-    public Lexicality lexicalify()
-    {
-        if (nets.size() == 0)
-        {
-            throw new VerilogSyntaxException("NetDeclaration contains no nets to declare.");
-        }
-        Lexicality lex = new Lexicality();
-        
-        lex.append(type);
+		this.width = net.getWidth();
+		this.lsb = net.getLSB();
+		this.msb = net.getMSB();
+		this.type = net.getType();
 
-        //
-        // Only declare the net, output, input, wire, register, etc as
-        // a vector if the width is greater than 1 bit. Also no width
-        // is specified if the type of net is integer or real
-        //
-        if (width > 1 && type != Keyword.INTEGER && type != Keyword.REAL)
-        {
-            lex.append(getRange());
-        }
-        
-        for (Iterator it = nets.iterator(); it.hasNext();)
-        {
-            Net net = (Net)it.next();
-            lex.append(net.getIdentifier());
-            if (net instanceof BusRegister)
-            {
-                Expression declarationInitial = ((BusRegister)net).getDeclarationInitial();
-                lex.append(Symbol.BLOCKING_ASSIGN);
-                lex.append(declarationInitial);
-            }
-            if (it.hasNext()) lex.append(Symbol.COMMA);
-        }
+	} // NetDeclaration()
 
-        lex.append(Symbol.SEMICOLON);
+	public NetDeclaration(Net[] nets) {
+		this(nets[0]);
 
-        return lex;
-        
-    } // lexicalify()
+		for (int i = 1; i < nets.length; i++) {
+			add(nets[i]);
+		}
+	} // NetDeclaration()
 
-    /**
-     * Returns the Range used for bit select for this NetDeclaration.
-     * This method allows subclasses to override the behavior of how
-     * this range appears in the resulting HDL.
-     *
-     * @return a value of type 'Range'
-     */
-    protected Range getRange ()
-    {
-        return new Range(msb, lsb);
-    }
-    
-    public String toString()
-    {
-        return lexicalify().toString();
-    }
-    
-    
+	public void add(Net net) {
+		if ((net.getWidth() == width) && (net.getType() == type)
+				&& (net.getLSB() == lsb) && (net.getMSB() == msb)) {
+			if (!names.contains(net.getIdentifier().toString())) {
+				nets.add(net);
+				names.add(net.getIdentifier().toString());
+			} else {
+				throw new VerilogSyntaxException(
+						"Duplicate wire name in declaration.");
+			}
+		} else {
+			throw new VerilogSyntaxException("Mismatched nets in declaration.");
+		}
+	}
+
+	public void remove(Net net) {
+		nets.remove(net);
+		names.remove(net.getIdentifier().toString());
+	}
+
+	public Collection getNets() {
+		return nets;
+	}
+
+	public Keyword getType() {
+		return type;
+	}
+
+	public Lexicality lexicalify() {
+		if (nets.size() == 0) {
+			throw new VerilogSyntaxException(
+					"NetDeclaration contains no nets to declare.");
+		}
+		Lexicality lex = new Lexicality();
+
+		lex.append(type);
+
+		//
+		// Only declare the net, output, input, wire, register, etc as
+		// a vector if the width is greater than 1 bit. Also no width
+		// is specified if the type of net is integer or real
+		//
+		if (width > 1 && type != Keyword.INTEGER && type != Keyword.REAL) {
+			lex.append(getRange());
+		}
+
+		for (Iterator it = nets.iterator(); it.hasNext();) {
+			Net net = (Net) it.next();
+			lex.append(net.getIdentifier());
+			if (net instanceof BusRegister) {
+				Expression declarationInitial = ((BusRegister) net)
+						.getDeclarationInitial();
+				lex.append(Symbol.BLOCKING_ASSIGN);
+				lex.append(declarationInitial);
+			}
+			if (it.hasNext())
+				lex.append(Symbol.COMMA);
+		}
+
+		lex.append(Symbol.SEMICOLON);
+
+		return lex;
+
+	} // lexicalify()
+
+	/**
+	 * Returns the Range used for bit select for this NetDeclaration. This
+	 * method allows subclasses to override the behavior of how this range
+	 * appears in the resulting HDL.
+	 * 
+	 * @return a value of type 'Range'
+	 */
+	protected Range getRange() {
+		return new Range(msb, lsb);
+	}
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 } // end of class NetDeclaration

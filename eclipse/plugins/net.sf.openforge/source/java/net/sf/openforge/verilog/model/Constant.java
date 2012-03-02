@@ -25,160 +25,133 @@ import java.util.HashSet;
 
 /**
  * Constant is an unsigned decimal number of immutable size and value.
- *
+ * 
  * <P>
- *
+ * 
  * Created: Wed Feb 28 2001
- *
+ * 
  * @author abk
  * @version $Id: Constant.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Constant extends Token implements Expression
-{
+public class Constant extends Token implements Expression {
 
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+	public static final int TYPE = 4;
 
+	public final static int HEX = 16;
+	public final static int DECIMAL = 10;
+	public final static int OCTAL = 8;
+	public final static int BINARY = 2;
 
-    public static final int TYPE = 4;
+	Number n;
+	int size;
 
-    public final static int HEX = 16;
-    public final static int DECIMAL = 10;
-    public final static int OCTAL = 8;
-    public final static int BINARY = 2;
+	public Constant(Number n) {
+		this.n = n;
 
-    Number n;
-    int size;
-    
-    public Constant(Number n)
-    {
-        this.n = n;
-        
-        if (n instanceof Byte)
-            setSize(8);
-        else if (n instanceof Double)
-            setSize(64);
-        else if (n instanceof Float)
-            setSize(32);
-        else if (n instanceof Integer)
-            setSize(32);
-        else if (n instanceof Long)
-            setSize(64);
-        else if (n instanceof Short)
-            setSize(16);
-        else setSize(64);
-    }
-    
-    public Constant(String s) 
-    {
-        this(new Long(s));
-    }
-    
-    public Constant(String s, int size) 
-    {
-        this(new Long(s));
-        setSize(size);
-    }
-    
-    public Constant(long l)
-    {
-        this(new Long(l));
-    }
+		if (n instanceof Byte)
+			setSize(8);
+		else if (n instanceof Double)
+			setSize(64);
+		else if (n instanceof Float)
+			setSize(32);
+		else if (n instanceof Integer)
+			setSize(32);
+		else if (n instanceof Long)
+			setSize(64);
+		else if (n instanceof Short)
+			setSize(16);
+		else
+			setSize(64);
+	}
 
-    public Constant(long l, int size)
-    {
-        this(new Long(l));
-        setSize(size);
-    }
-        
-    public Constant(int i)
-    {
-        this(new Integer(i));
-    }
-    
-    public Constant(byte b)
-    {
-        this(new Byte(b));
-    }
-    
-    public final int getSize()
-    {
-        return size;
-    }
-    
-    public final Number getValue()
-    {
-        return n;
-    }
-    
-    public int getRadix()
-    {
-        return DECIMAL;
-    }
-    
-    public final long longValue()
-    {
-        return n.longValue();
-    }
-    
-    private void setSize(int size)
-    {
-        this.size = size;
-        
-        n = new Long(mask(getValue().longValue(), size));
-    }
-    
-    protected long mask(long value, int size)
-    {
-        long mask = 0;
-        long power = 1;
-        
-        for (int i=0; i < size; i++)
-        {
-            mask |= power;
-            power *= 2;
-        }
-        
-        return (value & mask);
-    }
+	public Constant(String s) {
+		this(new Long(s));
+	}
 
-    //////////////////////////////
-    // VerilogElement interface
-    
-    public String getToken() 
-    {        
-        String reply = getValue().toString();
-        
-        return reply;
-    }
+	public Constant(String s, int size) {
+		this(new Long(s));
+		setSize(size);
+	}
 
-    public int getType()
-    {
-        return TYPE;
-    }
+	public Constant(long l) {
+		this(new Long(l));
+	}
 
-    /**
-     *
-     * @return <description>
-     */
-    public Collection getNets()
-    {
-        return new HashSet(1);
-    }
+	public Constant(long l, int size) {
+		this(new Long(l));
+		setSize(size);
+	}
 
-    /**
-     *
-     * @return <description>
-     */
-    public int getWidth()
-    {
-        return getSize();
-    }
+	public Constant(int i) {
+		this(new Integer(i));
+	}
+
+	public Constant(byte b) {
+		this(new Byte(b));
+	}
+
+	public final int getSize() {
+		return size;
+	}
+
+	public final Number getValue() {
+		return n;
+	}
+
+	public int getRadix() {
+		return DECIMAL;
+	}
+
+	public final long longValue() {
+		return n.longValue();
+	}
+
+	private void setSize(int size) {
+		this.size = size;
+
+		n = new Long(mask(getValue().longValue(), size));
+	}
+
+	protected long mask(long value, int size) {
+		long mask = 0;
+		long power = 1;
+
+		for (int i = 0; i < size; i++) {
+			mask |= power;
+			power *= 2;
+		}
+
+		return (value & mask);
+	}
+
+	// ////////////////////////////
+	// VerilogElement interface
+
+	public String getToken() {
+		String reply = getValue().toString();
+
+		return reply;
+	}
+
+	public int getType() {
+		return TYPE;
+	}
+
+	/**
+	 * 
+	 * @return <description>
+	 */
+	public Collection getNets() {
+		return new HashSet(1);
+	}
+
+	/**
+	 * 
+	 * @return <description>
+	 */
+	public int getWidth() {
+		return getSize();
+	}
 
 } // end of class Constant
-
-
-
-
-
-
 

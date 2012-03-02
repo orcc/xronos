@@ -21,63 +21,57 @@
  */
 package net.sf.openforge.verilog.model;
 
-
 /**
- * ParameterSetting represents a parameter value specification in a
- * module instantiation
- *
- *
+ * ParameterSetting represents a parameter value specification in a module
+ * instantiation
+ * 
+ * 
  * Created: Thu Aug 08 16:20:29 2006
- *
+ * 
  * @author <a href="mailto:imiller@xilinx.com">Ian Miller</a>
  * @version $Id: ParameterSetting.java 284 2006-08-15 15:43:34Z imiller $
  */
 
-public class ParameterSetting implements VerilogElement  
-{
-    private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
+public class ParameterSetting implements VerilogElement {
 
-    private ArbitraryString paramName;
-    private VerilogElement e;
+	private ArbitraryString paramName;
+	private VerilogElement e;
 
-    public ParameterSetting (String paramName, String e)
-    {
-        this(paramName, new ArbitraryString(e));
-    }
-    
-    /**
-     * Create a Parameter setting to the name of the specified expression
-     *
-     * @param paramName the string name of the parameter to be set.
-     * @param e the expression that defines the value of the parameter
-     */
-    public ParameterSetting (String paramName, VerilogElement e)
-    {
-        this.paramName = new ArbitraryString(paramName);
-        this.e = e;
-    }
+	public ParameterSetting(String paramName, String e) {
+		this(paramName, new ArbitraryString(e));
+	}
 
-    /**
-     *
-     * @return <description>
-     */
-    public Lexicality lexicalify()
-    {
-        Lexicality lex = new Lexicality();
-        
-        lex.append(Symbol.DOT);
-        lex.append(paramName);
-        lex.append(Symbol.OPEN_PARENTHESIS);
-        lex.append(e);
-        lex.append(Symbol.CLOSE_PARENTHESIS);
-        
-        return lex;
-    } // lexicalify()
+	/**
+	 * Create a Parameter setting to the name of the specified expression
+	 * 
+	 * @param paramName
+	 *            the string name of the parameter to be set.
+	 * @param e
+	 *            the expression that defines the value of the parameter
+	 */
+	public ParameterSetting(String paramName, VerilogElement e) {
+		this.paramName = new ArbitraryString(paramName);
+		this.e = e;
+	}
 
-    public String toString() 
-    {
-        return lexicalify().toString();
-    }
-    
+	/**
+	 * 
+	 * @return <description>
+	 */
+	public Lexicality lexicalify() {
+		Lexicality lex = new Lexicality();
+
+		lex.append(Symbol.DOT);
+		lex.append(paramName);
+		lex.append(Symbol.OPEN_PARENTHESIS);
+		lex.append(e);
+		lex.append(Symbol.CLOSE_PARENTHESIS);
+
+		return lex;
+	} // lexicalify()
+
+	public String toString() {
+		return lexicalify().toString();
+	}
+
 }
-
