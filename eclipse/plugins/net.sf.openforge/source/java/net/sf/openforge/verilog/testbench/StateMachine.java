@@ -65,7 +65,6 @@ import net.sf.openforge.verilog.pattern.OrMany;
  * @version $Id: StateMachine.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class StateMachine {
-	private static final String _RCS_ = "$Rev: 2 $";
 
 	// The global signals
 	private Register clock;

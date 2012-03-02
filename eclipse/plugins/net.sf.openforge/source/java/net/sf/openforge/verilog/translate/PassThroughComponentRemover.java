@@ -20,231 +20,216 @@
  */
 package net.sf.openforge.verilog.translate;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Set;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.io.*;
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.ArrayRead;
+import net.sf.openforge.lim.ArrayWrite;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.FilteredVisitor;
+import net.sf.openforge.lim.InBuf;
+import net.sf.openforge.lim.Kicker;
+import net.sf.openforge.lim.Latch;
+import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.Operation;
+import net.sf.openforge.lim.OutBuf;
+import net.sf.openforge.lim.PinRead;
+import net.sf.openforge.lim.PinReferee;
+import net.sf.openforge.lim.PinStateChange;
+import net.sf.openforge.lim.PinWrite;
+import net.sf.openforge.lim.Primitive;
+import net.sf.openforge.lim.Procedure;
+import net.sf.openforge.lim.Scoreboard;
+import net.sf.openforge.lim.UnexpectedVisitationException;
+import net.sf.openforge.lim.Visitable;
+import net.sf.openforge.lim.io.SimplePinRead;
+import net.sf.openforge.lim.memory.MemoryRead;
+import net.sf.openforge.lim.memory.MemoryWrite;
 
 /**
  * PassThroughComponentRemover visits a physically connected LIM. It eliminates
- * pass through components from a {@link Design} since those components
- * buses aren't consumed by any port's value. This will improve the QoR
- * of outputting Verilog. 
- *
- * @author    cwu
- * @version   $Id: PassThroughComponentRemover.java 23 2005-09-09 18:45:32Z imiller $
+ * pass through components from a {@link Design} since those components buses
+ * aren't consumed by any port's value. This will improve the QoR of outputting
+ * Verilog.
+ * 
+ * @author cwu
+ * @version $Id: PassThroughComponentRemover.java 23 2005-09-09 18:45:32Z
+ *          imiller $
  */
-public class PassThroughComponentRemover extends FilteredVisitor
-{
-    private final static String _RCS_ = "$Rev: 23 $";
-    
-    private Set removableComponents = new HashSet();
-    
-    public PassThroughComponentRemover ()
-    {
-        if (_translate.db) _translate.ln("Identifying pass through components...");
-    }
-    
-    public void visit (Design design)
-    {
-        //_translate.d.modGraph(design, "./dotDir");
+public class PassThroughComponentRemover extends FilteredVisitor {
 
-        //         super.visit(design);
-        // No need to call the super, the task calls will be caught
-        // here
-        LinkedList comps = new LinkedList(design.getDesignModule().getComponents());
-        while (!comps.isEmpty())
-        {
-            Visitable vis = (Visitable)comps.remove(0);
-            try
-            {
-                vis.accept(this);
-            }
-            catch (UnexpectedVisitationException uve)
-            {
-                if (vis instanceof Module)
-                {
-                    comps.addAll(((Module)vis).getComponents());
-                }
-                else
-                {
-                    // Not rethrowing uve b/c it is OK to leave pass
-                    // throughs. 
-                }
-            }
-        }
-        
-        for (Iterator compIter = removableComponents.iterator(); compIter.hasNext();)
-        {
-            Component component = (Component)compIter.next();
-            if (_translate.db) _translate.ln("Removing(Component): " + component.toString());
-            component.getOwner().removeComponent(component);
-        }
-        removableComponents.clear();
+	private Set<Object> removableComponents = new HashSet<Object>();
 
-        // Visit the components of register's endian swappers.
-        /* The physical and swappers will be visited in the super.
-        for (Iterator iter = design.getRegisters().iterator(); iter.hasNext();)
-        {
-            Register reg = (Register)iter.next();
+	public PassThroughComponentRemover() {
+		if (_translate.db)
+			_translate.ln("Identifying pass through components...");
+	}
 
-            Module physical = reg.getPhysicalComponent();
-            if (physical != null)
-            {
-                for (Iterator compIter = physical.getComponents().iterator(); compIter.hasNext();)
-                {
-                   ((Visitable)compIter.next()).accept(this); 
-                }
-            }
-            for (Iterator compIter = removableComponents.iterator(); compIter.hasNext();)
-            {
-                Component component = (Component)compIter.next();
-                if (_translate.db) _translate.ln("Removing(Component): " + component.toString());
-                component.getOwner().removeComponent(component);
-            }
-            removableComponents.clear();
-        }
-        */
-        
-        // Visit the components inside the structural memory.
-        /* The structural memory pieces will get visited by the super.
-        for (Iterator iter = design.getLogicalMemories().iterator(); iter.hasNext();)
-        {
-            LogicalMemory mem = (LogicalMemory)iter.next();
-            StructuralMemory structMem = mem.getStructuralMemory();
-            if (structMem != null)
-            {
-                for (Iterator compIter = structMem.getComponents().iterator(); compIter.hasNext();)
-                {
-                    ((Visitable)compIter.next()).accept(this);
-                }
-            }
-        }
+	public void visit(Design design) {
+		// _translate.d.modGraph(design, "./dotDir");
 
-        for (Iterator compIter = removableComponents.iterator(); compIter.hasNext();)
-        {
-            Component component = (Component)compIter.next();
-            if (_translate.db) _translate.ln("Removing(Component): " + component.toString());
-            component.getOwner().removeComponent(component);
-        }
-        removableComponents.clear();
-        */
-    }
-    
-    public void visit (Procedure procedure)
-    {
-        if (_translate.db) _translate.ln("Checking... " + procedure.toString());
-        traverse(procedure);
-    }
-    
-    public void visit (InBuf inBuf)
-    {
-        preFilterAny(inBuf);
-    }
-    
-    public void visit (OutBuf outBuf)
-    {
-        preFilterAny(outBuf);
-    }
-    
-    public void visit (MemoryRead mr)
-    {
-        preFilterAny(mr);
-        traverse(mr);
-    }
-    
-    public void visit (MemoryWrite mw)
-    {
-        preFilterAny(mw);
-        traverse(mw);
-    }
-    
-    public void visit (ArrayRead ar)
-    {
-        preFilterAny(ar);
-        traverse(ar);
-    }
-    
-    public void visit (ArrayWrite aw)
-    {
-        preFilterAny(aw);
-        traverse(aw);
-    }
+		// super.visit(design);
+		// No need to call the super, the task calls will be caught
+		// here
+		LinkedList<Object> comps = new LinkedList<Object>(design
+				.getDesignModule().getComponents());
+		while (!comps.isEmpty()) {
+			Visitable vis = (Visitable) comps.remove(0);
+			try {
+				vis.accept(this);
+			} catch (UnexpectedVisitationException uve) {
+				if (vis instanceof Module) {
+					comps.addAll(((Module) vis).getComponents());
+				} else {
+					// Not rethrowing uve b/c it is OK to leave pass
+					// throughs.
+				}
+			}
+		}
 
-    /**
-     * A SimplePinRead, by definition, is always just a passthrough.
-     * This method adds the pin read to the collection of components
-     * to be removed.
-     */
-    public void visit (SimplePinRead pinRead)
-    {
-        preFilterAny(pinRead);
-        removableComponents.add(pinRead);
-    }
-    
-    public void visit (PinRead pinRead)
-    {
-        preFilter(pinRead);
-    }
-    
-    public void visit (PinWrite pinWrite)
-    {
-        preFilter(pinWrite);
-        traverse(pinWrite);
-    }   
-    
-    public void visit (Scoreboard scoreboard)
-    {
-        preFilter(scoreboard);
-        traverse(scoreboard);
-    }
-    
-    public void visit (PinStateChange pinChange)
-    {
-        preFilter(pinChange);
-        traverse(pinChange);
-    }
-    
-    public void visit (PinReferee pinReferee)
-    {
-        preFilter(pinReferee);
-        traverse(pinReferee);
-    }
-    
-    public void visit (Latch latch)
-    {
-        preFilter(latch);
-        traverse(latch);
-    }
-    
-    public void visit (Kicker kicker)
-    {
-        preFilter(kicker);
-        traverse(kicker);
-    }
-    
-    public void preFilterAny (Component c)
-    {
-        if (_translate.db) _translate.ln("Checking... " + c.toString());
-    }
-    
-    public void filter (Operation op)
-    {
-        if (op.isPassThrough())
-        {
-            if (_translate.db) _translate.ln("Found pass through operation: " + op.toString());
-            removableComponents.add(op);
-        }
-    }
-    
-    public void filter (Primitive p)
-    {
-        if (p.isPassThrough())
-        {
-            if (_translate.db) _translate.ln("Found pass through primitive: " + p.toString());
-            removableComponents.add(p);
-        }
-    }
+		for (Iterator<Object> compIter = removableComponents.iterator(); compIter
+				.hasNext();) {
+			Component component = (Component) compIter.next();
+			if (_translate.db)
+				_translate.ln("Removing(Component): " + component.toString());
+			component.getOwner().removeComponent(component);
+		}
+		removableComponents.clear();
+
+		// Visit the components of register's endian swappers.
+		/*
+		 * The physical and swappers will be visited in the super. for (Iterator
+		 * iter = design.getRegisters().iterator(); iter.hasNext();) { Register
+		 * reg = (Register)iter.next();
+		 * 
+		 * Module physical = reg.getPhysicalComponent(); if (physical != null) {
+		 * for (Iterator compIter = physical.getComponents().iterator();
+		 * compIter.hasNext();) { ((Visitable)compIter.next()).accept(this); } }
+		 * for (Iterator compIter = removableComponents.iterator();
+		 * compIter.hasNext();) { Component component =
+		 * (Component)compIter.next(); if (_translate.db)
+		 * _translate.ln("Removing(Component): " + component.toString());
+		 * component.getOwner().removeComponent(component); }
+		 * removableComponents.clear(); }
+		 */
+
+		// Visit the components inside the structural memory.
+		/*
+		 * The structural memory pieces will get visited by the super. for
+		 * (Iterator iter = design.getLogicalMemories().iterator();
+		 * iter.hasNext();) { LogicalMemory mem = (LogicalMemory)iter.next();
+		 * StructuralMemory structMem = mem.getStructuralMemory(); if (structMem
+		 * != null) { for (Iterator compIter =
+		 * structMem.getComponents().iterator(); compIter.hasNext();) {
+		 * ((Visitable)compIter.next()).accept(this); } } }
+		 * 
+		 * for (Iterator compIter = removableComponents.iterator();
+		 * compIter.hasNext();) { Component component =
+		 * (Component)compIter.next(); if (_translate.db)
+		 * _translate.ln("Removing(Component): " + component.toString());
+		 * component.getOwner().removeComponent(component); }
+		 * removableComponents.clear();
+		 */
+	}
+
+	public void visit(Procedure procedure) {
+		if (_translate.db)
+			_translate.ln("Checking... " + procedure.toString());
+		traverse(procedure);
+	}
+
+	public void visit(InBuf inBuf) {
+		preFilterAny(inBuf);
+	}
+
+	public void visit(OutBuf outBuf) {
+		preFilterAny(outBuf);
+	}
+
+	public void visit(MemoryRead mr) {
+		preFilterAny(mr);
+		traverse(mr);
+	}
+
+	public void visit(MemoryWrite mw) {
+		preFilterAny(mw);
+		traverse(mw);
+	}
+
+	public void visit(ArrayRead ar) {
+		preFilterAny(ar);
+		traverse(ar);
+	}
+
+	public void visit(ArrayWrite aw) {
+		preFilterAny(aw);
+		traverse(aw);
+	}
+
+	/**
+	 * A SimplePinRead, by definition, is always just a passthrough. This method
+	 * adds the pin read to the collection of components to be removed.
+	 */
+	public void visit(SimplePinRead pinRead) {
+		preFilterAny(pinRead);
+		removableComponents.add(pinRead);
+	}
+
+	public void visit(PinRead pinRead) {
+		preFilter(pinRead);
+	}
+
+	public void visit(PinWrite pinWrite) {
+		preFilter(pinWrite);
+		traverse(pinWrite);
+	}
+
+	public void visit(Scoreboard scoreboard) {
+		preFilter(scoreboard);
+		traverse(scoreboard);
+	}
+
+	public void visit(PinStateChange pinChange) {
+		preFilter(pinChange);
+		traverse(pinChange);
+	}
+
+	public void visit(PinReferee pinReferee) {
+		preFilter(pinReferee);
+		traverse(pinReferee);
+	}
+
+	public void visit(Latch latch) {
+		preFilter(latch);
+		traverse(latch);
+	}
+
+	public void visit(Kicker kicker) {
+		preFilter(kicker);
+		traverse(kicker);
+	}
+
+	public void preFilterAny(Component c) {
+		if (_translate.db)
+			_translate.ln("Checking... " + c.toString());
+	}
+
+	public void filter(Operation op) {
+		if (op.isPassThrough()) {
+			if (_translate.db)
+				_translate.ln("Found pass through operation: " + op.toString());
+			removableComponents.add(op);
+		}
+	}
+
+	public void filter(Primitive p) {
+		if (p.isPassThrough()) {
+			if (_translate.db)
+				_translate.ln("Found pass through primitive: " + p.toString());
+			removableComponents.add(p);
+		}
+	}
 }
