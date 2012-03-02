@@ -21,24 +21,10 @@
 
 package net.sf.openforge.verilog.mapping;
 
+public class PrimitiveMappedModule extends MappedModule {
 
-public class PrimitiveMappedModule extends MappedModule
-{
-    private static final String _RCS_ = "$Rev: 2 $";
-
-    private String moduleName;
-    private String simInclude;
-    private String synthInclude;
-
-    public PrimitiveMappedModule(String moduleName,
-	String simInclude,
-	String synthInclude)
-    {
-	super(moduleName,simInclude,synthInclude);
-    }
+	public PrimitiveMappedModule(String moduleName, String simInclude,
+			String synthInclude) {
+		super(moduleName, simInclude, synthInclude);
+	}
 }
-
-
-
-
-

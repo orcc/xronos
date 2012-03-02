@@ -21,173 +21,167 @@
 
 package net.sf.openforge.verilog.mapping;
 
-import java.util.prefs.*;
-import java.util.*;
-import java.io.*;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.InvalidPreferencesFormatException;
 
-import net.sf.openforge.app.*;
+import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.app.project.Option;
 import net.sf.openforge.lim.CodeLabel;
-import net.sf.openforge.util.*;
-
+import net.sf.openforge.util.XilinxDevice;
 
 /**
- * Base brokering class for getting mapping information for primitives.  One
+ * Base brokering class for getting mapping information for primitives. One
  * instance is created for the entire JVM.
  * <P>
  * For a specific primitive/part pair, a number of data points are captured.
  * Simulation and Synthesis Include paths, and the Module name are fairly
  * obvious.
- *
+ * 
  * @author "C. Schanck" <cschanck@cschanck>
  * @version 1.0
  * @since 1.0
  */
-public class PrimitiveMapper
-{
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class PrimitiveMapper {
 
-    public static final String UNKNOWN_PART="Unknown Part";
-    public static final String UNKNOWN_XILINX_PART="Xilinx Part";
+	public static final String UNKNOWN_PART = "Unknown Part";
+	public static final String UNKNOWN_XILINX_PART = "Xilinx Part";
 
-    /** The one and only instance */
-    private static PrimitiveMapper instance = null;
+	/** The one and only instance */
+	private static PrimitiveMapper instance = null;
 
-    // Map of primitive+"/"+part :: MappedModule
-    private HashMap mappingStore = new HashMap();
-    
-    /**
-     * Gets the single global instance of PrimitiveMapper.
-     *
-     * @return the single instance, creating it if necessary
-     * @exception IOException XXX: ???
-     * @exception InvalidPreferencesFormatException XXX: ???
-     * @exception BackingStoreException XXX: ???
-     */
-    public static PrimitiveMapper getInstance ()
-    {
-        if (instance == null)
-        {
-            instance = new PrimitiveMapper();
-        }
-        return instance;
-    }
+	// Map of primitive+"/"+part :: MappedModule
+	private Map<String, PrimitiveMappedModule> mappingStore = new HashMap<String, PrimitiveMappedModule>();
 
-    /**
-     * Create an instance based on the info in the filename given.
-     *
-     * @exception IOException if an error occurs
-     * @exception InvalidPreferencesFormatException if an error occurs
-     * @exception BackingStoreException if an error occurs
-     */
-    private PrimitiveMapper()
-    {
-        mappingStore.clear();
-        new BootstrapMapper(mappingStore);
-    }
+	/**
+	 * Gets the single global instance of PrimitiveMapper.
+	 * 
+	 * @return the single instance, creating it if necessary
+	 * @exception IOException
+	 *                XXX: ???
+	 * @exception InvalidPreferencesFormatException
+	 *                XXX: ???
+	 * @exception BackingStoreException
+	 *                XXX: ???
+	 */
+	public static PrimitiveMapper getInstance() {
+		if (instance == null) {
+			instance = new PrimitiveMapper();
+		}
+		return instance;
+	}
 
-    public final PrimitiveMappedModule getMappedModule (String primitiveName, XilinxDevice xd)
-    {
-        String id;
-        PrimitiveMappedModule pmm = null;
-        // if a xilinx part
-        if(xd.isXilinxDevice())
-        {
-            // check full device
-            id=primitiveName+"/"+xd.getFullDeviceName();
-            pmm=makeMappedModule(id);
-            if(pmm!=null)
-            {
-                mappingStore.put(primitiveName,pmm);
-                return pmm;
-            }
+	/**
+	 * Create an instance based on the info in the filename given.
+	 * 
+	 * @exception IOException
+	 *                if an error occurs
+	 * @exception InvalidPreferencesFormatException
+	 *                if an error occurs
+	 * @exception BackingStoreException
+	 *                if an error occurs
+	 */
+	private PrimitiveMapper() {
+		mappingStore.clear();
+		new BootstrapMapper(mappingStore);
+	}
 
-            // check device with no temp
-            id=primitiveName+"/"+xd.getFullDeviceNameNoTemp();
-            pmm=makeMappedModule(id);
-            if(pmm!=null)
-            {
-                mappingStore.put(primitiveName,pmm);
-                return pmm;
-            }
+	public final PrimitiveMappedModule getMappedModule(String primitiveName,
+			XilinxDevice xd) {
+		String id;
+		PrimitiveMappedModule pmm = null;
+		// if a xilinx part
+		if (xd.isXilinxDevice()) {
+			// check full device
+			id = primitiveName + "/" + xd.getFullDeviceName();
+			pmm = makeMappedModule(id);
+			if (pmm != null) {
+				mappingStore.put(primitiveName, pmm);
+				return pmm;
+			}
 
-            // check just the family
-            id=primitiveName+"/"+xd.getFamilyAsString();
-            pmm=makeMappedModule(id);
-            if(pmm!=null)
-            {
-                mappingStore.put(primitiveName,pmm);
-                return pmm;
-            }
-        
-            // give up -- any xilinx part
-            id=primitiveName+"/"+UNKNOWN_XILINX_PART;
-            pmm=makeMappedModule(id);
-            if(pmm!=null)
-            {
-                mappingStore.put(primitiveName,pmm);
-                return pmm;
-            }
-        }
+			// check device with no temp
+			id = primitiveName + "/" + xd.getFullDeviceNameNoTemp();
+			pmm = makeMappedModule(id);
+			if (pmm != null) {
+				mappingStore.put(primitiveName, pmm);
+				return pmm;
+			}
 
-        // check plain verilog
-        id=primitiveName+"/"+UNKNOWN_PART;
-        pmm=makeMappedModule(id);
-        if(pmm!=null)
-        {
-            mappingStore.put(primitiveName,pmm);
-            return pmm;
-        }
+			// check just the family
+			id = primitiveName + "/" + xd.getFamilyAsString();
+			pmm = makeMappedModule(id);
+			if (pmm != null) {
+				mappingStore.put(primitiveName, pmm);
+				return pmm;
+			}
 
-        // nope!
-        return null;
-    }
-    
-    public final PrimitiveMappedModule getMappedModule(String primitiveName)
-    {
-        PrimitiveMappedModule pmm;
-        if(mappingStore.containsKey(primitiveName))
-        {
-            return (PrimitiveMappedModule)mappingStore.get(primitiveName);
-        }
-        XilinxDevice xd = EngineThread.getGenericJob().getPart(CodeLabel.UNSCOPED);
-        pmm = getMappedModule(primitiveName, xd);
-        if (pmm != null)
-        {
-            return pmm;
-        }
+			// give up -- any xilinx part
+			id = primitiveName + "/" + UNKNOWN_XILINX_PART;
+			pmm = makeMappedModule(id);
+			if (pmm != null) {
+				mappingStore.put(primitiveName, pmm);
+				return pmm;
+			}
+		}
 
-        XilinxDevice defaultDevice = EngineThread.getGenericJob().getDefaultPart();
-        pmm = getMappedModule(primitiveName, defaultDevice);
-        if (pmm != null)
-        {
-        	Option op = EngineThread.getGenericJob().getOption(OptionRegistry.XILINX_PART);
-            EngineThread.getGenericJob().warn("No implementation found for " +
-                primitiveName + " for device name: " +
-                op.getValue(CodeLabel.UNSCOPED).toString() +
-                " Using device " + defaultDevice);
-            return pmm;
-        }
-        
-        // nope!
-        return null;
-    }
+		// check plain verilog
+		id = primitiveName + "/" + UNKNOWN_PART;
+		pmm = makeMappedModule(id);
+		if (pmm != null) {
+			mappingStore.put(primitiveName, pmm);
+			return pmm;
+		}
 
-    public boolean exists(String partString)
-    {
-        return mappingStore.containsKey(partString);
-    }
+		// nope!
+		return null;
+	}
 
-    private PrimitiveMappedModule makeMappedModule(String id)
-    {
-        //Job.verbose("Looking for primitive mapping for: "+id);
-        if(exists(id))
-        {
-            EngineThread.getGenericJob().verbose("Primitive mapping found: "+id);
-            return (PrimitiveMappedModule)mappingStore.get(id);
-        }
-        return null;
-    }
+	public final PrimitiveMappedModule getMappedModule(String primitiveName) {
+		PrimitiveMappedModule pmm;
+		if (mappingStore.containsKey(primitiveName)) {
+			return (PrimitiveMappedModule) mappingStore.get(primitiveName);
+		}
+		XilinxDevice xd = EngineThread.getGenericJob().getPart(
+				CodeLabel.UNSCOPED);
+		pmm = getMappedModule(primitiveName, xd);
+		if (pmm != null) {
+			return pmm;
+		}
+
+		XilinxDevice defaultDevice = EngineThread.getGenericJob()
+				.getDefaultPart();
+		pmm = getMappedModule(primitiveName, defaultDevice);
+		if (pmm != null) {
+			Option op = EngineThread.getGenericJob().getOption(
+					OptionRegistry.XILINX_PART);
+			EngineThread.getGenericJob().warn(
+					"No implementation found for " + primitiveName
+							+ " for device name: "
+							+ op.getValue(CodeLabel.UNSCOPED).toString()
+							+ " Using device " + defaultDevice);
+			return pmm;
+		}
+
+		// nope!
+		return null;
+	}
+
+	public boolean exists(String partString) {
+		return mappingStore.containsKey(partString);
+	}
+
+	private PrimitiveMappedModule makeMappedModule(String id) {
+		// Job.verbose("Looking for primitive mapping for: "+id);
+		if (exists(id)) {
+			EngineThread.getGenericJob().verbose(
+					"Primitive mapping found: " + id);
+			return (PrimitiveMappedModule) mappingStore.get(id);
+		}
+		return null;
+	}
 
 }
-

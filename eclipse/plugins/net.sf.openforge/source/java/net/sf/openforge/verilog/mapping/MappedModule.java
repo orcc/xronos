@@ -21,43 +21,40 @@
 
 package net.sf.openforge.verilog.mapping;
 
+public class MappedModule {
 
-public class MappedModule
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+	private String moduleName;
+	private String simInclude;
+	private String synthInclude;
 
-    private String moduleName;
-    private String simInclude;
-    private String synthInclude;
+	public MappedModule(String moduleName, String simInclude,
+			String synthInclude) {
+		this.moduleName = moduleName;
+		this.simInclude = simInclude;
+		this.synthInclude = synthInclude;
 
-    public MappedModule(String moduleName,
-        String simInclude,
-        String synthInclude)
-    {
-        this.moduleName=moduleName;
-        this.simInclude=simInclude;
-        this.synthInclude=synthInclude;
-        
-        assert moduleName != null;
-        assert simInclude != null;
-        assert synthInclude != null;
-    }
-    
-    public String getSimInclude() { return simInclude; }
-    
-    public String getSynthInclude() { return synthInclude; }
+		assert moduleName != null;
+		assert simInclude != null;
+		assert synthInclude != null;
+	}
 
-    public String getModuleName() { return moduleName; }
+	public String getSimInclude() {
+		return simInclude;
+	}
 
-    public int hashCode() { return moduleName.hashCode(); }
+	public String getSynthInclude() {
+		return synthInclude;
+	}
 
-    public boolean equals(MappedModule im)
-    {
-        return im.getModuleName().equals(moduleName);
-    }
+	public String getModuleName() {
+		return moduleName;
+	}
+
+	public int hashCode() {
+		return moduleName.hashCode();
+	}
+
+	public boolean equals(MappedModule im) {
+		return im.getModuleName().equals(moduleName);
+	}
 }
-
-
-
-
-

@@ -22,36 +22,44 @@ package net.sf.openforge.verilog.mapping;
 
 /**
  * Immutable class for naming primitives we no about
- *
+ * 
  * @author "C. Schanck" <cschanck@cschanck>
  * @version 1.0
  * @since 1.0
  */
-public class MappingName
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class MappingName {
 
-    // synchronous 1 bit flop variants (posedge)
-    public static MappingName FLOP_SYNC=new MappingName("FlopSync");
-    public static MappingName FLOP_SYNC_ENABLE=new MappingName("FlopSyncEnable");
-    public static MappingName FLOP_SYNC_RESET=new MappingName("FlopSyncReset");
-    public static MappingName FLOP_SYNC_SET=new MappingName("FlopSyncSet");
-    public static MappingName FLOP_SYNC_ENABLE_RESET=new MappingName("FlopSyncEnableReset");
-    public static MappingName FLOP_SYNC_ENABLE_SET=new MappingName("FlopSyncEnableSet");
-    public static MappingName FLOP_SYNC_SET_RESET=new MappingName("FlopSyncSetReset");
-    public static MappingName FLOP_SYNC_ENABLE_SET_RESET=new MappingName("FlopSyncEnableSetReset");
-    public static MappingName SHIFT_REGISTER_LUT=new MappingName("SRL16");
-    public static MappingName SHIFT_REGISTER_LUT_ENABLE=new MappingName("SRL16E");
-    public static MappingName SHIFT_REGISTER_LUT_NEG_EDGE=new MappingName("SRL16_1");
+	// synchronous 1 bit flop variants (posedge)
+	public static MappingName FLOP_SYNC = new MappingName("FlopSync");
+	public static MappingName FLOP_SYNC_ENABLE = new MappingName(
+			"FlopSyncEnable");
+	public static MappingName FLOP_SYNC_RESET = new MappingName("FlopSyncReset");
+	public static MappingName FLOP_SYNC_SET = new MappingName("FlopSyncSet");
+	public static MappingName FLOP_SYNC_ENABLE_RESET = new MappingName(
+			"FlopSyncEnableReset");
+	public static MappingName FLOP_SYNC_ENABLE_SET = new MappingName(
+			"FlopSyncEnableSet");
+	public static MappingName FLOP_SYNC_SET_RESET = new MappingName(
+			"FlopSyncSetReset");
+	public static MappingName FLOP_SYNC_ENABLE_SET_RESET = new MappingName(
+			"FlopSyncEnableSetReset");
+	public static MappingName SHIFT_REGISTER_LUT = new MappingName("SRL16");
+	public static MappingName SHIFT_REGISTER_LUT_ENABLE = new MappingName(
+			"SRL16E");
+	public static MappingName SHIFT_REGISTER_LUT_NEG_EDGE = new MappingName(
+			"SRL16_1");
 
-    private String name;
-    
-    public MappingName(String name)
-    {
-        this.name=name;
-    }
+	private String name;
 
-    public String getName() { return name; }
-    
-    public String toString() { return name; }
+	public MappingName(String name) {
+		this.name = name;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String toString() {
+		return name;
+	}
 }
