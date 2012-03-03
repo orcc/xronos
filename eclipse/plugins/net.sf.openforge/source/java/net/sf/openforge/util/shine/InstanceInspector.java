@@ -45,7 +45,6 @@ public class InstanceInspector implements Comparator {
 	private String sortOrder = "TVNFSPRU";
 
 	public InstanceInspector() {
-		;
 	}
 
 	public InstanceInspector(Object o) {

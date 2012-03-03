@@ -272,7 +272,6 @@ public abstract class Variable extends ID implements Location
             throw new NullPointerException("null location not allowed");
         if (units < 0)
             throw new IllegalArgumentException("cannot chop a negative number of addressable units from an allocation");
-        ; // Do nothing.
     }
     
     /**

@@ -37,7 +37,6 @@ public class ArrayInspector {
 	}
 
 	public ArrayInspector() {
-		;
 	}
 
 	public void reuse(Object o) {

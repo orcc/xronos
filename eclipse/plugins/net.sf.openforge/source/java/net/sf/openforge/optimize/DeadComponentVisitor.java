@@ -947,7 +947,7 @@ public class DeadComponentVisitor extends ComponentSwapVisitor implements Optimi
         if (c.isNonRemovable())
             return;
 
-        if (_optimize.db) _optimize.ln(_optimize.DEAD_CODE, "Examining " + c.toString());;
+        if (_optimize.db) _optimize.ln(_optimize.DEAD_CODE, "Examining " + c.toString());
         boolean dataBusUsed = isDataBusUsed(c);//false;
 
         // dataPortUsed is initialized to true if component has 0 ports.

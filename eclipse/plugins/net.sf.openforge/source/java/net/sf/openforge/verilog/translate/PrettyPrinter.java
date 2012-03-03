@@ -197,7 +197,6 @@ public class PrettyPrinter {
 		} else if (control.equals(Control.OUTDENT)) {
 			writer.dec();
 		} else if (control.equals(Control.SETDENT)) {
-			; // ???
 		}
 	}
 

@@ -199,7 +199,7 @@ public class RomReplicator implements Optimization
     /**
      * Does nothing.
      */
-    public void clear () {;}
+    public void clear () {}
     
     /**
      * Reports, via {@link GenericJob#info}, what optimization is being

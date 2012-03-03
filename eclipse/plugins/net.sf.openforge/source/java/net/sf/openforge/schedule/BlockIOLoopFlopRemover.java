@@ -170,7 +170,7 @@ public class BlockIOLoopFlopRemover extends DefaultVisitor
     /**
      * Do nothing so that we do not descend into any calls.
      */
-    public void visit (Call vis){;}
+    public void visit (Call vis){}
 
     /**
      * The tracker will be null if we are outside of a loop.  This can

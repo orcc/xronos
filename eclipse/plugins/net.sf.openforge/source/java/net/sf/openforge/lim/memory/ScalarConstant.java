@@ -63,7 +63,7 @@ public class ScalarConstant extends MemoryConstant
         
         final int units = (int)Math.ceil((width*1.0)/policy.getStride());
         if (units != bytes.length)
-            EngineThread.getGenericJob().warn("Constant specified with incorrect number of units.  Endianness of platform may cause discrepancies. Required: "+units + " actual: "+bytes.length);;
+            EngineThread.getGenericJob().warn("Constant specified with incorrect number of units.  Endianness of platform may cause discrepancies. Required: "+units + " actual: "+bytes.length);
         
         final AddressableUnit aurep[] = new AddressableUnit[units];
         for (int i=0; i < units; i++)

@@ -180,7 +180,6 @@ public class PinRead extends PinAccess implements Cloneable
         
         public void accept (Visitor v)
         {
-            ; // nobody should be visiting this component directly
         }
 
         public boolean removeDataBus (Bus bus)

@@ -222,7 +222,6 @@ public abstract class Latency implements Cloneable
                     if (_lim.db) _lim.ln(_lim.LATENCY, "equal");
                     if (preferred.contains(savedValue))
                     {
-                        ; // do nothing so that we save the one
                           // already in the latestMap.
                     }
                     else

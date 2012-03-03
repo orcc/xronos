@@ -50,7 +50,7 @@ public class ForgeStreamHandler extends Handler
 	    writer.flush();
             out.flush();
 	}
-	catch (Exception ex) {;}
+	catch (Exception ex) {}
     }
 
     public synchronized void close() throws SecurityException {

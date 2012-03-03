@@ -259,7 +259,6 @@ public class Comment extends PrintWriter {
 		}
 
 		public void remove() {
-			;
 
 		}
 

@@ -56,7 +56,6 @@ public class CodeLabel implements SearchLabel
      */
     private CodeLabel()
     {
-    	;
     }    
     
     /**

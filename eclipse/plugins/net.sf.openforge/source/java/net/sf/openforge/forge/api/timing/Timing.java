@@ -33,7 +33,6 @@ public class Timing
      */
     public static void waitSync()
     {
-        ;
     }
 
     /**
@@ -45,7 +44,6 @@ public class Timing
      */
     public static void waitClock()
     {
-        ;
     }
 
     /**
@@ -57,7 +55,6 @@ public class Timing
      */
     public static void waitSyncLocal()
     {
-        ;
     }
 
     /**
@@ -69,7 +66,6 @@ public class Timing
      */
     public static void waitClockLocal()
     {
-        ;
     }
 
     /**
@@ -87,6 +83,5 @@ public class Timing
      */
     public static void throughputLocal(int i)
     {
-        ;
     }
 }

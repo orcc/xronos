@@ -55,7 +55,6 @@ public class MemoryMapper {
 	private static Map<MemoryBank, VerilogMemory> mapMemoryType = new HashMap<MemoryBank, VerilogMemory>();
 
 	MemoryMapper() {
-		;
 	}
 
 	/**

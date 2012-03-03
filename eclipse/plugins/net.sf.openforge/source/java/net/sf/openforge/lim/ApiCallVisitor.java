@@ -159,7 +159,7 @@ public class ApiCallVisitor extends FilteredVisitor implements Optimization
     /**
      * Does nothing.
      */
-    public void clear () {;}
+    public void clear () {}
     
 }
 

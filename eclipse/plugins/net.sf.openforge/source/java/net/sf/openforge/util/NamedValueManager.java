@@ -36,7 +36,6 @@ public class NamedValueManager {
 	private HashMap values = new HashMap();
 
 	public NamedValueManager() {
-		;
 	}
 
 	public Object getNamedValue(String name) {

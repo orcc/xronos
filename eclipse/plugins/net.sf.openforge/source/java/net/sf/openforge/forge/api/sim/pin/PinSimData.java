@@ -47,7 +47,7 @@ public class PinSimData
     private static HashMap mapPinToTestData=new HashMap(11);
     
     private PinSimData()
-    {;}
+    {}
 
 
     /**
@@ -213,12 +213,10 @@ public class PinSimData
             }
             catch(IllegalAccessException iae)
             {
-                ;
             }
         }
         catch(NoSuchFieldException nsfe)
         {
-            ;
         }
         return null;
     }

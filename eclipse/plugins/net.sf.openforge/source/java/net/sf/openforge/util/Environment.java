@@ -73,7 +73,6 @@ public class Environment {
 	 * @see
 	 */
 	private Environment() {
-		;
 	}
 
 	// ************************************************************

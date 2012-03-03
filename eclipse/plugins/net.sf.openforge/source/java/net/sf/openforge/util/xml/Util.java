@@ -186,7 +186,6 @@ public class Util {
 						is.close();
 				} catch (IOException ioe) {
 				}
-				;
 			}
 		}
 		return xforms;

@@ -115,7 +115,6 @@ public class Control extends Token {
 				token = sw.toString();
 				sw.close();
 			} catch (Exception e) {
-				;
 			}
 
 			return token;

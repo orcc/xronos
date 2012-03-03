@@ -185,7 +185,6 @@ public class ForgeLogger
         }
         catch(NoSuchElementException e)
         {
-            ;
         }
     }
 

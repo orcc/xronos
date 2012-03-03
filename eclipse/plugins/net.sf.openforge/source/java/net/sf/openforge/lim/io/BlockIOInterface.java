@@ -138,7 +138,7 @@ public class BlockIOInterface
                             public DeclarationGenerator getDeclaredType () { return new tempDeclGen("struct foo *"); }
                             public String getFormalName () { return "x"; }
                             public byte[] getStreamFormat () { return new byte[]{1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}; }
-                            public void deleteStreamBytes (int start, int length) {;}
+                            public void deleteStreamBytes (int start, int length) {}
                         },
                         new BlockElement ()
                         {
@@ -147,7 +147,7 @@ public class BlockIOInterface
                             public DeclarationGenerator getDeclaredType () { return new tempDeclGen("short"); }
                             public String getFormalName () { return "a"; }
                             public byte[] getStreamFormat () { return new byte[]{1,0,0,0,1,0,0,0}; }
-                            public void deleteStreamBytes (int start, int length) {;}
+                            public void deleteStreamBytes (int start, int length) {}
                         },
                         new BlockElement ()
                         {
@@ -156,7 +156,7 @@ public class BlockIOInterface
                             public DeclarationGenerator getDeclaredType () { return new tempDeclGen("long long"); }
                             public String getFormalName () { return "b"; }
                             public byte[] getStreamFormat () { return new byte[]{1,1,1,1, 1,1,1,1}; }
-                            public void deleteStreamBytes (int start, int length) {;}
+                            public void deleteStreamBytes (int start, int length) {}
                         }
                     };
                 }
@@ -188,7 +188,7 @@ public class BlockIOInterface
                             public DeclarationGenerator getDeclaredType () { return new tempDeclGen("struct foo *"); }
                             public String getFormalName () { return "x"; }
                             public byte[] getStreamFormat () { return new byte[]{1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}; }
-                            public void deleteStreamBytes (int start, int length) {;}
+                            public void deleteStreamBytes (int start, int length) {}
                         },
                         new BlockElement ()
                         {
@@ -197,7 +197,7 @@ public class BlockIOInterface
                             public DeclarationGenerator getDeclaredType () { return new tempDeclGen("short"); }
                             public String getFormalName () { return "a"; }
                             public byte[] getStreamFormat () { return new byte[]{1,0,0,0,1,0,0,0}; }
-                            public void deleteStreamBytes (int start, int length) {;}
+                            public void deleteStreamBytes (int start, int length) {}
                         },
                         new BlockElement ()
                         {
@@ -206,7 +206,7 @@ public class BlockIOInterface
                             public DeclarationGenerator getDeclaredType () { return new tempDeclGen("long long"); }
                             public String getFormalName () { return "b"; }
                             public byte[] getStreamFormat () { return new byte[]{1,1,1,1, 1,1,1,1}; }
-                            public void deleteStreamBytes (int start, int length) {;}
+                            public void deleteStreamBytes (int start, int length) {}
                         },
                         new BlockElement ()
                         {
@@ -215,7 +215,7 @@ public class BlockIOInterface
                             public DeclarationGenerator getDeclaredType () { return new tempDeclGen("int"); }
                             public String getFormalName () { return "return"; }
                             public byte[] getStreamFormat () { return new byte[]{1,1,1,1}; }
-                            public void deleteStreamBytes (int start, int length) {;}
+                            public void deleteStreamBytes (int start, int length) {}
                         }
                     };
                 }

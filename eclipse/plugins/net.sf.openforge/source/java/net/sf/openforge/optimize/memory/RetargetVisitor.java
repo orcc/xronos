@@ -51,12 +51,12 @@ public class RetargetVisitor extends FailVisitor
     }
     
     //Nothing to do...
-    public void visit (ArrayRead comp){;}
-    public void visit (ArrayWrite comp){;}
+    public void visit (ArrayRead comp){}
+    public void visit (ArrayWrite comp){}
     // Nothing to do so long as we arent modifying the structure
     // of what is being accessed (which we arent here)
-    public void visit (HeapRead comp){;}
-    public void visit (HeapWrite comp){;}
+    public void visit (HeapRead comp){}
+    public void visit (HeapWrite comp){}
     
     public void visit (AbsoluteMemoryRead comp)
     { // Let the visit(LocationConstant do the work for us!)

@@ -74,7 +74,7 @@ public abstract class DataFlowVisitor implements Visitor
     private boolean forward = false;
     
     public DataFlowVisitor ()
-    {;}
+    {}
 
     /**
      * Set true to run through in input -> output data flow order, or

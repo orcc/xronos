@@ -313,7 +313,6 @@ public class PinReferee extends Referee implements Cloneable
         public ReadSlot (PinRead read)
         {
             this.address = makeDataPort(Component.SIDEBAND);
-            ;
             Exit exit = makeExit(0, Exit.SIDEBAND,
                     ID.showLogical(read) + "@"
                     + Integer.toHexString(read.hashCode()));

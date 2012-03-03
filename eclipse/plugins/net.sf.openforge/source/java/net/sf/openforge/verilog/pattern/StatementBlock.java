@@ -46,7 +46,6 @@ public class StatementBlock implements Statement, VerilogElement {
 	protected List<Statement> statements = new ArrayList<Statement>();
 
 	public StatementBlock() {
-		;
 	} // StatementBlock
 
 	/**

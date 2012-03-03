@@ -212,7 +212,6 @@ public abstract class LoopFlopConflictSet
 
         protected void resolve (LoopFlopConflict conflict)
         {
-            ;
         }
         
         public Collection<Component> getFixableAccessPathComponents ()

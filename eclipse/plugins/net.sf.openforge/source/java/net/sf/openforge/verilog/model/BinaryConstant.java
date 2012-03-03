@@ -115,7 +115,6 @@ public class BinaryConstant extends Constant {
 		} catch (NumberFormatException nfe) {
 			result = 0;
 		}
-		;
 
 		return result;
 	}

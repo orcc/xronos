@@ -47,7 +47,7 @@ public abstract class MemoryImplementation
     private static final String _RCS_ = "$Rev: 538 $";
 
     public MemoryImplementation ()
-    {;}
+    {}
 
     public abstract Latency getReadLatency ();
     public abstract Latency getWriteLatency ();

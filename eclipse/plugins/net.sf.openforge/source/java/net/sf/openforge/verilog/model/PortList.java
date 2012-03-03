@@ -46,7 +46,6 @@ public class PortList implements VerilogElement {
 	 * Constructs an empty PortList.
 	 */
 	public PortList() {
-		;
 	} // PortList()
 
 	/**

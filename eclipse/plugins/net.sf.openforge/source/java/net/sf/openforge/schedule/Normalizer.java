@@ -42,7 +42,6 @@ public class Normalizer extends FilteredVisitor
     /** Constructor for the Normalizer object */
     protected Normalizer()
     {
-        ;
     }
 
     /**

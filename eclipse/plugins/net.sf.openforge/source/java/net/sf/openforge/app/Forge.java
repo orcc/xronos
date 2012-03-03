@@ -63,7 +63,6 @@ public class Forge implements ForgeDebug
      */
     public Forge()
     {
-        ;
     } // Forge()
     
     public void preprocess(GenericJob gj)

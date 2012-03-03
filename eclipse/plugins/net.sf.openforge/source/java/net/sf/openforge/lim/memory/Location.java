@@ -51,7 +51,7 @@ public interface Location
             public int getAbsoluteMaxDelta () { return 0; }
             public boolean overlaps (Location loc) { return loc == this; }
             public LogicalValue getInitialValue () { throw new UnsupportedOperationException("INVALID Location"); }
-            public void chopStart (Location loc, int delta) { ; }
+            public void chopStart (Location loc, int delta) {  }
             public String debug () {return "INVALID";}
         };
 

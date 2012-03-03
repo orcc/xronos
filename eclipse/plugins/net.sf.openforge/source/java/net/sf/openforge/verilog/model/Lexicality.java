@@ -42,7 +42,6 @@ public class Lexicality {
 	LinkedList tokens = new LinkedList();
 
 	public Lexicality() {
-		;
 	} // Lexicality
 
 	public Lexicality(Token[] t) {

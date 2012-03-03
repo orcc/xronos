@@ -38,7 +38,7 @@ public class EngineThread
     private static HashMap threadToJob = new HashMap();
 
     // statc class -- don't create any instances!
-    private EngineThread() {;}
+    private EngineThread() {}
     
     /**
      * Add the relationship of a thread to an engine. This will

@@ -40,7 +40,6 @@ public class VerilogDocument {
 	List<Object> elements = new ArrayList<Object>();
 
 	public VerilogDocument() {
-		;
 	} // VerilogDocument()
 
 	/**

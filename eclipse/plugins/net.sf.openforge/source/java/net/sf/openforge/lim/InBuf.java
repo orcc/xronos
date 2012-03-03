@@ -189,7 +189,6 @@ public class InBuf extends Component implements Emulatable
      */
     public void updatePhysical()
     {
-        ;
     }
     
     public void accept(Visitor v)

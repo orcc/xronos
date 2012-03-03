@@ -712,12 +712,12 @@ public class FilteredVisitor implements Visitor
      */
     public void filterAny (Component c)
     {
-        if (_lim.db) _lim.ln("filterAny(Component): " + c.toString());;
+        if (_lim.db) _lim.ln("filterAny(Component): " + c.toString());
     }
 
     public void preFilterAny (Component c)
     {
-        if (_lim.db) _lim.ln("pre-filterAny(Component): " + c.toString());;
+        if (_lim.db) _lim.ln("pre-filterAny(Component): " + c.toString());
     }
     
     protected void traverse (Design d)

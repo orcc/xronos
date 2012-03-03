@@ -125,7 +125,6 @@ public class GnuOptionValidator {
 											i--;
 										}
 									} catch (ArrayIndexOutOfBoundsException e) {
-										; // missing the optional arg
 									}
 								}
 								if (((argFlag & GnuOptionDefinition.REQUIRED_ARGUMENT) != 0)

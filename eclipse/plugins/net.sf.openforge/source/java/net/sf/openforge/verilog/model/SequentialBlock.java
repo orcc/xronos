@@ -47,7 +47,6 @@ public class SequentialBlock implements Statement {
 	List<Statement> body = new ArrayList<Statement>();
 
 	public SequentialBlock() {
-		;
 	} // SequentialBlock()
 
 	public SequentialBlock(Statement s) {

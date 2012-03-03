@@ -51,7 +51,6 @@ public class Concatenation implements Expression {
 	List<Expression> elements = new ArrayList<Expression>();
 
 	public Concatenation() {
-		;
 	} // Concatenation()
 
 	public Concatenation(Expression e) {

@@ -206,7 +206,6 @@ public class ReadOnlyFieldReducer implements Optimization
          */
         public FieldRemover()
         {
-            ;
         }
         
         /**

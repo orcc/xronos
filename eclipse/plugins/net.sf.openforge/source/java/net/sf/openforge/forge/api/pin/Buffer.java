@@ -466,29 +466,29 @@ public abstract class Buffer
     // Primitive method calls used by sub-classes to interact with the
     // Buffer.
 
-    protected void writeValueNow(long value) {;}
+    protected void writeValueNow(long value) {}
     
-    protected void writeValueNext(long value) {;}
+    protected void writeValueNext(long value) {}
     
     
     protected long readValue() { return 0; }
     
     
-    protected void changeDriveNow(boolean enable) {;}
+    protected void changeDriveNow(boolean enable) {}
     
-    protected void changeDriveNext(boolean enable){;}
+    protected void changeDriveNext(boolean enable){}
     
 
-    protected void writeFloatValueNow (float value) {;}
+    protected void writeFloatValueNow (float value) {}
     
-    protected void writeFloatValueNext (float value) {;}
+    protected void writeFloatValueNext (float value) {}
     
     protected float readFloatValue () { return 0; }
     
     
-    protected void writeDoubleValueNow (double value) {;}
+    protected void writeDoubleValueNow (double value) {}
     
-    protected void writeDoubleValueNext (double value) {;}
+    protected void writeDoubleValueNext (double value) {}
     
     protected double readDoubleValue () { return 0; }
 }

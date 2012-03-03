@@ -127,13 +127,11 @@ public class Shine {
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException ie) {
-				;
 			}
 			for (; bbt.getCounter() != 0;) {
 				try {
 					Thread.sleep(250);
 				} catch (InterruptedException ie) {
-					;
 				}
 			}
 		}

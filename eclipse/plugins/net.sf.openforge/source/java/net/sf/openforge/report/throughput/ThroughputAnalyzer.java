@@ -222,7 +222,7 @@ public class ThroughputAnalyzer extends DataFlowVisitor implements Visitor
         Module owner = comp.getOwner();
         if (owner instanceof HeapRead &&
             ((HeapRead)owner).isArrayLengthRead())
-        {;}
+        {}
         else
         {
             markResource(comp);

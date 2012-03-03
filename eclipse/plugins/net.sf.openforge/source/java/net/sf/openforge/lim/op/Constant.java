@@ -125,7 +125,7 @@ public abstract class Constant extends ValueOp implements Emulatable
      * locked. 
      */
     public void lock ()
-    {;}
+    {}
 
     /**
      * Returns true if this constant has a fixed numerical value.

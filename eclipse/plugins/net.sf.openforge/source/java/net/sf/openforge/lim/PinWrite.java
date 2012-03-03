@@ -233,7 +233,6 @@ public class PinWrite extends PinAccess
         
         public void accept (Visitor v)
         {
-            ; // nobody should be visiting this component directly
         }
         
         public boolean removeDataBus (Bus bus)
