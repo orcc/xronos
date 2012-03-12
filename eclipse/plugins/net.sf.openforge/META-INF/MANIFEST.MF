@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: net.sf.openforge.core
 Bundle-SymbolicName: net.sf.openforge.core;singleton:=true
 Bundle-Version: 1.0.11
-Bundle-Activator: openforge.Activator
+Bundle-Activator: net.sf.openforge.Activator
 Require-Bundle: org.eclipse.core.runtime
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: net.sf.openforge.app,
