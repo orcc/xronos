@@ -24,25 +24,22 @@ package net.sf.openforge.backend.hdl.ucf;
 /**
  * An arbitrary string, terminated with a semicolon.
  */
-public class UCFArbitraryStatement implements UCFStatement
-{
-    String statement;
+public class UCFArbitraryStatement implements UCFStatement {
+	String statement;
 
-    /**
-     * Constructs a new arbitrary UCF statement. A semicolon
-     * will automatically be appended to the statement.
-     *
-     * @param statement the UCF statement (excluding the semicolon).
-     */
-    public UCFArbitraryStatement(String statement)
-    {
-        this.statement = statement;
-    }
-    
+	/**
+	 * Constructs a new arbitrary UCF statement. A semicolon will automatically
+	 * be appended to the statement.
+	 * 
+	 * @param statement
+	 *            the UCF statement (excluding the semicolon).
+	 */
+	public UCFArbitraryStatement(String statement) {
+		this.statement = statement;
+	}
 
-    public String toString()
-    {
-        return statement + ";";
-    }
-    
+	public String toString() {
+		return statement + ";";
+	}
+
 }

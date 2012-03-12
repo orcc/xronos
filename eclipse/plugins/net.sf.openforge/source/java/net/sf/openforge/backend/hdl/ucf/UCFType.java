@@ -21,22 +21,19 @@
 
 package net.sf.openforge.backend.hdl.ucf;
 
-public class UCFType
-{
-    public final static UCFType NET = new UCFType("NET");
-    public final static UCFType INST = new UCFType("INST");
-    public final static UCFType PIN = new UCFType("PIN");
-    public final static UCFType SET = new UCFType("SET");
-    
-    private String type;
-    
-    private UCFType(String type)
-    {
-        this.type = type;
-    }
-    
-    public String toString()
-    {
-        return type;
-    }
+public class UCFType {
+	public final static UCFType NET = new UCFType("NET");
+	public final static UCFType INST = new UCFType("INST");
+	public final static UCFType PIN = new UCFType("PIN");
+	public final static UCFType SET = new UCFType("SET");
+
+	private String type;
+
+	private UCFType(String type) {
+		this.type = type;
+	}
+
+	public String toString() {
+		return type;
+	}
 }

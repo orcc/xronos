@@ -21,59 +21,52 @@
 
 package net.sf.openforge.backend.timedc;
 
-
-import java.util.*;
-import java.io.*;
-
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
 
 /**
- * IndexedVar is the common superclass for stateful resources which
- * require an index (ie xxx[yy]) to select the output value.
- *
- * <p>Created: Wed Mar  2 21:21:30 2005
- *
+ * IndexedVar is the common superclass for stateful resources which require an
+ * index (ie xxx[yy]) to select the output value.
+ * 
+ * <p>
+ * Created: Wed Mar 2 21:21:30 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: IndexedVar.java 2 2005-06-09 20:00:48Z imiller $
  */
-public abstract class IndexedVar extends OpHandle
-{
-    private static final String _RCS_ = "$Rev: 2 $";
-    
-    private Bus output;
-    
-    public IndexedVar (Component comp, Bus output, CNameCache cache)
-    {
-        super(comp, cache);
-        this.output = output;
-    }
-    
-    protected abstract String getIndex ();
-    
-    /**
-     * Overrides the super method so that we can append the array
-     * select to point to the 'index' element
-     */
-    public String getBusName (Bus b)
-    {
-        String name = getDefaultBusName(b);
-        if (b == this.output)
-        {
-            name += "[" + getIndex() + "]";
-        }
-        return name;
-    }
+public abstract class IndexedVar extends OpHandle {
 
-    /**
-     * Returns the non modified version of the output bus name, that
-     * is the name of the output without any indexing applied.
-     *
-     * @param b a non-null Bus
-     * @return a value of type 'String'
-     */
-    protected String getDefaultBusName (Bus b)
-    {
-        return super.getBusName(b);
-    }
-    
+	private Bus output;
+
+	public IndexedVar(Component comp, Bus output, CNameCache cache) {
+		super(comp, cache);
+		this.output = output;
+	}
+
+	protected abstract String getIndex();
+
+	/**
+	 * Overrides the super method so that we can append the array select to
+	 * point to the 'index' element
+	 */
+	public String getBusName(Bus b) {
+		String name = getDefaultBusName(b);
+		if (b == this.output) {
+			name += "[" + getIndex() + "]";
+		}
+		return name;
+	}
+
+	/**
+	 * Returns the non modified version of the output bus name, that is the name
+	 * of the output without any indexing applied.
+	 * 
+	 * @param b
+	 *            a non-null Bus
+	 * @return a value of type 'String'
+	 */
+	protected String getDefaultBusName(Bus b) {
+		return super.getBusName(b);
+	}
+
 }// IndexedVar

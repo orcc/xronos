@@ -21,60 +21,68 @@
 
 package net.sf.openforge.backend.timedc;
 
-import net.sf.openforge.app.*;
-import net.sf.openforge.backend.*;
+import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.app.ForgeFileHandler;
+import net.sf.openforge.app.ForgeFileKey;
+import net.sf.openforge.backend.OutputEngine;
 import net.sf.openforge.lim.Design;
 
-
 /**
- * CycleCTranslateEngine is the implementation of {@link OutputEngine}
- * that controls the location and generation of the Cycle accurate c
- * simulation model of the design.
+ * CycleCTranslateEngine is the implementation of {@link OutputEngine} that
+ * controls the location and generation of the Cycle accurate c simulation model
+ * of the design.
  * 
- * <p>Created: Fri Mar 17 20:50:55 2006
- *
+ * <p>
+ * Created: Fri Mar 17 20:50:55 2006
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: CycleCTranslateEngine.java 112 2006-03-21 15:41:57Z imiller $
  */
-public class CycleCTranslateEngine implements OutputEngine
-{
-    private static final String _RCS_ = "$Rev: 103 $";
+public class CycleCTranslateEngine implements OutputEngine {
 
-    public static final ForgeFileKey HEADER = new ForgeFileKey("C sim model header");
-    public static final ForgeFileKey SOURCE = new ForgeFileKey("C sim model source");
-    public static final ForgeFileKey VPGEN_HEADER = new ForgeFileKey("C sim model vp compliant header");
-    public static final ForgeFileKey VPGEN_WRAPPER = new ForgeFileKey("C sim model vp compliant wrapper");
-    
-    public void initEnvironment ()
-    {
-        ForgeFileHandler fileHandler = EngineThread.getGenericJob().getFileHandler();
-        fileHandler.registerFile(HEADER, fileHandler.buildName("_sim","h"));
-        fileHandler.registerFile(SOURCE, fileHandler.buildName("_sim","c"));
-        fileHandler.registerFile(VPGEN_HEADER, fileHandler.buildName("_vp","h"));
-        fileHandler.registerFile(VPGEN_WRAPPER, fileHandler.buildName("_vp","c"));
-    }
+	public static final ForgeFileKey HEADER = new ForgeFileKey(
+			"C sim model header");
+	public static final ForgeFileKey SOURCE = new ForgeFileKey(
+			"C sim model source");
+	public static final ForgeFileKey VPGEN_HEADER = new ForgeFileKey(
+			"C sim model vp compliant header");
+	public static final ForgeFileKey VPGEN_WRAPPER = new ForgeFileKey(
+			"C sim model vp compliant wrapper");
 
-    public void translate (Design design)
-    {
-        ForgeFileHandler fileHandler = EngineThread.getGenericJob().getFileHandler();
+	public void initEnvironment() {
+		ForgeFileHandler fileHandler = EngineThread.getGenericJob()
+				.getFileHandler();
+		fileHandler.registerFile(HEADER, fileHandler.buildName("_sim", "h"));
+		fileHandler.registerFile(SOURCE, fileHandler.buildName("_sim", "c"));
+		fileHandler.registerFile(VPGEN_HEADER,
+				fileHandler.buildName("_vp", "h"));
+		fileHandler.registerFile(VPGEN_WRAPPER,
+				fileHandler.buildName("_vp", "c"));
+	}
 
-        try
-        {
-            CycleCTranslator.translate(design, fileHandler.getFile(HEADER), fileHandler.getFile(SOURCE));
-        }
-        catch (CycleCTranslator.CycleCTranslatorException ccte)
-        {
-            EngineThread.getGenericJob().error("Could not generate a cycle-c model due to internal error: " + ccte.getMessage());
-        }
-        
-    }
+	public void translate(Design design) {
+		ForgeFileHandler fileHandler = EngineThread.getGenericJob()
+				.getFileHandler();
 
-    /**
-     * Returns a string which uniquely identifies this phase of the
-     * compiler output.
-     *
-     * @return a non-empty, non-null String
-     */
-    public String getOutputPhaseId () { return "Cycle-accurate C model"; }
-        
+		try {
+			CycleCTranslator.translate(design, fileHandler.getFile(HEADER),
+					fileHandler.getFile(SOURCE));
+		} catch (CycleCTranslator.CycleCTranslatorException ccte) {
+			EngineThread.getGenericJob().error(
+					"Could not generate a cycle-c model due to internal error: "
+							+ ccte.getMessage());
+		}
+
+	}
+
+	/**
+	 * Returns a string which uniquely identifies this phase of the compiler
+	 * output.
+	 * 
+	 * @return a non-empty, non-null String
+	 */
+	public String getOutputPhaseId() {
+		return "Cycle-accurate C model";
+	}
+
 }

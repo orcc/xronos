@@ -21,42 +21,45 @@
 
 package net.sf.openforge.backend.timedc;
 
-import java.io.*;
+import java.io.PrintStream;
 
 /**
- * StateVar is an interface implemented by those 'special' OpHandles
- * that have explicit declaration needs and have the ability to update
- * their state at a clock edge.
- *
- *
- * <p>Created: Wed Mar  9 13:57:57 2005
- *
+ * StateVar is an interface implemented by those 'special' OpHandles that have
+ * explicit declaration needs and have the ability to update their state at a
+ * clock edge.
+ * 
+ * 
+ * <p>
+ * Created: Wed Mar 9 13:57:57 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: StateVar.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface StateVar 
-{
-    public static final String _RCS_ = "$Rev: 2 $";
+public interface StateVar {
 
-    /** The C storage class that is used for all global declarations. */
-    static final String STORAGE_CLASS = "static ";
-    
-    /**
-     * Writes declarations for any stateful variables necessary for
-     * this {@link StateVar} to the specified stream.
-     *
-     * @param ps a non-null PrintStream
-     * @throws NullPointerException if ps is null
-     */
-    public void declareGlobal (PrintStream ps);
-    
-    /**
-     * Writes update statements for the stateful variables of this
-     * {@link StateVar} to the specified stream.  
-     *
-     * @param ps a non-null PrintStream
-     * @throws NullPointerException if ps is null
-     */
-    public void writeTick (PrintStream ps);
+	/** The C storage class that is used for all global declarations. */
+	static final String STORAGE_CLASS = "static ";
+
+	/**
+	 * Writes declarations for any stateful variables necessary for this
+	 * {@link StateVar} to the specified stream.
+	 * 
+	 * @param ps
+	 *            a non-null PrintStream
+	 * @throws NullPointerException
+	 *             if ps is null
+	 */
+	public void declareGlobal(PrintStream ps);
+
+	/**
+	 * Writes update statements for the stateful variables of this
+	 * {@link StateVar} to the specified stream.
+	 * 
+	 * @param ps
+	 *            a non-null PrintStream
+	 * @throws NullPointerException
+	 *             if ps is null
+	 */
+	public void writeTick(PrintStream ps);
 
 }// StateVar

@@ -21,43 +21,38 @@
 
 package net.sf.openforge.backend;
 
-
 import java.io.IOException;
 
 import net.sf.openforge.lim.Design;
 
 /**
- * The OutputEngine interface is to be implemented by any class which
- * generates any File output of the compiler.  The interface provides
- * methods for initializing itself and translating (generating) the
- * output. 
- *
- * <p>Created: Fri Mar 17 20:50:55 2006
- *
+ * The OutputEngine interface is to be implemented by any class which generates
+ * any File output of the compiler. The interface provides methods for
+ * initializing itself and translating (generating) the output.
+ * 
+ * <p>
+ * Created: Fri Mar 17 20:50:55 2006
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: OutputEngine.java 112 2006-03-21 15:41:57Z imiller $
  */
-public interface OutputEngine
-{
-    public static final String _RCS_ = "$Rev: 103 $";
+public interface OutputEngine {
 
-    /**
-     * Initialize the target or destination for the output of this
-     * engine.  This may include registering files with the
-     * ForgeFileHandler.
-     */
-    public void initEnvironment ();
+	/**
+	 * Initialize the target or destination for the output of this engine. This
+	 * may include registering files with the ForgeFileHandler.
+	 */
+	public void initEnvironment();
 
-    /**
-     * Generate the output for this engine, including creation of the
-     * output files and/or directories.
-     */
-    public void translate (Design design) throws IOException;
+	/**
+	 * Generate the output for this engine, including creation of the output
+	 * files and/or directories.
+	 */
+	public void translate(Design design) throws IOException;
 
-    /**
-     * Returns a unique string which identifies this engine.
-     */
-    public String getOutputPhaseId ();
+	/**
+	 * Returns a unique string which identifies this engine.
+	 */
+	public String getOutputPhaseId();
 
 }
-

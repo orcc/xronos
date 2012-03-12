@@ -21,32 +21,33 @@
 
 package net.sf.openforge.backend.hdl.ucf;
 
-public class UCFConstraintStatement implements UCFStatement
-{
-    
-    private UCFType type;
-    private String name;
-    private UCFConstraint constraint;
+public class UCFConstraintStatement implements UCFStatement {
 
-    public UCFConstraintStatement(UCFType type, String name, UCFConstraint constraint)
-    {
-        this.type = type;
-        this.name = name;
-        this.constraint = constraint;
-    }
-    
-    public UCFType getType() { return type; }
-    
-    public String getName() { return name;
-    }
-    
-    public UCFConstraint getConstraint() { return constraint;
-    }
-    
-    public String toString()
-    {
-        return getType().toString() + " " + 
-            getName() + " " +
-            getConstraint().toString() + ";";
-    }
+	private UCFType type;
+	private String name;
+	private UCFConstraint constraint;
+
+	public UCFConstraintStatement(UCFType type, String name,
+			UCFConstraint constraint) {
+		this.type = type;
+		this.name = name;
+		this.constraint = constraint;
+	}
+
+	public UCFType getType() {
+		return type;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public UCFConstraint getConstraint() {
+		return constraint;
+	}
+
+	public String toString() {
+		return getType().toString() + " " + getName() + " "
+				+ getConstraint().toString() + ";";
+	}
 }

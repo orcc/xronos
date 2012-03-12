@@ -22,27 +22,21 @@
 package net.sf.openforge.backend.hdl.ucf;
 
 /**
- * A UCF comment is a single line comment starting with a '#'
- * symbol.
+ * A UCF comment is a single line comment starting with a '#' symbol.
  */
-public class UCFComment implements UCFStatement
-{
-    
-    private String message;
+public class UCFComment implements UCFStatement {
 
-    public UCFComment(String message)
-    {
-        this.message = message;
-    }
+	private String message;
 
-    public UCFComment(UCFStatement statement)
-    {
-        this.message = statement.toString();
-    }
-    
-    
-    public String toString()
-    {
-        return "# " + message;
-    }
+	public UCFComment(String message) {
+		this.message = message;
+	}
+
+	public UCFComment(UCFStatement statement) {
+		this.message = statement.toString();
+	}
+
+	public String toString() {
+		return "# " + message;
+	}
 }

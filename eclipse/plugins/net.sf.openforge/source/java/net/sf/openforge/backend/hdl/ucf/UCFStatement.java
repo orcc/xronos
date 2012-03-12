@@ -24,8 +24,6 @@ package net.sf.openforge.backend.hdl.ucf;
 /**
  * A marker interface for valid UCF statements.
  */
-public interface UCFStatement
-{
-    
+public interface UCFStatement {
 
 }

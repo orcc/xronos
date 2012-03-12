@@ -21,280 +21,276 @@
 
 package net.sf.openforge.backend.edk;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 
-import java.util.*;
-import java.io.*;
-
-import net.sf.openforge.app.*;
-import net.sf.openforge.app.project.Option;
-import net.sf.openforge.backend.*;
+import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.app.ForgeFileHandler;
+import net.sf.openforge.app.ForgeFileKey;
+import net.sf.openforge.app.GenericJob;
+import net.sf.openforge.app.OptionRegistry;
+import net.sf.openforge.backend.OutputEngine;
 import net.sf.openforge.lim.CodeLabel;
 import net.sf.openforge.lim.Design;
-import net.sf.openforge.lim.io.*;
+import net.sf.openforge.lim.io.FifoIF;
+import net.sf.openforge.lim.io.FifoInput;
+import net.sf.openforge.lim.io.FifoOutput;
+import net.sf.openforge.lim.io.SimplePin;
 
 /**
- * This Forge Core Descriptor implements the OutputEngine interface in
- * order to generate a correctly structured EDK project containing the
- * desgin being compiled.  This includes generation of the directory
- * structure, pao and mpd files.
- *
- * The Peripheral Analyze Order (PAO) file contains a list of HDL
- * modules and files that are needed for synthesis, and defines the
- * analyzing order for compilation.
- *
- * A Microprocessor Peripheral Description (MPD) file defines the
- * interface of the peripheral.  
- *
- * <p>Created: Wed Apr  7 13:25:39 2004
- *
+ * This Forge Core Descriptor implements the OutputEngine interface in order to
+ * generate a correctly structured EDK project containing the desgin being
+ * compiled. This includes generation of the directory structure, pao and mpd
+ * files.
+ * 
+ * The Peripheral Analyze Order (PAO) file contains a list of HDL modules and
+ * files that are needed for synthesis, and defines the analyzing order for
+ * compilation.
+ * 
+ * A Microprocessor Peripheral Description (MPD) file defines the interface of
+ * the peripheral.
+ * 
+ * <p>
+ * Created: Wed Apr 7 13:25:39 2004
+ * 
  * @author cwu, last modified by $Author: imiller $
  * @version $Id: ForgeCoreDescriptor.java 112 2006-03-21 15:41:57Z imiller $
  */
-public class ForgeCoreDescriptor implements OutputEngine
-{
-    private static final String _RCS_ = "$Rev: 112 $";
-    
-    private static final String VERSION = "v2_1_0";
+public class ForgeCoreDescriptor implements OutputEngine {
 
-    private Design design;
+	private static final String VERSION = "v2_1_0";
 
-    // File handles for the various directories and files generated
-    // for an EDK project.
-    public static final ForgeFileKey EDK_ROOT_DIR =  new ForgeFileKey("EDK root dir");
-    public static final ForgeFileKey EDK_HDL_DIR =  new ForgeFileKey("EDK HDL dir");
-    public static final ForgeFileKey EDK_HDL_VER_DIR =  new ForgeFileKey("EDK HDL Verilog dir");
-    public static final ForgeFileKey EDK_REPORT_DIR =  new ForgeFileKey("EDK report dir");
-    public static final ForgeFileKey EDK_DATA_DIR =  new ForgeFileKey("EDK data dir");
+	private Design design;
 
-    private static final ForgeFileKey PAO = new ForgeFileKey("EDK PAO file");
-    private static final ForgeFileKey MPD = new ForgeFileKey("EDK MPD file");
-    
-    public ForgeCoreDescriptor () { }
+	// File handles for the various directories and files generated
+	// for an EDK project.
+	public static final ForgeFileKey EDK_ROOT_DIR = new ForgeFileKey(
+			"EDK root dir");
+	public static final ForgeFileKey EDK_HDL_DIR = new ForgeFileKey(
+			"EDK HDL dir");
+	public static final ForgeFileKey EDK_HDL_VER_DIR = new ForgeFileKey(
+			"EDK HDL Verilog dir");
+	public static final ForgeFileKey EDK_REPORT_DIR = new ForgeFileKey(
+			"EDK report dir");
+	public static final ForgeFileKey EDK_DATA_DIR = new ForgeFileKey(
+			"EDK data dir");
 
-    public void initEnvironment ()
-    {
-        // Because we need the design name in order to correctly
-        // generate the file names, the files are not registered until
-        // they are translated.  This works so long as the keys are
-        // not needed by anything else, or are only used by something
-        // that is guaranteed to be run after the translation phase of
-        // this engine.
-        // We do, however, want to initialize the directory structure
-        //
-        // root
-        //   hdl
-        //     verilog
-        //   report
-        //   data
-        //     foo.pao
-        //     foo.mpd
-        //
-        
-        final GenericJob gj = EngineThread.getGenericJob();
-        final ForgeFileHandler fileHandler = gj.getFileHandler();
-        
-        final String peName = gj.getOption(OptionRegistry.PE_NAME).getValue(CodeLabel.UNSCOPED).toString();
-        final String peVersion = gj.getOption(OptionRegistry.PE_VERSION).getValue(CodeLabel.UNSCOPED).toString();
+	private static final ForgeFileKey PAO = new ForgeFileKey("EDK PAO file");
+	private static final ForgeFileKey MPD = new ForgeFileKey("EDK MPD file");
 
-        final File rootDir = fileHandler.registerFile(EDK_ROOT_DIR, peName + "_" + peVersion);
-        final File hdlDir = fileHandler.registerFile(EDK_HDL_DIR, rootDir, "hdl");
-        fileHandler.registerFile(EDK_HDL_VER_DIR, hdlDir, "verilog");
-        fileHandler.registerFile(EDK_REPORT_DIR, rootDir, "report");
-        fileHandler.registerFile(EDK_DATA_DIR, rootDir, "data");
-    }
-    
-    public void translate (Design design) throws IOException
-    {
-        final ForgeFileHandler fileHandler = EngineThread.getGenericJob().getFileHandler();
-        final File destDir = fileHandler.getFile(EDK_DATA_DIR);
-        fileHandler.getFile(EDK_DATA_DIR).mkdirs();
-        fileHandler.getFile(EDK_REPORT_DIR).mkdirs();
-        
-        this.design = design;
+	public ForgeCoreDescriptor() {
+	}
 
-        final String peName = design.showIDLogical();
-        final File pao = fileHandler.registerFile(PAO, destDir, peName + "_" + VERSION + ".pao");
-        final File mpd = fileHandler.registerFile(MPD, destDir, peName + "_" + VERSION + ".mpd");
+	public void initEnvironment() {
+		// Because we need the design name in order to correctly
+		// generate the file names, the files are not registered until
+		// they are translated. This works so long as the keys are
+		// not needed by anything else, or are only used by something
+		// that is guaranteed to be run after the translation phase of
+		// this engine.
+		// We do, however, want to initialize the directory structure
+		//
+		// root
+		// hdl
+		// verilog
+		// report
+		// data
+		// foo.pao
+		// foo.mpd
+		//
 
-        this.generatePAO(pao);
-        this.generateMPD(mpd);
-    }
+		final GenericJob gj = EngineThread.getGenericJob();
+		final ForgeFileHandler fileHandler = gj.getFileHandler();
 
+		final String peName = gj.getOption(OptionRegistry.PE_NAME)
+				.getValue(CodeLabel.UNSCOPED).toString();
+		final String peVersion = gj.getOption(OptionRegistry.PE_VERSION)
+				.getValue(CodeLabel.UNSCOPED).toString();
 
-    /**
-     * Returns a string which uniquely identifies this phase of the
-     * compiler output.
-     *
-     * @return a non-empty, non-null String
-     */
-    public String getOutputPhaseId () { return "EDK Project Files"; }
-    
-    /**
-     * Generates Peripheral Analyze Order (PAO) file.
-     *
-     *@param File the directory where the genearted file will be
-     *            stored.
-     */
-    private void generatePAO (File paoFile) throws IOException
-    {
-    	GenericJob gj = EngineThread.getGenericJob();
-        final String peVersion = gj.getOption(OptionRegistry.PE_VERSION).getValue(CodeLabel.UNSCOPED).toString();
-        String verilogFileName = gj.getOutputBaseName();
+		final File rootDir = fileHandler.registerFile(EDK_ROOT_DIR, peName
+				+ "_" + peVersion);
+		final File hdlDir = fileHandler.registerFile(EDK_HDL_DIR, rootDir,
+				"hdl");
+		fileHandler.registerFile(EDK_HDL_VER_DIR, hdlDir, "verilog");
+		fileHandler.registerFile(EDK_REPORT_DIR, rootDir, "report");
+		fileHandler.registerFile(EDK_DATA_DIR, rootDir, "data");
+	}
 
-        final String peName = design.showIDLogical();
+	public void translate(Design design) throws IOException {
+		final ForgeFileHandler fileHandler = EngineThread.getGenericJob()
+				.getFileHandler();
+		final File destDir = fileHandler.getFile(EDK_DATA_DIR);
+		fileHandler.getFile(EDK_DATA_DIR).mkdirs();
+		fileHandler.getFile(EDK_REPORT_DIR).mkdirs();
 
-        /*
-        final String paoFileName = peName + "_" + VERSION + ".pao";
-        final File paoFile = new File(directory, paoFileName);
-        */
-        
-        final FileOutputStream paoFos = openFile(paoFile);
+		this.design = design;
 
-        final PrintStream ps = new PrintStream(paoFos, true);
-        
-        ps.println("################################################################################");
-        ps.println("##");
-        ps.println("## " + paoFile.getName());
-        ps.println("##");
-        ps.println("## Peripheral Analyze Order");
-        ps.println("##");
-        ps.println("################################################################################");
-        ps.println();
-        ps.println("lib " + peName + "_" + peVersion + " " + verilogFileName);
-        
-        closeFile(paoFile, paoFos);
-    }
+		final String peName = design.showIDLogical();
+		final File pao = fileHandler.registerFile(PAO, destDir, peName + "_"
+				+ VERSION + ".pao");
+		final File mpd = fileHandler.registerFile(MPD, destDir, peName + "_"
+				+ VERSION + ".mpd");
 
-    /**
-     * Genarates the Microprocesser Peripheral Definition (MPD) file.
-     *
-     *@param File the directory where the genearted file will be
-     *            stored.
-     */
-    private void generateMPD (File mpdFile) throws IOException
-    {
-        final String peName = design.showIDLogical();
+		this.generatePAO(pao);
+		this.generateMPD(mpd);
+	}
 
-        final FileOutputStream mpdFos = openFile(mpdFile);
+	/**
+	 * Returns a string which uniquely identifies this phase of the compiler
+	 * output.
+	 * 
+	 * @return a non-empty, non-null String
+	 */
+	public String getOutputPhaseId() {
+		return "EDK Project Files";
+	}
 
-        final PrintStream ps = new PrintStream(mpdFos, true);
+	/**
+	 * Generates Peripheral Analyze Order (PAO) file.
+	 * 
+	 * @param File
+	 *            the directory where the genearted file will be stored.
+	 */
+	private void generatePAO(File paoFile) throws IOException {
+		GenericJob gj = EngineThread.getGenericJob();
+		final String peVersion = gj.getOption(OptionRegistry.PE_VERSION)
+				.getValue(CodeLabel.UNSCOPED).toString();
+		String verilogFileName = gj.getOutputBaseName();
 
-        ps.println("################################################################################");
-        ps.println("##");
-        ps.println("## " + mpdFile.getName());
-        ps.println("##");
-        ps.println("## Microprocessor Peripheral Description");
-        ps.println("##");
-        ps.println("################################################################################");
-        ps.println();
-        ps.println("BEGIN " + peName);
-        ps.println();
-        ps.println("##====================");
-        ps.println("## Peripheral Options");
-        ps.println("##====================");
-        ps.println();
-        ps.println("OPTION IPTYPE = PERIPHERAL");
-        ps.println("OPTION HDL = VERILOG");
-        ps.println();
-        
-        ps.println("##================");
-        ps.println("## Bus Interfaces");
-        ps.println("##================");
-        ps.println();
-        for (Iterator fifoIFIter = design.getFifoInterfaces().iterator(); fifoIFIter.hasNext();)
-        {
-            FifoIF fifoIF = (FifoIF)fifoIFIter.next();
-            if (fifoIF instanceof FifoInput)
-            {
-                ps.println("BUS_INTERFACE BUS = FSL_IN, BUS_STD = FSL, BUS_TYPE = SLAVE");
-            }
-            else if (fifoIF instanceof FifoOutput)
-            {
-                ps.println("BUS_INTERFACE BUS = FSL_OUT, BUS_STD = FSL, BUS_TYPE = MASTER");
-            }
-        }
-        ps.println();
-        
-        ps.println("##=======");
-        ps.println("## Ports");
-        ps.println("##=======");
-        ps.println();
-        ps.println("PORT CLK = \"\", DIR=IN, SIGIS=CLK");
-        ps.println();
-        for (Iterator fifoIFIter = design.getFifoInterfaces().iterator(); fifoIFIter.hasNext();)
-        {
-            FifoIF fifoIF = (FifoIF)fifoIFIter.next();
-            if (fifoIF instanceof FifoInput)
-            {
-                for(Iterator pinIter = fifoIF.getPins().iterator(); pinIter.hasNext();)
-                {
-                    SimplePin pin = (SimplePin)pinIter.next();
-                    if (pin.showIDLogical().endsWith("CLK"))
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_S_Clk, DIR=OUT, SIGIS=CLK, BUS=FSL_IN");
-                    }
-                    else if (pin.showIDLogical().endsWith("READ"))
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_S_Read, DIR=OUT, BUS=FSL_IN");
-                    }
-                    else if(pin.showIDLogical().endsWith("DATA"))
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_S_Data, DIR=IN, VEC=[0:" + (pin.getWidth() - 1) + "], BUS=FSL_IN");
-                    }
-                    else if(pin.showIDLogical().endsWith("CONTROL"))
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_S_Control, DIR=IN, BUS=FSL_IN");
-                    }
-                    else
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_S_Exists, DIR=IN, BUS=FSL_IN");
-                    }
-                }
-                ps.println();
-            }
-            else if (fifoIF instanceof FifoOutput)
-            {
-                for(Iterator pinIter = fifoIF.getPins().iterator(); pinIter.hasNext();)
-                {
-                    SimplePin pin = (SimplePin)pinIter.next();
-                    if (pin.showIDLogical().endsWith("CLK"))
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_M_Clk, DIR=OUT, SIGIS=CLK, BUS=FSL_OUT");
-                    }
-                    else if (pin.showIDLogical().endsWith("WRITE"))
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_M_Write, DIR=OUT, BUS=FSL_OUT");
-                    }
-                    else if(pin.showIDLogical().endsWith("DATA"))
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_M_Data, DIR=OUT, VEC=[0:" + (pin.getWidth() - 1) + "], BUS=FSL_OUT");
-                    }
-                    else if(pin.showIDLogical().endsWith("CONTROL"))
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_M_Control, DIR=OUT, BUS=FSL_OUT");
-                    }
-                    else
-                    {
-                        ps.println("PORT " + pin.showIDLogical() + " = FSL_M_Full, DIR=IN, BUS=FSL_OUT");
-                    }
-                }
-                ps.println();
-            }
-        }
-        ps.println("END");
-        
-        closeFile(mpdFile, mpdFos);
-    }
+		final String peName = design.showIDLogical();
 
-    private FileOutputStream openFile (File file) throws IOException
-    {
-        return new FileOutputStream(file);
-    }
-    
-    private void closeFile (File file, FileOutputStream fos) throws IOException
-    {
-        fos.flush();
-        fos.close();
-    }
+		/*
+		 * final String paoFileName = peName + "_" + VERSION + ".pao"; final
+		 * File paoFile = new File(directory, paoFileName);
+		 */
+
+		final FileOutputStream paoFos = openFile(paoFile);
+
+		final PrintStream ps = new PrintStream(paoFos, true);
+
+		ps.println("################################################################################");
+		ps.println("##");
+		ps.println("## " + paoFile.getName());
+		ps.println("##");
+		ps.println("## Peripheral Analyze Order");
+		ps.println("##");
+		ps.println("################################################################################");
+		ps.println();
+		ps.println("lib " + peName + "_" + peVersion + " " + verilogFileName);
+
+		closeFile(paoFile, paoFos);
+	}
+
+	/**
+	 * Genarates the Microprocesser Peripheral Definition (MPD) file.
+	 * 
+	 * @param File
+	 *            the directory where the genearted file will be stored.
+	 */
+	private void generateMPD(File mpdFile) throws IOException {
+		final String peName = design.showIDLogical();
+
+		final FileOutputStream mpdFos = openFile(mpdFile);
+
+		final PrintStream ps = new PrintStream(mpdFos, true);
+
+		ps.println("################################################################################");
+		ps.println("##");
+		ps.println("## " + mpdFile.getName());
+		ps.println("##");
+		ps.println("## Microprocessor Peripheral Description");
+		ps.println("##");
+		ps.println("################################################################################");
+		ps.println();
+		ps.println("BEGIN " + peName);
+		ps.println();
+		ps.println("##====================");
+		ps.println("## Peripheral Options");
+		ps.println("##====================");
+		ps.println();
+		ps.println("OPTION IPTYPE = PERIPHERAL");
+		ps.println("OPTION HDL = VERILOG");
+		ps.println();
+
+		ps.println("##================");
+		ps.println("## Bus Interfaces");
+		ps.println("##================");
+		ps.println();
+		for(FifoIF fifoIF: design.getFifoInterfaces()){
+			if (fifoIF instanceof FifoInput) {
+				ps.println("BUS_INTERFACE BUS = FSL_IN, BUS_STD = FSL, BUS_TYPE = SLAVE");
+			} else if (fifoIF instanceof FifoOutput) {
+				ps.println("BUS_INTERFACE BUS = FSL_OUT, BUS_STD = FSL, BUS_TYPE = MASTER");
+			}
+		}
+		ps.println();
+
+		ps.println("##=======");
+		ps.println("## Ports");
+		ps.println("##=======");
+		ps.println();
+		ps.println("PORT CLK = \"\", DIR=IN, SIGIS=CLK");
+		ps.println();
+		for(FifoIF fifoIF: design.getFifoInterfaces()){
+			if (fifoIF instanceof FifoInput) {
+				for (SimplePin pin: fifoIF.getPins()){
+					if (pin.showIDLogical().endsWith("CLK")) {
+						ps.println("PORT "
+								+ pin.showIDLogical()
+								+ " = FSL_S_Clk, DIR=OUT, SIGIS=CLK, BUS=FSL_IN");
+					} else if (pin.showIDLogical().endsWith("READ")) {
+						ps.println("PORT " + pin.showIDLogical()
+								+ " = FSL_S_Read, DIR=OUT, BUS=FSL_IN");
+					} else if (pin.showIDLogical().endsWith("DATA")) {
+						ps.println("PORT " + pin.showIDLogical()
+								+ " = FSL_S_Data, DIR=IN, VEC=[0:"
+								+ (pin.getWidth() - 1) + "], BUS=FSL_IN");
+					} else if (pin.showIDLogical().endsWith("CONTROL")) {
+						ps.println("PORT " + pin.showIDLogical()
+								+ " = FSL_S_Control, DIR=IN, BUS=FSL_IN");
+					} else {
+						ps.println("PORT " + pin.showIDLogical()
+								+ " = FSL_S_Exists, DIR=IN, BUS=FSL_IN");
+					}
+				}
+				ps.println();
+			} else if (fifoIF instanceof FifoOutput) {
+				for (SimplePin pin: fifoIF.getPins()){
+					if (pin.showIDLogical().endsWith("CLK")) {
+						ps.println("PORT "
+								+ pin.showIDLogical()
+								+ " = FSL_M_Clk, DIR=OUT, SIGIS=CLK, BUS=FSL_OUT");
+					} else if (pin.showIDLogical().endsWith("WRITE")) {
+						ps.println("PORT " + pin.showIDLogical()
+								+ " = FSL_M_Write, DIR=OUT, BUS=FSL_OUT");
+					} else if (pin.showIDLogical().endsWith("DATA")) {
+						ps.println("PORT " + pin.showIDLogical()
+								+ " = FSL_M_Data, DIR=OUT, VEC=[0:"
+								+ (pin.getWidth() - 1) + "], BUS=FSL_OUT");
+					} else if (pin.showIDLogical().endsWith("CONTROL")) {
+						ps.println("PORT " + pin.showIDLogical()
+								+ " = FSL_M_Control, DIR=OUT, BUS=FSL_OUT");
+					} else {
+						ps.println("PORT " + pin.showIDLogical()
+								+ " = FSL_M_Full, DIR=IN, BUS=FSL_OUT");
+					}
+				}
+				ps.println();
+			}
+		}
+		ps.println("END");
+
+		closeFile(mpdFile, mpdFos);
+	}
+
+	private FileOutputStream openFile(File file) throws IOException {
+		return new FileOutputStream(file);
+	}
+
+	private void closeFile(File file, FileOutputStream fos) throws IOException {
+		fos.flush();
+		fos.close();
+	}
 }
-

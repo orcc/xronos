@@ -917,7 +917,7 @@ public abstract class Module extends Component implements Cloneable
         public List getSearchList(String postfix)
         {
             final SearchLabel searchLabel = Module.super.getSearchLabel();
-            List searchList = searchLabel.getSearchList(postfix);
+            List<String> searchList = searchLabel.getSearchList(postfix);
             List modified = new ArrayList();
             modified.add(((String)searchList.get(0)) + "." + this.localLabel);
             modified.addAll(searchList);

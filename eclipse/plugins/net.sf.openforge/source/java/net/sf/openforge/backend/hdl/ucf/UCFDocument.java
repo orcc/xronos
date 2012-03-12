@@ -21,66 +21,58 @@
 
 package net.sf.openforge.backend.hdl.ucf;
 
-import java.util.*;
-import java.io.*;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 
-public class UCFDocument
-{
+public class UCFDocument {
 
-    List statements = new ArrayList();
-    
-    public UCFDocument()
-    {
-    }
+	List<Object> statements = new ArrayList<Object>();
 
-    public void blank()
-    {
-        statements.add("");
-    }
+	public UCFDocument() {
+	}
 
-    protected void state(String statement)
-    {
-        statements.add(statement);
-    }
-    
-    public void state(UCFStatement statement)
-    {
-        statements.add(statement);
-    }
-    
-    public void comment(String comment)
-    {
-        statements.add(new UCFComment(comment));
-    }
+	public void blank() {
+		statements.add("");
+	}
 
-    public void comment(UCFStatement comment)
-    {
-        statements.add(new UCFComment(comment));
-    }
-    
-    public void write(OutputStream os)
-    {
-        write(new PrintWriter(os));
-    }
-    
-    public void write(Writer writer)
-    {
-        write(new PrintWriter(writer));
-    }
-    
-    public void write(PrintWriter printer)
-    {
-        for (Iterator it=statements.iterator(); it.hasNext();)
-        {
-            printer.println(it.next().toString());
-        }
-        printer.flush();
-    }
-    
-    public String toString()
-    {
-        StringWriter stringer = new StringWriter();
-        write(stringer);
-        return stringer.toString();
-    }
+	protected void state(String statement) {
+		statements.add(statement);
+	}
+
+	public void state(UCFStatement statement) {
+		statements.add(statement);
+	}
+
+	public void comment(String comment) {
+		statements.add(new UCFComment(comment));
+	}
+
+	public void comment(UCFStatement comment) {
+		statements.add(new UCFComment(comment));
+	}
+
+	public void write(OutputStream os) {
+		write(new PrintWriter(os));
+	}
+
+	public void write(Writer writer) {
+		write(new PrintWriter(writer));
+	}
+
+	public void write(PrintWriter printer) {
+		for (Object object: statements){
+			printer.println(object.toString());
+		}
+		printer.flush();
+	}
+
+	public String toString() {
+		StringWriter stringer = new StringWriter();
+		write(stringer);
+		return stringer.toString();
+	}
 }

@@ -21,55 +21,49 @@
 
 package net.sf.openforge.backend.timedc;
 
+import java.io.PrintStream;
 
-import java.util.*;
-import java.io.*;
-
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.RegisterWrite;
 
 /**
- * RegWriteVar maintains the state of the write, ie the go/done path. 
- *
- *
- * <p>Created: Thu Mar 10 10:11:11 2005
- *
+ * RegWriteVar maintains the state of the write, ie the go/done path.
+ * 
+ * 
+ * <p>
+ * Created: Thu Mar 10 10:11:11 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: RegWriteVar.java 99 2006-02-02 20:09:53Z imiller $
  */
-public class RegWriteVar extends OpHandle implements StateVar
-{
-    private static final String _RCS_ = "$Rev: 99 $";
+public class RegWriteVar extends OpHandle implements StateVar {
 
-    private RegisterWrite write;
-    private RegisterVar var;
-    
-    public RegWriteVar (RegisterWrite regWrite, RegisterVar regVar, CNameCache cache)
-    {
-        super(regWrite, cache);
-        this.write = regWrite;
-        this.var = regVar;
-    }
+	private RegisterWrite write;
+	private RegisterVar var;
 
-    public void declareGlobal (PrintStream ps)
-    {
-        ps.println(StateVar.STORAGE_CLASS + "char " + getPendingIn() + " = 0;");
-        ps.println(StateVar.STORAGE_CLASS + "char " + getPendingOut() + " = 0;");
-    }
+	public RegWriteVar(RegisterWrite regWrite, RegisterVar regVar,
+			CNameCache cache) {
+		super(regWrite, cache);
+		this.write = regWrite;
+		this.var = regVar;
+	}
 
-    public void writeTick (PrintStream ps)
-    {
-        this.var.writeTick(ps);
-        ps.println("\t" + getPendingOut() + " = " + getPendingIn() + ";");
-    }
+	public void declareGlobal(PrintStream ps) {
+		ps.println(StateVar.STORAGE_CLASS + "char " + getPendingIn() + " = 0;");
+		ps.println(StateVar.STORAGE_CLASS + "char " + getPendingOut() + " = 0;");
+	}
 
-    public String getPendingIn ()
-    {
-        return getPendingOut() + "_next";
-    }
+	public void writeTick(PrintStream ps) {
+		this.var.writeTick(ps);
+		ps.println("\t" + getPendingOut() + " = " + getPendingIn() + ";");
+	}
 
-    public String getPendingOut ()
-    {
-        return getBusName(this.write.getExit(Exit.DONE).getDoneBus());
-    }
-    
+	public String getPendingIn() {
+		return getPendingOut() + "_next";
+	}
+
+	public String getPendingOut() {
+		return getBusName(this.write.getExit(Exit.DONE).getDoneBus());
+	}
+
 }// RegWriteVar
