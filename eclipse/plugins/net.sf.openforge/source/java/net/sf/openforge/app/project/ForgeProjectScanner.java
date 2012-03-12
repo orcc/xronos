@@ -52,304 +52,282 @@ import java.util.List;
 
 import net.sf.openforge.app.EngineThread;
 
+public class ForgeProjectScanner {
 
-public class ForgeProjectScanner 
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	/** org.w3c.dom.Document document */
+	org.w3c.dom.Document document;
 
-    /** org.w3c.dom.Document document */
-    org.w3c.dom.Document document;
+	private static final String claSwitch = "-opt";
+	private String optionScope = null;
+	private List<String> pfileTokens = new ArrayList<String>();
 
-    private static final String claSwitch = "-opt";    
-    private String optionScope = null;    
-    private List pfileTokens = new ArrayList();      
-    
-    /** Create new ForgeProjectScanner with org.w3c.dom.Document. */
-    public ForgeProjectScanner(org.w3c.dom.Document document) 
-    {
-        this.document = document;
-    }
-    
-    /**
-     * Reads a project file.
-     */
-    public static List readProjectFile (File project_file)
-    throws FileNotFoundException
-    {        
-    	List pFileTokens = null;
-        javax.xml.parsers.DocumentBuilderFactory builderFactory = null;
-        javax.xml.parsers.DocumentBuilder builder = null;
-        Object o = null;
-        try
-        {
-            o = javax.xml.parsers.DocumentBuilderFactory.newInstance();
-        }
-        catch (Exception e)
-        {
-            EngineThread.getGenericJob().error("FATAL: Failed to create the XML DocumentBuilderFactory because : " + e);
-            e.printStackTrace();
-            EngineThread.getEngine().fatalError("FATAL: Failed to create the XML DocumentBuilderFactory");
-        }
-        
-        try
-        {   
-            builderFactory = (javax.xml.parsers.DocumentBuilderFactory)o;
-        }
-        catch (ClassCastException cce)
-        {
-            EngineThread.getGenericJob().error("FATAL: " + cce);
-            EngineThread.getGenericJob().error("Produced a non-DocumentBuilderFactory class, " +
-                "\"" + o.getClass().toString() + "\"" +
-                " was expecting " +
-                "\"" + javax.xml.parsers.DocumentBuilder.class + "\"");
-            cce.printStackTrace();
-        }
-        
-        try 
-        {
-            builder = builderFactory.newDocumentBuilder();
-        }
-        catch (Exception e)
-        {
-        	EngineThread.getGenericJob().error("FATAL: Failed to create the DocumentBuilder.");
-        	e.printStackTrace();
-        	EngineThread.getEngine().fatalError("FATAL: Failed to create the DocumentBuilder.");
-        }
+	/** Create new ForgeProjectScanner with org.w3c.dom.Document. */
+	public ForgeProjectScanner(org.w3c.dom.Document document) {
+		this.document = document;
+	}
 
-        FileReader freader = new FileReader(project_file);
+	/**
+	 * Reads a project file.
+	 */
+	public static List readProjectFile(File project_file)
+			throws FileNotFoundException {
+		List pFileTokens = null;
+		javax.xml.parsers.DocumentBuilderFactory builderFactory = null;
+		javax.xml.parsers.DocumentBuilder builder = null;
+		Object o = null;
+		try {
+			o = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+		} catch (Exception e) {
+			EngineThread.getGenericJob().error(
+					"FATAL: Failed to create the XML DocumentBuilderFactory because : "
+							+ e);
+			e.printStackTrace();
+			EngineThread.getEngine().fatalError(
+					"FATAL: Failed to create the XML DocumentBuilderFactory");
+		}
 
-        org.w3c.dom.Document document = null;
-        try 
-        {
-            document = builder.parse (new org.xml.sax.InputSource (freader));
-        }
-        catch (Exception e)
-        {
-        	EngineThread.getGenericJob().error("FATAL: Failed to parse file into XML document.");
-            e.printStackTrace();
-            EngineThread.getEngine().fatalError("FATAL: Failed to parse file into XML document.");
-        }
-        
-        try 
-        {
-            ForgeProjectScanner scanner = new ForgeProjectScanner (document);
-            scanner.visitDocument();
-            pFileTokens = scanner.getPfileTokens();            
-        }
-        catch (Exception e)
-        {
-        	EngineThread.getGenericJob().error("FATAL: Failed to scan the XML document.");
-            e.printStackTrace();
-            EngineThread.getEngine().fatalError("FATAL: Failed to scan the XML document.");
-        }        
-    
-        return pFileTokens;
-    } // readProjectFile()
-    
-    /** Scan through org.w3c.dom.Document document. */
-    public void visitDocument() 
-    {
-        org.w3c.dom.Element element = document.getDocumentElement();
-        if ((element != null) && element.getTagName().equals("forgeProject")) {
-            visitElement_forgeProject(element);
-        }
-        if ((element != null) && element.getTagName().equals("options")) {
-            visitElement_options(element);
-        }
-        if ((element != null) && element.getTagName().equals("option")) {
-            visitElement_option(element);
-        }
-        if ((element != null) && element.getTagName().equals("entry")) {
-            visitElement_entry(element);
-        }
-    } // visitDocument()
-    
-    /** Scan through org.w3c.dom.Element named forgeProject. */
-    void visitElement_forgeProject(org.w3c.dom.Element element) 
-    { // <forgeProject>
-        
-        // element.getValue();
-        org.w3c.dom.NodeList nodes = element.getChildNodes();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            org.w3c.dom.Node node = nodes.item(i);
-            switch (node.getNodeType()) {
-                case org.w3c.dom.Node.CDATA_SECTION_NODE:
-                    break;
-                case org.w3c.dom.Node.ELEMENT_NODE:
-                    org.w3c.dom.Element nodeElement = (org.w3c.dom.Element)node;
-                    if (nodeElement.getTagName().equals("options")) {
-                        visitElement_options(nodeElement);
-                    }
-                    break;
-                case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
-                    // ((org.w3c.dom.ProcessingInstruction)node).getTarget();
-                    // ((org.w3c.dom.ProcessingInstruction)node).getData();
-                    break;
-            }
-        }
-    } // visitElement_forgeProject()
-    
-    /** Scan through org.w3c.dom.Element named options. */
-    void visitElement_options(org.w3c.dom.Element element) 
-    { // <options>
-                
-        // element.getValue();
-        org.w3c.dom.NamedNodeMap attrs = element.getAttributes();
-        for (int i = 0; i < attrs.getLength(); i++) {
-            org.w3c.dom.Attr attr = (org.w3c.dom.Attr)attrs.item(i);
-            if (attr.getName().equals("tag")) { // <options tag="???">        
-                optionScope = attr.getValue();
-            }
-        }
-        
-        org.w3c.dom.NodeList nodes = element.getChildNodes();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            org.w3c.dom.Node node = nodes.item(i);
-            switch (node.getNodeType()) {
-                case org.w3c.dom.Node.CDATA_SECTION_NODE:
-                    // ((org.w3c.dom.CDATASection)node).getData());
-                    break;
-                case org.w3c.dom.Node.ELEMENT_NODE:
-                    org.w3c.dom.Element nodeElement = (org.w3c.dom.Element)node;
-                    if (nodeElement.getTagName().equals("option")) {
-                        visitElement_option(nodeElement);
-                    }
-                    break;
-                case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
-                    // ((org.w3c.dom.ProcessingInstruction)node).getTarget();
-                    // ((org.w3c.dom.ProcessingInstruction)node).getData();
-                    break;
-            }
-        }
-    } // visitElement_options()
-    
-    /** Scan through org.w3c.dom.Element named option. */
-    void visitElement_option(org.w3c.dom.Element element) 
-    { // <option>
-        // element.getValue();
-        org.w3c.dom.NamedNodeMap attrs = element.getAttributes();
-        String option_name = "unnamed";
-        String option_type= "untyped";
-        
-        for (int i = 0; i < attrs.getLength(); i++) {
-            org.w3c.dom.Attr attr = (org.w3c.dom.Attr)attrs.item(i);
-            if (attr.getName().equals("name")) { // <option name="???">
-                option_name = attr.getValue();        
-            }
-            if (attr.getName().equals("type")) { // <option type="???">
-                option_type = attr.getValue();
-            }
-        }
+		try {
+			builderFactory = (javax.xml.parsers.DocumentBuilderFactory) o;
+		} catch (ClassCastException cce) {
+			EngineThread.getGenericJob().error("FATAL: " + cce);
+			EngineThread.getGenericJob().error(
+					"Produced a non-DocumentBuilderFactory class, " + "\""
+							+ o.getClass().toString() + "\""
+							+ " was expecting " + "\""
+							+ javax.xml.parsers.DocumentBuilder.class + "\"");
+			cce.printStackTrace();
+		}
 
-        org.w3c.dom.NodeList nodes = element.getChildNodes();
-        
-        String option_value = "";
-        
-        if (option_type.equalsIgnoreCase("list") ||
-            option_type.equalsIgnoreCase("path") ||
-            option_type.equalsIgnoreCase("multi-file"))
-        {
-            List values = new ArrayList();
-            
-            for (int i = 0; i < nodes.getLength(); i++) {
-                org.w3c.dom.Node node = nodes.item(i);
-                switch (node.getNodeType()) {
-                    case org.w3c.dom.Node.CDATA_SECTION_NODE:
-                        // ((org.w3c.dom.CDATASection)node).getData());
-                        break;
-                    case org.w3c.dom.Node.ELEMENT_NODE:
-                        org.w3c.dom.Element nodeElement = (org.w3c.dom.Element)node;
-                        if (nodeElement.getTagName().equals("entry")) {
-                            values.add(visitElement_entry(nodeElement));
-                        }
-                        break;
-                    case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
-                        // ((org.w3c.dom.ProcessingInstruction)node).getTarget();
-                        // ((org.w3c.dom.ProcessingInstruction)node).getData();
-                        break;
-                    case org.w3c.dom.Node.TEXT_NODE:
-                        // ((org.w3c.dom.Text)node).getData());
-                        break;
-                }
-            }
-            option_value = OptionList.toString(values);
-        }
-        else 
-        {
-            if (nodes.getLength() > 0) 
-            {
-                org.w3c.dom.Node node = nodes.item(0);
+		try {
+			builder = builderFactory.newDocumentBuilder();
+		} catch (Exception e) {
+			EngineThread.getGenericJob().error(
+					"FATAL: Failed to create the DocumentBuilder.");
+			e.printStackTrace();
+			EngineThread.getEngine().fatalError(
+					"FATAL: Failed to create the DocumentBuilder.");
+		}
 
-                switch (node.getNodeType()) {
-                    case org.w3c.dom.Node.CDATA_SECTION_NODE:
-                        // ((org.w3c.dom.CDATASection)node).getData());
-                        break;
-                    case org.w3c.dom.Node.ELEMENT_NODE:
-                        org.w3c.dom.Element nodeElement = (org.w3c.dom.Element)node;
-                        if (nodeElement.getTagName().equals("entry")) {
-                            visitElement_entry(nodeElement);
-                        }
-                        break;
-                    case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
-                        // ((org.w3c.dom.ProcessingInstruction)node).getTarget();
-                        // ((org.w3c.dom.ProcessingInstruction)node).getData();
-                        break;
-                    case org.w3c.dom.Node.TEXT_NODE:
-                        option_value = ((org.w3c.dom.Text)node).getData().trim();
-                        break;
-                }
-            }
-        }
-        
-        pfileTokens.add(claSwitch);
-        if(optionScope.equals("UNSCOPED"))
-        {        	
-        	pfileTokens.add(option_name + "=" + option_value);
-        }
-        else
-        {        
-        	pfileTokens.add(option_name + "@" + optionScope + "=" + option_value);
-        }        
-        
-    } // visitElement_option()
-    
-    /** Scan through org.w3c.dom.Element named entry. */
-    String visitElement_entry(org.w3c.dom.Element element) 
-    { // <entry>
-        String entry = "";
-        
-        // element.getValue();
-        org.w3c.dom.NodeList nodes = element.getChildNodes();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            org.w3c.dom.Node node = nodes.item(i);
-            switch (node.getNodeType()) {
-                case org.w3c.dom.Node.CDATA_SECTION_NODE:
-                    // ((org.w3c.dom.CDATASection)node).getData());
-                    break;
-                case org.w3c.dom.Node.ELEMENT_NODE:
-                    org.w3c.dom.Element nodeElement = (org.w3c.dom.Element)node;
-                    break;
-                case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
-                    // ((org.w3c.dom.ProcessingInstruction)node).getTarget();
-                    // ((org.w3c.dom.ProcessingInstruction)node).getData();
-                    break;
-                case org.w3c.dom.Node.TEXT_NODE:
-                    entry = ((org.w3c.dom.Text)node).getData().trim();
-                    break;
-            }
-        }
+		FileReader freader = new FileReader(project_file);
 
-            return entry;
-        
-    } // visitElement_entry()
+		org.w3c.dom.Document document = null;
+		try {
+			document = builder.parse(new org.xml.sax.InputSource(freader));
+		} catch (Exception e) {
+			EngineThread.getGenericJob().error(
+					"FATAL: Failed to parse file into XML document.");
+			e.printStackTrace();
+			EngineThread.getEngine().fatalError(
+					"FATAL: Failed to parse file into XML document.");
+		}
 
-   /**
-     * Returns the options in the preference file as a list of 
-     * command line tokens.
-     */
-    public List getPfileTokens()
-    {
-        return pfileTokens;
-    }
-    
+		try {
+			ForgeProjectScanner scanner = new ForgeProjectScanner(document);
+			scanner.visitDocument();
+			pFileTokens = scanner.getPfileTokens();
+		} catch (Exception e) {
+			EngineThread.getGenericJob().error(
+					"FATAL: Failed to scan the XML document.");
+			e.printStackTrace();
+			EngineThread.getEngine().fatalError(
+					"FATAL: Failed to scan the XML document.");
+		}
+
+		return pFileTokens;
+	} // readProjectFile()
+
+	/** Scan through org.w3c.dom.Document document. */
+	public void visitDocument() {
+		org.w3c.dom.Element element = document.getDocumentElement();
+		if ((element != null) && element.getTagName().equals("forgeProject")) {
+			visitElement_forgeProject(element);
+		}
+		if ((element != null) && element.getTagName().equals("options")) {
+			visitElement_options(element);
+		}
+		if ((element != null) && element.getTagName().equals("option")) {
+			visitElement_option(element);
+		}
+		if ((element != null) && element.getTagName().equals("entry")) {
+			visitElement_entry(element);
+		}
+	} // visitDocument()
+
+	/** Scan through org.w3c.dom.Element named forgeProject. */
+	void visitElement_forgeProject(org.w3c.dom.Element element) { // <forgeProject>
+
+		// element.getValue();
+		org.w3c.dom.NodeList nodes = element.getChildNodes();
+		for (int i = 0; i < nodes.getLength(); i++) {
+			org.w3c.dom.Node node = nodes.item(i);
+			switch (node.getNodeType()) {
+			case org.w3c.dom.Node.CDATA_SECTION_NODE:
+				break;
+			case org.w3c.dom.Node.ELEMENT_NODE:
+				org.w3c.dom.Element nodeElement = (org.w3c.dom.Element) node;
+				if (nodeElement.getTagName().equals("options")) {
+					visitElement_options(nodeElement);
+				}
+				break;
+			case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
+				// ((org.w3c.dom.ProcessingInstruction)node).getTarget();
+				// ((org.w3c.dom.ProcessingInstruction)node).getData();
+				break;
+			}
+		}
+	} // visitElement_forgeProject()
+
+	/** Scan through org.w3c.dom.Element named options. */
+	void visitElement_options(org.w3c.dom.Element element) { // <options>
+
+		// element.getValue();
+		org.w3c.dom.NamedNodeMap attrs = element.getAttributes();
+		for (int i = 0; i < attrs.getLength(); i++) {
+			org.w3c.dom.Attr attr = (org.w3c.dom.Attr) attrs.item(i);
+			if (attr.getName().equals("tag")) { // <options tag="???">
+				optionScope = attr.getValue();
+			}
+		}
+
+		org.w3c.dom.NodeList nodes = element.getChildNodes();
+		for (int i = 0; i < nodes.getLength(); i++) {
+			org.w3c.dom.Node node = nodes.item(i);
+			switch (node.getNodeType()) {
+			case org.w3c.dom.Node.CDATA_SECTION_NODE:
+				// ((org.w3c.dom.CDATASection)node).getData());
+				break;
+			case org.w3c.dom.Node.ELEMENT_NODE:
+				org.w3c.dom.Element nodeElement = (org.w3c.dom.Element) node;
+				if (nodeElement.getTagName().equals("option")) {
+					visitElement_option(nodeElement);
+				}
+				break;
+			case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
+				// ((org.w3c.dom.ProcessingInstruction)node).getTarget();
+				// ((org.w3c.dom.ProcessingInstruction)node).getData();
+				break;
+			}
+		}
+	} // visitElement_options()
+
+	/** Scan through org.w3c.dom.Element named option. */
+	void visitElement_option(org.w3c.dom.Element element) { // <option>
+															// element.getValue();
+		org.w3c.dom.NamedNodeMap attrs = element.getAttributes();
+		String option_name = "unnamed";
+		String option_type = "untyped";
+
+		for (int i = 0; i < attrs.getLength(); i++) {
+			org.w3c.dom.Attr attr = (org.w3c.dom.Attr) attrs.item(i);
+			if (attr.getName().equals("name")) { // <option name="???">
+				option_name = attr.getValue();
+			}
+			if (attr.getName().equals("type")) { // <option type="???">
+				option_type = attr.getValue();
+			}
+		}
+
+		org.w3c.dom.NodeList nodes = element.getChildNodes();
+
+		String option_value = "";
+
+		if (option_type.equalsIgnoreCase("list")
+				|| option_type.equalsIgnoreCase("path")
+				|| option_type.equalsIgnoreCase("multi-file")) {
+			List<String> values = new ArrayList<String>();
+
+			for (int i = 0; i < nodes.getLength(); i++) {
+				org.w3c.dom.Node node = nodes.item(i);
+				switch (node.getNodeType()) {
+				case org.w3c.dom.Node.CDATA_SECTION_NODE:
+					// ((org.w3c.dom.CDATASection)node).getData());
+					break;
+				case org.w3c.dom.Node.ELEMENT_NODE:
+					org.w3c.dom.Element nodeElement = (org.w3c.dom.Element) node;
+					if (nodeElement.getTagName().equals("entry")) {
+						values.add(visitElement_entry(nodeElement));
+					}
+					break;
+				case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
+					// ((org.w3c.dom.ProcessingInstruction)node).getTarget();
+					// ((org.w3c.dom.ProcessingInstruction)node).getData();
+					break;
+				case org.w3c.dom.Node.TEXT_NODE:
+					// ((org.w3c.dom.Text)node).getData());
+					break;
+				}
+			}
+			option_value = OptionList.toString(values);
+		} else {
+			if (nodes.getLength() > 0) {
+				org.w3c.dom.Node node = nodes.item(0);
+
+				switch (node.getNodeType()) {
+				case org.w3c.dom.Node.CDATA_SECTION_NODE:
+					// ((org.w3c.dom.CDATASection)node).getData());
+					break;
+				case org.w3c.dom.Node.ELEMENT_NODE:
+					org.w3c.dom.Element nodeElement = (org.w3c.dom.Element) node;
+					if (nodeElement.getTagName().equals("entry")) {
+						visitElement_entry(nodeElement);
+					}
+					break;
+				case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
+					// ((org.w3c.dom.ProcessingInstruction)node).getTarget();
+					// ((org.w3c.dom.ProcessingInstruction)node).getData();
+					break;
+				case org.w3c.dom.Node.TEXT_NODE:
+					option_value = ((org.w3c.dom.Text) node).getData().trim();
+					break;
+				}
+			}
+		}
+
+		pfileTokens.add(claSwitch);
+		if (optionScope.equals("UNSCOPED")) {
+			pfileTokens.add(option_name + "=" + option_value);
+		} else {
+			pfileTokens.add(option_name + "@" + optionScope + "="
+					+ option_value);
+		}
+
+	} // visitElement_option()
+
+	/** Scan through org.w3c.dom.Element named entry. */
+	String visitElement_entry(org.w3c.dom.Element element) { // <entry>
+		String entry = "";
+
+		// element.getValue();
+		org.w3c.dom.NodeList nodes = element.getChildNodes();
+		for (int i = 0; i < nodes.getLength(); i++) {
+			org.w3c.dom.Node node = nodes.item(i);
+			switch (node.getNodeType()) {
+			case org.w3c.dom.Node.CDATA_SECTION_NODE:
+				// ((org.w3c.dom.CDATASection)node).getData());
+				break;
+			case org.w3c.dom.Node.ELEMENT_NODE:
+				//org.w3c.dom.Element nodeElement = (org.w3c.dom.Element) node;
+				break;
+			case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
+				// ((org.w3c.dom.ProcessingInstruction)node).getTarget();
+				// ((org.w3c.dom.ProcessingInstruction)node).getData();
+				break;
+			case org.w3c.dom.Node.TEXT_NODE:
+				entry = ((org.w3c.dom.Text) node).getData().trim();
+				break;
+			}
+		}
+
+		return entry;
+
+	} // visitElement_entry()
+
+	/**
+	 * Returns the options in the preference file as a list of command line
+	 * tokens.
+	 */
+	public List getPfileTokens() {
+		return pfileTokens;
+	}
+
 } // class ForgeProjectScanner

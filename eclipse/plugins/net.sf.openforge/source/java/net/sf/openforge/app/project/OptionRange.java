@@ -24,72 +24,58 @@ import net.sf.openforge.app.OptionKey;
 
 /**
  * An Option which accepts integer values.
- *
+ * 
  * @author Andreas Kollegger
  */
-public class OptionRange extends OptionInt
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class OptionRange extends OptionInt {
 
-    int lowest = 0;
-    int highest = 0;
-    
-    public OptionRange(OptionKey key,
-                     int default_value,
-                     int lowest,
-                     int highest,
-                     boolean hidden)
-    {
-        super(key, default_value, hidden);
-        this.lowest = lowest;
-        this.highest = highest;
-    } // OptionRange()
-          
-    /**
-     * Returns the lowest valid value which this range will accept.
-     *
-     * @return the lowest valid value
-     */
-    public int getLowest()
-    {
-        return lowest;
-    }
-    
-    /**
-     * Returns the highest valid value which this range will accept.
-     *
-     * @return the highest valid value
-     */
-    public int getHighest()
-    {
-        return highest;
-    }
-    
-    public boolean isValid(String s)
-    {
-        int value;
-        try 
-        {
-            Integer valid = Integer.valueOf(s);
-            value = valid.intValue();
-        }
-        catch (NumberFormatException nfe) 
-        {
-            return false;
-        }
+	int lowest = 0;
+	int highest = 0;
 
-        if ((value < lowest) || (value > highest))
-        {
-            return false;
-        }
-        
-        return true;
+	public OptionRange(OptionKey key, int default_value, int lowest,
+			int highest, boolean hidden) {
+		super(key, default_value, hidden);
+		this.lowest = lowest;
+		this.highest = highest;
+	} // OptionRange()
 
-    } // isValid()
+	/**
+	 * Returns the lowest valid value which this range will accept.
+	 * 
+	 * @return the lowest valid value
+	 */
+	public int getLowest() {
+		return lowest;
+	}
 
-    public String getTypeName()
-    {
-        return "range";
-    }
-    
+	/**
+	 * Returns the highest valid value which this range will accept.
+	 * 
+	 * @return the highest valid value
+	 */
+	public int getHighest() {
+		return highest;
+	}
+
+	public boolean isValid(String s) {
+		int value;
+		try {
+			Integer valid = Integer.valueOf(s);
+			value = valid.intValue();
+		} catch (NumberFormatException nfe) {
+			return false;
+		}
+
+		if ((value < lowest) || (value > highest)) {
+			return false;
+		}
+
+		return true;
+
+	} // isValid()
+
+	public String getTypeName() {
+		return "range";
+	}
+
 } /* end class OptionRange */

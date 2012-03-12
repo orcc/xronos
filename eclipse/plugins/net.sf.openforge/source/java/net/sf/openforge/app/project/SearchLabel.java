@@ -21,36 +21,36 @@
 
 package net.sf.openforge.app.project;
 
-import java.util.*;
+import java.util.List;
 
 /**
- * A label which can be applied to any structural piece of code, common in most languages.
- *
+ * A label which can be applied to any structural piece of code, common in most
+ * languages.
+ * 
  * @author <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
  * @version $Id: SearchLabel.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface SearchLabel
-{
-	
-	/**
-     * Returns a List which produces an increasingly general
-     * sequence of label strings.
-     *
-     * @see SearchIterator
-     */
-    public List getSearchList();
-	
-    /**
-     * Returns a List which produces an increasingly general
-     * sequence of label strings.
-     *
-     * @see SearchIterator
-     */
-    public List getSearchList(String postfix);
+public interface SearchLabel {
 
-    /**
-     * Returns the String label associated with this SearchLabel if
-     * applicable, null otherwise.
-     */
-    public String getLabel ();
+	/**
+	 * Returns a List which produces an increasingly general sequence of label
+	 * strings.
+	 * 
+	 * @see SearchIterator
+	 */
+	public List<String> getSearchList();
+
+	/**
+	 * Returns a List which produces an increasingly general sequence of label
+	 * strings.
+	 * 
+	 * @see SearchIterator
+	 */
+	public List getSearchList(String postfix);
+
+	/**
+	 * Returns the String label associated with this SearchLabel if applicable,
+	 * null otherwise.
+	 */
+	public String getLabel();
 }

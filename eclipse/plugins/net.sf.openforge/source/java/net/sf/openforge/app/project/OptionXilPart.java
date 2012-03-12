@@ -21,52 +21,45 @@
 
 package net.sf.openforge.app.project;
 
-import net.sf.openforge.app.*;
+import net.sf.openforge.app.OptionKey;
 import net.sf.openforge.util.XilinxDevice;
 
-
 /**
- * OptionXilPart is a lightweight extension to OptionString that does
- * type checking on the String specified by the user to ensure that it
- * represents a valid part, as recognized by the {@link XilinxDevice}
- * class. 
- *
- * <p>Created: Tue Feb  1 11:53:46 2005
- *
+ * OptionXilPart is a lightweight extension to OptionString that does type
+ * checking on the String specified by the user to ensure that it represents a
+ * valid part, as recognized by the {@link XilinxDevice} class.
+ * 
+ * <p>
+ * Created: Tue Feb 1 11:53:46 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: OptionXilPart.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class OptionXilPart extends OptionString
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class OptionXilPart extends OptionString {
 
-    public OptionXilPart (OptionKey key, String defaultValue, boolean hidden)
-    {
-        super(key, defaultValue, hidden);
-    }
+	public OptionXilPart(OptionKey key, String defaultValue, boolean hidden) {
+		super(key, defaultValue, hidden);
+	}
 
-    /**
-     * Returns false if the string does not parse to a known Xilinx
-     * Device, or if the super class reports that it is an invalid
-     * string. 
-     *
-     * @param s a value of type 'String'
-     * @return a value of type 'boolean'
-     */
-    public boolean isValid (String s)
-    {
-        final XilinxDevice testDevice = new XilinxDevice(s);
-        if (!testDevice.isXilinxDevice())
-        {
-            return false;
-        }
-        
-        return super.isValid(s);
-    }
+	/**
+	 * Returns false if the string does not parse to a known Xilinx Device, or
+	 * if the super class reports that it is an invalid string.
+	 * 
+	 * @param s
+	 *            a value of type 'String'
+	 * @return a value of type 'boolean'
+	 */
+	public boolean isValid(String s) {
+		final XilinxDevice testDevice = new XilinxDevice(s);
+		if (!testDevice.isXilinxDevice()) {
+			return false;
+		}
 
-    public String getTypeName ()
-    {
-        return "xilinxPartSelect";
-    }
-    
+		return super.isValid(s);
+	}
+
+	public String getTypeName() {
+		return "xilinxPartSelect";
+	}
+
 }// OptionXilPart

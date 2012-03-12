@@ -20,65 +20,57 @@
  */
 package net.sf.openforge.app.project;
 
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.sf.openforge.app.OptionKey;
 
-
-/** 
- * An {@link OptionString} which validates by matching
- * against a regular expression.
- *
+/**
+ * An {@link OptionString} which validates by matching against a regular
+ * expression.
+ * 
  * @see net.sf.openforge.app.project.Option
  * @author Andreas Kollegger
  */
-public class OptionRegExp extends OptionString
-{
+public class OptionRegExp extends OptionString {
 
-    private static final String _RCS_ = "$Rev: 2 $";
+	Pattern pattern;
 
-    Pattern pattern;
-    
-    /**
-     * Constructs a new OptionRegExp definition of a File based Option.
-     *
-     * @param key the look-up key for the option
-     * @param default_value the default value for the option
-     * @param regexp the default value for the option is not used
-     *      as a literal value, but is used as a regular expression
-     *      to validate string values 
-     * @param hidden true if this option should be secret
-     */    
-    public OptionRegExp(OptionKey key,
-        String default_value,
-        String regexp,
-        boolean hidden)
-	{
+	/**
+	 * Constructs a new OptionRegExp definition of a File based Option.
+	 * 
+	 * @param key
+	 *            the look-up key for the option
+	 * @param default_value
+	 *            the default value for the option
+	 * @param regexp
+	 *            the default value for the option is not used as a literal
+	 *            value, but is used as a regular expression to validate string
+	 *            values
+	 * @param hidden
+	 *            true if this option should be secret
+	 */
+	public OptionRegExp(OptionKey key, String default_value, String regexp,
+			boolean hidden) {
 		super(key, default_value, hidden);
 		setPattern(regexp);
 	} // OptionRegExp()
 
-    private void setPattern(String p)
-    {
-        if ((p != null) && (!p.equals("")))
-        {
-            pattern = Pattern.compile(p);
-        }
-        else
-        {
-            pattern = Pattern.compile(".*");
-        }
-    }
-    
-    public boolean isValid(String s)
-    {
-        Matcher m = pattern.matcher(s);
-        return m.matches();
-    } // isValid()
-    
-    public String getTypeName()
-    {
-        return "regexp";
-    }
-    
+	private void setPattern(String p) {
+		if ((p != null) && (!p.equals(""))) {
+			pattern = Pattern.compile(p);
+		} else {
+			pattern = Pattern.compile(".*");
+		}
+	}
+
+	public boolean isValid(String s) {
+		Matcher m = pattern.matcher(s);
+		return m.matches();
+	} // isValid()
+
+	public String getTypeName() {
+		return "regexp";
+	}
+
 } /* end class OptionRegExp */

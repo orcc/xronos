@@ -13,44 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-/*
- * 
- *
- * 
- */
 
 package net.sf.openforge.app.project;
 
 import net.sf.openforge.app.GenericJob;
 
-
 /**
- * An interface which defines the association of an object
- * with Options.
- *
+ * An interface which defines the association of an object with Options.
+ * 
  * @author Andreas Kollegger
  */
-public interface Configurable
-{
-    //    private static final String _RCS_ = "$Rev: 2 $";
+public interface Configurable {
 
-    /**
-     * Returns the Configurable parent. The parent is involved
-     * in hierarchical searches for option values.
-     */
-    public Configurable getConfigurableParent();
+	/**
+	 * Returns the Configurable parent. The parent is involved in hierarchical
+	 * searches for option values.
+	 */
+	public Configurable getConfigurableParent();
 
-    public String getOptionLabel();    
-    
-    /**
-     * Returns the string label associated with this Configurable.
-     * 
-     */
-    public SearchLabel getSearchLabel();
-    
-    /**
-     * Gets the GenericJob context for the configurable.
-     */
-    public GenericJob getGenericJob();
-    
+	public String getOptionLabel();
+
+	/**
+	 * Returns the string label associated with this Configurable.
+	 * 
+	 */
+	public SearchLabel getSearchLabel();
+
+	/**
+	 * Gets the GenericJob context for the configurable.
+	 */
+	public GenericJob getGenericJob();
+
 } /* end interface Configurable */
