@@ -16,63 +16,61 @@
 /* $Rev: 2 $ */
 package net.sf.openforge.forge.api.sim.pin;
 
-import java.util.*;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Abstract parent class of all pin data. Not to be user-instantiated.
  */
-public abstract class PinData
-{
+public abstract class PinData {
 
-    /**
-     * Return the cycle count of this data set
-     *
-     * @return count
-     */
-    public abstract int getCycleCount();
-    
-    /**
-     * Get value at an arbitrary clock tick, which must be between
-     * 0 & getCycleCount()-1.
-     *
-     * @param clockTick clock tick whose value you want
-     * @return value
-     */
-    public abstract SignalValue valueAt(int clockTick);
-    
-    /**
-     * Empty this data set
-     *
-     */
-    public abstract void clear();
-    
-    public String toString()
-    {
-        ByteArrayOutputStream baos=new ByteArrayOutputStream();
-        PrintWriter pw=new PrintWriter(baos);
-        pw.println(this.getClass().getName());
-        for(int i=0;i<getCycleCount();i++)
-        {
-            pw.println("\t"+valueAt(i)+"@"+i); 
-        }
-        pw.flush();
-        return baos.toString();
-    }
+	/**
+	 * Return the cycle count of this data set
+	 * 
+	 * @return count
+	 */
+	public abstract int getCycleCount();
 
-    /**
-     * Return the data set as a List of SignalValues
-     *
-     * @return List of SignalValues
-     */
-    public List asList()
-    {
-        ArrayList al=new ArrayList(getCycleCount());
-        for(int i=0;i<getCycleCount();i++)
-        {
-            al.add((SignalValue)valueAt(i));
-        }
-        return al;
-    }
+	/**
+	 * Get value at an arbitrary clock tick, which must be between 0 &
+	 * getCycleCount()-1.
+	 * 
+	 * @param clockTick
+	 *            clock tick whose value you want
+	 * @return value
+	 */
+	public abstract SignalValue valueAt(int clockTick);
+
+	/**
+	 * Empty this data set
+	 * 
+	 */
+	public abstract void clear();
+
+	public String toString() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		PrintWriter pw = new PrintWriter(baos);
+		pw.println(this.getClass().getName());
+		for (int i = 0; i < getCycleCount(); i++) {
+			pw.println("\t" + valueAt(i) + "@" + i);
+		}
+		pw.flush();
+		return baos.toString();
+	}
+
+	/**
+	 * Return the data set as a List of SignalValues
+	 * 
+	 * @return List of SignalValues
+	 */
+	public List<SignalValue> asList() {
+		List<SignalValue> al = new ArrayList<SignalValue>(getCycleCount());
+		for (int i = 0; i < getCycleCount(); i++) {
+			al.add((SignalValue) valueAt(i));
+		}
+		return al;
+	}
 
 }
