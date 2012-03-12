@@ -24,42 +24,36 @@ package net.sf.openforge.app;
 /**
  * JobHandlerAdapter implements the basic funtionality of a JobHandler.
  * <P>
- *
+ * 
  * Created: Thu Mar 14 15:31:14 2002
- *
+ * 
  * @author <a href="mailto:abk@cubist">Andreas Kollegger</a>
  * @version $Id: JobHandlerAdapter.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class JobHandlerAdapter implements JobHandler 
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class JobHandlerAdapter implements JobHandler {
 
-    Engine engine;
-    String stageName;
-    
-    /**
-     * The name of the stage which this adapter will handle.
-     */
-    public JobHandlerAdapter(String name)
-    {
-        this.stageName = name;
-    }
-    
-    public void start(Engine engine)
-    {
-        this.engine = engine;
-        engine.fireHandlerStart(this);
-    }
-    
-    public void stop()
-    {
-        engine.fireHandlerFinish(this);
-        this.engine = null;
-    }
+	Engine engine;
+	String stageName;
 
-    public String getStageName()
-    {
-        return stageName;
-    }
-    
+	/**
+	 * The name of the stage which this adapter will handle.
+	 */
+	public JobHandlerAdapter(String name) {
+		this.stageName = name;
+	}
+
+	public void start(Engine engine) {
+		this.engine = engine;
+		engine.fireHandlerStart(this);
+	}
+
+	public void stop() {
+		engine.fireHandlerFinish(this);
+		this.engine = null;
+	}
+
+	public String getStageName() {
+		return stageName;
+	}
+
 } // class JobHandlerAdapter

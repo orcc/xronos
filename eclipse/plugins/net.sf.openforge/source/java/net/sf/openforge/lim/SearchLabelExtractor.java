@@ -31,14 +31,14 @@ import java.util.List;
  */
 public class SearchLabelExtractor extends FilteredVisitor
 {	
-	List tagList = new ArrayList();
+	List<String> tagList = new ArrayList<String>();
     
     private Procedure currentProcedure;    
     
     /**
      * Gets the tags extracted from any visited designs.
      */
-    public List getTags()
+    public List<String> getTags()
     {
         return tagList;
     }
@@ -50,7 +50,7 @@ public class SearchLabelExtractor extends FilteredVisitor
     public void visit (Procedure procedure)
     {
         CodeLabel procedureLabel = new CodeLabel(procedure, null);
-        List procList = procedureLabel.getSearchList();
+        List<String> procList = procedureLabel.getSearchList();
         for(int idx = 0; idx < procList.size(); idx ++){
         	String tag = (String)procList.get(idx);
             if (!tagList.contains(tag)) tagList.add(tag);
@@ -69,7 +69,7 @@ public class SearchLabelExtractor extends FilteredVisitor
         if (optionLabel != null)
         {
             CodeLabel label = new CodeLabel(currentProcedure, optionLabel);
-            List list = label.getSearchList(optionLabel);
+            List<String> list = label.getSearchList(optionLabel);
             for(int idx = 0; idx < list.size(); idx ++){
             	String tag = (String)list.get(idx);
                 if (!tagList.contains(tag)) tagList.add(tag);

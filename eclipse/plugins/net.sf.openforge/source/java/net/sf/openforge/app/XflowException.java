@@ -21,12 +21,10 @@
 
 package net.sf.openforge.app;
 
-public class XflowException extends RuntimeException
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+@SuppressWarnings("serial")
+public class XflowException extends RuntimeException {
 
-    public XflowException(String s)
-    {
-        super(s);
-    }
+	public XflowException(String s) {
+		super(s);
+	}
 }

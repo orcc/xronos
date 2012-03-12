@@ -46,7 +46,7 @@ public interface SearchLabel {
 	 * 
 	 * @see SearchIterator
 	 */
-	public List getSearchList(String postfix);
+	public List<String> getSearchList(String postfix);
 
 	/**
 	 * Returns the String label associated with this SearchLabel if applicable,

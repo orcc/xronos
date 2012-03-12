@@ -21,75 +21,56 @@
 
 package net.sf.openforge.app;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
-import net.sf.openforge.app.logging.*;
+import net.sf.openforge.app.logging.ForgeLogger;
 
+public class Drain {
 
-public class Drain
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	// shared variables must be volatile!
+	volatile boolean alive = true;
 
-    // shared variables must be volatile!
-    volatile boolean alive = true;
+	public Drain(InputStream stream, ForgeLogger logger) {
+		drain(stream, logger);
+	}
 
-    public Drain(InputStream stream, ForgeLogger logger)
-    {
-        drain(stream, logger);
-    }
+	public boolean isAlive() {
+		return alive;
+	}
 
-    
-    public boolean isAlive()
-    {
-        return alive;
-    }
+	/**
+	 * Starts a thread to keep a given text InputStream from filling up.
+	 */
+	private void drain(final InputStream stream, final ForgeLogger logger) {
+		new Thread() {
+			public void run() {
+				// System.out.println("Starting Drain: " +
+				// Thread.currentThread());
 
-    /**
-     * Starts a thread to keep a given text InputStream from filling up.
-     */
-    private void drain (final InputStream stream, final ForgeLogger logger)
-    {
-        new Thread()
-            {
-                public void run ()
-                {
-                    //System.out.println("Starting Drain: " + Thread.currentThread());
-                    
-                    InputStreamReader reader = new InputStreamReader(stream);
-                    BufferedReader buffer = new BufferedReader(reader);
-                    
-                    try
-                    {
-                        while (true)
-                        {
-                            String nextLine = buffer.readLine();
-                            if (nextLine == null)
-                            {
-                                break;
-                            }
-                            else
-                            {
-                                if (logger != null)
-                                {
-                                    logger.info(nextLine);
-                                }
-                            }
-                        }
-                    }
-                    catch (IOException eIO)
-                    {
-                    }
-                    
-                    //System.out.println("Drain Dying: " + Thread.currentThread());
-                    alive = false;
-                }
-                
-            }.start();
-    }   
+				InputStreamReader reader = new InputStreamReader(stream);
+				BufferedReader buffer = new BufferedReader(reader);
+
+				try {
+					while (true) {
+						String nextLine = buffer.readLine();
+						if (nextLine == null) {
+							break;
+						} else {
+							if (logger != null) {
+								logger.info(nextLine);
+							}
+						}
+					}
+				} catch (IOException eIO) {
+				}
+
+				// System.out.println("Drain Dying: " + Thread.currentThread());
+				alive = false;
+			}
+
+		}.start();
+	}
 }
-
-
-
-
-
-

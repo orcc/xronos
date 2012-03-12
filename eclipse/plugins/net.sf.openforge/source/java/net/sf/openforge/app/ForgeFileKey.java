@@ -21,29 +21,23 @@
 
 package net.sf.openforge.app;
 
-import java.io.*;
-import java.util.*;
 
 /**
- * The ForgeFileKey is a lightweight class that is used to refer
- * to a particular handled file in the {@link ForgeFileHandler}
+ * The ForgeFileKey is a lightweight class that is used to refer to a particular
+ * handled file in the {@link ForgeFileHandler}
  * 
- * @author imiller
- * Created on 03.17.2006
+ * @author imiller Created on 03.17.2006
  */
 
-public class ForgeFileKey
-{
-    private String reason = "unknown";
-    
-    public ForgeFileKey (String reason)
-    {
-        this.reason = reason;
-    }
+public class ForgeFileKey {
+	private String reason = "unknown";
 
-    public String toString ()
-    {
-        return super.toString() + "<" + this.reason + ">";
-    }
-    
+	public ForgeFileKey(String reason) {
+		this.reason = reason;
+	}
+
+	public String toString() {
+		return super.toString() + "<" + this.reason + ">";
+	}
+
 }

@@ -21,63 +21,50 @@
 package net.sf.openforge.app;
 
 /**
- * ForgeFileTyper contains static utility methods which identify the
- * file type based on the filename.
- *
+ * ForgeFileTyper contains static utility methods which identify the file type
+ * based on the filename.
+ * 
  * <P>
  * Created: Mon Oct 22 10:53:00 2001
- *
+ * 
  * @author <a href="mailto: andreas.kollegger@xilinx.com">Andy Kollegger</a>
  * @version $Id: ForgeFileTyper.java 48 2005-11-02 15:43:19Z imiller $
  */
 
-public class ForgeFileTyper 
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 48 $";
-    
-    public static final int JAVA = 0;
-    public static final int CLASS = 1;
-    public static final int FORGE = 2;
+public class ForgeFileTyper {
 
-    public static boolean isJavaSource(String filename)
-    {
-        // javac only supports lowercase .java files on solaris and windows!
-        return (filename.endsWith(".java"));
-    }
+	public static final int JAVA = 0;
+	public static final int CLASS = 1;
+	public static final int FORGE = 2;
 
-    public static boolean isCSource(String filename)
-    {
-        return filename.toLowerCase().endsWith(".c");
-    }
+	public static boolean isJavaSource(String filename) {
+		// javac only supports lowercase .java files on solaris and windows!
+		return (filename.endsWith(".java"));
+	}
 
-    public static boolean isXLIMSource(String filename)
-    {
-        return filename.toLowerCase().endsWith(".xlim") || filename.toLowerCase().endsWith(".sxlim");
-    }
+	public static boolean isCSource(String filename) {
+		return filename.toLowerCase().endsWith(".c");
+	}
 
-    public static boolean isJavaClass(String filename)
-    {
-        return (filename.endsWith(".class") ||
-                filename.endsWith(".CLASS"));
-    }
-    
-    public static boolean isForgeProject(String filename)
-    {
-        return (filename.endsWith(".forge") ||
-                filename.endsWith(".FORGE"));
-    }
-    
-    public static boolean isForgePref(String filename)
-    {
-        return (filename.endsWith(".pref") ||
-                filename.endsWith(".PREF"));
-    }
+	public static boolean isXLIMSource(String filename) {
+		return filename.toLowerCase().endsWith(".xlim")
+				|| filename.toLowerCase().endsWith(".sxlim");
+	}
 
-    public static boolean isForgeUcf(String filename)
-    {
-        return(filename.endsWith(".ucf") ||
-               filename.endsWith(".UCF"));
-    }
-    
+	public static boolean isJavaClass(String filename) {
+		return (filename.endsWith(".class") || filename.endsWith(".CLASS"));
+	}
+
+	public static boolean isForgeProject(String filename) {
+		return (filename.endsWith(".forge") || filename.endsWith(".FORGE"));
+	}
+
+	public static boolean isForgePref(String filename) {
+		return (filename.endsWith(".pref") || filename.endsWith(".PREF"));
+	}
+
+	public static boolean isForgeUcf(String filename) {
+		return (filename.endsWith(".ucf") || filename.endsWith(".UCF"));
+	}
 
 }// end of class ForgeFileTyper

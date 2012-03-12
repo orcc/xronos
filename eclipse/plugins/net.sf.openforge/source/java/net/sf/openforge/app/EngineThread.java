@@ -23,140 +23,130 @@ package net.sf.openforge.app;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
+import java.util.Map.Entry;
 
 /**
- * A EngineThread is used to interact with a thread or runnable object.
- * It also has static methods to manipulate the mapping of Thread :: Job [1 :: 1]
-
+ * A EngineThread is used to interact with a thread or runnable object. It also
+ * has static methods to manipulate the mapping of Thread :: Job [1 :: 1]
+ * 
  * @author <a href="cschanck@xilinx.com">CRSS</a>
  * @version $Id: EngineThread.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class EngineThread
-{
-    private static final String _RCS_ = "$Rev: 2 $";
-    private static HashMap threadToJob = new HashMap();
+public class EngineThread {
+	private static Map<Thread, Engine> threadToJob = new HashMap<Thread, Engine>();
 
-    // statc class -- don't create any instances!
-    private EngineThread() {}
-    
-    /**
-     * Add the relationship of a thread to an engine. This will
-     * overwrite a previously added relationship for this thread.
-     *
-     * @param thread a value of type 'Thread'
-     * @param engine a value of type 'Engine'
-     */
-    public static void addThread(Thread thread, Engine engine)
-    {
-        synchronized(threadToJob)
-        {
-            threadToJob.put(thread, engine);
-        }
-    }
-    
-    /**
-     * Adds a relationship from the current thread to the specified engine
-     *
-     * @param engine a value of type 'Engine'
-     */
-    public static void addThread(Engine engine)
-    {
-        addThread(Thread.currentThread(), engine);
-    }
+	// statc class -- don't create any instances!
+	private EngineThread() {
+	}
 
-    /**
-     * Remove the relationship of a thread to an engine. 
-     *
-     * @param thread a value of type 'Thread'
-     */
-    public static void removeThread(Thread thread)
-    {
-        synchronized(threadToJob)
-        {
-            threadToJob.remove(thread);
-        }
-    }
+	/**
+	 * Add the relationship of a thread to an engine. This will overwrite a
+	 * previously added relationship for this thread.
+	 * 
+	 * @param thread
+	 *            a value of type 'Thread'
+	 * @param engine
+	 *            a value of type 'Engine'
+	 */
+	public static void addThread(Thread thread, Engine engine) {
+		synchronized (threadToJob) {
+			threadToJob.put(thread, engine);
+		}
+	}
 
-    /**
-     * Remove the relationship of a thread to an engine. 
-     *
-     * @param thread a value of type 'Thread'
-     */
-    public static void removeJob(Engine engine)
-    {
-        synchronized(threadToJob)
-        {
-            for(Iterator it=threadToJob.entrySet().iterator();it.hasNext();)
-            {
-                Map.Entry entry=(Map.Entry)it.next();
-                Engine e=(Engine)entry.getValue();
-                if(e.equals(engine))
-                    it.remove();
-            }
-        }
-    }
+	/**
+	 * Adds a relationship from the current thread to the specified engine
+	 * 
+	 * @param engine
+	 *            a value of type 'Engine'
+	 */
+	public static void addThread(Engine engine) {
+		addThread(Thread.currentThread(), engine);
+	}
 
-    /**
-     * check if a thread has a known engine
-     *
-     * @param thread a value of type 'Thread'
-     * @return a value of type 'boolean'
-     */
-    public static final boolean isKnownThread(Thread thread)
-    {
+	/**
+	 * Remove the relationship of a thread to an engine.
+	 * 
+	 * @param thread
+	 *            a value of type 'Thread'
+	 */
+	public static void removeThread(Thread thread) {
+		synchronized (threadToJob) {
+			threadToJob.remove(thread);
+		}
+	}
 
-        return threadToJob.containsKey(thread);
-    }
+	/**
+	 * Remove the relationship of a thread to an engine.
+	 * 
+	 * @param thread
+	 *            a value of type 'Thread'
+	 */
+	public static void removeJob(Engine engine) {
+		synchronized (threadToJob) {
+			for (Iterator it = threadToJob.entrySet().iterator(); it.hasNext();) {
+				Entry entry = (Entry) it.next();
+				Engine e = (Engine) entry.getValue();
+				if (e.equals(engine))
+					it.remove();
+			}
+		}
+	}
 
-    /**
-     * Get the Engine for specific engine
-     *
-     * @param thread a value of type 'Thread'
-     * @return a value of type 'Engine'
-     */
-    public static final Engine getEngine(Thread thread)
-    {
-        return (Engine)threadToJob.get(thread);
-    }
+	/**
+	 * check if a thread has a known engine
+	 * 
+	 * @param thread
+	 *            a value of type 'Thread'
+	 * @return a value of type 'boolean'
+	 */
+	public static final boolean isKnownThread(Thread thread) {
 
-    /**
-     * Get the Engine for the current thread
-     *
-     */
-    public static final Engine getEngine()
-    {
-        return getEngine(Thread.currentThread());
-    }
+		return threadToJob.containsKey(thread);
+	}
 
-    public static final GenericJob getGenericJob(Thread t)
-    {
+	/**
+	 * Get the Engine for specific engine
+	 * 
+	 * @param thread
+	 *            a value of type 'Thread'
+	 * @return a value of type 'Engine'
+	 */
+	public static final Engine getEngine(Thread thread) {
+		return (Engine) threadToJob.get(thread);
+	}
 
-        Engine e = getEngine(t);
+	/**
+	 * Get the Engine for the current thread
+	 * 
+	 */
+	public static final Engine getEngine() {
+		return getEngine(Thread.currentThread());
+	}
 
-        if(e != null)
-        {
+	public static final GenericJob getGenericJob(Thread t) {
 
-            return e.getGenericJob();
-        }
+		Engine e = getEngine(t);
 
-        return null;
-    }
+		if (e != null) {
 
-    public static final GenericJob getGenericJob()
-    {
-        return getGenericJob(Thread.currentThread());
-    }
+			return e.getGenericJob();
+		}
 
-    public static void info(Object token, String s)
-    {
-        getGenericJob().getLogger().getRawLogger().log(
-                java.util.logging.Level.INFO, s, token);
-    }
+		return null;
+	}
 
-    public static void verbose(Object token, String s)
-    {
-        getGenericJob().getLogger().getRawLogger().log(
-                java.util.logging.Level.FINE, s, token);
-    }
+	public static final GenericJob getGenericJob() {
+		return getGenericJob(Thread.currentThread());
+	}
+
+	public static void info(Object token, String s) {
+		getGenericJob().getLogger().getRawLogger()
+				.log(java.util.logging.Level.INFO, s, token);
+	}
+
+	public static void verbose(Object token, String s) {
+		getGenericJob().getLogger().getRawLogger()
+				.log(java.util.logging.Level.FINE, s, token);
+	}
 } // class EngineThread

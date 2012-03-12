@@ -20,68 +20,63 @@
  */
 package net.sf.openforge.app;
 
+import java.util.EventObject;
+
 /**
- * JobEvent represents an event which occurred in relation to
- * the processing of a job.
+ * JobEvent represents an event which occurred in relation to the processing of
+ * a job.
  * <P>
  * Created: Thu Mar 14 15:34:45 2002
- *
+ * 
  * @author <a href="mailto:abk@cubist">Andreas Kollegger</a>
  * @version $Id: JobEvent.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class JobEvent extends java.util.EventObject 
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+@SuppressWarnings("serial")
+public class JobEvent extends EventObject {
 
-    String message;
+	String message;
 
-    public JobEvent (JobHandler source, String message)
-    {
-        super(source);
-        this.message = message;
-    } // JobEvent()
-    
-    public JobHandler getJobHandler()
-    {
-        return (JobHandler)getSource();
-    }
-    
-    public String getMessage()
-    {
-        return message;
-    }
+	public JobEvent(JobHandler source, String message) {
+		super(source);
+		this.message = message;
+	} // JobEvent()
 
-    public String toString()
-    {
-        return new String("JobEvent[message(" + getMessage() + "), source(" + getSource() + ")]");
-    }
+	public JobHandler getJobHandler() {
+		return (JobHandler) getSource();
+	}
 
-    public static class Started extends JobEvent
-    {
-        public static final String MESSAGE = "started";
-        public Started(JobHandler source)
-        {
-            super(source, MESSAGE);
-        }
-    }
+	public String getMessage() {
+		return message;
+	}
 
-    public static class Finished extends JobEvent
-    {
-        public static final String MESSAGE = "finished";
-        public Finished(JobHandler source)
-        {
-            super(source, MESSAGE);
-        }
-    }
+	public String toString() {
+		return new String("JobEvent[message(" + getMessage() + "), source("
+				+ getSource() + ")]");
+	}
 
-    public static class Error extends JobEvent
-    {
-        public static final String MESSAGE = "error";
-        public Error(JobHandler source)
-        {
-            super(source, MESSAGE);
-        }
-    }
-    
+	public static class Started extends JobEvent {
+		public static final String MESSAGE = "started";
+
+		public Started(JobHandler source) {
+			super(source, MESSAGE);
+		}
+	}
+
+	public static class Finished extends JobEvent {
+		public static final String MESSAGE = "finished";
+
+		public Finished(JobHandler source) {
+			super(source, MESSAGE);
+		}
+	}
+
+	public static class Error extends JobEvent {
+		public static final String MESSAGE = "error";
+
+		public Error(JobHandler source) {
+			super(source, MESSAGE);
+		}
+	}
+
 } // class JobEvent

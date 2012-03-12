@@ -20,30 +20,20 @@
  */
 package net.sf.openforge.app;
 
-
 /**
  * ForgeFatalException is thrown when processing cannot continue
- *
+ * 
  * @version $Id: ForgeFatalException.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class ForgeFatalException extends RuntimeException
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+@SuppressWarnings("serial")
+public class ForgeFatalException extends RuntimeException {
 
+	public ForgeFatalException() {
+		super();
+	}
 
-    public ForgeFatalException()
-    {
-        super();
-    }
-
-    
-    public ForgeFatalException(String s)
-    {
-        super(s);
-    }
+	public ForgeFatalException(String s) {
+		super(s);
+	}
 }
-
-    
-
-

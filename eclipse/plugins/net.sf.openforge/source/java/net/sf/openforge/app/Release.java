@@ -20,68 +20,61 @@
  */
 package net.sf.openforge.app;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import net.sf.openforge.util.ForgeResource;
 
 /**
  * Release provides access to release notes for Forge.
- *
- *
+ * 
+ * 
  * Created: Thu Mar 28 11:33:02 2002
- *
+ * 
  * @author <a href="mailto:abk@ladd">Andy Kollegger</a>
  * @version $Id: Release.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Release 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class Release {
 
-    /**
-     * method to return the release notes as a string
-     *
-     *
-     * @return the release notes
-     */
-    public static String releaseNotes()
-    {
-        String rnotes_comment = "";
-        InputStream is = ForgeResource.loadForgeResourceStream("RELEASE_NOTES_TEXT");
+	/**
+	 * method to return the release notes as a string
+	 * 
+	 * 
+	 * @return the release notes
+	 */
+	public static String releaseNotes() {
+		String rnotes_comment = "";
+		InputStream is = ForgeResource
+				.loadForgeResourceStream("RELEASE_NOTES_TEXT");
 
-        if (is == null)
-        {
-            return ("release notes not provided");
-        }
+		if (is == null) {
+			return ("release notes not provided");
+		}
 
-        InputStreamReader isr = new InputStreamReader(is);
+		InputStreamReader isr = new InputStreamReader(is);
 
-        if (isr == null)
-        {
-            return ("release notes not provided");
-        }
+		if (isr.equals(null)){
+			return ("release notes not provided");
+		}
 
-        BufferedReader rnotes_reader = new BufferedReader(isr);
+		BufferedReader rnotes_reader = new BufferedReader(isr);
 
-        if (rnotes_reader == null)
-        {
-            return ("release notes not provided");
-        }
+		if (rnotes_reader.equals(null)) {
+			return ("release notes not provided");
+		}
 
-        try
-        {
-            while (rnotes_reader.ready())
-            {
-                rnotes_comment += rnotes_reader.readLine() + "\n";
-            }
-        }
-        catch (Exception ioe)
-        {
-            rnotes_comment = "Resource disabled version.";
-        }
+		try {
+			while (rnotes_reader.ready()) {
+				rnotes_comment += rnotes_reader.readLine() + "\n";
+			}
+		} catch (Exception ioe) {
+			rnotes_comment = "Resource disabled version.";
+		}
 
-        return (rnotes_comment);
+		return (rnotes_comment);
 
-        // return("Version information temporarily disabled");
-    }
-    
+		// return("Version information temporarily disabled");
+	}
+
 } // class Release

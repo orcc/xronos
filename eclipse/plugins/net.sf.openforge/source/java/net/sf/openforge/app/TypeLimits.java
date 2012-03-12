@@ -21,142 +21,111 @@
 
 package net.sf.openforge.app;
 
-
 /**
  * Classname is...
- *
+ * 
  * @version $Id: TypeLimits.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class TypeLimits
-{
-    /** Revision */
-    private static final String _RCS_ = "$Rev: 2 $";
+public class TypeLimits {
 
-    public static class C
-    {
-        public static int getPointerSize()
-        {
-            return 32;
-        }
-        
-        public static int getWCharSize()
-        {
-            return 16;
-        }
-        
-        public static int getUCharSize()
-        {
-            return 8;
-        }
-        
-        public static int getUShortSize()
-        {
-            return 16;
-        }
-        
-        public static int getUIntSize()
-        {
-            return 32;
-        }
-        
-        public static int getULongSize()
-        {
-            return 32;
-        }
+	public static class C {
+		public static int getPointerSize() {
+			return 32;
+		}
 
-        public static int getULongLongSize()
-        {
-            return 64;
-        }
+		public static int getWCharSize() {
+			return 16;
+		}
 
-        public static int getCharSize()
-        {
-            return 8;
-        }
-        
-        public static int getShortSize()
-        {
-            return 16;
-        }
-        
-        public static int getIntSize()
-        {
-            return 32;
-        }
-        
-        public static int getLongSize()
-        {
-            return 32;
-        }
+		public static int getUCharSize() {
+			return 8;
+		}
 
-        public static int getLongLongSize()
-        {
-            return 64;
-        }
+		public static int getUShortSize() {
+			return 16;
+		}
 
-        public static int getFloatSize()
-        {
-            return 32;
-        }
+		public static int getUIntSize() {
+			return 32;
+		}
 
-        public static int getDoubleSize()
-        {
-            return 64;
-        }
+		public static int getULongSize() {
+			return 32;
+		}
 
-        public static int getLongDoubleSize()
-        {
-            return 64;
-        }
-    }
+		public static int getULongLongSize() {
+			return 64;
+		}
 
-    public static class Java
-    {
-        public static int getObjectReferenceSize()
-        {
-            return 32;
-        }
-        
-        public static int getBooleanSize()
-        {
-            return 1;
-        }
+		public static int getCharSize() {
+			return 8;
+		}
 
-        public static int getByteSize()
-        {
-            return 8;
-        }
+		public static int getShortSize() {
+			return 16;
+		}
 
-        public static int getShortSize()
-        {
-            return 16;
-        }
+		public static int getIntSize() {
+			return 32;
+		}
 
-        public static int getIntSize()
-        {
-            return 32;
-        }
+		public static int getLongSize() {
+			return 32;
+		}
 
-        public static int getLongSize()
-        {
-            return 64;
-        }
+		public static int getLongLongSize() {
+			return 64;
+		}
 
-        public static int getFloatSize()
-        {
-            return 32;
-        }
+		public static int getFloatSize() {
+			return 32;
+		}
 
-        public static int getDoubleSize()
-        {
-            return 64;
-        }
+		public static int getDoubleSize() {
+			return 64;
+		}
 
-        public static int getCharSize()
-        {
-            return 16;
-        }
-    }
+		public static int getLongDoubleSize() {
+			return 64;
+		}
+	}
 
-    
+	public static class Java {
+		public static int getObjectReferenceSize() {
+			return 32;
+		}
+
+		public static int getBooleanSize() {
+			return 1;
+		}
+
+		public static int getByteSize() {
+			return 8;
+		}
+
+		public static int getShortSize() {
+			return 16;
+		}
+
+		public static int getIntSize() {
+			return 32;
+		}
+
+		public static int getLongSize() {
+			return 64;
+		}
+
+		public static int getFloatSize() {
+			return 32;
+		}
+
+		public static int getDoubleSize() {
+			return 64;
+		}
+
+		public static int getCharSize() {
+			return 16;
+		}
+	}
+
 }

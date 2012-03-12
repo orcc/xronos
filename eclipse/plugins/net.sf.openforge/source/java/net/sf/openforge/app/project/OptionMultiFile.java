@@ -153,7 +153,7 @@ public class OptionMultiFile extends OptionFile {
 	 *            SearchLabel that can be used to get the scope.
 	 * @return List value of the option as a List.
 	 */
-	public List getValueAsList(SearchLabel slabel) {
+	public List<String> getValueAsList(SearchLabel slabel) {
 		return this.toList(super.getValue(slabel).toString());
 	}
 
@@ -169,7 +169,7 @@ public class OptionMultiFile extends OptionFile {
 		return true;
 	}
 
-	public List toList(String s) {
+	public List<String> toList(String s) {
 		StringTokenizer st = new StringTokenizer(s, separators);
 		List reply = new ArrayList();
 

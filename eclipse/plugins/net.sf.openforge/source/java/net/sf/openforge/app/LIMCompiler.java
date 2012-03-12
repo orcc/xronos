@@ -26,23 +26,42 @@
 
 package net.sf.openforge.app;
 
-import java.io.*;
-import java.util.*;
-import java.lang.reflect.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import net.sf.openforge.app.project.*;
-import net.sf.openforge.backend.*;
-import net.sf.openforge.backend.edk.*;
-import net.sf.openforge.backend.hdl.*;
+import net.sf.openforge.backend.OutputEngine;
+import net.sf.openforge.backend.edk.ForgeCoreDescriptor;
+import net.sf.openforge.backend.hdl.TestBenchEngine;
+import net.sf.openforge.backend.hdl.VerilogTranslateEngine;
 import net.sf.openforge.backend.sysgen.SysgenSimApi;
 import net.sf.openforge.backend.timedc.CycleCTranslateEngine;
 import net.sf.openforge.forge.api.internal.Core;
+import net.sf.openforge.forge.api.runtime.RunTime;
 import net.sf.openforge.forge.api.sim.pin.PinSimData;
-import net.sf.openforge.lim.*;
-import net.sf.openforge.optimize.*;
-import net.sf.openforge.report.*;
+import net.sf.openforge.lim.Call;
+import net.sf.openforge.lim.CodeLabel;
+import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.IPCoreCall;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.LimDRC;
+import net.sf.openforge.lim.Pin;
+import net.sf.openforge.lim.Task;
+import net.sf.openforge.optimize.Optimizer;
+import net.sf.openforge.report.DesignResource;
+import net.sf.openforge.report.HardwareResourceUtilizer;
+import net.sf.openforge.report.InterfaceReporter;
+import net.sf.openforge.report.ResourcePrinter;
+import net.sf.openforge.report.SimpleResourceReporter;
+import net.sf.openforge.report.XmlResourcePrinter;
 import net.sf.openforge.report.throughput.ThroughputAnalyzer;
-import net.sf.openforge.schedule.*;
+import net.sf.openforge.schedule.Scheduler;
 import net.sf.openforge.verilog.translate.PassThroughComponentRemover;
 
 /**
@@ -54,7 +73,6 @@ import net.sf.openforge.verilog.translate.PassThroughComponentRemover;
  * @version $Id: LIMCompiler.java 424 2007-02-26 22:36:09Z imiller $
  */
 public class LIMCompiler {
-	private static final String _RCS_ = "$Rev: 424 $";
 
 	private File reportDirectory;
 
@@ -68,7 +86,7 @@ public class LIMCompiler {
 	 *            a value of type 'Design'
 	 */
 	public Design processLim(Design design) {
-		Option op;
+		//Option op;
 		GenericJob gj = EngineThread.getGenericJob();
 		gj.getOption(OptionRegistry.PE_NAME).setValue(CodeLabel.UNSCOPED,
 				design.showIDLogical());
@@ -196,8 +214,8 @@ public class LIMCompiler {
 	}
 
 	private List<OutputEngine> generateOutputEngines() {
-		List<OutputEngine> engines = new ArrayList();
-		Option op;
+		List<OutputEngine> engines = new ArrayList<OutputEngine>();
+		//Option op;
 		GenericJob gj = EngineThread.getGenericJob();
 
 		// Cycle C handled seperately because of where it has to run
@@ -255,9 +273,11 @@ public class LIMCompiler {
 		// clear out the api RunTime class in case this is a multi
 		// file compilation
 		try {
-			Class runtime = net.sf.openforge.forge.api.runtime.RunTime.class;
+			Class<RunTime> runtime = net.sf.openforge.forge.api.runtime.RunTime.class;
 
 			// init all fields
+			// FIXME
+			@SuppressWarnings("rawtypes")
 			Class[] args = { java.lang.Integer.TYPE, java.io.File.class,
 					java.io.File.class, java.io.File.class };
 
@@ -289,13 +309,12 @@ public class LIMCompiler {
 	private void reportDesignCharacteristics(Design design) {
 		(new InterfaceReporter()).reportStreams();
 		GenericJob gj = EngineThread.getGenericJob();
-		for (Iterator iter = design.getTasks().iterator(); iter.hasNext();) {
-			final Task task = (Task) iter.next();
+		for (Task task : design.getTasks()){
 			final Call topCall = task.getCall();
 			if (topCall instanceof IPCoreCall)
 				continue;
 			final Latency latency = topCall.getLatency();
-			final StringBuffer stringBuffer = new StringBuffer();
+			//final StringBuffer stringBuffer = new StringBuffer();
 
 			gj.inc();
 			gj.info("entry module \"" + topCall.showIDLogical() + "\":");
@@ -367,6 +386,7 @@ public class LIMCompiler {
 	 * @param design
 	 *            a {@link Design}
 	 */
+	
 	private void report(Design design, ThroughputAnalyzer throughputAnalyzer) {
 		GenericJob gj = EngineThread.getGenericJob();
 		gj.info("generating Resource Utilization Report... ");
@@ -409,6 +429,7 @@ public class LIMCompiler {
 		gj.info("writing " + resourceUtilizationReportFile.getAbsolutePath());
 		gj.inc();
 		FileOutputStream resourceUtilizationFos = openFile(resourceUtilizationReportFile);
+		@SuppressWarnings("unused")
 		HardwareResourceUtilizer resourceUtilizer = new HardwareResourceUtilizer(
 				design, resourceUtilizationFos);
 		closeFile(resourceUtilizationReportFile, resourceUtilizationFos);
@@ -420,9 +441,10 @@ public class LIMCompiler {
 		gj.info("writing " + reportXmlFile.getAbsolutePath());
 		gj.inc();
 		FileOutputStream reportXmlFos = openFile(reportXmlFile);
+		@SuppressWarnings("unused")
 		XmlResourcePrinter xmlReport = new XmlResourcePrinter(design,
 				reportXmlFos);
-		//closeFile(reportXmlFile, reportXmlFos);
+		// closeFile(reportXmlFile, reportXmlFos);
 		gj.dec();
 
 		// Report on how we distributed the memories of the design
@@ -468,10 +490,8 @@ public class LIMCompiler {
 		Xflow xf = new Xflow(design, synthFile, workingDir);
 
 		if (xf.isEnvironmentValid()) {
-			HashMap pin_map = new HashMap();
-			for (Iterator pinIter = design.getPins().iterator(); pinIter
-					.hasNext();) {
-				Object pin = pinIter.next();
+			Map<String, Object> pin_map = new HashMap<String, Object>();
+			for (Object pin: design.getPins()){
 				pin_map.put(((Pin) pin).showIDLogical(), pin);
 			}
 

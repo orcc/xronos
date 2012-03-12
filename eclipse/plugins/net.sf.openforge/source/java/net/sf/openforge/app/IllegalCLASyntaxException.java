@@ -23,15 +23,17 @@ package net.sf.openforge.app;
 
 /**
  * @author sb
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
+ * 
+ *         TODO To change the template for this generated type comment go to
+ *         Window - Preferences - Java - Code Generation - Code and Comments
  */
-public class IllegalCLASyntaxException extends RuntimeException{
+@SuppressWarnings("serial")
+public class IllegalCLASyntaxException extends RuntimeException {
 	/**
 	 * 
 	 */
 	public IllegalCLASyntaxException(String s) {
-		super("Invalid syntax to forge option" + s + ". Type \"forge -h\" for help");		
+		super("Invalid syntax to forge option" + s
+				+ ". Type \"forge -h\" for help");
 	}
 }

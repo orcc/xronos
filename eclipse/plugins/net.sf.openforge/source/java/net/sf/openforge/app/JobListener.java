@@ -23,18 +23,16 @@ package net.sf.openforge.app;
 
 /**
  * JobListener receives events about the status of a job.
- *
- *
+ * 
+ * 
  * Created: Thu Mar 14 15:23:14 2002
- *
+ * 
  * @author <a href="mailto:abk@cubist">Andreas Kollegger</a>
  * @version $Id: JobListener.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public interface JobListener extends java.util.EventListener
-{
-    static final String _RCS_ = "$Rev: 2 $";
+public interface JobListener extends java.util.EventListener {
 
-    public void jobNotice(JobEvent event);
-    
+	public void jobNotice(JobEvent event);
+
 } // class JobListener

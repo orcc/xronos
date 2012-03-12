@@ -20,30 +20,21 @@
  */
 package net.sf.openforge.app;
 
-
 /**
- * RecursiveMethodException is thrown when a recursive method call is encountered.
- *
+ * RecursiveMethodException is thrown when a recursive method call is
+ * encountered.
+ * 
  * @version $Id: RecursiveMethodException.java 2 2005-06-09 20:00:48Z imiller $
  */
 
-public class RecursiveMethodException extends RuntimeException
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+@SuppressWarnings("serial")
+public class RecursiveMethodException extends RuntimeException {
 
+	public RecursiveMethodException() {
+		super();
+	}
 
-    public RecursiveMethodException()
-    {
-        super();
-    }
-
-    
-    public RecursiveMethodException(String s)
-    {
-        super(s);
-    }
+	public RecursiveMethodException(String s) {
+		super(s);
+	}
 }
-
-    
-
-

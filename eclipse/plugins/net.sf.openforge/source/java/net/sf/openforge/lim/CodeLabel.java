@@ -91,7 +91,7 @@ public class CodeLabel implements SearchLabel
      * for the CodeLabel's own.
      *
      */
-    public List getSearchList(){
+    public List<String> getSearchList(){
     	List sList = getSearchList(this.label);    	
     	return sList;
     }
@@ -103,7 +103,7 @@ public class CodeLabel implements SearchLabel
      * for the CodeLabel's own.
      *
      */
-    public List getSearchList(String label){
+    public List<String> getSearchList(String label){
     	List searchList = new ArrayList();
     	if (label != null)
         {

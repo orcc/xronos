@@ -69,9 +69,9 @@ public class ForgeProjectScanner {
 	/**
 	 * Reads a project file.
 	 */
-	public static List readProjectFile(File project_file)
+	public static List<String> readProjectFile(File project_file)
 			throws FileNotFoundException {
-		List pFileTokens = null;
+		List<String> pFileTokens = null;
 		javax.xml.parsers.DocumentBuilderFactory builderFactory = null;
 		javax.xml.parsers.DocumentBuilder builder = null;
 		Object o = null;
@@ -326,7 +326,7 @@ public class ForgeProjectScanner {
 	 * Returns the options in the preference file as a list of command line
 	 * tokens.
 	 */
-	public List getPfileTokens() {
+	public List<String> getPfileTokens() {
 		return pfileTokens;
 	}
 
