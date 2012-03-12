@@ -16,8 +16,5 @@
 
 package net.sf.openforge.app.logging;
 
-public interface ForgeDefaultLoggable
-{
-    static final String _RCS_ = "$Rev: 2 $";
+public interface ForgeDefaultLoggable {
 }
-

@@ -16,24 +16,18 @@
 
 package net.sf.openforge.app.logging;
 
-import java.util.logging.*;
+import java.util.logging.Level;
 
-public class ForgeLevel extends Level
-{
-    private static final String _RCS_ = "$Revision: 2 $";
+@SuppressWarnings("serial")
+public class ForgeLevel extends Level {
 
-    public static final Level RAW_SEVERE = new ForgeLevel("RAW_SEVERE",Level.SEVERE.intValue()+1);
-    public static final Level RAW_WARNING = new ForgeLevel("RAW_WARNING",Level.WARNING.intValue()+1);
-    
-    protected ForgeLevel(String name, int value)
-    {
-	super(name, value, null);
-    }
+	public static final Level RAW_SEVERE = new ForgeLevel("RAW_SEVERE",
+			Level.SEVERE.intValue() + 1);
+	public static final Level RAW_WARNING = new ForgeLevel("RAW_WARNING",
+			Level.WARNING.intValue() + 1);
 
-    
+	protected ForgeLevel(String name, int value) {
+		super(name, value, null);
+	}
+
 }
-
-
-
-
-
