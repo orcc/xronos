@@ -16,188 +16,174 @@
 
 package net.sf.openforge.forge.api.internal;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
-import net.sf.openforge.forge.api.ipcore.*;
-import net.sf.openforge.forge.api.pin.*;
+import net.sf.openforge.forge.api.ipcore.IPCore;
+import net.sf.openforge.forge.api.pin.Buffer;
 
 /**
- * A Core is a collection of user IPCores. This class provides easy
- * access to each IPCore by storing them in a HashMap.
- *
+ * A Core is a collection of user IPCores. This class provides easy access to
+ * each IPCore by storing them in a HashMap.
+ * 
  */
-public class Core
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class Core {
 
-    /** A HashMap of IPCore->IPCoreStorage */
-    private static HashMap internalCoreMap = new HashMap();
-    
-    /**
-     * @return A set of IPCore objects
-     */
-    public static Set getIPCores()
-    {
-        return internalCoreMap.keySet();
-    }
+	/** A HashMap of IPCore->IPCoreStorage */
+	private static HashMap<IPCore, IPCoreStorage> internalCoreMap = new HashMap<IPCore, IPCoreStorage>();
 
-    public static IPCore getIPCore(IPCoreStorage ipcs)
-    {
-        // we need to find the IPCore that maps to the given storage
-        for(Iterator it = internalCoreMap.keySet().iterator();
-            it.hasNext(); )
-        {
-            IPCore ipc = (IPCore)it.next();
+	/**
+	 * @return A set of IPCore objects
+	 */
+	public static Set<IPCore> getIPCores() {
+		return internalCoreMap.keySet();
+	}
 
-            if(ipcs == internalCoreMap.get(ipc))
-            {
-                return(ipc);
-            }
-        }
+	public static IPCore getIPCore(IPCoreStorage ipcs) {
+		// we need to find the IPCore that maps to the given storage
+		for (IPCore ipc : internalCoreMap.keySet()) {
 
-        return null;
-    }
+			if (ipcs == internalCoreMap.get(ipc)) {
+				return (ipc);
+			}
+		}
 
-    
-    /**
-     * Add a new IPCore to the internal database of user IPCore objects.
-     *
-     * @param ipc an IPCore Object
-     * @param moduleName a String name by which the IPCore is uniquely
-     * identified.
-     */
-    public static void addIPCore (IPCore ipc, String moduleName)
-    {
-        IPCoreStorage ipcs = new IPCoreStorage(moduleName);
-        internalCoreMap.put(ipc, ipcs);
-    }
+		return null;
+	}
 
-    /**
-     * Adds the specified pin to the data maintained for the given
-     * IPCore.
-     *
-     * @param pin a Buffer Object
-     * @param ipc an IPCore Object
-     */
-    public static void addToPinIPCoreMap(Buffer pin, IPCore ipc)
-    {
-        getIPCoreStorage(ipc).addPin(pin);
-    }
+	/**
+	 * Add a new IPCore to the internal database of user IPCore objects.
+	 * 
+	 * @param ipc
+	 *            an IPCore Object
+	 * @param moduleName
+	 *            a String name by which the IPCore is uniquely identified.
+	 */
+	public static void addIPCore(IPCore ipc, String moduleName) {
+		IPCoreStorage ipcs = new IPCoreStorage(moduleName);
+		internalCoreMap.put(ipc, ipcs);
+	}
 
-    /**
-     * Get an IPCoreStorage object from the internal database using
-     * the given IPCore object as the key
-     * 
-     * @param ipc an IPCore object
-     * @return the IPCoreStorage for the specified IPCore
-     */
-    public static IPCoreStorage getIPCoreStorage (IPCore ipc)
-    {
-        return (IPCoreStorage)internalCoreMap.get(ipc);
-    }
+	/**
+	 * Adds the specified pin to the data maintained for the given IPCore.
+	 * 
+	 * @param pin
+	 *            a Buffer Object
+	 * @param ipc
+	 *            an IPCore Object
+	 */
+	public static void addToPinIPCoreMap(Buffer pin, IPCore ipc) {
+		getIPCoreStorage(ipc).addPin(pin);
+	}
 
-    /**
-     * Returns the <code>IPCoreStorage</code> that maintains state
-     * information and attributes for the <code>IPCore</code> to which
-     * the given <code>Buffer</code> belongs.
-     *
-     * @param pin a <code>Buffer</code>
-     * @return an <code>IPCoreStorage</code> or null if the given
-     * <code>Buffer</code> does not belong to an <code>IPCore</code>.
-     */
-    public static IPCoreStorage getIPCoreStorage (Buffer pin)
-    {
-        for (Iterator iter = getIPCoreStorages().iterator(); iter.hasNext();)
-        {
-            IPCoreStorage storage = (IPCoreStorage)iter.next();
-            if (storage.getAllPins().contains(pin))
-            {
-                return storage;
-            }
-        }
+	/**
+	 * Get an IPCoreStorage object from the internal database using the given
+	 * IPCore object as the key
+	 * 
+	 * @param ipc
+	 *            an IPCore object
+	 * @return the IPCoreStorage for the specified IPCore
+	 */
+	public static IPCoreStorage getIPCoreStorage(IPCore ipc) {
+		return (IPCoreStorage) internalCoreMap.get(ipc);
+	}
 
-        return null;
-    }
-    
-    /**
-     * Returns true of the database contains no IPCores.
-     *
-     * @return true if no IPCore objects have been registered.
-     */
-    public static boolean isEmpty()
-    {
-        return internalCoreMap.isEmpty();
-    }
-    
-    /**
-     * Gets all the IPCoreStorage objects that have been registered
-     * (one per IPCore).
-     *
-     * @return a Collection of IPCoreStorage objects
-     */
-    public static Collection getIPCoreStorages()
-    {
-        return new HashSet(internalCoreMap.values());
-    }
+	/**
+	 * Returns the <code>IPCoreStorage</code> that maintains state information
+	 * and attributes for the <code>IPCore</code> to which the given
+	 * <code>Buffer</code> belongs.
+	 * 
+	 * @param pin
+	 *            a <code>Buffer</code>
+	 * @return an <code>IPCoreStorage</code> or null if the given
+	 *         <code>Buffer</code> does not belong to an <code>IPCore</code>.
+	 */
+	public static IPCoreStorage getIPCoreStorage(Buffer pin) {
+		for (IPCoreStorage storage : getIPCoreStorages()) {
+			if (storage.getAllPins().contains(pin)) {
+				return storage;
+			}
+		}
 
-    /** 
-     * Determine whether a <code>Buffer</code> belongs to an
-     * IPCore. 
-     * 
-     * @param pin a <code>Buffer</code>
-     * @return true if the <code>Buffer</code> belongs to an IPCore.
-     */
-    public static boolean hasThisPin(Buffer pin)
-    {
-        return getIPCoreStorage(pin) != null;
-    }
+		return null;
+	}
 
-    /**
-     * Determines whether a <code>Buffer</code> belongs to an
-     * IPCore and has been published.
-     *
-     * @param pin a <code>Buffer</code>
-     * @return true if the <code>Buffer</code> belongs to an IPCore and
-     * has been published.
-     */
-    public static boolean hasPublished(Buffer pin)
-    {
-        IPCoreStorage ipcs = getIPCoreStorage(pin);
-        return ((ipcs != null) && ipcs.hasPublished(pin));
-    }
+	/**
+	 * Returns true of the database contains no IPCores.
+	 * 
+	 * @return true if no IPCore objects have been registered.
+	 */
+	public static boolean isEmpty() {
+		return internalCoreMap.isEmpty();
+	}
 
-    /**
-     * Return a shallow clone of the internal clone
-     *
-     * @return a value of type 'Map'
-     */
-    public static Map cloneIPCoreMap()
-    {
-        return (Map)internalCoreMap.clone();
-    }
+	/**
+	 * Gets all the IPCoreStorage objects that have been registered (one per
+	 * IPCore).
+	 * 
+	 * @return a Collection of IPCoreStorage objects
+	 */
+	public static Collection<IPCoreStorage> getIPCoreStorages() {
+		return new HashSet<IPCoreStorage>(internalCoreMap.values());
+	}
 
-    /**
-     * Impose a set of ipcore data on the underlying map
-     *
-     * @param m a value of type 'Map'
-     */
-    public static void setIPCoreMap(Map m)
-    {
-        clearIPCoreMap();
-        for(Iterator it=m.entrySet().iterator();it.hasNext();)
-        {
-            Map.Entry me=(Map.Entry)it.next();
-            internalCoreMap.put(me.getKey(),me.getValue());
-        }
-    }
-    
-    /**
-     * Clears all entries in the internal IPCore->IPCoreStorage
-     * map.
-     */
-    public static void clearIPCoreMap()
-    {
-        internalCoreMap.clear();
-    }
-    
+	/**
+	 * Determine whether a <code>Buffer</code> belongs to an IPCore.
+	 * 
+	 * @param pin
+	 *            a <code>Buffer</code>
+	 * @return true if the <code>Buffer</code> belongs to an IPCore.
+	 */
+	public static boolean hasThisPin(Buffer pin) {
+		return getIPCoreStorage(pin) != null;
+	}
+
+	/**
+	 * Determines whether a <code>Buffer</code> belongs to an IPCore and has
+	 * been published.
+	 * 
+	 * @param pin
+	 *            a <code>Buffer</code>
+	 * @return true if the <code>Buffer</code> belongs to an IPCore and has been
+	 *         published.
+	 */
+	public static boolean hasPublished(Buffer pin) {
+		IPCoreStorage ipcs = getIPCoreStorage(pin);
+		return ((ipcs != null) && ipcs.hasPublished(pin));
+	}
+
+	/**
+	 * Return a shallow clone of the internal clone
+	 * 
+	 * @return a value of type 'Map'
+	 */
+	@SuppressWarnings("unchecked")
+	public static Map<IPCore, IPCoreStorage> cloneIPCoreMap() {
+		return (Map<IPCore, IPCoreStorage>) internalCoreMap.clone();
+	}
+
+	/**
+	 * Impose a set of ipcore data on the underlying map
+	 * 
+	 * @param m
+	 *            a value of type 'Map'
+	 */
+	public static void setIPCoreMap(Map<IPCore, IPCoreStorage> m) {
+		clearIPCoreMap();
+		for (Entry<IPCore, IPCoreStorage> entry: m.entrySet()){
+			internalCoreMap.put(entry.getKey(), entry.getValue());
+		}
+	}
+
+	/**
+	 * Clears all entries in the internal IPCore->IPCoreStorage map.
+	 */
+	public static void clearIPCoreMap() {
+		internalCoreMap.clear();
+	}
+
 }

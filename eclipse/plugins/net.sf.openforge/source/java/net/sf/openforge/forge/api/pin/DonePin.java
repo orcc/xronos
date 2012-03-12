@@ -17,31 +17,29 @@
 package net.sf.openforge.forge.api.pin;
 
 /**
- * DonePin is a specific type of ControlPin that is used as an output
- * to indicate that processing of data has completed.
+ * DonePin is a specific type of ControlPin that is used as an output to
+ * indicate that processing of data has completed.
  */
-public class DonePin extends ControlPin
-{
-    /** The default done signal used whenever a done is needed but not
-     * explicitly provided.
-     */
-    public final static DonePin GLOBAL = new DonePin("DONE");
-    
-    /**
-     * Constructs a new active high DonePin.
-     */
-    public DonePin()
-    {
-        super("DONE");
-    }
+public class DonePin extends ControlPin {
+	/**
+	 * The default done signal used whenever a done is needed but not explicitly
+	 * provided.
+	 */
+	public final static DonePin GLOBAL = new DonePin("DONE");
 
-    /**
-     * Constructs a new active high named DonePin.
-     * 
-     * @param name
-     */
-    public DonePin(String name)
-    {
-        super(name);
-    }
+	/**
+	 * Constructs a new active high DonePin.
+	 */
+	public DonePin() {
+		super("DONE");
+	}
+
+	/**
+	 * Constructs a new active high named DonePin.
+	 * 
+	 * @param name
+	 */
+	public DonePin(String name) {
+		super(name);
+	}
 }

@@ -16,6 +16,9 @@
 
 package net.sf.openforge.forge.api.ipcore;
 
+import java.io.PrintWriter;
+import java.util.List;
+
 /**
  * The <code>HDLWriter</code> interface is implemented by a user's class
  * that supports Verilog generation for IP Cores.  Each
@@ -85,7 +88,7 @@ public interface HDLWriter
      * representing Xilinx UniSim library modules required by the
      * written Verilog. 
      */
-    public java.util.List writeVerilog(IPCore targetCore, java.io.PrintWriter printWriter);
+    public List<String> writeVerilog(IPCore targetCore, PrintWriter printWriter);
 }
 
 

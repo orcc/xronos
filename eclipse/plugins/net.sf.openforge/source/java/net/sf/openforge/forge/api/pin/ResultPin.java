@@ -17,42 +17,40 @@
 package net.sf.openforge.forge.api.pin;
 
 /**
- * ResultPin is a specific type of Buffer that is used as an output,
- * supplying the calculated result of an entry method.
- *
+ * ResultPin is a specific type of Buffer that is used as an output, supplying
+ * the calculated result of an entry method.
+ * 
  */
-public class ResultPin extends Buffer
-{
-    /** The default result signal used whenever a result is needed but
-     * not explicitly provided.
-     */
-    public final static ResultPin GLOBAL = new ResultPin("RESULT");
-    
-    /**
-     * Constructs a new ResultPin with default name RESULT.
-     */
-    public ResultPin()
-    {
-        /**
-         * Sizing is initially set to 64 bits, but will ultimately be
-         * determined by the natural size of a method's return
-         * type and may possibly be reduced through optimizations.
-         */
-        super("RESULT", 64); 
-    }
+public class ResultPin extends Buffer {
+	/**
+	 * The default result signal used whenever a result is needed but not
+	 * explicitly provided.
+	 */
+	public final static ResultPin GLOBAL = new ResultPin("RESULT");
 
-    /**
-     * Constructs a new named ResultPin.
-     * 
-     * @param name
-     */
-    public ResultPin(String name)
-    {
-        /**
-         * Sizing is initially set to 64 bits, but will ultimately be
-         * determined by the natural size of a method's return
-         * type and may possibly be reduced through optimizations.
-         */
-        super(name, 64); 
-    }
+	/**
+	 * Constructs a new ResultPin with default name RESULT.
+	 */
+	public ResultPin() {
+		/**
+		 * Sizing is initially set to 64 bits, but will ultimately be determined
+		 * by the natural size of a method's return type and may possibly be
+		 * reduced through optimizations.
+		 */
+		super("RESULT", 64);
+	}
+
+	/**
+	 * Constructs a new named ResultPin.
+	 * 
+	 * @param name
+	 */
+	public ResultPin(String name) {
+		/**
+		 * Sizing is initially set to 64 bits, but will ultimately be determined
+		 * by the natural size of a method's return type and may possibly be
+		 * reduced through optimizations.
+		 */
+		super(name, 64);
+	}
 }

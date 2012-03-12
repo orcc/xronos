@@ -17,32 +17,29 @@
 package net.sf.openforge.forge.api.pin;
 
 /**
- * GoPin is a specific type of ControlPin that is used as an input to
- * indicate that data is available and ready that processing should
- * commence.
+ * GoPin is a specific type of ControlPin that is used as an input to indicate
+ * that data is available and ready that processing should commence.
  */
-public class GoPin extends ControlPin
-{
-    /** The default go signal used whenever a go is needed but not
-     * explicitly provided.
-     */
-    public final static GoPin GLOBAL = new GoPin("GO");
-    
-    /**
-     * Constructs a new active high GoPin with default name of GO.
-     */
-    public GoPin()
-    {
-        super("GO");
-    }
+public class GoPin extends ControlPin {
+	/**
+	 * The default go signal used whenever a go is needed but not explicitly
+	 * provided.
+	 */
+	public final static GoPin GLOBAL = new GoPin("GO");
 
-    /**
-     * Constructs a new active high named GoPin.
-     * 
-     * @param name
-     */
-    public GoPin(String name)
-    {
-        super(name);
-    }
+	/**
+	 * Constructs a new active high GoPin with default name of GO.
+	 */
+	public GoPin() {
+		super("GO");
+	}
+
+	/**
+	 * Constructs a new active high named GoPin.
+	 * 
+	 * @param name
+	 */
+	public GoPin(String name) {
+		super(name);
+	}
 }

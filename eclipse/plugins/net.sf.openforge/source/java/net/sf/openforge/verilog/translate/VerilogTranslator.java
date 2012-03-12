@@ -1069,7 +1069,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 			if (hdlWriter != null) {
 				UserPrintWriter upw = new UserPrintWriter(printer);
 
-				List unisimlist = hdlWriter.writeVerilog(ipcore, upw);
+				List<String> unisimlist = hdlWriter.writeVerilog(ipcore, upw);
 
 				if (unisimlist != null) {
 

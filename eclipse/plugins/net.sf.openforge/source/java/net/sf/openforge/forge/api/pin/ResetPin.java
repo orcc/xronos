@@ -17,27 +17,24 @@
 package net.sf.openforge.forge.api.pin;
 
 /**
- * ResetPin is a specific type of <code>Buffer</code> that represents
- * a reset signal input to the design.  <code>ResetPin</code>s are
- * identified by the specific name used to create them.
+ * ResetPin is a specific type of <code>Buffer</code> that represents a reset
+ * signal input to the design. <code>ResetPin</code>s are identified by the
+ * specific name used to create them.
  */
-public class ResetPin extends ControlPin
-{
-    /**
-     * Constructs a new active high ResetPin with default name RESET.
-     */
-    protected ResetPin()
-    {
-        super("RESET");
-    }
+public class ResetPin extends ControlPin {
+	/**
+	 * Constructs a new active high ResetPin with default name RESET.
+	 */
+	protected ResetPin() {
+		super("RESET");
+	}
 
-    /**
-     * Constructs a new active high named ResetPin.
-     * 
-     * @param name
-     */
-    protected ResetPin(String name)
-    {
-        super(name);
-    }
+	/**
+	 * Constructs a new active high named ResetPin.
+	 * 
+	 * @param name
+	 */
+	protected ResetPin(String name) {
+		super(name);
+	}
 }

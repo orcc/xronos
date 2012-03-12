@@ -18,28 +18,25 @@ package net.sf.openforge.forge.api.pin;
 
 /**
  * ControlPin is the super class for all non-data pins in a design.
- *
+ * 
  */
-public abstract class ControlPin extends Buffer
-{
-    /**
-     * Constructs a new named ControlPin.
-     * 
-     * @param name
-     */
-    public ControlPin(String name)
-    {
-        super(name,1);
-    }
-    
-    /**
-     * Control pins are always unsigned, so this always returns false.
-     * 
-     * @see net.sf.openforge.forge.api.pin.Buffer#isSigned()
-     */
-    public boolean isSigned() 
-    {
-        return false;
-    }
+public abstract class ControlPin extends Buffer {
+	/**
+	 * Constructs a new named ControlPin.
+	 * 
+	 * @param name
+	 */
+	public ControlPin(String name) {
+		super(name, 1);
+	}
+
+	/**
+	 * Control pins are always unsigned, so this always returns false.
+	 * 
+	 * @see net.sf.openforge.forge.api.pin.Buffer#isSigned()
+	 */
+	public boolean isSigned() {
+		return false;
+	}
 
 }

@@ -19,28 +19,26 @@ package net.sf.openforge.forge.api.pin;
 /**
  * SuspendPin
  */
-public class SuspendPin extends ControlPin
-{
-    /** The default suspend signal used whenever a suspend is needed
-     * but not explicitly provided.
-     */
-    public final static SuspendPin GLOBAL = new SuspendPin("SUSPEND");
-    
-    /**
-     * Constructs a new active high SuspendPin with default name SUSPEND.
-     */
-    public SuspendPin()
-    {
-        super("SUSPEND");
-    }
+public class SuspendPin extends ControlPin {
+	/**
+	 * The default suspend signal used whenever a suspend is needed but not
+	 * explicitly provided.
+	 */
+	public final static SuspendPin GLOBAL = new SuspendPin("SUSPEND");
 
-    /**
-     * Constructs a new active high named SuspendPin.
-     * 
-     * @param name
-     */
-    public SuspendPin(String name)
-    {
-        super(name);
-    }
+	/**
+	 * Constructs a new active high SuspendPin with default name SUSPEND.
+	 */
+	public SuspendPin() {
+		super("SUSPEND");
+	}
+
+	/**
+	 * Constructs a new active high named SuspendPin.
+	 * 
+	 * @param name
+	 */
+	public SuspendPin(String name) {
+		super(name);
+	}
 }
