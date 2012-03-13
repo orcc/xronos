@@ -278,7 +278,8 @@ public class RunTime
     }
     
 
-    private static void setValues(int fam, File srcDir, File dstDir,
+    @SuppressWarnings("unused")
+	private static void setValues(int fam, File srcDir, File dstDir,
                                   File xDir)
     {
         setFamily(fam);

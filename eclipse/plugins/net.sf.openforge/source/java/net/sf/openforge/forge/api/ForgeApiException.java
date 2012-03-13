@@ -22,6 +22,7 @@ package net.sf.openforge.forge.api;
  * checking during compilation and throw this exception if an error is
  * detected.  The error message will describe the nature of the error.
  */
+@SuppressWarnings("serial")
 public class ForgeApiException extends RuntimeException
 {
     public ForgeApiException (String s)

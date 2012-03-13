@@ -25,9 +25,8 @@ package net.sf.openforge.forge.library.ops;
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: DIV.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class DIV 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+
+public class DIV{
     
     /**
      * Implements a functionally correct signed divide according to the
