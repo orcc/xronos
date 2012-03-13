@@ -21,119 +21,115 @@
 
 package net.sf.openforge.lim.io;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+
 /**
- * FSLFifoInput creates pins necessary for obtaining data from an input
- * FIFO interface that is FSL compliant.
- *
- *
- * <p>Created: Tue Dec 16 12:10:31 2003
- *
+ * FSLFifoInput creates pins necessary for obtaining data from an input FIFO
+ * interface that is FSL compliant.
+ * 
+ * 
+ * <p>
+ * Created: Tue Dec 16 12:10:31 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: FSLFifoInput.java 128 2006-04-04 15:05:31Z imiller $
  */
-public class FSLFifoInput extends FifoInput
-{
-    private static final String _RCS_ = "$Rev: 88 $";
+public class FSLFifoInput extends FifoInput {
 
-    private String baseName;
-    private SimplePin data;
-    private SimplePin exists;
-    private SimplePin ctrl;
-    private SimplePin clk;
-    private SimplePin read;
-    
-    /**
-     * Constructs a new FSLFifoInput instance, creating all the
-     * necessary pin objects and assigning them names of the form 
-     * <code><i>idString</i>_S_DIN</code>, etc.
-     *
-     * @param idString a uniquifying String that is pre-pended to the
-     * signal names which must conform to the specification for signal
-     * naming (ie FSLx where x is the instance number)
-     * @param width an int, the byte bit of the Fifo data path.
-     */
-    public FSLFifoInput (String idString, int width)
-    {
-        super(width);
+	private String baseName;
+	private SimplePin data;
+	private SimplePin exists;
+	private SimplePin ctrl;
+	private SimplePin clk;
+	private SimplePin read;
 
-        //  This class creates all of the FSL slave pins according to
-        // the specified interface.  The idString will be of the form
-        // FSLx.  To this idString we must append the  _S_yyyyy signal
-        // names to generate the following pins: 
-        /*
-         * FSLx_S_DATA <width> bits wide input
-         * FSLx_S_EXISTS 1 bit input
-         * FSLx_S_READ 1 bit output
-         * FSLx_S_CONTROL 1 bit input, 
-         * FSLx_S_CLK 1 bit input
-         */
-        this.baseName = idString;
-        final String pinBaseName = buildPortBaseName(idString);
-        // The direction of the pin is dependent only on how we access it
-        //this.data = new SimpleFifoPin(this, width * 8, pinBaseName + "_DATA");
-        this.data = new SimpleFifoPin(this, width, pinBaseName + "_DATA");
-        this.exists = new SimpleFifoPin(this, 1, pinBaseName + "_EXISTS");
-        this.ctrl = new SimpleFifoPin(this, 1, pinBaseName + "_CONTROL");
-        this.clk = new SimpleFifoPin(this, 1, pinBaseName + "_CLK");
-        this.read = new SimpleFifoPin(this, 1, pinBaseName + "_READ");
+	/**
+	 * Constructs a new FSLFifoInput instance, creating all the necessary pin
+	 * objects and assigning them names of the form
+	 * <code><i>idString</i>_S_DIN</code>, etc.
+	 * 
+	 * @param idString
+	 *            a uniquifying String that is pre-pended to the signal names
+	 *            which must conform to the specification for signal naming (ie
+	 *            FSLx where x is the instance number)
+	 * @param width
+	 *            an int, the byte bit of the Fifo data path.
+	 */
+	public FSLFifoInput(String idString, int width) {
+		super(width);
 
-        // The order that these are added here determines the order
-        // they show up in the translated inteface.
-        this.addPin(data);
-        this.addPin(exists);
-        this.addPin(read);
-        this.addPin(ctrl);
-        this.addPin(clk);
+		// This class creates all of the FSL slave pins according to
+		// the specified interface. The idString will be of the form
+		// FSLx. To this idString we must append the _S_yyyyy signal
+		// names to generate the following pins:
+		/*
+		 * FSLx_S_DATA <width> bits wide input FSLx_S_EXISTS 1 bit input
+		 * FSLx_S_READ 1 bit output FSLx_S_CONTROL 1 bit input, FSLx_S_CLK 1 bit
+		 * input
+		 */
+		this.baseName = idString;
+		final String pinBaseName = buildPortBaseName(idString);
+		// The direction of the pin is dependent only on how we access it
+		// this.data = new SimpleFifoPin(this, width * 8, pinBaseName +
+		// "_DATA");
+		this.data = new SimpleFifoPin(this, width, pinBaseName + "_DATA");
+		this.exists = new SimpleFifoPin(this, 1, pinBaseName + "_EXISTS");
+		this.ctrl = new SimpleFifoPin(this, 1, pinBaseName + "_CONTROL");
+		this.clk = new SimpleFifoPin(this, 1, pinBaseName + "_CLK");
+		this.read = new SimpleFifoPin(this, 1, pinBaseName + "_READ");
 
-        // Tie off the unused outputs.
-        // None.
-    }
+		// The order that these are added here determines the order
+		// they show up in the translated inteface.
+		this.addPin(data);
+		this.addPin(exists);
+		this.addPin(read);
+		this.addPin(ctrl);
+		this.addPin(clk);
 
-    /**
-     * <code>getType</code> returns {@link FifoIF#TYPE_FSL_FIFO}
-     *
-     * @return an <code>int</code> value
-     */
-    public int getType ()
-    {
-        return FifoIF.TYPE_FSL_FIFO;
-    }
-    
-    public String getPortBaseName ()
-    {
-        return this.baseName;
-    }
-    
-    /**
-     * Fifo input ports are slave queues, this method returns
-     * portname_S 
-     */
-    protected String buildPortBaseName (String portName)
-    {
-        return portName + "_S";
-    }
-    
-    /**
-     * Returns a subset of {@link #getPins} that are the output pins
-     * of the interface, containing only the read pin.
-     */
-    public Collection<SimplePin> getOutputPins ()
-    {
-        return Collections.unmodifiableList(Collections.singletonList(this.read));
-    }
+		// Tie off the unused outputs.
+		// None.
+	}
 
-    public SimplePin getDataPin ()
-    {
-        return this.data;
-    }
-    public SimplePin getSendPin ()
-    {
-        return this.exists;
-    }
-    public SimplePin getAckPin ()
-    {
-        return this.read;
-    }
-    
+	/**
+	 * <code>getType</code> returns {@link FifoIF#TYPE_FSL_FIFO}
+	 * 
+	 * @return an <code>int</code> value
+	 */
+	public int getType() {
+		return FifoIF.TYPE_FSL_FIFO;
+	}
+
+	public String getPortBaseName() {
+		return this.baseName;
+	}
+
+	/**
+	 * Fifo input ports are slave queues, this method returns portname_S
+	 */
+	protected String buildPortBaseName(String portName) {
+		return portName + "_S";
+	}
+
+	/**
+	 * Returns a subset of {@link #getPins} that are the output pins of the
+	 * interface, containing only the read pin.
+	 */
+	public Collection<SimplePin> getOutputPins() {
+		return Collections.unmodifiableList(Collections
+				.singletonList(this.read));
+	}
+
+	public SimplePin getDataPin() {
+		return this.data;
+	}
+
+	public SimplePin getSendPin() {
+		return this.exists;
+	}
+
+	public SimplePin getAckPin() {
+		return this.read;
+	}
+
 }// FSLFifoInput

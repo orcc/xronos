@@ -21,100 +21,101 @@
 
 package net.sf.openforge.lim.io;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.Referenceable;
+import net.sf.openforge.lim.Referencer;
+import net.sf.openforge.lim.StateAccessor;
+import net.sf.openforge.lim.StateHolder;
+import net.sf.openforge.lim.Visitable;
+import net.sf.openforge.lim.Visitor;
 
 /**
  * SimplePinAccess is the superclass of specific types of accesses to a
  * {@link SimplePin}.
- *
- *
- * <p>Created: Tue Dec 16 11:22:23 2003
- *
+ * 
+ * 
+ * <p>
+ * Created: Tue Dec 16 11:22:23 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: SimplePinAccess.java 40 2005-10-17 15:08:12Z imiller $
  */
-public abstract class SimplePinAccess extends Module implements Referencer, StateAccessor, Visitable
-{
-    private static final String _RCS_ = "$Rev: 40 $";
+public abstract class SimplePinAccess extends Module implements Referencer,
+		StateAccessor, Visitable {
 
-    private SimplePin targetPin;
-    
-    /**
-     * Constructs a new SimplePinAccess instance which targets the
-     * specified SimplePin.
-     *
-     * @param pin a value of type 'SimplePin'
-     * @throws IllegalArgumentException if pin is null
-     */
-    public SimplePinAccess (SimplePin pin)
-    {
-        if (pin == null)
-        {
-            throw new IllegalArgumentException("Target pin cannot be null");
-        }
-        
-        this.targetPin = pin;
-    }
+	private SimplePin targetPin;
 
-    /**
-     * Accept the specified visitor
-     *
-     * @param visitor a Visitor
-     */
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
-    
-    public boolean replaceComponent (Component removed, Component inserted)
-    {
-        // TBD
-        assert false;
-        return false;
-    }
+	/**
+	 * Constructs a new SimplePinAccess instance which targets the specified
+	 * SimplePin.
+	 * 
+	 * @param pin
+	 *            a value of type 'SimplePin'
+	 * @throws IllegalArgumentException
+	 *             if pin is null
+	 */
+	public SimplePinAccess(SimplePin pin) {
+		if (pin == null) {
+			throw new IllegalArgumentException("Target pin cannot be null");
+		}
 
-    /**
-     * Returns the targetted {@link SimplePin}.
-     *
-     * @return a non null 'SimplePin'.
-     */
-    public SimplePin getTargetPin ()
-    {
-        return this.targetPin;
-    }
+		this.targetPin = pin;
+	}
 
-    /**
-     * determines if this component can be scheduled to execute in
-     * fixed known time (all paths through take same time), but
-     * because pin accesses may block this overrides the one in
-     * component to return false.
-     *
-     * @return false
-     */
-    public boolean isBalanceable ()
-    {
-        return false;
-    }
-    
-    /**
-     * Returns the {@link Referenceable} {@link SimplePin} which this
-     * access targets.
-     *
-     * @return a non-null {@link Referenceable}
-     */
-    public Referenceable getReferenceable ()
-    {
-        return this.getTargetPin();
-    }
-    
-    /**
-     * Returns the {@link SimplePin} object that this access targets.
-     *
-     * @return a non-null StateHolder
-     */
-    public StateHolder getStateHolder ()
-    {
-        return this.getTargetPin();
-    }
-    
+	/**
+	 * Accept the specified visitor
+	 * 
+	 * @param visitor
+	 *            a Visitor
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
+
+	public boolean replaceComponent(Component removed, Component inserted) {
+		// TBD
+		assert false;
+		return false;
+	}
+
+	/**
+	 * Returns the targetted {@link SimplePin}.
+	 * 
+	 * @return a non null 'SimplePin'.
+	 */
+	public SimplePin getTargetPin() {
+		return this.targetPin;
+	}
+
+	/**
+	 * determines if this component can be scheduled to execute in fixed known
+	 * time (all paths through take same time), but because pin accesses may
+	 * block this overrides the one in component to return false.
+	 * 
+	 * @return false
+	 */
+	public boolean isBalanceable() {
+		return false;
+	}
+
+	/**
+	 * Returns the {@link Referenceable} {@link SimplePin} which this access
+	 * targets.
+	 * 
+	 * @return a non-null {@link Referenceable}
+	 */
+	public Referenceable getReferenceable() {
+		return this.getTargetPin();
+	}
+
+	/**
+	 * Returns the {@link SimplePin} object that this access targets.
+	 * 
+	 * @return a non-null StateHolder
+	 */
+	public StateHolder getStateHolder() {
+		return this.getTargetPin();
+	}
+
 }// SimplePinAccess

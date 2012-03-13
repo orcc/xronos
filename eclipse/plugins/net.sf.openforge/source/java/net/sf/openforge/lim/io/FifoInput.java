@@ -21,66 +21,68 @@
 
 package net.sf.openforge.lim.io;
 
-import java.util.*;
+
 /**
- * FifoInput is an abstract class which contains the common behavior
- * for all types of fifo input
- *
- *
- * <p>Created: Tue Dec 16 12:10:31 2003
- *
+ * FifoInput is an abstract class which contains the common behavior for all
+ * types of fifo input
+ * 
+ * 
+ * <p>
+ * Created: Tue Dec 16 12:10:31 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: FifoInput.java 95 2006-01-19 22:12:38Z imiller $
  */
-public abstract class FifoInput extends FifoIF 
-{
-    private static final String _RCS_ = "$Rev: 95 $";
+public abstract class FifoInput extends FifoIF {
 
-    /**
-     * Constructs a new FifoInput instance
-     *
-     * @param width an int, the byte bit of the Fifo data path.
-     */
-    public FifoInput (int width)
-    {
-        super(width);
-    }
+	/**
+	 * Constructs a new FifoInput instance
+	 * 
+	 * @param width
+	 *            an int, the byte bit of the Fifo data path.
+	 */
+	public FifoInput(int width) {
+		super(width);
+	}
 
-    /**
-     * Returns a {@link FifoRead} object that is used to obtain data
-     * from this FifoIF.
-     *
-     * @return a {@link FifoAccess}, specifically of type {@link
-     * FifoRead}
-     */
-    public FifoAccess getAccess ()
-    {
-        return new FifoRead(this);
-    }
+	/**
+	 * Returns a {@link FifoRead} object that is used to obtain data from this
+	 * FifoIF.
+	 * 
+	 * @return a {@link FifoAccess}, specifically of type {@link FifoRead}
+	 */
+	public FifoAccess getAccess() {
+		return new FifoRead(this);
+	}
 
-    /**
-     * Returns true due to the fact that the data pin for this
-     * interface is an input to the design.
-     *
-     * @return true
-     */
-    public boolean isInput ()
-    {
-        return true;
-    }
-    
-    /** Returns the input data pin */
-    public abstract SimplePin getDataPin ();
-    /** Returns the input send pin which indicates that a value is
-     * being sent TO this input interface. */
-    public abstract SimplePin getSendPin ();
-    /** Returns the output ack pin which indicates that this interface
-     * is acknowledging reciept of the current send value */
-    public abstract SimplePin getAckPin ();
+	/**
+	 * Returns true due to the fact that the data pin for this interface is an
+	 * input to the design.
+	 * 
+	 * @return true
+	 */
+	public boolean isInput() {
+		return true;
+	}
 
-    public String toString ()
-    {
-        return super.toString().replaceAll("net.sf.openforge.lim.io.","")+"{" + getDataPin().getName() + "}";
-    }
-    
+	/** Returns the input data pin */
+	public abstract SimplePin getDataPin();
+
+	/**
+	 * Returns the input send pin which indicates that a value is being sent TO
+	 * this input interface.
+	 */
+	public abstract SimplePin getSendPin();
+
+	/**
+	 * Returns the output ack pin which indicates that this interface is
+	 * acknowledging reciept of the current send value
+	 */
+	public abstract SimplePin getAckPin();
+
+	public String toString() {
+		return super.toString().replaceAll("net.sf.openforge.lim.io.", "")
+				+ "{" + getDataPin().getName() + "}";
+	}
+
 }// FifoInput

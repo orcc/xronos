@@ -21,229 +21,235 @@
 
 package net.sf.openforge.lim.io;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.And;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.Not;
+import net.sf.openforge.lim.Or;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Referenceable;
+import net.sf.openforge.lim.Reg;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitable;
+import net.sf.openforge.lim.Visitor;
 
 /**
- * FifoRead is an atomic access to a given {@link FifoIF} which
- * returns a single element of data from that interface.  It is,
- * however, a subclass of Module so that this functionality can be
- * further broken down into a sequence of pin accesses.  This
- * functionality is hand-constructed.
- * <P>FifoRead components are inherently unsigned due to the fact that
- * the {@link SimplePinRead} and {@link SimplePinWrite} on which they
- * are based are inherently unsigned.  If you need a signed value from
- * a fifo read you must cast the result bus to the proper signedness.
- *
- * <p>Created: Tue Dec 16 11:44:39 2003
- *
+ * FifoRead is an atomic access to a given {@link FifoIF} which returns a single
+ * element of data from that interface. It is, however, a subclass of Module so
+ * that this functionality can be further broken down into a sequence of pin
+ * accesses. This functionality is hand-constructed.
+ * <P>
+ * FifoRead components are inherently unsigned due to the fact that the
+ * {@link SimplePinRead} and {@link SimplePinWrite} on which they are based are
+ * inherently unsigned. If you need a signed value from a FIFO read you must
+ * cast the result bus to the proper signeness.
+ * 
+ * <p>
+ * Created: Tue Dec 16 11:44:39 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: FifoRead.java 280 2006-08-11 17:00:32Z imiller $
  */
-public class FifoRead extends FifoAccess implements Visitable
-{
-    private static final String _RCS_ = "$Rev: 280 $";
+public class FifoRead extends FifoAccess implements Visitable {
 
-    /** A set containing only the flop */
-    private Set feedbackPoints = new HashSet();
+	/** A set containing only the flop */
+	private Set<Reg> feedbackPoints = new HashSet<Reg>();
 
-    protected FifoRead (FifoInput targetInterface, Latency operationalLatency)
-    {
-        super(targetInterface);
-        
-        // Excluding 'sideband' ports/buses (those connecting to pins)
-        // there is a single result bus on this module, and a GO port
-        // and DONE bus.
-        Exit exit = makeExit(1);
-        Bus result = (Bus)exit.getDataBuses().get(0);
-        Bus done = exit.getDoneBus();
-        done.setUsed(true);
-        result.setUsed(true);
+	protected FifoRead(FifoInput targetInterface, Latency operationalLatency) {
+		super(targetInterface);
 
-        exit.setLatency(operationalLatency);
-    }
-    
-    /**
-     * Constructs a new FifoRead targetting the given FifoIF.
-     *
-     * @param targetInterface a non null 'FifoIF'
-     */
-    public FifoRead (FifoInput targetInterface)
-    {
-        // Could be combinational or longer if the access is blocked
-        // by status flags.
-        //this(targetInterface, Latency.ZERO.open(new Object()));
-        this(targetInterface, null);
-        Exit exit = getExit(Exit.DONE);
-        exit.setLatency(Latency.ZERO.open(exit));
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single result bus on this module, and a GO port
+		// and DONE bus.
+		Exit exit = makeExit(1);
+		Bus result = (Bus) exit.getDataBuses().get(0);
+		Bus done = exit.getDoneBus();
+		done.setUsed(true);
+		result.setUsed(true);
 
-        this.setProducesDone(true);
-        this.setDoneSynchronous(true);
-        
-        /* Build up the correct logic in this module to implement the
-         * functionality:
-         * read_data = fifo_DIN;
-         * pending = (GO || GO');
-         * read_done = fifo_ACK = pending && fifo_DE;
-         * GO' <= pending && !fifo_DE;
-         */
-//         // Excluding 'sideband' ports/buses (those connecting to pins)
-//         // there is a single result bus on this module, and a GO port
-//         // and DONE bus.
-//         Exit exit = makeExit(1);
-//         Bus result = (Bus)exit.getDataBuses().get(0);
-//         Bus done = exit.getDoneBus();
-//         done.setUsed(true);
-//         result.setUsed(true);
+		exit.setLatency(operationalLatency);
+	}
 
-//         // Could be combinational or longer if the access is blocked
-//         // by status flags.
-//         exit.setLatency(Latency.ZERO.open(this));
-        Bus done = exit.getDoneBus();
-        Bus result = (Bus)exit.getDataBuses().get(0);
-        
-        // To implement the functionality we have:
-        // 1 FD flop (resets to 0)
-        // 1 logical OR (2 input)
-        // 2 logical ANDs (2 input)
-        // 1 logical NOT
-        // 1 fifo data read
-        // 1 fifo DE read
-        // 1 fifo ACK write
-        // Needs RESET b/c it is in the control path
-        final Reg flop = Reg.getConfigurableReg(Reg.REGR, "fifoReadFlop");
-        flop.getClockPort().setBus(this.getClockPort().getPeer());
-        flop.getResetPort().setBus(this.getResetPort().getPeer());
-        flop.getInternalResetPort().setBus(this.getResetPort().getPeer());
-        // Because the flop is a feedback point it needs to be
-        // pre-initialized with its value
-        flop.getResultBus().pushValueForward(new Value(1, false));
-        final Or pending = new Or(2);
-        final And done_and = new And(2);
-        final And flop_and = new And(2);
-        final Not not = new Not();
-        final SimplePinRead din = new SimplePinRead(targetInterface.getDataPin());
-        final SimplePinRead exists = new SimplePinRead(targetInterface.getSendPin());
-        final SimplePinWrite ack = new SimplePinWrite(targetInterface.getAckPin());
-        this.addComponent(flop);
-        this.addComponent(pending);
-        this.addComponent(done_and);
-        this.addComponent(flop_and);
-        this.addComponent(not);
-        this.addComponent(din);
-        this.addComponent(exists);
-        this.addComponent(ack);
+	/**
+	 * Constructs a new FifoRead targetting the given FifoIF.
+	 * 
+	 * @param targetInterface
+	 *            a non null 'FifoIF'
+	 */
+	public FifoRead(FifoInput targetInterface) {
+		// Could be combinational or longer if the access is blocked
+		// by status flags.
+		// this(targetInterface, Latency.ZERO.open(new Object()));
+		this(targetInterface, null);
+		Exit exit = getExit(Exit.DONE);
+		exit.setLatency(Latency.ZERO.open(exit));
 
-        // Hook fifo DIN pin to the result of the module.  Easy
-        // straight wire through.
-        result.getPeer().setBus(din.getResultBus());
-        
-        // Calculate 'pending'
-        ((Port)pending.getDataPorts().get(0)).setBus(flop.getResultBus());
-        ((Port)pending.getDataPorts().get(1)).setBus(getGoPort().getPeer());
+		this.setProducesDone(true);
+		this.setDoneSynchronous(true);
 
-        // calculate the 'read done'
-        ((Port)done_and.getDataPorts().get(0)).setBus(pending.getResultBus());
-        ((Port)done_and.getDataPorts().get(1)).setBus(exists.getResultBus());
+		/*
+		 * Build up the correct logic in this module to implement the
+		 * functionality: read_data = fifo_DIN; pending = (GO || GO'); read_done
+		 * = fifo_ACK = pending && fifo_DE; GO' <= pending && !fifo_DE;
+		 */
+		// // Excluding 'sideband' ports/buses (those connecting to pins)
+		// // there is a single result bus on this module, and a GO port
+		// // and DONE bus.
+		// Exit exit = makeExit(1);
+		// Bus result = (Bus)exit.getDataBuses().get(0);
+		// Bus done = exit.getDoneBus();
+		// done.setUsed(true);
+		// result.setUsed(true);
 
-        // hook 'read done' to done bus and fifo ack
-        done.getPeer().setBus(done_and.getResultBus());
-        ack.getDataPort().setBus(done_and.getResultBus());
-        ack.getGoPort().setBus(done_and.getResultBus());
-        
-        // calculate the and for the flop
-        not.getDataPort().setBus(exists.getResultBus());
-        ((Port)flop_and.getDataPorts().get(0)).setBus(not.getResultBus());
-        ((Port)flop_and.getDataPorts().get(1)).setBus(pending.getResultBus());
+		// // Could be combinational or longer if the access is blocked
+		// // by status flags.
+		// exit.setLatency(Latency.ZERO.open(this));
+		Bus done = exit.getDoneBus();
+		Bus result = (Bus) exit.getDataBuses().get(0);
 
-        // Connect the flop port
-        flop.getDataPort().setBus(flop_and.getResultBus());
+		// To implement the functionality we have:
+		// 1 FD flop (resets to 0)
+		// 1 logical OR (2 input)
+		// 2 logical ANDs (2 input)
+		// 1 logical NOT
+		// 1 fifo data read
+		// 1 fifo DE read
+		// 1 fifo ACK write
+		// Needs RESET b/c it is in the control path
+		final Reg flop = Reg.getConfigurableReg(Reg.REGR, "fifoReadFlop");
+		flop.getClockPort().setBus(this.getClockPort().getPeer());
+		flop.getResetPort().setBus(this.getResetPort().getPeer());
+		flop.getInternalResetPort().setBus(this.getResetPort().getPeer());
+		// Because the flop is a feedback point it needs to be
+		// pre-initialized with its value
+		flop.getResultBus().pushValueForward(new Value(1, false));
+		final Or pending = new Or(2);
+		final And done_and = new And(2);
+		final And flop_and = new And(2);
+		final Not not = new Not();
+		final SimplePinRead din = new SimplePinRead(
+				targetInterface.getDataPin());
+		final SimplePinRead exists = new SimplePinRead(
+				targetInterface.getSendPin());
+		final SimplePinWrite ack = new SimplePinWrite(
+				targetInterface.getAckPin());
+		this.addComponent(flop);
+		this.addComponent(pending);
+		this.addComponent(done_and);
+		this.addComponent(flop_and);
+		this.addComponent(not);
+		this.addComponent(din);
+		this.addComponent(exists);
+		this.addComponent(ack);
 
-        // Define the feedback point
-        this.feedbackPoints = Collections.singleton(flop);
-    }
+		// Hook fifo DIN pin to the result of the module. Easy
+		// straight wire through.
+		result.getPeer().setBus(din.getResultBus());
 
-    /**
-     * Accept the specified visitor
-     *
-     * @param visitor a Visitor
-     */
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+		// Calculate 'pending'
+		((Port) pending.getDataPorts().get(0)).setBus(flop.getResultBus());
+		((Port) pending.getDataPorts().get(1)).setBus(getGoPort().getPeer());
 
-    /**
-     * Needs a clock for the embedded flop
-     *
-     * @return true
-     */
-    public boolean consumesClock ()
-    {
-        return true;
-    }
+		// calculate the 'read done'
+		((Port) done_and.getDataPorts().get(0)).setBus(pending.getResultBus());
+		((Port) done_and.getDataPorts().get(1)).setBus(exists.getResultBus());
 
-    /**
-     * Needs a GO to generate the done signal, overrides Module
-     * because this module is not traversed during scheduling.  That
-     * means that we will not automagically detect that it needs a go
-     * and thus won't calculate one for it unless we return true from
-     * this method.
-     *
-     * @return true
-     */
-    public boolean consumesGo ()
-    {
-        return true;
-    }
+		// hook 'read done' to done bus and fifo ack
+		done.getPeer().setBus(done_and.getResultBus());
+		ack.getDataPort().setBus(done_and.getResultBus());
+		ack.getGoPort().setBus(done_and.getResultBus());
 
-    public boolean replaceComponent (Component removed, Component inserted)
-    {
-        // TBD
-        assert false;
-        return false;
-    }
+		// calculate the and for the flop
+		not.getDataPort().setBus(exists.getResultBus());
+		((Port) flop_and.getDataPorts().get(0)).setBus(not.getResultBus());
+		((Port) flop_and.getDataPorts().get(1)).setBus(pending.getResultBus());
 
-    public Set getFeedbackPoints ()
-    {
-        Set feedback = new HashSet();
-        feedback.addAll(super.getFeedbackPoints());
-        feedback.addAll(this.feedbackPoints);
-        
-        return feedback;
-    }
+		// Connect the flop port
+		flop.getDataPort().setBus(flop_and.getResultBus());
 
-    /**
-     * This accessor modifies the {@link Referenceable} target state
-     * so it may not execute in parallel with other accesses.
-     */
-    public boolean isSequencingPoint ()
-    {
-        return true;
-    }
-    
-    protected void cloneNotify (Module clone, Map cloneMap)
-    {
-        super.cloneNotify(clone, cloneMap);
-        // Re-set the feedback points to point to the correct register
-        // in the clone instead of the register in the original IFF it
-        // exists... subclasses may have alternate structure
-        if (this.feedbackPoints.isEmpty())
-        {
-            ((FifoRead)clone).feedbackPoints = Collections.EMPTY_SET;
-        }
-        else
-        {
-            Set cloneSet = new HashSet();
-            ((FifoRead)clone).feedbackPoints = cloneSet;
-            for (Iterator iter = this.feedbackPoints.iterator(); iter.hasNext();)
-                cloneSet.add(cloneMap.get(iter.next()));
-            assert !cloneSet.contains(null);
-        }
-        
-        //((FifoRead)clone).feedbackPoints = Collections.singleton(cloneMap.get(this.feedbackPoints.iterator().next()));
-    }
-    
-    
+		// Define the feedback point
+		this.feedbackPoints = Collections.singleton(flop);
+	}
+
+	/**
+	 * Accept the specified visitor
+	 * 
+	 * @param visitor
+	 *            a Visitor
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
+
+	/**
+	 * Needs a clock for the embedded flop
+	 * 
+	 * @return true
+	 */
+	public boolean consumesClock() {
+		return true;
+	}
+
+	/**
+	 * Needs a GO to generate the done signal, overrides Module because this
+	 * module is not traversed during scheduling. That means that we will not
+	 * automagically detect that it needs a go and thus won't calculate one for
+	 * it unless we return true from this method.
+	 * 
+	 * @return true
+	 */
+	public boolean consumesGo() {
+		return true;
+	}
+
+	public boolean replaceComponent(Component removed, Component inserted) {
+		// TBD
+		assert false;
+		return false;
+	}
+
+	public Set<Reg> getFeedbackPoints() {
+		Set<Reg> feedback = new HashSet<Reg>();
+		feedback.addAll(super.getFeedbackPoints());
+		feedback.addAll(this.feedbackPoints);
+
+		return feedback;
+	}
+
+	/**
+	 * This accessor modifies the {@link Referenceable} target state so it may
+	 * not execute in parallel with other accesses.
+	 */
+	public boolean isSequencingPoint() {
+		return true;
+	}
+
+	protected void cloneNotify(Module clone, Map cloneMap) {
+		super.cloneNotify(clone, cloneMap);
+		// Re-set the feedback points to point to the correct register
+		// in the clone instead of the register in the original IFF it
+		// exists... subclasses may have alternate structure
+		if (this.feedbackPoints.isEmpty()) {
+			((FifoRead) clone).feedbackPoints = Collections.emptySet();
+		} else {
+			Set cloneSet = new HashSet();
+			((FifoRead) clone).feedbackPoints = cloneSet;
+			for (Iterator iter = this.feedbackPoints.iterator(); iter.hasNext();)
+				cloneSet.add(cloneMap.get(iter.next()));
+			assert !cloneSet.contains(null);
+		}
+
+		// ((FifoRead)clone).feedbackPoints =
+		// Collections.singleton(cloneMap.get(this.feedbackPoints.iterator().next()));
+	}
+
 }// FifoRead

@@ -21,66 +21,59 @@
 
 package net.sf.openforge.lim.io;
 
-
 /**
- * BlockDescriptor holds information about a specific fifo, including
- * direction, and the organization of the contents of the block where
- * a block is defined as one complete data set necessary for complete
- * processing by the function.
+ * BlockDescriptor holds information about a specific fifo, including direction,
+ * and the organization of the contents of the block where a block is defined as
+ * one complete data set necessary for complete processing by the function.
  */
-public abstract class BlockDescriptor
-{
-    private static final String _RCS_ = "$Rev: 129 $";
+public abstract class BlockDescriptor {
 
-    /**
-     * Gets a {@link DeclarationGenerator} capable of declaring a
-     * variable to store the return value of the function described by
-     * this descriptor.
-     */
-    public abstract DeclarationGenerator getFunctionDeclaredType ();
+	/**
+	 * Gets a {@link DeclarationGenerator} capable of declaring a variable to
+	 * store the return value of the function described by this descriptor.
+	 */
+	public abstract DeclarationGenerator getFunctionDeclaredType();
 
-    /**
-     * name of the function that this block belongs to.  only useful
-     * when we support multiple entry methods
-     */
-    public abstract String getFunctionName ();
+	/**
+	 * name of the function that this block belongs to. only useful when we
+	 * support multiple entry methods
+	 */
+	public abstract String getFunctionName();
 
-    /**
-     * Returns the unique numerical ID of this interface.  Thus the
-     * interface will have names FSLx_y_zzz where x is the numerical
-     * ID
-     */
-    public abstract String getInterfaceID ();
-    
-    /**
-     * isSlave returns true if this fifo is an input fifo, false if it
-     * is an output interface.
-     */
-    public abstract boolean isSlave ();
+	/**
+	 * Returns the unique numerical ID of this interface. Thus the interface
+	 * will have names FSLx_y_zzz where x is the numerical ID
+	 */
+	public abstract String getInterfaceID();
 
-    /**
-     * Returns an array which encodes the organization of data within
-     * the block. Each position represents 1 transfer on the fifo, and
-     * the value identifies the BlockElement transferred on that
-     * 'cycle'.  The block organization is derived from the position
-     * of the BlockElement in the List returned from
-     * getBlockElements().  Thus a return of [0,0,0,0,1,1,1,1,2,2]
-     * would indicate 4 transfers from getBlockElements().get(0)
-     * followed by 4 transfers from getBlockElements().get(1) followed
-     * by 2 transfers from getBlockElements().get(2), etc. An
-     * alternative might be a return of [0,1,2,0,1,2,0,1,0,1] in which
-     * case the transfers are all interleaved, etc.
-     */
-    public abstract int[] getBlockOrganization ();
-    
-    /**
-     * Returns a list of BlockElement objects
-     */
-    public abstract BlockElement[] getBlockElements ();
+	/**
+	 * isSlave returns true if this fifo is an input fifo, false if it is an
+	 * output interface.
+	 */
+	public abstract boolean isSlave();
 
-    /**
-     * Returns the width of the interface data path in bytes.
-     */
-    public abstract int getByteWidth ();
+	/**
+	 * Returns an array which encodes the organization of data within the block.
+	 * Each position represents 1 transfer on the fifo, and the value identifies
+	 * the BlockElement transferred on that 'cycle'. The block organization is
+	 * derived from the position of the BlockElement in the List returned from
+	 * getBlockElements(). Thus a return of [0,0,0,0,1,1,1,1,2,2] would indicate
+	 * 4 transfers from getBlockElements().get(0) followed by 4 transfers from
+	 * getBlockElements().get(1) followed by 2 transfers from
+	 * getBlockElements().get(2), etc. An alternative might be a return of
+	 * [0,1,2,0,1,2,0,1,0,1] in which case the transfers are all interleaved,
+	 * etc.
+	 */
+	public abstract int[] getBlockOrganization();
+
+	/**
+	 * Returns a list of BlockElement objects
+	 */
+	public abstract BlockElement[] getBlockElements();
+
+	/**
+	 * Returns the width of the interface data path in bytes.
+	 */
+	public abstract int getByteWidth();
 
 }

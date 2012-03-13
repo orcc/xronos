@@ -21,38 +21,31 @@
 
 package net.sf.openforge.lim.io;
 
-
 /**
- * SimpleFifoPin is a concrete instance of the {@link SimplePin} but
- * provides no additional functionality.  The original intent was to
- * have it know what 'group' of pins it belonged to for purposes of
- * adding scheduling contsraints.  However this functionality was
- * achieved by adding scheduling constraints on the FifoRead and
- * FifoWrite modules instead.  The former documentation is saved for
- * reference.
- * <strike>
- * SimpleFifoPin is an extension of the {@link SimplePin} and adds an
- * additional scheduling contraint by adding the {@link Refernceable}
- * {@link FifoIF} to the set of referenceable targets held in the
- * pin.  This way, dependencies can be created for the pin (allowing
- * the scheduler to ensure that no two accesses to the same pin occur
- * in the same cycle) and for the grouping of pins (ie the interface)
- * ensuring that the ordering of all pin accesses to a given interface
- * remains consistent.
+ * SimpleFifoPin is a concrete instance of the {@link SimplePin} but provides no
+ * additional functionality. The original intent was to have it know what
+ * 'group' of pins it belonged to for purposes of adding scheduling contsraints.
+ * However this functionality was achieved by adding scheduling constraints on
+ * the FifoRead and FifoWrite modules instead. The former documentation is saved
+ * for reference. <strike> SimpleFifoPin is an extension of the
+ * {@link SimplePin} and adds an additional scheduling contraint by adding the
+ * {@link Refernceable} {@link FifoIF} to the set of referenceable targets held
+ * in the pin. This way, dependencies can be created for the pin (allowing the
+ * scheduler to ensure that no two accesses to the same pin occur in the same
+ * cycle) and for the grouping of pins (ie the interface) ensuring that the
+ * ordering of all pin accesses to a given interface remains consistent.
  * </strike>
- *
- * <p>Created: Thu Jan 15 10:48:46 2004
- *
+ * 
+ * <p>
+ * Created: Thu Jan 15 10:48:46 2004
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: SimpleFifoPin.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class SimpleFifoPin extends SimplePin
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class SimpleFifoPin extends SimplePin {
 
-    public SimpleFifoPin (FifoIF fifoInterface, int width , String pinName)
-    {
-        super(width, pinName);
-    }
-    
+	public SimpleFifoPin(FifoIF fifoInterface, int width, String pinName) {
+		super(width, pinName);
+	}
+
 }// SimpleFifoPin

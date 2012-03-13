@@ -21,62 +21,60 @@
 
 package net.sf.openforge.lim.io.actor;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.io.*;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.io.FifoAccess;
+import net.sf.openforge.lim.io.FifoIF;
+import net.sf.openforge.lim.io.SimplePin;
+import net.sf.openforge.lim.io.SimplePinRead;
 
 /**
  * ActionPortStatus is an atomic access to a given {@link FifoIF} which
- *
- * <p>Created: Wed Oct 19 15:26:09 2005
- *
+ * 
+ * <p>
+ * Created: Wed Oct 19 15:26:09 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: ActionPortStatus.java 98 2006-02-02 20:08:45Z imiller $
  */
-public class ActionPortStatus extends FifoAccess
-{
-    private static final String _RCS_ = "$Rev: 98 $";
+public class ActionPortStatus extends FifoAccess {
 
-    private ActionPortStatus (FifoIF targetInterface, SimplePin statusPin)
-    {
-        super(targetInterface);
-        
-        // Excluding 'sideband' ports/buses (those connecting to pins)
-        // there is a single result bus on this module, resulting in
-        // the status of the target interface (status of the full or
-        // exists port)
-        Exit exit = makeExit(1);
-        Bus result = (Bus)exit.getDataBuses().get(0);
-        Bus done = exit.getDoneBus();
-        result.setUsed(true);
+	private ActionPortStatus(FifoIF targetInterface, SimplePin statusPin) {
+		super(targetInterface);
 
-        exit.setLatency(Latency.ZERO);
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single result bus on this module, resulting in
+		// the status of the target interface (status of the full or
+		// exists port)
+		Exit exit = makeExit(1);
+		Bus result = (Bus) exit.getDataBuses().get(0);
+		//Bus done = exit.getDoneBus();
+		result.setUsed(true);
 
-        final SimplePinRead status = new SimplePinRead(statusPin);
-        this.addComponent(status);
-        
-        result.getPeer().setBus(status.getResultBus());
-    }
-    
-    public ActionPortStatus (ActorScalarInput targetInterface)
-    {
-        // The send pin indicates that the port contains data. 
-        this(targetInterface, targetInterface.getSendPin());
-    }
+		exit.setLatency(Latency.ZERO);
 
-    public ActionPortStatus (ActorScalarOutput targetInterface)
-    {
-        this(targetInterface, targetInterface.getReadyPin());
-    }
+		final SimplePinRead status = new SimplePinRead(statusPin);
+		this.addComponent(status);
 
-    /**
-     * This accessor may execute in parallel with other similar (non
-     * state modifying) accesses.
-     */
-    public boolean isSequencingPoint ()
-    {
-        return false;
-    }
-    
+		result.getPeer().setBus(status.getResultBus());
+	}
+
+	public ActionPortStatus(ActorScalarInput targetInterface) {
+		// The send pin indicates that the port contains data.
+		this(targetInterface, targetInterface.getSendPin());
+	}
+
+	public ActionPortStatus(ActorScalarOutput targetInterface) {
+		this(targetInterface, targetInterface.getReadyPin());
+	}
+
+	/**
+	 * This accessor may execute in parallel with other similar (non state
+	 * modifying) accesses.
+	 */
+	public boolean isSequencingPoint() {
+		return false;
+	}
+
 }

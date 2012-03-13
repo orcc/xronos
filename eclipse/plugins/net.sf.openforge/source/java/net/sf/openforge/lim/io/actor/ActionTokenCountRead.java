@@ -21,59 +21,59 @@
 
 package net.sf.openforge.lim.io.actor;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.io.*;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.io.FifoAccess;
+import net.sf.openforge.lim.io.SimplePinRead;
 
 /**
- * ActionTokenCountRead is a {@link Component} which represents an
- * atomic access to the 'token count' associated with an input Actor
- * interface.  The component has a single output bus and always
- * completes combinationally.
- *
- * <p>Created: Fri Aug 26 15:28:50 2005
- *
+ * ActionTokenCountRead is a {@link Component} which represents an atomic access
+ * to the 'token count' associated with an input Actor interface. The component
+ * has a single output bus and always completes combinationally.
+ * 
+ * <p>
+ * Created: Fri Aug 26 15:28:50 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: ActionTokenCountRead.java 62 2005-11-17 18:10:30Z imiller $
  */
-public class ActionTokenCountRead extends FifoAccess
-{
-    private static final String _RCS_ = "$Rev: 62 $";
+public class ActionTokenCountRead extends FifoAccess {
 
-    public ActionTokenCountRead (ActorScalarInput fifoIF)
-    {
-        super(fifoIF);
+	public ActionTokenCountRead(ActorScalarInput fifoIF) {
+		super(fifoIF);
 
-        // Excluding 'sideband' ports/buses (those connecting to pins)
-        // there is a single result bus on this module.  Since the
-        // count is always valid, the go/done are not needed
-        Exit exit = makeExit(1);
-        Bus result = (Bus)exit.getDataBuses().get(0);
-        //Bus done = exit.getDoneBus();
-        //done.setUsed(true);
-        result.setUsed(true);
-        
-        // Is always combinational.
-        exit.setLatency(Latency.ZERO);
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single result bus on this module. Since the
+		// count is always valid, the go/done are not needed
+		Exit exit = makeExit(1);
+		Bus result = (Bus) exit.getDataBuses().get(0);
+		// Bus done = exit.getDoneBus();
+		// done.setUsed(true);
+		result.setUsed(true);
 
-        final SimplePinRead count = new SimplePinRead(fifoIF.getCountPin());
-        count.getGoPort().setBus(getGoPort().getPeer());
-        addComponent(count);
+		// Is always combinational.
+		exit.setLatency(Latency.ZERO);
 
-        // Hook the count pin read to the result bus.
-        result.getPeer().setBus(count.getResultBus());
-    }
+		final SimplePinRead count = new SimplePinRead(fifoIF.getCountPin());
+		count.getGoPort().setBus(getGoPort().getPeer());
+		addComponent(count);
 
-//     public ActionTokenCountRead (ActorObjectInput fifoIF)
-//     {
-//     }
+		// Hook the count pin read to the result bus.
+		result.getPeer().setBus(count.getResultBus());
+	}
 
-    /**
-     * This accessor may execute in parallel with other similar (non
-     * state modifying) accesses.
-     */
-    public boolean isSequencingPoint ()
-    {
-        return false;
-    }
-    
+	// public ActionTokenCountRead (ActorObjectInput fifoIF)
+	// {
+	// }
+
+	/**
+	 * This accessor may execute in parallel with other similar (non state
+	 * modifying) accesses.
+	 */
+	public boolean isSequencingPoint() {
+		return false;
+	}
+
 }// ActionTokenCountRead
