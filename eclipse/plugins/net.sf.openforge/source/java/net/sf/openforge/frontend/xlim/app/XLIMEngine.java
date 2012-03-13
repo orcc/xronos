@@ -21,81 +21,72 @@
 
 package net.sf.openforge.frontend.xlim.app;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import net.sf.openforge.app.Engine;
+import net.sf.openforge.app.GenericJob;
+import net.sf.openforge.frontend.slim.builder.SLIMBuilderException;
+import net.sf.openforge.frontend.xlim.builder.XLIMBuilder;
+import net.sf.openforge.lim.Design;
+
 import org.w3c.dom.Document;
 
-import net.sf.openforge.app.*;
-import net.sf.openforge.frontend.slim.builder.*;
-import net.sf.openforge.frontend.xlim.builder.XLIMBuilder;
-import net.sf.openforge.lim.*;
-
 /**
- * XLIMEngine is a stub class that extends the Engine class and is
- * used to simply initialize the Forge runtime environment with the
- * specified GenericJob.  The Engine class updates the EngineThread
- * with the current thread, allowing for logging and preferences DB
- * lookups. 
- *
- *
- * <p>Created: Wed Jul 13 10:23:13 2005
- *
+ * XLIMEngine is a stub class that extends the Engine class and is used to
+ * simply initialize the Forge runtime environment with the specified
+ * GenericJob. The Engine class updates the EngineThread with the current
+ * thread, allowing for logging and preferences DB lookups.
+ * 
+ * 
+ * <p>
+ * Created: Wed Jul 13 10:23:13 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: XLIMEngine.java 76 2005-12-14 21:19:08Z imiller $
  */
-public class XLIMEngine extends Engine
-{
-    private static final String _RCS_ = "$Rev: 76 $";
+public class XLIMEngine extends Engine {
 
-    public XLIMEngine (GenericJob job)
-    {
-        super(job);
-    }
+	public XLIMEngine(GenericJob job) {
+		super(job);
+	}
 
-    public Design buildLim()
-    {
-        final File[] targetFiles = getGenericJob().getTargetFiles();
-        assert targetFiles.length == 1 : "XLIM Compilation supports exactly one target file.  Found: " + targetFiles.length;
+	public Design buildLim() {
+		final File[] targetFiles = getGenericJob().getTargetFiles();
+		assert targetFiles.length == 1 : "XLIM Compilation supports exactly one target file.  Found: "
+				+ targetFiles.length;
 
-        final File input = targetFiles[0];
-        Document document = null;
-        try
-        {
-            DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder domBuilder = domFactory.newDocumentBuilder();
-            System.out.println("RUN A SCHEMA ON ME!");
-            document = domBuilder.parse(input);
-        }
-        catch (ParserConfigurationException pce)
-        {
-            throw new SLIMBuilderException("error in configuration " + pce);
-        }
-        catch (org.xml.sax.SAXException saxe)
-        {
-            throw new SLIMBuilderException("sax error " + saxe);
-        }
-        catch (IOException ioe)
-        {
-            throw new SLIMBuilderException("io error " + ioe);
-        }
-        long t0 = System.currentTimeMillis();
-        Design design = new XLIMBuilder().build(document);
-        long t1 = System.currentTimeMillis();
-    	System.out.println("XLIM Builder took: " + ((float) (t1 - t0) / (float) 1000)
-			+ "s\n");
-        String fileName = input.getName();
-        String rootName = fileName.substring(0, fileName.lastIndexOf("."));
+		final File input = targetFiles[0];
+		Document document = null;
+		try {
+			DocumentBuilderFactory domFactory = DocumentBuilderFactory
+					.newInstance();
+			DocumentBuilder domBuilder = domFactory.newDocumentBuilder();
+			System.out.println("RUN A SCHEMA ON ME!");
+			document = domBuilder.parse(input);
+		} catch (ParserConfigurationException pce) {
+			throw new SLIMBuilderException("error in configuration " + pce);
+		} catch (org.xml.sax.SAXException saxe) {
+			throw new SLIMBuilderException("sax error " + saxe);
+		} catch (IOException ioe) {
+			throw new SLIMBuilderException("io error " + ioe);
+		}
+		long t0 = System.currentTimeMillis();
+		Design design = new XLIMBuilder().build(document);
+		long t1 = System.currentTimeMillis();
+		System.out.println("XLIM Builder took: "
+				+ ((float) (t1 - t0) / (float) 1000) + "s\n");
+		String fileName = input.getName();
+		String rootName = fileName.substring(0, fileName.lastIndexOf("."));
 
-        // This should be set already by the XDesignFactory
-//         design.setIDLogical(rootName + "_xlim");
-        
-        return design;
-    }
-    
-    
-    
+		// This should be set already by the XDesignFactory
+		design.setIDLogical(rootName + "_xlim");
+
+		return design;
+	}
+
 }// XLIMEngine
