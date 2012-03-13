@@ -26,69 +26,66 @@ import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Operation;
 
 /**
- * Base class of all operations, which require three operands and
- * generate two results for true and false case. The Java language has
- * only one ternary operation, which is the short-hand if-else
- * operation.
+ * Base class of all operations, which require three operands and generate two
+ * results for true and false case. The Java language has only one ternary
+ * operation, which is the short-hand if-else operation.
  * 
  * Created: Thu Mar 08 16:39:34 2002
- *
- * @author  Conor Wu
+ * 
+ * @author Conor Wu
  * @version $Id: TernaryOp.java 2 2005-06-09 20:00:48Z imiller $
  */
-public abstract class TernaryOp extends Operation
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public abstract class TernaryOp extends Operation {
 
-//     private Bus true_bus;
+	// private Bus true_bus;
 
-//     private Bus false_bus;
-    
-    /**
-     * Constructs a ternary opeation.
-     * By default the done Bus of a TernaryOp is set to unused.
-     */
-    public TernaryOp ()
-    {
-        super(3);
-        Exit exit = makeExit(1);
-        //setMainExit(exit);
-//         exit.getDoneBus().setUsed(false);
-//         Iterator exitBusIter = exit.getDataBuses().iterator();
-//         true_bus = (Bus)exitBusIter.next();
-//         false_bus = (Bus)exitBusIter.next();
-    }
+	// private Bus false_bus;
 
-//     public Bus getTrueBus ()
-//     {
-//         return true_bus;
-//     }
-    
-//     public Bus getFalseBus ()
-//     {
-//         return false_bus;
-//     }
+	/**
+	 * Constructs a ternary opeation. By default the done Bus of a TernaryOp is
+	 * set to unused.
+	 */
+	public TernaryOp() {
+		super(3);
+		@SuppressWarnings("unused")
+		Exit exit = makeExit(1);
+		// setMainExit(exit);
+		// exit.getDoneBus().setUsed(false);
+		// Iterator exitBusIter = exit.getDataBuses().iterator();
+		// true_bus = (Bus)exitBusIter.next();
+		// false_bus = (Bus)exitBusIter.next();
+	}
 
-    public Bus getResultBus ()
-    {
-        return (Bus)getExit(Exit.DONE).getDataBuses().iterator().next();
-    }
-    
-    /**
-     * Clones this TernaryOp and correctly set's the 'true_bus' and 'false_bus'
-     *
-     * @return a TernaryOp clone of this operations.
-     * @exception CloneNotSupportedException if an error occurs
-     */
-    public Object clone () throws CloneNotSupportedException
-    {
-        TernaryOp clone = (TernaryOp)super.clone();
-        
-//         Iterator exitBusIter =  clone.getExit(Exit.DONE).getDataBuses().iterator();
-//         clone.true_bus = (Bus)exitBusIter.next();
-//         clone.false_bus = (Bus)exitBusIter.next();
-        
-        return clone;
-    }
+	// public Bus getTrueBus ()
+	// {
+	// return true_bus;
+	// }
+
+	// public Bus getFalseBus ()
+	// {
+	// return false_bus;
+	// }
+
+	public Bus getResultBus() {
+		return (Bus) getExit(Exit.DONE).getDataBuses().iterator().next();
+	}
+
+	/**
+	 * Clones this TernaryOp and correctly set's the 'true_bus' and 'false_bus'
+	 * 
+	 * @return a TernaryOp clone of this operations.
+	 * @exception CloneNotSupportedException
+	 *                if an error occurs
+	 */
+	public Object clone() throws CloneNotSupportedException {
+		TernaryOp clone = (TernaryOp) super.clone();
+
+		// Iterator exitBusIter =
+		// clone.getExit(Exit.DONE).getDataBuses().iterator();
+		// clone.true_bus = (Bus)exitBusIter.next();
+		// clone.false_bus = (Bus)exitBusIter.next();
+
+		return clone;
+	}
 
 }

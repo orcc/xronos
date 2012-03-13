@@ -21,160 +21,157 @@
 
 package net.sf.openforge.lim.op;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.report.*;
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Emulatable;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitor;
+import net.sf.openforge.report.FPGAResource;
 import net.sf.openforge.util.SizedInteger;
-
 
 /**
  * A binary relational operation in a form of ==.
- *
+ * 
  * Created: Thu Mar 08 16:39:34 2002
- *
- * @author  Conor Wu
+ * 
+ * @author Conor Wu
  * @version $Id: EqualsOp.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class EqualsOp extends ConditionalOp implements Emulatable
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class EqualsOp extends ConditionalOp implements Emulatable {
 
-    /**
-     * Constructs a relational equals operation.
-     *
-     */
-    public EqualsOp ()
-    {
-        super();
-    }
+	/**
+	 * Constructs a relational equals operation.
+	 * 
+	 */
+	public EqualsOp() {
+		super();
+	}
 
-    /**
-     * Accept method for the Visitor interface
-     */ 
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    /**
-     * Gets the gate depth of this component.  This is the maximum number of gates
-     * that any input signal must traverse before reaching an {@link Exit}.
-     *
-     * @return a non-negative integer
-     */
-    public int getGateDepth ()
-    {
-        final int width = Math.max(getLeftDataPort().getValue().getSize(),
-            getRightDataPort().getValue().getSize());
-        return log2(width);
-    }
+	/**
+	 * Gets the gate depth of this component. This is the maximum number of
+	 * gates that any input signal must traverse before reaching an {@link Exit}
+	 * .
+	 * 
+	 * @return a non-negative integer
+	 */
+	public int getGateDepth() {
+		final int width = Math.max(getLeftDataPort().getValue().getSize(),
+				getRightDataPort().getValue().getSize());
+		return log2(width);
+	}
 
-    /**
-     * Gets the FPGA hardware resource usage of this component.
-     *
-     * @return a FPGAResource objec
-     */
-    public FPGAResource getHardwareResourceUsage ()
-    {
-        int lutCount = 0;
-        int muxCount = 0;
-        int positionCount = 0;
-        
-        Value leftValue = getLeftDataPort().getValue();
-        Value rightValue = getRightDataPort().getValue();
+	/**
+	 * Gets the FPGA hardware resource usage of this component.
+	 * 
+	 * @return a FPGAResource objec
+	 */
+	public FPGAResource getHardwareResourceUsage() {
+		int lutCount = 0;
+		// int muxCount = 0;
+		int positionCount = 0;
 
-        for (int i = 0; i < Math.max(leftValue.getSize(), rightValue.getSize()); i++)
-        {
-            Bit leftBit = null;
-            Bit rightBit = null;
-            if (i < leftValue.getSize())
-            {
-                leftBit = leftValue.getBit(i);
-            }
-            if (i < rightValue.getSize())
-            {
-                rightBit = rightValue.getBit(i);
-            }
-            
-            if ((leftBit != null) && (rightBit != null))
-            {
-                if (leftBit.isCare() && rightBit.isCare() && (!leftBit.isConstant() || !rightBit.isConstant()))
-                {
-                    positionCount ++;
-                }
-            }
-        }
+		Value leftValue = getLeftDataPort().getValue();
+		Value rightValue = getRightDataPort().getValue();
 
-        lutCount = (positionCount / 2) + (positionCount % 2);
-        muxCount = lutCount - 1;
-        
-        FPGAResource hwResource = new FPGAResource();
-        hwResource.addLUT(lutCount);
-        
-        return hwResource;
-    }
+		for (int i = 0; i < Math.max(leftValue.getSize(), rightValue.getSize()); i++) {
+			Bit leftBit = null;
+			Bit rightBit = null;
+			if (i < leftValue.getSize()) {
+				leftBit = leftValue.getBit(i);
+			}
+			if (i < rightValue.getSize()) {
+				rightBit = rightValue.getBit(i);
+			}
 
-    /**
-     * Performes a high level numerical emulation of this component.
-     *
-     * @param portValues a map of owner {@link Port} to {@link SizedInteger}
-     *          input value
-     * @return a map of {@link Bus} to {@link SizedInteger} result value
-     */
-    public Map emulate (Map portValues)
-    {
-        final SizedInteger lval = (SizedInteger)portValues.get(getLeftDataPort());
-        final SizedInteger rval = (SizedInteger)portValues.get(getRightDataPort());
+			if ((leftBit != null) && (rightBit != null)) {
+				if (leftBit.isCare() && rightBit.isCare()
+						&& (!leftBit.isConstant() || !rightBit.isConstant())) {
+					positionCount++;
+				}
+			}
+		}
 
-        final Value resultValue = getResultBus().getValue();
-        final int intValue = (lval.compareTo(rval) == 0 ? 1 : 0);
-        final SizedInteger result = SizedInteger.valueOf(intValue,
-            resultValue.getSize(), resultValue.isSigned());
+		lutCount = (positionCount / 2) + (positionCount % 2);
+		// muxCount = lutCount - 1;
 
-        return Collections.singletonMap(getResultBus(), result);
-    }
+		FPGAResource hwResource = new FPGAResource();
+		hwResource.addLUT(lutCount);
 
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
+		return hwResource;
+	}
 
-    /**
-     * Pushes size, care, and constant information forward through
-     * this EqualsOp according to this rule:
-     *
-     * Result has only 1 care bit. 
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesForward ()
-    {
-        boolean mod = false;
+	/**
+	 * Performes a high level numerical emulation of this component.
+	 * 
+	 * @param portValues
+	 *            a map of owner {@link Port} to {@link SizedInteger} input
+	 *            value
+	 * @return a map of {@link Bus} to {@link SizedInteger} result value
+	 */
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
+		final SizedInteger lval = (SizedInteger) portValues
+				.get(getLeftDataPort());
+		final SizedInteger rval = (SizedInteger) portValues
+				.get(getRightDataPort());
 
-        Value newValue = new Value(1, false);
-        
-        mod |= getResultBus().pushValueForward(newValue);
-        
-        return mod;
-    }
-    
-    /**
-     * No rules can be applied on an EqualsOp.  
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesBackward ()
-    {
-        boolean mod = false;
-        
-        // No rules applied.
-        
-        return mod;
-    }
+		final Value resultValue = getResultBus().getValue();
+		final int intValue = (lval.compareTo(rval) == 0 ? 1 : 0);
+		final SizedInteger result = SizedInteger.valueOf(intValue,
+				resultValue.getSize(), resultValue.isSigned());
 
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
+		return Collections.singletonMap(getResultBus(), result);
+	}
+
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
+
+	/**
+	 * Pushes size, care, and constant information forward through this EqualsOp
+	 * according to this rule:
+	 * 
+	 * Result has only 1 care bit.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesForward() {
+		boolean mod = false;
+
+		Value newValue = new Value(1, false);
+
+		mod |= getResultBus().pushValueForward(newValue);
+
+		return mod;
+	}
+
+	/**
+	 * No rules can be applied on an EqualsOp.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesBackward() {
+		boolean mod = false;
+
+		// No rules applied.
+
+		return mod;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
 }

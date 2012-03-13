@@ -21,117 +21,112 @@
 
 package net.sf.openforge.lim.op;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Emulatable;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitor;
+import net.sf.openforge.util.SizedInteger;
 
 /**
  * A unary bitwise promotion operation in a form of +.
- *
+ * 
  * Created: Thu Mar 08 16:39:34 2002
- *
- * @author  Conor Wu
+ * 
+ * @author Conor Wu
  * @version $Id: PlusOp.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class PlusOp extends UnaryOp implements Emulatable
-{
-    private static final String _RCS_ = "$Rev: 2 $";
-    
-    /**
-     * Constructs a promotion plus operation.
-     *
-     */
-    public PlusOp ()
-    {
-        super();
-    }
+public class PlusOp extends UnaryOp implements Emulatable {
 
-    /**
-     * Accept method for the Visitor interface
-     */ 
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+	/**
+	 * Constructs a promotion plus operation.
+	 * 
+	 */
+	public PlusOp() {
+		super();
+	}
 
-    /**
-     * Performes a high level numerical emulation of this component.
-     *
-     * @param portValues a map of owner {@link Port} to {@link SizedInteger}
-     *          input value
-     * @return a map of {@link Bus} to {@link SizedInteger} result value
-     */
-    public Map emulate (Map portValues)
-    {
-        return Collections.singletonMap(getResultBus(), portValues.get(getDataPort()));
-    }
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
+	/**
+	 * Performes a high level numerical emulation of this component.
+	 * 
+	 * @param portValues
+	 *            a map of owner {@link Port} to {@link SizedInteger} input
+	 *            value
+	 * @return a map of {@link Bus} to {@link SizedInteger} result value
+	 */
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
+		return Collections.singletonMap(getResultBus(),
+				portValues.get(getDataPort()));
+	}
 
-    /**
-     * Pushes size, care, and constant information forward through
-     * this PlusOp according to these rules:
-     *
-     * Result value is all pass throughs of input value
-     *
-     * @return true if new information was generated on the result
-     * bus.
-     */
-    public boolean pushValuesForward ()
-    {
-        boolean mod = false;
-        
-        Value in = getDataPort().getValue();
-        
-        Value newValue = new Value(32, in.isSigned());
-        
-        for (int i = 0; i < 32; i++)
-        {
-            if (i < in.getSize())
-            {
-                newValue.setBit(i, in.getBit(i));
-            }
-            else
-            {
-                newValue.setBit(i, in.getBit(in.getSize()-1));
-            }
-        }
-        
-        mod |= getResultBus().pushValueForward(newValue);
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
 
-        return mod;
-    }
-    
-    /**
-     * Reverse constant prop on a PlusOp simply propagates the
-     * consumed value back to the Port. The port has the same size
-     * with the consumed value.
-     *
-     * @return true if new information was generated on the input port
-     */
-    public boolean pushValuesBackward ()
-    {
-        boolean mod = false;
-        
-        Value resultBusValue = getResultBus().getValue();
-        
-        Value newValue = new Value(getDataPort().getValue().getSize(), getDataPort().getValue().isSigned());
-        
-        for (int i = 0; i < getDataPort().getValue().getSize(); i++)
-        {
-            newValue.setBit(i, resultBusValue.getBit(i));
-        }
-        
-        mod |= getDataPort().pushValueBackward(newValue);
-        
-        return mod;
-    }
-    
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
+	/**
+	 * Pushes size, care, and constant information forward through this PlusOp
+	 * according to these rules:
+	 * 
+	 * Result value is all pass throughs of input value
+	 * 
+	 * @return true if new information was generated on the result bus.
+	 */
+	public boolean pushValuesForward() {
+		boolean mod = false;
+
+		Value in = getDataPort().getValue();
+
+		Value newValue = new Value(32, in.isSigned());
+
+		for (int i = 0; i < 32; i++) {
+			if (i < in.getSize()) {
+				newValue.setBit(i, in.getBit(i));
+			} else {
+				newValue.setBit(i, in.getBit(in.getSize() - 1));
+			}
+		}
+
+		mod |= getResultBus().pushValueForward(newValue);
+
+		return mod;
+	}
+
+	/**
+	 * Reverse constant prop on a PlusOp simply propagates the consumed value
+	 * back to the Port. The port has the same size with the consumed value.
+	 * 
+	 * @return true if new information was generated on the input port
+	 */
+	public boolean pushValuesBackward() {
+		boolean mod = false;
+
+		Value resultBusValue = getResultBus().getValue();
+
+		Value newValue = new Value(getDataPort().getValue().getSize(),
+				getDataPort().getValue().isSigned());
+
+		for (int i = 0; i < getDataPort().getValue().getSize(); i++) {
+			newValue.setBit(i, resultBusValue.getBit(i));
+		}
+
+		mod |= getDataPort().pushValueBackward(newValue);
+
+		return mod;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
 }

@@ -21,54 +21,50 @@
 
 package net.sf.openforge.lim.op;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.Operation;
+import net.sf.openforge.lim.Visitor;
 
 /**
  * @version $Id: TimingOp.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class TimingOp extends Operation
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class TimingOp extends Operation {
 
-    private boolean isGlobal;
-    
-    /**
-     * Constructs a TimingOp.
-     *
-     * @param lateny latency for this timing op
-     */
-    public TimingOp (Latency latency,boolean isGlobal)
-    {
-        super(0);
-        this.isGlobal=isGlobal;
-        Exit exit = makeExit(0,Exit.DONE);
-        exit.setLatency(latency);
-    }
+	private boolean isGlobal;
 
-    public boolean isGlobal()
-    {
-        return isGlobal;
-    }
+	/**
+	 * Constructs a TimingOp.
+	 * 
+	 * @param lateny
+	 *            latency for this timing op
+	 */
+	public TimingOp(Latency latency, boolean isGlobal) {
+		super(0);
+		this.isGlobal = isGlobal;
+		Exit exit = makeExit(0, Exit.DONE);
+		exit.setLatency(latency);
+	}
 
-    private void setGlobal(boolean b)
-    {
-        isGlobal=b;
-    }
-    
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
-    
-    public Object clone() throws CloneNotSupportedException
-    {
-        TimingOp clone = (TimingOp)super.clone();
-        clone.setGlobal(isGlobal);
-        return clone;
-    }
+	public boolean isGlobal() {
+		return isGlobal;
+	}
 
-    public boolean consumesGo ()
-    {
-        return true;
-    }
+	private void setGlobal(boolean b) {
+		isGlobal = b;
+	}
+
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
+
+	public Object clone() throws CloneNotSupportedException {
+		TimingOp clone = (TimingOp) super.clone();
+		clone.setGlobal(isGlobal);
+		return clone;
+	}
+
+	public boolean consumesGo() {
+		return true;
+	}
 }

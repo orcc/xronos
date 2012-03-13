@@ -21,155 +21,152 @@
 
 package net.sf.openforge.lim.op;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.report.*;
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Emulatable;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitor;
+import net.sf.openforge.report.FPGAResource;
 import net.sf.openforge.util.SizedInteger;
-
 
 /**
  * A binary relational operation in a form of !=.
- *
+ * 
  * Created: Thu Mar 08 16:39:34 2002
- *
- * @author  Conor Wu
+ * 
+ * @author Conor Wu
  * @version $Id: NotEqualsOp.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class NotEqualsOp extends ConditionalOp implements Emulatable
-{
-    private static final String _RCS_ = "$Rev: 2 $";
-    
-    /**
-     * Constructs a relational not equals operation.
-     *
-     */
-    public NotEqualsOp ()
-    {
-        super();
-    }
+public class NotEqualsOp extends ConditionalOp implements Emulatable {
 
-    /**
-     * Accept method for the Visitor interface
-     */ 
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+	/**
+	 * Constructs a relational not equals operation.
+	 * 
+	 */
+	public NotEqualsOp() {
+		super();
+	}
 
-    /**
-     * Gets the gate depth of this component.  This is the maximum number of gates
-     * that any input signal must traverse before reaching an {@link Exit}.
-     *
-     * @return a non-negative integer
-     */
-    public int getGateDepth ()
-    {
-        final int width = Math.max(getLeftDataPort().getValue().getSize(),
-            getRightDataPort().getValue().getSize());
-        return log2(width);
-    }
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    /**
-     * Gets the FPGA hardware resource usage of this component.
-     *
-     * @return a FPGAResource objec
-     */
-    public FPGAResource getHardwareResourceUsage ()
-    {
-        int lutCount = 0;
-        int muxCount = 0;
-        int positionCount = 0;
-        
-        Value leftValue = getLeftDataPort().getValue();
-        Value rightValue = getRightDataPort().getValue();
+	/**
+	 * Gets the gate depth of this component. This is the maximum number of
+	 * gates that any input signal must traverse before reaching an {@link Exit}
+	 * .
+	 * 
+	 * @return a non-negative integer
+	 */
+	public int getGateDepth() {
+		final int width = Math.max(getLeftDataPort().getValue().getSize(),
+				getRightDataPort().getValue().getSize());
+		return log2(width);
+	}
 
-        for (int i = 0; i < Math.max(leftValue.getSize(), rightValue.getSize()); i++)
-        {
-            Bit leftBit = null;
-            Bit rightBit = null;
-            if (i < leftValue.getSize())
-            {
-                leftBit = leftValue.getBit(i);
-            }
-            if (i < rightValue.getSize())
-            {
-                rightBit = rightValue.getBit(i);
-            }
-            
-            if ((leftBit != null) && (rightBit != null))
-            {
-                if (leftBit.isCare() && rightBit.isCare() && (!leftBit.isConstant() || !rightBit.isConstant()))
-                {
-                    positionCount ++;
-                }
-            }
-        }
+	/**
+	 * Gets the FPGA hardware resource usage of this component.
+	 * 
+	 * @return a FPGAResource objec
+	 */
+	public FPGAResource getHardwareResourceUsage() {
+		int lutCount = 0;
+		//int muxCount = 0;
+		int positionCount = 0;
 
-        lutCount = (positionCount / 2) + (positionCount % 2);
-        muxCount = lutCount;
-        
-        FPGAResource hwResource = new FPGAResource();
-        hwResource.addLUT(lutCount);
-        
-        return hwResource;
-    }
+		Value leftValue = getLeftDataPort().getValue();
+		Value rightValue = getRightDataPort().getValue();
 
-    /**
-     * Performes a high level numerical emulation of this component.
-     *
-     * @param portValues a map of owner {@link Port} to {@link SizedInteger}
-     *          input value
-     * @return a map of {@link Bus} to {@link SizedInteger} result value
-     */
-    public Map emulate (Map portValues)
-    {
-        final SizedInteger lval = (SizedInteger)portValues.get(getLeftDataPort());
-        final SizedInteger rval = (SizedInteger)portValues.get(getRightDataPort());
+		for (int i = 0; i < Math.max(leftValue.getSize(), rightValue.getSize()); i++) {
+			Bit leftBit = null;
+			Bit rightBit = null;
+			if (i < leftValue.getSize()) {
+				leftBit = leftValue.getBit(i);
+			}
+			if (i < rightValue.getSize()) {
+				rightBit = rightValue.getBit(i);
+			}
 
-        final Value resultValue = getResultBus().getValue();
-        final int intValue = (lval.compareTo(rval) != 0 ? 1 : 0);
-        final SizedInteger result = SizedInteger.valueOf(intValue,
-            resultValue.getSize(), resultValue.isSigned());
+			if ((leftBit != null) && (rightBit != null)) {
+				if (leftBit.isCare() && rightBit.isCare()
+						&& (!leftBit.isConstant() || !rightBit.isConstant())) {
+					positionCount++;
+				}
+			}
+		}
 
-        return Collections.singletonMap(getResultBus(), result);
-    }
-    
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
-     
-    /**
-     * Pushes size, care, and constant information forward through
-     * this NotEqualsOp according to this rule:
-     *
-     * Result has only 1 care bit. 
-     *
-     * @return a value of type 'boolean'
-     */
-     
-    public boolean pushValuesForward ()
-    {
-        boolean mod = false;
-        Value newValue = new Value(1, false);
-        mod |= getResultBus().pushValueForward(newValue);
-        return mod;
-    }
+		lutCount = (positionCount / 2) + (positionCount % 2);
+		//muxCount = lutCount;
 
-    /**
-     * No rules can be applied on a NotEqualsOp.  
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesBackward ()
-    {
-        // No rules applied.
-        return false;
-    }
-    
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
+		FPGAResource hwResource = new FPGAResource();
+		hwResource.addLUT(lutCount);
+
+		return hwResource;
+	}
+
+	/**
+	 * Performes a high level numerical emulation of this component.
+	 * 
+	 * @param portValues
+	 *            a map of owner {@link Port} to {@link SizedInteger} input
+	 *            value
+	 * @return a map of {@link Bus} to {@link SizedInteger} result value
+	 */
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
+		final SizedInteger lval = (SizedInteger) portValues
+				.get(getLeftDataPort());
+		final SizedInteger rval = (SizedInteger) portValues
+				.get(getRightDataPort());
+
+		final Value resultValue = getResultBus().getValue();
+		final int intValue = (lval.compareTo(rval) != 0 ? 1 : 0);
+		final SizedInteger result = SizedInteger.valueOf(intValue,
+				resultValue.getSize(), resultValue.isSigned());
+
+		return Collections.singletonMap(getResultBus(), result);
+	}
+
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
+
+	/**
+	 * Pushes size, care, and constant information forward through this
+	 * NotEqualsOp according to this rule:
+	 * 
+	 * Result has only 1 care bit.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+
+	public boolean pushValuesForward() {
+		boolean mod = false;
+		Value newValue = new Value(1, false);
+		mod |= getResultBus().pushValueForward(newValue);
+		return mod;
+	}
+
+	/**
+	 * No rules can be applied on a NotEqualsOp.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesBackward() {
+		// No rules applied.
+		return false;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
 }

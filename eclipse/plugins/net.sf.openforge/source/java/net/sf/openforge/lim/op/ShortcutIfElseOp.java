@@ -21,72 +21,67 @@
 
 package net.sf.openforge.lim.op;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Visitor;
 
 /**
- * A ternary conditional operation in a form of " ? : ", which is the
- * shorthand if-else.
- *
+ * A ternary conditional operation in a form of " ? : ", which is the shorthand
+ * if-else.
+ * 
  * Created: Thu Mar 08 16:39:34 2002
- *
- * @author  Conor Wu
+ * 
+ * @author Conor Wu
  * @version $Id: ShortcutIfElseOp.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ShortcutIfElseOp extends TernaryOp
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class ShortcutIfElseOp extends TernaryOp {
 
-    /**
-     * Constructs a conditional shorthand if-else operation.
-     *
-     */
-    public ShortcutIfElseOp ()
-    {
-        super();
-    }
+	/**
+	 * Constructs a conditional shorthand if-else operation.
+	 * 
+	 */
+	public ShortcutIfElseOp() {
+		super();
+	}
 
-    /**
-     * Accept method for the Visitor interface
-     */ 
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    /**
-     * Gets the gate depth of this component.  This is the maximum number of gates
-     * that any input signal must traverse before reaching an {@link Exit}.
-     *
-     * @return a non-negative integer
-     */
-    public int getGateDepth ()
-    {
-        /*
-         * XXX: This isn't necessarily correct.  Only one of the second and third
-         * operands is evaluated.
-         */
-        return 2;
-    }
-    
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
-    public boolean pushValuesForward ()
-    {
-        boolean mod = false;
-        
-        // No rules
-        
-        return mod;
-    }
-    
-    public boolean pushValuesBackward ()
-    {
-        boolean mod = false;
-        
-        // No rules
-        
-        return mod;
-    }
+	/**
+	 * Gets the gate depth of this component. This is the maximum number of
+	 * gates that any input signal must traverse before reaching an {@link Exit}
+	 * .
+	 * 
+	 * @return a non-negative integer
+	 */
+	public int getGateDepth() {
+		/*
+		 * XXX: This isn't necessarily correct. Only one of the second and third
+		 * operands is evaluated.
+		 */
+		return 2;
+	}
+
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
+	public boolean pushValuesForward() {
+		boolean mod = false;
+
+		// No rules
+
+		return mod;
+	}
+
+	public boolean pushValuesBackward() {
+		boolean mod = false;
+
+		// No rules
+
+		return mod;
+	}
 }

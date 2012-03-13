@@ -20,32 +20,30 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.Map;
 
 import net.sf.openforge.util.SizedInteger;
 
-
 /**
  * Implemented by classes (typically {@link Component} subclasses) whose
- * instances can perform a numerical emulation of their logic.  Currently this
+ * instances can perform a numerical emulation of their logic. Currently this
  * capability is used to determine the iteration count for unrollable
  * {@link Loop Loops}.
- *
+ * 
  * @version $Id: Emulatable.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface Emulatable
-{
-    /**
-     * Performes a high level numerical emulation of this component.  It
-     * is assumed that since this is a logical emulation, the implementer
-     * is only responsible for emulating data computations and not control;
-     * control issues are the responsibility of the caller.  Therefore control
-     * ports and buses, such as <code>go</code> and <code>done</code>, are
-     * not included in the emulation.
-     *
-     * @param portValues a map of {@link Port} to {@link SizedInteger}
-     *          input value
-     * @return a map of {@link Bus} to {@link SizedInteger} result value
-     */
-    public Map emulate (Map portValues);
+public interface Emulatable {
+	/**
+	 * Performes a high level numerical emulation of this component. It is
+	 * assumed that since this is a logical emulation, the implementer is only
+	 * responsible for emulating data computations and not control; control
+	 * issues are the responsibility of the caller. Therefore control ports and
+	 * buses, such as <code>go</code> and <code>done</code>, are not included in
+	 * the emulation.
+	 * 
+	 * @param portValues
+	 *            a map of {@link Port} to {@link SizedInteger} input value
+	 * @return a map of {@link Bus} to {@link SizedInteger} result value
+	 */
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues);
 }

@@ -210,7 +210,8 @@ public class SimpleConstant extends Constant implements Emulatable {
 	 * 
 	 * @return a List containing only this constant
 	 */
-	public List getConstituents() {
+
+	public List<SimpleConstant> getConstituents() {
 		return Collections.unmodifiableList(Collections.singletonList(this));
 	}
 
@@ -219,7 +220,7 @@ public class SimpleConstant extends Constant implements Emulatable {
 	 * 
 	 * @return a singleton Set containing this object.
 	 */
-	public Set getContents() {
+	public Set<SimpleConstant> getContents() {
 		return Collections.unmodifiableSet(Collections.singleton(this));
 	}
 

@@ -21,134 +21,126 @@
 
 package net.sf.openforge.lim.op;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.report.*;
-
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitor;
+import net.sf.openforge.report.FPGAResource;
 
 /**
  * An or reductiono peration in a form of |.
- *
+ * 
  * Created: Mon May 19 16:39:34 2003
- *
- * @author  Conor Wu
+ * 
+ * @author Conor Wu
  * @version $Id: ReductionOrOp.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ReductionOrOp extends ReductionOp
-{
-    private static final String _RCS_ = "$Rev: 2 $";
-    
-    /**
-     * Constructs an or reduction operation.
-     *
-     */
-    public ReductionOrOp ()
-    {
-        super();
-    }
+public class ReductionOrOp extends ReductionOp {
 
-    /**
-     * Accept method for the Visitor interface
-     */ 
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+	/**
+	 * Constructs an or reduction operation.
+	 * 
+	 */
+	public ReductionOrOp() {
+		super();
+	}
 
-    /**
-     * Gets the gate depth of this component.  This is the maximum number of gates
-     * that any input signal must traverse before reaching an {@link Exit}.
-     *
-     * @return a non-negative integer
-     */
-    public int getGateDepth ()
-    {
-        return isPassthrough() ? 0 : 1;
-    }
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    /**
-     * Gets the FPGA hardware resource usage of this component.
-     *
-     * @return a FPGAResource objec
-     */
-    public FPGAResource getHardwareResourceUsage ()
-    {
-        int lutCount = 0;
-        
-        Value inputValue = getDataPort().getValue();
-        for (int i = 0; i < inputValue.getSize(); i++)
-        {
-            Bit inputBit = inputValue.getBit(i);
-            if (!inputBit.isConstant() && inputBit.isCare())
-            {
-                lutCount ++;
-            }
-        }
-        
-        FPGAResource hwResource = new FPGAResource();
-        hwResource.addLUT(lutCount);
-        
-        return hwResource;
-    }
+	/**
+	 * Gets the gate depth of this component. This is the maximum number of
+	 * gates that any input signal must traverse before reaching an {@link Exit}
+	 * .
+	 * 
+	 * @return a non-negative integer
+	 */
+	public int getGateDepth() {
+		return isPassthrough() ? 0 : 1;
+	}
 
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
-     
-    /**
-     * Pushes size, care, and constant information forward through
-     * this ReductionOrOp according to this rule:
-     *
-     * Result has only 1 care bit. 
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesForward ()
-    {
-        boolean mod = false;
-        
-        Value inValue = getDataPort().getValue();
+	/**
+	 * Gets the FPGA hardware resource usage of this component.
+	 * 
+	 * @return a FPGAResource objec
+	 */
+	public FPGAResource getHardwareResourceUsage() {
+		int lutCount = 0;
 
-        Value newValue = new Value(inValue.getSize(), false);
+		Value inputValue = getDataPort().getValue();
+		for (int i = 0; i < inputValue.getSize(); i++) {
+			Bit inputBit = inputValue.getBit(i);
+			if (!inputBit.isConstant() && inputBit.isCare()) {
+				lutCount++;
+			}
+		}
 
-        for (int i = 1; i < inValue.getSize(); i++)
-        {
-            newValue.setBit(i, Bit.ZERO);
-        }
-                    
-        mod |=  getResultBus().pushValueForward(newValue);
-        
-        return mod;
-    }
-    
-    /**
-     * No rules can be applied on a ReductionOrOp.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesBackward ()
-    {
-        boolean mod = false;
-        
-        // No rules.
-        
-        return mod;
-    }
+		FPGAResource hwResource = new FPGAResource();
+		hwResource.addLUT(lutCount);
 
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
-        
-    /**
-     * Tests whether this is a passthrough operation.
-     *
-     * @return true if the output of this component can be reduced to a constant
-     *         or the value of a single input, based upon the current {@link Value}
-     *         of each data {@link Port}
-     */
-    private boolean isPassthrough ()
-    {
-        return false;
-    }
+		return hwResource;
+	}
+
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
+
+	/**
+	 * Pushes size, care, and constant information forward through this
+	 * ReductionOrOp according to this rule:
+	 * 
+	 * Result has only 1 care bit.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesForward() {
+		boolean mod = false;
+
+		Value inValue = getDataPort().getValue();
+
+		Value newValue = new Value(inValue.getSize(), false);
+
+		for (int i = 1; i < inValue.getSize(); i++) {
+			newValue.setBit(i, Bit.ZERO);
+		}
+
+		mod |= getResultBus().pushValueForward(newValue);
+
+		return mod;
+	}
+
+	/**
+	 * No rules can be applied on a ReductionOrOp.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesBackward() {
+		boolean mod = false;
+
+		// No rules.
+
+		return mod;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
+
+	/**
+	 * Tests whether this is a passthrough operation.
+	 * 
+	 * @return true if the output of this component can be reduced to a constant
+	 *         or the value of a single input, based upon the current
+	 *         {@link Value} of each data {@link Port}
+	 */
+	private boolean isPassthrough() {
+		return false;
+	}
 }

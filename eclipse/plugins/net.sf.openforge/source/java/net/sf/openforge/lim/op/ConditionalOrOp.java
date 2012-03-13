@@ -21,212 +21,190 @@
 
 package net.sf.openforge.lim.op;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.report.*;
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Emulatable;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitor;
+import net.sf.openforge.report.FPGAResource;
 import net.sf.openforge.util.SizedInteger;
-
 
 /**
  * A binary conditional operation in a form of ||.
- *
+ * 
  * Created: Thu Mar 08 16:39:34 2002
- *
- * @author  Conor Wu
+ * 
+ * @author Conor Wu
  * @version $Id: ConditionalOrOp.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ConditionalOrOp extends BinaryOp implements Emulatable
-{
-    private static final String _RCS_ = "$Rev: 2 $";
-    
-    /**
-     * Constructs a conditional or operation.
-     *
-     */
-    public ConditionalOrOp ()
-    {
-        super();
-    }
+public class ConditionalOrOp extends BinaryOp implements Emulatable {
 
-    /**
-     * Accept method for the Visitor interface
-     */ 
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+	/**
+	 * Constructs a conditional or operation.
+	 * 
+	 */
+	public ConditionalOrOp() {
+		super();
+	}
 
-    /**
-     * Gets the gate depth of this component.  This is the maximum number of gates
-     * that any input signal must traverse before reaching an {@link Exit}.
-     *
-     * @return a non-negative integer
-     */
-    public int getGateDepth ()
-    {
-        return 1;
-    }
-    
-    /**
-     * Gets the FPGA hardware resource usage of this component.
-     *
-     * @return a FPGAResource objec
-     */
-    public FPGAResource getHardwareResourceUsage ()
-    {
-        int lutCount = 0;
-        
-        Value leftValue = getLeftDataPort().getValue();
-        Value rightValue = getRightDataPort().getValue();
-        
-        for (int i = 0; i < Math.max(leftValue.getSize(), rightValue.getSize()); i++)
-        {
-            Bit leftBit = null;
-            Bit rightBit = null;
-            if (i < leftValue.getSize())
-            {
-                leftBit = leftValue.getBit(i);
-            }
-            if (i < rightValue.getSize())
-            {
-                rightBit = rightValue.getBit(i);
-            }
-            
-            if ((leftBit != null) && (rightBit != null))
-            {
-                if (leftBit.isCare() && rightBit.isCare() && (!leftBit.isConstant() || !rightBit.isConstant()))
-                {
-                    lutCount ++;
-                }
-            }
-        }
-        
-        FPGAResource hwResource = new FPGAResource();
-        hwResource.addLUT(lutCount);
-        
-        return hwResource;
-    }
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    /**
-     * Performes a high level numerical emulation of this component.
-     *
-     * @param portValues a map of owner {@link Port} to {@link SizedInteger}
-     *          input value
-     * @return a map of {@link Bus} to {@link SizedInteger} result value
-     */
-    public Map emulate (Map portValues)
-    {
-        final SizedInteger lval = (SizedInteger)portValues.get(getLeftDataPort());
-        final SizedInteger rval = (SizedInteger)portValues.get(getRightDataPort());
-        final int resultInt = (lval.isZero() && rval.isZero()) ? 0 : 1;
-        final Value resultValue = getResultBus().getValue();
-        return Collections.singletonMap(getResultBus(), SizedInteger.valueOf(resultInt,
-                                            resultValue.getSize(), resultValue.isSigned()));
-    }
+	/**
+	 * Gets the gate depth of this component. This is the maximum number of
+	 * gates that any input signal must traverse before reaching an {@link Exit}
+	 * .
+	 * 
+	 * @return a non-negative integer
+	 */
+	public int getGateDepth() {
+		return 1;
+	}
 
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
+	/**
+	 * Gets the FPGA hardware resource usage of this component.
+	 * 
+	 * @return a FPGAResource objec
+	 */
+	public FPGAResource getHardwareResourceUsage() {
+		int lutCount = 0;
 
-    /**
-     * Produces a Value representing the state after ORing the two
-     * given values according to these rules:
-     * <pre>
-     * x = Dont Care     c = care (non constant)   0 = zero   1 = one
-     *    x x : x        c x : x ???    0 x : x    1 x : x
-     *    x c : x ???    c c : c        0 c : c    1 c : 1
-     *    x 0 : x        c 0 : c        0 0 : 0    1 0 : 1
-     *    x 1 : x        c 1 : 1        0 1 : 1    1 1 : 1
-     * </pre>
-     *
-     * @return a {@link Value} representing the And'ing of the two
-     * specified input Values.
-     */
+		Value leftValue = getLeftDataPort().getValue();
+		Value rightValue = getRightDataPort().getValue();
 
-    public boolean pushValuesForward ()
-    {
-        boolean mod = false;
-        
-        Value in0 = getLeftDataPort().getValue();
-        Value in1 = getRightDataPort().getValue();        
-        
-        // Always a unsigned value
-        Value newValue = new Value(Math.max(in0.getSize(), in1.getSize()), false);
+		for (int i = 0; i < Math.max(leftValue.getSize(), rightValue.getSize()); i++) {
+			Bit leftBit = null;
+			Bit rightBit = null;
+			if (i < leftValue.getSize()) {
+				leftBit = leftValue.getBit(i);
+			}
+			if (i < rightValue.getSize()) {
+				rightBit = rightValue.getBit(i);
+			}
 
-        if (newValue.getSize() == 1)
-        {
-            if(!in0.getBit(0).isCare() || !in1.getBit(0).isCare())
-            {
-                newValue.setBit(0, Bit.DONT_CARE);
-            }
-            else
-            {
-                if (in0.getBit(0).isConstant() && in1.getBit(0).isConstant())
-                {
-                    if (in0.getBit(0).isOn() || in1.getBit(0).isOn())
-                    {
-                        newValue.setBit(0, Bit.ONE);
-                    }
-                    else
-                    {
-                        newValue.setBit(0, Bit.ZERO);
-                    }
-                }
-                else if (in0.getBit(0).isConstant())
-                {
-                    if (in0.getBit(0).isOn())
-                    {
-                        newValue.setBit(0, Bit.ONE);
-                    }
-                    else
-                    {
-                        newValue.setBit(0, in1.getBit(0));
-                    }
-                }
-                else if (in1.getBit(0).isConstant())
-                {
-                    if (in1.getBit(0).isOn())
-                    {
-                        newValue.setBit(0, Bit.ONE);
-                    }
-                    else
-                    {
-                        newValue.setBit(0, in0.getBit(0));
-                    }
-                }
-            }
-        }
-        else
-        {
-            for (int i = 1; i < newValue.getSize(); i++)
-            {
-                newValue.setBit(i, Bit.ZERO);
-            }
-        }
+			if ((leftBit != null) && (rightBit != null)) {
+				if (leftBit.isCare() && rightBit.isCare()
+						&& (!leftBit.isConstant() || !rightBit.isConstant())) {
+					lutCount++;
+				}
+			}
+		}
 
-        mod |= getResultBus().pushValueForward(newValue);
-        
-        return mod;
-    }
+		FPGAResource hwResource = new FPGAResource();
+		hwResource.addLUT(lutCount);
 
-    /**
-     * No rules can be applied on a NotOp.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesBackward ()
-    {
-        boolean mod = false;
+		return hwResource;
+	}
 
-        // No rules.
+	/**
+	 * Performs a high level numerical emulation of this component.
+	 * 
+	 * @param portValues
+	 *            a map of owner {@link Port} to {@link SizedInteger} input
+	 *            value
+	 * @return a map of {@link Bus} to {@link SizedInteger} result value
+	 */
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
+		final SizedInteger lval = (SizedInteger) portValues
+				.get(getLeftDataPort());
+		final SizedInteger rval = (SizedInteger) portValues
+				.get(getRightDataPort());
+		final int resultInt = (lval.isZero() && rval.isZero()) ? 0 : 1;
+		final Value resultValue = getResultBus().getValue();
+		return Collections.singletonMap(getResultBus(), SizedInteger.valueOf(
+				resultInt, resultValue.getSize(), resultValue.isSigned()));
+	}
 
-        return mod;
-    }
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
 
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */ 
+	/**
+	 * Produces a Value representing the state after ORing the two given values
+	 * according to these rules:
+	 * 
+	 * <pre>
+	 * x = Dont Care     c = care (non constant)   0 = zero   1 = one
+	 *    x x : x        c x : x ???    0 x : x    1 x : x
+	 *    x c : x ???    c c : c        0 c : c    1 c : 1
+	 *    x 0 : x        c 0 : c        0 0 : 0    1 0 : 1
+	 *    x 1 : x        c 1 : 1        0 1 : 1    1 1 : 1
+	 * </pre>
+	 * 
+	 * @return a {@link Value} representing the And'ing of the two specified
+	 *         input Values.
+	 */
+
+	public boolean pushValuesForward() {
+		boolean mod = false;
+
+		Value in0 = getLeftDataPort().getValue();
+		Value in1 = getRightDataPort().getValue();
+
+		// Always a unsigned value
+		Value newValue = new Value(Math.max(in0.getSize(), in1.getSize()),
+				false);
+
+		if (newValue.getSize() == 1) {
+			if (!in0.getBit(0).isCare() || !in1.getBit(0).isCare()) {
+				newValue.setBit(0, Bit.DONT_CARE);
+			} else {
+				if (in0.getBit(0).isConstant() && in1.getBit(0).isConstant()) {
+					if (in0.getBit(0).isOn() || in1.getBit(0).isOn()) {
+						newValue.setBit(0, Bit.ONE);
+					} else {
+						newValue.setBit(0, Bit.ZERO);
+					}
+				} else if (in0.getBit(0).isConstant()) {
+					if (in0.getBit(0).isOn()) {
+						newValue.setBit(0, Bit.ONE);
+					} else {
+						newValue.setBit(0, in1.getBit(0));
+					}
+				} else if (in1.getBit(0).isConstant()) {
+					if (in1.getBit(0).isOn()) {
+						newValue.setBit(0, Bit.ONE);
+					} else {
+						newValue.setBit(0, in0.getBit(0));
+					}
+				}
+			}
+		} else {
+			for (int i = 1; i < newValue.getSize(); i++) {
+				newValue.setBit(i, Bit.ZERO);
+			}
+		}
+
+		mod |= getResultBus().pushValueForward(newValue);
+
+		return mod;
+	}
+
+	/**
+	 * No rules can be applied on a NotOp.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesBackward() {
+		boolean mod = false;
+
+		// No rules.
+
+		return mod;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
 }

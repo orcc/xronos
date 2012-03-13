@@ -21,25 +21,21 @@
 
 package net.sf.openforge.lim.op;
 
-
 /**
- * Base class of all operations, which can be terned into a verilog
- * reduction operation.
- *
+ * Base class of all operations, which can be terned into a verilog reduction
+ * operation.
+ * 
  * Created: Thu May 19 16:39:34 2003
- *
- * @author  Conor Wu
+ * 
+ * @author Conor Wu
  * @version $Id: ReductionOp.java 2 2005-06-09 20:00:48Z imiller $
  */
-public abstract class ReductionOp extends UnaryOp
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public abstract class ReductionOp extends UnaryOp {
 
-    /**
-     * Constructs a reduction opeation.
-     */
-    public ReductionOp ()
-    {
-        super();
-    }
+	/**
+	 * Constructs a reduction opeation.
+	 */
+	public ReductionOp() {
+		super();
+	}
 }
