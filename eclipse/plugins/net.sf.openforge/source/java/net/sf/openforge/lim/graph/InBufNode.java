@@ -21,45 +21,38 @@
 
 package net.sf.openforge.lim.graph;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-import net.sf.openforge.util.graphviz.*;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.InBuf;
+import net.sf.openforge.util.graphviz.Record;
 
 /**
- * InBufNode represents an {@link InBuf} in a {@link LXGraph}.  In particular it
+ * InBufNode represents an {@link InBuf} in a {@link LXGraph}. In particular it
  * relabels its buses.
- *
+ * 
  * @version $Id: InBufNode.java 2 2005-06-09 20:00:48Z imiller $
  */
-class InBufNode extends ComponentNode
-{
-    InBufNode (InBuf inbuf, String id,int fontSize)
-    {
-        super(inbuf, id,fontSize);
-    }
+class InBufNode extends ComponentNode {
+	InBufNode(InBuf inbuf, String id, int fontSize) {
+		super(inbuf, id, fontSize);
+	}
 
-    protected void graphBuses (Exit exit, Record.Port busBox)
-    {
-        InBuf inbuf = (InBuf)getComponent();
+	protected void graphBuses(Exit exit, Record.Port busBox) {
+		InBuf inbuf = (InBuf) getComponent();
 
-        graphBus(inbuf.getGoBus(), busBox, "go", "G");
-        Bus reset = inbuf.getResetBus();
-        if (reset.isConnected())
-        {
-            graphBus(reset, busBox, "reset", "R");
-        }
-        Bus clock = inbuf.getClockBus();
-        if (clock.isConnected())
-        {
-            graphBus(clock, busBox, "clock", "C");
-        }
-        int index = 0;
-        for (Iterator iter = inbuf.getDataBuses().iterator(); iter.hasNext();)
-        {
-            Bus bus = (Bus)iter.next();
-            graphBus(bus, busBox, "din" + index, "d" + index);
-            index++;
-        }
-    }
+		graphBus(inbuf.getGoBus(), busBox, "go", "G");
+		Bus reset = inbuf.getResetBus();
+		if (reset.isConnected()) {
+			graphBus(reset, busBox, "reset", "R");
+		}
+		Bus clock = inbuf.getClockBus();
+		if (clock.isConnected()) {
+			graphBus(clock, busBox, "clock", "C");
+		}
+		int index = 0;
+		for (Bus bus : inbuf.getDataBuses()) {
+			graphBus(bus, busBox, "din" + index, "d" + index);
+			index++;
+		}
+	}
 }

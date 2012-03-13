@@ -16,53 +16,47 @@
 
 package net.sf.openforge.lim.graph;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-import net.sf.openforge.util.graphviz.*;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.EncodedMux;
+import net.sf.openforge.util.graphviz.Record;
 
 /**
  * EncodedMuxNode.java
- *
- *
- * <p>Created: Tue Dec 17 15:43:25 2002
- *
+ * 
+ * 
+ * <p>
+ * Created: Tue Dec 17 15:43:25 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: EncodedMuxNode.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class EncodedMuxNode extends ComponentNode 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
-    
-    public EncodedMuxNode (Component component, String id,int fontSize)
-    {
-        super (component, id, fontSize);
-    }
+public class EncodedMuxNode extends ComponentNode {
 
-    protected void graphPorts (Record.Port boundingBox)
-    {
-        EncodedMux em = (EncodedMux)getComponent();
-        
-        Record.Port entryBox = boundingBox.getPort(ENTRY);
-        entryBox.setSeparated(false);
-        graphPort(em.getGoPort(), entryBox, "go", "G");
-        net.sf.openforge.lim.Port reset = em.getResetPort();
-        if (reset.isConnected())
-        {
-            graphPort(reset, entryBox, "reset", "R");
-        }
-        net.sf.openforge.lim.Port clock = em.getClockPort();
-        if (clock.isConnected())
-        {
-            graphPort(clock, entryBox, "clock", "C");
-        }
-        graphPort(em.getSelectPort(), entryBox, "select", "SEL");
-        int index = 0;
-        for (Iterator iter = em.getDataPorts().iterator(); iter.hasNext();)
-        {
-            graphPort((net.sf.openforge.lim.Port)iter.next(), entryBox, "din" + index, "d" + index);
-            index++;
-        }
-    }
-    
+	public EncodedMuxNode(Component component, String id, int fontSize) {
+		super(component, id, fontSize);
+	}
+
+	protected void graphPorts(Record.Port boundingBox) {
+		EncodedMux em = (EncodedMux) getComponent();
+
+		Record.Port entryBox = boundingBox.getPort(ENTRY);
+		entryBox.setSeparated(false);
+		graphPort(em.getGoPort(), entryBox, "go", "G");
+		net.sf.openforge.lim.Port reset = em.getResetPort();
+		if (reset.isConnected()) {
+			graphPort(reset, entryBox, "reset", "R");
+		}
+		net.sf.openforge.lim.Port clock = em.getClockPort();
+		if (clock.isConnected()) {
+			graphPort(clock, entryBox, "clock", "C");
+		}
+		graphPort(em.getSelectPort(), entryBox, "select", "SEL");
+		int index = 0;
+		for (net.sf.openforge.lim.Port port : em.getDataPorts()) {
+			graphPort((net.sf.openforge.lim.Port) port, entryBox,
+					"din" + index, "d" + index);
+			index++;
+		}
+	}
+
 }// EncodedMuxNode

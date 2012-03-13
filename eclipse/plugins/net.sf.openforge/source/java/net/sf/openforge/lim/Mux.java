@@ -36,10 +36,9 @@ import net.sf.openforge.report.*;
  */
 public class Mux extends Primitive
 {
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
     /** List of Go signal ports */
-    List goPorts = Collections.EMPTY_LIST;
+    List<Port> goPorts = Collections.emptyList();
 
     /** Map of Go-Data pairs */
     Map muxMap = new LinkedHashMap();
@@ -114,7 +113,7 @@ public class Mux extends Primitive
      *
      * @return   The GoPorts value
      */
-    public List getGoPorts()
+    public List<Port> getGoPorts()
     {
         return goPorts;
     }

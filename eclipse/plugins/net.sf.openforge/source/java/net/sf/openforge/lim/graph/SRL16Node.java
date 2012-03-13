@@ -16,32 +16,26 @@
 
 package net.sf.openforge.lim.graph;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.SRL16;
 
 /**
  * SRL16Node.java
  */
-public class SRL16Node extends ComponentNode 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class SRL16Node extends ComponentNode {
 
-    private int stages = -1;
-    
-    SRL16Node (SRL16 component, String id,int fontSize)
-    {
-        super(component, id, fontSize);
-    }
+	SRL16Node(SRL16 component, String id, int fontSize) {
+		super(component, id, fontSize);
+	}
 
-    protected String getBodyLabel ()
-    {
-        StringBuffer labelBuf = new StringBuffer();
-        labelBuf.append(getShortClassName(getComponent()));
-        final int stages = ((SRL16)getComponent()).getStages();
-        labelBuf.append("(" + stages + ")");
-        labelBuf.append("\\n");
-        labelBuf.append("@");
-        labelBuf.append(Integer.toHexString(getComponent().hashCode()));
-        return labelBuf.toString();
-    }
-    
+	protected String getBodyLabel() {
+		StringBuffer labelBuf = new StringBuffer();
+		labelBuf.append(getShortClassName(getComponent()));
+		final int stages = ((SRL16) getComponent()).getStages();
+		labelBuf.append("(" + stages + ")");
+		labelBuf.append("\\n");
+		labelBuf.append("@");
+		labelBuf.append(Integer.toHexString(getComponent().hashCode()));
+		return labelBuf.toString();
+	}
+
 }// SRL16Node

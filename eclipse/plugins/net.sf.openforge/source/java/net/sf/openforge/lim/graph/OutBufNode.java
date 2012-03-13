@@ -21,25 +21,23 @@
 
 package net.sf.openforge.lim.graph;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.OutBuf;
 
 /**
- * OutBufNode represents an {@link OutBuf} in a {@link LXGraph}.  In particular it
- * is labeled with the Tag of its peer {@link Exit}.
- *
+ * OutBufNode represents an {@link OutBuf} in a {@link LXGraph}. In particular
+ * it is labeled with the Tag of its peer {@link Exit}.
+ * 
  * @version $Id: OutBufNode.java 2 2005-06-09 20:00:48Z imiller $
  */
-class OutBufNode extends ComponentNode
-{
-    OutBufNode (OutBuf outbuf, String id,int fontSize)
-    {
-        super(outbuf, id, fontSize);
-    }
+class OutBufNode extends ComponentNode {
+	OutBufNode(OutBuf outbuf, String id, int fontSize) {
+		super(outbuf, id, fontSize);
+	}
 
-    protected String getBodyLabel ()
-    {
-        String label = super.getBodyLabel();
-        OutBuf outbuf = (OutBuf)getComponent();
-        return label + "\\n" + outbuf.getPeer().getTag();
-    }
+	protected String getBodyLabel() {
+		String label = super.getBodyLabel();
+		OutBuf outbuf = (OutBuf) getComponent();
+		return label + "\\n" + outbuf.getPeer().getTag();
+	}
 }

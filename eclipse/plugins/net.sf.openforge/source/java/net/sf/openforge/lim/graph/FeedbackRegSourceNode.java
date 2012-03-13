@@ -21,34 +21,31 @@
 
 package net.sf.openforge.lim.graph;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Loop;
+import net.sf.openforge.lim.Reg;
 
 /**
- * In a {@link LXGraph}, FeedbackRegSourceNode is one of the two nodes that are created
- * to represent a feedback register in a {@link Loop}.  In particular, it
+ * In a {@link LXGraph}, FeedbackRegSourceNode is one of the two nodes that are
+ * created to represent a feedback register in a {@link Loop}. In particular, it
  * shows the register as a data source (ie, at the top of the loop).
- *
+ * 
  * @version $Id: FeedbackRegSourceNode.java 2 2005-06-09 20:00:48Z imiller $
  */
-class FeedbackRegSourceNode extends ComponentNode
-{
-    FeedbackRegSourceNode (Reg reg, String id,int fontSize)
-    {
-        super(reg, id,fontSize);
-    }
+class FeedbackRegSourceNode extends ComponentNode {
+	FeedbackRegSourceNode(Reg reg, String id, int fontSize) {
+		super(reg, id, fontSize);
+	}
 
-    protected boolean needPortGraph ()
-    {
-        return false;
-    }
+	protected boolean needPortGraph() {
+		return false;
+	}
 
-    protected String getBodyLabel ()
-    {
-        StringBuffer labelBuf = new StringBuffer();
-        labelBuf.append(getShortClassName(getComponent()));
-        labelBuf.append("-FB\\n");
-        labelBuf.append("@");
-        labelBuf.append(Integer.toHexString(getComponent().hashCode()));
-        return labelBuf.toString();
-    }
+	protected String getBodyLabel() {
+		StringBuffer labelBuf = new StringBuffer();
+		labelBuf.append(getShortClassName(getComponent()));
+		labelBuf.append("-FB\\n");
+		labelBuf.append("@");
+		labelBuf.append(Integer.toHexString(getComponent().hashCode()));
+		return labelBuf.toString();
+	}
 }

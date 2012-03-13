@@ -78,7 +78,7 @@ public class Entry
      *
      * @return a collection of Ports
      */
-    public List getPorts ()
+    public List<Port> getPorts ()
     {
         return getOwner().getPorts();
     }

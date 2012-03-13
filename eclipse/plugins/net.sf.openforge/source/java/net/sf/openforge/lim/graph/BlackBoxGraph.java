@@ -21,68 +21,56 @@
 
 package net.sf.openforge.lim.graph;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.util.graphviz.*;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.util.graphviz.Node;
 
 /**
- * A helper class to {@link LXGraph}, BlackBoxGraph is a sub-Graph for a {@link BlackBox}.
- * It draws each of its components as a black box {@link Node}.
- *
+ * A helper class to {@link LXGraph}, BlackBoxGraph is a sub-Graph for a
+ * {@link BlackBox}. It draws each of its components as a black box {@link Node}
+ * .
+ * 
  * @version $Id: BlackBoxGraph.java 2 2005-06-09 20:00:48Z imiller $
  */
-class BlackBoxGraph extends ModuleGraph
-{
-    /** List of components to be added */
-    protected HashSet components=new HashSet();
-    //protected ArrayList components=new ArrayList();
-    
-    BlackBoxGraph (String name,Object obj,int nodeCount, int fontSize)
-    {
-        super(nodeCount,fontSize);
-        setLabel(name+ " @" + Integer.toHexString(obj.hashCode()));
-    }
-    
-    BlackBoxGraph (String name,int nodeCount,int fontSize)
-    {
-        super(nodeCount,fontSize);
-        setLabel(name);
-    }
+class BlackBoxGraph extends ModuleGraph {
+	/** List of components to be added */
+	protected HashSet<Component> components = new HashSet<Component>();
 
-    void addComponent(Component c)
-    {
-        assert c != null;
-        components.add(c);
-    }
-    
-    void addComponents(Collection c)
-    {
-        assert c != null;
-        components.addAll(c);
-    }
-    
-    /**
-     * Creates a node for each component of the BlackBox.  Also creates edges
-     * for the port-to-bus connections.
-     */
-    void graphAddedComponents()
-    {
-        for (Iterator iter = components.iterator(); iter.hasNext();)
-        {
-            graph((Component)iter.next(), nodeCount);
-        }
-        for (Iterator iter = components.iterator(); iter.hasNext();)
-        {
-            graphEdges((Component)iter.next());
-        }
-    }
+	// protected ArrayList components=new ArrayList();
+
+	BlackBoxGraph(String name, Object obj, int nodeCount, int fontSize) {
+		super(nodeCount, fontSize);
+		setLabel(name + " @" + Integer.toHexString(obj.hashCode()));
+	}
+
+	BlackBoxGraph(String name, int nodeCount, int fontSize) {
+		super(nodeCount, fontSize);
+		setLabel(name);
+	}
+
+	void addComponent(Component c) {
+		assert c != null;
+		components.add(c);
+	}
+
+	void addComponents(Collection<Component> c) {
+		assert c != null;
+		components.addAll(c);
+	}
+
+	/**
+	 * Creates a node for each component of the BlackBox. Also creates edges for
+	 * the port-to-bus connections.
+	 */
+	void graphAddedComponents() {
+		for (Component comp : components) {
+			graph(comp, nodeCount);
+		}
+		for (Component comp : components) {
+			graphEdges(comp);
+		}
+	}
 
 }
-
-
-
-
-
-
-

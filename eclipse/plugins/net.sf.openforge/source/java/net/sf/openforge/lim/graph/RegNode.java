@@ -16,106 +16,86 @@
 
 package net.sf.openforge.lim.graph;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-import net.sf.openforge.util.graphviz.*;
+import net.sf.openforge.lim.Reg;
+import net.sf.openforge.util.graphviz.Record;
 
 /**
  * RegNode.java
  */
-public class RegNode extends ComponentNode 
-{
-    private static final String _RCS_ = "$Rev: 280 $";
+public class RegNode extends ComponentNode {
 
-    private int stages = -1;
-    
-    RegNode (Reg component, String id,int fontSize)
-    {
-        super(component, id, fontSize);
-    }
+	// private int stages = -1;
 
-    protected String getBodyLabel ()
-    {
-        String label = super.getBodyLabel();
-        final int type = ((Reg)getComponent()).getType();
-        final String syncLabel = (((type & Reg.CLEAR) != 0) || ((type & Reg.PRESET) != 0)) ? "async":"sync";
-        
-        label += "\\n" + syncLabel;
-        return label;
-    }
-    /**
-     * Creates sub-nodes in a given bounding box for each port of the component.
-     */
-    protected void graphPorts (Record.Port boundingBox)
-    {
-        Reg reg = (Reg)getComponent();
-        if (needPortGraph())
-        {
-            Record.Port entryBox = boundingBox.getPort(ENTRY);
-            entryBox.setSeparated(false);
-            graphPort(reg.getGoPort(), entryBox, "go", "G");
-            net.sf.openforge.lim.Port reset = reg.getResetPort();
-            if (reset.isConnected())
-            {
-                graphPort(reset, entryBox, "reset", "R");
-            }
-            net.sf.openforge.lim.Port clock = reg.getClockPort();
-            if (clock.isConnected())
-            {
-                graphPort(clock, entryBox, "clock", "C");
-            }
+	RegNode(Reg component, String id, int fontSize) {
+		super(component, id, fontSize);
+	}
 
-            int index = 0;
-            for (Iterator iter = reg.getDataPorts().iterator(); iter.hasNext();)
-            {
-                net.sf.openforge.lim.Port port = (net.sf.openforge.lim.Port)iter.next();
-                String pid = "din" + index;
-                String plabel = "d" + index;
-                if (port == reg.getDataPort())
-                {
-                    pid = "din";
-                    plabel = "D";
-                }
-                else if (port == reg.getSetPort())
-                {
-                    pid = "set";
-                    plabel = "set";
-                }
-                else if (port == reg.getInternalResetPort())
-                {
-                    pid = "ir";
-                    plabel = "ir";
-                }
-                else if (port == reg.getEnablePort())
-                {
-                    pid = "en";
-                    plabel = "en";
-                }
-//                 else if (port == reg.getPresetPort())
-//                 {
-//                     pid = "pre";
-//                     plabel = "pre";
-//                 }
-//                 else if (port == reg.getClearPort())
-//                 {
-//                     pid = "clr";
-//                     plabel = "clr";
-//                 }
-                else if (port == reg.getEnablePort())
-                {
-                    pid = "en";
-                    plabel = "en";
-                }
+	protected String getBodyLabel() {
+		String label = super.getBodyLabel();
+		final int type = ((Reg) getComponent()).getType();
+		final String syncLabel = (((type & Reg.CLEAR) != 0) || ((type & Reg.PRESET) != 0)) ? "async"
+				: "sync";
 
-                if (port.isConnected())
-                {
-                    graphPort(port, entryBox, pid, plabel);
-                }
-                index++;
-            }
-        }
-    }
+		label += "\\n" + syncLabel;
+		return label;
+	}
 
-    
+	/**
+	 * Creates sub-nodes in a given bounding box for each port of the component.
+	 */
+	protected void graphPorts(Record.Port boundingBox) {
+		Reg reg = (Reg) getComponent();
+		if (needPortGraph()) {
+			Record.Port entryBox = boundingBox.getPort(ENTRY);
+			entryBox.setSeparated(false);
+			graphPort(reg.getGoPort(), entryBox, "go", "G");
+			net.sf.openforge.lim.Port reset = reg.getResetPort();
+			if (reset.isConnected()) {
+				graphPort(reset, entryBox, "reset", "R");
+			}
+			net.sf.openforge.lim.Port clock = reg.getClockPort();
+			if (clock.isConnected()) {
+				graphPort(clock, entryBox, "clock", "C");
+			}
+
+			int index = 0;
+			for (net.sf.openforge.lim.Port port : reg.getDataPorts()) {
+				String pid = "din" + index;
+				String plabel = "d" + index;
+				if (port == reg.getDataPort()) {
+					pid = "din";
+					plabel = "D";
+				} else if (port == reg.getSetPort()) {
+					pid = "set";
+					plabel = "set";
+				} else if (port == reg.getInternalResetPort()) {
+					pid = "ir";
+					plabel = "ir";
+				} else if (port == reg.getEnablePort()) {
+					pid = "en";
+					plabel = "en";
+				}
+				// else if (port == reg.getPresetPort())
+				// {
+				// pid = "pre";
+				// plabel = "pre";
+				// }
+				// else if (port == reg.getClearPort())
+				// {
+				// pid = "clr";
+				// plabel = "clr";
+				// }
+				else if (port == reg.getEnablePort()) {
+					pid = "en";
+					plabel = "en";
+				}
+
+				if (port.isConnected()) {
+					graphPort(port, entryBox, pid, plabel);
+				}
+				index++;
+			}
+		}
+	}
+
 }// RegNode

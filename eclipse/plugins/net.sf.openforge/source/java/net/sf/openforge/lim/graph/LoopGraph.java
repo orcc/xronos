@@ -21,84 +21,81 @@
 
 package net.sf.openforge.lim.graph;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Loop;
+import net.sf.openforge.lim.Reg;
 
 /**
- * A sub-graph for a {@link Loop} in an {@link LXGraph}.  This specialization]
- * of {@link ModuleGraph} handles the cycles that appear in loop graphs.  In
+ * A sub-graph for a {@link Loop} in an {@link LXGraph}. This specialization] of
+ * {@link ModuleGraph} handles the cycles that appear in loop graphs. In
  * particular, the feedback registers are drawn in two parts: one node to
- * represent the register as a source of data (ie at the top of the graph)
- * and another node to represent the register as a data sink (ie at the bottom
- * of the graph).
- *
+ * represent the register as a source of data (ie at the top of the graph) and
+ * another node to represent the register as a data sink (ie at the bottom of
+ * the graph).
+ * 
  * @version $Id: LoopGraph.java 2 2005-06-09 20:00:48Z imiller $
  */
-class LoopGraph extends ModuleGraph
-{
-    /** Map of Reg to FeedbackRegSinkNode */
-    private Map sinkNodeMap = new HashMap();
+class LoopGraph extends ModuleGraph {
+	/** Map of Reg to FeedbackRegSinkNode */
+	private Map<Reg, FeedbackRegSinkNode> sinkNodeMap = new HashMap<Reg, FeedbackRegSinkNode>();
 
-    LoopGraph (Loop loop, int id, int fontSize)
-    {
-        super(loop, id, fontSize);
-        graphComponentsDelayed();
-    }
+	LoopGraph(Loop loop, int id, int fontSize) {
+		super(loop, id, fontSize);
+		graphComponentsDelayed();
+	}
 
-    protected void graphComponents ()
-    {
-        /*
-         * Delay until we are fully constructed.
-         */
-    }
+	protected void graphComponents() {
+		/*
+		 * Delay until we are fully constructed.
+		 */
+	}
 
-    private void graphComponentsDelayed ()
-    {
-        Loop loop = (Loop)getModule();
-        Reg controlRegister = loop.getControlRegister();
-        Collection dataRegisters = loop.getDataRegisters();
+	private void graphComponentsDelayed() {
+		Loop loop = (Loop) getModule();
+		Reg controlRegister = loop.getControlRegister();
+		Collection<Reg> dataRegisters =  loop.getDataRegisters();
 
-        Collection components = new HashSet(loop.getComponents());
-        components.remove(controlRegister);
-        components.removeAll(dataRegisters);
+		Collection<Component> components = new HashSet<Component>(loop.getComponents());
+		components.remove(controlRegister);
+		components.removeAll(dataRegisters);
 
-        for (Iterator iter = components.iterator(); iter.hasNext();)
-        {
-            graph((Component)iter.next(), nodeCount++);
-        }
-        if (controlRegister != null)
-        {
-            graphRegister(controlRegister);
-        }
-        for (Iterator iter = dataRegisters.iterator(); iter.hasNext();)
-        {
-            graphRegister((Reg)iter.next());
-        }
+		for (Component comp : components) {
+			graph((Component) comp, nodeCount++);
+		}
+		if (controlRegister != null) {
+			graphRegister(controlRegister);
+		}
+		for (Reg reg : dataRegisters) {
+			graphRegister(reg);
+		}
 
-        for (Iterator iter = components.iterator(); iter.hasNext();)
-        {
-            graphEdges((Component)iter.next());
-        }
+		for (Component comp : components) {
+			graphEdges(comp);
+		}
 
-        for (Iterator iter = sinkNodeMap.entrySet().iterator(); iter.hasNext();)
-        {
-            Map.Entry entry = (Map.Entry)iter.next();
-            Reg reg = (Reg)entry.getKey();
-            ComponentNode regNode = (ComponentNode)entry.getValue();
-            graphEdge(regNode, reg.getEnablePort());
-            graphEdge(regNode, reg.getDataPort());
-        }
-    }
+		for (Entry<Reg, FeedbackRegSinkNode> entry : sinkNodeMap.entrySet()) {
+			Reg reg = (Reg) entry.getKey();
+			ComponentNode regNode = (ComponentNode) entry.getValue();
+			graphEdge(regNode, reg.getEnablePort());
+			graphEdge(regNode, reg.getDataPort());
+		}
+	}
 
-    private void graphRegister (Reg reg)
-    {
-        FeedbackRegSourceNode sourceNode = new FeedbackRegSourceNode(reg, "node" + nodeCount++,fontSize);
-        add(sourceNode);
-        nodeMap.put(reg, sourceNode);
+	private void graphRegister(Reg reg) {
+		FeedbackRegSourceNode sourceNode = new FeedbackRegSourceNode(reg,
+				"node" + nodeCount++, fontSize);
+		add(sourceNode);
+		nodeMap.put(reg, sourceNode);
 
-        FeedbackRegSinkNode sinkNode = new FeedbackRegSinkNode(reg, "node" + nodeCount++,fontSize);
-        add(sinkNode);
-        sinkNodeMap.put(reg, sinkNode);
-    }
+		FeedbackRegSinkNode sinkNode = new FeedbackRegSinkNode(reg, "node"
+				+ nodeCount++, fontSize);
+		add(sinkNode);
+		sinkNodeMap.put(reg, sinkNode);
+	}
 }

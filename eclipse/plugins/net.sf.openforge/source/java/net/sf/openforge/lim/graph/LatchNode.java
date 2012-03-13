@@ -21,32 +21,28 @@
 
 package net.sf.openforge.lim.graph;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.util.graphviz.*;
+import net.sf.openforge.lim.Latch;
+import net.sf.openforge.util.graphviz.Record;
 
 /**
- * A LatchNode is a node for a {@link Latch} in an {@link LXGraph}.  It
- * labels its enable port as "en".
- *
+ * A LatchNode is a node for a {@link Latch} in an {@link LXGraph}. It labels
+ * its enable port as "en".
+ * 
  * @version $Id: LatchNode.java 2 2005-06-09 20:00:48Z imiller $
  */
-class LatchNode extends ComponentNode
-{
-    LatchNode (Latch latch, String id, int fontSize)
-    {
-        super(latch, id,fontSize);
-    }
+class LatchNode extends ComponentNode {
+	LatchNode(Latch latch, String id, int fontSize) {
+		super(latch, id, fontSize);
+	}
 
-    protected void graphPorts (Record.Port boundingBox)
-    {
-        if (needPortGraph())
-        {
-            Record.Port entryBox = boundingBox.getPort(ENTRY);
-            entryBox.setSeparated(false);
+	protected void graphPorts(Record.Port boundingBox) {
+		if (needPortGraph()) {
+			Record.Port entryBox = boundingBox.getPort(ENTRY);
+			entryBox.setSeparated(false);
 
-			Latch latch = (Latch)getComponent();
-            graphPort(latch.getEnablePort(), entryBox, "en", "en");
-            graphPort(latch.getDataPort(), entryBox, "din", "d");
-        }
-    }
+			Latch latch = (Latch) getComponent();
+			graphPort(latch.getEnablePort(), entryBox, "en", "en");
+			graphPort(latch.getDataPort(), entryBox, "din", "d");
+		}
+	}
 }

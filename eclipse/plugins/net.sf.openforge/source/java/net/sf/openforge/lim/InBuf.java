@@ -152,9 +152,9 @@ public class InBuf extends Component implements Emulatable
      *         not the same as that returned by {@link Exit#getDataBuses()}
      *         in that it does not contain the clock or reset bus
      */
-    public Collection getDataBuses ()
+    public Collection<Bus> getDataBuses ()
     {
-        List list = new LinkedList(getExit(Exit.DONE).getDataBuses());
+        List<Bus> list = new LinkedList<Bus>(getExit(Exit.DONE).getDataBuses());
         list.remove(getClockBus());
         list.remove(getResetBus());
         return list;

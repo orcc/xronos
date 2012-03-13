@@ -31,12 +31,11 @@ import java.util.*;
  */
 public class EncodedMux extends Primitive
 {
-    private static final String rcs_id = "RCS_REVISION: $Rev: 12 $";
 
     /** The encoded select value */
     private Port selectPort;
 
-    private List inputPorts = Collections.EMPTY_LIST;
+    private List<Port> inputPorts = Collections.emptyList();
         
     /**
      * Constructor for the Mux object
@@ -80,7 +79,7 @@ public class EncodedMux extends Primitive
         return (Port) inputPorts.get(num);
     }
 
-    public List getDataPorts ()
+    public List<Port> getDataPorts ()
     {
         return Collections.unmodifiableList(inputPorts);
     }

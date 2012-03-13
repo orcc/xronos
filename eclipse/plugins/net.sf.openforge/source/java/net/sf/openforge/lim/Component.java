@@ -400,10 +400,10 @@ public abstract class Component extends ID
     {
         // The 'this' port is included in the ports returned from the
         // data ports.
-        List dataPortsList = getDataPorts();
+        List<Port>  dataPortsList = getDataPorts();
 
         int portCount = dataPortsList.size() + 3;
-        List<Port> list = new ArrayList(portCount);
+        List<Port> list = new ArrayList<Port>(portCount);
         list.add(getClockPort());
         list.add(getResetPort());
         list.add(getGoPort());

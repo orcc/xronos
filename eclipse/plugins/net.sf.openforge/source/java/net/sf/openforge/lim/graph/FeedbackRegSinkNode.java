@@ -21,51 +21,46 @@
 
 package net.sf.openforge.lim.graph;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.util.graphviz.*;
+import net.sf.openforge.lim.Loop;
+import net.sf.openforge.lim.Reg;
+import net.sf.openforge.util.graphviz.Record;
 
 /**
- * In a {@link LXGraph}, FeedbackRegSinkNode is one of the two nodes that are created
- * to represent a feedback register in a {@link Loop}.  In particular, it
+ * In a {@link LXGraph}, FeedbackRegSinkNode is one of the two nodes that are
+ * created to represent a feedback register in a {@link Loop}. In particular, it
  * shows the register as a data sink (ie, at the bottom of the loop).
- *
+ * 
  * @version $Id: FeedbackRegSinkNode.java 2 2005-06-09 20:00:48Z imiller $
  */
-class FeedbackRegSinkNode extends ComponentNode
-{
-    FeedbackRegSinkNode (Reg reg, String id, int fontSize)
-    {
-        super(reg, id, fontSize);
-    }
+class FeedbackRegSinkNode extends ComponentNode {
+	FeedbackRegSinkNode(Reg reg, String id, int fontSize) {
+		super(reg, id, fontSize);
+	}
 
-    protected void graphPorts (Record.Port boundingBox)
-    {
-        Reg reg = (Reg)getComponent();
+	protected void graphPorts(Record.Port boundingBox) {
+		Reg reg = (Reg) getComponent();
 
-        Record.Port entryBox = boundingBox.getPort(ENTRY);
-        entryBox.setSeparated(false);
+		Record.Port entryBox = boundingBox.getPort(ENTRY);
+		entryBox.setSeparated(false);
 
-        if (reg.getEnablePort().isConnected())
-        {
-            graphPort(reg.getEnablePort(), entryBox, "en", "en");
-        }
-        graphPort(reg.getDataPort(), entryBox, "din", "d");
-    }
+		if (reg.getEnablePort().isConnected()) {
+			graphPort(reg.getEnablePort(), entryBox, "en", "en");
+		}
+		graphPort(reg.getDataPort(), entryBox, "din", "d");
+	}
 
-    protected void graphExits (Record.Port boundingBox)
-    {
-        /*
-         * Disable graphing of Exits.
-         */
-    }
+	protected void graphExits(Record.Port boundingBox) {
+		/*
+		 * Disable graphing of Exits.
+		 */
+	}
 
-    protected String getBodyLabel ()
-    {
-        StringBuffer labelBuf = new StringBuffer();
-        labelBuf.append(getShortClassName(getComponent()));
-        labelBuf.append("-FB\\n");
-        labelBuf.append("@");
-        labelBuf.append(Integer.toHexString(getComponent().hashCode()));
-        return labelBuf.toString();
-    }
+	protected String getBodyLabel() {
+		StringBuffer labelBuf = new StringBuffer();
+		labelBuf.append(getShortClassName(getComponent()));
+		labelBuf.append("-FB\\n");
+		labelBuf.append("@");
+		labelBuf.append(Integer.toHexString(getComponent().hashCode()));
+		return labelBuf.toString();
+	}
 }

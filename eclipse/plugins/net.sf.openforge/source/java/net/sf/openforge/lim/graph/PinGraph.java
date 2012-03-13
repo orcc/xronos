@@ -21,78 +21,70 @@
 
 package net.sf.openforge.lim.graph;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-import net.sf.openforge.util.graphviz.*;
-import net.sf.openforge.util.naming.*;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.InputPin;
+import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.OutputPin;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.util.graphviz.Node;
+import net.sf.openforge.util.naming.ID;
 
 /**
- * A helper class to {@link LXGraph}, PinGraph is a sub-Graph for a {@link Module}.
- * It draws each of its components as a black box {@link Node}.
- *
+ * A helper class to {@link LXGraph}, PinGraph is a sub-Graph for a
+ * {@link Module}. It draws each of its components as a black box {@link Node}.
+ * 
  * @version $Id: PinGraph.java 2 2005-06-09 20:00:48Z imiller $
  */
-class PinGraph extends BlackBoxGraph
-{
-    /**
-     * For classes which extend PinGraph
-     *
-     * @param nodeCount a value of type 'int'
-     */
-    PinGraph (String name,int nodeCount,int fontSize)
-    {
-        super(name,nodeCount,fontSize);
-    }
+class PinGraph extends BlackBoxGraph {
+	/**
+	 * For classes which extend PinGraph
+	 * 
+	 * @param nodeCount
+	 *            a value of type 'int'
+	 */
+	PinGraph(String name, int nodeCount, int fontSize) {
+		super(name, nodeCount, fontSize);
+	}
 
-    
-    static final class Input extends PinGraph
-    {
-        Input(InputPin ipin,int nodeCount,int fontSize)
-        {
-            super(ID.showLogical(ipin),nodeCount,fontSize);
-            graph(ipin, nodeCount++);
-            _graph.ln("Input Pin: "+ipin);
-            
-            Bus b=ipin.getBus();
-            for(Iterator it2=b.getPorts().iterator();it2.hasNext();)
-            {
-                Port p=(Port)it2.next();
-                Component c=(Component)p.getOwner();
-                graph(c, nodeCount++);
-                graphEdges(c,b);
-            }
-        }
+	static final class Input extends PinGraph {
+		Input(InputPin ipin, int nodeCount, int fontSize) {
+			super(ID.showLogical(ipin), nodeCount, fontSize);
+			graph(ipin, nodeCount++);
+			_graph.ln("Input Pin: " + ipin);
 
-        /**
-         * Graphs the incoming connections to a component's ports.
-         */
-        protected void graphEdges (Component component,Bus src)
-        {
-            ComponentNode componentNode = (ComponentNode)nodeMap.get(component);
-            graphEdge(componentNode, component.getGoPort());
-            for (Iterator iter = component.getDataPorts().iterator(); iter.hasNext();)
-            {
-                net.sf.openforge.lim.Port port = (net.sf.openforge.lim.Port)iter.next();
-                if(port.getBus()==src)
-                    graphEdge(componentNode, port);
-            }
-        }
-    }
+			Bus b = ipin.getBus();
+			for (Port p : b.getPorts()) {
+				Component c = (Component) p.getOwner();
+				graph(c, nodeCount++);
+				graphEdges(c, b);
+			}
+		}
 
-    static final class Output extends PinGraph
-    {
-        Output(OutputPin opin,int nodeCount,int fontSize)
-        {
-            super(ID.showLogical(opin),nodeCount,fontSize);
-            _graph.ln("Output Pin: "+opin);
-            graph(opin, nodeCount++);
-            Port p=opin.getPort();
-            Bus b=p.getBus();
-            graph(b.getOwner().getOwner(), nodeCount++);
-            
-            graphEdges(opin);
-        }
-    }
+		/**
+		 * Graphs the incoming connections to a component's ports.
+		 */
+		protected void graphEdges(Component component, Bus src) {
+			ComponentNode componentNode = (ComponentNode) nodeMap
+					.get(component);
+			graphEdge(componentNode, component.getGoPort());
+			for (net.sf.openforge.lim.Port port : component.getDataPorts()) {
+				if (port.getBus() == src)
+					graphEdge(componentNode, port);
+			}
+		}
+	}
+
+	static final class Output extends PinGraph {
+		Output(OutputPin opin, int nodeCount, int fontSize) {
+			super(ID.showLogical(opin), nodeCount, fontSize);
+			_graph.ln("Output Pin: " + opin);
+			graph(opin, nodeCount++);
+			Port p = opin.getPort();
+			Bus b = p.getBus();
+			graph(b.getOwner().getOwner(), nodeCount++);
+
+			graphEdges(opin);
+		}
+	}
 }
-
