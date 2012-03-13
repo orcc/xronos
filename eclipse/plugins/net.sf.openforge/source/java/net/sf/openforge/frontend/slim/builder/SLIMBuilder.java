@@ -14,56 +14,48 @@
  * limitations under the License.
  ******************************************************************************/
 
-
 package net.sf.openforge.frontend.slim.builder;
 
-import java.io.*;
-import java.util.*;
+import net.sf.openforge.lim.Design;
 
-import net.sf.openforge.app.*;
-import net.sf.openforge.lim.*;
-
-import org.w3c.dom.*;
-
-import javax.xml.parsers.*;
-import javax.xml.*;
-import javax.xml.validation.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 /**
  * SLIMBuilder contains methods to turn SLIM source document into a fully
  * constructed, structurally correct, LIM {@link Design} object.
- *
- *
- * <p>Created: Fri Jun 10 13:07:24 2005
- *
+ * 
+ * 
+ * <p>
+ * Created: Fri Jun 10 13:07:24 2005
+ * 
  * @author imiller
  * @author jwj@acm.org
  */
-public class SLIMBuilder extends org.xml.sax.helpers.DefaultHandler
-{
+public class SLIMBuilder extends org.xml.sax.helpers.DefaultHandler {
 
-    public SLIMBuilder ()
-    {
-        super();
-    }
-    
-    public Design build (Document doc)
-    {    	
-        // Resources are all direct children of the 'design' element
-        // There had better be only one design element!
-        NodeList designTags = doc.getElementsByTagName(SLIMConstants.DESIGN);
-        assert designTags.getLength() == 1 : "Wrong number of design tags found.  Must be 1.  " + designTags.getLength();
-        
-        return build ((Element)designTags.item(0));
+	public SLIMBuilder() {
+		super();
+	}
 
-    }
-    
-    public Design build (Element designElement) {
-    	
-        XDesignFactory designFactory = new XDesignFactory();
-        Design design = designFactory.buildDesign(designElement);
-        
-        return design;
-    }
-    
+	public Design build(Document doc) {
+		// Resources are all direct children of the 'design' element
+		// There had better be only one design element!
+		NodeList designTags = doc.getElementsByTagName(SLIMConstants.DESIGN);
+		assert designTags.getLength() == 1 : "Wrong number of design tags found.  Must be 1.  "
+				+ designTags.getLength();
+
+		return build((Element) designTags.item(0));
+
+	}
+
+	public Design build(Element designElement) {
+
+		XDesignFactory designFactory = new XDesignFactory();
+		Design design = designFactory.buildDesign(designElement);
+
+		return design;
+	}
+
 }// SLIMBuilder

@@ -220,7 +220,7 @@ public abstract class Module extends Component implements Cloneable
      * @return a List of OutBufs, one for each bus of
      *         this module
      */
-    public Collection getOutBufs ()
+    public Collection<OutBuf> getOutBufs ()
     {
         List list = new ArrayList(getExits().size());
         for (Iterator iter = getExits().iterator(); iter.hasNext();)

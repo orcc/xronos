@@ -14,41 +14,36 @@
  * limitations under the License.
  ******************************************************************************/
 
-
 package net.sf.openforge.frontend.slim.builder;
 
 import net.sf.openforge.lim.io.FifoID;
 
 /**
- * NamedFifoID is a concrete implementation of the {@link FifoID}
- * class which defers to the getID() method to determine the name of
- * the interface.
- *
- * <p>Created: Tue Jul 12 14:55:48 2005
- *
+ * NamedFifoID is a concrete implementation of the {@link FifoID} class which
+ * defers to the getID() method to determine the name of the interface.
+ * 
+ * <p>
+ * Created: Tue Jul 12 14:55:48 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  */
-public class NamedFifoID extends FifoID
-{
+public class NamedFifoID extends FifoID {
 
-    public NamedFifoID ()
-    {
-        super();
-    }
-    
-    public NamedFifoID (String encoded)
-    {
-        super(encoded);
-    }
+	public NamedFifoID() {
+		super();
+	}
 
-    /**
-     * Simply return the defined String ID without any modification.
-     *
-     * @return a value of type 'String'
-     */
-    public String getName ()
-    {
-        return getID();
-    }
-    
+	public NamedFifoID(String encoded) {
+		super(encoded);
+	}
+
+	/**
+	 * Simply return the defined String ID without any modification.
+	 * 
+	 * @return a value of type 'String'
+	 */
+	public String getName() {
+		return getID();
+	}
+
 }// NamedFifoID

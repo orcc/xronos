@@ -499,12 +499,11 @@ public abstract class Component extends ID
      *
      * @return a list of {@link Bus Buses}
      */
-    public Collection getBuses ()
+    public Collection<Bus> getBuses ()
     {
-        List list = new LinkedList();
-        for (Iterator iter = exits.values().iterator(); iter.hasNext();)
+        List<Bus> list = new LinkedList<Bus>();
+        for (Exit exit : exits.values())
         {
-            Exit exit = (Exit)iter.next();
             list.addAll(exit.getBuses());
         }
         return list;
@@ -517,7 +516,7 @@ public abstract class Component extends ID
      */
     public Collection<Exit> getExits ()
     {
-        return new ArrayList(exits.values());
+        return new ArrayList<Exit>(exits.values());
     }
 
     /**

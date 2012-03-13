@@ -14,94 +14,97 @@
  * limitations under the License.
  ******************************************************************************/
 
-
 package net.sf.openforge.frontend.slim.builder;
 
-import net.sf.openforge.lim.*;
+import java.util.List;
 
-import org.w3c.dom.*;
-import java.util.*;
+import net.sf.openforge.lim.Block;
+import net.sf.openforge.lim.Branch;
+import net.sf.openforge.lim.Decision;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
- * XBranchFactory constructs a {@link Branch} object for an 'if'
- * element in the SLIM document.
- *
- *
- * <p>Created: Wed Jul 13 12:50:32 2005
- *
+ * XBranchFactory constructs a {@link Branch} object for an 'if' element in the
+ * SLIM document.
+ * 
+ * 
+ * <p>
+ * Created: Wed Jul 13 12:50:32 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  */
-public class XBranchFactory extends XModuleFactory
-{
+public class XBranchFactory extends XModuleFactory {
 
-    /**
-     * Constructs a new XBranchFactory which may be used to build a
-     * Branch whose implementation makes use of the resources defined
-     * in the specified {@link ResourceCache}
-     *
-     * @param resources a value of type 'ResourceCache'
-     */
-    public XBranchFactory (ResourceCache resources)
-    {
-        super(resources);
-    }
+	/**
+	 * Constructs a new XBranchFactory which may be used to build a Branch whose
+	 * implementation makes use of the resources defined in the specified
+	 * {@link ResourceCache}
+	 * 
+	 * @param resources
+	 *            a value of type 'ResourceCache'
+	 */
+	public XBranchFactory(ResourceCache resources) {
+		super(resources);
+	}
 
-    public Branch buildBranch (Element ifElement)
-    {
-        // A branch has 3 parts.  A decision block, a true block and a
-        // (potentially empty) false block
-        Element testElement = null;
-        Element thenElement = null;
-        Element elseElement = null;
-        List modules = getChildNodesByTag(ifElement, SLIMConstants.MODULE);
-        for (Iterator iter = modules.iterator(); iter.hasNext();)
-        {
-            Element element = (Element)iter.next();
-            String moduleType = element.getAttribute(SLIMConstants.MODULE_STYLE);
-            if (moduleType.equals(SLIMConstants.DECISION_TEST)) { testElement = element; }
-            else if (moduleType.equals(SLIMConstants.THEN)) { thenElement = element; }
-            else if (moduleType.equals(SLIMConstants.ELSE)) { elseElement = element; }
-            else
-            {
-                assert false : "Unknown module type in 'if' structure: " + moduleType;
-            }
-        }
-        assert testElement != null : "'if' structure must have a test element";
-        assert thenElement != null : "'if' structure must have a then element";
+	public Branch buildBranch(Element ifElement) {
+		// A branch has 3 parts. A decision block, a true block and a
+		// (potentially empty) false block
+		Element testElement = null;
+		Element thenElement = null;
+		Element elseElement = null;
+		List<Node> modules = getChildNodesByTag(ifElement, SLIMConstants.MODULE);
+		for (Node ele : modules) {
+			Element element = (Element) ele;
+			String moduleType = element
+					.getAttribute(SLIMConstants.MODULE_STYLE);
+			if (moduleType.equals(SLIMConstants.DECISION_TEST)) {
+				testElement = element;
+			} else if (moduleType.equals(SLIMConstants.THEN)) {
+				thenElement = element;
+			} else if (moduleType.equals(SLIMConstants.ELSE)) {
+				elseElement = element;
+			} else {
+				assert false : "Unknown module type in 'if' structure: "
+						+ moduleType;
+			}
+		}
+		assert testElement != null : "'if' structure must have a test element";
+		assert thenElement != null : "'if' structure must have a then element";
 
-        XDecisionFactory decisionFactory = new XDecisionFactory(getResourceCache());
-        Decision decision = (Decision)decisionFactory.buildComponent(testElement);
-        
-        XModuleFactory thenFactory = new XModuleFactory(getResourceCache());
-        Block thenBlock = (Block)thenFactory.buildComponent(thenElement);
+		XDecisionFactory decisionFactory = new XDecisionFactory(
+				getResourceCache());
+		Decision decision = (Decision) decisionFactory
+				.buildComponent(testElement);
 
-        decisionFactory.publishPorts(getPortCache());
-        thenFactory.publishPorts(getPortCache());
-        
+		XModuleFactory thenFactory = new XModuleFactory(getResourceCache());
+		Block thenBlock = (Block) thenFactory.buildComponent(thenElement);
 
-        Branch branch;
-        if (elseElement != null)
-        {
-            XModuleFactory elseFactory = new XModuleFactory(getResourceCache());
-            Block elseBlock = (Block)elseFactory.buildComponent(elseElement);
-            branch = new Branch(decision, thenBlock, elseBlock);
-            elseFactory.publishPorts(getPortCache());
-        }
-        else
-        {
-            branch = new Branch(decision, thenBlock);
-        }
-        
-        setModule(branch);
+		decisionFactory.publishPorts(getPortCache());
+		thenFactory.publishPorts(getPortCache());
 
-        createInterface(ifElement, getPortCache());
-        buildDependencies(ifElement, getPortCache());
+		Branch branch;
+		if (elseElement != null) {
+			XModuleFactory elseFactory = new XModuleFactory(getResourceCache());
+			Block elseBlock = (Block) elseFactory.buildComponent(elseElement);
+			branch = new Branch(decision, thenBlock, elseBlock);
+			elseFactory.publishPorts(getPortCache());
+		} else {
+			branch = new Branch(decision, thenBlock);
+		}
 
-        getResourceCache().registerConfigurable(ifElement, branch);
-        
-        buildOptionScope(ifElement, branch);
-        
-        return branch;
-    }
+		setModule(branch);
+
+		createInterface(ifElement, getPortCache());
+		buildDependencies(ifElement, getPortCache());
+
+		getResourceCache().registerConfigurable(ifElement, branch);
+
+		buildOptionScope(ifElement, branch);
+
+		return branch;
+	}
 
 }// XBranchFactory

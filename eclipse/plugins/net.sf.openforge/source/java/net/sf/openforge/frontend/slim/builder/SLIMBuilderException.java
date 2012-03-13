@@ -14,13 +14,11 @@
  * limitations under the License.
  ******************************************************************************/
 
-
 package net.sf.openforge.frontend.slim.builder;
 
-public class SLIMBuilderException extends RuntimeException
-{
-    public SLIMBuilderException (String message)
-    {
-        super("SLIM Builder Error: " + message);
-    }
+@SuppressWarnings("serial")
+public class SLIMBuilderException extends RuntimeException {
+	public SLIMBuilderException(String message) {
+		super("SLIM Builder Error: " + message);
+	}
 }

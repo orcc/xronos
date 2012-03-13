@@ -280,7 +280,7 @@ public class Exit extends ID implements LatencyKey
      */
     public Collection<Bus> getBuses ()
     {
-        List<Bus> list = new ArrayList(getDataBuses().size() + 1);
+        List<Bus> list = new ArrayList<Bus>(getDataBuses().size() + 1);
         list.add(getDoneBus());
         list.addAll(getDataBuses());
         return list;
