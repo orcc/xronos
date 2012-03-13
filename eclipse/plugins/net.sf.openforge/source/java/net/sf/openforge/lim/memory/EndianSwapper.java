@@ -21,144 +21,142 @@
 
 package net.sf.openforge.lim.memory;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.op.*;
-import net.sf.openforge.util.*;
-import net.sf.openforge.util.naming.*;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Visitor;
+import net.sf.openforge.lim.op.AndOp;
+import net.sf.openforge.lim.op.Constant;
+import net.sf.openforge.lim.op.LeftShiftOp;
+import net.sf.openforge.lim.op.OrOpMulti;
+import net.sf.openforge.lim.op.RightShiftUnsignedOp;
+import net.sf.openforge.lim.op.ShiftOp;
+import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.util.MathStuff;
+import net.sf.openforge.util.naming.ID;
 
 /**
- * <code>EndianSwapper</code> is an extension of {@link Module} and
- * contains one data input and one data output as its only used
- * buses. The purpose of the module is to correctly convert one
- * endianness to the other as needed.
- *
- * <p>Created: Wed Mar 17 12:04:14 2004
+ * <code>EndianSwapper</code> is an extension of {@link Module} and contains one
+ * data input and one data output as its only used buses. The purpose of the
+ * module is to correctly convert one endianness to the other as needed.
+ * 
+ * <p>
+ * Created: Wed Mar 17 12:04:14 2004
  * 
  * @author cwu, last modified by $Author: imiller $
  * @version $Id: EndianSwapper.java 70 2005-12-01 17:43:11Z imiller $
  */
-public class EndianSwapper extends Module
-{
-    public EndianSwapper (int memWidth)
-    {
-        this(memWidth, AddressStridePolicy.BYTE_ADDRESSING.getStride());
-    }
-    
-    public EndianSwapper (int memWidth, int strideBits)
-    {
-        // 1 input port and 1 output bus
-        super(1);
+public class EndianSwapper extends Module {
+	public EndianSwapper(int memWidth) {
+		this(memWidth, AddressStridePolicy.BYTE_ADDRESSING.getStride());
+	}
 
-        // The stride limit is based on the maskValue below (easy to
-        // fix) the memory width limit is based on the fact that we
-        // cannot create a simple constant for the mask of over 64
-        // bits. 
-        assert strideBits <= 64 : "Cannot swap in units over 64 bits";
-        assert memWidth <= 64 : "Cannot swap a memory of over 64 bits";
-        
-        Exit exit = makeExit(1);
+	public EndianSwapper(int memWidth, int strideBits) {
+		// 1 input port and 1 output bus
+		super(1);
 
-        getInputPort().setUsed(true);
-        getInputPort().getPeer().setIDLogical(ID.showLogical(this)+"_in");
-        getOutputBus().setUsed(true);
-        getOutputBus().setIDLogical(ID.showLogical(this)+"_out");
+		// The stride limit is based on the maskValue below (easy to
+		// fix) the memory width limit is based on the fact that we
+		// cannot create a simple constant for the mask of over 64
+		// bits.
+		assert strideBits <= 64 : "Cannot swap in units over 64 bits";
+		assert memWidth <= 64 : "Cannot swap a memory of over 64 bits";
 
-        int byteWidth = 1;
-        int maxShiftStage = MathStuff.log2(memWidth);
-        
-        // Width in addressable locations, rounded up to the nearest
-        // power of 2.
-        while (memWidth > (byteWidth * strideBits))
-        {
-            byteWidth <<= 1;
-        }
+		@SuppressWarnings("unused")
+		Exit exit = makeExit(1);
 
-        long maskValue = 0;
-        for (int i=0; i < strideBits; i++)
-        {
-            maskValue <<= 1;
-            maskValue |= 0x1L;
-        }
-        
-        final OrOpMulti orOpMulti = new OrOpMulti();
-        
-        for (int i = 0; i < byteWidth; i++)
-        {
-            long shiftMagnitude = 0;
-            Constant shiftConstant = null;
-            ShiftOp shiftOp = null;
-            
-            if (i < byteWidth/2)
-            {
-                shiftMagnitude = (long)(byteWidth - (2 * i) - 1);
-                shiftConstant = new SimpleConstant((8 * shiftMagnitude), maxShiftStage, false);
-                shiftOp = new RightShiftUnsignedOp(maxShiftStage);
-            }
-            else
-            {
-                shiftMagnitude = (long)(2 * (i + 1) - byteWidth - 1);
-                shiftConstant = new SimpleConstant((8 * shiftMagnitude), maxShiftStage, false);
-                shiftOp = new LeftShiftOp(maxShiftStage);
-            }
-            shiftOp.getLeftDataPort().setBus(getInputPort().getPeer());
-            shiftOp.getRightDataPort().setBus(shiftConstant.getValueBus());
-            addComponent(shiftConstant);
-            addComponent(shiftOp);
-            
-//             long mask = 0xFFL << (8 * i);
-            // This will fail if (strideBits * i-1) > 64
-            long mask = maskValue << (strideBits * i);
-            Constant maskConst = new SimpleConstant(mask, memWidth, false);
-            AndOp andOp = new AndOp();
-            andOp.getLeftDataPort().setBus(maskConst.getValueBus());
-            andOp.getRightDataPort().setBus(shiftOp.getResultBus());
-            addComponent(maskConst);
-            addComponent(andOp);
+		getInputPort().setUsed(true);
+		getInputPort().getPeer().setIDLogical(ID.showLogical(this) + "_in");
+		getOutputBus().setUsed(true);
+		getOutputBus().setIDLogical(ID.showLogical(this) + "_out");
 
-            orOpMulti.makeDataPort().setBus(andOp.getResultBus());
-        }
-        addComponent(orOpMulti);
-        getOutputBus().getPeer().setBus(orOpMulti.getResultBus());
-    }
-    
-    public Port getInputPort ()
-    {
-        return (Port)getDataPorts().iterator().next();
-    }
-    
-    public Bus getOutputBus ()
-    {
-        return (Bus)getDataBuses().iterator().next();
-    }
+		int byteWidth = 1;
+		int maxShiftStage = MathStuff.log2(memWidth);
 
-    /**
-     * Replace a component with another.
-     * the user must take care of dependencies
-     *
-     * @param remove component to remove
-     * @param insert component to insert
-     *
-     * @return true if successful, else false
-     */
-    public boolean replaceComponent (Component removed, Component inserted)
-    {
-        if (super.removeComponent(removed))
-        {
-            addComponent(inserted);
-            return true;
-        }
-        return false;
-    }
+		// Width in addressable locations, rounded up to the nearest
+		// power of 2.
+		while (memWidth > (byteWidth * strideBits)) {
+			byteWidth <<= 1;
+		}
 
-    public void accept (Visitor vis)
-    {
-        vis.visit(this);
-    }
+		long maskValue = 0;
+		for (int i = 0; i < strideBits; i++) {
+			maskValue <<= 1;
+			maskValue |= 0x1L;
+		}
 
-    public boolean isOpaque ()
-    {
-        return true;
-    }
+		final OrOpMulti orOpMulti = new OrOpMulti();
+
+		for (int i = 0; i < byteWidth; i++) {
+			long shiftMagnitude = 0;
+			Constant shiftConstant = null;
+			ShiftOp shiftOp = null;
+
+			if (i < byteWidth / 2) {
+				shiftMagnitude = (long) (byteWidth - (2 * i) - 1);
+				shiftConstant = new SimpleConstant((8 * shiftMagnitude),
+						maxShiftStage, false);
+				shiftOp = new RightShiftUnsignedOp(maxShiftStage);
+			} else {
+				shiftMagnitude = (long) (2 * (i + 1) - byteWidth - 1);
+				shiftConstant = new SimpleConstant((8 * shiftMagnitude),
+						maxShiftStage, false);
+				shiftOp = new LeftShiftOp(maxShiftStage);
+			}
+			shiftOp.getLeftDataPort().setBus(getInputPort().getPeer());
+			shiftOp.getRightDataPort().setBus(shiftConstant.getValueBus());
+			addComponent(shiftConstant);
+			addComponent(shiftOp);
+
+			// long mask = 0xFFL << (8 * i);
+			// This will fail if (strideBits * i-1) > 64
+			long mask = maskValue << (strideBits * i);
+			Constant maskConst = new SimpleConstant(mask, memWidth, false);
+			AndOp andOp = new AndOp();
+			andOp.getLeftDataPort().setBus(maskConst.getValueBus());
+			andOp.getRightDataPort().setBus(shiftOp.getResultBus());
+			addComponent(maskConst);
+			addComponent(andOp);
+
+			orOpMulti.makeDataPort().setBus(andOp.getResultBus());
+		}
+		addComponent(orOpMulti);
+		getOutputBus().getPeer().setBus(orOpMulti.getResultBus());
+	}
+
+	public Port getInputPort() {
+		return (Port) getDataPorts().iterator().next();
+	}
+
+	public Bus getOutputBus() {
+		return (Bus) getDataBuses().iterator().next();
+	}
+
+	/**
+	 * Replace a component with another. the user must take care of dependencies
+	 * 
+	 * @param remove
+	 *            component to remove
+	 * @param insert
+	 *            component to insert
+	 * 
+	 * @return true if successful, else false
+	 */
+	public boolean replaceComponent(Component removed, Component inserted) {
+		if (super.removeComponent(removed)) {
+			addComponent(inserted);
+			return true;
+		}
+		return false;
+	}
+
+	public void accept(Visitor vis) {
+		vis.visit(this);
+	}
+
+	public boolean isOpaque() {
+		return true;
+	}
 }
-
-    

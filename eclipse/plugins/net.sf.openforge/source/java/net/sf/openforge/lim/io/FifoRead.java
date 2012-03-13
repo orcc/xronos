@@ -217,8 +217,8 @@ public class FifoRead extends FifoAccess implements Visitable {
 		return false;
 	}
 
-	public Set<Reg> getFeedbackPoints() {
-		Set<Reg> feedback = new HashSet<Reg>();
+	public Set<Component> getFeedbackPoints() {
+		Set<Component> feedback = new HashSet<Component>();
 		feedback.addAll(super.getFeedbackPoints());
 		feedback.addAll(this.feedbackPoints);
 

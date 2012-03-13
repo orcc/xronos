@@ -21,26 +21,25 @@
 
 package net.sf.openforge.lim.memory;
 
-import java.lang.Exception;
 
 /**
- * NonRemovableRangeException is an exception thrown when attempting
- * to remove a range from a context in which that range cannot be
- * removed.
- * <p>Example: Removing a range of bytes from a pointer.
- *
- * <p>Created: Fri Aug 29 12:00:39 2003
- *
+ * NonRemovableRangeException is an exception thrown when attempting to remove a
+ * range from a context in which that range cannot be removed.
+ * <p>
+ * Example: Removing a range of bytes from a pointer.
+ * 
+ * <p>
+ * Created: Fri Aug 29 12:00:39 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
- * @version $Id: NonRemovableRangeException.java 2 2005-06-09 20:00:48Z imiller $
+ * @version $Id: NonRemovableRangeException.java 2 2005-06-09 20:00:48Z imiller
+ *          $
  */
-public class NonRemovableRangeException extends Exception 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+@SuppressWarnings("serial")
+public class NonRemovableRangeException extends Exception {
 
-    public NonRemovableRangeException (String msg)
-    {
-        super(msg);
-    }
-    
+	public NonRemovableRangeException(String msg) {
+		super(msg);
+	}
+
 }// NonRemovableRangeException

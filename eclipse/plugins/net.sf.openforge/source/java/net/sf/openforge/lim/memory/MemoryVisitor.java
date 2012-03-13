@@ -23,29 +23,32 @@ package net.sf.openforge.lim.memory;
 
 /**
  * MemoryVisitor is a visitor interface that is used to traverse
- * {@link LogicalMemory LogicalMemories} and their contents.  By
- * traversing the LogicalMemory, {@link Allocation Allocations}, and
- * all implementations of {@link LogicalValue} this visitor can be
- * used to visit all classes responsible for the physical contents of
- * any memory.  The other types of {@link Location Locations} are not
- * necessary in this visitor as they do not define actual contents of
- * memory but rather they define the nature of accesses to the
- * memory.
- *
- * <p>Created: Tue Sep 16 15:24:07 2003
- *
+ * {@link LogicalMemory LogicalMemories} and their contents. By traversing the
+ * LogicalMemory, {@link Allocation Allocations}, and all implementations of
+ * {@link LogicalValue} this visitor can be used to visit all classes
+ * responsible for the physical contents of any memory. The other types of
+ * {@link Location Locations} are not necessary in this visitor as they do not
+ * define actual contents of memory but rather they define the nature of
+ * accesses to the memory.
+ * 
+ * <p>
+ * Created: Tue Sep 16 15:24:07 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: MemoryVisitor.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface MemoryVisitor 
-{
-    static final String _RCS_ = "$Rev: 2 $";
+public interface MemoryVisitor {
 
-    void visit (LogicalMemory mem);
-    void visit (Allocation alloc);
-    void visit (Pointer ptr);
-    void visit (Record rec);
-    void visit (Scalar sclr);
-    void visit (Slice slice);
-    
+	void visit(LogicalMemory mem);
+
+	void visit(Allocation alloc);
+
+	void visit(Pointer ptr);
+
+	void visit(Record rec);
+
+	void visit(Scalar sclr);
+
+	void visit(Slice slice);
+
 }// MemoryVisitor

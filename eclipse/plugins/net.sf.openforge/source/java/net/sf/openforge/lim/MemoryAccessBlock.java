@@ -40,7 +40,6 @@ import net.sf.openforge.lim.memory.*;
  */
 public abstract class MemoryAccessBlock extends Block implements LValue
 {
-    private static final String _RCS_ = "$Rev: 70 $";
 
     /** Memory access operation */
     private MemoryAccess memoryAccess;

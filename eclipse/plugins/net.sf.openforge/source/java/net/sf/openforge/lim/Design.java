@@ -327,7 +327,7 @@ public class Design extends ID implements Visitable,Cloneable
      * reset, and non-blockio pins.
      *
      * @return a value of type 'Collection'
-     * @deprecated
+     * 
      */
     public Collection getInputPins ()
     {
@@ -339,7 +339,7 @@ public class Design extends ID implements Visitable,Cloneable
      * result, and non-blockio pins.
      *
      * @return a value of type 'Collection'
-     * @deprecated
+     * 
      */
     public Collection getOutputPins ()
     {
@@ -1095,7 +1095,7 @@ public class Design extends ID implements Visitable,Cloneable
 
         public Collection<Component> getComponents ()
         {
-            LinkedHashSet comps = new LinkedHashSet(super.getComponents());
+            LinkedHashSet<Component> comps = new LinkedHashSet<Component>(super.getComponents());
             comps.remove(getInBuf());
             comps.remove(getOutBufs());
             return comps;

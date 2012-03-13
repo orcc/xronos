@@ -61,7 +61,7 @@ public abstract class Module extends Component implements Cloneable
     private boolean consumesReset = false;
 
     /** A Set of components which can break feedback paths. */
-    private Set feedbackPoints = Collections.EMPTY_SET;
+    private Set<Component> feedbackPoints = Collections.emptySet();
 
     /** The label used for OptionDB look-ups. May be null if no search
      * scope has been specifically set for this module */
@@ -239,7 +239,7 @@ public abstract class Module extends Component implements Cloneable
      *
      * @return the set of identified feedback points.
      */
-    public Set getFeedbackPoints ()
+    public Set<Component> getFeedbackPoints ()
     {
         return Collections.unmodifiableSet(this.feedbackPoints);
     }

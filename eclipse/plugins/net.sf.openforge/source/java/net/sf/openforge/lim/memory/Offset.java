@@ -21,198 +21,182 @@
 
 package net.sf.openforge.lim.memory;
 
-import net.sf.openforge.app.EngineThread;
 
 /**
- * Offset is an implementation of {@link Location} which describes a
- * memory region in terms of an offset from an existing {@link Location}.
- * The offset itself is decscribed in terms of the base {@link Location}
- * and an increment that represents a number of addressable units
- * past the base {@link Location}.
- *
+ * Offset is an implementation of {@link Location} which describes a memory
+ * region in terms of an offset from an existing {@link Location}. The offset
+ * itself is decscribed in terms of the base {@link Location} and an increment
+ * that represents a number of addressable units past the base {@link Location}.
+ * 
  * @version $Id: Offset.java 70 2005-12-01 17:43:11Z imiller $
  */
-public class Offset extends Variable
-{
-    /** Revision */
-    private static final String _RCS_ = "$Rev: 70 $";
+public class Offset extends Variable {
 
-    /** The location from which this offset is calculated */
-    private Location baseLocation;
+	/** The location from which this offset is calculated */
+	private Location baseLocation;
 
-    /** The number of addressable units past the start of the base
-     * location */ 
-    private int delta;
+	/**
+	 * The number of addressable units past the start of the base location
+	 */
+	private int delta;
 
+	public boolean equals(Object object) {
+		if (object instanceof Offset) {
+			final Offset offset = (Offset) object;
+			return (delta == offset.delta
+					&& baseLocation.equals(offset.baseLocation) && offset
+						.getAddressableSize() == getAddressableSize());
+		}
+		return false;
+	}
 
-    public boolean equals (Object object)
-    {
-        if (object instanceof Offset)
-        {
-            final Offset offset = (Offset)object;
-            return (delta == offset.delta
-                && baseLocation.equals(offset.baseLocation)
-                && offset.getAddressableSize() == getAddressableSize());
-        }
-        return false;
-    }
+	public int hashCode() {
+		return baseLocation.hashCode() + delta + getAddressableSize();
+	}
 
-    public int hashCode ()
-    {
-        return baseLocation.hashCode() + delta + getAddressableSize();
-    }
+	/**
+	 * Constructs a new Offset.
+	 * 
+	 * @param size
+	 *            the size in addressable units of the variable; a size of 0
+	 *            indicates that this is a pure location (ie, a pointer)
+	 * @param baseLocation
+	 *            the base location; the delta is applied to the start address
+	 *            of this location to obtain the start of this location
+	 * @param delta
+	 *            the number of addresses past the start of
+	 *            <code>baseLocation</code> at which this location begins; the
+	 *            value may be negative to indicate a backwards offset
+	 * @throws IllegalArgumentException
+	 *             if <code>size</code> is negative
+	 * @throws NullPointerException
+	 *             if <code>baseLocation</code> is null
+	 */
+	Offset(int size, Location baseLocation, int delta) {
+		super(baseLocation.getLogicalMemory(), size);
+		this.baseLocation = baseLocation;
+		this.delta = delta;
+	}
 
+	/**
+	 * Creates a Location that represents an offset from this Location.
+	 * 
+	 * @param size
+	 *            the size in addressable units of the new location
+	 * @param delta
+	 *            the number of addressable units beyond the start of this
+	 *            location at which the offset location begins
+	 * @throws IllegalArgumentException
+	 *             if <code>size</code> is negative
+	 */
+	public Location createOffset(int size, int delta) {
+		return ((size == getAddressableSize()) && (delta == 0) ? this
+				: getBaseLocation().createOffset(size, (getMinDelta() + delta)));
+	}
 
+	/**
+	 * Creates and returns a <code>Location</code> that is a duplicate of this
+	 * one using a given <code>Location</code> as a base.
+	 * 
+	 * @param baseLocation
+	 *            the base for the duplicate location
+	 * @return the duplicated location
+	 */
+	public Location duplicateForBaseLocation(Location baseLocation) {
+		return baseLocation.createOffset(getAddressableSize(), this.delta);
+	}
 
+	/**
+	 * Gets the base location.
+	 * 
+	 * @return the {@link Location location} from which this offset is
+	 *         calculated
+	 */
+	public Location getBaseLocation() {
+		return baseLocation;
+	}
 
-    /**
-     * Constructs a new Offset.
-     *
-     * @param size the size in addressable units of the variable; a
-     * size of 0 indicates that this is a pure location (ie, a
-     * pointer) 
-     * @param baseLocation the base location; the delta is applied to
-     * the start address of this location to obtain the start of this
-     * location 
-     * @param delta the number of addresses past the start of
-     * <code>baseLocation</code> at which this location begins; the
-     * value may be negative to indicate a backwards offset
-     * @throws IllegalArgumentException if <code>size</code> is negative
-     * @throws NullPointerException if <code>baseLocation</code> is null
-     */
-    Offset (int size, Location baseLocation, int delta)
-    {
-        super(baseLocation.getLogicalMemory(), size);
-        this.baseLocation = baseLocation;
-        this.delta = delta;
-    }
+	/**
+	 * Gets the minmum delta.
+	 * 
+	 * @return the minimum number of addressable units beyond the start of the
+	 *         base to which this location refers
+	 */
+	public int getMinDelta() {
+		return this.getMaxDelta();
+	}
 
-    /**
-     * Creates a Location that represents an offset from this Location.
-     *
-     * @param size the size in addressable units of the new location
-     * @param delta the number of addressable units beyond the start
-     * of this location at which the offset location begins
-     * @throws IllegalArgumentException if <code>size</code> is negative
-     */
-    public Location createOffset (int size, int delta)
-    {
-        return ((size == getAddressableSize()) && (delta == 0)
-            ? this
-            : getBaseLocation().createOffset(size, (getMinDelta() + delta)));
-    }
+	/**
+	 * Gets the maximum delta.
+	 * 
+	 * @return the maximum number of addressable units beyond the start of the
+	 *         base to which this location refers
+	 */
+	public int getMaxDelta() {
+		return this.delta;
+	}
 
-    /**
-     * Creates and returns a <code>Location</code> that is a duplicate
-     * of this one using a given <code>Location</code> as a base.
-     *
-     * @param baseLocation the base for the duplicate location
-     * @return the duplicated location
-     */
-    public Location duplicateForBaseLocation (Location baseLocation)
-    {
-        return baseLocation.createOffset(getAddressableSize(), this.delta);
-    }
+	/**
+	 * Returns the LogicalValue that represents the initial value for this
+	 * Location. The LogicalValue is generated by obtaining the LogicalValue for
+	 * the base location and then constructing a new LogicalValue for this
+	 * Location based on the delta.
+	 * 
+	 * @return a LogicalValue representing the initial value of this Location.
+	 * @throws {@link Location#IllegalInitialValueContextException} when the
+	 *         Location context does not have a LogicalValue to represent its
+	 *         initial value.
+	 * @throws an
+	 *             UnsupportedOperationException when byte representation of the
+	 *             LogicalValue is invalid (null, zero length, or greater than
+	 *             the size of a long).
+	 */
+	public LogicalValue getInitialValue() {
+		return getBaseLocation().getInitialValue().getValueAtOffset(delta,
+				getAddressableSize());
+	}
 
-    /**
-     * Gets the base location.
-     *
-     * @return the {@link Location location} from which this offset
-     *         is calculated
-     */
-    public Location getBaseLocation ()
-    {
-        return baseLocation;
-    }
+	/**
+	 * If the specified Location <code>loc</code> is the base location of this
+	 * Offset, then the min/max delta of this Location will be reduced by the
+	 * <code>units</code> parameter, otherwise this method does nothing.
+	 */
+	public void chopStart(Location loc, int units) {
+		super.chopStart(loc, units); // tests for null
+		Location base = getBaseLocation();
+		if (loc.getAbsoluteBase() == base.getAbsoluteBase()
+				&& loc.getAbsoluteMinDelta() == base.getAbsoluteMinDelta()
+				&& loc.getAbsoluteMaxDelta() == loc.getAbsoluteMaxDelta()
+				&& loc.getAddressableSize() == base.getAddressableSize()) {
+			if (units > this.delta) {
+				throw new IllegalArgumentException(
+						"Cannot shift location by more addressable units than in its base");
+			}
+			this.delta = this.delta - units;
+		}
+	}
 
-    /**
-     * Gets the minmum delta.
-     *
-     * @return the minimum number of addressable units beyond the
-     * start of the base to which this location refers
-     */
-    public int getMinDelta ()
-    {
-        return this.getMaxDelta();
-    }
+	public String toString() {
+		StringBuffer buf = new StringBuffer();
+		buf.append("Offset(");
+		buf.append(getAddressableSize());
+		buf.append("B)");
+		buf.append(Integer.toHexString(hashCode()));
+		buf.append("{(");
+		buf.append(getBaseLocation());
+		buf.append(") + ");
+		buf.append(getMaxDelta());
+		buf.append("}");
+		return buf.toString();
+	}
 
-    /**
-     * Gets the maximum delta.
-     *
-     * @return the maximum number of addressable units beyond the
-     * start of the base to which this location refers 
-     */
-    public int getMaxDelta ()
-    {
-        return this.delta;
-    }
+	public String debug() {
+		String ret = "";
+		ret += "<" + getAbsoluteBase().debug() + ">";
+		ret += " min: " + getAbsoluteMinDelta();
+		ret += " max: " + getAbsoluteMaxDelta();
+		ret += " siz: " + getAddressableSize();
+		return ret;
+	}
 
-    /**
-     * Returns the LogicalValue that represents the initial value for
-     * this Location.  The LogicalValue is generated by obtaining the
-     * LogicalValue for the base location and then constructing a new
-     * LogicalValue for this Location based on the delta.
-     *
-     * @return a LogicalValue representing the initial value of this
-     * Location.
-     * @throws {@link Location#IllegalInitialValueContextException}
-     * when the Location context does not have a LogicalValue to
-     * represent its initial value.
-     * @throws an UnsupportedOperationException when byte
-     * representation of the LogicalValue is invalid (null, zero
-     * length, or greater than the size of a long).
-     */
-    public LogicalValue getInitialValue()
-    {
-        return getBaseLocation().getInitialValue().getValueAtOffset(delta, getAddressableSize());
-    }
-
-    /**
-     * If the specified Location <code>loc</code> is the base location
-     * of this Offset, then the min/max delta of this Location will be
-     * reduced by the <code>units</code> parameter, otherwise this
-     * method does nothing.
-     */
-    public void chopStart (Location loc, int units)
-    {
-        super.chopStart(loc, units); // tests for null
-        Location base = getBaseLocation();
-        if (loc.getAbsoluteBase() == base.getAbsoluteBase() &&
-            loc.getAbsoluteMinDelta() == base.getAbsoluteMinDelta() &&
-            loc.getAbsoluteMaxDelta() == loc.getAbsoluteMaxDelta() &&
-            loc.getAddressableSize() == base.getAddressableSize())
-        {
-            if (units > this.delta)
-            {
-                throw new IllegalArgumentException("Cannot shift location by more addressable units than in its base");
-            }
-            this.delta = this.delta - units;
-        }
-    }
-    
-    public String toString ()
-    {
-        StringBuffer buf = new StringBuffer();
-        buf.append("Offset(");
-        buf.append(getAddressableSize());
-        buf.append("B)");
-        buf.append(Integer.toHexString(hashCode()));
-        buf.append("{(");
-        buf.append(getBaseLocation());
-        buf.append(") + ");
-        buf.append(getMaxDelta());
-        buf.append("}");
-        return buf.toString();
-    }
-
-    public String debug ()
-    {
-        String ret = "";
-        ret += "<" + getAbsoluteBase().debug() +">";
-        ret += " min: " + getAbsoluteMinDelta();
-        ret += " max: " + getAbsoluteMaxDelta();
-        ret += " siz: " + getAddressableSize();
-        return ret;
-    }
-    
 }

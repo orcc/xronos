@@ -21,11 +21,32 @@
 
 package net.sf.openforge.lim.memory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
-import net.sf.openforge.app.*;
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.op.*;
+import net.sf.openforge.app.OptionRegistry;
+import net.sf.openforge.lim.And;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.EncodedMux;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.Not;
+import net.sf.openforge.lim.Or;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Reg;
+import net.sf.openforge.lim.UnexpectedVisitationException;
+import net.sf.openforge.lim.Visitor;
+import net.sf.openforge.lim.op.Constant;
+import net.sf.openforge.lim.op.LeftShiftOp;
+import net.sf.openforge.lim.op.MultiplyOp;
+import net.sf.openforge.lim.op.OrOpMulti;
+import net.sf.openforge.lim.op.RightShiftUnsignedOp;
+import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.lim.op.SubtractOp;
 
 /**
  * StructuralMemory is a Module which contains a structural representation of a
@@ -55,11 +76,11 @@ import net.sf.openforge.lim.op.*;
  * @version $Id: StructuralMemory.java 536 2007-11-19 22:10:55Z imiller $
  */
 public class StructuralMemory extends Module {
-	private static final String _RCS_ = "$Rev: 536 $";
 
 	/**
 	 * The width of the Bus used to represent the 1-hot encoded bank selects.
 	 */
+	@SuppressWarnings("unused")
 	private static final int SELECT_BITS = 9;
 
 	/**
@@ -79,17 +100,17 @@ public class StructuralMemory extends Module {
 	private List<MemoryBank> banks = new ArrayList<MemoryBank>();
 
 	/** A 1-bit Constant representing the value 0. */
-	private Constant zero = new SimpleConstant(0, 1);
+	private Constant zero = new SimpleConstant(0, 1, false);
 	/**
 	 * A Constant representing 0, with the same width as the data path
 	 */
 	private Constant dataZero;
 
 	/** Map of MemoryPort -> StructuralMemoryPort */
-	private Map memPorts = new LinkedHashMap();
+	private Map<LogicalMemoryPort, StructuralMemoryPort> memPorts = new LinkedHashMap<LogicalMemoryPort, StructuralMemoryPort>();
 
 	/** Map of StructuralMemoryPort to List of MemoryBank.BankPort */
-	private Map portToBankPorts = new LinkedHashMap();
+	private Map<StructuralMemoryPort, List<MemoryBank.BankPort>> portToBankPorts = new LinkedHashMap<StructuralMemoryPort, List<MemoryBank.BankPort>>();
 
 	/**
 	 * The number of lsb address bits that are to be used in selecting which
@@ -122,8 +143,8 @@ public class StructuralMemory extends Module {
 	 * location is a byte.
 	 */
 	public StructuralMemory(int memoryWidth, int memDepth, int bankWidth,
-			List memoryPorts, String baseName, MemoryImplementation impl,
-			int maxAddressWidth) {
+			List<LogicalMemoryPort> memoryPorts, String baseName,
+			MemoryImplementation impl, int maxAddressWidth) {
 		this(memoryWidth, memDepth, bankWidth, memoryPorts, baseName, impl,
 				AddressStridePolicy.BYTE_ADDRESSING, maxAddressWidth);
 	}
@@ -148,9 +169,11 @@ public class StructuralMemory extends Module {
 	 *            is the AddressStridePolicy in effect for this memory which
 	 *            determines the number of bits per address.
 	 */
+
 	public StructuralMemory(int memoryWidth, int memDepth, int bankWidth,
-			List memoryPorts, String baseName, MemoryImplementation impl,
-			AddressStridePolicy addrPolicy, int maxAddressWidth) {
+			List<LogicalMemoryPort> memoryPorts, String baseName,
+			MemoryImplementation impl, AddressStridePolicy addrPolicy,
+			int maxAddressWidth) {
 		super();
 
 		final int bitsPerAddress = addrPolicy.getStride();
@@ -193,7 +216,8 @@ public class StructuralMemory extends Module {
 			bankMask <<= 1;
 			bankMask |= 1L;
 		}
-		this.bankWidthConst = new SimpleConstant(bankMask, this.bankWidth);
+		this.bankWidthConst = new SimpleConstant(bankMask, this.bankWidth,
+				false);
 		addComponent(bankWidthConst);
 
 		this.DATA_SHIFT_STAGES = log2((double) memoryWidth);
@@ -219,10 +243,10 @@ public class StructuralMemory extends Module {
 		getClockPort().setUsed(true);
 		getClockPort().getPeer().setUsed(true);
 		getClockPort().getPeer().setIDLogical("CLK");
-
+		@SuppressWarnings("unused")
 		final Exit exit = makeExit(0, Exit.DONE);
 
-		this.dataZero = new SimpleConstant(0, memoryWidth);
+		this.dataZero = new SimpleConstant(0, memoryWidth, false);
 		addComponent(zero);
 		addComponent(dataZero);
 
@@ -239,8 +263,7 @@ public class StructuralMemory extends Module {
 		//
 		// Create the logic needed for each access port of the memory.
 		//
-		for (Iterator iter = memoryPorts.iterator(); iter.hasNext();) {
-			LogicalMemoryPort memPort = (LogicalMemoryPort) iter.next();
+		for (LogicalMemoryPort memPort : memoryPorts) {
 			StructuralMemoryPort structMemPort = createInterface(memPort,
 					memoryWidth);
 
@@ -315,7 +338,7 @@ public class StructuralMemory extends Module {
 					shiftedDataIn = dataZero.getValueBus();
 
 				// If only 1 it is always selected.
-				Constant select = new SimpleConstant(1, 1);
+				Constant select = new SimpleConstant(1, 1, false);
 				addComponent(select);
 				selectBus = select.getValueBus();
 			}
@@ -327,7 +350,7 @@ public class StructuralMemory extends Module {
 			final Bus enableBus = createEnableBus(structMemPort);
 
 			// Connect up the ports/buses of each bank.
-			List bankPorts = new ArrayList();
+			List<MemoryBank.BankPort> bankPorts = new ArrayList<MemoryBank.BankPort>();
 			for (int i = 0; i < bankCount; i++) {
 				MemoryBank bank = (MemoryBank) banks.get(i);
 				MemoryBank.BankPort bankPort = bank.createPort(
@@ -475,8 +498,8 @@ public class StructuralMemory extends Module {
 	/**
 	 * Returns a List of all the structural memory ports for this memory.
 	 */
-	public List getStructuralMemoryPorts() {
-		return new LinkedList(this.memPorts.values());
+	public List<StructuralMemoryPort> getStructuralMemoryPorts() {
+		return new LinkedList<StructuralMemoryPort>(this.memPorts.values());
 	}
 
 	/**
@@ -491,9 +514,10 @@ public class StructuralMemory extends Module {
 
 		// Remove the interface allocated on the MemoryBank based on
 		// the given memory port.
-		List bankPorts = (List) this.portToBankPorts.get(structPort);
-		for (Iterator iter = bankPorts.iterator(); iter.hasNext();) {
-			((MemoryBank.BankPort) iter.next()).remove();
+		List<MemoryBank.BankPort> bankPorts = this.portToBankPorts
+				.get(structPort);
+		for (MemoryBank.BankPort mb : bankPorts) {
+			mb.remove();
 		}
 
 		this.memPorts.remove(port);
@@ -559,7 +583,7 @@ public class StructuralMemory extends Module {
 			// int addrStages =
 			// (int)Math.ceil(Math.log(this.addrShiftBits)/Math.log(2.0));
 			final Constant addrConst = new SimpleConstant(this.addrShiftBits,
-					32);
+					32, false);
 			final int stages = addrConst.getValueBus().getValue().getSize();
 			final RightShiftUnsignedOp addrShift = new RightShiftUnsignedOp(
 					stages);
@@ -618,7 +642,7 @@ public class StructuralMemory extends Module {
 		final int log2_width = log2(locationWidth);
 		if ((2 << log2_width) == locationWidth) {
 			final Constant powerConstant = new SimpleConstant(
-					(long) log2_width, 32);
+					(long) log2_width, 32, false);
 			final int stages = powerConstant.getValueBus().getValue().getSize();
 			LeftShiftOp addrShift = new LeftShiftOp(stages);
 			addrShift.getLeftDataPort().setBus(addrBus);
@@ -628,7 +652,7 @@ public class StructuralMemory extends Module {
 			shiftMagnitude = addrShift.getResultBus();
 		} else {
 			final Constant locSizeConstant = new SimpleConstant(locationWidth,
-					32);
+					32, false);
 			final MultiplyOp multiply = new MultiplyOp(32);
 			multiply.getLeftDataPort().setBus(addrBus);
 			multiply.getRightDataPort().setBus(locSizeConstant.getValueBus());
@@ -768,7 +792,7 @@ public class StructuralMemory extends Module {
 		final int log2_width = log2(locationWidth);
 		if ((2 << log2_width) == locationWidth) {
 			final Constant powerConstant = new SimpleConstant(
-					(long) log2_width, 32);
+					(long) log2_width, 32, false);
 			final int stages = powerConstant.getValueBus().getValue().getSize();
 			LeftShiftOp addrShift = new LeftShiftOp(stages);
 			addrShift.getLeftDataPort().setBus(subtract.getResultBus());
@@ -778,7 +802,7 @@ public class StructuralMemory extends Module {
 			shiftMagnitude = addrShift.getResultBus();
 		} else {
 			final Constant locSizeConstant = new SimpleConstant(locationWidth,
-					32);
+					32, false);
 			final MultiplyOp multiply = new MultiplyOp(32);
 			multiply.getLeftDataPort().setBus(subtract.getResultBus());
 			multiply.getRightDataPort().setBus(locSizeConstant.getValueBus());
@@ -911,7 +935,7 @@ public class StructuralMemory extends Module {
 			// locations has been reached.
 			final int magValue = log2(locationsPerBank);
 			assert magValue > 0;
-			final Constant addrShiftMagnitude = new SimpleConstant(magValue, 32);
+			final Constant addrShiftMagnitude = new SimpleConstant(magValue, 32, false);
 			final RightShiftUnsignedOp selAddrShift = new RightShiftUnsignedOp(
 					log2(magValue) + 1);
 			selAddrShift.getLeftDataPort().setBus(address);
@@ -1035,7 +1059,7 @@ public class StructuralMemory extends Module {
 			value <<= 1;
 			value |= 1;
 		}
-		Constant constant = new SimpleConstant(value, 8);
+		Constant constant = new SimpleConstant(value, 8, false);
 		addComponent(constant);
 		return constant;
 	}
@@ -1058,17 +1082,13 @@ public class StructuralMemory extends Module {
 	 */
 	private boolean removeByteLaneShifter(LogicalMemoryPort memPort,
 			int locationsPerLine) {
-		for (Iterator riter = memPort.getReadAccesses().iterator(); riter
-				.hasNext();) {
-			LValue lvalue = (LValue) riter.next();
+		for (LValue lvalue : memPort.getReadAccesses()) {
 			if (locationsPerLine != lvalue.getAccessLocationCount()) {
 				return false;
 			}
 		}
 
-		for (Iterator witer = memPort.getWriteAccesses().iterator(); witer
-				.hasNext();) {
-			LValue lvalue = (LValue) witer.next();
+		for (LValue lvalue : memPort.getWriteAccesses()) {
 			if (locationsPerLine != lvalue.getAccessLocationCount()) {
 				return false;
 			}
@@ -1124,7 +1144,7 @@ public class StructuralMemory extends Module {
 			size = -1;
 			break;
 		}
-		return new SimpleConstant(size, LogicalMemory.SIZE_WIDTH);
+		return new SimpleConstant(size, LogicalMemory.SIZE_WIDTH, false);
 	}
 
 	/**

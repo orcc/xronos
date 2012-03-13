@@ -22,17 +22,17 @@
 package net.sf.openforge.lim.memory;
 
 /**
- * MemoryVisitable is a lightweight interface implemented by any node
- * which can be visited by the {@link MemoryVisitor}
- *
- * <p>Created: Tue Sep 16 15:26:08 2003
- *
+ * MemoryVisitable is a lightweight interface implemented by any node which can
+ * be visited by the {@link MemoryVisitor}
+ * 
+ * <p>
+ * Created: Tue Sep 16 15:26:08 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: MemoryVisitable.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface MemoryVisitable 
-{
+public interface MemoryVisitable {
 
-    void accept (MemoryVisitor vis);
-    
+	void accept(MemoryVisitor vis);
+
 }// MemoryVisitable

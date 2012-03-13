@@ -21,280 +21,265 @@
 
 package net.sf.openforge.lim.memory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Visitor;
 import net.sf.openforge.lim.op.Constant;
 
 /**
- * LocationConstant is a {@link MemoryConstant} whose value is
- * deferred ({@link #isLocked} is false) which is based on
- * accessing a particular {@link Location}.  The actual value of
- * this constant will be set once the memory map is fixed and the
- * {@link #lock} method is called.
- *
- * <p>Created: Fri Feb 28 15:49:00 2003
- *
+ * LocationConstant is a {@link MemoryConstant} whose value is deferred (
+ * {@link #isLocked} is false) which is based on accessing a particular
+ * {@link Location}. The actual value of this constant will be set once the
+ * memory map is fixed and the {@link #lock} method is called.
+ * 
+ * <p>
+ * Created: Fri Feb 28 15:49:00 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: LocationConstant.java 568 2008-03-31 17:23:31Z imiller $
  */
-public class LocationConstant extends MemoryConstant implements LocationValueSource
-{
-    private static final String _RCS_ = "$Rev:2 $";
+public class LocationConstant extends MemoryConstant implements
+		LocationValueSource {
 
-    /** The location that this constant is based upon. */
-    private Location location;
+	/** The location that this constant is based upon. */
+	private Location location;
 
-    /** The state of this constant, when set to true the ByteRep array
-     * will be populated with fixed numerical values corresponding to
-     * the address of the location referenced. */
-    private boolean isLocked = false;
+	/**
+	 * The state of this constant, when set to true the ByteRep array will be
+	 * populated with fixed numerical values corresponding to the address of the
+	 * location referenced.
+	 */
+	private boolean isLocked = false;
 
-    /** The addressable unit representation of this constant, whose endianness
-     * corresponds to the endianness of the compilation.  Initially
-     * this bundle is populated with AURep objects whose value is 0
-     * and isLocked is false.  After this constant is locked this
-     * bundle is repopulated with locked and numerically correct
-     * values. */
-    private AURepBundle rep;
-    
-    /*
-    public LocationConstant (Location loc, int width)
-    {
-        this(loc, width, loc.getAbsoluteBase().getLogicalMemory().getAddressStridePolicy());
-    }
-    */
-    /**
-     * Creates a new LocationConstant which represents the numerical
-     * address of the given Location in memory and has the specified
-     * width in bits.
-     *
-     * @param loc the target Location.
-     * @param width the int bitwidth.
-     */
-    public LocationConstant (Location loc, int width, AddressStridePolicy policy)
-    {
-        super(width, false); // unsigned.  Addresses are always unsigned
-        setTarget(loc);
-        //int repLength = (int)Math.ceil(((double)width) / 8.0);
-        int repLength = (int)Math.ceil(((double)width) / policy.getStride());
-        assert repLength > 0;
-        AddressableUnit[] aurep = new AddressableUnit[repLength];
-        for (int i=0; i < repLength; i++)
-        {
-            // Set each byte to 'indeterminate' for now.
-            aurep[i] = new AddressableUnit(0, false);
-        }
-        this.rep = new AURepBundle(aurep, policy.getStride()); 
-        
-        pushValuesForward();
-    }
+	/**
+	 * The addressable unit representation of this constant, whose endianness
+	 * corresponds to the endianness of the compilation. Initially this bundle
+	 * is populated with AURep objects whose value is 0 and isLocked is false.
+	 * After this constant is locked this bundle is repopulated with locked and
+	 * numerically correct values.
+	 */
+	private AURepBundle rep;
 
-    /**
-     * Returns a single element, non modifiable list containing this
-     * constant as its only constituent is itself.
-     *
-     * @return a List containing only this constant
-     */
-    public List getConstituents ()
-    {
-        return Collections.unmodifiableList(Collections.singletonList(this));
-    }
+	/*
+	 * public LocationConstant (Location loc, int width) { this(loc, width,
+	 * loc.getAbsoluteBase().getLogicalMemory().getAddressStridePolicy()); }
+	 */
+	/**
+	 * Creates a new LocationConstant which represents the numerical address of
+	 * the given Location in memory and has the specified width in bits.
+	 * 
+	 * @param loc
+	 *            the target Location.
+	 * @param width
+	 *            the int bitwidth.
+	 */
+	public LocationConstant(Location loc, int width, AddressStridePolicy policy) {
+		super(width, false); // unsigned. Addresses are always unsigned
+		setTarget(loc);
+		// int repLength = (int)Math.ceil(((double)width) / 8.0);
+		int repLength = (int) Math.ceil(((double) width) / policy.getStride());
+		assert repLength > 0;
+		AddressableUnit[] aurep = new AddressableUnit[repLength];
+		for (int i = 0; i < repLength; i++) {
+			// Set each byte to 'indeterminate' for now.
+			aurep[i] = new AddressableUnit(0, false);
+		}
+		this.rep = new AURepBundle(aurep, policy.getStride());
 
-    /**
-     * Returns a single element non modifiable set containing only
-     * this object. 
-     *
-     * @return a singleton Set containing this object.
-     */
-    public Set getContents ()
-    {
-        return Collections.unmodifiableSet(Collections.singleton(this));
-    }
-    
-    /**
-     * Returns a bundle of AURep objects which define the address of
-     * the location which this constant represents.  The values are
-     * marked indeterminate until this constant is locked.  The value 
-     * ordering returned depends on the endianness of the compilation.
-     */
-    public AURepBundle getRepBundle ()
-    {
-        return this.rep;
-    }
-    
-    /**
-     * Retrieves the {@link Location} that this constant is based
-     * upon.
-     */
-    public Location getTarget ()
-    {
-        return this.location;
-    }
+		pushValuesForward();
+	}
 
-    /**
-     * Modifies the location to which this constant points and removes
-     * this LocationConstant from the old logical memory and adds it
-     * to the new logical memory.
-     *
-     * @param newLoc a non-null 'Location'
-     * @throws IllegalArgumentException if newLoc is null
-     * @throws UnsupportedOperationException if this constant is locked.
-     */
-    public void setTarget (Location newLoc)
-    {
-        if (newLoc == null)
-            throw new IllegalArgumentException("Cannot change target location to null");
-        if (this.isLocked())
-            throw new UnsupportedOperationException("Cannot change target location of a locked constant");
+	/**
+	 * Returns a single element, non modifiable list containing this constant as
+	 * its only constituent is itself.
+	 * 
+	 * @return a List containing only this constant
+	 */
+	public List getConstituents() {
+		return Collections.unmodifiableList(Collections.singletonList(this));
+	}
 
-        removeFromMemory();
-        this.location = newLoc;
-        newLoc.getLogicalMemory().addLocationConstant(this);
-    }
-    
-    /**
-     * Derives, if necessary, the numeric value represented
-     * by this constant.
-     */
-    public void lock ()
-    {
-        this.isLocked = true;
-        final Location location = getTarget();
+	/**
+	 * Returns a single element non modifiable set containing only this object.
+	 * 
+	 * @return a singleton Set containing this object.
+	 */
+	public Set getContents() {
+		return Collections.unmodifiableSet(Collections.singleton(this));
+	}
 
-        final long addr = location.getLogicalMemory().getAddress(location);
+	/**
+	 * Returns a bundle of AURep objects which define the address of the
+	 * location which this constant represents. The values are marked
+	 * indeterminate until this constant is locked. The value ordering returned
+	 * depends on the endianness of the compilation.
+	 */
+	public AURepBundle getRepBundle() {
+		return this.rep;
+	}
 
-        // The address is in 'little endian' format, so if this is a
-        // big endian compilation, byte swap.
-        AddressableUnit[] fixedRep = new AddressableUnit[this.rep.getLength()];
-        int bitsPerUnit = this.rep.getBitsPerUnit();
-        long mask = 0;
-        for (int i=0; i < bitsPerUnit; i++)
-            mask = (mask << 1) | 1L;
-        // first, populate in little endian order
-        for (int i=0; i < fixedRep.length; i++)
-        {
-            //fixedRep[i] = new AURep((byte)((addr >>> (8 * i)) & 0xFF));
-            fixedRep[i] = new AddressableUnit( (int)((addr >>> (bitsPerUnit*i)) & mask), true); 
-        }
-        if (isBigEndian())
-        {
-            fixedRep = swapEndian(fixedRep);
-        }
-        
-        this.rep = new AURepBundle(fixedRep, this.rep.getBitsPerUnit());
+	/**
+	 * Retrieves the {@link Location} that this constant is based upon.
+	 */
+	public Location getTarget() {
+		return this.location;
+	}
 
-        pushValuesForward();
-    }
+	/**
+	 * Modifies the location to which this constant points and removes this
+	 * LocationConstant from the old logical memory and adds it to the new
+	 * logical memory.
+	 * 
+	 * @param newLoc
+	 *            a non-null 'Location'
+	 * @throws IllegalArgumentException
+	 *             if newLoc is null
+	 * @throws UnsupportedOperationException
+	 *             if this constant is locked.
+	 */
+	public void setTarget(Location newLoc) {
+		if (newLoc == null)
+			throw new IllegalArgumentException(
+					"Cannot change target location to null");
+		if (this.isLocked())
+			throw new UnsupportedOperationException(
+					"Cannot change target location of a locked constant");
 
-    /**
-     * Returns true if this symbolic constant has been resolved to a
-     * true constant.
-     */
-    public boolean isLocked ()
-    {
-        return this.isLocked;
-    }
+		removeFromMemory();
+		this.location = newLoc;
+		newLoc.getLogicalMemory().addLocationConstant(this);
+	}
 
-    /**
-     * Remove the underlying {@link LocationConstant} as a reference of
-     * the targetted memory.
-     */
-    public void removeFromMemory ()
-    {
-        if (getTarget() != null)
-        {
-            getTarget().getLogicalMemory().removeLocationConstant(this);
-        }
-    }
+	/**
+	 * Derives, if necessary, the numeric value represented by this constant.
+	 */
+	public void lock() {
+		this.isLocked = true;
+		final Location location = getTarget();
 
-    /**
-     * returns true
-     */
-    public boolean isPointerValue ()
-    {
-        return true;
-    }
+		final long addr = location.getLogicalMemory().getAddress(location);
 
-    /**
-     * Tests whether the given constant has the same numerical value,
-     * or will have the same value if it is a deferred constant. Here
-     * we return false is it isn't locked, otherwise call Constant's
-     * isSameValue()
-     *
-     * <p>requires: none
-     * <p>modifies: none
-     * <p>effects: returns true if the constant will ultimately
-     * resolve to the same numerical value as this Constant.
-     *
-     * @param constant a Constant, may be null
-     * @return true if the given constant is not null and has the same
-     * numerical value.
-     */
-    public boolean isSameValue (Constant constant)
-    {
-        // if we are locked, abdicate responsibility up the line
-        if(isLocked())
-        {
-            return super.isSameValue(constant);
-        }
+		// The address is in 'little endian' format, so if this is a
+		// big endian compilation, byte swap.
+		AddressableUnit[] fixedRep = new AddressableUnit[this.rep.getLength()];
+		int bitsPerUnit = this.rep.getBitsPerUnit();
+		long mask = 0;
+		for (int i = 0; i < bitsPerUnit; i++)
+			mask = (mask << 1) | 1L;
+		// first, populate in little endian order
+		for (int i = 0; i < fixedRep.length; i++) {
+			// fixedRep[i] = new AURep((byte)((addr >>> (8 * i)) & 0xFF));
+			fixedRep[i] = new AddressableUnit(
+					(int) ((addr >>> (bitsPerUnit * i)) & mask), true);
+		}
+		if (isBigEndian()) {
+			fixedRep = swapEndian(fixedRep);
+		}
 
-        // if our to-be-compared-to constant is not a pointer, fail
-        if(!constant.isPointerValue())
-        {
-            return false;
-        }
+		this.rep = new AURepBundle(fixedRep, this.rep.getBitsPerUnit());
 
-        // compare-to-be is locked? we are not
-        if(constant.isLocked())
-        {
-            return false;
-        }
+		pushValuesForward();
+	}
 
-        
-        // get starting locations
-        final Location thisLoc = getTarget();
-        final Location thatLoc=((LocationConstant)constant).getTarget();
+	/**
+	 * Returns true if this symbolic constant has been resolved to a true
+	 * constant.
+	 */
+	public boolean isLocked() {
+		return this.isLocked;
+	}
 
-        if(thisLoc.getAbsoluteBase()!=thatLoc.getAbsoluteBase())
-        {
-            return false;
-        }
-        
-        // get this min/max/size
-        final int thisAbsMinDelta=thisLoc.getAbsoluteMinDelta();
-        final int thisAbsMaxDelta=thisLoc.getAbsoluteMaxDelta();
-        final int thisSize=getValueBus().getSize();
+	/**
+	 * Remove the underlying {@link LocationConstant} as a reference of the
+	 * targetted memory.
+	 */
+	public void removeFromMemory() {
+		if (getTarget() != null) {
+			getTarget().getLogicalMemory().removeLocationConstant(this);
+		}
+	}
 
-        // get that min/max/size
-        final int thatAbsMinDelta=thatLoc.getAbsoluteMinDelta();
-        final int thatAbsMaxDelta=thatLoc.getAbsoluteMaxDelta();
-        final int thatSize=constant.getValueBus().getSize();
+	/**
+	 * returns true
+	 */
+	public boolean isPointerValue() {
+		return true;
+	}
 
-        // all must match
-        return((thisAbsMinDelta==thatAbsMinDelta)&&
-            (thisAbsMaxDelta==thatAbsMaxDelta)&&
-            (thisSize==thatSize));            
-        
-    }
+	/**
+	 * Tests whether the given constant has the same numerical value, or will
+	 * have the same value if it is a deferred constant. Here we return false is
+	 * it isn't locked, otherwise call Constant's isSameValue()
+	 * 
+	 * <p>
+	 * requires: none
+	 * <p>
+	 * modifies: none
+	 * <p>
+	 * effects: returns true if the constant will ultimately resolve to the same
+	 * numerical value as this Constant.
+	 * 
+	 * @param constant
+	 *            a Constant, may be null
+	 * @return true if the given constant is not null and has the same numerical
+	 *         value.
+	 */
+	public boolean isSameValue(Constant constant) {
+		// if we are locked, abdicate responsibility up the line
+		if (isLocked()) {
+			return super.isSameValue(constant);
+		}
 
-    /**
-     * Accept method for the Visitor interface
-     */ 
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
-    
-    public Object clone () throws CloneNotSupportedException
-    {
-        LocationConstant clone = (LocationConstant)super.clone();
-        if (clone.getTarget() != null)
-        {
-            LogicalMemory mem = clone.getTarget().getLogicalMemory();
-            mem.addLocationConstant(clone);
-        }
-        return clone;
-    }
-    
+		// if our to-be-compared-to constant is not a pointer, fail
+		if (!constant.isPointerValue()) {
+			return false;
+		}
+
+		// compare-to-be is locked? we are not
+		if (constant.isLocked()) {
+			return false;
+		}
+
+		// get starting locations
+		final Location thisLoc = getTarget();
+		final Location thatLoc = ((LocationConstant) constant).getTarget();
+
+		if (thisLoc.getAbsoluteBase() != thatLoc.getAbsoluteBase()) {
+			return false;
+		}
+
+		// get this min/max/size
+		final int thisAbsMinDelta = thisLoc.getAbsoluteMinDelta();
+		final int thisAbsMaxDelta = thisLoc.getAbsoluteMaxDelta();
+		final int thisSize = getValueBus().getSize();
+
+		// get that min/max/size
+		final int thatAbsMinDelta = thatLoc.getAbsoluteMinDelta();
+		final int thatAbsMaxDelta = thatLoc.getAbsoluteMaxDelta();
+		final int thatSize = constant.getValueBus().getSize();
+
+		// all must match
+		return ((thisAbsMinDelta == thatAbsMinDelta)
+				&& (thisAbsMaxDelta == thatAbsMaxDelta) && (thisSize == thatSize));
+
+	}
+
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
+
+	public Object clone() throws CloneNotSupportedException {
+		LocationConstant clone = (LocationConstant) super.clone();
+		if (clone.getTarget() != null) {
+			LogicalMemory mem = clone.getTarget().getLogicalMemory();
+			mem.addLocationConstant(clone);
+		}
+		return clone;
+	}
+
 }// LocationConstant

@@ -21,43 +21,45 @@
 
 package net.sf.openforge.lim.memory;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.HeapRead;
 
 /**
- * ArrayLengthRead is a specific type of heap read that targets the
- * 'length' field of an accessed array.
- *
- * <p>Created: Wed Nov  6 13:23:52 2002
- *
+ * ArrayLengthRead is a specific type of heap read that targets the 'length'
+ * field of an accessed array.
+ * 
+ * <p>
+ * Created: Wed Nov 6 13:23:52 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: ArrayLengthRead.java 70 2005-12-01 17:43:11Z imiller $
  */
-public class ArrayLengthRead extends HeapRead 
-{
-    private static final String _RCS_ = "$Rev: 70 $";
+public class ArrayLengthRead extends HeapRead {
 
-    /**
-     * Constructs a new node which retrieves the length fied from the
-     * array identified by 'className' (which is the arrays type)
-     *
-     * @param memRead the actual {@link MemoryRead} contained in this
-     * module that is used to access the memory.
-     * @param className a value of type 'String'
-     * @param byteCount, the number of bytes read.
-     * @param maxAddressWidth the pre-optimized number of bits in the address bus
-     */
-    public ArrayLengthRead (int byteCount, int maxAddressWidth)
-    {
-        super(byteCount, maxAddressWidth, 0, false, AddressStridePolicy.BYTE_ADDRESSING);
-        throw new UnsupportedOperationException("reimplement me");
-    }
+	/**
+	 * Constructs a new node which retrieves the length fied from the array
+	 * identified by 'className' (which is the arrays type)
+	 * 
+	 * @param memRead
+	 *            the actual {@link MemoryRead} contained in this module that is
+	 *            used to access the memory.
+	 * @param className
+	 *            a value of type 'String'
+	 * @param byteCount
+	 *            , the number of bytes read.
+	 * @param maxAddressWidth
+	 *            the pre-optimized number of bits in the address bus
+	 */
+	public ArrayLengthRead(int byteCount, int maxAddressWidth) {
+		super(byteCount, maxAddressWidth, 0, false,
+				AddressStridePolicy.BYTE_ADDRESSING);
+		throw new UnsupportedOperationException("reimplement me");
+	}
 
-    /**
-     * returns true
-     */
-    public boolean isArrayLengthRead ()
-    {
-        return true;
-    }
-    
+	/**
+	 * returns true
+	 */
+	public boolean isArrayLengthRead() {
+		return true;
+	}
+
 }// ArrayLengthRead

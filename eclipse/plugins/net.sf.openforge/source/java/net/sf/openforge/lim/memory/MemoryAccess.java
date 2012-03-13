@@ -21,220 +21,208 @@
 
 package net.sf.openforge.lim.memory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Referenceable;
+import net.sf.openforge.lim.Resource;
+import net.sf.openforge.lim.SizedAccess;
+import net.sf.openforge.lim.StateAccessor;
 
 /**
- * MemoryAccess factors out functionality that is common among all
- * accesses to memory such as address port, done bus and methods that
- * identify whether the node uses go, done, etc.
- *
- * <p>Created: Mon Sep 23 16:13:23 2002
- *
+ * MemoryAccess factors out functionality that is common among all accesses to
+ * memory such as address port, done bus and methods that identify whether the
+ * node uses go, done, etc.
+ * 
+ * <p>
+ * Created: Mon Sep 23 16:13:23 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: MemoryAccess.java 490 2007-06-15 16:37:00Z imiller $
  */
-public abstract class MemoryAccess extends SizedAccess implements StateAccessor
-{
-    private static final String _RCS_ = "$Rev: 490 $";
+public abstract class MemoryAccess extends SizedAccess implements StateAccessor {
 
-    private LogicalMemoryPort logicalMemoryPort;
-    
-    /** True if the value being accessed is signed, false if unsigned */
-    private boolean isSigned;
+	private LogicalMemoryPort logicalMemoryPort;
 
-    /** The number of (unoptimized) bits in the value being accessed in memory */
-    private int width;
+	/** True if the value being accessed is signed, false if unsigned */
+	private boolean isSigned;
 
-    /**
-     * Describe constructor here.
-     *
-     * @param portCount the number of data ports
-     * @param isVolatile true if this is an access to a volatile memory location
-     */
-    public MemoryAccess (int portCount, boolean isVolatile, boolean isSigned, int width)
-    {
-        super(null, portCount, isVolatile);
-        this.logicalMemoryPort = null;
-        this.isSigned = isSigned;
-        this.width = width;
-    }
-    
-    /**
-     * Gets the {@link LogicalMemoryPort} accessed by this component.
-     *
-     * @return the logical memory port, or null if there is none
-     */
-    public LogicalMemoryPort getMemoryPort ()
-    {
-        return logicalMemoryPort;
-    }
+	/** The number of (unoptimized) bits in the value being accessed in memory */
+	private int width;
 
-    /**
-     * Sets the {@link LogicalMemoryPort} accessed by this component.
-     *
-     * @param memoryPort the logical memory port, or null if there is none
-     */
-    public void setMemoryPort (LogicalMemoryPort memoryPort)
-    {
-        this.logicalMemoryPort = memoryPort;
-    }
+	/**
+	 * Describe constructor here.
+	 * 
+	 * @param portCount
+	 *            the number of data ports
+	 * @param isVolatile
+	 *            true if this is an access to a volatile memory location
+	 */
+	public MemoryAccess(int portCount, boolean isVolatile, boolean isSigned,
+			int width) {
+		super(null, portCount, isVolatile);
+		this.logicalMemoryPort = null;
+		this.isSigned = isSigned;
+		this.width = width;
+	}
 
-    /**
-     * Same as {@link #getMemoryPort()}.
-     *
-     * @return the logical memory port, or null if there is none
-     */
-    public Resource getResource ()
-    {
-        return getMemoryPort();
-    }
+	/**
+	 * Gets the {@link LogicalMemoryPort} accessed by this component.
+	 * 
+	 * @return the logical memory port, or null if there is none
+	 */
+	public LogicalMemoryPort getMemoryPort() {
+		return logicalMemoryPort;
+	}
 
-    public Referenceable getReferenceable ()
-    {
-        return this.getMemoryPort().getLogicalMemory();
-    }
-    
-    /**
-     * Returns the number of unoptimized bits in the value being
-     * accessed in memory
-     *
-     * @return a value of type 'int'
-     */
-    public int getWidth ()
-    {
-        return width;
-    }
+	/**
+	 * Sets the {@link LogicalMemoryPort} accessed by this component.
+	 * 
+	 * @param memoryPort
+	 *            the logical memory port, or null if there is none
+	 */
+	public void setMemoryPort(LogicalMemoryPort memoryPort) {
+		this.logicalMemoryPort = memoryPort;
+	}
 
-    public Port getAddressPort()
-    {
-        return (Port)getDataPorts().get(0);
-    }
-    
-    public Bus getDoneBus()
-    {
-        return (Bus)getExit(Exit.DONE).getDoneBus();
-    }
-    
-    /**
-     * Returns true if this MemoryAccess is a signed accesses to
-     * memory or false if the access is an unsigned access to memory.
-     *
-     * @return a 'boolean'
-     */
-    public boolean isSigned ()
-    {
-        return isSigned;
-    }
+	/**
+	 * Same as {@link #getMemoryPort()}.
+	 * 
+	 * @return the logical memory port, or null if there is none
+	 */
+	public Resource getResource() {
+		return getMemoryPort();
+	}
 
-    public abstract Module getPhysicalComponent ();
-    public abstract boolean isReadAccess ();
-    public abstract boolean isWriteAccess ();
+	public Referenceable getReferenceable() {
+		return this.getMemoryPort().getLogicalMemory();
+	}
 
-    
-    public boolean hasPhysicalComponent ()
-    {
-        return getPhysicalComponent() != null;
-    }
+	/**
+	 * Returns the number of unoptimized bits in the value being accessed in
+	 * memory
+	 * 
+	 * @return a value of type 'int'
+	 */
+	public int getWidth() {
+		return width;
+	}
 
-    /**
-     * Returns true since both {@link MemoryRead} and
-     * {@link MemoryWrite} use the clock in their Physical
-     * implementation.
-     */
-    public boolean consumesClock ()
-    {
-        return true;
-    }
+	public Port getAddressPort() {
+		return (Port) getDataPorts().get(0);
+	}
 
-    /**
-     * Returns true since both {@link MemoryRead} and
-     * {@link MemoryWrite} use the reset in their Physical
-     * implementation.
-     */
-    public boolean consumesReset ()
-    {
-        return true;
-    }
+	public Bus getDoneBus() {
+		return (Bus) getExit(Exit.DONE).getDoneBus();
+	}
 
-    /**
-     * Tests whether this component requires a connection to its
-     * <em>go</em> {@link Port} in order to commence processing.
-     */
-    public boolean consumesGo ()
-    {
-        return true;
-    }
+	/**
+	 * Returns true if this MemoryAccess is a signed accesses to memory or false
+	 * if the access is an unsigned access to memory.
+	 * 
+	 * @return a 'boolean'
+	 */
+	public boolean isSigned() {
+		return isSigned;
+	}
 
-    /**
-     * Tests whether this component produces a signal on the
-     * done {@link Bus} of each of its {@link Exit Exits}, returns
-     * true if the accessed {@link LogicalMemoryPort} is arbitrated.
-     */
-    public boolean producesDone ()
-    {
-        return getMemoryPort().isArbitrated();
-    }
+	public abstract Module getPhysicalComponent();
 
-    /**
-     * Returns true if this access takes more than one clock cycle, or
-     * if the latency is open.
-     */
-    public boolean isDoneSynchronous ()
-    {
-        return getLatency() != Latency.ZERO;
-    }
+	public abstract boolean isReadAccess();
 
-    /**
-     * returns true if the accessed {@link LogicalMemoryPort} is not arbitrated.
-     */
-    public boolean isBalanceable ()
-    {
-        return !getMemoryPort().isArbitrated();
-    }
+	public abstract boolean isWriteAccess();
 
-    /**
-     * Returns the {@link Latency} reported for this access by the
-     * accessed resource.
-     */
-    public Latency getLatency ()
-    {
-        return getMemoryPort().getLatency(getOnlyExit());
-    }
+	public boolean hasPhysicalComponent() {
+		return getPhysicalComponent() != null;
+	}
 
+	/**
+	 * Returns true since both {@link MemoryRead} and {@link MemoryWrite} use
+	 * the clock in their Physical implementation.
+	 */
+	public boolean consumesClock() {
+		return true;
+	}
 
-    /**
-     * Gets the resources accessed by or within this component.
-     *
-     * @return a collection of {@link Resource}
-     */
-    public Collection getAccessedResources ()
-    {
-        return Collections.singletonList(getMemoryPort());
-    }
+	/**
+	 * Returns true since both {@link MemoryRead} and {@link MemoryWrite} use
+	 * the reset in their Physical implementation.
+	 */
+	public boolean consumesReset() {
+		return true;
+	}
 
+	/**
+	 * Tests whether this component requires a connection to its <em>go</em>
+	 * {@link Port} in order to commence processing.
+	 */
+	public boolean consumesGo() {
+		return true;
+	}
 
-    protected Exit createExit (int dataCount, Exit.Type type, String label)
-    {
-        return new VariableLatencyExit(this, dataCount, type, label);
-    }
+	/**
+	 * Tests whether this component produces a signal on the done {@link Bus} of
+	 * each of its {@link Exit Exits}, returns true if the accessed
+	 * {@link LogicalMemoryPort} is arbitrated.
+	 */
+	public boolean producesDone() {
+		return getMemoryPort().isArbitrated();
+	}
 
-    /**
-     * Overrides {@link Exit#getLatency()} to return the latency as
-     * specified by the owner of the exit.
-     */
-    private static class VariableLatencyExit extends Exit
-    {
-        VariableLatencyExit (MemoryAccess memoryAccess, int dataCount, Exit.Type type, String label)
-        {
-            super(memoryAccess, dataCount, type, label);
-        }
+	/**
+	 * Returns true if this access takes more than one clock cycle, or if the
+	 * latency is open.
+	 */
+	public boolean isDoneSynchronous() {
+		return getLatency() != Latency.ZERO;
+	}
 
-        public Latency getLatency ()
-        {
-            return ((MemoryAccess)getOwner()).getLatency();
-        }
-    }
-    
+	/**
+	 * returns true if the accessed {@link LogicalMemoryPort} is not arbitrated.
+	 */
+	public boolean isBalanceable() {
+		return !getMemoryPort().isArbitrated();
+	}
+
+	/**
+	 * Returns the {@link Latency} reported for this access by the accessed
+	 * resource.
+	 */
+	public Latency getLatency() {
+		return getMemoryPort().getLatency(getOnlyExit());
+	}
+
+	/**
+	 * Gets the resources accessed by or within this component.
+	 * 
+	 * @return a collection of {@link Resource}
+	 */
+	public Collection<LogicalMemoryPort> getAccessedResources() {
+		return Collections.singletonList(getMemoryPort());
+	}
+
+	protected Exit createExit(int dataCount, Exit.Type type, String label) {
+		return new VariableLatencyExit(this, dataCount, type, label);
+	}
+
+	/**
+	 * Overrides {@link Exit#getLatency()} to return the latency as specified by
+	 * the owner of the exit.
+	 */
+	private static class VariableLatencyExit extends Exit {
+		VariableLatencyExit(MemoryAccess memoryAccess, int dataCount,
+				Exit.Type type, String label) {
+			super(memoryAccess, dataCount, type, label);
+		}
+
+		public Latency getLatency() {
+			return ((MemoryAccess) getOwner()).getLatency();
+		}
+	}
+
 }// MemoryAccess
