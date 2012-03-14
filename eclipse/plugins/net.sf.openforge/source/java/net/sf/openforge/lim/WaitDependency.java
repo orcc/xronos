@@ -20,47 +20,38 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
- * A WaitDependency is a {@link ControlDependency ControlDependency}
- * between two {@link Component Components} that indicates the
- * dependent component must wait for the completion of the prior
- * component before beginning its own execution.
- *
- * @author  Stephen Edwards
+ * A WaitDependency is a {@link ControlDependency ControlDependency} between two
+ * {@link Component Components} that indicates the dependent component must wait
+ * for the completion of the prior component before beginning its own execution.
+ * 
+ * @author Stephen Edwards
  * @version $Id: WaitDependency.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class WaitDependency extends ControlDependency
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class WaitDependency extends ControlDependency {
 
-    /**
-     * Constructs a WaitDependency.
-     *
-     * @param logicalBus the done bus on which the go port logically
-     *          depends
-     */
-    public WaitDependency (Bus logicalBus)
-    {
-        super(logicalBus);
-    }
+	/**
+	 * Constructs a WaitDependency.
+	 * 
+	 * @param logicalBus
+	 *            the done bus on which the go port logically depends
+	 */
+	public WaitDependency(Bus logicalBus) {
+		super(logicalBus);
+	}
 
-    public Dependency createSameType (Bus logicalBus)
-    {
-        return new WaitDependency(logicalBus);
-    }
-    
-    public boolean equals (Object obj)
-    {
-        if (obj instanceof WaitDependency)
-        {
-            return super.equals(obj);
-        }
-        return false;
-    }
+	public Dependency createSameType(Bus logicalBus) {
+		return new WaitDependency(logicalBus);
+	}
 
-    public int hashCode ()
-    {
-        return super.hashCode();
-    }
+	public boolean equals(Object obj) {
+		if (obj instanceof WaitDependency) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	public int hashCode() {
+		return super.hashCode();
+	}
 }

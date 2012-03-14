@@ -21,251 +21,226 @@
 
 package net.sf.openforge.lim;
 
-import net.sf.openforge.util.naming.*;
 
 /**
  * A {@link Register} write access.
- *
+ * 
  * @version $Id: RegisterWrite.java 88 2006-01-11 22:39:52Z imiller $
  */
-public class RegisterWrite extends Access implements StateAccessor
-{
-    private static final String _RCS_ = "$Rev: 88 $";
+public class RegisterWrite extends Access implements StateAccessor {
+	private static final String _RCS_ = "$Rev: 88 $";
 
-    /** records whether this read is a signed memory read. */
-    private boolean isSigned;
-    
+	/** records whether this read is a signed memory read. */
+	private boolean isSigned;
 
-    RegisterWrite (Register register, boolean isSigned)
-    {
-        /*
-         * One port for the data.
-         */
-        super(register, 1, register.isVolatile());
+	RegisterWrite(Register register, boolean isSigned) {
+		/*
+		 * One port for the data.
+		 */
+		super(register, 1, register.isVolatile());
 
-        this.isSigned = isSigned;
-        
-        getGoPort().setUsed(true);
-        makeExit(0).setLatency(Latency.ONE);
-    }
+		this.isSigned = isSigned;
 
-    /**
-     * Accept method for the Visitor interface
-     */
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+		getGoPort().setUsed(true);
+		makeExit(0).setLatency(Latency.ONE);
+	}
 
-    /**
-     * Returns the targetted Register which is a StateHolder object.
-     *
-     * @return the targetted Register
-     */
-    public StateHolder getStateHolder ()
-    {
-        return getRegister();
-    }
-    
-    /**
-     * Returns true if the accessed register is stores a floating
-     * point value.
-     */
-    public boolean isFloat ()
-    {
-        return getRegister().isFloat();
-    }
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    /**
-     * Returns true if this is a signed access to the backing register.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean isSigned ()
-    {
-        return this.isSigned;
-    }
+	/**
+	 * Returns the targetted Register which is a StateHolder object.
+	 * 
+	 * @return the targetted Register
+	 */
+	public StateHolder getStateHolder() {
+		return getRegister();
+	}
 
-    public Port getDataPort ()
-    {
-        return (Port)getDataPorts().get(0);
-    }
+	/**
+	 * Returns true if the accessed register is stores a floating point value.
+	 */
+	public boolean isFloat() {
+		return getRegister().isFloat();
+	}
 
-    public Bus getSidebandWEBus ()
-    {
-        if (getExit(Exit.SIDEBAND) == null)
-            return null;
-        // The ordering here MUST match the sizing applied in
-        // makeSidebandConnections
-        return (Bus)getExit(Exit.SIDEBAND).getDataBuses().get(0);
-    }
-    public Bus getSidebandDataBus ()
-    {
-        if (getExit(Exit.SIDEBAND) == null)
-            return null;
-        // The ordering here MUST match the sizing applied in
-        // makeSidebandConnections
-        return (Bus)getExit(Exit.SIDEBAND).getDataBuses().get(1);
-    }
+	/**
+	 * Returns true if this is a signed access to the backing register.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean isSigned() {
+		return this.isSigned;
+	}
 
-    /**
-     * Creates the sideband data/control connections necessary to
-     * connect this Operation to the resource it targets.
-     */
-    public void makeSidebandConnections ()
-    {
-        assert getExit(Exit.SIDEBAND) == null : "Can only create sideband connections once " + this;
+	public Port getDataPort() {
+		return (Port) getDataPorts().get(0);
+	}
 
-        Exit exit = makeExit(0, Exit.SIDEBAND);
-        Bus we = exit.makeDataBus(Component.SIDEBAND);
-        we.setSize(1, true);
+	public Bus getSidebandWEBus() {
+		if (getExit(Exit.SIDEBAND) == null)
+			return null;
+		// The ordering here MUST match the sizing applied in
+		// makeSidebandConnections
+		return (Bus) getExit(Exit.SIDEBAND).getDataBuses().get(0);
+	}
 
-        Bus data = exit.makeDataBus(Component.SIDEBAND);
-        data.setSize(getRegister().getInitWidth(), this.isSigned());
-    }
-    
-    /**
-     * Tests whether this component requires a connection to its
-     * <em>go</em> {@link Port} in order to commence processing.
-     */
-    public boolean consumesGo ()
-    {
-        return true;
-    }
+	public Bus getSidebandDataBus() {
+		if (getExit(Exit.SIDEBAND) == null)
+			return null;
+		// The ordering here MUST match the sizing applied in
+		// makeSidebandConnections
+		return (Bus) getExit(Exit.SIDEBAND).getDataBuses().get(1);
+	}
 
-    /**
-     * Overwrites the method in {@link Component} to return
-     * <em>true</em> since the {@link RegisterWrite} operation needs a
-     * <em>go</em> and a <em>done</em>.
-     */
-    public boolean isControlled ()
-    {
-        return true;
-    }
+	/**
+	 * Creates the sideband data/control connections necessary to connect this
+	 * Operation to the resource it targets.
+	 */
+	public void makeSidebandConnections() {
+		assert getExit(Exit.SIDEBAND) == null : "Can only create sideband connections once "
+				+ this;
 
-    /**
-     * This accessor modifies the {@link Referenceable} target state
-     * so it may not execute in parallel with other accesses.
-     */
-    public boolean isSequencingPoint ()
-    {
-        return true;
-    }
-    
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
+		Exit exit = makeExit(0, Exit.SIDEBAND);
+		Bus we = exit.makeDataBus(Component.SIDEBAND);
+		we.setSize(1, true);
 
-    /**
-     * Pushes size, care, and constant information forward through
-     * this RegisterWrite from the Register's access Value.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesForward ()
-    {
-        boolean mod = false;
+		Bus data = exit.makeDataBus(Component.SIDEBAND);
+		data.setSize(getRegister().getInitWidth(), this.isSigned());
+	}
 
-        if (getSidebandDataBus() != null)
-        {
-            Value goValue = getGoPort().getValue();
-            Value weValue = new Value(1, getSidebandWEBus().getValue().isSigned());
-            weValue.setBit(0, goValue.getBit(0));
-            mod |= getSidebandWEBus().pushValueForward(weValue);
+	/**
+	 * Tests whether this component requires a connection to its <em>go</em>
+	 * {@link Port} in order to commence processing.
+	 */
+	public boolean consumesGo() {
+		return true;
+	}
 
-            Value inValue = getDataPort().getValue();
-            Value newValue = new Value(inValue.getSize(), this.isSigned());
-            for (int i=0; i < inValue.getSize(); i++)
-                newValue.setBit(i, inValue.getBit(i));
-            mod |= getSidebandDataBus().pushValueForward(newValue);
-        }
-        
-        return mod;
-    }
+	/**
+	 * Overwrites the method in {@link Component} to return <em>true</em> since
+	 * the {@link RegisterWrite} operation needs a <em>go</em> and a
+	 * <em>done</em>.
+	 */
+	public boolean isControlled() {
+		return true;
+	}
 
-    /**
-     * Reverse partial constant prop on an RegisterWrite just updates
-     * the consumed Bus Value.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesBackward ()
-    {
-        boolean mod = false;
+	/**
+	 * This accessor modifies the {@link Referenceable} target state so it may
+	 * not execute in parallel with other accesses.
+	 */
+	public boolean isSequencingPoint() {
+		return true;
+	}
 
-        Value newValue;
-        if (getSidebandDataBus() == null)
-        {
-            newValue = new Value(getRegister().getInitWidth(), this.isSigned());
-        }
-        else
-        {
-            Value resValue = getSidebandDataBus().getValue();
-            newValue = new Value(resValue.getSize(), this.isSigned());
-            for (int i=0; i < resValue.getSize(); i++)
-            {
-                Bit bit = resValue.getBit(i);
-                //if (!bit.isCare() || bit.isConstant())
-                if (!bit.isCare())
-                {
-                    newValue.setBit(i, Bit.DONT_CARE);
-                }
-            }
-        }
-        mod |= getDataPort().pushValueBackward(newValue);
-        
-        return mod;
-    }
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
 
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
+	/**
+	 * Pushes size, care, and constant information forward through this
+	 * RegisterWrite from the Register's access Value.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesForward() {
+		boolean mod = false;
 
-    /**
-     * Returns a copy of this RegisterWrite by creating a new register write
-     * off of the {@link Register} associated with this node.  We
-     * create a new access instead of cloning because of the way that
-     * the Register stores references (not in Referent).  Creating a
-     * new access correctly sets up the Referent/Reference
-     * relationship.
-     *
-     * @return a RegisterWrite object.
-     * @exception CloneNotSupportedException if an error occurs
-     */
-    public Object clone () throws CloneNotSupportedException
-    {
-        RegisterWrite clone = getRegister().makeWriteAccess(this.isSigned);
-        this.copyComponentAttributes(clone);
-        return clone;
-    }
+		if (getSidebandDataBus() != null) {
+			Value goValue = getGoPort().getValue();
+			Value weValue = new Value(1, getSidebandWEBus().getValue()
+					.isSigned());
+			weValue.setBit(0, goValue.getBit(0));
+			mod |= getSidebandWEBus().pushValueForward(weValue);
 
-    /**
-     * Tests whether a given Bus is the sideband write enable Bus
-     * that was added by the global connector.
-     */
-    private boolean isWriteEnableBus (Bus bus)
-    {
-        //return getExit(Exit.SIDEBAND).getDataBuses().indexOf(bus) == 0;
-        return bus != null && bus == getSidebandWEBus();
-    }
+			Value inValue = getDataPort().getValue();
+			Value newValue = new Value(inValue.getSize(), this.isSigned());
+			for (int i = 0; i < inValue.getSize(); i++)
+				newValue.setBit(i, inValue.getBit(i));
+			mod |= getSidebandDataBus().pushValueForward(newValue);
+		}
 
-    /**
-     * Tests whether a given Bus is the sideband data Bus
-     * that was added by the global connector.
-     */
-    private boolean isWriteDataBus (Bus bus)
-    {
-        //return getExit(Exit.SIDEBAND).getDataBuses().indexOf(bus) == 1;
-        return bus != null && bus == getSidebandDataBus();
-    }
+		return mod;
+	}
 
-    /**
-     * Just for convenience...
-     */
-    private Register getRegister ()
-    {
-        return (Register)getResource();
-    }
+	/**
+	 * Reverse partial constant prop on an RegisterWrite just updates the
+	 * consumed Bus Value.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesBackward() {
+		boolean mod = false;
+
+		Value newValue;
+		if (getSidebandDataBus() == null) {
+			newValue = new Value(getRegister().getInitWidth(), this.isSigned());
+		} else {
+			Value resValue = getSidebandDataBus().getValue();
+			newValue = new Value(resValue.getSize(), this.isSigned());
+			for (int i = 0; i < resValue.getSize(); i++) {
+				Bit bit = resValue.getBit(i);
+				// if (!bit.isCare() || bit.isConstant())
+				if (!bit.isCare()) {
+					newValue.setBit(i, Bit.DONT_CARE);
+				}
+			}
+		}
+		mod |= getDataPort().pushValueBackward(newValue);
+
+		return mod;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
+
+	/**
+	 * Returns a copy of this RegisterWrite by creating a new register write off
+	 * of the {@link Register} associated with this node. We create a new access
+	 * instead of cloning because of the way that the Register stores references
+	 * (not in Referent). Creating a new access correctly sets up the
+	 * Referent/Reference relationship.
+	 * 
+	 * @return a RegisterWrite object.
+	 * @exception CloneNotSupportedException
+	 *                if an error occurs
+	 */
+	public Object clone() throws CloneNotSupportedException {
+		RegisterWrite clone = getRegister().makeWriteAccess(this.isSigned);
+		this.copyComponentAttributes(clone);
+		return clone;
+	}
+
+	/**
+	 * Tests whether a given Bus is the sideband write enable Bus that was added
+	 * by the global connector.
+	 */
+	private boolean isWriteEnableBus(Bus bus) {
+		// return getExit(Exit.SIDEBAND).getDataBuses().indexOf(bus) == 0;
+		return bus != null && bus == getSidebandWEBus();
+	}
+
+	/**
+	 * Tests whether a given Bus is the sideband data Bus that was added by the
+	 * global connector.
+	 */
+	private boolean isWriteDataBus(Bus bus) {
+		// return getExit(Exit.SIDEBAND).getDataBuses().indexOf(bus) == 1;
+		return bus != null && bus == getSidebandDataBus();
+	}
+
+	/**
+	 * Just for convenience...
+	 */
+	private Register getRegister() {
+		return (Register) getResource();
+	}
 }

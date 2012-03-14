@@ -20,185 +20,159 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.Collection;
 
-import net.sf.openforge.forge.api.pin.*;
+import net.sf.openforge.forge.api.pin.Buffer;
 
 /**
- * A pin of the {@link Design}.  Note that a Pin is not a {@link Resource}.
- * Rather, it may contain an {@link InPinBuf}, an {@link OutPinBuf},
- * or both, which are {@link Resource Resources}.
- *
- * @author  Stephen Edwards
+ * A pin of the {@link Design}. Note that a Pin is not a {@link Resource}.
+ * Rather, it may contain an {@link InPinBuf}, an {@link OutPinBuf}, or both,
+ * which are {@link Resource Resources}.
+ * 
+ * @author Stephen Edwards
  * @version $Id: Pin.java 282 2006-08-14 21:25:33Z imiller $
  */
-public abstract class Pin extends Component
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 282 $";
-    
-    int width = 0;
-    boolean isSigned = true;
-    Buffer apiPin;
+public abstract class Pin extends Component {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 282 $";
 
-    /** the clock that controls this pin */
-    private InputPin clockPin=null;
-    /** the reset that controls this pin */
-    private InputPin resetPin=null;
+	int width = 0;
+	boolean isSigned = true;
+	Buffer apiPin;
 
-    /** The pin referee used to arbitrate all accesses to this pin. */
-    private PinReferee referee = null;
-    
-    /**
-     * Construct a new Pin with specified width and signedness.
-     * 
-     * @param width
-     * @param isSigned;
-     */
-    public Pin (int width, boolean isSigned)
-    {
-        this.width = width;
-        this.isSigned = isSigned;
-    }
+	/** the clock that controls this pin */
+	private InputPin clockPin = null;
+	/** the reset that controls this pin */
+	private InputPin resetPin = null;
 
-    /**
-     * Returns true if this {@link Pin} was created from a user
-     * instantiated pin (external or IPCore).
-     *
-     * @return a value of type 'boolean'
-     */
-    protected boolean isUserCreatedPin ()
-    {
-        return this.apiPin != null;
-    }
+	/** The pin referee used to arbitrate all accesses to this pin. */
+	private PinReferee referee = null;
 
-    public InPinBuf getInPinBuf ()
-    {
-        return null;
-    }
+	/**
+	 * Construct a new Pin with specified width and signedness.
+	 * 
+	 * @param width
+	 * @param isSigned
+	 *            ;
+	 */
+	public Pin(int width, boolean isSigned) {
+		this.width = width;
+		this.isSigned = isSigned;
+	}
 
-    public OutPinBuf getOutPinBuf ()
-    {
-        return null;
-    }
+	/**
+	 * Returns true if this {@link Pin} was created from a user instantiated pin
+	 * (external or IPCore).
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	protected boolean isUserCreatedPin() {
+		return this.apiPin != null;
+	}
 
-    public Buffer getApiPin()
-    {
-        return apiPin;
-    }
+	public InPinBuf getInPinBuf() {
+		return null;
+	}
 
-    public void setApiPin(Buffer b)
-    {
-        apiPin=b;
-        b.setSize(getWidth());
-    }
-    
-    public abstract Collection getPinBufs ();
-    
-    public int getWidth()
-    {
-        return width;
-    }
+	public OutPinBuf getOutPinBuf() {
+		return null;
+	}
 
-    /**
-     * Changes the bit width of this pin to be the specified value.
-     * Used by subclasses to update the pin size during constant prop.
-     */
-    protected void setWidth (int value)
-    {
-        this.width = value;
-    }
+	public Buffer getApiPin() {
+		return apiPin;
+	}
 
-    public long getResetValue()
-    {
-        return apiPin.getResetValue();
-    }
-    
-    public boolean isDriveOnReset()
-    {
-        return apiPin.getDriveOnReset();
-    }
-    
-    public boolean consumesClock()
-    {
-        if((getInPinBuf()!=null)&&(getInPinBuf().consumesClock()))
-        {
-            return true;
-        }
-        if((getOutPinBuf()!=null)&&(getOutPinBuf().consumesClock()))
-        {
-            return true;
-        }
-        return false;
-    }
-    
-    public boolean consumesReset()
-    {
-        if((getInPinBuf()!=null)&&(getInPinBuf().consumesReset()))
-        {
-            return true;
-        }
-        if((getOutPinBuf()!=null)&&(getOutPinBuf().consumesReset()))
-        {
-            return true;
-        }
-        return false;
-    }
-    
-    public boolean hasWait()
-    {
-        return false;
-    }
-    
-    public void accept(Visitor visitor)
-    {
-        // assert (false) : "Pins should not be visited.";
-    	throw new UnexpectedVisitationException();
-    }
-    
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
-    
-    /**
-     * Asserts false until rule is supported.
-     */
-    public boolean pushValuesForward ()
-    {
-        assert false : "new pushValuesForward propagation of constants through " + this.getClass() + " not yet supported";
-        return false;
-    }
-    
-    /**
-     * Asserts false until rule is supported.
-     */
-    public boolean pushValuesBackward ()
-    {
-        assert false : "new pushValuesBackward propagation of constants through " + this.getClass() + " not yet supported";
-        return false;
-    }
+	public void setApiPin(Buffer b) {
+		apiPin = b;
+		b.setSize(getWidth());
+	}
 
-    /**
-     * Retrieves the {@link PinReferee} used to arbitrate all accesses
-     * to this pin.
-     */
-    public PinReferee getReferee ()
-    {
-        if (this.referee == null)
-        {
-            this.referee = new PinReferee(this);
-        }
-        return this.referee;
-    }
-    
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
+	public abstract Collection getPinBufs();
+
+	public int getWidth() {
+		return width;
+	}
+
+	/**
+	 * Changes the bit width of this pin to be the specified value. Used by
+	 * subclasses to update the pin size during constant prop.
+	 */
+	protected void setWidth(int value) {
+		this.width = value;
+	}
+
+	public long getResetValue() {
+		return apiPin.getResetValue();
+	}
+
+	public boolean isDriveOnReset() {
+		return apiPin.getDriveOnReset();
+	}
+
+	public boolean consumesClock() {
+		if ((getInPinBuf() != null) && (getInPinBuf().consumesClock())) {
+			return true;
+		}
+		if ((getOutPinBuf() != null) && (getOutPinBuf().consumesClock())) {
+			return true;
+		}
+		return false;
+	}
+
+	public boolean consumesReset() {
+		if ((getInPinBuf() != null) && (getInPinBuf().consumesReset())) {
+			return true;
+		}
+		if ((getOutPinBuf() != null) && (getOutPinBuf().consumesReset())) {
+			return true;
+		}
+		return false;
+	}
+
+	public boolean hasWait() {
+		return false;
+	}
+
+	public void accept(Visitor visitor) {
+		// assert (false) : "Pins should not be visited.";
+		throw new UnexpectedVisitationException();
+	}
+
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
+
+	/**
+	 * Asserts false until rule is supported.
+	 */
+	public boolean pushValuesForward() {
+		assert false : "new pushValuesForward propagation of constants through "
+				+ this.getClass() + " not yet supported";
+		return false;
+	}
+
+	/**
+	 * Asserts false until rule is supported.
+	 */
+	public boolean pushValuesBackward() {
+		assert false : "new pushValuesBackward propagation of constants through "
+				+ this.getClass() + " not yet supported";
+		return false;
+	}
+
+	/**
+	 * Retrieves the {@link PinReferee} used to arbitrate all accesses to this
+	 * pin.
+	 */
+	public PinReferee getReferee() {
+		if (this.referee == null) {
+			this.referee = new PinReferee(this);
+		}
+		return this.referee;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
 }
-
-
-
-
-
-

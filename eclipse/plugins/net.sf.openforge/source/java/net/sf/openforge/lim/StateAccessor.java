@@ -22,19 +22,18 @@
 package net.sf.openforge.lim;
 
 /**
- * StateAccessor is an interface implemented by the LIM Components
- * that access or reference a {@link StateHolder} object.
- *
- *
- * <p>Created: Fri Sep 10 08:27:09 2004
- *
+ * StateAccessor is an interface implemented by the LIM Components that access
+ * or reference a {@link StateHolder} object.
+ * 
+ * 
+ * <p>
+ * Created: Fri Sep 10 08:27:09 2004
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: StateAccessor.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface StateAccessor 
-{
-    public static final String _RCS_ = "$Rev: 2 $";
+public interface StateAccessor {
 
-    public StateHolder getStateHolder ();
-    
+	public StateHolder getStateHolder();
+
 }// StateAccessor

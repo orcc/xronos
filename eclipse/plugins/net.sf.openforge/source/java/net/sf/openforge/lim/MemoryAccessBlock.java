@@ -21,149 +21,141 @@
 
 package net.sf.openforge.lim;
 
-
-import java.util.*;
+import java.util.Map;
 
 import net.sf.openforge.lim.io.BlockElement;
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.memory.LValue;
+import net.sf.openforge.lim.memory.LogicalMemoryPort;
+import net.sf.openforge.lim.memory.MemoryAccess;
 
 /**
- * MemoryAccessBlock is an abstract class which contains a
- * {@link MemoryAccess} and represents an access to memory as
- * characterized by the memory access and a fixed number of
- * addressable locations accessed.
- *
- * <p>Created: Thu Feb 27 16:20:44 2003
- *
+ * MemoryAccessBlock is an abstract class which contains a {@link MemoryAccess}
+ * and represents an access to memory as characterized by the memory access and
+ * a fixed number of addressable locations accessed.
+ * 
+ * <p>
+ * Created: Thu Feb 27 16:20:44 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: MemoryAccessBlock.java 70 2005-12-01 17:43:11Z imiller $
  */
-public abstract class MemoryAccessBlock extends Block implements LValue
-{
+public abstract class MemoryAccessBlock extends Block implements LValue {
 
-    /** Memory access operation */
-    private MemoryAccess memoryAccess;
-    
-    /** The number of addressable locations being accessed. */
-    private int addressableCount;
+	/** Memory access operation */
+	private MemoryAccess memoryAccess;
 
-    /** This BlockElement identifies the specific block of data on the
-     * IO interface that this LValue is associated with.  This field
-     * will be null for the majority of LValues. */
-    private BlockElement ioBlockElement = null;
+	/** The number of addressable locations being accessed. */
+	private int addressableCount;
 
-    public MemoryAccessBlock (MemoryAccess access, int addressableLocationCount)
-    {
-        super(false);
-        this.memoryAccess = access;
-        this.addressableCount = addressableLocationCount;
-        insertComponent(this.memoryAccess, 0);
-    }
+	/**
+	 * This BlockElement identifies the specific block of data on the IO
+	 * interface that this LValue is associated with. This field will be null
+	 * for the majority of LValues.
+	 */
+	private BlockElement ioBlockElement = null;
 
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+	public MemoryAccessBlock(MemoryAccess access, int addressableLocationCount) {
+		super(false);
+		this.memoryAccess = access;
+		this.addressableCount = addressableLocationCount;
+		insertComponent(this.memoryAccess, 0);
+	}
 
-    /**
-     * Gets the low level operation that actually performs the memory access.
-     */
-    public MemoryAccess getMemoryAccess ()
-    {
-        return memoryAccess;
-    }
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    /**
-     * Gets the identity of the {@link LogicalMemoryPort} which is accessed
-     * by this component.
-     *
-     * @return the logical memory port accessed by this component, or null
-     *         if there is none
-     */
-    public LogicalMemoryPort getLogicalMemoryPort ()
-    {
-        return getMemoryAccess().getMemoryPort();
-    }
+	/**
+	 * Gets the low level operation that actually performs the memory access.
+	 */
+	public MemoryAccess getMemoryAccess() {
+		return memoryAccess;
+	}
 
-    /**
-     * Sets the identity of the {@link LogicalMemoryPort} which is accessed
-     * by this component.  Also calls {@link MemoryAccess#setMemoryPort(LogicalMemoryPort)}
-     * on the contained {@link MemoryAccess}.
-     *
-     * @param logicalMemoryPort the logical memory port accessed by this component, or null
-     *         if there is none
-     */
-    public void setLogicalMemoryPort (LogicalMemoryPort logicalMemoryPort)
-    {
-        getMemoryAccess().setMemoryPort(logicalMemoryPort);
-    }
-    
-    /**
-     * Remove the underlying {@link MemoryAccess} as a reference of
-     * the targetted memory.
-     */
-    public void removeFromMemory ()
-    {
-        final LogicalMemoryPort memoryPort = getLogicalMemoryPort();
-        memoryPort.getLogicalMemory().removeAccessor(this);
-    }
+	/**
+	 * Gets the identity of the {@link LogicalMemoryPort} which is accessed by
+	 * this component.
+	 * 
+	 * @return the logical memory port accessed by this component, or null if
+	 *         there is none
+	 */
+	public LogicalMemoryPort getLogicalMemoryPort() {
+		return getMemoryAccess().getMemoryPort();
+	}
 
-    /**
-     * Returns the number of addressable locations accessed by this
-     * memory access. 
-     */
-    public int getAccessLocationCount ()
-    {
-        return this.addressableCount;
-    }
+	/**
+	 * Sets the identity of the {@link LogicalMemoryPort} which is accessed by
+	 * this component. Also calls
+	 * {@link MemoryAccess#setMemoryPort(LogicalMemoryPort)} on the contained
+	 * {@link MemoryAccess}.
+	 * 
+	 * @param logicalMemoryPort
+	 *            the logical memory port accessed by this component, or null if
+	 *            there is none
+	 */
+	public void setLogicalMemoryPort(LogicalMemoryPort logicalMemoryPort) {
+		getMemoryAccess().setMemoryPort(logicalMemoryPort);
+	}
 
-    /**
-     * Returns true if this access is a write.
-     */
-    public abstract boolean isWrite ();
-    
-    /**
-     * Sets the specific {@link BlockElement} that this LValue is
-     * associated with, and further indicates that this LValue is part
-     * of the interface wrapper code.
-     *
-     * @param element a BlockElement, may be null
-     */
-    public void setBlockElement (BlockElement element)
-    {
-        this.ioBlockElement = element;
-    }
-    
-    /**
-     * Retrieves the {@link BlockElement} associated with this LValue
-     * or null if none has been defined.  A non null value means that
-     * this LValue is part of the interface wrapper logic for the
-     * design. 
-     *
-     * @return a BlockElement, may be null
-     */
-    public BlockElement getBlockElement ()
-    {
-        return this.ioBlockElement;
-    }
-    
-    
-    /**
-     * Returns true if this memory access is an array access.  returns false.
-     */
-    public boolean isArrayAccess ()
-    {
-        return false;
-    }
+	/**
+	 * Remove the underlying {@link MemoryAccess} as a reference of the
+	 * targetted memory.
+	 */
+	public void removeFromMemory() {
+		final LogicalMemoryPort memoryPort = getLogicalMemoryPort();
+		memoryPort.getLogicalMemory().removeAccessor(this);
+	}
 
-     protected void cloneNotify (Module moduleClone, Map cloneMap)
-     {
-         super.cloneNotify(moduleClone, cloneMap);
-         MemoryAccessBlock clone = (MemoryAccessBlock)moduleClone;
-         clone.memoryAccess = (MemoryAccess)cloneMap.get(this.memoryAccess);
-         clone.memoryAccess.setMemoryPort(getLogicalMemoryPort());
-         // Nothing to do for the ioBlockElement since we want the
-         // clone to be associated with the same element.
-     }
+	/**
+	 * Returns the number of addressable locations accessed by this memory
+	 * access.
+	 */
+	public int getAccessLocationCount() {
+		return this.addressableCount;
+	}
+
+	/**
+	 * Returns true if this access is a write.
+	 */
+	public abstract boolean isWrite();
+
+	/**
+	 * Sets the specific {@link BlockElement} that this LValue is associated
+	 * with, and further indicates that this LValue is part of the interface
+	 * wrapper code.
+	 * 
+	 * @param element
+	 *            a BlockElement, may be null
+	 */
+	public void setBlockElement(BlockElement element) {
+		this.ioBlockElement = element;
+	}
+
+	/**
+	 * Retrieves the {@link BlockElement} associated with this LValue or null if
+	 * none has been defined. A non null value means that this LValue is part of
+	 * the interface wrapper logic for the design.
+	 * 
+	 * @return a BlockElement, may be null
+	 */
+	public BlockElement getBlockElement() {
+		return this.ioBlockElement;
+	}
+
+	/**
+	 * Returns true if this memory access is an array access. returns false.
+	 */
+	public boolean isArrayAccess() {
+		return false;
+	}
+
+	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+		super.cloneNotify(moduleClone, cloneMap);
+		MemoryAccessBlock clone = (MemoryAccessBlock) moduleClone;
+		clone.memoryAccess = (MemoryAccess) cloneMap.get(this.memoryAccess);
+		clone.memoryAccess.setMemoryPort(getLogicalMemoryPort());
+		// Nothing to do for the ioBlockElement since we want the
+		// clone to be associated with the same element.
+	}
 
 }// MemoryAccessBlock

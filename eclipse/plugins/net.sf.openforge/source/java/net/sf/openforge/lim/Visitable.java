@@ -21,17 +21,16 @@
 
 package net.sf.openforge.lim;
 
-
 /**
  * Implemented by all classes which can be traversed by a {@link Visitor}.
- *
+ * 
  * @author imiller
  * @version $Id: Visitable.java 2 2005-06-09 20:00:48Z imiller $
  * @see Visitor
  */
-public interface Visitable 
-{
-    static final String _RCS_ = "$Rev: 2 $";
-    void accept (Visitor visitor);
-    
+public interface Visitable {
+	static final String _RCS_ = "$Rev: 2 $";
+
+	void accept(Visitor visitor);
+
 }// Visitable

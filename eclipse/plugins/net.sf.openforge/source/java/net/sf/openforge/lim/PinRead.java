@@ -20,179 +20,168 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.Iterator;
 
 import net.sf.openforge.util.naming.ID;
 
 /**
  * An {@link InPinBuf} access.
- *
- * @author  Stephen Edwards
+ * 
+ * @author Stephen Edwards
  * @version $Id: PinRead.java 88 2006-01-11 22:39:52Z imiller $
  */
-public class PinRead extends PinAccess implements Cloneable
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 88 $";
+public class PinRead extends PinAccess implements Cloneable {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 88 $";
 
-    private Physical physical = null;
+	private Physical physical = null;
 
-    public PinRead ()
-    {
-        // one port -- the address (object reference) of the pin
-        super(1);
+	public PinRead() {
+		// one port -- the address (object reference) of the pin
+		super(1);
 
-        /*
-         * One bus for the data.
-         */
-        makeExit(1);
-    }
+		/*
+		 * One bus for the data.
+		 */
+		makeExit(1);
+	}
 
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
 
-    /**
-     * The data out from the pin read should be sized to 
-     * whatever the pin size is defined to be.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesForward ()
-    {
-        /*
-         * The InBuf identity is dynamic.  The best we could do here is choose the max
-         * size of any possible InBuf after the ObjectResolver has run. --SGE
-         */
-        return false;
-    }
+	/**
+	 * The data out from the pin read should be sized to whatever the pin size
+	 * is defined to be.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesForward() {
+		/*
+		 * The InBuf identity is dynamic. The best we could do here is choose
+		 * the max size of any possible InBuf after the ObjectResolver has run.
+		 * --SGE
+		 */
+		return false;
+	}
 
-    /**
-     * No port to annotate size back from bus.
-     * The input pin size should not be changed.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesBackward ()
-    {
-        return false;
-    }
+	/**
+	 * No port to annotate size back from bus. The input pin size should not be
+	 * changed.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesBackward() {
+		return false;
+	}
 
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
-    
-    public void accept (Visitor v)
-    {
-        v.visit(this);
-    }
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
 
-    public Object clone () throws CloneNotSupportedException
-    {
-        final PinRead clone = (PinRead)super.clone();
-        this.copyComponentAttributes(clone);
-        return clone;
-    }
+	public void accept(Visitor v) {
+		v.visit(this);
+	}
 
-    public Physical makePhysicalComponent ()
-    {
-        assert physical == null : "Physical component of PinRead can only be made once.";
-        physical = new Physical();
-        return physical;
-    }
-    
-    public Module getPhysicalComponent ()
-    {
-        return physical;
-    }
-    
-    public class Physical extends PhysicalImplementationModule
-    {
-        private Port addressPort;
-        private Bus dataBus;
-        private Bus sideAddressBus;
-        private Port sideDataPort;
-        
-        private Physical()
-        {
-            super(0); 
+	public Object clone() throws CloneNotSupportedException {
+		final PinRead clone = (PinRead) super.clone();
+		this.copyComponentAttributes(clone);
+		return clone;
+	}
 
-            // one normal port for the address
-            Port addressPort = makeDataPort();
-            Port pinReadAddress = (Port)PinRead.this.getDataPorts().get(0);
-            assert (pinReadAddress.getBus() != null) : "PinRead's address port not attached to a bus.";
-            assert (pinReadAddress.getBus().getValue() != null) : "PinRead address port has no value";
-            {
-                Bus readAddrBus = pinReadAddress.getBus();
-                addressPort.getPeer().setSize(readAddrBus.getSize(), readAddrBus.getValue().isSigned());
-            }
-            addressPort.setUsed(pinReadAddress.isUsed());
-            addressPort.setBus(pinReadAddress.getBus());
-            
-            // appropriate the data out bus
-            Exit physicalExit = makeExit(0);
-            Bus dataBus = physicalExit.makeDataBus();
-            Bus pinRead_data = (Bus)PinRead.this.getExit(Exit.DONE).getDataBuses().get(0);
-            final int dataWidth = pinRead_data.getValue().getSize();
-            dataBus.setUsed(pinRead_data.isUsed());
-            dataBus.setIDLogical(ID.showLogical(pinRead_data));
-            dataBus.setSize(dataWidth, true);
+	public Physical makePhysicalComponent() {
+		assert physical == null : "Physical component of PinRead can only be made once.";
+		physical = new Physical();
+		return physical;
+	}
 
-            for (Iterator data_consumers = pinRead_data.getPorts().iterator(); data_consumers.hasNext();)
-            {
-                Port consumer = (Port)data_consumers.next();
-                consumer.setBus(dataBus);
-            }
-            
-            sideDataPort = makeDataPort(Component.SIDEBAND);
-            sideDataPort.getPeer().setSize(dataWidth, true);
+	public Module getPhysicalComponent() {
+		return physical;
+	}
 
-            sideAddressBus = physicalExit.makeDataBus(Component.SIDEBAND);
-            sideAddressBus.setIDLogical(ID.showLogical(PinRead.this) + "_RA");
-            {
-                Bus readAddrBus = pinReadAddress.getBus();
-                sideAddressBus.setSize(readAddrBus.getSize(), readAddrBus.getValue().isSigned());
-            }
-            
-            /*
-             * Pin reads do not use go, clock, or reset, or done.
-             */
-            getGoPort().setUsed(false);
-            getClockPort().setUsed(false);
-            getResetPort().setUsed(false);
-            physicalExit.getDoneBus().setUsed(false);
-            
-            // now wire everything up
-            sideAddressBus.getPeer().setBus(addressPort.getPeer());
-            dataBus.getPeer().setBus(sideDataPort.getPeer());
-        }
-        
-        public Port getSideDataPort()
-        {
-            return sideDataPort;
-        }
-        
-        public Bus getSideAddressBus()
-        {
-            return sideAddressBus;
-        }
-        
-        public void accept (Visitor v)
-        {
-        }
+	public class Physical extends PhysicalImplementationModule {
+		private Port addressPort;
+		private Bus dataBus;
+		private Bus sideAddressBus;
+		private Port sideDataPort;
 
-        public boolean removeDataBus (Bus bus)
-        {
-            assert false : "remove data bus not supported on " + this;
-            return false;
-        }
-        
-        public boolean removeDataPort (Port port)
-        {
-            assert false : "remove data port not supported on " + this;
-            return false;
-        }
-        
-    }
+		private Physical() {
+			super(0);
+
+			// one normal port for the address
+			Port addressPort = makeDataPort();
+			Port pinReadAddress = (Port) PinRead.this.getDataPorts().get(0);
+			assert (pinReadAddress.getBus() != null) : "PinRead's address port not attached to a bus.";
+			assert (pinReadAddress.getBus().getValue() != null) : "PinRead address port has no value";
+			{
+				Bus readAddrBus = pinReadAddress.getBus();
+				addressPort.getPeer().setSize(readAddrBus.getSize(),
+						readAddrBus.getValue().isSigned());
+			}
+			addressPort.setUsed(pinReadAddress.isUsed());
+			addressPort.setBus(pinReadAddress.getBus());
+
+			// appropriate the data out bus
+			Exit physicalExit = makeExit(0);
+			Bus dataBus = physicalExit.makeDataBus();
+			Bus pinRead_data = (Bus) PinRead.this.getExit(Exit.DONE)
+					.getDataBuses().get(0);
+			final int dataWidth = pinRead_data.getValue().getSize();
+			dataBus.setUsed(pinRead_data.isUsed());
+			dataBus.setIDLogical(ID.showLogical(pinRead_data));
+			dataBus.setSize(dataWidth, true);
+
+			for (Iterator data_consumers = pinRead_data.getPorts().iterator(); data_consumers
+					.hasNext();) {
+				Port consumer = (Port) data_consumers.next();
+				consumer.setBus(dataBus);
+			}
+
+			sideDataPort = makeDataPort(Component.SIDEBAND);
+			sideDataPort.getPeer().setSize(dataWidth, true);
+
+			sideAddressBus = physicalExit.makeDataBus(Component.SIDEBAND);
+			sideAddressBus.setIDLogical(ID.showLogical(PinRead.this) + "_RA");
+			{
+				Bus readAddrBus = pinReadAddress.getBus();
+				sideAddressBus.setSize(readAddrBus.getSize(), readAddrBus
+						.getValue().isSigned());
+			}
+
+			/*
+			 * Pin reads do not use go, clock, or reset, or done.
+			 */
+			getGoPort().setUsed(false);
+			getClockPort().setUsed(false);
+			getResetPort().setUsed(false);
+			physicalExit.getDoneBus().setUsed(false);
+
+			// now wire everything up
+			sideAddressBus.getPeer().setBus(addressPort.getPeer());
+			dataBus.getPeer().setBus(sideDataPort.getPeer());
+		}
+
+		public Port getSideDataPort() {
+			return sideDataPort;
+		}
+
+		public Bus getSideAddressBus() {
+			return sideAddressBus;
+		}
+
+		public void accept(Visitor v) {
+		}
+
+		public boolean removeDataBus(Bus bus) {
+			assert false : "remove data bus not supported on " + this;
+			return false;
+		}
+
+		public boolean removeDataPort(Port port) {
+			assert false : "remove data port not supported on " + this;
+			return false;
+		}
+
+	}
 }

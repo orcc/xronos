@@ -20,7 +20,6 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
  * This is a tristateable buffer having an 2 inputs (1 data, one enable),
  * and an output. You'll need to size the result bus, and it is a 'raw'
@@ -35,87 +34,67 @@ package net.sf.openforge.lim;
 /**
  * @version $Id: TriBuf.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class TriBuf extends Component
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class TriBuf extends Component {
 
-    private Bus resultBus;
-    
-    /**
-     * Constructs a Tribus. result buf is unsized.
-     *
-     * @param size size of data in / data out
-     */
-    public TriBuf()
-    {
-        super(2); // 2 data port
-        Exit exit = makeExit(1);
-        resultBus = (Bus)exit.getDataBuses().iterator().next();
-    }
+	private Bus resultBus;
 
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+	/**
+	 * Constructs a Tribus. result buf is unsized.
+	 * 
+	 * @param size
+	 *            size of data in / data out
+	 */
+	public TriBuf() {
+		super(2); // 2 data port
+		Exit exit = makeExit(1);
+		resultBus = (Bus) exit.getDataBuses().iterator().next();
+	}
 
-    public Port getInputPort()
-    {
-        return (Port)getDataPorts().get(0);
-    }
-    
-    public Port getEnablePort()
-    {
-        return (Port)getDataPorts().get(1);
-    }
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    public Bus getResultBus()
-    {
-        return resultBus;
-    }
+	public Port getInputPort() {
+		return (Port) getDataPorts().get(0);
+	}
 
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
+	public Port getEnablePort() {
+		return (Port) getDataPorts().get(1);
+	}
 
-    /**
-     * Pushes size, care, and constant information forward through
-     * this TriBuf according to these rules:
-     *
-     * Result value is all pass throughs of input value
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesForward ()
-    {
-        return false;
-    }
-    
-    /**
-     * Reverse constant prop on a TriBuf simply propagates the
-     * consumed value back to the Port. The port has the same size
-     * with the consumed value.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesBackward ()
-    {
-        return false;
-    }
+	public Bus getResultBus() {
+		return resultBus;
+	}
 
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
+
+	/**
+	 * Pushes size, care, and constant information forward through this TriBuf
+	 * according to these rules:
+	 * 
+	 * Result value is all pass throughs of input value
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesForward() {
+		return false;
+	}
+
+	/**
+	 * Reverse constant prop on a TriBuf simply propagates the consumed value
+	 * back to the Port. The port has the same size with the consumed value.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesBackward() {
+		return false;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
 }
-
-
-
-
-
-
-
-
-
-
-

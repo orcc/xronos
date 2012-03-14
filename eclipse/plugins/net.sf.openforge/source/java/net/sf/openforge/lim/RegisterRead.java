@@ -20,226 +20,201 @@
  */
 package net.sf.openforge.lim;
 
-import net.sf.openforge.util.naming.*;
 
 /**
  * A {@link Register} read access.
- *
- * @author  Stephen Edwards
+ * 
+ * @author Stephen Edwards
  * @version $Id: RegisterRead.java 88 2006-01-11 22:39:52Z imiller $
  */
-public class RegisterRead extends Access implements StateAccessor
-{
-    private static final String _RCS_ = "$Rev: 88 $";
+public class RegisterRead extends Access implements StateAccessor {
+	private static final String _RCS_ = "$Rev: 88 $";
 
-    /** records whether this read is a signed memory read. */
-    private boolean isSigned;
-    
-    /**
-     * Creates a new RegisterRead targetted at the specified register
-     *
-     * @param register a non-null 'Register' object.
-     */
-    RegisterRead (Register register, boolean isSigned)
-    {
-        super(register, 0, register.isVolatile());
+	/** records whether this read is a signed memory read. */
+	private boolean isSigned;
 
-        this.isSigned = isSigned;
+	/**
+	 * Creates a new RegisterRead targetted at the specified register
+	 * 
+	 * @param register
+	 *            a non-null 'Register' object.
+	 */
+	RegisterRead(Register register, boolean isSigned) {
+		super(register, 0, register.isVolatile());
 
-        getGoPort().setUsed(true);
+		this.isSigned = isSigned;
 
-        /*
-         * One bus for the data.
-         */
-        makeExit(1);
+		getGoPort().setUsed(true);
 
-        getResultBus().setFloat(register.isFloat());
-    }
+		/*
+		 * One bus for the data.
+		 */
+		makeExit(1);
 
-    /**
-     * Accept method for the Visitor interface
-     */
-    public void accept (Visitor visitor)
-    {
-        visitor.visit(this);
-    }
+		getResultBus().setFloat(register.isFloat());
+	}
 
-    /**
-     * Returns the targetted Register which is a StateHolder object.
-     *
-     * @return the targetted Register
-     */
-    public StateHolder getStateHolder ()
-    {
-        return getRegister();
-    }
-    
-    public Bus getResultBus ()
-    {
-        return (Bus)getExit(Exit.DONE).getDataBuses().get(0);
-    }
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
 
-    /**
-     * Returns true if the accessed register is stores a floating
-     * point value.
-     */
-    public boolean isFloat ()
-    {
-        return getRegister().isFloat();
-    }
+	/**
+	 * Returns the targetted Register which is a StateHolder object.
+	 * 
+	 * @return the targetted Register
+	 */
+	public StateHolder getStateHolder() {
+		return getRegister();
+	}
 
-    /**
-     * Returns true if this is a signed access to the backing register.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean isSigned ()
-    {
-        return this.isSigned;
-    }
+	public Bus getResultBus() {
+		return (Bus) getExit(Exit.DONE).getDataBuses().get(0);
+	}
 
-    public Port getSidebandDataPort ()
-    {
-        if (getDataPorts().size() > 0)
-        {
-            return (Port)getDataPorts().get(0);
-        }
-        
-        return null;
-    }
+	/**
+	 * Returns true if the accessed register is stores a floating point value.
+	 */
+	public boolean isFloat() {
+		return getRegister().isFloat();
+	}
 
-    /**
-     * Returns a fixed latency of ZERO since all register reads are
-     * combinational.
-     */
-    public Latency getLatency ()
-    {
-        return Latency.ZERO;
-    }
-    
+	/**
+	 * Returns true if this is a signed access to the backing register.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean isSigned() {
+		return this.isSigned;
+	}
 
-    /**
-     * Overwrites the method in {@link Component} to return
-     * <em>true</em> since the {@link RegisterRead} operation needs a
-     * <em>go</em> and a <em>done</em>.
-     */
-    public boolean isControlled ()
-    {
-        return true;
-    }
+	public Port getSidebandDataPort() {
+		if (getDataPorts().size() > 0) {
+			return (Port) getDataPorts().get(0);
+		}
 
-    /**
-     * This accessor may execute in parallel with other similar (non
-     * state modifying) accesses.
-     */
-    public boolean isSequencingPoint ()
-    {
-        return false;
-    }
-    
-    /**
-     * Creates the sideband data/control connections necessary to
-     * connect this Operation to the resource it targets.
-     */
-    public void makeSidebandConnections ()
-    {
-        assert getDataPorts().size() < 1 : "Can only create sideband connections once " + this;
+		return null;
+	}
 
-        // The data in port from the register.
-        makeDataPort(Component.SIDEBAND);
-    }
-    
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
+	/**
+	 * Returns a fixed latency of ZERO since all register reads are
+	 * combinational.
+	 */
+	public Latency getLatency() {
+		return Latency.ZERO;
+	}
 
-    /**
-     * Pushes size, care, and constant information forward through
-     * this RegisterRead from the Register's access Value.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesForward ()
-    {
-        boolean mod = false;
+	/**
+	 * Overwrites the method in {@link Component} to return <em>true</em> since
+	 * the {@link RegisterRead} operation needs a <em>go</em> and a
+	 * <em>done</em>.
+	 */
+	public boolean isControlled() {
+		return true;
+	}
 
-        Value newValue;
-        if (getSidebandDataPort() == null)
-        {
-            newValue = new Value(getRegister().getInitWidth(), this.isSigned);
-        }
-        else
-        {
-            Value inValue = getSidebandDataPort().getValue();
-            newValue = new Value(inValue.getSize(), this.isSigned);
-            for (int i=0; i < inValue.getSize(); i++)
-            {
-                newValue.setBit(i, inValue.getBit(i));
-            }
-        }
-        mod |= getResultBus().pushValueForward(newValue);
-        
-        return mod;
-    }
+	/**
+	 * This accessor may execute in parallel with other similar (non state
+	 * modifying) accesses.
+	 */
+	public boolean isSequencingPoint() {
+		return false;
+	}
 
-    /**
-     * Reverse partial constant prop on an RegisterRead just updates
-     * the consumed Bus Value.
-     *
-     * @return a value of type 'boolean'
-     */
-    public boolean pushValuesBackward ()
-    {
-        boolean mod = false;
+	/**
+	 * Creates the sideband data/control connections necessary to connect this
+	 * Operation to the resource it targets.
+	 */
+	public void makeSidebandConnections() {
+		assert getDataPorts().size() < 1 : "Can only create sideband connections once "
+				+ this;
 
-        Port sideband = getSidebandDataPort();
-        if (sideband != null)
-        {
-            Value resultBusValue = getResultBus().getValue();
-            Value newValue = new Value(resultBusValue.getSize(), this.isSigned);
-            for (int i=0; i < resultBusValue.getSize(); i++)
-            {
-                Bit bit = resultBusValue.getBit(i);
-                if (!bit.isCare() || bit.isConstant())
-                {
-                    newValue.setBit(i, Bit.DONT_CARE);
-                }
-            }
-            mod |= sideband.pushValueBackward(newValue);
-        }
-        
-        return mod;
-    }
+		// The data in port from the register.
+		makeDataPort(Component.SIDEBAND);
+	}
 
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
-    
-    /**
-     * Returns a copy of this RegisterRead by creating a new register read
-     * off of the {@link Register} associated with this node.  We
-     * create a new access instead of cloning because of the way that
-     * the Register stores references (not in Referent).  Creating a
-     * new access correctly sets up the Referent/Reference
-     * relationship.
-     *
-     * @return a RegisterRead object.
-     * @exception CloneNotSupportedException if an error occurs
-     */
-    public Object clone () throws CloneNotSupportedException
-    {
-        RegisterRead clone = getRegister().makeReadAccess(this.isSigned);
-        this.copyComponentAttributes(clone);
-        return clone;
-    }
-    
-    /**
-     * Just for convenience...
-     */
-    private Register getRegister ()
-    {
-        return (Register)getResource();
-    }
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
+
+	/**
+	 * Pushes size, care, and constant information forward through this
+	 * RegisterRead from the Register's access Value.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesForward() {
+		boolean mod = false;
+
+		Value newValue;
+		if (getSidebandDataPort() == null) {
+			newValue = new Value(getRegister().getInitWidth(), this.isSigned);
+		} else {
+			Value inValue = getSidebandDataPort().getValue();
+			newValue = new Value(inValue.getSize(), this.isSigned);
+			for (int i = 0; i < inValue.getSize(); i++) {
+				newValue.setBit(i, inValue.getBit(i));
+			}
+		}
+		mod |= getResultBus().pushValueForward(newValue);
+
+		return mod;
+	}
+
+	/**
+	 * Reverse partial constant prop on an RegisterRead just updates the
+	 * consumed Bus Value.
+	 * 
+	 * @return a value of type 'boolean'
+	 */
+	public boolean pushValuesBackward() {
+		boolean mod = false;
+
+		Port sideband = getSidebandDataPort();
+		if (sideband != null) {
+			Value resultBusValue = getResultBus().getValue();
+			Value newValue = new Value(resultBusValue.getSize(), this.isSigned);
+			for (int i = 0; i < resultBusValue.getSize(); i++) {
+				Bit bit = resultBusValue.getBit(i);
+				if (!bit.isCare() || bit.isConstant()) {
+					newValue.setBit(i, Bit.DONT_CARE);
+				}
+			}
+			mod |= sideband.pushValueBackward(newValue);
+		}
+
+		return mod;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
+
+	/**
+	 * Returns a copy of this RegisterRead by creating a new register read off
+	 * of the {@link Register} associated with this node. We create a new access
+	 * instead of cloning because of the way that the Register stores references
+	 * (not in Referent). Creating a new access correctly sets up the
+	 * Referent/Reference relationship.
+	 * 
+	 * @return a RegisterRead object.
+	 * @exception CloneNotSupportedException
+	 *                if an error occurs
+	 */
+	public Object clone() throws CloneNotSupportedException {
+		RegisterRead clone = getRegister().makeReadAccess(this.isSigned);
+		this.copyComponentAttributes(clone);
+		return clone;
+	}
+
+	/**
+	 * Just for convenience...
+	 */
+	private Register getRegister() {
+		return (Register) getResource();
+	}
 }

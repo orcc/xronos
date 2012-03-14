@@ -20,326 +20,273 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.*;
-
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
- * AndLatency represents the latency of a scoreboard-style combination
- * of input latencies.  That is, it is the latency that is always the maximum
- * of any of its input latencies.
+ * AndLatency represents the latency of a scoreboard-style combination of input
+ * latencies. That is, it is the latency that is always the maximum of any of
+ * its input latencies.
  * <P>
- * Each Latency is associated with a key Object that can differentiate
- * the use of that Latency when accessed as a component in
- * a different OrLatency.
- *
+ * Each Latency is associated with a key Object that can differentiate the use
+ * of that Latency when accessed as a component in a different OrLatency.
+ * 
  * @version $Id: AndLatency.java 127 2006-04-03 16:47:38Z imiller $
  */
-class AndLatency extends Latency
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 127 $";
+class AndLatency extends Latency {
 
-    /** Set of constituent Latency objects */
-    private Set<Latency> latencies;
-    /** Cached state for the isOpen method.  Because latency objects
-     * are immutable a latency will be either open or not open for its
-     * lifetime */
-    private boolean openState;
+	/** Set of constituent Latency objects */
+	private Set<Latency> latencies;
+	/**
+	 * Cached state for the isOpen method. Because latency objects are immutable
+	 * a latency will be either open or not open for its lifetime
+	 */
+	private boolean openState;
 
-    public Set __getSet ()
-    {
-        return latencies;
-    }
-    
-    public boolean isOpen ()
-    {
-        return this.openState;
-    }
+	public Set<Latency> __getSet() {
+		return latencies;
+	}
 
-    public boolean isGT (Latency latency)
-    {
-        for (Latency next : this.latencies)
-        {
-            if (next.isGT(latency))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+	public boolean isOpen() {
+		return this.openState;
+	}
 
-    public boolean isGE (Latency latency)
-    {
-        if (this.equals(latency))
-        {
-            return true;
-        }
+	public boolean isGT(Latency latency) {
+		for (Latency next : this.latencies) {
+			if (next.isGT(latency)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-        if (latency instanceof AndLatency)
-        {
-            // Two special cases if we are testing against another
-            // AndLatency.  If this latency contains (at a minimum)
-            // all the testLatency constituents, then we are
-            // guaranteed to be at least GE.
-            // The second case is similar, but a bit more generic
-            // (could only test for 2nd case).  If every latency in
-            // the test latency is an ancestor of one or more
-            // latencies in this context then we are similarly
-            // guaranteed to be at least GE.
-            if (this.latencies.containsAll(((AndLatency)latency).latencies))
-            {
-                return true;
-            }
-            
-            // Same test but using isDescendentOf.  ie if all of the
-            // constituent parts of latency are ancestors of some part
-            // of this.latencies then isGE is true.
-            boolean allCovered = true;
-            for (Latency testLat : ((AndLatency)latency).latencies)
-            {
-                boolean coverFound = false;
-                for (Latency localLat : this.latencies)
-                {
-                    if (localLat.isDescendantOf(testLat))
-                    {
-                        coverFound = true;
-                        break;
-                    }
-                }
-                allCovered &= coverFound;
-            }
-            if (allCovered)
-                return true;
-        }
-        
-        for (Latency next : this.latencies)
-        {
-            if (next.isGE(latency))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Returns false, and latencies are never fixed.
-     *
-     * @return false
-     */
-    public boolean isFixed ()
-    {
-        return false;
-    }
-    
-    /**
-     * Gets the result of adding the whole of this latency to
-     * a given latency.  Used by Modules to compute their output
-     * latency.
-     *
-     * @param latency the latency at the input to the Module
-     * @return the latency at the output of the Module
-     */
-    public Latency addTo (Latency latency)
-    {
-        Set newLatencies = new HashSet(latencies.size());
-        for (Latency next : this.latencies)
-        {
-            newLatencies.add(next.addTo(latency));
-        }
-        return new AndLatency(newLatencies, getKey());
-    }
+	public boolean isGE(Latency latency) {
+		if (this.equals(latency)) {
+			return true;
+		}
 
-    public boolean equals (Object object)
-    {
-        if (object == this)
-        {
-            return true;
-        }
-        else if (object instanceof AndLatency)
-        {
-            AndLatency latency = (AndLatency)object;
-            //return latencies.equals(latency.latencies) && getKey().equals(latency.getKey());
-            // In an AND latency, the source is irrelevant in
-            // determining equality.  This is because regardless of
-            // the source (and/or decisions made to traverse that
-            // source) the runtime clock ticks will always match
-            // between two AND latencies with the same constituents.
-            // Thus, for the purposes of equality the key may be
-            // safely ignored.  Also in hashCode below.
-            return latencies.equals(latency.latencies);
-        }
-        else
-        {
-            return false;
-        }
-    }
+		if (latency instanceof AndLatency) {
+			// Two special cases if we are testing against another
+			// AndLatency. If this latency contains (at a minimum)
+			// all the testLatency constituents, then we are
+			// guaranteed to be at least GE.
+			// The second case is similar, but a bit more generic
+			// (could only test for 2nd case). If every latency in
+			// the test latency is an ancestor of one or more
+			// latencies in this context then we are similarly
+			// guaranteed to be at least GE.
+			if (this.latencies.containsAll(((AndLatency) latency).latencies)) {
+				return true;
+			}
 
-    public int hashCode ()
-    {
-        // See note in equals method.
-        //return latencies.hashCode() + getKey().hashCode();
-        return latencies.hashCode();
-    }
+			// Same test but using isDescendentOf. ie if all of the
+			// constituent parts of latency are ancestors of some part
+			// of this.latencies then isGE is true.
+			boolean allCovered = true;
+			for (Latency testLat : ((AndLatency) latency).latencies) {
+				boolean coverFound = false;
+				for (Latency localLat : this.latencies) {
+					if (localLat.isDescendantOf(testLat)) {
+						coverFound = true;
+						break;
+					}
+				}
+				allCovered &= coverFound;
+			}
+			if (allCovered)
+				return true;
+		}
 
-    boolean isDescendantOf (Latency latency)
-    {
-        for (Latency next : this.latencies)
-        {
-            if (next.isDescendantOf(latency))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+		for (Latency next : this.latencies) {
+			if (next.isGE(latency)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-    protected Latency increment (int minClocks, int maxClocks)
-    {
-        Set newLatencies = new HashSet(latencies.size());
-        for (Latency next : this.latencies)
-        {
-            newLatencies.add(next.increment(minClocks, maxClocks));
-        }
-        return new AndLatency(newLatencies, getKey());
-    }
+	/**
+	 * Returns false, and latencies are never fixed.
+	 * 
+	 * @return false
+	 */
+	public boolean isFixed() {
+		return false;
+	}
 
-    protected Latency increment (int minClocks, LatencyKey key)
-    {
-        Set newLatencies = new HashSet(latencies.size());
-        for (Latency next : this.latencies)
-        {
-            newLatencies.add(next.increment(minClocks, key));
-        }
-        // The key for the AndLatency is the current key.  The 'open'
-        // key is factored into each of the constituent latencies
-        return new AndLatency(newLatencies, getKey());
-    }
+	/**
+	 * Gets the result of adding the whole of this latency to a given latency.
+	 * Used by Modules to compute their output latency.
+	 * 
+	 * @param latency
+	 *            the latency at the input to the Module
+	 * @return the latency at the output of the Module
+	 */
+	public Latency addTo(Latency latency) {
+		Set<Latency> newLatencies = new HashSet<Latency>(latencies.size());
+		for (Latency next : this.latencies) {
+			newLatencies.add(next.addTo(latency));
+		}
+		return new AndLatency(newLatencies, getKey());
+	}
 
-    AndLatency (Set lats, LatencyKey key)
-    {
-        super(getMinClocks(lats),
-            getMaxClocks(lats), key);
+	public boolean equals(Object object) {
+		if (object == this) {
+			return true;
+		} else if (object instanceof AndLatency) {
+			AndLatency latency = (AndLatency) object;
+			// return latencies.equals(latency.latencies) &&
+			// getKey().equals(latency.getKey());
+			// In an AND latency, the source is irrelevant in
+			// determining equality. This is because regardless of
+			// the source (and/or decisions made to traverse that
+			// source) the runtime clock ticks will always match
+			// between two AND latencies with the same constituents.
+			// Thus, for the purposes of equality the key may be
+			// safely ignored. Also in hashCode below.
+			return latencies.equals(latency.latencies);
+		} else {
+			return false;
+		}
+	}
 
-        this.latencies = flatten(lats);
-        
-        // Cache the 'open' state
-        this.openState = false;
-        for (Latency next : this.latencies)
-        {
-            if (next.isOpen())
-            {
-                this.openState = true;
-            }
-        }
-    }
+	public int hashCode() {
+		// See note in equals method.
+		// return latencies.hashCode() + getKey().hashCode();
+		return latencies.hashCode();
+	}
 
-    AndLatency (Latency l1, Latency l2, LatencyKey key)
-    {
-        this(createSet(l1, l2), key);
-    }
+	boolean isDescendantOf(Latency latency) {
+		for (Latency next : this.latencies) {
+			if (next.isDescendantOf(latency)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-    private static Set createSet (Latency val1, Latency val2)
-    {
-        Set set = new HashSet(3);
-        set.add(val1);
-        set.add(val2);
-        return set;
-    }
+	protected Latency increment(int minClocks, int maxClocks) {
+		Set<Latency> newLatencies = new HashSet<Latency>(latencies.size());
+		for (Latency next : this.latencies) {
+			newLatencies.add(next.increment(minClocks, maxClocks));
+		}
+		return new AndLatency(newLatencies, getKey());
+	}
 
-    /**
-     * Convert any 'nested' AndLatencies into a flattened AndLatency
-     * structure to improve runtime performance (many fewer
-     * instantiations of iterators).
-     *
-     * @param latencies a Set of Latency objects
-     * @return a flattened Set of Latency objects
-     */
-    private static Set<Latency> flatten (Set lats)
-    {
-        final Set<Latency> newSet = new HashSet();
-        for (Iterator iter = lats.iterator(); iter.hasNext();)
-        {
-            Latency next = (Latency)iter.next();
-            if (next instanceof AndLatency)
-            {
-                newSet.addAll(((AndLatency)next).latencies);
-            }
-            else
-            {
-                newSet.add(next);
-            }
-        }
-        return newSet;
-    }
-    
-    private static int getMinClocks (Collection lats)
-    {
-        boolean minValid = false;
-        int min = 0;
-        for (Iterator iter = lats.iterator(); iter.hasNext();)
-        {
-            Latency next = (Latency)iter.next();
-            int clocks = next.getMinClocks();
-            min = minValid ? Math.max(min, clocks) : clocks;
-            minValid = true;
-        }
-        return min;
-    }
+	protected Latency increment(int minClocks, LatencyKey key) {
+		Set<Latency> newLatencies = new HashSet<Latency>(latencies.size());
+		for (Latency next : this.latencies) {
+			newLatencies.add(next.increment(minClocks, key));
+		}
+		// The key for the AndLatency is the current key. The 'open'
+		// key is factored into each of the constituent latencies
+		return new AndLatency(newLatencies, getKey());
+	}
 
-    private static int getMaxClocks (Collection lats)
-    {
-        boolean maxValid = false;
-        int max = 0;
-        for (Iterator iter = lats.iterator(); iter.hasNext();)
-        {
-            Latency next = (Latency)iter.next();
-            int clocks = next.getMaxClocks();
-            if (clocks == Latency.UNKNOWN)
-            {
-                return clocks;
-            }
-            max = maxValid ? Math.max(max, clocks) : clocks;
-            maxValid = true;
-        }
-        return max;
-    }
+	AndLatency(Set<Latency> lats, LatencyKey key) {
+		super(getMinClocks(lats), getMaxClocks(lats), key);
 
-    public String toString()
-    {
-        String ret = "AndLatency<"+getKey()+"> {";
-        for (Iterator iter = this.latencies.iterator(); iter.hasNext();)
-        {
-            ret += iter.next();
+		this.latencies = flatten(lats);
 
-            if (iter.hasNext())
-            {
-                ret += ", ";
-            }
-        }
-        ret += "}";
-        return ret;
-    }
-    
-    /**
-     * Returns a semi-shallow clone of this latency object in which
-     * the map of latencies has been cloned, but the latencies
-     * contained in the map have not been cloned.
-     *
-     * @return an Object of type AndLatency
-     * @exception CloneNotSupportedException if an error occurs
-     */
-    public Object clone() throws CloneNotSupportedException
-    {
-        AndLatency clone = (AndLatency)super.clone();
+		// Cache the 'open' state
+		this.openState = false;
+		for (Latency next : this.latencies) {
+			if (next.isOpen()) {
+				this.openState = true;
+			}
+		}
+	}
 
-        clone.latencies = new HashSet();
+	AndLatency(Latency l1, Latency l2, LatencyKey key) {
+		this(createSet(l1, l2), key);
+	}
 
-        for (Latency lat : this.latencies)
-        {
-            clone.latencies.add(lat);
-        }
-        
-        return clone;
-    }
-    
+	private static Set<Latency> createSet(Latency val1, Latency val2) {
+		Set<Latency> set = new HashSet<Latency>(3);
+		set.add(val1);
+		set.add(val2);
+		return set;
+	}
+
+	/**
+	 * Convert any 'nested' AndLatencies into a flattened AndLatency structure
+	 * to improve runtime performance (many fewer instantiations of iterators).
+	 * 
+	 * @param latencies
+	 *            a Set of Latency objects
+	 * @return a flattened Set of Latency objects
+	 */
+	private static Set<Latency> flatten(Set<Latency> lats) {
+		final Set<Latency> newSet = new HashSet<Latency>();
+		for (Latency next : lats) {
+			if (next instanceof AndLatency) {
+				newSet.addAll(((AndLatency) next).latencies);
+			} else {
+				newSet.add(next);
+			}
+		}
+		return newSet;
+	}
+
+	private static int getMinClocks(Collection<Latency> lats) {
+		boolean minValid = false;
+		int min = 0;
+		for (Latency latency : lats) {
+			int clocks = latency.getMinClocks();
+			min = minValid ? Math.max(min, clocks) : clocks;
+			minValid = true;
+		}
+		return min;
+	}
+
+	private static int getMaxClocks(Collection<Latency> lats) {
+		boolean maxValid = false;
+		int max = 0;
+		for (Latency latency : lats) {
+			int clocks = latency.getMaxClocks();
+			if (clocks == Latency.UNKNOWN) {
+				return clocks;
+			}
+			max = maxValid ? Math.max(max, clocks) : clocks;
+			maxValid = true;
+		}
+		return max;
+	}
+
+	public String toString() {
+		String ret = "AndLatency<" + getKey() + "> {";
+		for (Iterator<Latency> iter = this.latencies.iterator(); iter.hasNext();) {
+			ret += iter.next();
+
+			if (iter.hasNext()) {
+				ret += ", ";
+			}
+		}
+		ret += "}";
+		return ret;
+	}
+
+	/**
+	 * Returns a semi-shallow clone of this latency object in which the map of
+	 * latencies has been cloned, but the latencies contained in the map have
+	 * not been cloned.
+	 * 
+	 * @return an Object of type AndLatency
+	 * @exception CloneNotSupportedException
+	 *                if an error occurs
+	 */
+	public Object clone() throws CloneNotSupportedException {
+		AndLatency clone = (AndLatency) super.clone();
+
+		clone.latencies = new HashSet<Latency>();
+
+		for (Latency lat : this.latencies) {
+			clone.latencies.add(lat);
+		}
+
+		return clone;
+	}
+
 }

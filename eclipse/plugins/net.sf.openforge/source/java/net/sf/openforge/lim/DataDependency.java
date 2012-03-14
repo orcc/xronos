@@ -20,48 +20,41 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
- * A DataDependency describes the dependence of a data input
- * {@link Port Port} on the arrival of a value from a data
- * output {@link Bus Bus}.  Scheduling will resolve this dependency by
- * ensuring the validity of the data value from the specified bus. 
- *
- * @author  Stephen Edwards
+ * A DataDependency describes the dependence of a data input {@link Port Port}
+ * on the arrival of a value from a data output {@link Bus Bus}. Scheduling will
+ * resolve this dependency by ensuring the validity of the data value from the
+ * specified bus.
+ * 
+ * @author Stephen Edwards
  * @version $Id: DataDependency.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class DataDependency extends Dependency
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class DataDependency extends Dependency {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
-    /**
-     * Constructs a DataDependency.
-     *
-     * @param logicalBus the data bus on which the data port logically
-     *          depends
-     */
-    public DataDependency (Bus logicalBus)
-    {
-        super(logicalBus);
-    }
+	/**
+	 * Constructs a DataDependency.
+	 * 
+	 * @param logicalBus
+	 *            the data bus on which the data port logically depends
+	 */
+	public DataDependency(Bus logicalBus) {
+		super(logicalBus);
+	}
 
-    public Dependency createSameType(Bus logicalBus)
-    {
-        return new DataDependency(logicalBus);
-    }
-    
-    public boolean equals (Object obj)
-    {
-        if (obj instanceof DataDependency)
-        {
-            return super.equals(obj);
-        }
-        return false;
-    }
+	public Dependency createSameType(Bus logicalBus) {
+		return new DataDependency(logicalBus);
+	}
 
-    public int hashCode ()
-    {
-        return super.hashCode();
-    }
+	public boolean equals(Object obj) {
+		if (obj instanceof DataDependency) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	public int hashCode() {
+		return super.hashCode();
+	}
 
 }

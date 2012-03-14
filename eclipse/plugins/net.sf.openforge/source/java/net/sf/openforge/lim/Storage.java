@@ -20,21 +20,16 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
- * Storage is any persistent memory that can be accessed by
- * operations.
- *
- * @author  Stephen Edwards
+ * Storage is any persistent memory that can be accessed by operations.
+ * 
+ * @author Stephen Edwards
  * @version $Id: Storage.java 282 2006-08-14 21:25:33Z imiller $
  */
-public abstract class Storage extends Resource
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 282 $";
+public abstract class Storage extends Resource {
 
-    public Storage ()
-    {
-        super();
-    }
+	public Storage() {
+		super();
+	}
 
 }

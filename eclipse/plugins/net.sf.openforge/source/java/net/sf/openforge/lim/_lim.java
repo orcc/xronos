@@ -20,149 +20,175 @@
  */
 package net.sf.openforge.lim;
 
-import java.io.*;
+import java.io.PrintStream;
 
 import net.sf.openforge.util.Debug;
 
 /**
  * _lim debug.
- *
+ * 
  * Use like this:
- *
- * if (_lim.db)
- * {
- *    _lim.ln("ugh");
- * }
- *
- * if (_lim.db)
- * {
- *    _lim.ln("glub");
- * }
- *
- *************************************
- *
- * You can additionally control your debug by using the system property:
- *    - debug.internal.<tag> = true|false
- * or the envriement variable:
- *    - DEBUG_INTERNAL_<tag> = true|false
- *
+ * 
+ * if (_lim.db) { _lim.ln("ugh"); }
+ * 
+ * if (_lim.db) { _lim.ln("glub"); }
+ * 
+ ************************************* 
+ * 
+ * You can additionally control your debug by using the system property: -
+ * debug.internal.<tag> = true|false or the envriement variable: -
+ * DEBUG_INTERNAL_<tag> = true|false
+ * 
  * By default, your outputs are using the DEFAULT level. I.e., if you use
- *    _lim.ln("Blug");
- * it is the default level.
- *
+ * _lim.ln("Blug"); it is the default level.
+ * 
  * For now, that is enough ;-)
- *
+ * 
  */
-public class _lim
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 127 $";
+public class _lim {
 
-    public final static int DFV      = 0x800;
-    public final static int DRC      = 0x400;
-    public final static int VALUES   = 0x200;
-    public final static int LATENCY  = 0x100;
-    public final static int SCHEDULE = 0x80;
-    public final static int CCONN    = 0x40;
-    public final static int LOOPS    = 0x20;
+	public final static int DFV = 0x800;
+	public final static int DRC = 0x400;
+	public final static int VALUES = 0x200;
+	public final static int LATENCY = 0x100;
+	public final static int SCHEDULE = 0x80;
+	public final static int CCONN = 0x40;
+	public final static int LOOPS = 0x20;
 
-    // Add your tag here!
-    public final static String TAG = "Lim";
+	// Add your tag here!
+	public final static String TAG = "Lim";
 
-    // COMPILED_IN when you want debug info left in
-    public final static boolean db = Debug.COMPILED_OUT;
+	// COMPILED_IN when you want debug info left in
+	public final static boolean db = Debug.COMPILED_OUT;
 
-    // set to true to see your debug, false to suppress
-    public final static boolean VISIBLE = true;
+	// set to true to see your debug, false to suppress
+	public final static boolean VISIBLE = true;
 
-    private final static Debug debug = new Debug(net.sf.openforge.lim._lim.class,
-                                                 TAG, db, VISIBLE, LATENCY);
+	private final static Debug debug = new Debug(
+			net.sf.openforge.lim._lim.class, TAG, db, VISIBLE, LATENCY);
 
-    public final static Debug d = debug; // backwards compatibility with previous version
+	public final static Debug d = debug; // backwards compatibility with
+											// previous version
 
-    /**
-     * Accessor for the output PrintStream
-     *
-     * @return PrintStream
-     */
-    public static PrintStream getPrintStream() { return debug.getPrintStream(); }
+	/**
+	 * Accessor for the output PrintStream
+	 * 
+	 * @return PrintStream
+	 */
+	public static PrintStream getPrintStream() {
+		return debug.getPrintStream();
+	}
 
-    /**
-     * Set the current preface.
-     *
-     * @param preface String value for the preface.
-     */
-    public static void setPreface(String preface) { debug.setPreface(preface); }
+	/**
+	 * Set the current preface.
+	 * 
+	 * @param preface
+	 *            String value for the preface.
+	 */
+	public static void setPreface(String preface) {
+		debug.setPreface(preface);
+	}
 
-    /**
-     * use this to turn on (true) or off (false) debug
-     */
-    public static void setVisible(boolean vis) { debug.setVisible(vis); }
+	/**
+	 * use this to turn on (true) or off (false) debug
+	 */
+	public static void setVisible(boolean vis) {
+		debug.setVisible(vis);
+	}
 
-    /**
-     * Set the debug bitmask levels
-     *
-     * @param level a value of type 'int'
-     */
-    public static void setLevels(int level) { debug.setLevels(level); }
+	/**
+	 * Set the debug bitmask levels
+	 * 
+	 * @param level
+	 *            a value of type 'int'
+	 */
+	public static void setLevels(int level) {
+		debug.setLevels(level);
+	}
 
-    /**
-     * Work-alike for PrintStream.println(); Uses the DEFAULT level.
-     * 
-     */
-    public static void ln() { debug.ln(); }
+	/**
+	 * Work-alike for PrintStream.println(); Uses the DEFAULT level.
+	 * 
+	 */
+	public static void ln() {
+		debug.ln();
+	}
 
-    /**
-     * Work-alike for PrintStream.print(); USes the DEFAULT level
-     * 
-     * @param v Object to print out.
-     */
-    public static void o(Object v) { debug.o(v); }
+	/**
+	 * Work-alike for PrintStream.print(); USes the DEFAULT level
+	 * 
+	 * @param v
+	 *            Object to print out.
+	 */
+	public static void o(Object v) {
+		debug.o(v);
+	}
 
-    /**
-     * Work-alike for PrintStream.println(Object); Uses the DEFAULT level.
-     * 
-     * @param v Object to print out.
-     */
-    public static void ln(Object v) { debug.ln(v); }
-    
-    /**
-     * Work-alike for PrintStream.println();
-     *
-     * @param level level of this debug statement
-     */
-    public static void ln(int level) { debug.ln(level); }
+	/**
+	 * Work-alike for PrintStream.println(Object); Uses the DEFAULT level.
+	 * 
+	 * @param v
+	 *            Object to print out.
+	 */
+	public static void ln(Object v) {
+		debug.ln(v);
+	}
 
-    /**
-     * Work-alike for PrintStream.print(Object);
-     * 
-     * @param level level of this debug statement
-     * @param v Object to print out.
-     */
-    public static void o(int level,Object v) { debug.o(level, v); }
+	/**
+	 * Work-alike for PrintStream.println();
+	 * 
+	 * @param level
+	 *            level of this debug statement
+	 */
+	public static void ln(int level) {
+		debug.ln(level);
+	}
 
-    /**
-     * Work-alike for PrintStream.println(Object);
-     * 
-     * @param level level of this debug statement
-     * @param v Object to print out.
-     */
-    public static void ln(int level,Object v) { debug.ln(level, v); }
+	/**
+	 * Work-alike for PrintStream.print(Object);
+	 * 
+	 * @param level
+	 *            level of this debug statement
+	 * @param v
+	 *            Object to print out.
+	 */
+	public static void o(int level, Object v) {
+		debug.o(level, v);
+	}
 
-    /**
-     * Used to display a stack trace from the current location.
-     * Uses level DEFAULT.
-     *
-     * @param v Displayable object to makr where you are
-     */
-    public static void whereAmI(Object v) { debug.whereAmI(v); }
-    
-    /**
-     * Used to display a stack trace from the current location.
-     * Uses level DEFAULT.
-     *
-     * @param v Displayable object to makr where you are
-     * @param level level of this debug statement
-     */
-    public static void whereAmI(int level,Object v) { debug.whereAmI(level, v); }
+	/**
+	 * Work-alike for PrintStream.println(Object);
+	 * 
+	 * @param level
+	 *            level of this debug statement
+	 * @param v
+	 *            Object to print out.
+	 */
+	public static void ln(int level, Object v) {
+		debug.ln(level, v);
+	}
+
+	/**
+	 * Used to display a stack trace from the current location. Uses level
+	 * DEFAULT.
+	 * 
+	 * @param v
+	 *            Displayable object to makr where you are
+	 */
+	public static void whereAmI(Object v) {
+		debug.whereAmI(v);
+	}
+
+	/**
+	 * Used to display a stack trace from the current location. Uses level
+	 * DEFAULT.
+	 * 
+	 * @param v
+	 *            Displayable object to makr where you are
+	 * @param level
+	 *            level of this debug statement
+	 */
+	public static void whereAmI(int level, Object v) {
+		debug.whereAmI(level, v);
+	}
 }
-

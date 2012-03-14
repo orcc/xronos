@@ -23,11 +23,9 @@ package net.sf.openforge.lim;
 import net.sf.openforge.util.naming.ID;
 
 /**
- * Logic cache. tbd.  Each Module should keep its own cache rather
- * than having a global one.
+ * Logic cache. tbd. Each Module should keep its own cache rather than having a
+ * global one.
  */
-public class Cache extends ID
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class Cache extends ID {
 
 }

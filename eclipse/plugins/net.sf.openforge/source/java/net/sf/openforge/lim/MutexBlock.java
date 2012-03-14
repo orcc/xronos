@@ -21,44 +21,38 @@
 
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.List;
 
 /**
- * If set to true this is an indication that this module contains
- * components whose 'execution' are mutually exclusive.  In
- * reality, there can be some components that are not mutually
- * exclusive so long as their execution is not visible outside
- * this module.  Non-visibility means also that operation outside
- * this module cannot affect those components behavior.  eg state
- * var reads would violate the non-visibility.  The effect of this
- * constraint is that there is no need to insert resource dependencies
- * between the components of this module because it is guaranteed that
- * only one of the components will execute.
- * {@see GlobalResourceSequencer}
- *
- * @author  imiller
+ * If set to true this is an indication that this module contains components
+ * whose 'execution' are mutually exclusive. In reality, there can be some
+ * components that are not mutually exclusive so long as their execution is not
+ * visible outside this module. Non-visibility means also that operation outside
+ * this module cannot affect those components behavior. eg state var reads would
+ * violate the non-visibility. The effect of this constraint is that there is no
+ * need to insert resource dependencies between the components of this module
+ * because it is guaranteed that only one of the components will execute. {@see
+ * GlobalResourceSequencer}
+ * 
+ * @author imiller
  * @version $Id: MutexBlock.java 100 2006-02-03 22:49:08Z imiller $
  */
-public class MutexBlock extends Block
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class MutexBlock extends Block {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
-    /**
-     * Constructs a mutex block whose population is deferred. 
-     */
-    public MutexBlock (boolean isProcedureBody)
-    {
-        super(isProcedureBody);
-    }
-    
-    public MutexBlock (List sequence, boolean isProcedureBody)
-    {
-        super(sequence, isProcedureBody);
-    }
-    
-    public boolean isMutexModule ()
-    {
-        return true;
-    }
-    
+	/**
+	 * Constructs a mutex block whose population is deferred.
+	 */
+	public MutexBlock(boolean isProcedureBody) {
+		super(isProcedureBody);
+	}
+
+	public MutexBlock(List sequence, boolean isProcedureBody) {
+		super(sequence, isProcedureBody);
+	}
+
+	public boolean isMutexModule() {
+		return true;
+	}
+
 }

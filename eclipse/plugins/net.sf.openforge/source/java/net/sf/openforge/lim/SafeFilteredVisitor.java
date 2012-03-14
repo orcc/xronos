@@ -21,29 +21,24 @@
 
 package net.sf.openforge.lim;
 
-
 /**
- * SafeFilteredVisitor is an implementation of the FilteredVisitor
- * which creates a new linked list for all Collections before
- * iterating over them.  This eliminates the problems of
- * ConcurrentModification exceptions if/when iterating over the
- * components of a module and adding/deleting components to/from that
- * module.
- *
- *
+ * SafeFilteredVisitor is an implementation of the FilteredVisitor which creates
+ * a new linked list for all Collections before iterating over them. This
+ * eliminates the problems of ConcurrentModification exceptions if/when
+ * iterating over the components of a module and adding/deleting components
+ * to/from that module.
+ * 
+ * 
  * Created: Thu Jul 11 14:32:46 2002
- *
+ * 
  * @author imiller
  * @version $Id: SafeFilteredVisitor.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class SafeFilteredVisitor extends FilteredVisitor 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class SafeFilteredVisitor extends FilteredVisitor {
 
-    public SafeFilteredVisitor ()
-    {
-        super();
-        this.scanner = new Scanner(this, true);
-    }
+	public SafeFilteredVisitor() {
+		super();
+		this.scanner = new Scanner(this, true);
+	}
 
 }// SafeFilteredVisitor

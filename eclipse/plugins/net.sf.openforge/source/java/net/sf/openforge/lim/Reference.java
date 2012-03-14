@@ -20,89 +20,82 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
- * A Reference is an {@link Operation} which stands in
- * for a {@link Referent} component that is defined outside
- * the current context.  The Reference executes by deferring
- * its behavior to its Reference.
- *
- * @author  Stephen Edwards
+ * A Reference is an {@link Operation} which stands in for a {@link Referent}
+ * component that is defined outside the current context. The Reference executes
+ * by deferring its behavior to its Reference.
+ * 
+ * @author Stephen Edwards
  * @version $Id: Reference.java 2 2005-06-09 20:00:48Z imiller $
  */
-public abstract class Reference extends Operation
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public abstract class Reference extends Operation {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
-    /** The referenced entity */
-    private Referent referent;
-    
-    /**
-     * Gets the Referent referenced by this Reference, may be null.
-     */
-    public Referent getReferent ()
-    {
-        return referent;
-    }
+	/** The referenced entity */
+	private Referent referent;
 
-    protected Reference () {}
+	/**
+	 * Gets the Referent referenced by this Reference, may be null.
+	 */
+	public Referent getReferent() {
+		return referent;
+	}
 
-    /**
-     * Constructs a new Reference for a given Reference.
-     */
-    protected Reference (Referent referent, int dataPortCount)
-    {
-        super(dataPortCount);
-        this.referent = referent;
-    }
+	protected Reference() {
+	}
 
-    /**
-     * Redirects this reference to the given {@link Referent},
-     * replacing the existing referent, if any.
-     *
-     * @param ref a value of type 'Referent'
-     */
-    public abstract void setReferent(Referent ref);
+	/**
+	 * Constructs a new Reference for a given Reference.
+	 */
+	protected Reference(Referent referent, int dataPortCount) {
+		super(dataPortCount);
+		this.referent = referent;
+	}
 
-    /**
-     * Used by concrete classes to replace the referent field and to
-     * remove this Reference from the {@link Referent Referent's} list
-     * of accessing References.
-     *
-     * @param ref a {@link Referent} which can be set to null to
-     * remove this reference from all references.
-     */
-    protected void setRef(Referent ref)
-    {
-        if (this.referent != null)
-        {
-            this.referent.removeReference(this);
-        }
-        this.referent = ref;
-        if (ref != null)
-        {
-            this.referent.addReference(this);
-        }
-    }
-    
-    
-    public void accept(Visitor v)
-    {
-        throw new UnsupportedOperationException();
-    }
+	/**
+	 * Redirects this reference to the given {@link Referent}, replacing the
+	 * existing referent, if any.
+	 * 
+	 * @param ref
+	 *            a value of type 'Referent'
+	 */
+	public abstract void setReferent(Referent ref);
 
-    /**
-     * Returns a copy of this Reference to the <b>same</b>
-     * {@link Referent} as the original node, but does not add the
-     * clone to the list of references stored by the Referent.
-     *
-     * @return a value of type 'Object'
-     * @exception CloneNotSupportedException if an error occurs
-     */
-    public Object clone () throws CloneNotSupportedException
-    {
-        Reference clone = (Reference)super.clone();
-        return clone;
-    }
+	/**
+	 * Used by concrete classes to replace the referent field and to remove this
+	 * Reference from the {@link Referent Referent's} list of accessing
+	 * References.
+	 * 
+	 * @param ref
+	 *            a {@link Referent} which can be set to null to remove this
+	 *            reference from all references.
+	 */
+	protected void setRef(Referent ref) {
+		if (this.referent != null) {
+			this.referent.removeReference(this);
+		}
+		this.referent = ref;
+		if (ref != null) {
+			this.referent.addReference(this);
+		}
+	}
+
+	public void accept(Visitor v) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * Returns a copy of this Reference to the <b>same</b> {@link Referent} as
+	 * the original node, but does not add the clone to the list of references
+	 * stored by the Referent.
+	 * 
+	 * @return a value of type 'Object'
+	 * @exception CloneNotSupportedException
+	 *                if an error occurs
+	 */
+	public Object clone() throws CloneNotSupportedException {
+		Reference clone = (Reference) super.clone();
+		return clone;
+	}
 
 }

@@ -22,28 +22,29 @@
 package net.sf.openforge.lim;
 
 /**
- * Referencer is an interface that is implemented by any LIM {@link
- * Component} which represents an inferred connection to a {@link
- * Referenceable} target.
- *
- * <p>Created: Tue Jan 20 08:27:55 2004
- *
+ * Referencer is an interface that is implemented by any LIM {@link Component}
+ * which represents an inferred connection to a {@link Referenceable} target.
+ * 
+ * <p>
+ * Created: Tue Jan 20 08:27:55 2004
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: Referencer.java 62 2005-11-17 18:10:30Z imiller $
  */
-public interface Referencer 
-{
-    static final String _RCS_ = "$Rev: 62 $";
+public interface Referencer {
+	static final String _RCS_ = "$Rev: 62 $";
 
-    /**
-     * Returns the {@link Referenceable} target of this Referencer.
-     */
-    public Referenceable getReferenceable ();
+	/**
+	 * Returns the {@link Referenceable} target of this Referencer.
+	 */
+	public Referenceable getReferenceable();
 
-    /** Returns true if this reference to the {@link Referenceable} is
-     * a sequence enforcing point (eg it modifies the state of the
-     * resource) false if other non-sequencing {@link Referencer}
-     * accesses can occur in parallel with this access */
-    public boolean isSequencingPoint ();
-    
+	/**
+	 * Returns true if this reference to the {@link Referenceable} is a sequence
+	 * enforcing point (eg it modifies the state of the resource) false if other
+	 * non-sequencing {@link Referencer} accesses can occur in parallel with
+	 * this access
+	 */
+	public boolean isSequencingPoint();
+
 }// Referencer

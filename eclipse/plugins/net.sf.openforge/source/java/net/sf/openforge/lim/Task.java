@@ -20,227 +20,205 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.Collection;
 
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.memory.Allocation;
 import net.sf.openforge.lim.op.Constant;
-import net.sf.openforge.util.naming.*;
+import net.sf.openforge.util.naming.ID;
 
 /**
- * A Task is a thread of execution within a {@link Design}.  The
- * executable contents of a Task are expressed as a {@link Call}
- * to a {@link Procedure}.
- *
- * @author  Stephen Edwards
+ * A Task is a thread of execution within a {@link Design}. The executable
+ * contents of a Task are expressed as a {@link Call} to a {@link Procedure}.
+ * 
+ * @author Stephen Edwards
  * @version $Id: Task.java 121 2006-03-27 19:58:31Z imiller $
  */
-public class Task extends ID implements Visitable, Cloneable
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 121 $";
+public class Task extends ID implements Visitable, Cloneable {
 
-    public static final int INDETERMINATE_GO_SPACING = -1;
-    
-    private Call call;
+	public static final int INDETERMINATE_GO_SPACING = -1;
 
-    /**
-     * The constant which is hooked to the hidden argument which
-     * identifies the instance on which this entry method is
-     * applied.
-     */
-    private Constant thisConstant;
+	private Call call;
 
-    /**
-     * An identifier used to associate this Task with the target
-     * object instance that it is applied to, or null if the call is
-     * to a static method.
-     */
-    private Allocation memoryKey;
+	/**
+	 * The constant which is hooked to the hidden argument which identifies the
+	 * instance on which this entry method is applied.
+	 */
+	private Constant thisConstant;
 
-    /** The max gate depth */
-    private int maxGateDepth = 0;
+	/**
+	 * An identifier used to associate this Task with the target object instance
+	 * that it is applied to, or null if the call is to a static method.
+	 */
+	private Allocation memoryKey;
 
-    // Deprecated???
-    private boolean isAutomatic;
+	/** The max gate depth */
+	private int maxGateDepth = 0;
 
-    /** Set to true if a kicker is required to start this task off
-     * after reset. */
-    private boolean kickerRequired = false;
-    
-    /** Indicator of whether this task was balanced during scheduling */
-    private boolean isBalanced = false;
+	// Deprecated???
+	private boolean isAutomatic;
 
-    /** The go spacing of this task, as number of clock cycles
-     * necessary between successive assertions of data/go. */
-    private int goSpacing = INDETERMINATE_GO_SPACING;
-    
-    /*
-     * tbd. Do we need subclasses for explicit vs. implicit start?
-     */
+	/**
+	 * Set to true if a kicker is required to start this task off after reset.
+	 */
+	private boolean kickerRequired = false;
 
-    public Task (Call call, Allocation memoryKey, boolean isAutomatic)
-    {
-        this.call = call;
-        this.memoryKey = memoryKey;
-        this.isAutomatic=isAutomatic;
-    }
+	/** Indicator of whether this task was balanced during scheduling */
+	private boolean isBalanced = false;
 
-    public Task (Call call, Allocation memoryKey)
-    {
-        this(call,memoryKey,false);
-    }
+	/**
+	 * The go spacing of this task, as number of clock cycles necessary between
+	 * successive assertions of data/go.
+	 */
+	private int goSpacing = INDETERMINATE_GO_SPACING;
 
-    public Task (Call call)
-    {
-        this(call, null);
-    }
+	/*
+	 * tbd. Do we need subclasses for explicit vs. implicit start?
+	 */
 
-    public Task ()
-    {
-        this(null,null);
-    }
-    
-    public Allocation getMemoryKey ()
-    {
-        return this.memoryKey;
-    }
+	public Task(Call call, Allocation memoryKey, boolean isAutomatic) {
+		this.call = call;
+		this.memoryKey = memoryKey;
+		this.isAutomatic = isAutomatic;
+	}
 
-    /**
-     * Adds the given constant to this Task and attaches the
-     * constant's value bus to the Port via dependencies and physical
-     * connection.
-     *
-     * @param constant a value of type 'Constant'
-     */
-    public void setHiddenConstant(Constant constant)
-    {
-        assert this.thisConstant == null : "Can only set the hidden constant once";
-        this.thisConstant = constant;
-        connectConstant(this.call, this.thisConstant);
-    }
+	public Task(Call call, Allocation memoryKey) {
+		this(call, memoryKey, false);
+	}
 
-    public Constant getThisConstant ()
-    {
-        return this.thisConstant;
-    }
-    
-    public void accept(Visitor vis)
-    {
-        vis.visit(this);
-    }
-    
-    public int getMaxGateDepth ()
-    {
-        return this.maxGateDepth;
-    }
-    
-    public void setMaxGateDepth (int maxGateDepth)
-    {
-        this.maxGateDepth = maxGateDepth;
-    }
+	public Task(Call call) {
+		this(call, null);
+	}
 
-    public Call getCall ()
-    {
-        return call;
-    }
+	public Task() {
+		this(null, null);
+	}
 
-    public void setCall (Call call)
-    {
-        this.call = call;
-    }
+	public Allocation getMemoryKey() {
+		return this.memoryKey;
+	}
 
-    public void setBalanced (boolean value)
-    {
-        this.isBalanced = value;
-    }
+	/**
+	 * Adds the given constant to this Task and attaches the constant's value
+	 * bus to the Port via dependencies and physical connection.
+	 * 
+	 * @param constant
+	 *            a value of type 'Constant'
+	 */
+	public void setHiddenConstant(Constant constant) {
+		assert this.thisConstant == null : "Can only set the hidden constant once";
+		this.thisConstant = constant;
+		connectConstant(this.call, this.thisConstant);
+	}
 
-    public boolean isBalanced ()
-    {
-        return this.isBalanced;
-    }
+	public Constant getThisConstant() {
+		return this.thisConstant;
+	}
 
-    /**
-     * Sets the identified number of cycles that must exist between
-     * assertions of GO for this task in order to maintain data
-     * integrity.
-     */
-    public void setGoSpacing (int value)
-    {
-        this.goSpacing = value;
-    }
+	public void accept(Visitor vis) {
+		vis.visit(this);
+	}
 
-    /**
-     * Returns the minimum number of clock cycles that must occur
-     * between consecutive assertions of GO to this task.  Will return
-     * {@link Task#INDETERMINATE_GO_SPACING} if not calculated or if
-     * the minimum spacing could not be determined.
-     */
-    public int getGoSpacing ()
-    {
-        return this.goSpacing;
-    }
-    
+	public int getMaxGateDepth() {
+		return this.maxGateDepth;
+	}
 
-    /**
-     * Gets the resources accessed within this task.
-     *
-     * @return a collection of {@link Resource}
-     */
-    public Collection getAccessedResources ()
-    {
-        return getCall().getAccessedResources();
-    }
+	public void setMaxGateDepth(int maxGateDepth) {
+		this.maxGateDepth = maxGateDepth;
+	}
 
-    /**
-     * <code>setKickerRequired</code> is used to indicate whether an
-     * {@link Kicker} is required to initiate this Task after reset.
-     *
-     * @param value a <code>boolean</code> value
-     */
-    public void setKickerRequired (boolean value)
-    {
-        this.kickerRequired = value;
-    }
+	public Call getCall() {
+		return call;
+	}
 
-    /**
-     * <code>isKickerRequired</code> returns true if a {@link Kicker}
-     * is needed to initiate this Task after reset.
-     *
-     * @return a <code>boolean</code> value
-     */
-    public boolean isKickerRequired ()
-    {
-        return this.kickerRequired;
-    }
-    
-    /**
-     * Returns a copy of this Task which contains a new copy of the
-     * contained Call.
-     *
-     * @return a Task object.
-     * @exception CloneNotSupportedException if an error occurs
-     */
-    public Object clone () throws CloneNotSupportedException
-    {
-        throw new CloneNotSupportedException();
-    }
+	public void setCall(Call call) {
+		this.call = call;
+	}
 
-    private static void connectConstant(Call call, Constant constant)
-    {
-        assert call.getThisPort() != null : "Cannot set hidden constant on non virtual entry methods";
-        Entry entry;
-        if (call.getEntries().size() == 0)
-            entry = call.makeEntry(null);
-        else
-            entry = (Entry)call.getEntries().get(0);
+	public void setBalanced(boolean value) {
+		this.isBalanced = value;
+	}
 
-        
-        Dependency dep = new DataDependency(constant.getValueBus());
-        entry.addDependency(call.getThisPort(), dep);
-        // Reconcile the Values on the Port and bus before connecting.
-//          call.getThisPort().updateValue(constant.getValueBus().getValue());
-        call.getThisPort().setBus(constant.getValueBus());
-    }
+	public boolean isBalanced() {
+		return this.isBalanced;
+	}
 
-    public boolean isAutomatic() { return isAutomatic; }
-    
+	/**
+	 * Sets the identified number of cycles that must exist between assertions
+	 * of GO for this task in order to maintain data integrity.
+	 */
+	public void setGoSpacing(int value) {
+		this.goSpacing = value;
+	}
+
+	/**
+	 * Returns the minimum number of clock cycles that must occur between
+	 * consecutive assertions of GO to this task. Will return
+	 * {@link Task#INDETERMINATE_GO_SPACING} if not calculated or if the minimum
+	 * spacing could not be determined.
+	 */
+	public int getGoSpacing() {
+		return this.goSpacing;
+	}
+
+	/**
+	 * Gets the resources accessed within this task.
+	 * 
+	 * @return a collection of {@link Resource}
+	 */
+	public Collection getAccessedResources() {
+		return getCall().getAccessedResources();
+	}
+
+	/**
+	 * <code>setKickerRequired</code> is used to indicate whether an
+	 * {@link Kicker} is required to initiate this Task after reset.
+	 * 
+	 * @param value
+	 *            a <code>boolean</code> value
+	 */
+	public void setKickerRequired(boolean value) {
+		this.kickerRequired = value;
+	}
+
+	/**
+	 * <code>isKickerRequired</code> returns true if a {@link Kicker} is needed
+	 * to initiate this Task after reset.
+	 * 
+	 * @return a <code>boolean</code> value
+	 */
+	public boolean isKickerRequired() {
+		return this.kickerRequired;
+	}
+
+	/**
+	 * Returns a copy of this Task which contains a new copy of the contained
+	 * Call.
+	 * 
+	 * @return a Task object.
+	 * @exception CloneNotSupportedException
+	 *                if an error occurs
+	 */
+	public Object clone() throws CloneNotSupportedException {
+		throw new CloneNotSupportedException();
+	}
+
+	private static void connectConstant(Call call, Constant constant) {
+		assert call.getThisPort() != null : "Cannot set hidden constant on non virtual entry methods";
+		Entry entry;
+		if (call.getEntries().size() == 0)
+			entry = call.makeEntry(null);
+		else
+			entry = (Entry) call.getEntries().get(0);
+
+		Dependency dep = new DataDependency(constant.getValueBus());
+		entry.addDependency(call.getThisPort(), dep);
+		// Reconcile the Values on the Port and bus before connecting.
+		// call.getThisPort().updateValue(constant.getValueBus().getValue());
+		call.getThisPort().setBus(constant.getValueBus());
+	}
+
+	public boolean isAutomatic() {
+		return isAutomatic;
+	}
+
 }

@@ -23,33 +23,32 @@ package net.sf.openforge.lim;
 
 /**
  * PhysicalImplementationModule.java
- *
- *
- * <p>Created: Mon Nov 25 16:49:35 2002
- *
+ * 
+ * 
+ * <p>
+ * Created: Mon Nov 25 16:49:35 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
- * @version $Id: PhysicalImplementationModule.java 2 2005-06-09 20:00:48Z imiller $
+ * @version $Id: PhysicalImplementationModule.java 2 2005-06-09 20:00:48Z
+ *          imiller $
  */
-public abstract class PhysicalImplementationModule extends Module 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public abstract class PhysicalImplementationModule extends Module {
+	private static final String _RCS_ = "$Rev: 2 $";
 
-    public PhysicalImplementationModule ()
-    {
-        super();
-    }
-    
-    public PhysicalImplementationModule (int dataCount)
-    {
-        super(dataCount);
-    }
-    
-    /**
-     * Throws an exception, replacement in this class not supported.
-     */
-    public boolean replaceComponent (Component removed, Component inserted)
-    {
-        throw new UnsupportedOperationException("Cannot replace components in " + getClass());
-    }
-    
+	public PhysicalImplementationModule() {
+		super();
+	}
+
+	public PhysicalImplementationModule(int dataCount) {
+		super(dataCount);
+	}
+
+	/**
+	 * Throws an exception, replacement in this class not supported.
+	 */
+	public boolean replaceComponent(Component removed, Component inserted) {
+		throw new UnsupportedOperationException("Cannot replace components in "
+				+ getClass());
+	}
+
 }// PhysicalImplementationModule

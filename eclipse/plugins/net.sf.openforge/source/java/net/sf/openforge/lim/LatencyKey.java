@@ -20,25 +20,23 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.*;
 
 /**
- * LatencyKey is an interface implemented by any object which can
- * uniquely identify the 'source' of a latency.  The latency source
- * must be sufficeintly unique to differentiate two otherwise
- * identical latencies based on the conditions upon which those
- * latencies, during runtime, will evaluate to a specific (exact)
- * number of clock ticks.
- *
- * @author  imiller
+ * LatencyKey is an interface implemented by any object which can uniquely
+ * identify the 'source' of a latency. The latency source must be sufficeintly
+ * unique to differentiate two otherwise identical latencies based on the
+ * conditions upon which those latencies, during runtime, will evaluate to a
+ * specific (exact) number of clock ticks.
+ * 
+ * @author imiller
  * @version $Id: LatencyKey.java 109 2006-02-24 18:10:34Z imiller $
  */
-public interface LatencyKey
-{
-    public static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public interface LatencyKey {
+	public static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
-    public static final LatencyKey BASE = new LatencyKey()
-        {
-            public String toString () { return "BASE"; }
-        };
+	public static final LatencyKey BASE = new LatencyKey() {
+		public String toString() {
+			return "BASE";
+		}
+	};
 }

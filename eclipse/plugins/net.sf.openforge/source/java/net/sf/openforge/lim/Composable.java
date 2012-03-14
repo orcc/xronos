@@ -22,15 +22,13 @@
 package net.sf.openforge.lim;
 
 /**
- * This interface is used to describe lim object which is composed of
- * smaller atomic objects. In essence, this is a lim 'molecule' compared
- * lim 'atoms'
- *
+ * This interface is used to describe lim object which is composed of smaller
+ * atomic objects. In essence, this is a lim 'molecule' compared lim 'atoms'
+ * 
  * @author "C. Schanck" <cschanck@cschanck>
  * @version 1.0
  * @since 1.0
  */
-public interface Composable
-{
-    static final String _RCS_ = "$Rev: 2 $";
+public interface Composable {
+	static final String _RCS_ = "$Rev: 2 $";
 }

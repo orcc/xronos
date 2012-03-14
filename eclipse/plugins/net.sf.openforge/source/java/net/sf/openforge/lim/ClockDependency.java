@@ -20,44 +20,38 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
  * A ClockDependency describes the source of a clock signal.
- *
- * @author  Stephen Edwards
+ * 
+ * @author Stephen Edwards
  * @version $Id: ClockDependency.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ClockDependency extends Dependency
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class ClockDependency extends Dependency {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
-    /**
-     * Constructs a ClockDependency.
-     *
-     * @param logicalBus the bus which provides the clock signal
-     */
-    public ClockDependency (Bus logicalBus)
-    {
-        super(logicalBus);
-    }
+	/**
+	 * Constructs a ClockDependency.
+	 * 
+	 * @param logicalBus
+	 *            the bus which provides the clock signal
+	 */
+	public ClockDependency(Bus logicalBus) {
+		super(logicalBus);
+	}
 
-    public Dependency createSameType(Bus logicalBus)
-    {
-        return new ClockDependency(logicalBus);
-    }
-    
-    public boolean equals (Object obj)
-    {
-        if (obj instanceof ClockDependency)
-        {
-            return super.equals(obj);
-        }
-        return false;
-    }
+	public Dependency createSameType(Bus logicalBus) {
+		return new ClockDependency(logicalBus);
+	}
 
-    public int hashCode ()
-    {
-        return super.hashCode();
-    }
+	public boolean equals(Object obj) {
+		if (obj instanceof ClockDependency) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	public int hashCode() {
+		return super.hashCode();
+	}
 
 }

@@ -21,28 +21,28 @@
 
 package net.sf.openforge.lim;
 
-import java.util.*;
-
+import java.util.Map;
 
 /**
  * Implemented by classes that want a view into the cloning process of
- * {@link Component Components} and {@link Module Modules}.  During a
- * clone, the cloned object provides the listener with a map of original
- * objects to their clones.
- *
+ * {@link Component Components} and {@link Module Modules}. During a clone, the
+ * cloned object provides the listener with a map of original objects to their
+ * clones.
+ * 
  * @version $Id: CloneListener.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface CloneListener
-{
-    static final String _RCS_ = "$Rev: 2 $";
-    /**
-     * Notifies the listener of the cloning of one or more
-     * {@link Component Components}.  This method may be invoked
-     * more than once during before cloning is complete.
-     *
-     * @param cloneMap a map of original objects to cloned objects;
-     *          these include the cloned {@link Component Components}
-     *          and their {@link Entry Entries}
-     */
-    public void setCloneMap (Map cloneMap);
+public interface CloneListener {
+	static final String _RCS_ = "$Rev: 2 $";
+
+	/**
+	 * Notifies the listener of the cloning of one or more {@link Component
+	 * Components}. This method may be invoked more than once during before
+	 * cloning is complete.
+	 * 
+	 * @param cloneMap
+	 *            a map of original objects to cloned objects; these include the
+	 *            cloned {@link Component Components} and their {@link Entry
+	 *            Entries}
+	 */
+	public void setCloneMap(Map cloneMap);
 }

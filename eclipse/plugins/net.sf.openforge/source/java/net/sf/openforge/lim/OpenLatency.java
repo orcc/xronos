@@ -20,151 +20,129 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
- * A Latency whose maximum number of clocks is unknown and is
- * represented with the constant value UNKNOWN (the value of an unknown
- * minimum number of clocks may be represented simply as 0).
+ * A Latency whose maximum number of clocks is unknown and is represented with
+ * the constant value UNKNOWN (the value of an unknown minimum number of clocks
+ * may be represented simply as 0).
  * <P>
- * OpenLatency is constructed as an offset from an existing
- * base Latency, and may include an increment to the minimum clock
- * value.  It includes an Object key that is used to distinguish
- * it from other open latencies that may have the base latency
- * and number of minimum clocks.
- *
- * @author  Stephen Edwards
+ * OpenLatency is constructed as an offset from an existing base Latency, and
+ * may include an increment to the minimum clock value. It includes an Object
+ * key that is used to distinguish it from other open latencies that may have
+ * the base latency and number of minimum clocks.
+ * 
+ * @author Stephen Edwards
  * @version $Id: OpenLatency.java 124 2006-03-31 17:24:55Z imiller $
  */
-class OpenLatency extends Latency implements Cloneable
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 124 $";
+class OpenLatency extends Latency implements Cloneable {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 124 $";
 
-    /** The latency from which this latency was created */
-    private Latency base;
+	/** The latency from which this latency was created */
+	private Latency base;
 
-    /** An Object that can be used to differentiate this latency */
-    //private Object key;
+	/** An Object that can be used to differentiate this latency */
+	// private Object key;
 
-    public boolean isOpen ()
-    {
-        return true;
-    }
+	public boolean isOpen() {
+		return true;
+	}
 
-    /**
-     * Gets the result of adding the number of clocks represented
-     * by the parameter latency to this open latency.  The resulting 
-     * latency is an open latency with the same key as this one.  Any
-     * key of the parameter latency is ignored.
-     *
-     * @param latency the latency which is to be added to this latency
-     * @return the resulting latency
-     */
-    public Latency addTo (Latency latency)
-    {
-        return latency.increment(getMinClocks(), getKey());
-    }
+	/**
+	 * Gets the result of adding the number of clocks represented by the
+	 * parameter latency to this open latency. The resulting latency is an open
+	 * latency with the same key as this one. Any key of the parameter latency
+	 * is ignored.
+	 * 
+	 * @param latency
+	 *            the latency which is to be added to this latency
+	 * @return the resulting latency
+	 */
+	public Latency addTo(Latency latency) {
+		return latency.increment(getMinClocks(), getKey());
+	}
 
-    public boolean isGT (Latency latency)
-    {
-        if (latency.isOpen())
-        {
-            return isDescendantOf(latency) && (getMinClocks() > latency.getMinClocks());
-        }
-        else
-        {
-            return getMinClocks() > latency.getMaxClocks();
-        }
-    }
+	public boolean isGT(Latency latency) {
+		if (latency.isOpen()) {
+			return isDescendantOf(latency)
+					&& (getMinClocks() > latency.getMinClocks());
+		} else {
+			return getMinClocks() > latency.getMaxClocks();
+		}
+	}
 
-    public boolean isGE (Latency latency)
-    {
-        if (latency.equals(this))
-        {
-            return true;
-        }
+	public boolean isGE(Latency latency) {
+		if (latency.equals(this)) {
+			return true;
+		}
 
-        if (latency.isOpen())
-        {
-            return isDescendantOf(latency) && (getMinClocks() >= latency.getMinClocks());
-        }
-        else
-        {
-            return getMinClocks() >= latency.getMaxClocks();
-        }
-    }
+		if (latency.isOpen()) {
+			return isDescendantOf(latency)
+					&& (getMinClocks() >= latency.getMinClocks());
+		} else {
+			return getMinClocks() >= latency.getMaxClocks();
+		}
+	}
 
-    /**
-     * Returns false, open latencies are never fixed.
-     *
-     * @return false
-     */
-    public boolean isFixed()
-    {
-        return false;
-    }
-    
-    public boolean equals (Object object)
-    {
-        if (object instanceof OpenLatency)
-        {
-            OpenLatency latency = (OpenLatency)object;
-            return (getMinClocks() == latency.getMinClocks()
-                && base.equals(latency.base)
-                && getKey().equals(latency.getKey()));
-        }
-        else
-        {
-            return false;
-        }
-    }
+	/**
+	 * Returns false, open latencies are never fixed.
+	 * 
+	 * @return false
+	 */
+	public boolean isFixed() {
+		return false;
+	}
 
-    public int hashCode ()
-    {
-        return base.hashCode() + getKey().hashCode() + getMinClocks();
-    }
+	public boolean equals(Object object) {
+		if (object instanceof OpenLatency) {
+			OpenLatency latency = (OpenLatency) object;
+			return (getMinClocks() == latency.getMinClocks()
+					&& base.equals(latency.base) && getKey().equals(
+					latency.getKey()));
+		} else {
+			return false;
+		}
+	}
 
-    public String toString ()
-    {
-        return "OpenLat{Op minclks=" + getMinClocks() + " key=" + getKey() + " base=" + base + "}";
-    }
+	public int hashCode() {
+		return base.hashCode() + getKey().hashCode() + getMinClocks();
+	}
 
-    OpenLatency (Latency base, LatencyKey key, int minClocks)
-    {
-        super(base.getMinClocks() + minClocks, UNKNOWN, key);
-        this.base = base;
-        //this.key = key;
-    }
+	public String toString() {
+		return "OpenLat{Op minclks=" + getMinClocks() + " key=" + getKey()
+				+ " base=" + base + "}";
+	}
 
-    OpenLatency (Latency base, LatencyKey key)
-    {
-        this(base, key, 0);
-    }
+	OpenLatency(Latency base, LatencyKey key, int minClocks) {
+		super(base.getMinClocks() + minClocks, UNKNOWN, key);
+		this.base = base;
+		// this.key = key;
+	}
 
-    boolean isDescendantOf (Latency latency)
-    {
-        return base.equals(latency) || base.isDescendantOf(latency);
-    }
+	OpenLatency(Latency base, LatencyKey key) {
+		this(base, key, 0);
+	}
 
-    protected Latency increment (int minClocks, int maxClocks)
-    {
-        return new OpenLatency(this, getKey(), minClocks);
-    }
+	boolean isDescendantOf(Latency latency) {
+		return base.equals(latency) || base.isDescendantOf(latency);
+	}
 
-    protected Latency increment (int minClocks, LatencyKey key)
-    {
-        return new OpenLatency(this, key, minClocks);
-    }
+	protected Latency increment(int minClocks, int maxClocks) {
+		return new OpenLatency(this, getKey(), minClocks);
+	}
 
-    /**
-     * Returns a shallow clone of this latency object in which
-     * the base latency and identifying object have not been cloned.
-     *
-     * @return an Object of type OpenLatency
-     * @exception CloneNotSupportedException if an error occurs
-     */
-    public Object clone() throws CloneNotSupportedException
-    {
-        return super.clone();
-    }
-    
+	protected Latency increment(int minClocks, LatencyKey key) {
+		return new OpenLatency(this, key, minClocks);
+	}
+
+	/**
+	 * Returns a shallow clone of this latency object in which the base latency
+	 * and identifying object have not been cloned.
+	 * 
+	 * @return an Object of type OpenLatency
+	 * @exception CloneNotSupportedException
+	 *                if an error occurs
+	 */
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
+
 }

@@ -20,131 +20,123 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import net.sf.openforge.util.naming.ID;
 
 /**
- * A pin which a {@link Design} may both read and write.
- * This pin may also be tri-stated.
- *
- * @author  Stephen Edwards
+ * A pin which a {@link Design} may both read and write. This pin may also be
+ * tri-stated.
+ * 
+ * @author Stephen Edwards
  * @version $Id: BidirectionalPin.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class BidirectionalPin extends Pin
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class BidirectionalPin extends Pin {
 
-    private InPinBuf inBuf;
-    private OutPinBuf outBuf;
+	private InPinBuf inBuf;
+	private OutPinBuf outBuf;
 
-    private Bus bus;
-    private Port port;
-    
-    /**
-     * Constructs a new BidirectionalPin with a 
-     * specific width and signedness.
-     *
-     * @param width the bit-width of the pin
-     * @param isSigned the signedness of the pin
-     */
-    public BidirectionalPin (int width, boolean isSigned)
-    {
-        this(width, isSigned, "bipin");
-    }
-    
-    /**
-     * Constructs a BidirectionalPin with explicit size, signedness and name.
-     * 
-     * @param width
-     * @param isSigned
-     * @param name
-     */
-    public BidirectionalPin(int width, boolean isSigned, String name)
-    {
-        super(width, isSigned);
-        this.inBuf = new InPinBuf(this);
-        this.outBuf = new OutPinBuf(this);
-        setIDLogical(name);
-        makeBus();
-        makePort();
-    }
-    
-    private void makeBus()
-    {
-        Exit exit = makeExit(0);
-        this.bus = (Bus)exit.makeDataBus();
-        bus.setSize(getWidth(), true);
-        bus.setIDLogical(ID.showLogical(this));
-    }
-    
-    private void makePort()
-    {
-        this.port = makeDataPort();
-        port.setIDLogical(ID.showLogical(this));
-    }
+	private Bus bus;
+	private Port port;
 
-    public Port getPort()
-    {
-        return port;
-    }
-    
-    public Bus getBus()
-    {
-        return bus;
-    }
-    
-    public InPinBuf getInPinBuf ()
-    {
-        return inBuf;
-    }
+	/**
+	 * Constructs a new BidirectionalPin with a specific width and signedness.
+	 * 
+	 * @param width
+	 *            the bit-width of the pin
+	 * @param isSigned
+	 *            the signedness of the pin
+	 */
+	public BidirectionalPin(int width, boolean isSigned) {
+		this(width, isSigned, "bipin");
+	}
 
-    public OutPinBuf getOutPinBuf ()
-    {
-        return outBuf;
-    }
+	/**
+	 * Constructs a BidirectionalPin with explicit size, signedness and name.
+	 * 
+	 * @param width
+	 * @param isSigned
+	 * @param name
+	 */
+	public BidirectionalPin(int width, boolean isSigned, String name) {
+		super(width, isSigned);
+		this.inBuf = new InPinBuf(this);
+		this.outBuf = new OutPinBuf(this);
+		setIDLogical(name);
+		makeBus();
+		makePort();
+	}
 
-    public Collection getPinBufs ()
-    {
-        Set bufs = new LinkedHashSet();
-        bufs.add(getInPinBuf());
-        bufs.add(getOutPinBuf());
-        return Collections.unmodifiableSet(bufs);
-    }
+	private void makeBus() {
+		Exit exit = makeExit(0);
+		this.bus = (Bus) exit.makeDataBus();
+		bus.setSize(getWidth(), true);
+		bus.setIDLogical(ID.showLogical(this));
+	}
 
-    /*
-     * ===================================================
-     *    Begin new constant prop rules implementation.
-     */
-    
-    /**
-     * Pushes the size of the pin onto the Port as all care bits.
-     */
-    public boolean pushValuesBackward ()
-    {
-        boolean mod = false;
-        
-        Value newValue = new Value(getWidth(), true);
-        
-        mod |= getPort().pushValueBackward(newValue);
-        
-        return mod;
-    }
-    
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
+	private void makePort() {
+		this.port = makeDataPort();
+		port.setIDLogical(ID.showLogical(this));
+	}
 
-    /**
-     * Returns a full copy of this Pin
-     *
-     * @return a BidirectionalPin object.
-     * @exception CloneNotSupportedException if an error occurs
-     */
-    public Object clone () throws CloneNotSupportedException
-    {
-        throw new CloneNotSupportedException();
-    }
-    
+	public Port getPort() {
+		return port;
+	}
+
+	public Bus getBus() {
+		return bus;
+	}
+
+	public InPinBuf getInPinBuf() {
+		return inBuf;
+	}
+
+	public OutPinBuf getOutPinBuf() {
+		return outBuf;
+	}
+
+	public Collection<PinBuf> getPinBufs() {
+		Set<PinBuf> bufs = new LinkedHashSet<PinBuf>();
+		bufs.add(getInPinBuf());
+		bufs.add(getOutPinBuf());
+		return Collections.unmodifiableSet(bufs);
+	}
+
+	/*
+	 * =================================================== Begin new constant
+	 * prop rules implementation.
+	 */
+
+	/**
+	 * Pushes the size of the pin onto the Port as all care bits.
+	 */
+	public boolean pushValuesBackward() {
+		boolean mod = false;
+
+		Value newValue = new Value(getWidth(), true);
+
+		mod |= getPort().pushValueBackward(newValue);
+
+		return mod;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
+
+	/**
+	 * Returns a full copy of this Pin
+	 * 
+	 * @return a BidirectionalPin object.
+	 * @exception CloneNotSupportedException
+	 *                if an error occurs
+	 */
+	public Object clone() throws CloneNotSupportedException {
+		throw new CloneNotSupportedException();
+	}
+
 }

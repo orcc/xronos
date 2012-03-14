@@ -20,278 +20,259 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.List;
 
-import net.sf.openforge.util.naming.*;
-
+import net.sf.openforge.util.naming.ID;
 
 /**
  * An OutPinBuf allows writing to an output {@link Pin}.
- *
- * @author  Stephen Edwards
+ * 
+ * @author Stephen Edwards
  * @version $Id: OutPinBuf.java 280 2006-08-11 17:00:32Z imiller $
  */
-public class OutPinBuf extends PinBuf
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 280 $";
+public class OutPinBuf extends PinBuf {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 280 $";
 
-    private Physical phys;
-    
-    OutPinBuf (Pin pin)
-    {
-        /*
-         * tbd.
-         */
-        super(pin);
-    }
+	private Physical phys;
 
-    /**
-     * Gets the latency of a reference's exit.
-     */
-    public Latency getLatency (Exit exit)
-    {
-        /*
-         * tbd.
-         */
-        return Latency.ZERO;
-    }
+	OutPinBuf(Pin pin) {
+		/*
+		 * tbd.
+		 */
+		super(pin);
+	}
 
-    public boolean consumesReset()
-    {
-        // if we have an api pin, yes
-        return (getPhysicalComponent()!=null);
-    }
-    
-    public boolean consumesClock()
-    {
-        return (getPhysicalComponent()!=null);
-    }
-    
-    public Physical getPhysicalComponent()
-    {
-        //assert phys!=null;
-        return phys;
-    }
+	/**
+	 * Gets the latency of a reference's exit.
+	 */
+	public Latency getLatency(Exit exit) {
+		/*
+		 * tbd.
+		 */
+		return Latency.ZERO;
+	}
 
-    /**
-     * Make the Physical implementation of this OutPinBuf.
-     *
-     * @param initDriven true if drive state logic is required
-     */
-    public Physical makePhysicalComponent()
-    {
-        phys=new Physical(getPin().getWidth(), getPin().getResetValue(), getPin().isDriveOnReset());
-        return phys;
-    }
+	public boolean consumesReset() {
+		// if we have an api pin, yes
+		return (getPhysicalComponent() != null);
+	}
 
-    /**
-     * Here we have a module with 8 inputs, 1 outputs. Inputs are, in order:
-     * NextValue, NextValueEnable, NowValue, NowValueEnable, NextDriveValue,
-     * NextDriveEnable, NowDriveValue, NowDriveEnable. Output is value currently
-     * being driven
-     *
-     * @author "C. Schanck" <cschanck@cschanck>
-     * @version 1.0
-     * @since 1.0
-     * @see Module
-     */
-    public class Physical extends PhysicalImplementationModule
-    {
-        private Bus resultBus;
-        private int size;
-        private long initValue;
-        private boolean initDriven;
-        
-        Physical(int size,long initValue,boolean initDriven)
-        {
-            super(8);
-            getNextValuePort().getPeer().setSize(size, true);
-            getNextValueEnablePort().getPeer().setSize(1, true);
-            getNowValuePort().getPeer().setSize(size, true);
-            getNowValueEnablePort().getPeer().setSize(1, true);
-            getNextDrivePort().getPeer().setSize(1, true);
-            getNextDriveEnablePort().getPeer().setSize(1, true);
-            getNowDrivePort().getPeer().setSize(1, true);
-            getNowDriveEnablePort().getPeer().setSize(1, true);
+	public boolean consumesClock() {
+		return (getPhysicalComponent() != null);
+	}
 
-            getClockPort().setUsed(true);
-            getResetPort().setUsed(true);
-                
-            
-            Exit exit = makeExit(0);
+	public Physical getPhysicalComponent() {
+		// assert phys!=null;
+		return phys;
+	}
 
-            // make a result bus
-            resultBus = (Bus)exit.makeDataBus();
-            resultBus.setSize(size, true);
+	/**
+	 * Make the Physical implementation of this OutPinBuf.
+	 * 
+	 * @param initDriven
+	 *            true if drive state logic is required
+	 */
+	public Physical makePhysicalComponent() {
+		phys = new Physical(getPin().getWidth(), getPin().getResetValue(),
+				getPin().isDriveOnReset());
+		return phys;
+	}
 
-            this.size=size;
-            this.initDriven=initDriven;
-            if(initDriven)
-                this.initValue=initValue;
-            else
-                this.initValue=0;
-        }
+	/**
+	 * Here we have a module with 8 inputs, 1 outputs. Inputs are, in order:
+	 * NextValue, NextValueEnable, NowValue, NowValueEnable, NextDriveValue,
+	 * NextDriveEnable, NowDriveValue, NowDriveEnable. Output is value currently
+	 * being driven
+	 * 
+	 * @author "C. Schanck" <cschanck@cschanck>
+	 * @version 1.0
+	 * @since 1.0
+	 * @see Module
+	 */
+	public class Physical extends PhysicalImplementationModule {
+		private Bus resultBus;
+		private int size;
+		private long initValue;
+		private boolean initDriven;
 
-        public void connect()
-        {
-            // now add the tribuf
-            TriBuf tbuf=new TriBuf();
-            addComponent(tbuf);
-            tbuf.getResultBus().setSize(size, true);
+		Physical(int size, long initValue, boolean initDriven) {
+			super(8);
+			getNextValuePort().getPeer().setSize(size, true);
+			getNextValueEnablePort().getPeer().setSize(1, true);
+			getNowValuePort().getPeer().setSize(size, true);
+			getNowValueEnablePort().getPeer().setSize(1, true);
+			getNextDrivePort().getPeer().setSize(1, true);
+			getNextDriveEnablePort().getPeer().setSize(1, true);
+			getNowDrivePort().getPeer().setSize(1, true);
+			getNowDriveEnablePort().getPeer().setSize(1, true);
 
-            // create the value and drive logic
-            Bus res1=addValueLogic(size,initValue);
-            Bus res2=addDriveLogic(initDriven);
+			getClockPort().setUsed(true);
+			getResetPort().setUsed(true);
 
-            // hook it up
-            tbuf.getInputPort().setBus(res1);
-            tbuf.getEnablePort().setBus(res2);
+			Exit exit = makeExit(0);
 
-            // and the end!
-            resultBus.getPeer().setBus(tbuf.getResultBus());
-        }
+			// make a result bus
+			resultBus = (Bus) exit.makeDataBus();
+			resultBus.setSize(size, true);
 
-        private Bus addValueLogic(int size,long initValue)
-        {
-            // ok. We need a reg ...
-            //Reg reg1=new Reg(initValue);
-            Reg reg1 = Reg.getConfigurableReg(Reg.REGRE, ID.showLogical(this)+"_value");
-            reg1.setInitialValue(Value.getConstantValue(initValue));
+			this.size = size;
+			this.initDriven = initDriven;
+			if (initDriven)
+				this.initValue = initValue;
+			else
+				this.initValue = 0;
+		}
 
-            //reg1.setIDLogical(ID.showLogical(reg1)+"_value");
-            addComponent(reg1);
-            // set up the clock
-            reg1.getClockPort().setBus(getClockPort().getPeer()); 
-            // set the data/enable
-            reg1.getDataPort().setBus(getNextValuePort().getPeer());
-            reg1.getEnablePort().setBus(getNextValueEnablePort().getPeer());
-            // reset
-            reg1.getResetPort().setBus(getResetPort().getPeer());
-            reg1.getInternalResetPort().setBus(getResetPort().getPeer());
-            // size bus of reg
-            reg1.getResultBus().setSize(size, true);
-            
-            // now a mux
-            Mux mux1=new Mux(2);
-            mux1.setIDLogical(ID.showLogical(mux1)+"_value");
-            addComponent(mux1);
-            mux1.getResultBus().setSize(size, true);
+		public void connect() {
+			// now add the tribuf
+			TriBuf tbuf = new TriBuf();
+			addComponent(tbuf);
+			tbuf.getResultBus().setSize(size, true);
 
-            List l = mux1.getGoPorts();
-            //
-            // This is a hack like Latch -- we count on the translater
-            // ignoring the second select so we connect them themselves.
-            //
-            
-            // 0th -- now port
-            Port sel=(Port)l.get(0);
-            Port data=mux1.getDataPort(sel);
-            sel.setBus(getNowValueEnablePort().getPeer());
-            data.setBus(getNowValuePort().getPeer());
-            
-            // 1th -- result from the reg above
-            sel=(Port)l.get(1);
-            data=mux1.getDataPort(sel);
-            sel.setBus(getNowValueEnablePort().getPeer());
-            data.setBus(reg1.getResultBus());
+			// create the value and drive logic
+			Bus res1 = addValueLogic(size, initValue);
+			Bus res2 = addDriveLogic(initDriven);
 
-            return mux1.getResultBus();
-        }
+			// hook it up
+			tbuf.getInputPort().setBus(res1);
+			tbuf.getEnablePort().setBus(res2);
 
-        private Bus addDriveLogic(boolean isDriven)
-        {
-            // ok. We need a reg ...
-            //Reg reg1=new Reg(isDriven?1L:0L);
-            Reg reg1 = Reg.getConfigurableReg(Reg.REGRE,ID.showLogical(this)+"_drive");
-            reg1.setInitialValue(Value.getConstantValue(isDriven?1L:0L));
+			// and the end!
+			resultBus.getPeer().setBus(tbuf.getResultBus());
+		}
 
-            addComponent(reg1);
-            // set up the clock
-            reg1.getClockPort().setBus(getClockPort().getPeer()); 
-            // set the data/enable
-            reg1.getDataPort().setBus(getNextDrivePort().getPeer());
-            reg1.getEnablePort().setBus(getNextDriveEnablePort().getPeer());
-            // reset
-            reg1.getResetPort().setBus(getResetPort().getPeer());
-            reg1.getInternalResetPort().setBus(getResetPort().getPeer());
-            // size bus of reg to one bit
-            reg1.getResultBus().setSize(1, false);
-            
-            // now a mux
-            Mux mux1=new Mux(2);
-            mux1.setIDLogical(ID.showLogical(mux1)+"_drive");
-            addComponent(mux1);
-            mux1.getResultBus().setSize(1, true);
-            
-            List l = mux1.getGoPorts();
-            //
-            // This is a hack like Latch -- we count on the translater
-            // ignoring the second select so we connect them themselves.
-            //
-            
-            // 0th -- now port
-            Port sel=(Port)l.get(0);
-            Port data=mux1.getDataPort(sel);
-            sel.setBus(getNowDriveEnablePort().getPeer());
-            data.setBus(getNowDrivePort().getPeer());
+		private Bus addValueLogic(int size, long initValue) {
+			// ok. We need a reg ...
+			// Reg reg1=new Reg(initValue);
+			Reg reg1 = Reg.getConfigurableReg(Reg.REGRE, ID.showLogical(this)
+					+ "_value");
+			reg1.setInitialValue(Value.getConstantValue(initValue));
 
-            // 1th -- result from the reg above
-            sel=(Port)l.get(1);
-            data=mux1.getDataPort(sel);
-            sel.setBus(getNowDriveEnablePort().getPeer());
-            data.setBus(reg1.getResultBus());
+			// reg1.setIDLogical(ID.showLogical(reg1)+"_value");
+			addComponent(reg1);
+			// set up the clock
+			reg1.getClockPort().setBus(getClockPort().getPeer());
+			// set the data/enable
+			reg1.getDataPort().setBus(getNextValuePort().getPeer());
+			reg1.getEnablePort().setBus(getNextValueEnablePort().getPeer());
+			// reset
+			reg1.getResetPort().setBus(getResetPort().getPeer());
+			reg1.getInternalResetPort().setBus(getResetPort().getPeer());
+			// size bus of reg
+			reg1.getResultBus().setSize(size, true);
 
-            return mux1.getResultBus();
-        }
+			// now a mux
+			Mux mux1 = new Mux(2);
+			mux1.setIDLogical(ID.showLogical(mux1) + "_value");
+			addComponent(mux1);
+			mux1.getResultBus().setSize(size, true);
 
-        public Bus getResultBus()
-        {
-            return resultBus;
-        }
+			List l = mux1.getGoPorts();
+			//
+			// This is a hack like Latch -- we count on the translater
+			// ignoring the second select so we connect them themselves.
+			//
 
-        public Port getNextValuePort()
-        {
-            return (Port)getDataPorts().get(0);
-        }
+			// 0th -- now port
+			Port sel = (Port) l.get(0);
+			Port data = mux1.getDataPort(sel);
+			sel.setBus(getNowValueEnablePort().getPeer());
+			data.setBus(getNowValuePort().getPeer());
 
-        public Port getNextValueEnablePort()
-        {
-            return (Port)getDataPorts().get(1);
-        }
+			// 1th -- result from the reg above
+			sel = (Port) l.get(1);
+			data = mux1.getDataPort(sel);
+			sel.setBus(getNowValueEnablePort().getPeer());
+			data.setBus(reg1.getResultBus());
 
-        public Port getNowValuePort()
-        {
-            return (Port)getDataPorts().get(2);
-        }
+			return mux1.getResultBus();
+		}
 
-        public Port getNowValueEnablePort()
-        {
-            return (Port)getDataPorts().get(3);
-        }
+		private Bus addDriveLogic(boolean isDriven) {
+			// ok. We need a reg ...
+			// Reg reg1=new Reg(isDriven?1L:0L);
+			Reg reg1 = Reg.getConfigurableReg(Reg.REGRE, ID.showLogical(this)
+					+ "_drive");
+			reg1.setInitialValue(Value.getConstantValue(isDriven ? 1L : 0L));
 
-        public Port getNextDrivePort()
-        {
-            return (Port)getDataPorts().get(4);
-        }
+			addComponent(reg1);
+			// set up the clock
+			reg1.getClockPort().setBus(getClockPort().getPeer());
+			// set the data/enable
+			reg1.getDataPort().setBus(getNextDrivePort().getPeer());
+			reg1.getEnablePort().setBus(getNextDriveEnablePort().getPeer());
+			// reset
+			reg1.getResetPort().setBus(getResetPort().getPeer());
+			reg1.getInternalResetPort().setBus(getResetPort().getPeer());
+			// size bus of reg to one bit
+			reg1.getResultBus().setSize(1, false);
 
-        public Port getNextDriveEnablePort()
-        {
-            return (Port)getDataPorts().get(5);
-        }
+			// now a mux
+			Mux mux1 = new Mux(2);
+			mux1.setIDLogical(ID.showLogical(mux1) + "_drive");
+			addComponent(mux1);
+			mux1.getResultBus().setSize(1, true);
 
-        public Port getNowDrivePort()
-        {
-            return (Port)getDataPorts().get(6);
-        }
+			List l = mux1.getGoPorts();
+			//
+			// This is a hack like Latch -- we count on the translater
+			// ignoring the second select so we connect them themselves.
+			//
 
-        public Port getNowDriveEnablePort()
-        {
-            return (Port)getDataPorts().get(7);
-        }
+			// 0th -- now port
+			Port sel = (Port) l.get(0);
+			Port data = mux1.getDataPort(sel);
+			sel.setBus(getNowDriveEnablePort().getPeer());
+			data.setBus(getNowDrivePort().getPeer());
 
-        public void accept (Visitor visitor)
-        {
-            throw new UnexpectedVisitationException("InPinBuf's should not be visited!");
-        }
-    }
+			// 1th -- result from the reg above
+			sel = (Port) l.get(1);
+			data = mux1.getDataPort(sel);
+			sel.setBus(getNowDriveEnablePort().getPeer());
+			data.setBus(reg1.getResultBus());
+
+			return mux1.getResultBus();
+		}
+
+		public Bus getResultBus() {
+			return resultBus;
+		}
+
+		public Port getNextValuePort() {
+			return (Port) getDataPorts().get(0);
+		}
+
+		public Port getNextValueEnablePort() {
+			return (Port) getDataPorts().get(1);
+		}
+
+		public Port getNowValuePort() {
+			return (Port) getDataPorts().get(2);
+		}
+
+		public Port getNowValueEnablePort() {
+			return (Port) getDataPorts().get(3);
+		}
+
+		public Port getNextDrivePort() {
+			return (Port) getDataPorts().get(4);
+		}
+
+		public Port getNextDriveEnablePort() {
+			return (Port) getDataPorts().get(5);
+		}
+
+		public Port getNowDrivePort() {
+			return (Port) getDataPorts().get(6);
+		}
+
+		public Port getNowDriveEnablePort() {
+			return (Port) getDataPorts().get(7);
+		}
+
+		public void accept(Visitor visitor) {
+			throw new UnexpectedVisitationException(
+					"InPinBuf's should not be visited!");
+		}
+	}
 }

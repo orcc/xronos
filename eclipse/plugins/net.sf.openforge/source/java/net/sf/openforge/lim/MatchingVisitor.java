@@ -21,57 +21,52 @@
 
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
- * MatchingNodesVisitor is visitor which provides a DefaultVisitor which
- * can be used to record matching nodes in either a fifo or lifo manner.
- *
- *
+ * MatchingNodesVisitor is visitor which provides a DefaultVisitor which can be
+ * used to record matching nodes in either a fifo or lifo manner.
+ * 
+ * 
  * Created: Thu Jul 11 14:32:46 2002
- *
+ * 
  * @author cschanck
  * @version $Id: MatchingVisitor.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class MatchingVisitor extends DefaultVisitor
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class MatchingVisitor extends DefaultVisitor {
+	private static final String _RCS_ = "$Rev: 2 $";
 
-    public static final boolean FIFO=true;
-    public static final boolean LIFO=false;
+	public static final boolean FIFO = true;
+	public static final boolean LIFO = false;
 
-    private boolean isFifo;
-    private LinkedList ll=new LinkedList();
-    
-    public MatchingVisitor (boolean isFifo)
-    {
-        super();
-        this.isFifo=isFifo;
-    }
+	private boolean isFifo;
+	private LinkedList ll = new LinkedList();
 
-    public boolean isFifo() { return isFifo; }
-    
-    public void addMatchingNode(Object o)
-    {
-        if(isFifo)
-        {
-            ll.addLast(o);
-        }
-        else
-        {
-            ll.addFirst(o);
-        }
-    }
+	public MatchingVisitor(boolean isFifo) {
+		super();
+		this.isFifo = isFifo;
+	}
 
-    public List getMatchingNodes()
-    {
-        return Collections.unmodifiableList(ll);
-    }
+	public boolean isFifo() {
+		return isFifo;
+	}
 
-    public void clear()
-    {
-        ll.clear();
-    }
-    
+	public void addMatchingNode(Object o) {
+		if (isFifo) {
+			ll.addLast(o);
+		} else {
+			ll.addFirst(o);
+		}
+	}
+
+	public List getMatchingNodes() {
+		return Collections.unmodifiableList(ll);
+	}
+
+	public void clear() {
+		ll.clear();
+	}
 
 }

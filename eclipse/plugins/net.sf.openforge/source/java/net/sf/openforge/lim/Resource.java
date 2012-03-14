@@ -20,36 +20,34 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
- * A Resource is a {@link Component} wrapper that allows the
- * Component to be accessed by the execution of one or more
- * {@link Access Accesses} that reference the Resource.  All
- * Accesses to the same Resource share that Resource.
+ * A Resource is a {@link Component} wrapper that allows the Component to be
+ * accessed by the execution of one or more {@link Access Accesses} that
+ * reference the Resource. All Accesses to the same Resource share that
+ * Resource.
  * <P>
- * A Resource represents the target of a call-by-reference.
- * During the generation of HDL, explicit connections must be
- * made from each Access to its Resource.  The Resource is
- * responsible for arbitrating accesses to its component.
- * <p>The functionality of this class has been largely subsumed into
- * the Referent class and the Referenceable interface.
- *
- * @author  Stephen Edwards
+ * A Resource represents the target of a call-by-reference. During the
+ * generation of HDL, explicit connections must be made from each Access to its
+ * Resource. The Resource is responsible for arbitrating accesses to its
+ * component.
+ * <p>
+ * The functionality of this class has been largely subsumed into the Referent
+ * class and the Referenceable interface.
+ * 
+ * @author Stephen Edwards
  * @version $Id: Resource.java 282 2006-08-14 21:25:33Z imiller $
  */
-public abstract class Resource extends Referent implements Referenceable
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 282 $";
+public abstract class Resource extends Referent implements Referenceable {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 282 $";
 
-    /**
-     * Constructs a new Resource.
-     */
-    public Resource ()
-    {
-        super();
-    }
+	/**
+	 * Constructs a new Resource.
+	 */
+	public Resource() {
+		super();
+	}
 
-    /**
-     * interface to push clock and reset to shared resources 
-     */
+	/**
+	 * interface to push clock and reset to shared resources
+	 */
 }

@@ -21,245 +21,227 @@
 
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * An ApiCallIdentifier identifies a {@link Call Call} to be a Forged (forgeable)
- * API method call. These special API methods contains constant information
- * set by the users that says about the enclosing methods.
- * Each ApiCallIdentifier has an identifier call a {@link ApiCallIdentifier.Tag Tag}.
- * A {@link ApiCallIdentifier.Tag Tag} consists of an ApiCallIdentifier type, 
+ * An ApiCallIdentifier identifies a {@link Call Call} to be a Forged
+ * (forgeable) API method call. These special API methods contains constant
+ * information set by the users that says about the enclosing methods. Each
+ * ApiCallIdentifier has an identifier call a {@link ApiCallIdentifier.Tag Tag}.
+ * A {@link ApiCallIdentifier.Tag Tag} consists of an ApiCallIdentifier type,
  * {@link ApiCallIdentifier#THROUGHPUT_LOCAL}.
- *
- * <p><b>NOTE: Please add new Types if we have additional forgeable api methods.</b>
- *
+ * 
+ * <p>
+ * <b>NOTE: Please add new Types if we have additional forgeable api
+ * methods.</b>
+ * 
  * @author ysyu
  * @version $Id: ApiCallIdentifier.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class ApiCallIdentifier
-{
-    /* Revision */
-    private static final String _RCS_ = "$Rev: 2 $";
-    
-    /* The identifier tag of api call */
-    private ApiCallIdentifier.Tag tag;
-    
-    /* the call to which this identifier belongs */
-    private Call owner;
-    
-    /* 
-     * the collection of constant api call specifications.
-     * 
-     * NOTE: now, these are just ordered constants from this 
-     * ApiCallIdentifier owner's method parameters
-     */
-    private List specifications = new ArrayList();
-    
-    /**
-     * A type identifier for an ApiCallIdentifier.
-     * 
-     * @version $Id: ApiCallIdentifier.java 2 2005-06-09 20:00:48Z imiller $
-     */
-    public final static class Type
-    {
-        private static final String _RCS_ = "$Rev: 2 $";
-        
-        static final int ID_THROUGHPUT_LOCAL = 0;
+public class ApiCallIdentifier {
 
-        /* the kind of ApiCallIdentifier */
-        private int id;
-        
-        private Type (int id)
-        {
-            this.id = id;
-        }
+	/* The identifier tag of api call */
+	private ApiCallIdentifier.Tag tag;
 
-        private int getId ()
-        {
-            return id;
-        }
+	/* the call to which this identifier belongs */
+	private Call owner;
 
-        public String toString()
-        {
-            switch (getId())
-            {
-                case ID_THROUGHPUT_LOCAL:
-                    return "THROUGHPUT LOCAL";
-                default:
-                    assert false : "Unknown id: " + getId();
-                    return null;
-            }
-        }
-    }
+	/*
+	 * the collection of constant api call specifications.
+	 * 
+	 * NOTE: now, these are just ordered constants from this ApiCallIdentifier
+	 * owner's method parameters
+	 */
+	private List<Number> specifications = new ArrayList<Number>();
 
-    /* The type of ApiCallIdentifier that represents the throughput local go spacing */
-    public static final Type THROUGHPUT_LOCAL = new Type(Type.ID_THROUGHPUT_LOCAL);
+	/**
+	 * A type identifier for an ApiCallIdentifier.
+	 * 
+	 * @version $Id: ApiCallIdentifier.java 2 2005-06-09 20:00:48Z imiller $
+	 */
+	public final static class Type {
 
-    /**
-     * A unique, hashable identifier for an {@link ApiCallIdentifier}
-     *
-     * @version $Id: ApiCallIdentifier.java 2 2005-06-09 20:00:48Z imiller $
-     */
-    public static class Tag
-    {
-        /* The Call type */
-        private ApiCallIdentifier.Type type;
+		static final int ID_THROUGHPUT_LOCAL = 0;
 
-        /* the Call name */
-        private String name;
+		/* the kind of ApiCallIdentifier */
+		private int id;
 
-        private Tag (ApiCallIdentifier.Type type, String name)
-        {
-            this.type = type;
-            this.name = name;
-        }
+		private Type(int id) {
+			this.id = id;
+		}
 
-        public String getName ()
-        {
-            return name;
-        }
+		private int getId() {
+			return id;
+		}
 
-        public ApiCallIdentifier.Type getType ()
-        {
-            return type;
-        }
+		public String toString() {
+			switch (getId()) {
+			case ID_THROUGHPUT_LOCAL:
+				return "THROUGHPUT LOCAL";
+			default:
+				assert false : "Unknown id: " + getId();
+				return null;
+			}
+		}
+	}
 
-        public int hashCode ()
-        {
-            return type.hashCode();
-        }
+	/*
+	 * The type of ApiCallIdentifier that represents the throughput local go
+	 * spacing
+	 */
+	public static final Type THROUGHPUT_LOCAL = new Type(
+			Type.ID_THROUGHPUT_LOCAL);
 
-        public boolean equals (Object obj)
-        {
-            if (obj instanceof Tag)
-            {
-                Tag tag = (Tag)obj;
-                return tag.getType() == getType();
-            }
-            return false;
-        }
+	/**
+	 * A unique, hashable identifier for an {@link ApiCallIdentifier}
+	 * 
+	 * @version $Id: ApiCallIdentifier.java 2 2005-06-09 20:00:48Z imiller $
+	 */
+	public static class Tag {
+		/* The Call type */
+		private ApiCallIdentifier.Type type;
 
-        public String toString ()
-        {
-            return type.toString();
-        }
-    }
+		/* the Call name */
+		private String name;
 
-    /**
-     * @returns the tag of this identifier
-     */
-    public ApiCallIdentifier.Tag getTag()
-    {
-        return tag;
-    }
+		private Tag(ApiCallIdentifier.Type type, String name) {
+			this.type = type;
+			this.name = name;
+		}
 
-    /**
-     * Gets a named ApiCallIdentifier tag.
-     *
-     * @param type the ApiCallIdentifier type
-     * @param name the name of the Call
-     * @return a named tag
-     */
-    public static ApiCallIdentifier.Tag getTag (ApiCallIdentifier.Type type, String name)
-    {
-        return new Tag(type, name);
-    }
+		public String getName() {
+			return name;
+		}
 
-    /**
-     * @param tag 
-     */
-    public void setTag (ApiCallIdentifier.Tag tag)
-    {
-        this.tag = tag;
-    }
+		public ApiCallIdentifier.Type getType() {
+			return type;
+		}
 
-    /**
-     * Set the api call specification
-     *
-     * @param spec api call constant
-     */
-    public void setSpecification (int spec)
-    {
-        specifications.add(new Integer(spec));
-    }
+		public int hashCode() {
+			return type.hashCode();
+		}
 
-    /**
-     * Set the api call specification
-     *
-     * @param spec api call constant
-     */
-    public void setSpecification (Number spec)
-    {
-        specifications.add(spec);
-    }
+		public boolean equals(Object obj) {
+			if (obj instanceof Tag) {
+				Tag tag = (Tag) obj;
+				return tag.getType() == getType();
+			}
+			return false;
+		}
 
-    /**
-     * Set the specification with a list of specifications
-     *
-     * @param specs list of api call constants
-     */
-    void setSpecifications (List specs)
-    {
-        specifications.addAll(specs);
-    }
+		public String toString() {
+			return type.toString();
+		}
+	}
 
-    /**
-     * @return an ordered list of constant specifications
-     */
-    public List getSpecifications ()
-    {
-        return specifications;
-    }
+	/**
+	 * @returns the tag of this identifier
+	 */
+	public ApiCallIdentifier.Tag getTag() {
+		return tag;
+	}
 
-    /**
-     * The {@link Call} that this ApiCallIdentifier identifies
-     *
-     * @return a {@link Call}
-     */
-    public Call getOwner ()
-    {
-        return owner;
-    }
+	/**
+	 * Gets a named ApiCallIdentifier tag.
+	 * 
+	 * @param type
+	 *            the ApiCallIdentifier type
+	 * @param name
+	 *            the name of the Call
+	 * @return a named tag
+	 */
+	public static ApiCallIdentifier.Tag getTag(ApiCallIdentifier.Type type,
+			String name) {
+		return new Tag(type, name);
+	}
 
-    /**
-     * Set the {@link Call} that this ApiCallIdentifier identities
-     *
-     * @param owner {@link Call} that owns this identifier
-     */
-    public void setOwner (Call owner)
-    {
-        this.owner = owner;
-    }
+	/**
+	 * @param tag
+	 */
+	public void setTag(ApiCallIdentifier.Tag tag) {
+		this.tag = tag;
+	}
 
-    /**
-     * @return name of this identifier
-     */
-    public String getName ()
-    {
-        return getTag().getName();
-    }
+	/**
+	 * Set the api call specification
+	 * 
+	 * @param spec
+	 *            api call constant
+	 */
+	public void setSpecification(int spec) {
+		specifications.add(new Integer(spec));
+	}
 
-    public ApiCallIdentifier (Call owner, String api_name)
-    {
-        this.owner = owner;
+	/**
+	 * Set the api call specification
+	 * 
+	 * @param spec
+	 *            api call constant
+	 */
+	public void setSpecification(Number spec) {
+		specifications.add(spec);
+	}
 
-        if(api_name.compareTo("throughputLocal(int)") == 0)
-        {    
-            this.tag = new Tag(THROUGHPUT_LOCAL, api_name);
-        }
-        else
-        {
-            assert false : "Unknown API method " + api_name;
-        }
-    }
+	/**
+	 * Set the specification with a list of specifications
+	 * 
+	 * @param specs
+	 *            list of api call constants
+	 */
+	void setSpecifications(List<Number> specs) {
+		specifications.addAll(specs);
+	}
 
-    /**
-     * Copies the attributes of this ApiCallIdentifier
-     */
-    void copyAttributes(ApiCallIdentifier apiId)
-    {
-        setOwner(apiId.getOwner());
-        setTag(apiId.getTag());
-        setSpecifications(apiId.getSpecifications());
-    }
+	/**
+	 * @return an ordered list of constant specifications
+	 */
+	public List<Number> getSpecifications() {
+		return specifications;
+	}
+
+	/**
+	 * The {@link Call} that this ApiCallIdentifier identifies
+	 * 
+	 * @return a {@link Call}
+	 */
+	public Call getOwner() {
+		return owner;
+	}
+
+	/**
+	 * Set the {@link Call} that this ApiCallIdentifier identities
+	 * 
+	 * @param owner
+	 *            {@link Call} that owns this identifier
+	 */
+	public void setOwner(Call owner) {
+		this.owner = owner;
+	}
+
+	/**
+	 * @return name of this identifier
+	 */
+	public String getName() {
+		return getTag().getName();
+	}
+
+	public ApiCallIdentifier(Call owner, String api_name) {
+		this.owner = owner;
+
+		if (api_name.compareTo("throughputLocal(int)") == 0) {
+			this.tag = new Tag(THROUGHPUT_LOCAL, api_name);
+		} else {
+			assert false : "Unknown API method " + api_name;
+		}
+	}
+
+	/**
+	 * Copies the attributes of this ApiCallIdentifier
+	 */
+	void copyAttributes(ApiCallIdentifier apiId) {
+		setOwner(apiId.getOwner());
+		setTag(apiId.getTag());
+		setSpecifications(apiId.getSpecifications());
+	}
 }

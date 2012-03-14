@@ -23,20 +23,22 @@ package net.sf.openforge.lim;
 
 /**
  * Arbitratable.java
- *
- *
- * <p>Created: Mon Aug  8 16:18:06 2005
- *
+ * 
+ * 
+ * <p>
+ * Created: Mon Aug 8 16:18:06 2005
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: Arbitratable.java 18 2005-08-12 20:32:51Z imiller $
  */
-public interface Arbitratable 
-{
-    public static final String _RCS_ = "$Rev: 18 $";
+public interface Arbitratable {
 
-    public int getDataPathWidth ();
-    public int getAddrPathWidth ();
-    public boolean isAddressable ();
-    public boolean allowsCombinationalReads ();
-    
+	public int getDataPathWidth();
+
+	public int getAddrPathWidth();
+
+	public boolean isAddressable();
+
+	public boolean allowsCombinationalReads();
+
 }// Arbitratable

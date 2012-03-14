@@ -21,90 +21,87 @@
 
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.Map;
 
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.memory.MemoryWrite;
 
 /**
- * OffsetMemoryRead is an {@link OffsetMemoryAccess} for a write to memory.
- * It adds a data {@link Port} that receives the value to be written.
- *
+ * OffsetMemoryRead is an {@link OffsetMemoryAccess} for a write to memory. It
+ * adds a data {@link Port} that receives the value to be written.
+ * 
  * @version $Id: OffsetMemoryWrite.java 70 2005-12-01 17:43:11Z imiller $
  */
-public abstract class OffsetMemoryWrite extends OffsetMemoryAccess
-{
-    private static final String _RCS_ = "$Rev: 70 $";
+public abstract class OffsetMemoryWrite extends OffsetMemoryAccess {
+	private static final String _RCS_ = "$Rev: 70 $";
 
-    /** The port which receives the value to be written */
-    private Port valuePort;
-    
-    /**
-     * Constructs an OffsetMemoryWrite with the specified memory write access
-     *
-     * @param memoryWrite the underlying {@link MemoryWrite} for
-     *          this access.
-     * @param addressableLocations the number of addressable locations
-     * this access is to send/retrieve from the memory. 
-     * @param maxAddressWidth the pre-optimized number of bits in the
-     * address bus 
-     */
-    public OffsetMemoryWrite (MemoryWrite memoryWrite, int addressableLocations, int maxAddressWidth)
-    {
-        super(memoryWrite, addressableLocations, maxAddressWidth);
-        
-        this.valuePort  = makeDataPort();
-        final Bus valueBus = valuePort.getPeer();
-        final Entry writeEntry = (Entry)memoryWrite.getEntries().iterator().next();
-        writeEntry.addDependency(memoryWrite.getDataPort(), new DataDependency(valueBus));
+	/** The port which receives the value to be written */
+	private Port valuePort;
 
-        getExit(Exit.DONE).getDoneBus().setUsed(true);
-    }
+	/**
+	 * Constructs an OffsetMemoryWrite with the specified memory write access
+	 * 
+	 * @param memoryWrite
+	 *            the underlying {@link MemoryWrite} for this access.
+	 * @param addressableLocations
+	 *            the number of addressable locations this access is to
+	 *            send/retrieve from the memory.
+	 * @param maxAddressWidth
+	 *            the pre-optimized number of bits in the address bus
+	 */
+	public OffsetMemoryWrite(MemoryWrite memoryWrite, int addressableLocations,
+			int maxAddressWidth) {
+		super(memoryWrite, addressableLocations, maxAddressWidth);
 
-    /**
-     * Gets the data port that receives the value to be written.
-     */
-    public Port getValuePort ()
-    {
-        return valuePort;
-    }
+		this.valuePort = makeDataPort();
+		final Bus valueBus = valuePort.getPeer();
+		final Entry writeEntry = (Entry) memoryWrite.getEntries().iterator()
+				.next();
+		writeEntry.addDependency(memoryWrite.getDataPort(), new DataDependency(
+				valueBus));
 
-    /**
-     * Returns true
-     */
-    public boolean isWrite ()
-    {
-        return true;
-    }
+		getExit(Exit.DONE).getDoneBus().setUsed(true);
+	}
 
-    public MemoryWrite getMemoryWrite ()
-    {
-        return (MemoryWrite)getMemoryAccess();
-    }
-    
-    /**
-     * Attempts to remove the given {@link Port} from this component.
-     *
-     * @param port the port to remove
-     * @return true if the port was removed.
-     */
-    public boolean removeDataPort (Port port)
-    {
-        final boolean isRemoved = super.removeDataPort(port);
-        if (isRemoved && (port == getValuePort()))
-        {
-            this.valuePort = null;
-        }
-        return isRemoved;
-    }
-    
-    protected void cloneNotify (Module moduleClone, Map cloneMap)
-    {
-        // XXX WARNING!  This is probably never called since all the
-        // concrete subclasses override cloneNotify and do not call
-        // the super!
-        super.cloneNotify(moduleClone, cloneMap);
-        OffsetMemoryWrite clone = (OffsetMemoryWrite)moduleClone;
-        clone.valuePort = getPortClone(valuePort, cloneMap);
-    }
+	/**
+	 * Gets the data port that receives the value to be written.
+	 */
+	public Port getValuePort() {
+		return valuePort;
+	}
+
+	/**
+	 * Returns true
+	 */
+	public boolean isWrite() {
+		return true;
+	}
+
+	public MemoryWrite getMemoryWrite() {
+		return (MemoryWrite) getMemoryAccess();
+	}
+
+	/**
+	 * Attempts to remove the given {@link Port} from this component.
+	 * 
+	 * @param port
+	 *            the port to remove
+	 * @return true if the port was removed.
+	 */
+	public boolean removeDataPort(Port port) {
+		final boolean isRemoved = super.removeDataPort(port);
+		if (isRemoved && (port == getValuePort())) {
+			this.valuePort = null;
+		}
+		return isRemoved;
+	}
+
+	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+		// XXX WARNING! This is probably never called since all the
+		// concrete subclasses override cloneNotify and do not call
+		// the super!
+		super.cloneNotify(moduleClone, cloneMap);
+		OffsetMemoryWrite clone = (OffsetMemoryWrite) moduleClone;
+		clone.valuePort = getPortClone(valuePort, cloneMap);
+	}
 
 }

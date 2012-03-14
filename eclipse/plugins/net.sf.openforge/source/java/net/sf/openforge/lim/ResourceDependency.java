@@ -24,122 +24,109 @@ import net.sf.openforge.lim.util.PostScheduleCallback;
 import net.sf.openforge.schedule.LatencyTracker;
 
 /**
- * A ResourceDependency is a {@link ControlDependency ControlDependency}
- * between two {@link Component Components} that access the same
- * mutually exclusive resource.  The {@link Bus Bus} represents
- * the signal that is asserted when the predecessor access has
- * completed or has been skipped; in other words, when it is safe for
- * the downstream accessor to execute.
+ * A ResourceDependency is a {@link ControlDependency ControlDependency} between
+ * two {@link Component Components} that access the same mutually exclusive
+ * resource. The {@link Bus Bus} represents the signal that is asserted when the
+ * predecessor access has completed or has been skipped; in other words, when it
+ * is safe for the downstream accessor to execute.
  * <P>
- * Included is a number of clocks by which the successor should delay
- * before accessing the resource.
- *
- * @author  Stephen Edwards
+ * Included is a number of clocks by which the successor should delay before
+ * accessing the resource.
+ * 
+ * @author Stephen Edwards
  * @version $Id: ResourceDependency.java 538 2007-11-21 06:22:39Z imiller $
  */
-public class ResourceDependency extends ControlDependency
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 538 $";
+public class ResourceDependency extends ControlDependency {
 
-    private int delayClocks;
+	private int delayClocks;
 
-    /**
-     * Constructs a ResourceDependency.
-     *
-     * @param logicalBus the done bus on which the go port logically
-     *          depends
-     * @param clocks the number of clocks by which the dependent
-     *          component should delay its execution
-     */
-    public ResourceDependency (Bus logicalBus, int clocks)
-    {
-        super(logicalBus);
-        this.delayClocks = clocks;
-    }
-    
-    /**
-     * Returns a new resourcedependency with the same number of delay
-     * clocks as this one.
-     */
-    public Dependency createSameType(Bus logicalBus)
-    {
-        return new ResourceDependency(logicalBus, getDelayClocks());
-    }
-    
-    /**
-     * Gets the number of clocks by which the dependent component
-     * should delay before accessing the resource.
-     */
-    public int getDelayClocks ()
-    {
-        return delayClocks;
-    }
+	/**
+	 * Constructs a ResourceDependency.
+	 * 
+	 * @param logicalBus
+	 *            the done bus on which the go port logically depends
+	 * @param clocks
+	 *            the number of clocks by which the dependent component should
+	 *            delay its execution
+	 */
+	public ResourceDependency(Bus logicalBus, int clocks) {
+		super(logicalBus);
+		this.delayClocks = clocks;
+	}
 
-    public boolean equals (Object obj)
-    {
-        if (obj instanceof ResourceDependency && super.equals(obj))
-        {
-            ResourceDependency dep = (ResourceDependency)obj;
-            return getDelayClocks() == dep.getDelayClocks();
-        }
-        return false;
-    }
+	/**
+	 * Returns a new resourcedependency with the same number of delay clocks as
+	 * this one.
+	 */
+	public Dependency createSameType(Bus logicalBus) {
+		return new ResourceDependency(logicalBus, getDelayClocks());
+	}
 
-    public int hashCode ()
-    {
-        return super.hashCode() + getDelayClocks();
-    }
+	/**
+	 * Gets the number of clocks by which the dependent component should delay
+	 * before accessing the resource.
+	 */
+	public int getDelayClocks() {
+		return delayClocks;
+	}
 
-    /**
-     * A particular resource dependency used to indicate that the
-     * delay clocks is a delta between the GO conditions of the source
-     * and sink rather than the DONE to GO conditions.  However, if
-     * default handling is applied (ie DONE to GO scheduling) the
-     * circuit will still be correct, but may be sub optimal.
-     */
-    public static class GoToGoDep extends ResourceDependency implements PostScheduleCallback
-    {
-        private boolean preconditionIsValid = true;
-        
-        public GoToGoDep (Bus logicalBus, int clocks)
-        {
-            super(logicalBus, clocks);
-        }
+	public boolean equals(Object obj) {
+		if (obj instanceof ResourceDependency && super.equals(obj)) {
+			ResourceDependency dep = (ResourceDependency) obj;
+			return getDelayClocks() == dep.getDelayClocks();
+		}
+		return false;
+	}
 
-        public boolean preconditionIsValid ()
-        {
-            return this.preconditionIsValid;
-        }
-        
-        public boolean equals (Object obj)
-        {
-            if (obj instanceof ResourceDependency.GoToGoDep && super.equals(obj))
-            {
-                ResourceDependency dep = (ResourceDependency)obj;
-                return getDelayClocks() == dep.getDelayClocks();
-            }
-            return false;
-        }
-        
-        public int hashCode ()
-        {
-            return super.hashCode() - 1;
-        }
+	public int hashCode() {
+		return super.hashCode() + getDelayClocks();
+	}
 
-        public void postSchedule (LatencyTracker lt, Component comp)
-        {
-            // Once the component has been scheduled determine if the
-            // precondition still holds.  Specifically, the scheduled
-            // component (source of the dep) must have it's GO latency
-            // equal to the GO of the module (max latency of 0)
-            Latency latency = lt.getLatency(comp);
-            if (latency == null)
-                throw new IllegalStateException("Could not determine latency of scheduled component (source of resource dependency)");
-            if (latency.getMaxClocks() != 0)
-            {
-                this.preconditionIsValid = false;
-            }
-            comp.removePostScheduleCallback(this);
-        }
-    }
+	/**
+	 * A particular resource dependency used to indicate that the delay clocks
+	 * is a delta between the GO conditions of the source and sink rather than
+	 * the DONE to GO conditions. However, if default handling is applied (ie
+	 * DONE to GO scheduling) the circuit will still be correct, but may be sub
+	 * optimal.
+	 */
+	public static class GoToGoDep extends ResourceDependency implements
+			PostScheduleCallback {
+		private boolean preconditionIsValid = true;
+
+		public GoToGoDep(Bus logicalBus, int clocks) {
+			super(logicalBus, clocks);
+		}
+
+		public boolean preconditionIsValid() {
+			return this.preconditionIsValid;
+		}
+
+		public boolean equals(Object obj) {
+			if (obj instanceof ResourceDependency.GoToGoDep
+					&& super.equals(obj)) {
+				ResourceDependency dep = (ResourceDependency) obj;
+				return getDelayClocks() == dep.getDelayClocks();
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return super.hashCode() - 1;
+		}
+
+		public void postSchedule(LatencyTracker lt, Component comp) {
+			// Once the component has been scheduled determine if the
+			// precondition still holds. Specifically, the scheduled
+			// component (source of the dep) must have it's GO latency
+			// equal to the GO of the module (max latency of 0)
+			Latency latency = lt.getLatency(comp);
+			if (latency == null)
+				throw new IllegalStateException(
+						"Could not determine latency of scheduled component (source of resource dependency)");
+			if (latency.getMaxClocks() != 0) {
+				this.preconditionIsValid = false;
+			}
+			comp.removePostScheduleCallback(this);
+		}
+	}
 }

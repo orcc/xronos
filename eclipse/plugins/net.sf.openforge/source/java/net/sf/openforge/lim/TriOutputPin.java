@@ -20,25 +20,21 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
- * An output pin which a {@link Design}  both write
- * and tri-state.
- *
- * @author  Stephen Edwards
+ * An output pin which a {@link Design} both write and tri-state.
+ * 
+ * @author Stephen Edwards
  * @version $Id: TriOutputPin.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class TriOutputPin extends OutputPin
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public class TriOutputPin extends OutputPin {
 
-    /**
-     * Constructs a new TriOutputPin based on a Bus.
-     *
-     * @param bus the bus upon which to base the pin
-     */
-    public TriOutputPin (Bus bus)
-    {
-        super(bus);
-    }
+	/**
+	 * Constructs a new TriOutputPin based on a Bus.
+	 * 
+	 * @param bus
+	 *            the bus upon which to base the pin
+	 */
+	public TriOutputPin(Bus bus) {
+		super(bus);
+	}
 }

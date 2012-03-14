@@ -22,85 +22,76 @@
 package net.sf.openforge.lim;
 
 /**
- * PinAccess factors out functionality that is common among all
- * accesses to pins such as address (pin object reference) port, 
- * done bus and methods that identify whether the node uses go, done,
- * etc.
- * <p><b>Note, the targetted Resource (getResource() method) will be NULL
- * until the PinAllocator runs after scheduling.  This is because we
- * have the restriction that ALL pins accesses must resolve down to a
- * single pin, however this resolution may depend on the running of
- * several passes of several optimizations.  </b>
- *
- * <p>Created: Mon Sep 23 16:13:23 2002
- *
+ * PinAccess factors out functionality that is common among all accesses to pins
+ * such as address (pin object reference) port, done bus and methods that
+ * identify whether the node uses go, done, etc.
+ * <p>
+ * <b>Note, the targetted Resource (getResource() method) will be NULL until the
+ * PinAllocator runs after scheduling. This is because we have the restriction
+ * that ALL pins accesses must resolve down to a single pin, however this
+ * resolution may depend on the running of several passes of several
+ * optimizations. </b>
+ * 
+ * <p>
+ * Created: Mon Sep 23 16:13:23 2002
+ * 
  * @author abk, last modified by $Author: imiller $
  * @version $Id: PinAccess.java 88 2006-01-11 22:39:52Z imiller $
  */
-public abstract class PinAccess extends Access 
-{
-    private static final String _RCS_ = "$Rev: 88 $";
+public abstract class PinAccess extends Access {
+	private static final String _RCS_ = "$Rev: 88 $";
 
-    private boolean isFloatType = false;
-    private boolean isDouble = false;
-    
-    public PinAccess (int portCount)
-    {
-        super(null, portCount, false);
-    }
-    
-    public Port getAddressPort()
-    {
-        return (Port)getDataPorts().get(0);
-    }
-    
-    public Bus getDoneBus()
-    {
-        return (Bus)getExit(Exit.DONE).getDoneBus();
-    }
+	private boolean isFloatType = false;
+	private boolean isDouble = false;
 
-    public boolean isSequencingPoint ()
-    {
-        throw new UnsupportedOperationException("PinAccess is obsolete.  Access to unsupported method");
-    }
-    
-    public abstract Module getPhysicalComponent ();
+	public PinAccess(int portCount) {
+		super(null, portCount, false);
+	}
 
-    public boolean hasPhysicalComponent ()
-    {
-        return getPhysicalComponent() != null;
-    }
-    
-    public void setFloat (boolean isFloat)
-    {
-        this.isFloatType = isFloat;
-    }
-    
-    /**
-     * Returns true if this PinRead was declared a floating point
-     * read.
-     */
-    public boolean isFloat ()
-    {
-        return this.isFloatType;
-    }
-    
-    /**
-     * Used to identify this PinAccess as a double precision floating
-     * point access.
-     */
-    public void setDoublePrecisionFloat (boolean value)
-    {
-        this.isDouble = value;
-    }
+	public Port getAddressPort() {
+		return (Port) getDataPorts().get(0);
+	}
 
-    /**
-     * returns true if this PinAccess has been annotated as isFloat
-     * AND is double precision.
-     */
-    public boolean isDoublePrecisionFloat ()
-    {
-        return isFloat() && this.isDouble;
-    }
-    
+	public Bus getDoneBus() {
+		return (Bus) getExit(Exit.DONE).getDoneBus();
+	}
+
+	public boolean isSequencingPoint() {
+		throw new UnsupportedOperationException(
+				"PinAccess is obsolete.  Access to unsupported method");
+	}
+
+	public abstract Module getPhysicalComponent();
+
+	public boolean hasPhysicalComponent() {
+		return getPhysicalComponent() != null;
+	}
+
+	public void setFloat(boolean isFloat) {
+		this.isFloatType = isFloat;
+	}
+
+	/**
+	 * Returns true if this PinRead was declared a floating point read.
+	 */
+	public boolean isFloat() {
+		return this.isFloatType;
+	}
+
+	/**
+	 * Used to identify this PinAccess as a double precision floating point
+	 * access.
+	 */
+	public void setDoublePrecisionFloat(boolean value) {
+		this.isDouble = value;
+	}
+
+	/**
+	 * returns true if this PinAccess has been annotated as isFloat AND is
+	 * double precision.
+	 */
+	public boolean isDoublePrecisionFloat() {
+		return isFloat() && this.isDouble;
+	}
+
 }// PinAccess

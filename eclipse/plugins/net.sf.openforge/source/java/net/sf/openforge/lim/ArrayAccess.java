@@ -23,16 +23,15 @@ package net.sf.openforge.lim;
 
 /**
  * ArrayAccess is an interface common to all types of Array accesses.
- *
- * <p>Created: Tue Oct 22 21:28:25 2002
- *
+ * 
+ * <p>
+ * Created: Tue Oct 22 21:28:25 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: ArrayAccess.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface ArrayAccess 
-{
-    static final String _RCS_ = "$Rev: 2 $";
+public interface ArrayAccess {
 
-    public Port getOffsetPort ();
-    
+	public Port getOffsetPort();
+
 }// ArrayAccess

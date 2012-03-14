@@ -22,18 +22,16 @@
 package net.sf.openforge.lim;
 
 /**
- * StateHolder is an interface used by any LIM object that maintains
- * state in the program (eg memories or registers).
- *
- *
- * <p>Created: Fri Sep 10 08:45:14 2004
- *
+ * StateHolder is an interface used by any LIM object that maintains state in
+ * the program (eg memories or registers).
+ * 
+ * 
+ * <p>
+ * Created: Fri Sep 10 08:45:14 2004
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: StateHolder.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface StateHolder 
-{
-    public static final String _RCS_ = "$Rev: 2 $";
+public interface StateHolder {
 
-    
 }// StateHolder

@@ -18,27 +18,26 @@
  *
  * 
  */
-package net.sf.openforge.lim; 
+package net.sf.openforge.lim;
 
 /**
  * @author gandhij, last modified by $Author: imiller $
- * @version $Id: UnexpectedVisitationException.java 23 2005-09-09 18:45:32Z imiller $
- *
- * This expection should be thrown if a a lim object that should 
- * not be visited is visited.
+ * @version $Id: UnexpectedVisitationException.java 23 2005-09-09 18:45:32Z
+ *          imiller $
+ * 
+ *          This expection should be thrown if a a lim object that should not be
+ *          visited is visited.
  * 
  */
-public class UnexpectedVisitationException extends RuntimeException 
-{
+@SuppressWarnings("serial")
+public class UnexpectedVisitationException extends RuntimeException {
 
-    public UnexpectedVisitationException ()
-    {
-        super();
-    }
-    
-    public UnexpectedVisitationException (String msg)
-    {
-        super(msg);
-    }
-    
+	public UnexpectedVisitationException() {
+		super();
+	}
+
+	public UnexpectedVisitationException(String msg) {
+		super(msg);
+	}
+
 }

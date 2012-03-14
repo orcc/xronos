@@ -21,54 +21,64 @@
 
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.List;
 
 /**
- * SizedAccess is any Access which also identifies the size of the
- * access at runtime by providing an encoded size signal as one
- * parameter.  The value of this size port is defined by the following
- * encoding:
+ * SizedAccess is any Access which also identifies the size of the access at
+ * runtime by providing an encoded size signal as one parameter. The value of
+ * this size port is defined by the following encoding:
  * <table border=1>
- * <tr><th>encoded value</th><th>number of bytes of access</th></tr>
- * <tr><td>0</td><td>4</td></tr>
- * <tr><td>1</td><td>1</td></tr>
- * <tr><td>2</td><td>2</td></tr>
- * <tr><td>3</td><td>8</td></tr>
+ * <tr>
+ * <th>encoded value</th>
+ * <th>number of bytes of access</th>
+ * </tr>
+ * <tr>
+ * <td>0</td>
+ * <td>4</td>
+ * </tr>
+ * <tr>
+ * <td>1</td>
+ * <td>1</td>
+ * </tr>
+ * <tr>
+ * <td>2</td>
+ * <td>2</td>
+ * </tr>
+ * <tr>
+ * <td>3</td>
+ * <td>8</td>
+ * </tr>
  * </table>
- *
- * <p>Created: Mon Feb 10 15:52:57 2003
- *
+ * 
+ * <p>
+ * Created: Mon Feb 10 15:52:57 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: SizedAccess.java 70 2005-12-01 17:43:11Z imiller $
  */
-public abstract class SizedAccess extends Access 
-{
-    private static final String _RCS_ = "$Rev: 70 $";
+public abstract class SizedAccess extends Access {
 
-    private Port sizePort;
-    
-    public SizedAccess (Resource resource, int dataPortCount, boolean isVolatile)
-    {
-        super(resource, dataPortCount, isVolatile);
-        this.sizePort = makeDataPort();
-    }
+	private Port sizePort;
 
-    /**
-     * Returns the size port, used to provide the encoded number of
-     * bytes to this access.
-     */
-    public Port getSizePort ()
-    {
-        return this.sizePort;
-    }
+	public SizedAccess(Resource resource, int dataPortCount, boolean isVolatile) {
+		super(resource, dataPortCount, isVolatile);
+		this.sizePort = makeDataPort();
+	}
 
-    public Object clone () throws CloneNotSupportedException
-    {
-        SizedAccess clone = (SizedAccess)super.clone();
-        List ports = getPorts();
-        List clonePorts = clone.getPorts();
-        clone.sizePort = (Port)clonePorts.get(ports.indexOf(this.sizePort));
-        return clone;
-    }
-    
+	/**
+	 * Returns the size port, used to provide the encoded number of bytes to
+	 * this access.
+	 */
+	public Port getSizePort() {
+		return this.sizePort;
+	}
+
+	public Object clone() throws CloneNotSupportedException {
+		SizedAccess clone = (SizedAccess) super.clone();
+		List<Port> ports = getPorts();
+		List<Port> clonePorts = clone.getPorts();
+		clone.sizePort = (Port) clonePorts.get(ports.indexOf(this.sizePort));
+		return clone;
+	}
+
 }// SizedAccess

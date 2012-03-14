@@ -21,82 +21,76 @@
 
 package net.sf.openforge.lim;
 
-
 /**
- * An Operation is a an executable {@link Component}.
- * Operations are assembled into {@link Module Modules}.
- *
+ * An Operation is a an executable {@link Component}. Operations are assembled
+ * into {@link Module Modules}.
+ * 
  * @version $Id: Operation.java 2 2005-06-09 20:00:48Z imiller $
  */
-public abstract class Operation extends Component
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+public abstract class Operation extends Component {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
-    /**
-     * Constructs a new Operation.
-     *
-     * @param argCount the number of data {@link Port Ports} to create
-     * @param resultCount the number of data {@link Bus Buses} to create
-     */
-    public Operation (int argCount)
-    {
-        super(argCount);
-    }
+	/**
+	 * Constructs a new Operation.
+	 * 
+	 * @param argCount
+	 *            the number of data {@link Port Ports} to create
+	 * @param resultCount
+	 *            the number of data {@link Bus Buses} to create
+	 */
+	public Operation(int argCount) {
+		super(argCount);
+	}
 
-    /**
-     * Constructs a new Operation with no data {@link Port Ports}.
-     *
-     */
-    public Operation ()
-    {
-        this(0);
-    }
-    
-    /**
-     * Tests whether this component contains a wait directive.
-     * If so, everything prior to it must complete before it
-     * can execute, and everyhing after it must wait until it
-     * completes before executing.
-     */
-    public boolean hasWait ()
-    {
-        return false;
-    }
+	/**
+	 * Constructs a new Operation with no data {@link Port Ports}.
+	 * 
+	 */
+	public Operation() {
+		this(0);
+	}
 
-    /**
-     * Returns true if the implementation of this operation is
-     * floating point, always returns false, overidden by operations
-     * that may be floats.  Being a 'float' operation means that this
-     * Component processes floating point values by consuming
-     * float/double inputs <b>and/or</b> generating a float/double
-     * output.  It does not necessarily mean that it produces a float
-     * output (see the comparison ops).
-     */
-    public boolean isFloat ()
-    {
-        return false;
-    }
+	/**
+	 * Tests whether this component contains a wait directive. If so, everything
+	 * prior to it must complete before it can execute, and everyhing after it
+	 * must wait until it completes before executing.
+	 */
+	public boolean hasWait() {
+		return false;
+	}
 
-    /**
-     * Asserts false until rule is supported.
-     */
-    protected boolean pushValuesForward ()
-    {
-        assert false : "new pushValuesForward propagation of constants through " + this.getClass() + " not yet supported";
-        return false;
-    }
-    
-    /**
-     * Asserts false until rule is supported.
-     */
-    protected boolean pushValuesBackward ()
-    {
-        assert false : "new pushValuesBackward propagation of constants through " + this.getClass() + " not yet supported";
-        return false;
-    }
-    
-    /*
-     *    End new constant prop rules implementation.
-     * =================================================
-     */
+	/**
+	 * Returns true if the implementation of this operation is floating point,
+	 * always returns false, overidden by operations that may be floats. Being a
+	 * 'float' operation means that this Component processes floating point
+	 * values by consuming float/double inputs <b>and/or</b> generating a
+	 * float/double output. It does not necessarily mean that it produces a
+	 * float output (see the comparison ops).
+	 */
+	public boolean isFloat() {
+		return false;
+	}
+
+	/**
+	 * Asserts false until rule is supported.
+	 */
+	protected boolean pushValuesForward() {
+		assert false : "new pushValuesForward propagation of constants through "
+				+ this.getClass() + " not yet supported";
+		return false;
+	}
+
+	/**
+	 * Asserts false until rule is supported.
+	 */
+	protected boolean pushValuesBackward() {
+		assert false : "new pushValuesBackward propagation of constants through "
+				+ this.getClass() + " not yet supported";
+		return false;
+	}
+
+	/*
+	 * End new constant prop rules implementation.
+	 * =================================================
+	 */
 }

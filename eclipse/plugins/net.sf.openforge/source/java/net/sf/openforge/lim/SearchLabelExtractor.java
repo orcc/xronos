@@ -27,53 +27,51 @@ import java.util.List;
 /**
  * Extracts tags from Procedure names and labeled components within a design.
  * Based on Andy's LIMProject.
+ * 
  * @author sb
  */
-public class SearchLabelExtractor extends FilteredVisitor
-{	
+public class SearchLabelExtractor extends FilteredVisitor {
 	List<String> tagList = new ArrayList<String>();
-    
-    private Procedure currentProcedure;    
-    
-    /**
-     * Gets the tags extracted from any visited designs.
-     */
-    public List<String> getTags()
-    {
-        return tagList;
-    }
-    
-    /**
-     * Adds tags for all permutations of the procedure name using
-     * CodeLabel's searchList.
-     */
-    public void visit (Procedure procedure)
-    {
-        CodeLabel procedureLabel = new CodeLabel(procedure, null);
-        List<String> procList = procedureLabel.getSearchList();
-        for(int idx = 0; idx < procList.size(); idx ++){
-        	String tag = (String)procList.get(idx);
-            if (!tagList.contains(tag)) tagList.add(tag);
-        }            
-        currentProcedure = procedure;
-        super.visit(procedure);
-    }
-    
-    /**
-     * Adds tags for all permutations of the component's label (if any) using
-     * CodeLabel's searchList.
-     */
-    public void filterAny(Component c)
-    {
-        String optionLabel = c.getOptionLabel();
-        if (optionLabel != null)
-        {
-            CodeLabel label = new CodeLabel(currentProcedure, optionLabel);
-            List<String> list = label.getSearchList(optionLabel);
-            for(int idx = 0; idx < list.size(); idx ++){
-            	String tag = (String)list.get(idx);
-                if (!tagList.contains(tag)) tagList.add(tag);
-            }
-        }
-    }	
+
+	private Procedure currentProcedure;
+
+	/**
+	 * Gets the tags extracted from any visited designs.
+	 */
+	public List<String> getTags() {
+		return tagList;
+	}
+
+	/**
+	 * Adds tags for all permutations of the procedure name using CodeLabel's
+	 * searchList.
+	 */
+	public void visit(Procedure procedure) {
+		CodeLabel procedureLabel = new CodeLabel(procedure, null);
+		List<String> procList = procedureLabel.getSearchList();
+		for (int idx = 0; idx < procList.size(); idx++) {
+			String tag = (String) procList.get(idx);
+			if (!tagList.contains(tag))
+				tagList.add(tag);
+		}
+		currentProcedure = procedure;
+		super.visit(procedure);
+	}
+
+	/**
+	 * Adds tags for all permutations of the component's label (if any) using
+	 * CodeLabel's searchList.
+	 */
+	public void filterAny(Component c) {
+		String optionLabel = c.getOptionLabel();
+		if (optionLabel != null) {
+			CodeLabel label = new CodeLabel(currentProcedure, optionLabel);
+			List<String> list = label.getSearchList(optionLabel);
+			for (int idx = 0; idx < list.size(); idx++) {
+				String tag = (String) list.get(idx);
+				if (!tagList.contains(tag))
+					tagList.add(tag);
+			}
+		}
+	}
 }

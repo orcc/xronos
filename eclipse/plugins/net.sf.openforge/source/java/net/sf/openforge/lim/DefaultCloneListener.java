@@ -20,54 +20,49 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * A default implementation of {@link CloneListener} which
- * saves the final clone {@link Map} and allows it to be
- * be queried for cloned {@link Component Components} and
- * {@link Entry Entries}.
- *
+ * A default implementation of {@link CloneListener} which saves the final clone
+ * {@link Map} and allows it to be be queried for cloned {@link Component
+ * Components} and {@link Entry Entries}.
+ * 
  * @version $Id: DefaultCloneListener.java 2 2005-06-09 20:00:48Z imiller $
  */
-class DefaultCloneListener implements CloneListener
-{
-    private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+class DefaultCloneListener implements CloneListener {
+	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
-    private Map cloneMap = new HashMap();
+	private Map cloneMap = new HashMap();
 
-    /**
-     * The effect of calling this method multiple times is cumulative.
-     */
-    public void setCloneMap (Map cloneMap)
-    {
-        this.cloneMap.putAll(cloneMap);
-    }
+	/**
+	 * The effect of calling this method multiple times is cumulative.
+	 */
+	public void setCloneMap(Map cloneMap) {
+		this.cloneMap.putAll(cloneMap);
+	}
 
-    /**
-     * Gets the clone map that was set by the cloning component.
-     *
-     * @return a map of original {@link Component Components} and
-     *         {@link Entry Entries} to their clones
-     */
-    public Map getCloneMap ()
-    {
-        return cloneMap;
-    }
+	/**
+	 * Gets the clone map that was set by the cloning component.
+	 * 
+	 * @return a map of original {@link Component Components} and {@link Entry
+	 *         Entries} to their clones
+	 */
+	public Map getCloneMap() {
+		return cloneMap;
+	}
 
-    /**
-     * Gets the clone of a given {@link Component}.
-     */
-    public Component getClone (Component component)
-    {
-        return (Component)cloneMap.get(component);
-    }
+	/**
+	 * Gets the clone of a given {@link Component}.
+	 */
+	public Component getClone(Component component) {
+		return (Component) cloneMap.get(component);
+	}
 
-    /**
-     * Gets the clone of a given {@link Entry}.
-     */
-    public Entry getClone (Entry entry)
-    {
-        return (Entry)cloneMap.get(entry);
-    }
+	/**
+	 * Gets the clone of a given {@link Entry}.
+	 */
+	public Entry getClone(Entry entry) {
+		return (Entry) cloneMap.get(entry);
+	}
 }
