@@ -21,90 +21,97 @@
 package net.sf.openforge.lim.util;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.Port;
 import net.sf.openforge.util.SizedInteger;
-
+import net.sf.openforge.util.naming.ID;
 
 /**
  * @author gandhij
- *
- * This is a helper class to emulate the Loop Test Block. It is a 
- * speceal case of a Module.
+ * 
+ *         This is a helper class to emulate the Loop Test Block. It is a
+ *         speceal case of a Module.
  * 
  */
-public class LoopTestBlockEmulator extends ModuleEmulator{
+public class LoopTestBlockEmulator extends ModuleEmulator {
 
 	/**
 	 * Loop being emulated
 	 */
 	private Loop loop = null;
-	
+
 	/**
-	 * The loop condition has evaluated to true or not ?
-	 * In other words is the loop done ?
+	 * The loop condition has evaluated to true or not ? In other words is the
+	 * loop done ?
 	 */
 	private boolean done = false;
-	
+
 	/**
 	 * LoopTestBlockEmulator Constructor
 	 * 
-	 * @param loop Loop under consideration
-	 * @param module The loop testblock to be emulated
+	 * @param loop
+	 *            Loop under consideration
+	 * @param module
+	 *            The loop testblock to be emulated
 	 */
 	public LoopTestBlockEmulator(Loop loop, Module module) {
 		super(module);
 		this.loop = loop;
 	}
-	
+
 	/**
-	 * Emulate the LoopTestBlock with the inputMap provided and return a map of 
-	 * (output bus, SizedInteger value) pairs. 
+	 * Emulate the LoopTestBlock with the inputMap provided and return a map of
+	 * (output bus, SizedInteger value) pairs.
 	 * 
-	 * @param inputValues map of (input port, SizedInteger value) for input
-	 * @return	busValuesMap - a map of (output bus, SizedInteger value) pairs.
-	 * @throws UnEmulatableLoopException - the loop is unEmulatable.
+	 * @param inputValues
+	 *            map of (input port, SizedInteger value) for input
+	 * @return busValuesMap - a map of (output bus, SizedInteger value) pairs.
+	 * @throws UnEmulatableLoopException
+	 *             - the loop is unEmulatable.
 	 */
-	public Map emulate(Map inputValues) throws UnEmulatableLoopException	{
-		//System.out.println("\nEMULATING DECISION TESTBLOCK -- " + module + " with inputValues = "+ inputValues);
-		Map outputValues = null;
-		
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> inputValues)
+			throws UnEmulatableLoopException {
+		// System.out.println("\nEMULATING DECISION TESTBLOCK -- " + module +
+		// " with inputValues = "+ inputValues);
+		Map<Bus, SizedInteger> outputValues = null;
+
 		componentList.add(module);
 		updateInputMap();
 		componentList.remove(module);
-		
+
 		/*
-         * Prime the input bus value map with the given port values.
-         */
-        Map busValues = portToBusValues(inputValues);
-		
-		Iterator iter = componentList.iterator();
-		while(iter.hasNext()){
-			Component component = (Component)iter.next();
-			
-			HashMap portValues = busToPortValues(component, busValues);
-            outputValues = emulateComponent(component, portValues);
-			
-            /*
-             * If this is the loop's boolean test expression, save its value.
-             */
-            if(component == loop.getDecisionOp()){
-            	final Bus testBus = (Bus)loop.getDecisionOp().getDataBuses().iterator().next();
-            	if(outputValues == null)
-                {
-            		throw new UnEmulatableLoopException("UnEmulatable loop - unable to emulate decisionop");
-            	}
-            	final SizedInteger testValue = (SizedInteger)outputValues.get(testBus);
-            	done = testValue.numberValue().equals(BigInteger.ZERO);
-            }   
-			if(outputValues!=null){
+		 * Prime the input bus value map with the given port values.
+		 */
+		Map<Bus, SizedInteger> busValues = portToBusValues(inputValues);
+		// FIXME: Put implicit iterator
+		Iterator<ID> iter = componentList.iterator();
+		while (iter.hasNext()) {
+			Component component = (Component) iter.next();
+
+			Map<Port, SizedInteger> portValues = busToPortValues(component, busValues);
+			outputValues = emulateComponent(component, portValues);
+
+			/*
+			 * If this is the loop's boolean test expression, save its value.
+			 */
+			if (component == loop.getDecisionOp()) {
+				final Bus testBus = (Bus) loop.getDecisionOp().getDataBuses()
+						.iterator().next();
+				if (outputValues == null) {
+					throw new UnEmulatableLoopException(
+							"UnEmulatable loop - unable to emulate decisionop");
+				}
+				final SizedInteger testValue = (SizedInteger) outputValues
+						.get(testBus);
+				done = testValue.numberValue().equals(BigInteger.ZERO);
+			}
+			if (outputValues != null) {
 				busValues.putAll(outputValues);
 			}
 		}
@@ -113,12 +120,11 @@ public class LoopTestBlockEmulator extends ModuleEmulator{
 	}
 
 	/**
-	 * check if the loop test condition indicates if the
-	 * loop is done 
+	 * check if the loop test condition indicates if the loop is done
 	 * 
 	 * @return boolean indicating if the loop is done or not
 	 */
-	public boolean getDone(){
+	public boolean getDone() {
 		return done;
 	}
 

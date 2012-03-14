@@ -73,7 +73,7 @@ public class Bus extends ID
     Collection<Port> ports = new HashSet(3);
 
     /** Collection of Dependencys; accessed directly by Dependency */
-    Collection logicalDependents = new HashSet(3);
+    Collection<Dependency> logicalDependents = new HashSet<Dependency>(3);
 
     /** True if significant, false if ignorable */
     private boolean isUsed = false;
@@ -453,7 +453,7 @@ public class Bus extends ID
      *         Port that logically depends upon this bus; Dependencies
      *         which are not added to a Port are not returned
      */
-    public Collection getLogicalDependents ()
+    public Collection<Dependency> getLogicalDependents ()
     {
         return logicalDependents;
     }

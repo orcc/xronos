@@ -23,17 +23,17 @@ package net.sf.openforge.lim.util;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.schedule.LatencyTracker;
 
-public interface PostScheduleCallback
-{
-    /**
-     * Method provided by entities requiring post scheduling
-     * information by a component.  Called after the component is
-     * completely scheduled and all attributes are updated.
-     *
-     * @param lt an instance of the LatencyTracker used to schedule
-     * the specified component.
-     * @param comp the component for which scheduling was just
-     * completed. 
-     */
-    void postSchedule (LatencyTracker lt, Component comp);
+public interface PostScheduleCallback {
+	/**
+	 * Method provided by entities requiring post scheduling information by a
+	 * component. Called after the component is completely scheduled and all
+	 * attributes are updated.
+	 * 
+	 * @param lt
+	 *            an instance of the LatencyTracker used to schedule the
+	 *            specified component.
+	 * @param comp
+	 *            the component for which scheduling was just completed.
+	 */
+	void postSchedule(LatencyTracker lt, Component comp);
 }

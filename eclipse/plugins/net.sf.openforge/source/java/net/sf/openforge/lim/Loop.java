@@ -212,7 +212,7 @@ public class Loop extends Module
      * @return a Set containing the data registers and control
      * register if non-null
      */
-    public Set getFeedbackPoints ()
+    public Set<Component> getFeedbackPoints ()
     {
         Set feedback = new HashSet();
         feedback.addAll(super.getFeedbackPoints());

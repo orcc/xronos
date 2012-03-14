@@ -22,14 +22,16 @@ package net.sf.openforge.lim.util;
 
 /**
  * @author gandhij
- *
- * This exception is thrown when during emulation of a loop
- * we find that it is not emulatable.
+ * 
+ *         This exception is thrown when during emulation of a loop we find that
+ *         it is not emulatable.
  */
+@SuppressWarnings("serial")
 public class UnEmulatableLoopException extends Exception {
 
 	/**
-	 * @param message reason for cause
+	 * @param message
+	 *            reason for cause
 	 */
 	public UnEmulatableLoopException(String message) {
 		super(message);
