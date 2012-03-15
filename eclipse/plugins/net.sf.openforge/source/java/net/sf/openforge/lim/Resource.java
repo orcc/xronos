@@ -38,7 +38,6 @@ package net.sf.openforge.lim;
  * @version $Id: Resource.java 282 2006-08-14 21:25:33Z imiller $
  */
 public abstract class Resource extends Referent implements Referenceable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 282 $";
 
 	/**
 	 * Constructs a new Resource.

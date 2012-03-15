@@ -21,9 +21,12 @@
 
 package net.sf.openforge.lim;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import net.sf.openforge.lim.Exit.Tag;
 
 /**
  * A Branch represents a choice of execution between two {@link Component
@@ -171,7 +174,8 @@ public class Branch extends Module {
 				falseComponent.makeEntry(decision.getFalseBus().getOwner()),
 				clockBus, resetBus, decision.getFalseBus());
 
-		final Map exitMap = new HashMap(11);
+		final Map<Tag, Collection<Exit>> exitMap = new HashMap<Tag, Collection<Exit>>(
+				11);
 		collectExits(trueComponent, exitMap);
 		collectExits(falseComponent, exitMap);
 		mergeExits(exitMap, clockBus, resetBus);

@@ -21,6 +21,7 @@
 
 package net.sf.openforge.lim;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -451,7 +452,7 @@ public class Bus extends ID {
 	 * Disconnects all Ports that are physically connected to this bus.
 	 */
 	public void disconnect() {
-		for (Port port :getPorts()) {
+		for (Port port : new ArrayList<Port>(getPorts())) {
 			port.setBus(null);
 		}
 	}
@@ -461,7 +462,8 @@ public class Bus extends ID {
 	 * the dependency which stored the relationship on the target entry.
 	 */
 	public void clearLogicalDependents() {
-		for (Dependency logical :getLogicalDependents()) {
+		for (Dependency logical : new ArrayList<Dependency>(
+				getLogicalDependents())) {
 
 			// clears the logical dependency but also removes the
 			// dependency from the containing entry.

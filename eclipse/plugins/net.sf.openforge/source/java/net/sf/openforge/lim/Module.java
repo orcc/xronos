@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.openforge.app.project.SearchLabel;
+import net.sf.openforge.lim.Exit.Tag;
 
 /**
  * A Module is a {@link Component} that can be a container for other
@@ -42,7 +43,6 @@ import net.sf.openforge.app.project.SearchLabel;
  * @version $Id: Module.java 188 2006-07-05 20:13:17Z imiller $
  */
 public abstract class Module extends Component implements Cloneable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 188 $";
 
 	/**
 	 * The component which provides continuation buses for module ports
@@ -50,7 +50,7 @@ public abstract class Module extends Component implements Cloneable {
 	private InBuf inBuf;
 
 	/** Collection of Component */
-	private Collection<Component> components = new HashSet();
+	private Collection<Component> components = new HashSet<Component>();
 
 	/** True iff this module needs a go signal */
 	private boolean consumesGo = false;
@@ -138,9 +138,9 @@ public abstract class Module extends Component implements Cloneable {
 	 * @param components
 	 *            the {@link Component Components} to be added
 	 */
-	public void addComponents(Collection components) {
-		for (Iterator iter = components.iterator(); iter.hasNext();) {
-			addComponent((Component) iter.next());
+	public void addComponents(Collection<Component> components) {
+		for (Component component : components) {
+			addComponent(component);
 		}
 	}
 
@@ -219,9 +219,8 @@ public abstract class Module extends Component implements Cloneable {
 	 * @return a List of OutBufs, one for each bus of this module
 	 */
 	public Collection<OutBuf> getOutBufs() {
-		List list = new ArrayList(getExits().size());
-		for (Iterator iter = getExits().iterator(); iter.hasNext();) {
-			Exit exit = (Exit) iter.next();
+		List<OutBuf> list = new ArrayList<OutBuf>(getExits().size());
+		for (Exit exit : getExits()) {
 			list.add(exit.getPeer());
 		}
 		return list;
@@ -240,7 +239,7 @@ public abstract class Module extends Component implements Cloneable {
 
 	public void addFeedbackPoint(Component comp) {
 		if (this.feedbackPoints == Collections.EMPTY_SET) {
-			this.feedbackPoints = new HashSet(3);
+			this.feedbackPoints = new HashSet<Component>(3);
 		}
 		this.feedbackPoints.add(comp);
 	}
@@ -335,8 +334,7 @@ public abstract class Module extends Component implements Cloneable {
 	 */
 	public Collection getAccessedResources() {
 		final Set set = new HashSet();
-		for (Iterator iter = getComponents().iterator(); iter.hasNext();) {
-			final Component component = (Component) iter.next();
+		for (Component component : getComponents()) {
 			set.addAll(component.getAccessedResources());
 		}
 		return set;
@@ -352,8 +350,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * @return true if all components in the module are balanceable.
 	 */
 	public boolean isBalanceable() {
-		for (Iterator iter = getComponents().iterator(); iter.hasNext();) {
-			final Component component = (Component) iter.next();
+		for (Component component : getComponents()) {
 			if (!component.isBalanceable()) {
 				return false;
 			}
@@ -392,8 +389,8 @@ public abstract class Module extends Component implements Cloneable {
 	 */
 	public void setProducesDone(boolean producesDone) {
 		this.producesDone = producesDone;
-		for (Iterator iter = getOutBufs().iterator(); iter.hasNext();) {
-			((OutBuf) iter.next()).setConsumesGo(producesDone);
+		for (OutBuf outBuf : getOutBufs()) {
+			outBuf.setConsumesGo(producesDone);
 		}
 	}
 
@@ -491,12 +488,12 @@ public abstract class Module extends Component implements Cloneable {
 	 *            a map of {@link Exit.Tag} to {@link Collection} of
 	 *            {@link Exit}
 	 */
-	protected static void collectExits(Component component, Map exitMap) {
-		for (Iterator iter = component.getExits().iterator(); iter.hasNext();) {
-			Exit exit = (Exit) iter.next();
-			Collection list = (Collection) exitMap.get(exit.getTag());
+	protected static void collectExits(Component component,
+			Map<Exit.Tag, Collection<Exit>> exitMap) {
+		for (Exit exit : component.getExits()) {
+			Collection<Exit> list = exitMap.get(exit.getTag());
 			if (list == null) {
-				list = new LinkedList();
+				list = new LinkedList<Exit>();
 				exitMap.put(exit.getTag(), list);
 			}
 			list.add(exit);
@@ -519,18 +516,17 @@ public abstract class Module extends Component implements Cloneable {
 	 * @param resetBus
 	 *            the reset bus for each new exit
 	 */
-	protected void mergeExits(Map exitMap, Bus clockBus, Bus resetBus) {
-		for (Iterator iter = exitMap.keySet().iterator(); iter.hasNext();) {
-			final Exit.Tag tag = (Exit.Tag) iter.next();
+	protected void mergeExits(Map<Exit.Tag, Collection<Exit>> exitMap,
+			Bus clockBus, Bus resetBus) {
+		for (Exit.Tag tag : exitMap.keySet()) {
 			Exit moduleExit = getExit(tag.getType(), tag.getLabel());
 			if (moduleExit == null) {
 				moduleExit = makeExit(0, tag.getType(), tag.getLabel());
 			}
 			final Component moduleOut = moduleExit.getPeer();
 
-			final Collection exitList = (Collection) exitMap.get(tag);
-			for (Iterator eiter = exitList.iterator(); eiter.hasNext();) {
-				final Exit exit = (Exit) eiter.next();
+			final Collection<Exit> exitList = exitMap.get(tag);
+			for (Exit exit : exitList) {
 				final Entry outEntry = moduleOut.makeEntry(exit);
 				addDependencies(outEntry, clockBus, resetBus, exit.getDoneBus());
 			}
@@ -558,10 +554,11 @@ public abstract class Module extends Component implements Cloneable {
 	 * @param components
 	 *            a collection of child {@link Component Components}
 	 */
-	protected void mergeExits(Collection components) {
-		Map exitMap = new LinkedHashMap(components.size());
-		for (Iterator iter = components.iterator(); iter.hasNext();) {
-			collectExits((Component) iter.next(), exitMap);
+	protected void mergeExits(Collection<Component> components) {
+		Map<Tag, Collection<Exit>> exitMap = new LinkedHashMap<Tag, Collection<Exit>>(
+				components.size());
+		for (Component component : components) {
+			collectExits(component, exitMap);
 		}
 		mergeExits(exitMap, getInBuf().getClockBus(), getInBuf().getResetBus());
 	}
@@ -597,7 +594,7 @@ public abstract class Module extends Component implements Cloneable {
 		}
 
 		/* Map of original Component to cloned Component. */
-		final Map cloneMap = new HashMap();
+		final Map<Component, Component> cloneMap = new HashMap<Component, Component>();
 		cloneMap.put(this, clone);
 
 		/*
@@ -615,11 +612,10 @@ public abstract class Module extends Component implements Cloneable {
 		/*
 		 * Clone all components except the InBuf and OutBufs.
 		 */
-		final Set bufs = new HashSet();
+		final Set<Component> bufs = new HashSet<Component>();
 		bufs.add(getInBuf());
 		bufs.addAll(getOutBufs());
-		for (Iterator iter = components.iterator(); iter.hasNext();) {
-			final Component component = (Component) iter.next();
+		for (Component component : components) {
 			if (!bufs.contains(component)) {
 				Component componentClone = (Component) component.clone();
 				clone.addComponent(componentClone);
@@ -630,16 +626,15 @@ public abstract class Module extends Component implements Cloneable {
 		/*
 		 * convert the clones feedback points map to the right set of components
 		 */
-		clone.feedbackPoints = Collections.EMPTY_SET;
-		for (Iterator iter = this.feedbackPoints.iterator(); iter.hasNext();) {
-			clone.addFeedbackPoint((Component) cloneMap.get(iter.next()));
+		clone.feedbackPoints = Collections.emptySet();
+		for (Component component : this.feedbackPoints) {
+			clone.addFeedbackPoint((Component) cloneMap.get(component));
 		}
 
 		/*
 		 * Duplicate the Exits and OutBufs.
 		 */
-		for (Iterator iter = getExits().iterator(); iter.hasNext();) {
-			final Exit exit = (Exit) iter.next();
+		for (Exit exit : getExits()) {
 			final Exit exitClone = cloneExit(clone, exit);
 
 			final Component outbuf = exit.getPeer();
@@ -649,8 +644,8 @@ public abstract class Module extends Component implements Cloneable {
 			outbufClone.getClockPort().copyAttributes(outbuf.getClockPort());
 			outbufClone.getResetPort().copyAttributes(outbuf.getResetPort());
 			outbufClone.getGoPort().copyAttributes(outbuf.getGoPort());
-			final Iterator piter = outbuf.getDataPorts().iterator();
-			final Iterator pciter = outbufClone.getDataPorts().iterator();
+			final Iterator<Port> piter = outbuf.getDataPorts().iterator();
+			final Iterator<Port> pciter = outbufClone.getDataPorts().iterator();
 			while (pciter.hasNext()) {
 				((Port) pciter.next()).copyAttributes((Port) piter.next());
 			}
@@ -719,14 +714,10 @@ public abstract class Module extends Component implements Cloneable {
 						.makeEntry(drivingExitClone);
 				cloneMap.put(entry, entryClone);
 
-				for (Iterator piter = entry.getPorts().iterator(); piter
-						.hasNext();) {
-					final Port port = (Port) piter.next();
+				for (Port port : entry.getPorts()) {
 					final Port portClone = getPortClone(port, cloneMap);
 
-					for (Iterator diter = entry.getDependencies(port)
-							.iterator(); diter.hasNext();) {
-						final Dependency dependency = (Dependency) diter.next();
+					for (Dependency dependency : entry.getDependencies(port)) {
 						final Bus logicalBus = dependency.getLogicalBus();
 
 						final Dependency dependencyClone = (Dependency) dependency
