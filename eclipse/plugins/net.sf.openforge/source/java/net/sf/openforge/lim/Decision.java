@@ -47,7 +47,6 @@ import java.util.Set;
  * @version $Id: Decision.java 558 2008-03-14 14:14:48Z imiller $
  */
 public class Decision extends Module {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 558 $";
 
 	/**
 	 * The block containing the logic that is executed to produce the boolean

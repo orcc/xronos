@@ -32,7 +32,6 @@ import java.util.Map;
  * @version $Id: CloneListener.java 2 2005-06-09 20:00:48Z imiller $
  */
 public interface CloneListener {
-	static final String _RCS_ = "$Rev: 2 $";
 
 	/**
 	 * Notifies the listener of the cloning of one or more {@link Component

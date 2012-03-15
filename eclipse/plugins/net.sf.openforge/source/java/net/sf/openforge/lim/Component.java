@@ -82,19 +82,19 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	private Port thisPort;
 
 	/** List of argument Ports */
-	protected List<Port> dataPorts = new LinkedList();
+	protected List<Port> dataPorts = new LinkedList<Port>();
 
 	/** Entry */
 	protected List<Entry> entries = new LinkedList<Entry>();
 
 	/** Map of Exit.Tag to Exit */
-	Map<Exit.Tag, Exit> exits = new HashMap();
+	Map<Exit.Tag, Exit> exits = new HashMap<Exit.Tag, Exit>();
 
 	/** Natural log of 2 */
 	private static final double LN_2 = Math.log(2);
 
 	/** Collection of CloneListener */
-	private Collection cloneListeners = Collections.EMPTY_LIST;
+	private Collection<CloneListener> cloneListeners = Collections.emptyList();
 
 	/** denotes if this Component is non-removable */
 	private boolean nonRemovable = false;
@@ -103,9 +103,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * A list of Attribute objects that should be attached to this component
 	 * when instantiated in the LIM.
 	 */
-	private List attributes = Collections.EMPTY_LIST;
+	private List<Attribute> attributes = Collections.emptyList();
 
-	private List<PostScheduleCallback> schedCallbacks = Collections.EMPTY_LIST;
+	private List<PostScheduleCallback> schedCallbacks = Collections.emptyList();
 
 	/**
 	 * A type identifier for an Bus or Port.
@@ -113,7 +113,6 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * @version $Id: Component.java 558 2008-03-14 14:14:48Z imiller $
 	 */
 	public final static class Type {
-		private static final String _RCS_ = "$Rev: 558 $";
 
 		public static final int ID_NORMAL = 0;
 		public static final int ID_SIDEBAND = 1;
@@ -161,7 +160,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		}
 
 		if (dataCount > 0) {
-			this.dataPorts = new LinkedList();
+			this.dataPorts = new LinkedList<Port>();
 			for (int i = 0; i < dataCount; i++) {
 				makeDataPort();
 			}
@@ -185,7 +184,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * @return the data bus
 	 */
 	public static Bus getDataBus(Component component) {
-		final List dataBuses = component.getExit(Exit.DONE).getDataBuses();
+		final List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
 		// C pre increment and predecrement ops generate a block with 2 output
 		// buses. the "data bus" should be bus 0. bus 1 is the pre altered
 		// value.
@@ -221,8 +220,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * @return the result of {@link #pushValuesForward}
 	 */
 	public boolean propagateValuesForward() {
-		for (Iterator iter = getPorts().iterator(); iter.hasNext();) {
-			Port p = (Port) iter.next();
+		for (Port p : getPorts()) {
 			try {
 				p.pushValueForward();
 			} catch (Port.SizeMismatchException sme) {
@@ -241,8 +239,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * @return the result of {@link #pushValuesBackward}
 	 */
 	public boolean propagateValuesBackward() {
-		for (Iterator iter = getBuses().iterator(); iter.hasNext();) {
-			((Bus) iter.next()).pushValueBackward();
+		for (Bus bus : getBuses()) {
+			bus.pushValueBackward();
 		}
 		return pushValuesBackward();
 	}
@@ -278,7 +276,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * 
 	 * @return a collection of {@link CloneListener}
 	 */
-	public Collection getCloneListeners() {
+	public Collection<CloneListener> getCloneListeners() {
 		return cloneListeners;
 	}
 
@@ -290,7 +288,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 */
 	public void addCloneListener(CloneListener cloneListener) {
 		if (cloneListeners.isEmpty()) {
-			cloneListeners = new LinkedList();
+			cloneListeners = new LinkedList<CloneListener>();
 		}
 		cloneListeners.add(cloneListener);
 	}
@@ -308,7 +306,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 
 	public void addPostScheduleCallback(PostScheduleCallback cb) {
 		if (schedCallbacks.size() == 0)
-			this.schedCallbacks = new ArrayList();
+			this.schedCallbacks = new ArrayList<PostScheduleCallback>();
 		this.schedCallbacks.add(cb);
 	}
 
@@ -318,13 +316,14 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 					+ " in " + this);
 		}
 		if (this.schedCallbacks.size() == 0)
-			this.schedCallbacks = Collections.EMPTY_LIST;
+			this.schedCallbacks = Collections.emptyList();
 	}
 
 	public void postScheduleCallback(LatencyTracker lt) {
 		// Make a copy so that the callbacks can delete themselves
 		// after being invoked.
-		List<PostScheduleCallback> copy = new ArrayList(this.schedCallbacks);
+		List<PostScheduleCallback> copy = new ArrayList<PostScheduleCallback>(
+				this.schedCallbacks);
 		for (PostScheduleCallback pcb : copy) {
 			pcb.postSchedule(lt, this);
 		}
@@ -437,7 +436,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		if (getThisPort() == null) {
 			return dataPorts;
 		} else {
-			ArrayList<Port> dpList = new ArrayList(dataPorts.size() + 1);
+			ArrayList<Port> dpList = new ArrayList<Port>(dataPorts.size() + 1);
 			dpList.add(getThisPort());
 			dpList.addAll(this.dataPorts);
 			return dpList;
@@ -449,10 +448,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * 
 	 * @return a collection of {@link Bus buses}
 	 */
-	public Collection getDataBuses() {
-		List list = new LinkedList();
-		for (Iterator iter = exits.values().iterator(); iter.hasNext();) {
-			Exit exit = (Exit) iter.next();
+	public Collection<Bus> getDataBuses() {
+		List<Bus> list = new LinkedList<Bus>();
+		for (Exit exit : exits.values()) {
 			list.addAll(exit.getDataBuses());
 		}
 		return list;
@@ -596,20 +594,19 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 
 		final OutBuf oldOutBuf = (OutBuf) oldExit.getPeer();
 
-		List oldEntryList = oldOutBuf.getEntries();
+		List<Entry> oldEntryList = oldOutBuf.getEntries();
 		// iterate over old outbuf's entries
-		for (Iterator entryIter = oldEntryList.iterator(); entryIter.hasNext();) {
-			final Entry oldEntry = (Entry) entryIter.next();
+		for (Entry oldEntry : oldEntryList) {
 			final Entry newEntry = newOutBuf.makeEntry(oldEntry
 					.getDrivingExit());
 
 			// iterate over the entry's ports & "clone" the dependencies
-			Iterator newPortIterator = newEntry.getPorts().iterator();
-			for (Iterator oldPortIterator = oldEntry.getPorts().iterator(); oldPortIterator
-					.hasNext();) {
+			Iterator<Port> newPortIterator = newEntry.getPorts().iterator();
+			for (Iterator<Port> oldPortIterator = oldEntry.getPorts()
+					.iterator(); oldPortIterator.hasNext();) {
 				final Port oldPort = (Port) oldPortIterator.next();
 				final Port newPort = (Port) newPortIterator.next();
-				for (Iterator dependencyIterator = new ArrayList(
+				for (Iterator<Dependency> dependencyIterator = new ArrayList<Dependency>(
 						oldEntry.getDependencies(oldPort)).iterator(); dependencyIterator
 						.hasNext();) {
 					Dependency oldDep = (Dependency) dependencyIterator.next();
@@ -670,11 +667,10 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	}
 
 	protected void removeDependencies(Port port) {
-		for (Iterator iter = getEntries().iterator(); iter.hasNext();) {
-			final Entry entry = (Entry) iter.next();
-			for (Iterator iter2 = new ArrayList(entry.getDependencies(port))
-					.iterator(); iter2.hasNext();) {
-				((Dependency) iter2.next()).zap();
+		for (Entry entry : getEntries()) {
+			for (Dependency dependency : new ArrayList<Dependency>(
+					entry.getDependencies(port))) {
+				dependency.zap();
 			}
 		}
 	}
@@ -687,8 +683,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * @return true if the bus was removed.
 	 */
 	public boolean removeDataBus(Bus bus) {
-		for (Iterator iter = getExits().iterator(); iter.hasNext();) {
-			Exit exit = (Exit) iter.next();
+		for (Exit exit : getExits()) {
 			if (exit.removeDataBus(bus)) {
 				return true;
 			}
@@ -852,14 +847,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	public boolean isPassThrough() {
 		boolean isPassThrough = true;
 
-		for (Iterator exitIter = getExits().iterator(); exitIter.hasNext();) {
-			Exit exit = (Exit) exitIter.next();
-			for (Iterator dataBusIter = exit.getDataBuses().iterator(); dataBusIter
-					.hasNext();) {
-				Bus dataBus = (Bus) dataBusIter.next();
-				for (Iterator portIter = dataBus.getPorts().iterator(); portIter
-						.hasNext();) {
-					Port port = (Port) portIter.next();
+		for (Exit exit : getExits()) {
+			for (Bus dataBus : exit.getDataBuses()) {
+				for (Port port : dataBus.getPorts()) {
 					int size = port.getValue().getSize();
 					for (int i = 0; i < size; i++) {
 						Bit bit = port.getValue().getBit(i);
@@ -917,11 +907,11 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * @return a list of Modules, ending with the parent of this component, if
 	 *         any
 	 */
-	public List getLineage() {
-		List list = null;
+	public List<Module> getLineage() {
+		List<Module> list = null;
 		Module parent = getOwner();
 		if (parent == null) {
-			list = new LinkedList();
+			list = new LinkedList<Module>();
 		} else {
 			list = parent.getLineage();
 			list.add(parent);
@@ -939,13 +929,13 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 *         with the parent of this component, if any; if the specified
 	 *         ancestor is invalid, the returned list will be empty
 	 */
-	public List getLineage(Module ancestor) {
-		List lineage = getLineage();
+	public List<Module> getLineage(Module ancestor) {
+		List<Module> lineage = getLineage();
 		int index = lineage.indexOf(ancestor);
 		if (index != -1) {
 			return lineage.subList(index, lineage.size());
 		}
-		return Collections.EMPTY_LIST;
+		return Collections.emptyList();
 	}
 
 	/**
@@ -955,8 +945,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * @return the common ancestor, or null if there is none
 	 */
 	public Module getCommonAncestor(Component component) {
-		Iterator iter = getLineage().iterator();
-		Iterator otherIter = component.getLineage().iterator();
+		Iterator<Module> iter = getLineage().iterator();
+		Iterator<Module> otherIter = component.getLineage().iterator();
 
 		Module commonAncestor = null;
 		while (iter.hasNext() && otherIter.hasNext()) {
@@ -985,11 +975,11 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * all its ports from their dependencies and buses from their dependents
 	 */
 	public void disconnect() {
-		for (Iterator eiter = new ArrayList(getEntries()).iterator(); eiter
-				.hasNext();) {
+		for (Iterator<Entry> eiter = new ArrayList<Entry>(getEntries())
+				.iterator(); eiter.hasNext();) {
 			removeEntry((Entry) eiter.next());
 		}
-		for (Iterator piter = getPorts().iterator(); piter.hasNext();) {
+		for (Iterator<Port> piter = getPorts().iterator(); piter.hasNext();) {
 			((Port) piter.next()).disconnect();
 		}
 		// for(Iterator biter = getBuses().iterator(); biter.hasNext();)
@@ -998,7 +988,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		// bus.clearDependents();
 		// bus.disconnect();
 		// }
-		for (Iterator exitIter = getExits().iterator(); exitIter.hasNext();) {
+		for (Iterator<Exit> exitIter = getExits().iterator(); exitIter
+				.hasNext();) {
 			((Exit) exitIter.next()).disconnect();
 		}
 	}
@@ -1011,8 +1002,10 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	public Latency getLatency() {
 		// return getMainExit().getLatency();
 		Exit doneExit = getExit(Exit.DONE);
-		if (_lim.db && doneExit == null)
-			_lim.ln("NO EXITS ON " + this + " RETURNING LATENCY.ZERO");
+		if (_lim.db) {
+			if (doneExit.equals(null))
+				_lim.ln("NO EXITS ON " + this + " RETURNING LATENCY.ZERO");
+		}
 		return doneExit != null ? doneExit.getLatency() : Latency.ZERO;
 		// return getExit(Exit.DONE).getLatency();
 	}
@@ -1032,11 +1025,11 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * the method/function call hierarchy.
 	 */
 	public void printCallHierarchy() {
-		List callHier = this.getCallHierarchy();
+		List<String> callHier = this.getCallHierarchy();
 		getGenericJob().info("Method/Function call hierarchy:");
 		String space = "  ";
-		for (Iterator iter = callHier.iterator(); iter.hasNext();) {
-			getGenericJob().info(space + iter.next());
+		for (String string : callHier) {
+			getGenericJob().info(space + string);
 			space += "  ";
 		}
 	}
@@ -1051,10 +1044,10 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * 
 	 * @return a 'List' of String objects
 	 */
-	public List getCallHierarchy() {
+	public List<String> getCallHierarchy() {
 		// Assemble a List of the method call hierarchy to get to this
 		// component.
-		List callHier = new ArrayList();
+		List<String> callHier = new ArrayList<String>();
 
 		// Protect against infinite looping
 		int infiniteLoopCount = 0;
@@ -1069,7 +1062,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 				Procedure proc = block.getProcedure();
 				if (proc != null) {
 					callHier.add(0, proc.getName());
-					Collection calls = proc.getCalls();
+					Collection<Reference> calls = proc.getCalls();
 					if (calls.size() != 1) {
 						return Collections.singletonList("Traceback failed.");
 					} else {
@@ -1096,8 +1089,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 
 	public String show(boolean verbose) {
 		String ret = toString();
-		for (Iterator iter = getPorts().iterator(); iter.hasNext();) {
-			Port port = (Port) iter.next();
+		for (Port port : getPorts()) {
 			String value = port.getValue() == null ? "null" : port.getValue()
 					.debug();
 			String val = verbose ? port.toString() + "(" + value + ")" : port
@@ -1111,11 +1103,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 			else
 				ret = ret + " p:" + val;
 		}
-		for (Iterator iter = getExits().iterator(); iter.hasNext();) {
-			Exit exit = (Exit) iter.next();
-			for (Iterator busIter = exit.getBuses().iterator(); busIter
-					.hasNext();) {
-				Bus bus = (Bus) busIter.next();
+		for (Exit exit : getExits()) {
+			for (Bus bus : exit.getBuses()) {
 				String value = bus.getValue() == null ? "null" : bus.getValue()
 						.debug();
 				String val = verbose ? bus.toString() + "(" + value + ")" : bus
@@ -1142,8 +1131,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 
 	public String cpDebug(boolean verbose) {
 		String ret = toString();
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
-			Port p = (Port) iter.next();
+		for (Port p : getDataPorts()) {
 			if (verbose)
 				ret += p.getValue() == null ? " n" : " "
 						+ p.getValue().bitSourceDebug();
@@ -1151,12 +1139,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 				ret += p.getValue() == null ? " n" : " "
 						+ p.getValue().getSize();
 		}
-		for (Iterator iter = getExits().iterator(); iter.hasNext();) {
-			Exit exit = (Exit) iter.next();
+		for (Exit exit : getExits()) {
 			ret += " :";
-			for (Iterator busIter = exit.getDataBuses().iterator(); busIter
-					.hasNext();) {
-				Bus bus = (Bus) busIter.next();
+			for (Bus bus : exit.getDataBuses()) {
 				if (verbose)
 					ret += bus.getValue() == null ? " n" : " "
 							+ bus.getValue().bitSourceDebug();
@@ -1199,9 +1184,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		if (getThisPort() != null) {
 			clone.makeThisPort().copyAttributes(getThisPort());
 		}
-		clone.dataPorts = new LinkedList();
-		for (Iterator iter = dataPorts.iterator(); iter.hasNext();) {
-			Port port = (Port) iter.next();
+		clone.dataPorts = new LinkedList<Port>();
+		for (Port port : dataPorts) {
 			Port clonePort = clone.makeDataPort();
 			clonePort.copyAttributes(port);
 		}
@@ -1214,9 +1198,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		/*
 		 * Duplicate the Exits.
 		 */
-		clone.exits = new LinkedHashMap();
-		for (Iterator iter = exits.entrySet().iterator(); iter.hasNext();) {
-			Map.Entry mapEntry = (Map.Entry) iter.next();
+		clone.exits = new LinkedHashMap<Exit.Tag, Exit>();
+		for (Map.Entry<Exit.Tag, Exit> mapEntry : exits.entrySet()) {
 			Exit exit = (Exit) mapEntry.getValue();
 			cloneExit(clone, exit);
 		}
@@ -1291,7 +1274,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * Calls {@link CloneListener#setCloneMap(Map)} on all listeners.
 	 */
 	protected void notifyCloneListeners(Map cloneMap) {
-		for (Iterator iter = getCloneListeners().iterator(); iter.hasNext();) {
+		for (Iterator<CloneListener> iter = getCloneListeners().iterator(); iter
+				.hasNext();) {
 			((CloneListener) iter.next()).setCloneMap(cloneMap);
 		}
 	}
@@ -1337,14 +1321,13 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		clone.getClockPort().copyAttributes(getClockPort());
 		clone.getResetPort().copyAttributes(getResetPort());
 		clone.getGoPort().copyAttributes(getGoPort());
-		List thisPorts = getDataPorts();
-		List clonePorts = clone.getDataPorts();
+		List<Port> thisPorts = getDataPorts();
+		List<Port> clonePorts = clone.getDataPorts();
 		for (int i = 0; i < thisPorts.size(); i++) {
 			((Port) clonePorts.get(i)).copyAttributes((Port) thisPorts.get(i));
 		}
 
-		for (Iterator iter = getExits().iterator(); iter.hasNext();) {
-			Exit thisExit = (Exit) iter.next();
+		for (Exit thisExit : getExits()) {
 			Exit cloneExit = clone.getExit(thisExit.getTag());
 			cloneExit.copyAttributes(thisExit);
 		}
@@ -1463,7 +1446,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 */
 	public void addAttribute(Attribute attribute) {
 		if (this.attributes.size() == 0)
-			this.attributes = new ArrayList(5);
+			this.attributes = new ArrayList<Attribute>(5);
 		this.attributes.add(attribute);
 	}
 
@@ -1479,9 +1462,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 
 	public void debugPushValuesForward() {
 		System.out.print(this + ", FORWARD ==> ");
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
+		for (Port port : getDataPorts()) {
 			System.out.print("portValue: ");
-			Value portValue = ((Port) iter.next()).getValue();
+			Value portValue = port.getValue();
 			for (int i = portValue.getSize() - 1; i >= 0; i--) {
 				System.out.print(portValue.getBit(i));
 			}
@@ -1501,9 +1484,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		for (int i = resultValue.getSize() - 1; i >= 0; i--) {
 			System.out.print(resultValue.getBit(i));
 		}
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
+		for (Port port : getDataPorts()) {
 			System.out.print(", portValue: ");
-			Value portValue = ((Port) iter.next()).getValue();
+			Value portValue = port.getValue();
 			for (int i = portValue.getSize() - 1; i >= 0; i--) {
 				System.out.print(portValue.getBit(i));
 			}
@@ -1519,11 +1502,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 *            the bus whose logical dependents are collected
 	 * @return a list of logically dependency {@link Component Components}
 	 */
-	public static List getDependentComponents(Bus bus) {
-		final List list = new LinkedList();
-		for (Iterator iter = bus.getLogicalDependents().iterator(); iter
-				.hasNext();) {
-			final Dependency dependency = (Dependency) iter.next();
+	public static List<Component> getDependentComponents(Bus bus) {
+		final List<Component> list = new LinkedList<Component>();
+		for (Dependency dependency : bus.getLogicalDependents()) {
 			list.add(dependency.getPort().getOwner());
 		}
 		return list;

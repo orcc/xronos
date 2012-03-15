@@ -68,9 +68,9 @@ public class Block extends Module {
 	 *            {@link Exit Exits} of a body are merged with some small
 	 *            differences
 	 */
-	public Block(List sequence, boolean isProcedureBody) {
+	public Block(List<Component> sequence, boolean isProcedureBody) {
 		super();
-		this.sequence = new LinkedList(sequence);
+		this.sequence = new LinkedList<Component>(sequence);
 		for (Iterator iter = sequence.iterator(); iter.hasNext();) {
 			addComponent((Component) iter.next());
 		}

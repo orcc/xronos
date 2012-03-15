@@ -68,7 +68,6 @@ import net.sf.openforge.lim.op.*;
  * @version $Id: DataFlowVisitor.java 88 2006-01-11 22:39:52Z imiller $
  */
 public abstract class DataFlowVisitor implements Visitor {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	private boolean forward = false;
 
@@ -186,8 +185,8 @@ public abstract class DataFlowVisitor implements Visitor {
 	protected void traverse(Design node) {
 		if (_lim.db)
 			_lim.ln(_lim.DFV, "Traversing Design " + node);
-		for (Iterator iter = node.getTasks().iterator(); iter.hasNext();) {
-			((Visitable) iter.next()).accept(this);
+		for (Task task : node.getTasks()) {
+			task.accept(this);
 		}
 	}
 
@@ -281,11 +280,13 @@ public abstract class DataFlowVisitor implements Visitor {
 			_lim.ln(_lim.DFV, "NON-Component Traversal " + node);
 	}
 
-	protected void traverseModuleForward(Module module, Set feedbackComps) {
-		HashSet processed = new HashSet();
-		Set feedback = new LinkedHashSet(feedbackComps);
+	protected void traverseModuleForward(Module module,
+			Set<Component> feedbackComps) {
+		Set<Component> processed = new HashSet<Component>();
+		Set<Component> feedback = new LinkedHashSet<Component>(feedbackComps);
 		processed.addAll(feedback);
-		LinkedList queue = new LinkedList(module.getComponents());
+		LinkedList<Component> queue = new LinkedList<Component>(
+				module.getComponents());
 
 		while (!queue.isEmpty()) {
 			Component comp = (Component) queue.removeFirst();
@@ -303,9 +304,8 @@ public abstract class DataFlowVisitor implements Visitor {
 			}
 
 			// Ensure that all inputs have been processed
-			Set depenComponentsSet = new HashSet();
-			for (Iterator iter = comp.getPorts().iterator(); iter.hasNext();) {
-				Port port = (Port) iter.next();
+			Set<Component> depenComponentsSet = new HashSet<Component>();
+			for (Port port : comp.getPorts()) {
 				if (port.getBus() != null) {
 					Component depenComp = (Component) port.getBus().getOwner()
 							.getOwner();
@@ -314,12 +314,8 @@ public abstract class DataFlowVisitor implements Visitor {
 						queue.remove(depenComp);
 						queue.addFirst(depenComp);
 					}
-					for (Iterator entryIter = comp.getEntries().iterator(); entryIter
-							.hasNext();) {
-						Entry entry = (Entry) entryIter.next();
-						for (Iterator depIter = entry.getDependencies(port)
-								.iterator(); depIter.hasNext();) {
-							Dependency dep = (Dependency) depIter.next();
+					for (Entry entry : comp.getEntries()) {
+						for (Dependency dep : entry.getDependencies(port)) {
 							depenComp = dep.getLogicalBus().getOwner()
 									.getOwner();
 							if (dep instanceof ResourceDependency
@@ -332,12 +328,8 @@ public abstract class DataFlowVisitor implements Visitor {
 					}
 				} else {
 					// Iterate through the dependencies...
-					for (Iterator entryIter = comp.getEntries().iterator(); entryIter
-							.hasNext();) {
-						Entry entry = (Entry) entryIter.next();
-						for (Iterator depIter = entry.getDependencies(port)
-								.iterator(); depIter.hasNext();) {
-							Dependency dep = (Dependency) depIter.next();
+					for (Entry entry : comp.getEntries()) {
+						for (Dependency dep : entry.getDependencies(port)) {
 							Component depenComp = dep.getLogicalBus()
 									.getOwner().getOwner();
 							if (!processed.contains(depenComp)) {
@@ -360,17 +352,19 @@ public abstract class DataFlowVisitor implements Visitor {
 			}
 		}
 
-		for (Iterator iter = feedback.iterator(); iter.hasNext();) {
-			final Visitable visitable = (Visitable) iter.next();
+		for (Component component : feedback) {
+			final Visitable visitable = (Visitable) component;
 			visitable.accept(this);
 		}
 	}
 
-	protected void traverseModuleReverse(Module module, Set feedbackComps) {
-		HashSet processed = new HashSet();
-		Set feedback = new LinkedHashSet(feedbackComps);
+	protected void traverseModuleReverse(Module module,
+			Set<Component> feedbackComps) {
+		HashSet<Component> processed = new HashSet<Component>();
+		Set<Component> feedback = new LinkedHashSet<Component>(feedbackComps);
 		processed.addAll(feedback);
-		LinkedList queue = new LinkedList(module.getComponents());
+		LinkedList<Component> queue = new LinkedList<Component>(
+				module.getComponents());
 		while (!queue.isEmpty()) {
 			Component comp = (Component) queue.removeFirst();
 			if (processed.contains(comp)) {
@@ -388,30 +382,25 @@ public abstract class DataFlowVisitor implements Visitor {
 
 			// Ensure that all consumers have been processed.
 			boolean isReady = true;
-			for (Iterator iter = comp.getBuses().iterator(); iter.hasNext();) {
-				Bus bus = (Bus) iter.next();
-				Collection ports;
+			for (Bus bus : comp.getBuses()) {
+				Collection<Port> ports;
 				if (bus.getPorts().size() > 0) {
-					ports = new HashSet(bus.getPorts());
+					ports = new HashSet<Port>(bus.getPorts());
 					// Pick up any resource dependencies as well to
 					// guarantee correct data flow ordering through
 					// global resources.
-					for (Iterator depIter = bus.getLogicalDependents()
-							.iterator(); depIter.hasNext();) {
-						Dependency dep = (Dependency) depIter.next();
+					for (Dependency dep : bus.getLogicalDependents()) {
 						if (dep instanceof ResourceDependency) {
 							ports.add(dep.getPort());
 						}
 					}
 				} else {
-					ports = new LinkedList();
-					for (Iterator depIter = bus.getLogicalDependents()
-							.iterator(); depIter.hasNext();) {
-						ports.add(((Dependency) depIter.next()).getPort());
+					ports = new LinkedList<Port>();
+					for (Dependency dependency : bus.getLogicalDependents()) {
+						ports.add(dependency.getPort());
 					}
 				}
-				for (Iterator portIter = ports.iterator(); portIter.hasNext();) {
-					Port port = (Port) portIter.next();
+				for (Port port : ports) {
 					if (!processed.contains(port.getOwner())) {
 						isReady = false;
 						queue.remove(port.getOwner());
@@ -429,8 +418,8 @@ public abstract class DataFlowVisitor implements Visitor {
 				comp.accept(this);
 			}
 		}
-		for (Iterator iter = feedback.iterator(); iter.hasNext();) {
-			((Visitable) iter.next()).accept(this);
+		for (Component component : feedback) {
+			component.accept(this);
 		}
 	}
 
