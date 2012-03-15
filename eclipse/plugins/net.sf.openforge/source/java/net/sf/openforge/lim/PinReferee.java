@@ -34,7 +34,6 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: PinReferee.java 23 2005-09-09 18:45:32Z imiller $
  */
 public class PinReferee extends Referee implements Cloneable {
-	private static final String _RCS_ = "$Rev: 23 $";
 
 	private PinLogic logic;
 
@@ -296,19 +295,19 @@ public class PinReferee extends Referee implements Cloneable {
 	public class PinLogic {
 
 		/** A List of PinAccess -> WriteSlot. */
-		private Map writeNows = new LinkedHashMap();
+		private Map<PinAccess, WriteSlot> writeNows = new LinkedHashMap<PinAccess, WriteSlot>();
 
 		/** A Map of PinAccess -> WriteSlot. */
-		private Map writeNexts = new LinkedHashMap();
+		private Map<PinAccess, WriteSlot> writeNexts = new LinkedHashMap<PinAccess, WriteSlot>();
 
 		/** A Map of PinAccess -> WriteSlot. */
-		private Map driveNows = new LinkedHashMap();
+		private Map<PinAccess, WriteSlot> driveNows = new LinkedHashMap<PinAccess, WriteSlot>();
 
 		/** A Map of PinAccess -> WriteSlot. */
-		private Map driveNexts = new LinkedHashMap();
+		private Map<PinAccess, WriteSlot> driveNexts = new LinkedHashMap<PinAccess, WriteSlot>();
 
 		/** A Map of PinAccess -> ReadSlot. */
-		private Map reads = new LinkedHashMap();
+		private Map<PinAccess, ReadSlot> reads = new LinkedHashMap<PinAccess, ReadSlot>();
 
 		/** The pin slot that is being accessed by this pinLogic. */
 		private PinSlot pinSlot;
@@ -344,6 +343,7 @@ public class PinReferee extends Referee implements Cloneable {
 		 * make the necessary connections between the pinslot and read/write
 		 * slot as well as adding the generated logic to this referee.
 		 */
+
 		public void build() {
 			// Since the pin slot only creates ports/buses based on
 			// the type of pin, we don't want to try to connect to the
@@ -351,15 +351,18 @@ public class PinReferee extends Referee implements Cloneable {
 			if (pinSlot.containsWriteSide()) {
 				PinWriteLogic wnow = (writeNows.size() == 0) ? ((PinWriteLogic) new TieOffLogic(
 						pinSlot.getPin().getWidth()))
-						: ((PinWriteLogic) new MergeLogic(new ArrayList(
-								writeNows.values()), pinSlot.pin.getWidth()));
+						: ((PinWriteLogic) new MergeLogic(
+								new ArrayList<WriteSlot>(writeNows.values()),
+								pinSlot.pin.getWidth()));
 				PinWriteLogic wnext = (writeNexts.size() == 0) ? ((PinWriteLogic) new TieOffLogic(
 						pinSlot.getPin().getWidth()))
-						: ((PinWriteLogic) new MergeLogic(new ArrayList(
-								writeNexts.values()), pinSlot.pin.getWidth()));
+						: ((PinWriteLogic) new MergeLogic(
+								new ArrayList<WriteSlot>(writeNexts.values()),
+								pinSlot.pin.getWidth()));
 				PinWriteLogic dnext = (driveNexts.size() == 0) ? ((PinWriteLogic) new TieOffLogic(
-						1)) : ((PinWriteLogic) new MergeLogic(new ArrayList(
-						driveNexts.values()), pinSlot.pin.getWidth()));
+						1)) : ((PinWriteLogic) new MergeLogic(
+						new ArrayList<WriteSlot>(driveNexts.values()),
+						pinSlot.pin.getWidth()));
 
 				// Drive now is special. If no-one accesses either
 				// drive now or drive next, then set drive now on full
@@ -369,7 +372,7 @@ public class PinReferee extends Referee implements Cloneable {
 						.isDriveOnReset());
 				PinWriteLogic dnow = (driveNows.size() == 0) ? ((PinWriteLogic) new TieOffLogic(
 						alwaysOn, 1)) : ((PinWriteLogic) new MergeLogic(
-						new ArrayList(driveNows.values()),
+						new ArrayList<WriteSlot>(driveNows.values()),
 						pinSlot.pin.getWidth()));
 				pinSlot.getWriteNowEnable().getPeer()
 						.setBus(wnow.getEnableBus());
@@ -388,8 +391,8 @@ public class PinReferee extends Referee implements Cloneable {
 				PinReferee.this.getClockPort().setUsed(false);
 				PinReferee.this.getResetPort().setUsed(false);
 			}
-
-			PinReadLogic readLogic = new PinReadLogic(new ArrayList(
+			@SuppressWarnings("unused")
+			PinReadLogic readLogic = new PinReadLogic(new ArrayList<ReadSlot>(
 					reads.values()), pinSlot);
 		}
 	}
@@ -399,13 +402,12 @@ public class PinReferee extends Referee implements Cloneable {
 	 * each read slot.
 	 */
 	public class PinReadLogic {
-		public PinReadLogic(List reads, PinSlot slot) {
-			for (Iterator iter = reads.iterator(); iter.hasNext();) {
-				ReadSlot read = (ReadSlot) iter.next();
+		public PinReadLogic(List<ReadSlot> reads, PinSlot slot) {
+			for (ReadSlot read : reads) {
 				Bus readBus = slot.getReadData().getPeer();
 				// read.getData().setSize(readBus.getSize(),
 				// readBus.getValue().isSigned());
-				read.getData().getPeer().setBus(slot.getReadData().getPeer());
+				read.getData().getPeer().setBus(readBus);
 			}
 		}
 	}
@@ -421,7 +423,7 @@ public class PinReferee extends Referee implements Cloneable {
 		}
 
 		public TieOffLogic(boolean on, int width) {
-			constant = new SimpleConstant(on ? 1 : 0, width);
+			constant = new SimpleConstant(on ? 1 : 0, width, false);
 			PinReferee.this.addComponent(constant);
 		}
 
@@ -442,7 +444,7 @@ public class PinReferee extends Referee implements Cloneable {
 		private Bus enableBus;
 		private Bus dataBus;
 
-		public MergeLogic(List writeSlots, int width) {
+		public MergeLogic(List<WriteSlot> writeSlots, int width) {
 			if (writeSlots.size() > 1) {
 				Or or = new Or(writeSlots.size());
 				PriorityMux mux = new PriorityMux(writeSlots.size());
@@ -455,7 +457,7 @@ public class PinReferee extends Referee implements Cloneable {
 				PinReferee.this.addComponent(or);
 				PinReferee.this.addComponent(mux);
 
-				for (Iterator iter = writeSlots.iterator(), orIter = or
+				for (Iterator<?> iter = writeSlots.iterator(), orIter = or
 						.getDataPorts().iterator(), muxIter = mux
 						.getSelectPorts().iterator(); iter.hasNext();) {
 					WriteSlot slot = (WriteSlot) iter.next();

@@ -45,7 +45,6 @@ import net.sf.openforge.util.naming.IDSourceInfo;
  * @version $Id: OffsetMemoryAccess.java 88 2006-01-11 22:39:52Z imiller $
  */
 public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	/**
 	 * Adder to add the offset to the base address, implemented as an AddMulti
@@ -241,8 +240,8 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 	 */
 	public void setIDSourceInfo(IDSourceInfo sinfo) {
 		super.setIDSourceInfo(sinfo);
-		for (Iterator iter = getComponents().iterator(); iter.hasNext();) {
-			((ID) iter.next()).setIDSourceInfo(sinfo);
+		for (Component component: getComponents()) {
+			((ID) component).setIDSourceInfo(sinfo);
 		}
 	}
 

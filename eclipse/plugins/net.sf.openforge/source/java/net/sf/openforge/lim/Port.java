@@ -23,7 +23,7 @@ package net.sf.openforge.lim;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Set;
 
 import net.sf.openforge.util.naming.ID;
 import net.sf.openforge.util.naming.IDSourceInfo;
@@ -39,8 +39,6 @@ import net.sf.openforge.util.naming.IDSourceInfo;
  * @version $Id: Port.java 150 2006-06-28 18:43:12Z imiller $
  */
 public class Port extends ID {
-	/** DOCUMENT ME! */
-	private static final String rcs_id = "RCS_REVISION: $Rev: 150 $";
 
 	/** The owner of this port */
 	private Component owner;
@@ -160,7 +158,7 @@ public class Port extends ID {
 		}
 
 		boolean isInputComplete = true;
-		boolean modified = false;
+		//boolean modified = false;
 		Value derived;
 
 		// two cases, connected or not
@@ -168,15 +166,11 @@ public class Port extends ID {
 			// easy case ...
 			derived = getBus().getValue();
 		} else {
-			ArrayList vlist = new ArrayList(11);
+			ArrayList<Value> vlist = new ArrayList<Value>(11);
 
 			// cribbed from getdriven value below ...
-			for (Iterator entryIter = getOwner().getEntries().iterator(); entryIter
-					.hasNext();) {
-				Entry entry = (Entry) entryIter.next();
-				for (Iterator depIter = entry.getDependencies(this).iterator(); depIter
-						.hasNext();) {
-					Dependency dep = (Dependency) depIter.next();
+			for (Entry entry : getOwner().getEntries()) {
+				for (Dependency dep : entry.getDependencies(this)) {
 					Value v = dep.getLogicalBus().getValue();
 
 					if (v != null) {
@@ -201,11 +195,10 @@ public class Port extends ID {
 			derived = new Value(firstVal.getSize(), firstVal.isSigned());
 
 			// for each bit
-			HashSet testBucket = new HashSet();
+			Set<Bit> testBucket = new HashSet<Bit>();
 			for (int i = 0; i < derived.getSize(); i++) {
 				// for each one in the list, throw it in the bucket
-				for (Iterator it = vlist.iterator(); it.hasNext();) {
-					final Value nextVal = (Value) it.next();
+				for (Value nextVal : vlist) {
 					testBucket.add(nextVal.getBit(i));
 				}
 
@@ -520,6 +513,7 @@ public class Port extends ID {
 		return tag;
 	}
 
+	@SuppressWarnings("serial")
 	static class SizeMismatchException extends RuntimeException {
 		public SizeMismatchException(String msg) {
 			super(msg);

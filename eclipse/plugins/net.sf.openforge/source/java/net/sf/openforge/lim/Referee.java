@@ -27,7 +27,6 @@ package net.sf.openforge.lim;
  * @version $Id: Referee.java 13 2005-08-11 19:47:36Z imiller $
  */
 public abstract class Referee extends Module {
-	private static final String _RCS_ = "$Rev: 13 $";
 
 	/**
 	 * Constructs a Referee.

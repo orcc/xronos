@@ -31,7 +31,6 @@ import java.util.Map;
  * @version $Id: DefaultCloneListener.java 2 2005-06-09 20:00:48Z imiller $
  */
 class DefaultCloneListener implements CloneListener {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	private Map cloneMap = new HashMap();
 

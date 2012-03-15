@@ -31,7 +31,6 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: PinStateChange.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class PinStateChange extends PinAccess {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 88 $";
 
 	/** True if syncrhonous with the next clock edge, false if immediate */
 	private boolean isSynchronous;
@@ -128,6 +127,7 @@ public class PinStateChange extends PinAccess {
 		 * Constructs a new Physical which appropriates all the port-bus
 		 * connections of the PinStateChange.
 		 */
+		
 		public Physical() {
 			super(0);
 
@@ -138,6 +138,7 @@ public class PinStateChange extends PinAccess {
 			assert (pinStateChangeAddress.getBus() != null) : "PinStateChange's address port not attached to a bus.";
 
 			{
+				@SuppressWarnings("unused")
 				Bus changeAddrBus = pinStateChangeAddress.getBus();
 				// addressIn.getPeer().setSize(changeAddrBus.getSize(),
 				// changeAddrBus.getValue().isSigned());
@@ -152,6 +153,7 @@ public class PinStateChange extends PinAccess {
 			assert (pinStateChangeData.getBus() != null) : "PinStateChange's address port not attached to a bus.";
 
 			{
+				@SuppressWarnings("unused")
 				Bus changeDataBus = pinStateChangeData.getBus();
 				// dataIn.getPeer().setSize(changeDataBus.getSize(),
 				// changeDataBus.getValue().isSigned());
@@ -172,6 +174,7 @@ public class PinStateChange extends PinAccess {
 			sideAddress.setIDLogical(ID.showLogical(PinStateChange.this)
 					+ "_WA");
 			{
+				@SuppressWarnings("unused")
 				Bus changeAddrBus = pinStateChangeAddress.getBus();
 				// dataIn.getPeer().setSize(changeAddrBus.getSize(),
 				// changeAddrBus.getValue().isSigned());
@@ -180,6 +183,7 @@ public class PinStateChange extends PinAccess {
 			sideData = physicalExit.makeDataBus(Component.SIDEBAND);
 			sideData.setIDLogical(ID.showLogical(PinStateChange.this) + "_WD");
 			{
+				@SuppressWarnings("unused")
 				Bus changeDataBus = pinStateChangeData.getBus();
 				// dataIn.getPeer().setSize(changeDataBus.getSize(),
 				// changeDataBus.getValue().isSigned());

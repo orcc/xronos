@@ -38,7 +38,6 @@ import net.sf.openforge.lim.op.SimpleConstant;
  * @version $Id: HeapRead.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class HeapRead extends OffsetMemoryRead {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	private int offset;
 

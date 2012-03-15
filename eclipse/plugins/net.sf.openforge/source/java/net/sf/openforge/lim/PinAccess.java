@@ -39,7 +39,6 @@ package net.sf.openforge.lim;
  * @version $Id: PinAccess.java 88 2006-01-11 22:39:52Z imiller $
  */
 public abstract class PinAccess extends Access {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	private boolean isFloatType = false;
 	private boolean isDouble = false;

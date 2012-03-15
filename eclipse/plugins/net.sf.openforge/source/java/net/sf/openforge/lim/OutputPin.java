@@ -30,10 +30,11 @@ import java.util.Collections;
  * @version $Id: OutputPin.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class OutputPin extends Pin {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	private OutPinBuf buf;
 	private Port port;
+	
+	@SuppressWarnings("unused")
 	private int portWidth = -1;
 
 	/** True iff this pin was derived implicitly from a Port */
@@ -85,7 +86,7 @@ public class OutputPin extends Pin {
 		return buf;
 	}
 
-	public Collection getPinBufs() {
+	public Collection<OutPinBuf> getPinBufs() {
 		return Collections.singleton(getOutPinBuf());
 	}
 

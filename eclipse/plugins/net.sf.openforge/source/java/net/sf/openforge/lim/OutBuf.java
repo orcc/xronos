@@ -24,7 +24,6 @@ package net.sf.openforge.lim;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import net.sf.openforge.util.SizedInteger;
@@ -41,7 +40,6 @@ import net.sf.openforge.util.SizedInteger;
  * @version $Id: OutBuf.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class OutBuf extends Component implements Emulatable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	/** The estimated 'gate depth' of the default IOB's */
 	public static final int IOB_DEFAULT = 74;
@@ -83,8 +81,8 @@ public class OutBuf extends Component implements Emulatable {
 		this.exit = exit;
 	}
 
-	public Collection getExits() {
-		return Collections.EMPTY_LIST;
+	public Collection<Exit> getExits() {
+		return Collections.emptyList();
 	}
 
 	public void accept(Visitor v) {
@@ -136,10 +134,9 @@ public class OutBuf extends Component implements Emulatable {
 	 *            a map of {@link Port} to {@link SizedInteger} input value
 	 * @return a map of owner {@link Bus} to {@link SizedInteger} result value
 	 */
-	public Map emulate(Map portValues) {
-		final Map outputValues = new HashMap();
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
-			final Port port = (Port) iter.next();
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
+		final Map<Bus, SizedInteger> outputValues = new HashMap<Bus, SizedInteger>();
+		for (Port port : getDataPorts()) {
 			final SizedInteger portValue = (SizedInteger) portValues.get(port);
 			if (portValue != null) {
 				outputValues.put(port.getPeer(), portValue);
@@ -162,9 +159,7 @@ public class OutBuf extends Component implements Emulatable {
 	 */
 	public boolean pushValuesForward() {
 		boolean isModified = false;
-		for (Iterator iter = getPorts().iterator(); iter.hasNext();) {
-
-			final Port port = (Port) iter.next();
+		for (Port port : getPorts()) {
 			if ((port == getClockPort()) || (port == getResetPort())
 					|| ((port == getGoPort()) && (port.getValue() == null))) {
 				/*
@@ -243,8 +238,7 @@ public class OutBuf extends Component implements Emulatable {
 	 */
 	public boolean pushValuesBackward() {
 		boolean mod = false;
-		for (Iterator iter = getPorts().iterator(); iter.hasNext();) {
-			final Port port = (Port) iter.next();
+		for (Port port : getPorts()) {
 			if (port.getPeer() != null) {
 				final Value pushedValue = port.getPeer().getValue();
 				if (pushedValue != null) {

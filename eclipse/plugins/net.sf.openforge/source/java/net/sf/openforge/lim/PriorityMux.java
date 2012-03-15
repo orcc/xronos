@@ -23,7 +23,6 @@ package net.sf.openforge.lim;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,9 +37,8 @@ import java.util.Map;
  * @version $Id: PriorityMux.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class PriorityMux extends Module implements Cloneable {
-	private static final String _RCS_ = "$Rev: 2 $";
 
-	private Map selectToData = new LinkedHashMap();
+	private Map<Port, Port> selectToData = new LinkedHashMap<Port, Port>();
 
 	private Bus resultBus;
 
@@ -56,7 +54,7 @@ public class PriorityMux extends Module implements Cloneable {
 		Bus done_bus = main_exit.getDoneBus();
 
 		// Build all the ports (data and select) that are necessary.
-		LinkedList queue = new LinkedList();
+		List<SelectDataPair> queue = new LinkedList<SelectDataPair>();
 		for (int i = 0; i < inputs; i++) {
 			Port select_port = makeDataPort();
 			Port data_port = makeDataPort();
@@ -70,7 +68,7 @@ public class PriorityMux extends Module implements Cloneable {
 		// Run through the data/select pairs until we have merged them
 		// all down to 1.
 		while (queue.size() > 1) {
-			List subList = new LinkedList();
+			List<SelectDataPair> subList = new LinkedList<SelectDataPair>();
 			while (queue.size() > 1) {
 				SelectDataPair low = (SelectDataPair) queue.remove(0);
 				SelectDataPair high = (SelectDataPair) queue.remove(0);
@@ -92,10 +90,10 @@ public class PriorityMux extends Module implements Cloneable {
 						new SelectDataPair(or.getResultBus(), emux
 								.getResultBus()));
 			}
-			for (Iterator iter = subList.iterator(); iter.hasNext();) {
+			for (SelectDataPair selectDataPair : subList) {
 				// This reverses the order so that the highest
 				// priority mux stays first in the queue.
-				queue.add(0, iter.next());
+				queue.add(0, selectDataPair);
 			}
 		}
 
@@ -110,9 +108,9 @@ public class PriorityMux extends Module implements Cloneable {
 	 * 
 	 * @return a 'List' of {@link Port Ports}
 	 */
-	public List getSelectPorts() {
+	public List<Port> getSelectPorts() {
 		return Collections
-				.unmodifiableList(new ArrayList(selectToData.keySet()));
+				.unmodifiableList(new ArrayList<Port>(selectToData.keySet()));
 	}
 
 	/**
@@ -158,9 +156,8 @@ public class PriorityMux extends Module implements Cloneable {
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		PriorityMux clone = (PriorityMux) moduleClone;
-		clone.selectToData = new LinkedHashMap();
-		for (Iterator iter = selectToData.entrySet().iterator(); iter.hasNext();) {
-			final Map.Entry entry = (Map.Entry) iter.next();
+		clone.selectToData = new LinkedHashMap<Port, Port>();
+		for (Map.Entry<Port, Port> entry  :selectToData.entrySet()) {
 			final Port selectClone = getPortClone((Port) entry.getKey(),
 					cloneMap);
 			final Port dataClone = getPortClone((Port) entry.getValue(),

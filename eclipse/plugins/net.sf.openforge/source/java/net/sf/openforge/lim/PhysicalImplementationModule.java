@@ -33,7 +33,6 @@ package net.sf.openforge.lim;
  *          imiller $
  */
 public abstract class PhysicalImplementationModule extends Module {
-	private static final String _RCS_ = "$Rev: 2 $";
 
 	public PhysicalImplementationModule() {
 		super();

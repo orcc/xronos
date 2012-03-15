@@ -20,7 +20,6 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.Iterator;
 
 /**
  * A Primitive is a low level component that performs a simple logic function.
@@ -30,7 +29,6 @@ import java.util.Iterator;
  * @version $Id: Primitive.java 88 2006-01-11 22:39:52Z imiller $
  */
 public abstract class Primitive extends Component {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	private Bus resultBus = null;
 
@@ -148,8 +146,7 @@ public abstract class Primitive extends Component {
 	 */
 	protected int getCareBitsAt(int position) {
 		int careBits = 0;
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
-			final Port port = (Port) iter.next();
+		for (Port port : getDataPorts()) {
 			final Value value = port.getValue();
 			// if ((position < value.size()) && (value.getBit(position) ==
 			// Bit.CARE))
@@ -170,8 +167,7 @@ public abstract class Primitive extends Component {
 	 */
 	protected int maxPortSize() {
 		int size = 0;
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
-			final Port port = (Port) iter.next();
+		for (Port port : getDataPorts()) {
 			size = Math.max(size, port.getValue().getSize());
 		}
 		return size;

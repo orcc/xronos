@@ -33,16 +33,15 @@ import net.sf.openforge.forge.api.pin.Buffer;
  * @version $Id: Pin.java 282 2006-08-14 21:25:33Z imiller $
  */
 public abstract class Pin extends Component {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 282 $";
 
 	int width = 0;
 	boolean isSigned = true;
 	Buffer apiPin;
 
 	/** the clock that controls this pin */
-	private InputPin clockPin = null;
+	//private InputPin clockPin = null;
 	/** the reset that controls this pin */
-	private InputPin resetPin = null;
+	//private InputPin resetPin = null;
 
 	/** The pin referee used to arbitrate all accesses to this pin. */
 	private PinReferee referee = null;
@@ -86,7 +85,7 @@ public abstract class Pin extends Component {
 		b.setSize(getWidth());
 	}
 
-	public abstract Collection getPinBufs();
+	public abstract Collection<? extends PinBuf> getPinBufs();
 
 	public int getWidth() {
 		return width;

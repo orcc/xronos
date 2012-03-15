@@ -28,7 +28,6 @@ package net.sf.openforge.lim;
  * @version $Id: PinBuf.java 538 2007-11-21 06:22:39Z imiller $
  */
 public abstract class PinBuf extends Resource {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 538 $";
 
 	private Pin pin;
 

@@ -594,7 +594,7 @@ public abstract class Module extends Component implements Cloneable {
 		}
 
 		/* Map of original Component to cloned Component. */
-		final Map<Component, Component> cloneMap = new HashMap<Component, Component>();
+		final Map cloneMap = new HashMap();
 		cloneMap.put(this, clone);
 
 		/*
@@ -603,8 +603,7 @@ public abstract class Module extends Component implements Cloneable {
 		clone.createInBuf();
 		cloneMap.put(getInBuf(), clone.getInBuf());
 
-		for (Iterator iter = getInBuf().getExits().iterator(); iter.hasNext();) {
-			final Exit exit = (Exit) iter.next();
+		for (Exit exit : getInBuf().getExits()) {
 			final Exit exitClone = clone.getInBuf().getExit(exit.getTag());
 			exitClone.copyAttributes(exit);
 		}
@@ -681,7 +680,7 @@ public abstract class Module extends Component implements Cloneable {
 	 *            a map of each original {@link Component} and {@link Entry} to
 	 *            to its clone
 	 */
-	protected void cloneNotify(Module clone, Map cloneMap) {
+	protected void cloneNotify(Module clone, Map<Component, Entry> cloneMap) {
 	}
 
 	/**
@@ -696,17 +695,14 @@ public abstract class Module extends Component implements Cloneable {
 	 *            entries
 	 */
 	private void cloneConnections(Module clone, Map cloneMap) {
-		for (Iterator iter = components.iterator(); iter.hasNext();) {
-			final Component component = (Component) iter.next();
+		for (Component component : components) {
 			final Component componentClone = (Component) cloneMap
 					.get(component);
 
 			/*
 			 * Connect Entries and their Dependencies.
 			 */
-			for (Iterator eiter = component.getEntries().iterator(); eiter
-					.hasNext();) {
-				final Entry entry = (Entry) eiter.next();
+			for (Entry entry: component.getEntries()) {
 				final Exit drivingExit = entry.getDrivingExit();
 				final Exit drivingExitClone = (drivingExit == null ? null
 						: getExitClone(drivingExit, cloneMap));
@@ -734,9 +730,7 @@ public abstract class Module extends Component implements Cloneable {
 			/*
 			 * Set Port values and buses.
 			 */
-			for (Iterator piter = component.getPorts().iterator(); piter
-					.hasNext();) {
-				final Port port = (Port) piter.next();
+			for (Port port : component.getPorts()) {
 				final Port portClone = getPortClone(port, cloneMap);
 				if (port.isConnected()) {
 					portClone.setBus(getBusClone(port.getBus(), cloneMap));
@@ -776,7 +770,8 @@ public abstract class Module extends Component implements Cloneable {
 	 * @param cloneMap
 	 *            a map of original components to cloned components and entries
 	 */
-	protected static Entry getEntryClone(Entry entry, Map cloneMap) {
+	protected static Entry getEntryClone(Entry entry,
+			Map<Component, Entry> cloneMap) {
 		return (Entry) cloneMap.get(entry);
 	}
 
@@ -800,7 +795,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * {@link Port} on this Module.
 	 */
 	private void createInBuf() {
-		final int dataCount = getDataPorts().size();
+		// final int dataCount = getDataPorts().size();
 
 		/*
 		 * Create an InBuf and map all the module's ports to its buses.
@@ -817,7 +812,7 @@ public abstract class Module extends Component implements Cloneable {
 		getGoPort().setPeer(this.inBuf.getGoBus());
 		this.inBuf.getGoBus().setPeer(getGoPort());
 
-		Iterator portIter = getDataPorts().iterator();
+		Iterator<Port> portIter = getDataPorts().iterator();
 		if (getThisPort() != null) {
 			Port thisPort = (Port) portIter.next();
 			Bus thisBus = inBuf.makeThisBus();
@@ -840,19 +835,19 @@ public abstract class Module extends Component implements Cloneable {
 			this.localLabel = local;
 		}
 
-		public List getSearchList() {
+		public List<String> getSearchList() {
 			final SearchLabel searchLabel = Module.super.getSearchLabel();
-			List searchList = searchLabel.getSearchList();
-			List modified = new ArrayList();
+			List<String> searchList = searchLabel.getSearchList();
+			List<String> modified = new ArrayList<String>();
 			modified.add(((String) searchList.get(0)) + "." + this.localLabel);
 			modified.addAll(searchList);
 			return modified;
 		}
 
-		public List getSearchList(String postfix) {
+		public List<String> getSearchList(String postfix) {
 			final SearchLabel searchLabel = Module.super.getSearchLabel();
 			List<String> searchList = searchLabel.getSearchList(postfix);
-			List modified = new ArrayList();
+			List<String> modified = new ArrayList<String>();
 			modified.add(((String) searchList.get(0)) + "." + this.localLabel);
 			modified.addAll(searchList);
 			return modified;

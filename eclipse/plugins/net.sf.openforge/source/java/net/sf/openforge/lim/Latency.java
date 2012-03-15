@@ -67,7 +67,6 @@ import java.util.Set;
  * @version $Id: Latency.java 109 2006-02-24 18:10:34Z imiller $
  */
 public abstract class Latency implements Cloneable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 109 $";
 
 	/** An unknown number of clocks */
 	public static final int UNKNOWN = -1;

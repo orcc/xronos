@@ -35,7 +35,6 @@ import net.sf.openforge.report.FPGAResource;
  * @version $Id: Or.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class Or extends Primitive {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	/**
 	 * Constructor for the Or object
@@ -114,7 +113,7 @@ public class Or extends Primitive {
 
 		assert getDataPorts().size() > 0;
 
-		Iterator dpIter = getDataPorts().iterator();
+		Iterator<Port> dpIter = getDataPorts().iterator();
 		Value orValue = ((Port) dpIter.next()).getValue();
 		while (dpIter.hasNext()) {
 			Value nextValue = ((Port) dpIter.next()).getValue();
@@ -148,8 +147,8 @@ public class Or extends Primitive {
 			}
 		}
 
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
-			mod |= ((Port) iter.next()).pushValueBackward(newValue);
+		for (Port port : getDataPorts()) {
+			mod |= port.pushValueBackward(newValue);
 		}
 
 		return mod;

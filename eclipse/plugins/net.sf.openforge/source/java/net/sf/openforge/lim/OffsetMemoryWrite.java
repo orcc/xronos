@@ -32,7 +32,6 @@ import net.sf.openforge.lim.memory.MemoryWrite;
  * @version $Id: OffsetMemoryWrite.java 70 2005-12-01 17:43:11Z imiller $
  */
 public abstract class OffsetMemoryWrite extends OffsetMemoryAccess {
-	private static final String _RCS_ = "$Rev: 70 $";
 
 	/** The port which receives the value to be written */
 	private Port valuePort;

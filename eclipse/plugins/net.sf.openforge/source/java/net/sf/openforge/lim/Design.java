@@ -133,7 +133,7 @@ public class Design extends ID implements Visitable, Cloneable {
 
 	public void addTask(Task tk) {
 		if (this.taskList == Collections.EMPTY_LIST) {
-			this.taskList = new ArrayList(3);
+			this.taskList = new ArrayList<Task>(3);
 		}
 		this.taskList.add(tk);
 		addComponentToDesign(tk.getCall());
@@ -147,7 +147,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 */
 	public void addRegister(Register reg) {
 		if (this.registers == Collections.EMPTY_LIST) {
-			this.registers = new ArrayList(3);
+			this.registers = new ArrayList<Register>(3);
 		}
 		this.registers.add(reg);
 	}

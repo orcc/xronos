@@ -30,7 +30,6 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: PinWrite.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class PinWrite extends PinAccess {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 88 $";
 
 	/** True if effective on the next clock edge; false if immediate */
 	private boolean isSynchronous;

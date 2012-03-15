@@ -27,6 +27,7 @@ import java.util.Map;
 import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.app.project.OptionBoolean;
 import net.sf.openforge.report.FPGAResource;
+import net.sf.openforge.util.SizedInteger;
 
 /**
  * Reg models a register and can be constructed to match any of the
@@ -59,7 +60,6 @@ import net.sf.openforge.report.FPGAResource;
  * @version $Id: Reg.java 282 2006-08-14 21:25:33Z imiller $
  */
 public class Reg extends Primitive implements Emulatable {
-	private static final String _RCS_ = "$Rev: 282 $";
 	public static final int SET = 0x1;
 	public static final int RESET = 0x2;
 	public static final int ENABLE = 0x4;
@@ -377,7 +377,7 @@ public class Reg extends Primitive implements Emulatable {
 	 * @return a map of {@link Bus} to
 	 *         {@link net.sf.openforge.util.SizedInteger} result value
 	 */
-	public Map emulate(Map portValues) {
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 		return Collections.singletonMap(getResultBus(),
 				portValues.get(getDataPort()));
 	}
@@ -512,6 +512,7 @@ public class Reg extends Primitive implements Emulatable {
 		}
 	}
 
+	@SuppressWarnings("serial")
 	class IllegalRegisterConfiguration extends RuntimeException {
 		public IllegalRegisterConfiguration(String reason) {
 			super(reason);

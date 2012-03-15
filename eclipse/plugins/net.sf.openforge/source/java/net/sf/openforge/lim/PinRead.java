@@ -20,8 +20,6 @@
  */
 package net.sf.openforge.lim;
 
-import java.util.Iterator;
-
 import net.sf.openforge.util.naming.ID;
 
 /**
@@ -31,7 +29,6 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: PinRead.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class PinRead extends PinAccess implements Cloneable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 88 $";
 
 	private Physical physical = null;
 
@@ -101,7 +98,9 @@ public class PinRead extends PinAccess implements Cloneable {
 	}
 
 	public class Physical extends PhysicalImplementationModule {
+		@SuppressWarnings("unused")
 		private Port addressPort;
+		@SuppressWarnings("unused")
 		private Bus dataBus;
 		private Bus sideAddressBus;
 		private Port sideDataPort;
@@ -132,9 +131,7 @@ public class PinRead extends PinAccess implements Cloneable {
 			dataBus.setIDLogical(ID.showLogical(pinRead_data));
 			dataBus.setSize(dataWidth, true);
 
-			for (Iterator data_consumers = pinRead_data.getPorts().iterator(); data_consumers
-					.hasNext();) {
-				Port consumer = (Port) data_consumers.next();
+			for (Port consumer : pinRead_data.getPorts()) {
 				consumer.setBus(dataBus);
 			}
 

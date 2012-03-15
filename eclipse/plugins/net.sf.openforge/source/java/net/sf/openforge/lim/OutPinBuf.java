@@ -31,7 +31,6 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: OutPinBuf.java 280 2006-08-11 17:00:32Z imiller $
  */
 public class OutPinBuf extends PinBuf {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 280 $";
 
 	private Physical phys;
 
@@ -167,7 +166,7 @@ public class OutPinBuf extends PinBuf {
 			addComponent(mux1);
 			mux1.getResultBus().setSize(size, true);
 
-			List l = mux1.getGoPorts();
+			List<Port> l = mux1.getGoPorts();
 			//
 			// This is a hack like Latch -- we count on the translater
 			// ignoring the second select so we connect them themselves.
@@ -213,7 +212,7 @@ public class OutPinBuf extends PinBuf {
 			addComponent(mux1);
 			mux1.getResultBus().setSize(1, true);
 
-			List l = mux1.getGoPorts();
+			List<Port> l = mux1.getGoPorts();
 			//
 			// This is a hack like Latch -- we count on the translater
 			// ignoring the second select so we connect them themselves.

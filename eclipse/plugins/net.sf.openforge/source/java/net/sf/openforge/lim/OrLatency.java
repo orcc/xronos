@@ -37,10 +37,9 @@ import java.util.Set;
  * @version $Id: OrLatency.java 109 2006-02-24 18:10:34Z imiller $
  */
 class OrLatency extends Latency implements Cloneable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 109 $";
 
 	/** Set of constituent Latency objects */
-	private Set latencies;
+	private Set<Latency> latencies;
 	/**
 	 * Cached state for the isOpen method. Because latency objects are immutable
 	 * a latency will be either open or not open for its lifetime
@@ -52,8 +51,7 @@ class OrLatency extends Latency implements Cloneable {
 	}
 
 	public boolean isGT(Latency latency) {
-		for (Iterator iter = latencies.iterator(); iter.hasNext();) {
-			Latency next = (Latency) iter.next();
+		for (Latency next : latencies) {
 			if (!next.isGT(latency)) {
 				return false;
 			}
@@ -66,8 +64,7 @@ class OrLatency extends Latency implements Cloneable {
 			return true;
 		}
 
-		for (Iterator iter = latencies.iterator(); iter.hasNext();) {
-			Latency next = (Latency) iter.next();
+		for (Latency next : latencies) {
 			if (!next.isGE(latency)) {
 				return false;
 			}
@@ -85,9 +82,8 @@ class OrLatency extends Latency implements Cloneable {
 	}
 
 	public Latency addTo(Latency latency) {
-		Set newSet = new HashSet(latencies.size());
-		for (Iterator iter = latencies.iterator(); iter.hasNext();) {
-			Latency next = (Latency) iter.next();
+		Set<Latency> newSet = new HashSet<Latency>(latencies.size());
+		for (Latency next : latencies) {
 			newSet.add(next.addTo(latency));
 		}
 		return new OrLatency(newSet, getKey());
@@ -110,8 +106,7 @@ class OrLatency extends Latency implements Cloneable {
 	}
 
 	boolean isDescendantOf(Latency latency) {
-		for (Iterator iter = latencies.iterator(); iter.hasNext();) {
-			Latency next = (Latency) iter.next();
+		for (Latency next : latencies) {
 			if (!next.isDescendantOf(latency)) {
 				return false;
 			}
@@ -120,18 +115,16 @@ class OrLatency extends Latency implements Cloneable {
 	}
 
 	protected Latency increment(int minClocks, int maxClocks) {
-		Set newSet = new HashSet(latencies.size());
-		for (Iterator iter = latencies.iterator(); iter.hasNext();) {
-			Latency next = (Latency) iter.next();
+		Set<Latency> newSet = new HashSet<Latency>(latencies.size());
+		for (Latency next : latencies) {
 			newSet.add(next.increment(minClocks, maxClocks));
 		}
 		return new OrLatency(newSet, getKey());
 	}
 
 	protected Latency increment(int minClocks, LatencyKey key) {
-		Set newSet = new HashSet(latencies.size());
-		for (Iterator iter = latencies.iterator(); iter.hasNext();) {
-			Latency next = (Latency) iter.next();
+		Set<Latency> newSet = new HashSet<Latency>(latencies.size());
+		for (Latency next : latencies) {
 			newSet.add(next.increment(minClocks, key));
 		}
 		// The key for the OrLatency is the current key. The 'open'
@@ -139,15 +132,15 @@ class OrLatency extends Latency implements Cloneable {
 		return new OrLatency(newSet, getKey());
 	}
 
-	OrLatency(Set lats, LatencyKey key) {
+	OrLatency(Set<Latency> lats, LatencyKey key) {
 		super(getMinClocks(lats), getMaxClocks(lats), key);
 
 		this.latencies = flatten(lats);
 
 		// Cache the 'open' state
 		this.openState = false;
-		for (Iterator iter = this.latencies.iterator(); iter.hasNext();) {
-			if (((Latency) iter.next()).isOpen()) {
+		for (Latency latency : this.latencies) {
+			if (latency.isOpen()) {
 				this.openState = true;
 			}
 		}
@@ -157,17 +150,16 @@ class OrLatency extends Latency implements Cloneable {
 		this(createSet(l1, l2), key);
 	}
 
-	private static Set createSet(Latency l1, Latency l2) {
-		Set set = new HashSet(3);
+	private static Set<Latency> createSet(Latency l1, Latency l2) {
+		Set<Latency> set = new HashSet<Latency>(3);
 		set.add(l1);
 		set.add(l2);
 		return set;
 	}
 
-	private static Set flatten(Set lats) {
-		final Set newSet = new HashSet();
-		for (Iterator iter = lats.iterator(); iter.hasNext();) {
-			final Latency next = (Latency) iter.next();
+	private static Set<Latency> flatten(Set<Latency> lats) {
+		final Set<Latency> newSet = new HashSet<Latency>();
+		for (Latency next : lats) {
 			if (next instanceof OrLatency) {
 				newSet.addAll(((OrLatency) next).latencies);
 			} else {
@@ -177,22 +169,22 @@ class OrLatency extends Latency implements Cloneable {
 		return newSet;
 	}
 
-	private static int getMinClocks(Collection latencies) {
+	private static int getMinClocks(Collection<Latency> latencies) {
 		boolean minValid = false;
 		int min = 0;
-		for (Iterator iter = latencies.iterator(); iter.hasNext();) {
-			int clocks = ((Latency) iter.next()).getMinClocks();
+		for (Latency latency : latencies) {
+			int clocks = latency.getMinClocks();
 			min = minValid ? Math.min(min, clocks) : clocks;
 			minValid = true;
 		}
 		return min;
 	}
 
-	private static int getMaxClocks(Collection latencies) {
+	private static int getMaxClocks(Collection<Latency> latencies) {
 		boolean maxValid = false;
 		int max = 0;
-		for (Iterator iter = latencies.iterator(); iter.hasNext();) {
-			int clocks = ((Latency) iter.next()).getMaxClocks();
+		for (Latency latency : latencies) {
+			int clocks = latency.getMaxClocks();
 			if (clocks == Latency.UNKNOWN) {
 				return clocks;
 			}
@@ -204,7 +196,7 @@ class OrLatency extends Latency implements Cloneable {
 
 	public String toString() {
 		String ret = "OrLatency<" + getKey() + "> {";
-		for (Iterator iter = this.latencies.iterator(); iter.hasNext();) {
+		for (Iterator<Latency> iter = this.latencies.iterator(); iter.hasNext();) {
 			ret += iter.next();
 
 			if (iter.hasNext()) {
@@ -227,10 +219,10 @@ class OrLatency extends Latency implements Cloneable {
 	public Object clone() throws CloneNotSupportedException {
 		OrLatency clone = (OrLatency) super.clone();
 
-		clone.latencies = new HashSet();
+		clone.latencies = new HashSet<Latency>();
 
-		for (Iterator iter = this.latencies.iterator(); iter.hasNext();) {
-			clone.latencies.add(iter.next());
+		for (Latency latency : this.latencies) {
+			clone.latencies.add(latency);
 		}
 
 		return clone;

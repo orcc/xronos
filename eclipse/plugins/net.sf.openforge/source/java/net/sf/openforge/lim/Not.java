@@ -32,7 +32,6 @@ import java.util.List;
  * @version $Id: Not.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class Not extends Primitive {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	/**
 	 * Constructor for the Not object
@@ -58,7 +57,7 @@ public class Not extends Primitive {
 	}
 
 	public Port makeDataPort() {
-		List dps = getDataPorts();
+		List<Port> dps = getDataPorts();
 		assert (dps.size() == 0) : "Not only accepts a single data input.";
 
 		return super.makeDataPort();

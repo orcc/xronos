@@ -90,7 +90,6 @@ import net.sf.openforge.util.IndentWriter;
  * @version $Id: DefaultVisitor.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class DefaultVisitor implements Visitor {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	/** The writer to use for debugging */
 	private IndentWriter writer = null;

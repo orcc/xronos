@@ -34,7 +34,6 @@ package net.sf.openforge.lim;
  * @version $Id: OpenLatency.java 124 2006-03-31 17:24:55Z imiller $
  */
 class OpenLatency extends Latency implements Cloneable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 124 $";
 
 	/** The latency from which this latency was created */
 	private Latency base;

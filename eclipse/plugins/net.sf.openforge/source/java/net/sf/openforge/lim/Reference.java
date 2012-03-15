@@ -29,7 +29,6 @@ package net.sf.openforge.lim;
  * @version $Id: Reference.java 2 2005-06-09 20:00:48Z imiller $
  */
 public abstract class Reference extends Operation {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	/** The referenced entity */
 	private Referent referent;

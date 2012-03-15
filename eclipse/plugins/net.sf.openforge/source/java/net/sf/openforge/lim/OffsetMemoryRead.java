@@ -32,7 +32,6 @@ import net.sf.openforge.lim.memory.MemoryRead;
  * @version $Id: OffsetMemoryRead.java 70 2005-12-01 17:43:11Z imiller $
  */
 public abstract class OffsetMemoryRead extends OffsetMemoryAccess {
-	private static final String _RCS_ = "$Rev: 70 $";
 
 	/** Data bus for result of read */
 	private Bus resultBus;
@@ -48,10 +47,11 @@ public abstract class OffsetMemoryRead extends OffsetMemoryAccess {
 	 * @param maxAddressWidth
 	 *            the pre-optimized number of bits in the address bus
 	 */
+	
 	protected OffsetMemoryRead(MemoryRead memoryRead, int addressableLocations,
 			int maxAddressWidth) {
 		super(memoryRead, addressableLocations, maxAddressWidth);
-
+		@SuppressWarnings("unused")
 		final Bus readBus = (Bus) memoryRead.getExit(Exit.DONE).getDataBuses()
 				.get(0);
 

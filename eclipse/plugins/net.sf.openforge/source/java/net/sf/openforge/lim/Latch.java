@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.util.SizedInteger;
 import net.sf.openforge.util.naming.ID;
 
 /**
@@ -35,7 +36,6 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: Latch.java 280 2006-08-11 17:00:32Z imiller $
  */
 public class Latch extends Module implements Composable, Emulatable {
-	private static final String _RCS_ = "$Rev: 280 $";
 
 	private static final int GATE_DEPTH = 2;
 
@@ -47,7 +47,7 @@ public class Latch extends Module implements Composable, Emulatable {
 
 	private Bus resultBus;
 
-	private boolean initialized = false;
+	//private boolean initialized = false;
 
 	public Reg getRegister() {
 		return reg;
@@ -106,14 +106,14 @@ public class Latch extends Module implements Composable, Emulatable {
 
 		// now, construct the guts of this.
 		// create a sync reg with enable and reset
-		Entry regEntry = reg.makeEntry(getInBuf().getExit(Exit.DONE));
+		//Entry regEntry = reg.makeEntry(getInBuf().getExit(Exit.DONE));
 
 		reg.getClockPort().setBus(getClockPort().getPeer()); // connect clock
 		reg.getDataPort().setBus(getDataPort().getPeer()); // connect data
 		reg.getEnablePort().setBus(getEnablePort().getPeer()); // connect enable
 
-		Entry muxEntry = mux.makeEntry(reg.getResultBus().getOwner());
-		List muxEnablesList = mux.getGoPorts();
+		//Entry muxEntry = mux.makeEntry(reg.getResultBus().getOwner());
+		List<Port> muxEnablesList = mux.getGoPorts();
 		// 0th entry is DataPort if EnablePort
 		// 1th entry is r.resultBus is !EnablePort
 
@@ -135,8 +135,8 @@ public class Latch extends Module implements Composable, Emulatable {
 		// finally, connect the resultbus from the mux to resultbus for the
 		// module
 		resultBus.getPeer().setBus(mux.getResultBus());
-		Entry outEntry = resultBus.getPeer().getOwner()
-				.makeEntry(mux.getResultBus().getOwner());
+		//Entry outEntry = resultBus.getPeer().getOwner()
+		//		.makeEntry(mux.getResultBus().getOwner());
 
 		resultBus.setIDLogical(makeName("_result"));
 	}
@@ -185,11 +185,11 @@ public class Latch extends Module implements Composable, Emulatable {
 	 * 
 	 * @param portValues
 	 *            a map of {@link Port} to
-	 *            {@link net.sf.openforge.util.SizedInteger} input value
+	 *            {@link SizedInteger} input value
 	 * @return a map of {@link Bus} to
-	 *         {@link net.sf.openforge.util.SizedInteger} result value
+	 *         {@link SizedInteger} result value
 	 */
-	public Map emulate(Map portValues) {
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 		return Collections.singletonMap(getResultBus(),
 				portValues.get(getDataPort()));
 	}
@@ -275,8 +275,7 @@ public class Latch extends Module implements Composable, Emulatable {
 
 	public String debug() {
 		String ret = super.toString();
-		for (Iterator iter = getPorts().iterator(); iter.hasNext();) {
-			Port port = (Port) iter.next();
+		for (Port port : getPorts()) {
 			if (port == getGoPort())
 				ret = ret + " go:" + port;
 			else if (port == getClockPort())

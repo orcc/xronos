@@ -46,7 +46,7 @@ public class Mux extends Primitive {
 	List<Port> goPorts = Collections.emptyList();
 
 	/** Map of Go-Data pairs */
-	Map muxMap = new LinkedHashMap();
+	Map<Port, Port> muxMap = new LinkedHashMap<Port, Port>();
 
 	/**
 	 * Constructor for the Mux object
@@ -133,7 +133,7 @@ public class Mux extends Primitive {
 	 * pairing of the Go/Data. The Set reflects the same ordering as the Go and
 	 * Data Lists.
 	 */
-	public Set getMuxEntries() {
+	public Set<java.util.Map.Entry<Port, Port>> getMuxEntries() {
 		return muxMap.entrySet();
 	}
 
@@ -148,15 +148,15 @@ public class Mux extends Primitive {
 		Port dataPort = makeDataPort();
 
 		if (this.goPorts == Collections.EMPTY_LIST) {
-			this.goPorts = new LinkedList();
+			this.goPorts = new LinkedList<Port>();
 		}
 		this.goPorts.add(goPort);
 		muxMap.put(goPort, dataPort);
 		return goPort;
 	}
 
-	public List getPorts() {
-		List ports = new ArrayList();
+	public List<Port> getPorts() {
+		List<Port> ports = new ArrayList<Port>();
 		ports.add(getClockPort());
 		ports.add(getResetPort());
 		ports.add(getGoPort());
@@ -188,10 +188,11 @@ public class Mux extends Primitive {
 	public Object clone() throws CloneNotSupportedException {
 		Mux clone = (Mux) super.clone();
 
-		clone.goPorts = new LinkedList();
-		clone.muxMap = new LinkedHashMap();
+		clone.goPorts = new LinkedList<Port>();
+		clone.muxMap = new LinkedHashMap<Port, Port>();
 
-		for (Iterator iter = clone.getDataPorts().iterator(); iter.hasNext();) {
+		for (Iterator<Port> iter = clone.getDataPorts().iterator(); iter
+				.hasNext();) {
 			Port goPort = (Port) iter.next();
 			Port dataPort = (Port) iter.next();
 			clone.goPorts.add(goPort);
@@ -223,7 +224,7 @@ public class Mux extends Primitive {
 
 			int index = 0;
 
-			for (Iterator goPortIter = getGoPorts().iterator(); goPortIter
+			for (Iterator<Port> goPortIter = getGoPorts().iterator(); goPortIter
 					.hasNext();) {
 				Port goPort = (Port) goPortIter.next();
 				Port dataPort = getDataPort(goPort);
@@ -251,7 +252,7 @@ public class Mux extends Primitive {
 		// extended of carry out bit
 		if (getResultBus().getValue() != null) {
 			int compactedSize = 1;
-			for (Iterator goPortIter = getGoPorts().iterator(); goPortIter
+			for (Iterator<Port> goPortIter = getGoPorts().iterator(); goPortIter
 					.hasNext();) {
 				Port goPort = (Port) goPortIter.next();
 				Port dataPort = getDataPort(goPort);
@@ -281,8 +282,7 @@ public class Mux extends Primitive {
 
 		Value resultBusValue = getResultBus().getValue();
 
-		for (Iterator iter = getGoPorts().iterator(); iter.hasNext();) {
-			Port goPort = (Port) iter.next();
+		for (Port goPort : getGoPorts()) {
 			Port dataPort = getDataPort(goPort);
 			Value dataPortValue = dataPort.getValue();
 			Value newValue = new Value(dataPortValue.getSize(),
@@ -315,8 +315,7 @@ public class Mux extends Primitive {
 		int maxSize = 0;
 		boolean isSigned = true;
 
-		for (Iterator iter = getGoPorts().iterator(); iter.hasNext();) {
-			Port goPort = (Port) iter.next();
+		for (Port goPort : getGoPorts()) {
 			Port dataPort = getDataPort(goPort);
 			maxSize = Math.max(maxSize, dataPort.getValue().getSize());
 			isSigned = isSigned && dataPort.getValue().isSigned();
@@ -349,8 +348,7 @@ public class Mux extends Primitive {
 	protected int getCareInputs(int bitPosition) {
 		int careBits = 0;
 		int constBits = 0;
-		for (Iterator iter = getGoPorts().iterator(); iter.hasNext();) {
-			final Port goPort = (Port) iter.next();
+		for (Port goPort : getGoPorts()) {
 			final Port dataPort = getDataPort(goPort);
 
 			if (dataPort.getValue().getSize() > bitPosition) {

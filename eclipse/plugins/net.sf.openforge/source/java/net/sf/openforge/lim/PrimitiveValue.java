@@ -31,7 +31,6 @@ package net.sf.openforge.lim;
  * @version $Id: PrimitiveValue.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class PrimitiveValue implements InitialValue {
-	private static final String _RCS_ = "$Rev: 2 $";
 
 	Number initialValue;
 
