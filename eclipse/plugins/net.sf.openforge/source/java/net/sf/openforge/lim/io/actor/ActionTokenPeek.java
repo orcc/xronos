@@ -25,6 +25,7 @@ import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.io.FifoAccess;
 import net.sf.openforge.lim.io.FifoIF;
 import net.sf.openforge.lim.io.SimplePin;
@@ -45,6 +46,7 @@ import net.sf.openforge.lim.io.SimplePinRead;
  */
 public class ActionTokenPeek extends FifoAccess {
 
+	
 	private ActionTokenPeek(FifoIF fifoIF, SimplePin indexPin, SimplePin dataPin) {
 		super(fifoIF);
 
@@ -53,7 +55,8 @@ public class ActionTokenPeek extends FifoAccess {
 		// this module. Since the peek is always valid, the done
 		// is not needed. The Go is needed to drive the pin write.
 		// unused right now
-		// Port index = makeDataPort(); 
+		@SuppressWarnings("unused")
+		Port index = makeDataPort(); 
 		Exit exit = makeExit(1);
 		Bus result = (Bus) exit.getDataBuses().get(0);
 		// Bus done = exit.getDoneBus();

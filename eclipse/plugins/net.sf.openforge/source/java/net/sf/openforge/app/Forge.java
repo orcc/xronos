@@ -387,6 +387,7 @@ public class Forge implements ForgeDebug {
 
 	} // inner class Monitor()
 
+	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		String[] forgeFlags = { "-vv", // be verbose
 				"-pipeline", // Allow auto-insertion of registers based on
@@ -442,11 +443,11 @@ public class Forge implements ForgeDebug {
 			System.exit(-1);
 		}
 
-		if (!runForge(args)) {
-			System.exit(-1);
-		} else {
-			System.exit(0);
-		}
+//		if (!runForge(args)) {
+//			System.exit(-1);
+//		} else {
+//			System.exit(0);
+//		}
 
 	} // main()
 
