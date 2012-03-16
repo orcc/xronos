@@ -21,55 +21,51 @@
 
 package net.sf.openforge.optimize.constant.rule;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.optimize.*;
+import net.sf.openforge.lim.ArrayWrite;
+import net.sf.openforge.lim.HeapWrite;
+import net.sf.openforge.optimize.ComponentSwapVisitor;
 
 /**
- * Replaces an {@link ArrayWrite} with a constant index input with a {@link HeapWrite}.
+ * Replaces an {@link ArrayWrite} with a constant index input with a
+ * {@link HeapWrite}.
  * <P>
  * <i>Temporarily disabled.</i>
- *
+ * 
  * @version $Id: ArrayWriteRule.java 70 2005-12-01 17:43:11Z imiller $
  */
-public class ArrayWriteRule 
-{
-    private static final String _RCS_ = "$Rev: 70 $";
+public class ArrayWriteRule {
 
-    public static boolean halfConstant (ArrayWrite op, Number[] consts, ComponentSwapVisitor visitor)
-    {
-        Number indexConstant = consts[2];
-        if (indexConstant == null)
-        {
-            return false;
-        }
+	public static boolean halfConstant(ArrayWrite op, Number[] consts,
+			ComponentSwapVisitor visitor) {
+		Number indexConstant = consts[2];
+		if (indexConstant == null) {
+			return false;
+		}
 
-        int index = indexConstant.intValue();
-        int offset = index * op.getAccessLocationCount();
+		int index = indexConstant.intValue();
+		int offset = index * op.getAccessLocationCount();
 
-        final HeapWrite heapWrite = new HeapWrite(
-            op.getAccessLocationCount(), op.getMaxAddressWidth(),
-            offset, op.getMemoryWrite().isSigned(),
-            op.getMemoryAccess().getWidth());
-        
-        heapWrite.setBlockElement(op.getBlockElement());
-        
-        /*
-         * Since the swapComponents() only handles exact one-to-one
-         * mapping on both components, we have to do something on the
-         * ArrayWrite.  An ArrayWrite has an OffsetPort, but a HeapWrite
-         * does not. The solution here is trying to remove the
-         * offsetPort on an ArrayWrite before passing it to the
-         * swapComponets() method call.
-         */
-        op.removeDataPort(op.getOffsetPort());
+		final HeapWrite heapWrite = new HeapWrite(op.getAccessLocationCount(),
+				op.getMaxAddressWidth(), offset,
+				op.getMemoryWrite().isSigned(), op.getMemoryAccess().getWidth());
 
-        visitor.swapComponents(op, heapWrite);
+		heapWrite.setBlockElement(op.getBlockElement());
 
-        op.getLogicalMemoryPort().addAccess(heapWrite);
-        op.removeFromMemory();
+		/*
+		 * Since the swapComponents() only handles exact one-to-one mapping on
+		 * both components, we have to do something on the ArrayWrite. An
+		 * ArrayWrite has an OffsetPort, but a HeapWrite does not. The solution
+		 * here is trying to remove the offsetPort on an ArrayWrite before
+		 * passing it to the swapComponets() method call.
+		 */
+		op.removeDataPort(op.getOffsetPort());
 
-        return true;
-    }
-    
-    
+		visitor.swapComponents(op, heapWrite);
+
+		op.getLogicalMemoryPort().addAccess(heapWrite);
+		op.removeFromMemory();
+
+		return true;
+	}
+
 }

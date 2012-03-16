@@ -21,51 +21,49 @@
 
 package net.sf.openforge.optimize.constant.rule;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.optimize.*;
+import net.sf.openforge.lim.ArrayRead;
+import net.sf.openforge.lim.HeapRead;
+import net.sf.openforge.optimize.ComponentSwapVisitor;
 
 /**
- * Replaces an {@link ArrayRead} with a constant index input with a {@link HeapRead}.
+ * Replaces an {@link ArrayRead} with a constant index input with a
+ * {@link HeapRead}.
  * <P>
  * <i>Temporarily disabled.</i>
- *
+ * 
  * @version $Id: ArrayReadRule.java 70 2005-12-01 17:43:11Z imiller $
  */
-public class ArrayReadRule 
-{
-    private static final String _RCS_ = "$Rev: 70 $";
+public class ArrayReadRule {
 
-    public static boolean halfConstant (ArrayRead op, Number[] consts, ComponentSwapVisitor visitor)
-    {
-        Number indexConstant = consts[1];
-        if (indexConstant == null)
-        {
-            return false;
-        }
+	public static boolean halfConstant(ArrayRead op, Number[] consts,
+			ComponentSwapVisitor visitor) {
+		Number indexConstant = consts[1];
+		if (indexConstant == null) {
+			return false;
+		}
 
-        int index = indexConstant.intValue();
-        int offset = index * op.getAccessLocationCount();
+		int index = indexConstant.intValue();
+		int offset = index * op.getAccessLocationCount();
 
-        final HeapRead heapRead = new HeapRead(op.getAccessLocationCount(),
-            op.getMaxAddressWidth(), offset, op.getMemoryRead().isSigned(),
-            op.getMemoryAccess().getWidth());
+		final HeapRead heapRead = new HeapRead(op.getAccessLocationCount(),
+				op.getMaxAddressWidth(), offset, op.getMemoryRead().isSigned(),
+				op.getMemoryAccess().getWidth());
 
-        heapRead.setBlockElement(op.getBlockElement());
-        
-        /*
-         * Since the swapComponents() only handles exact one-to-one
-         * mapping on both components, we have to do something on the
-         * ArrayRead.  An ArrayRead has an OffsetPort, but a HeapRead
-         * does not. The solution here is trying to remove the
-         * offsetPort on an ArrayRead before passing it to the
-         * swapComponents() method call.
-         */
-        op.removeDataPort(op.getOffsetPort());
+		heapRead.setBlockElement(op.getBlockElement());
 
-        visitor.swapComponents(op, heapRead);
-        
-        op.getLogicalMemoryPort().addAccess(heapRead);
-        op.removeFromMemory();
-        return true;
-    }
+		/*
+		 * Since the swapComponents() only handles exact one-to-one mapping on
+		 * both components, we have to do something on the ArrayRead. An
+		 * ArrayRead has an OffsetPort, but a HeapRead does not. The solution
+		 * here is trying to remove the offsetPort on an ArrayRead before
+		 * passing it to the swapComponents() method call.
+		 */
+		op.removeDataPort(op.getOffsetPort());
+
+		visitor.swapComponents(op, heapRead);
+
+		op.getLogicalMemoryPort().addAccess(heapRead);
+		op.removeFromMemory();
+		return true;
+	}
 }
