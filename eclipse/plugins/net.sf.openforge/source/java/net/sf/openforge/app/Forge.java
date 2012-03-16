@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -72,14 +73,14 @@ public class Forge implements ForgeDebug {
 		// The info returned will be if the license file was found, what
 		// is in it, and what the expiration data is for the license.
 
-		//Option option;
+		// Option option;
 
 		if (gj.getUnscopedBooleanOptionValue(OptionRegistry.LICENSE)) {
 			msgln(License.getLicenseInfo());
 		}
 
 		// //// This is where the license check goes...
-		//boolean validLic = true;
+		// boolean validLic = true;
 
 		if (gj.getUnscopedBooleanOptionValue(OptionRegistry.VERSION)) {
 			msgln("Version: " + Version.versionNumber());
@@ -132,8 +133,8 @@ public class Forge implements ForgeDebug {
 			final OptionList optionList = (OptionList) job
 					.getOption(OptionRegistry.LOG);
 			final List<String> modified = new ArrayList<String>();
-			for (Iterator<?> iter = optionList.getValueAsList(CodeLabel.UNSCOPED)
-					.iterator(); iter.hasNext();) {
+			for (Iterator<?> iter = optionList.getValueAsList(
+					CodeLabel.UNSCOPED).iterator(); iter.hasNext();) {
 				final String nextValue = (String) iter.next();
 				if (!nextValue.startsWith("forge.log")) {
 					modified.add(nextValue);
@@ -387,29 +388,59 @@ public class Forge implements ForgeDebug {
 	} // inner class Monitor()
 
 	public static void main(String[] args) {
-		// Forge f = new Forge();
-		// GenericJob forgeMainJob = new GenericJob();
-		// boolean exitError=true;
+		String[] forgeFlags = { "-vv", // be verbose
+				"-pipeline", // Allow auto-insertion of registers based on
+								// max-gate-depth spec in the XLIM (simply turns
+								// feature on)
+				"-noblockio", // Do not automatically infer fifo interfaces
+								// from top level function signature (legacy C
+								// interface feature)
+				"-no_block_sched", // Do not perform block-based scheduling
+									// (auto s/w pipelining of top level tasks)
+				"-simple_arbitration", // Use simple arbitration of shared
+										// memories (assumes logic handles
+										// contention)
+				"-noedk", // Do not generate EDK pcore compliant directory
+							// output structure.
+				"-loopbal", // Balance loop latency. Ensures that all paths
+							// take at least 1 cycle if any path does so that
+							// loop iteration flop can be removed.
+				"-multdecomplimit", "2", // Any multiplier which can be
+											// decomposed into 2 or fewer
+											// add/subtract + shift stages is.
+				"-comb_lut_mem_read", // Reads of LUT based memories are
+										// performed combinationally.
+				"-nolog", // No log file generation
+				"-dplut", // Allow generation of dual ported LUT memories
+							// (default is to only use dual port BRAMs)
+				"-noinclude", // Suppress generation of _sim and _synth files
+		};
 
-		// try
-		// {
-		// forgeMainJob.setOptionValues(args);
-		// f.preprocess(forgeMainJob);
-		// exitError = f.compile(forgeMainJob);
-		// }
-		// catch (NewJob.ForgeOptionException foe)
-		// {
-		// f.msgln("Command line option error: " + foe.getMessage());
-		// f.msgln("");
-		// f.msgln(OptionRegistry.usage(false));
-		// System.exit(-1);
-		// }
-		// catch (ForgeFatalException ffe)
-		// {
-		// f.msgln("Forge compilation ended with fatal error:");
-		// f.msgln(ffe.getMessage());
-		// System.exit(-1);
-		// }
+		List<String> finalArgs = new ArrayList<String>();
+
+		finalArgs.addAll(Arrays.asList(forgeFlags));
+		for (String argument : args) {
+			finalArgs.add(argument);
+		}
+		Forge f = new Forge();
+		GenericJob forgeMainJob = new GenericJob();
+		boolean exitError = true;
+
+		try {
+			forgeMainJob.setOptionValues((String[]) finalArgs
+					.toArray(new String[0]));
+			f.preprocess(forgeMainJob);
+			exitError = f.compile(forgeMainJob);
+		} catch (NewJob.ForgeOptionException foe) {
+			f.msgln("Command line option error: " + foe.getMessage());
+			f.msgln("");
+			f.msgln(OptionRegistry.usage(false));
+			System.exit(-1);
+		} catch (ForgeFatalException ffe) {
+			f.msgln("Forge compilation ended with fatal error:");
+			f.msgln(ffe.getMessage());
+			System.exit(-1);
+		}
 
 		if (!runForge(args)) {
 			System.exit(-1);
@@ -420,10 +451,11 @@ public class Forge implements ForgeDebug {
 	} // main()
 
 	public static boolean runForge(String[] args) {
+
 		Forge f = new Forge();
 		GenericJob forgeMainJob = new GenericJob();
 		boolean error = true;
-
+		System.out.println("OpenForge Synthesizer");
 		try {
 			forgeMainJob.setOptionValues(args);
 			f.preprocess(forgeMainJob);
