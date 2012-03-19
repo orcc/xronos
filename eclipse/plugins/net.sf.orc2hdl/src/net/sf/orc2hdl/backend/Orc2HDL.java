@@ -54,6 +54,7 @@ import net.sf.orc2hdl.Activator;
 import net.sf.orc2hdl.analysis.ExecutionChart;
 import net.sf.orc2hdl.analysis.SimParser;
 import net.sf.orc2hdl.analysis.TimeGoDone;
+import net.sf.orc2hdl.analysis.WeightWriter;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
@@ -241,7 +242,8 @@ public class Orc2HDL extends AbstractBackend {
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
 		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", false);
-		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis", false);
+		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis",
+				false);
 		simTime = getAttribute("net.sf.orc2hdl.simTime", "5000");
 		srcPath = path + File.separator + "src";
 		new File(srcPath).mkdir();
@@ -261,7 +263,7 @@ public class Orc2HDL extends AbstractBackend {
 		String fpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "Virtex 2");
 
 		if (fpgaType.equals("Spartan 3")) {
-			//fpgaName = "xc3s5000-5-fg1156";
+			// fpgaName = "xc3s5000-5-fg1156";
 			fpgaName = "xc3s200-4-tq144C";
 		} else if (fpgaType.equals("Virtex 2")) {
 			fpgaName = "xc2vp30-7-ff1152";
@@ -337,8 +339,9 @@ public class Orc2HDL extends AbstractBackend {
 
 		DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
 				new LocalArrayRemoval(), new Multi2MonoToken(),
-				new DivisionSubstitution(), new UnitImporter(), 
-				new SSATransformation(), new TypeResizer(false, true, true, true),
+				new DivisionSubstitution(), new UnitImporter(),
+				new SSATransformation(),
+				new TypeResizer(false, true, true, true),
 				new GlobalArrayInitializer(true), new InstTernaryAdder(),
 				new Inliner(true, true), new UnaryListRemoval(),
 				new CustomPeekAdder(), new DeadGlobalElimination(),
@@ -410,6 +413,11 @@ public class Orc2HDL extends AbstractBackend {
 				simParser.createMaps();
 				Map<Instance, Map<Action, TimeGoDone>> execution = simParser
 						.getExecutionMap();
+
+				WeightWriter weightWriter = new WeightWriter(execution,
+						network, path + File.separator + "analysis"
+								+ File.separator + network.getName() + ".ew");
+				weightWriter.writeProtobuf();
 				ExecutionChart chart = new ExecutionChart(execution, network,
 						path);
 				chart.saveChart();

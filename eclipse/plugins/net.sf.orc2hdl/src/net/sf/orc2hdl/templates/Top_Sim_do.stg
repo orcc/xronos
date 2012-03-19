@@ -84,7 +84,7 @@ printInstanceInputBuffer(instance) ::=<<
 >>
 
 printInputQueues(port) ::=<<
-add wave sim:/<network.simpleName>/q_ai_<instance.simpleName>_<port.name>/fifo/msync_full 
+add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<if(options.modelsimAnalysis)>n_<network.simpleName>/<endif>q_ai_<instance.simpleName>_<port.name>/fifo/msync_full 
 >>
 
 printOutputPorts(port) ::=<<
