@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry exported="true" kind="lib" path="libs/protobuf-java-2.4.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/yaceb_protobuffer_v0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/junit.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/jcommon-1.0.17.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/jfreechart-1.0.14.jar"/>
