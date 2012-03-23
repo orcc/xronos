@@ -37,12 +37,12 @@ import java.util.Collections;
  */
 public class FSLFifoInput extends FifoInput {
 
-	private String baseName;
-	private SimplePin data;
-	private SimplePin exists;
-	private SimplePin ctrl;
-	private SimplePin clk;
-	private SimplePin read;
+	private final String baseName;
+	private final SimplePin data;
+	private final SimplePin exists;
+	private final SimplePin ctrl;
+	private final SimplePin clk;
+	private final SimplePin read;
 
 	/**
 	 * Constructs a new FSLFifoInput instance, creating all the necessary pin
@@ -96,10 +96,12 @@ public class FSLFifoInput extends FifoInput {
 	 * 
 	 * @return an <code>int</code> value
 	 */
+	@Override
 	public int getType() {
 		return FifoIF.TYPE_FSL_FIFO;
 	}
 
+	@Override
 	public String getPortBaseName() {
 		return this.baseName;
 	}
@@ -107,6 +109,7 @@ public class FSLFifoInput extends FifoInput {
 	/**
 	 * Fifo input ports are slave queues, this method returns portname_S
 	 */
+	@Override
 	protected String buildPortBaseName(String portName) {
 		return portName + "_S";
 	}
@@ -115,19 +118,23 @@ public class FSLFifoInput extends FifoInput {
 	 * Returns a subset of {@link #getPins} that are the output pins of the
 	 * interface, containing only the read pin.
 	 */
+	@Override
 	public Collection<SimplePin> getOutputPins() {
 		return Collections.unmodifiableList(Collections
 				.singletonList(this.read));
 	}
 
+	@Override
 	public SimplePin getDataPin() {
 		return this.data;
 	}
 
+	@Override
 	public SimplePin getSendPin() {
 		return this.exists;
 	}
 
+	@Override
 	public SimplePin getAckPin() {
 		return this.read;
 	}

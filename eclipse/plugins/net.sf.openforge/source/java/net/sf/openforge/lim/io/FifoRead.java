@@ -35,7 +35,6 @@ import net.sf.openforge.lim.Latency;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Not;
 import net.sf.openforge.lim.Or;
-import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Referenceable;
 import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Value;
@@ -71,7 +70,7 @@ public class FifoRead extends FifoAccess implements Visitable {
 		// there is a single result bus on this module, and a GO port
 		// and DONE bus.
 		Exit exit = makeExit(1);
-		Bus result = (Bus) exit.getDataBuses().get(0);
+		Bus result = exit.getDataBuses().get(0);
 		Bus done = exit.getDoneBus();
 		done.setUsed(true);
 		result.setUsed(true);
@@ -80,7 +79,7 @@ public class FifoRead extends FifoAccess implements Visitable {
 	}
 
 	/**
-	 * Constructs a new FifoRead targetting the given FifoIF.
+	 * Constructs a new FifoRead targeting the given FifoIF.
 	 * 
 	 * @param targetInterface
 	 *            a non null 'FifoIF'
@@ -114,7 +113,7 @@ public class FifoRead extends FifoAccess implements Visitable {
 		// // by status flags.
 		// exit.setLatency(Latency.ZERO.open(this));
 		Bus done = exit.getDoneBus();
-		Bus result = (Bus) exit.getDataBuses().get(0);
+		Bus result = exit.getDataBuses().get(0);
 
 		// To implement the functionality we have:
 		// 1 FD flop (resets to 0)
@@ -156,12 +155,12 @@ public class FifoRead extends FifoAccess implements Visitable {
 		result.getPeer().setBus(din.getResultBus());
 
 		// Calculate 'pending'
-		((Port) pending.getDataPorts().get(0)).setBus(flop.getResultBus());
-		((Port) pending.getDataPorts().get(1)).setBus(getGoPort().getPeer());
+		pending.getDataPorts().get(0).setBus(flop.getResultBus());
+		pending.getDataPorts().get(1).setBus(getGoPort().getPeer());
 
 		// calculate the 'read done'
-		((Port) done_and.getDataPorts().get(0)).setBus(pending.getResultBus());
-		((Port) done_and.getDataPorts().get(1)).setBus(exists.getResultBus());
+		done_and.getDataPorts().get(0).setBus(pending.getResultBus());
+		done_and.getDataPorts().get(1).setBus(exists.getResultBus());
 
 		// hook 'read done' to done bus and fifo ack
 		done.getPeer().setBus(done_and.getResultBus());
@@ -170,11 +169,79 @@ public class FifoRead extends FifoAccess implements Visitable {
 
 		// calculate the and for the flop
 		not.getDataPort().setBus(exists.getResultBus());
-		((Port) flop_and.getDataPorts().get(0)).setBus(not.getResultBus());
-		((Port) flop_and.getDataPorts().get(1)).setBus(pending.getResultBus());
+		flop_and.getDataPorts().get(0).setBus(not.getResultBus());
+		flop_and.getDataPorts().get(1).setBus(pending.getResultBus());
 
 		// Connect the flop port
 		flop.getDataPort().setBus(flop_and.getResultBus());
+
+		// Define the feedback point
+		this.feedbackPoints = Collections.singleton(flop);
+	}
+
+	public FifoRead(NativeInput targetInterface) {
+		super(targetInterface);
+		Exit exit = makeExit(1);
+		exit.setLatency(Latency.ZERO.open(exit));
+
+		this.setProducesDone(true);
+		this.setDoneSynchronous(true);
+
+		// Build up the correct logic in this module to implement the
+		// functionality:
+		// read_data = fifo_DIN;
+		// pending = (GO || GO');
+		// done = pending;
+		// GO' <= pending;
+
+		// // Excluding 'sideband' ports/buses (those connecting to pins)
+		// // there is a single result bus on this module, and a GO port
+		// // and DONE bus.
+		// Exit exit = makeExit(1);
+		// Bus result = (Bus)exit.getDataBuses().get(0);
+		// Bus done = exit.getDoneBus();
+		// done.setUsed(true);
+		// result.setUsed(true);
+
+		// // Could be combinational or longer if the access is blocked
+		// // by status flags.
+		// exit.setLatency(Latency.ZERO.open(this));
+		Bus done = exit.getDoneBus();
+		Bus result = exit.getDataBuses().get(0);
+
+		// To implement the functionality we have:
+		// 1 FD flop (resets to 0)
+		// 1 fifo data read
+
+		// Needs RESET b/c it is in the control path
+		final Reg flop = Reg.getConfigurableReg(Reg.REGR, "fifoReadFlop");
+		flop.getClockPort().setBus(this.getClockPort().getPeer());
+		flop.getResetPort().setBus(this.getResetPort().getPeer());
+		flop.getInternalResetPort().setBus(this.getResetPort().getPeer());
+		// Because the flop is a feedback point it needs to be
+		// pre-initialized with its value
+		flop.getResultBus().pushValueForward(new Value(1, false));
+		final Or pending = new Or(2);
+
+		final SimplePinRead din = new SimplePinRead(
+				targetInterface.getDataPin());
+		this.addComponent(flop);
+		this.addComponent(pending);
+		this.addComponent(din);
+
+		// Hook fifo DIN pin to the result of the module. Easy
+		// straight wire through.
+		result.getPeer().setBus(din.getResultBus());
+
+		// Calculate 'pending'
+		pending.getDataPorts().get(0).setBus(flop.getResultBus());
+		pending.getDataPorts().get(1).setBus(getGoPort().getPeer());
+
+		// hook 'pending' to done bus
+		done.getPeer().setBus(pending.getResultBus());
+
+		// Connect the flop port
+		flop.getDataPort().setBus(pending.getResultBus());
 
 		// Define the feedback point
 		this.feedbackPoints = Collections.singleton(flop);
@@ -186,6 +253,7 @@ public class FifoRead extends FifoAccess implements Visitable {
 	 * @param visitor
 	 *            a Visitor
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -195,6 +263,7 @@ public class FifoRead extends FifoAccess implements Visitable {
 	 * 
 	 * @return true
 	 */
+	@Override
 	public boolean consumesClock() {
 		return true;
 	}
@@ -207,16 +276,19 @@ public class FifoRead extends FifoAccess implements Visitable {
 	 * 
 	 * @return true
 	 */
+	@Override
 	public boolean consumesGo() {
 		return true;
 	}
 
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		// TBD
 		assert false;
 		return false;
 	}
 
+	@Override
 	public Set<Component> getFeedbackPoints() {
 		Set<Component> feedback = new HashSet<Component>();
 		feedback.addAll(super.getFeedbackPoints());
@@ -229,10 +301,12 @@ public class FifoRead extends FifoAccess implements Visitable {
 	 * This accessor modifies the {@link Referenceable} target state so it may
 	 * not execute in parallel with other accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return true;
 	}
 
+	@Override
 	protected void cloneNotify(Module clone, Map cloneMap) {
 		super.cloneNotify(clone, cloneMap);
 		// Re-set the feedback points to point to the correct register

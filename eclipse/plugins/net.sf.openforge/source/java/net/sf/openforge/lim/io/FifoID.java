@@ -39,7 +39,8 @@ public abstract class FifoID {
 
 	public static final int TYPE_FSL = 1;
 	public static final int TYPE_ACTION_SCALAR = 2;
-	public static final int TYPE_ACTION_OBJECT = 3;
+	public static final int TYPE_ACTION_NATIVE_SCALAR = 3;
+	public static final int TYPE_ACTION_OBJECT = 4;
 
 	private static final String READ_PREFIX = "fifoRead";
 	private static final String WRITE_PREFIX = "fifoWrite";
@@ -184,6 +185,7 @@ public abstract class FifoID {
 
 	public void setType(int type) {
 		if ((type != TYPE_FSL) && (type != TYPE_ACTION_SCALAR)
+				&& (type != TYPE_ACTION_NATIVE_SCALAR)
 				&& (type != TYPE_ACTION_OBJECT)) {
 			throw new IllegalArgumentException(
 					"Unknown interface type specified " + type);

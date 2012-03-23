@@ -146,7 +146,7 @@ public abstract class XFactory {
 			if (type.equalsIgnoreCase("int")) {
 				width = 32;
 			} else if (type.equalsIgnoreCase("uint")) {
-				width = 1;
+				width = 32;
 			} else if (type.equalsIgnoreCase("bool")) {
 				width = 1;
 			}

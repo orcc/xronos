@@ -50,6 +50,7 @@ public class XDecisionFactory extends XModuleFactory {
 	 * @param moduleNode
 	 *            an Element object
 	 */
+	@Override
 	public Component buildComponent(Node moduleNode) {
 		assert moduleNode instanceof Element;
 		Element testElement = (Element) moduleNode;
@@ -105,7 +106,7 @@ public class XDecisionFactory extends XModuleFactory {
 			for (Node nd : ports) {
 				Element port = (Element) nd;
 				if (port.getAttribute(SLIMConstants.NAME).equals(testTag)) {
-					Component testComp = (Component) operations.get(operation);
+					Component testComp = operations.get(operation);
 					return testComp;
 				}
 			}
@@ -133,7 +134,7 @@ public class XDecisionFactory extends XModuleFactory {
 
 		for (Port port : testBlock.getDataPorts()) {
 			Port decisionPort = decision.makeDataPort();
-			Entry entry = (Entry) port.getOwner().getEntries().get(0);
+			Entry entry = port.getOwner().getEntries().get(0);
 			entry.addDependency(port,
 					new DataDependency(decisionPort.getPeer()));
 			cache.replaceTarget(port, decisionPort);

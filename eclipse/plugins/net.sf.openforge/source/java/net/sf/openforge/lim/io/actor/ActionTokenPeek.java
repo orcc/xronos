@@ -46,7 +46,6 @@ import net.sf.openforge.lim.io.SimplePinRead;
  */
 public class ActionTokenPeek extends FifoAccess {
 
-	
 	private ActionTokenPeek(FifoIF fifoIF, SimplePin indexPin, SimplePin dataPin) {
 		super(fifoIF);
 
@@ -56,9 +55,9 @@ public class ActionTokenPeek extends FifoAccess {
 		// is not needed. The Go is needed to drive the pin write.
 		// unused right now
 		@SuppressWarnings("unused")
-		Port index = makeDataPort(); 
+		Port index = makeDataPort();
 		Exit exit = makeExit(1);
-		Bus result = (Bus) exit.getDataBuses().get(0);
+		Bus result = exit.getDataBuses().get(0);
 		// Bus done = exit.getDoneBus();
 		// done.setUsed(true);
 		result.setUsed(true);
@@ -89,6 +88,10 @@ public class ActionTokenPeek extends FifoAccess {
 		this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
 	}
 
+	public ActionTokenPeek(ActorNativeScalarInput fifoIF) {
+		this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
+	}
+
 	// public ActionTokenPeek (ActorScalarOutput fifoIF)
 	// {
 	// //this(fifoIF, null, null);
@@ -104,6 +107,7 @@ public class ActionTokenPeek extends FifoAccess {
 	 * This accessor may execute in parallel with other similar (non state
 	 * modifying) accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return false;
 	}

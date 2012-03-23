@@ -21,7 +21,6 @@
 
 package net.sf.openforge.lim.io;
 
-
 /**
  * FifoInput is an abstract class which contains the common behavior for all
  * types of fifo input
@@ -51,6 +50,7 @@ public abstract class FifoInput extends FifoIF {
 	 * 
 	 * @return a {@link FifoAccess}, specifically of type {@link FifoRead}
 	 */
+	@Override
 	public FifoAccess getAccess() {
 		return new FifoRead(this);
 	}
@@ -61,6 +61,7 @@ public abstract class FifoInput extends FifoIF {
 	 * 
 	 * @return true
 	 */
+	@Override
 	public boolean isInput() {
 		return true;
 	}
@@ -80,6 +81,7 @@ public abstract class FifoInput extends FifoIF {
 	 */
 	public abstract SimplePin getAckPin();
 
+	@Override
 	public String toString() {
 		return super.toString().replaceAll("net.sf.openforge.lim.io.", "")
 				+ "{" + getDataPin().getName() + "}";

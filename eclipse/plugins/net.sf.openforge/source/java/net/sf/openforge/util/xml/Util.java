@@ -68,6 +68,10 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.app.GenericJob;
+import net.sf.openforge.app.OptionRegistry;
+import net.sf.openforge.lim.CodeLabel;
 import net.sf.openforge.util.io.ClassLoaderStreamLocator;
 import net.sf.openforge.util.io.StreamLocator;
 
@@ -195,18 +199,49 @@ public class Util {
 			throws Exception {
 		Node doc = document;
 		String tmp = Util.nodeToString(doc);
-		// System.out.println(tmp);
+		System.out.println(tmp);
 		// Logging.user().info(tmp);
+
+		String[] transfo = { "XLIMLoopFix", "XLIMFixSelector", "XLIMTagify0",
+				"XLIMMakePortNames", "XLIMSizeAndType", "XLIMAddVarReads",
+				"XLIMInsertCasts", "XLIMAddVarReadScope", "XLIMBuildControl",
+				"XLIMRoutePorts", "XLIMFixNames0", "XLIMMakeDeps",
+				"XLIMProcessPHI", "XLIMFixNames1", "XLIMCreateExits",
+				"XLIMTagify1", "XLIMAddControlDeps" };
+		int i = 0;
+
 		for (Transformer xf : xfs) {
-			// System.out.println("call1");
+			System.out.println("call1");
 			// Logging.user().info("call1");
 			doc = applyTransform(doc, xf);
-			tmp = Util.nodeToString(doc);
+			printToXML(doc, Integer.toString(i) + "_" + transfo[i]);
+			i++;
 		}
+
 		tmp = Util.nodeToString(doc);
+
 		// System.out.println(tmp);
 		return doc;
 
+	}
+
+	static void printToXML(Node doc, String transfo) throws Exception {
+		GenericJob gj = EngineThread.getGenericJob();
+		String baseName = gj.getOutputBaseName();
+		String outDir = gj.getOption(OptionRegistry.DESTINATION_DIR)
+				.getValue(CodeLabel.UNSCOPED).toString()
+				+ File.separator + "slim";
+		new File(outDir).mkdir();
+		new File(outDir + File.separator + baseName).mkdir();
+		TransformerFactory tFactory = TransformerFactory.newInstance();
+		Transformer transformer = tFactory.newTransformer();
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		DOMSource source = new DOMSource(doc);
+
+		StreamResult result = new StreamResult(new File(outDir + File.separator
+				+ baseName + File.separator + baseName + "_" + transfo
+				+ ".slim"));
+		transformer.transform(source, result);
 	}
 
 	public static String nodeToString(Node node) {
@@ -267,12 +302,15 @@ public class Util {
 		// Catch and report errors during transformation here.
 		if (true) { // Redirect output of errors/warnings to the debug stream
 			xf.setErrorListener(new ErrorListener() {
+				@Override
 				public void error(TransformerException e) {
 				}
 
+				@Override
 				public void fatalError(TransformerException e) {
 				}
 
+				@Override
 				public void warning(TransformerException e) {
 				}
 			});
@@ -581,17 +619,20 @@ public class Util {
 			_resolver = resolver;
 		}
 
+		@Override
 		public InputSource getExternalSubset(String name, String baseURI)
 				throws SAXException, IOException {
 			return null;
 		}
 
+		@Override
 		public InputSource resolveEntity(String name, String publicId,
 				String baseURI, String systemId) throws SAXException,
 				IOException {
 			return resolveEntity(publicId, systemId);
 		}
 
+		@Override
 		public InputSource resolveEntity(String publicId, String systemId)
 				throws SAXException, IOException {
 			if (_resolver != null) {
@@ -609,9 +650,9 @@ public class Util {
 			}
 		}
 
-		private String _oldID;
-		private String _newSystemID;
-		private EntityResolver _resolver;
+		private final String _oldID;
+		private final String _newSystemID;
+		private final EntityResolver _resolver;
 	}
 
 	/**

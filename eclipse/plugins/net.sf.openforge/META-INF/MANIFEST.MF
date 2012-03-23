@@ -14,3 +14,5 @@ Bundle-ClassPath: source/xslt/,
  .,
  lib/saxon8-dom.jar,
  lib/saxon8.jar
+Bundle-ActivationPolicy: lazy
+Bundle-Vendor: EPFL

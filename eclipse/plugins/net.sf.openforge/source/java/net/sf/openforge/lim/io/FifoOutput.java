@@ -50,6 +50,7 @@ public abstract class FifoOutput extends FifoIF {
 	 * 
 	 * @return a {@link FifoAccess}, specifically of type {@link FifoWrite}
 	 */
+	@Override
 	public FifoAccess getAccess() {
 		return new FifoWrite(this);
 	}
@@ -60,6 +61,7 @@ public abstract class FifoOutput extends FifoIF {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean isInput() {
 		return false;
 	}
@@ -85,6 +87,7 @@ public abstract class FifoOutput extends FifoIF {
 	 */
 	public abstract SimplePin getReadyPin();
 
+	@Override
 	public String toString() {
 		return super.toString().replaceAll("net.sf.openforge.lim.io.", "")
 				+ "{" + getDataPin().getName() + "}";

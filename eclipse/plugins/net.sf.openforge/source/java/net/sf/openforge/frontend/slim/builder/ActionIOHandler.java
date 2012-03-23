@@ -117,7 +117,7 @@ public abstract class ActionIOHandler {
 	 * node.
 	 */
 	public static class FifoIOHandler extends ActionIOHandler {
-		private Element portNode;
+		private final Element portNode;
 		private ActorPort resource;
 
 		public FifoIOHandler(Node portNode) {
@@ -132,6 +132,7 @@ public abstract class ActionIOHandler {
 		 * @param design
 		 *            a value of type 'Design'
 		 */
+		@Override
 		public void build(Design design) {
 			final String direction = this.portNode
 					.getAttribute(SLIMConstants.PORT_DIRECTION);
@@ -152,6 +153,7 @@ public abstract class ActionIOHandler {
 			this.resource = (ActorPort) design.getFifoIF(fifoId);
 		}
 
+		@Override
 		public Component getReadAccess(Element accElement) {
 			if (!this.resource.isInput())
 				throw new UnsupportedOperationException(
@@ -159,6 +161,7 @@ public abstract class ActionIOHandler {
 			return this.resource.getAccess(getBlockingState(accElement));
 		}
 
+		@Override
 		public Component getStallAccess() {
 			// This could be supported if we wanted to stall on the
 			// availability of input data, or not-full status of the
@@ -167,6 +170,7 @@ public abstract class ActionIOHandler {
 					"Cannot stall on a FIFO interface");
 		}
 
+		@Override
 		public Component getWriteAccess(Element accElement) {
 			if (this.resource.isInput())
 				throw new UnsupportedOperationException(
@@ -174,6 +178,7 @@ public abstract class ActionIOHandler {
 			return this.resource.getAccess(getBlockingState(accElement));
 		}
 
+		@Override
 		public Component getTokenCountAccess() {
 			if (!this.resource.isInput())
 				throw new UnsupportedOperationException(
@@ -181,10 +186,12 @@ public abstract class ActionIOHandler {
 			return this.resource.getCountAccess();
 		}
 
+		@Override
 		public Component getTokenPeekAccess() {
 			return this.resource.getPeekAccess();
 		}
 
+		@Override
 		public Component getStatusAccess() {
 			return this.resource.getStatusAccess();
 		}
@@ -197,8 +204,96 @@ public abstract class ActionIOHandler {
 		}
 	}
 
+	/**
+	 * A specific implementation of the ActionIOHandler class which is
+	 * implemented by a {@link SimplePin} resource. All input/output using this
+	 * type of handler is accomplished through a standard SimplePin interface.
+	 * The Simple Pin interface will be named according the the name of the
+	 * specified port node.
+	 * 
+	 * @author Endri Bezati
+	 */
+	public static class NativeIOHandler extends ActionIOHandler {
+		private final Element portNode;
+		private ActorPort resource;
+
+		public NativeIOHandler(Node portNode) {
+			super();
+			assert portNode.getNodeType() == Node.ELEMENT_NODE;
+			this.portNode = (Element) portNode;
+		}
+
+		@Override
+		public void build(Design design) {
+			final String direction = this.portNode
+					.getAttribute(SLIMConstants.PORT_DIRECTION);
+			final String portName = this.portNode
+					.getAttribute(SLIMConstants.PORT_NAME);
+			final String portSize = this.portNode
+					.getAttribute(SLIMConstants.PORT_SIZE);
+			if (portSize.length() == 0) {
+				EngineThread.getGenericJob().warn(
+						"Port " + portName + " has no size specified!");
+			}
+			FifoID fifoId = new NamedFifoID();
+			fifoId.setBitWidth(Integer.parseInt(portSize));
+			fifoId.setID(portName);
+			fifoId.setDirection(direction.startsWith("in"));
+			fifoId.setType(FifoID.TYPE_ACTION_NATIVE_SCALAR);
+
+			this.resource = (ActorPort) design.getFifoIF(fifoId);
+
+		}
+
+		@Override
+		public Component getReadAccess(Element element) {
+			if (!this.resource.isInput())
+				throw new UnsupportedOperationException(
+						"Cannot read from an output interface");
+			return this.resource.getAccess(getBlockingState(element));
+		}
+
+		@Override
+		public Component getStallAccess() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public Component getWriteAccess(Element element) {
+			if (this.resource.isInput())
+				throw new UnsupportedOperationException(
+						"Cannot write to an input interface");
+			return this.resource.getAccess(getBlockingState(element));
+		}
+
+		@Override
+		public Component getTokenCountAccess() {
+			throw new UnsupportedOperationException(
+					"Cannot get the token count from an native port");
+		}
+
+		@Override
+		public Component getTokenPeekAccess() {
+			return resource.getPeekAccess();
+		}
+
+		@Override
+		public Component getStatusAccess() {
+			return resource.getStatusAccess();
+		}
+
+		private static final boolean getBlockingState(Element element) {
+			String accType = element
+					.getAttribute(SLIMConstants.PORT_ACCESS_STYLE);
+			return accType
+					.equalsIgnoreCase(SLIMConstants.PORT_ACCESS_BLOCKING_STYLE);
+		}
+
+	}
+
 	public static class InternalPinHandler extends ActionIOHandler {
-		private Element portNode;
+		private final Element portNode;
 		private SimplePin pin = null;
 
 		public InternalPinHandler(Node internalPortNode) {
@@ -206,6 +301,7 @@ public abstract class ActionIOHandler {
 			this.portNode = (Element) internalPortNode;
 		}
 
+		@Override
 		public void build(Design design) {
 			final String portName = this.portNode.getAttribute("name");
 			final String portSize = this.portNode.getAttribute("size");
@@ -216,28 +312,34 @@ public abstract class ActionIOHandler {
 			this.pin = pin;
 		}
 
+		@Override
 		public Component getReadAccess(Element element) {
 			return new SimplePinRead(this.pin);
 		}
 
+		@Override
 		public Component getStallAccess() {
 			return new SimplePinStall(this.pin);
 		}
 
+		@Override
 		public Component getWriteAccess(Element element) {
 			return new SimplePinWrite(this.pin);
 		}
 
+		@Override
 		public Component getTokenCountAccess() {
 			throw new UnsupportedOperationException(
 					"Cannot get the token count from an internal pin");
 		}
 
+		@Override
 		public Component getTokenPeekAccess() {
 			throw new UnsupportedOperationException(
 					"Cannot get the token count from an internal pin");
 		}
 
+		@Override
 		public Component getStatusAccess() {
 			throw new UnsupportedOperationException(
 					"Cannot get the status from an internal pin");

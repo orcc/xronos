@@ -29,6 +29,7 @@ import net.sf.openforge.app.OptionKey;
 import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.app.project.Configurable;
 import net.sf.openforge.app.project.SearchLabel;
+import net.sf.openforge.frontend.slim.builder.ActionIOHandler.NativeIOHandler;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.CodeLabel;
@@ -66,18 +67,22 @@ public class XDesignFactory extends XFactory {
 
 	// Used for assigning configuration values at the unscoped config level
 	private static final Configurable UNSCOPED_CONFIG = new Configurable() {
+		@Override
 		public Configurable getConfigurableParent() {
 			return null;
 		}
 
+		@Override
 		public String getOptionLabel() {
 			return null;
 		}
 
+		@Override
 		public SearchLabel getSearchLabel() {
 			return CodeLabel.UNSCOPED;
 		}
 
+		@Override
 		public GenericJob getGenericJob() {
 			return EngineThread.getGenericJob();
 		}
@@ -123,6 +128,12 @@ public class XDesignFactory extends XFactory {
 			if (node.getNodeName().equals(SLIMConstants.ACTOR_PORT)) {
 				// <port name="I" dbgTag="" size="10" dir="input" tag="d2e7"/>
 				ActionIOHandler ioHandler = new ActionIOHandler.FifoIOHandler(
+						node);
+				ioHandler.build(design);
+				resources.addIOHandler(node, ioHandler);
+			} else if (node.getNodeName().equals(
+					SLIMConstants.ACTOR_NATIVE_PORT)) {
+				NativeIOHandler ioHandler = new ActionIOHandler.NativeIOHandler(
 						node);
 				ioHandler.build(design);
 				resources.addIOHandler(node, ioHandler);
@@ -215,7 +226,7 @@ public class XDesignFactory extends XFactory {
 		for (Element taskCallNode : resources.getTaskCallNodes()) {
 			final String taskID = taskCallNode
 					.getAttribute(SLIMConstants.RESOURCE_TARGET);
-			final Task task = (Task) taskModules.get(taskID);
+			final Task task = taskModules.get(taskID);
 			if (task == null)
 				throw new IllegalStateException(
 						"Task Call to non-existant task "
@@ -394,7 +405,7 @@ public class XDesignFactory extends XFactory {
 		// any configuration options and apply them.
 		final Map<Configurable, Element> configMap = res.getConfigurableMap();
 		for (Configurable config : configMap.keySet()) {
-			Element element = (Element) configMap.get(config);
+			Element element = configMap.get(config);
 			NodeList elementChildren = element.getChildNodes();
 			for (int i = 0; i < elementChildren.getLength(); i++) {
 				Node node = elementChildren.item(i);

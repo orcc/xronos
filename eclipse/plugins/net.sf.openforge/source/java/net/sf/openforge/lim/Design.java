@@ -46,6 +46,8 @@ import net.sf.openforge.lim.io.FSLFifoOutput;
 import net.sf.openforge.lim.io.FifoID;
 import net.sf.openforge.lim.io.FifoIF;
 import net.sf.openforge.lim.io.SimplePin;
+import net.sf.openforge.lim.io.actor.ActorNativeScalarInput;
+import net.sf.openforge.lim.io.actor.ActorNativeScalarOutput;
 import net.sf.openforge.lim.io.actor.ActorScalarInput;
 import net.sf.openforge.lim.io.actor.ActorScalarOutput;
 import net.sf.openforge.lim.memory.LogicalMemory;
@@ -77,7 +79,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * hashmap as a convenience to the user so that the translated Verilog has
 	 * the same port ordering each time.
 	 */
-	private Map<String, FifoIF> fifoInterfaces = new LinkedHashMap();
+	private final Map<String, FifoIF> fifoInterfaces = new LinkedHashMap();
 
 	private Collection inputPins = Collections.EMPTY_LIST;
 	private Collection outputPins = Collections.EMPTY_LIST;
@@ -92,13 +94,13 @@ public class Design extends ID implements Visitable, Cloneable {
 	private Tester tester = null;
 
 	/** Map of defined clock domains. */
-	private Map<String, ClockDomain> clockDomains = new HashMap();
+	private final Map<String, ClockDomain> clockDomains = new HashMap();
 
 	/** map of api clock pin name to input pins (clocks) */
-	private HashMap apiClockNameToLIMClockMap = new HashMap();
+	private final HashMap apiClockNameToLIMClockMap = new HashMap();
 
 	/** map of api reset pin name to input pins (reset) */
-	private HashMap apiResetNameToLIMResetMap = new HashMap();
+	private final HashMap apiResetNameToLIMResetMap = new HashMap();
 
 	/**
 	 * A mapping between {@link Pin} and {@link Port} where the Port is the port
@@ -106,7 +108,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * that port. This map is used by the automatic test bench generator to
 	 * provide correlations.
 	 */
-	private Map pinPortBusMap = new HashMap();
+	private final Map pinPortBusMap = new HashMap();
 
 	/** The max gate depth */
 	private int maxGateDepth = 0;
@@ -127,6 +129,7 @@ public class Design extends ID implements Visitable, Cloneable {
 		this.searchLabel = new CodeLabel("design");
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -343,6 +346,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @return a value of type 'Collection'
 	 * @deprecated
 	 */
+	@Deprecated
 	public Collection getBidirectionalPins() {
 		// return bidirectionalPins;
 		return Collections.EMPTY_LIST;
@@ -476,7 +480,7 @@ public class Design extends ID implements Visitable, Cloneable {
 		// FifoIF object.
 
 		String key = fifoID.getName() + "" + fifoID.isInputFifo();
-		FifoIF fifoIF = (FifoIF) this.fifoInterfaces.get(key);
+		FifoIF fifoIF = this.fifoInterfaces.get(key);
 
 		if (fifoIF == null) {
 			String id = fifoID.getName();
@@ -493,6 +497,12 @@ public class Design extends ID implements Visitable, Cloneable {
 					fifoIF = new ActorScalarInput(fifoID);
 				else
 					fifoIF = new ActorScalarOutput(fifoID);
+				break;
+			case FifoID.TYPE_ACTION_NATIVE_SCALAR:
+				if (fifoID.isInputFifo())
+					fifoIF = new ActorNativeScalarInput(fifoID);
+				else
+					fifoIF = new ActorNativeScalarOutput(fifoID);
 				break;
 			case FifoID.TYPE_ACTION_OBJECT:
 				throw new UnsupportedOperationException(
@@ -628,6 +638,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 
@@ -883,7 +894,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @return a list of included source file paths
 	 */
 	public List getIncludeStatements() {
-		return (List) includeStatements;
+		return includeStatements;
 	}
 
 	/**
@@ -1014,7 +1025,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	//
 	// ///////////////////
 
-	private DesignModule designModule;
+	private final DesignModule designModule;
 
 	public DesignModule getDesignModule() {
 		return this.designModule;
@@ -1047,6 +1058,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * for the design.
 	 */
 	public static class DesignModule extends Module {
+		@Override
 		public boolean replaceComponent(Component removed, Component inserted) {
 			if (!removeComponent(removed))
 				return false;
@@ -1054,15 +1066,18 @@ public class Design extends ID implements Visitable, Cloneable {
 			return true;
 		}
 
+		@Override
 		public void accept(Visitor vis) {
 			throw new UnsupportedOperationException(
 					"Cannot directly visit a design Module");
 		}
 
+		@Override
 		public void addComponent(Component comp) {
 			super.addComponent(comp);
 		}
 
+		@Override
 		public Collection<Component> getComponents() {
 			LinkedHashSet<Component> comps = new LinkedHashSet<Component>(
 					super.getComponents());
@@ -1074,10 +1089,10 @@ public class Design extends ID implements Visitable, Cloneable {
 	}
 
 	public static class ClockDomain {
-		private SimplePin clock;
+		private final SimplePin clock;
 		private SimplePin reset;
-		private GlobalReset.Physical gsr;
-		private String domainSpec;
+		private final GlobalReset.Physical gsr;
+		private final String domainSpec;
 
 		private ClockDomain(String domainSpec) {
 			this.domainSpec = domainSpec;

@@ -57,13 +57,13 @@ import net.sf.openforge.lim.io.SimplePinWrite;
  */
 public class ActorScalarInput extends FifoInput implements ActorPort {
 
-	private String baseName;
-	private SimplePin data;
-	private SimplePin send;
-	private SimplePin ack;
+	private final String baseName;
+	private final SimplePin data;
+	private final SimplePin send;
+	private final SimplePin ack;
 
 	/** The input pin which specifies the number of available tokens */
-	private SimplePin tokenCount;
+	private final SimplePin tokenCount;
 
 	// public ActorScalarInput (String idString, int width)
 	public ActorScalarInput(FifoID fifoID) {
@@ -89,10 +89,12 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	 * 
 	 * @return an <code>int</code> value
 	 */
+	@Override
 	public int getType() {
 		return FifoIF.TYPE_ACTOR_QUEUE;
 	}
 
+	@Override
 	public String getPortBaseName() {
 		return this.baseName;
 	}
@@ -101,6 +103,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	 * ActorScalarInput ports have no special naming requirements, this method
 	 * returns portname
 	 */
+	@Override
 	protected String buildPortBaseName(String portName) {
 		return portName;
 	}
@@ -108,6 +111,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	/**
 	 * asserts false
 	 */
+	@Override
 	public void setAttribute(int type, String value) {
 		assert false : "No supported attributes";
 	}
@@ -116,6 +120,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	 * Returns a subset of {@link #getPins} that are the output pins of the
 	 * interface, containing only the data, write, and ctrl pins.
 	 */
+	@Override
 	public Collection<SimplePin> getOutputPins() {
 		return Collections.singletonList(this.ack);
 	}
@@ -126,6 +131,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	 * 
 	 * @return a blocking {@link FifoAccess}
 	 */
+	@Override
 	public FifoAccess getAccess() {
 		return getAccess(true);
 	}
@@ -139,6 +145,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	 *            non-blocking read is returned.
 	 * @return a {@link FifoAccess}
 	 */
+	@Override
 	public FifoAccess getAccess(boolean blocking) {
 		if (blocking)
 			return new FifoRead(this);
@@ -147,6 +154,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	}
 
 	/** Returns the input data pin */
+	@Override
 	public SimplePin getDataPin() {
 		return this.data;
 	}
@@ -155,6 +163,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	 * Returns the input send pin which indicates that a value is being sent TO
 	 * this input interface.
 	 */
+	@Override
 	public SimplePin getSendPin() {
 		return this.send;
 	}
@@ -163,6 +172,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	 * Returns the output ack pin which indicates that this interface is
 	 * acknowledging reciept of the current send value
 	 */
+	@Override
 	public SimplePin getAckPin() {
 		return this.ack;
 	}
@@ -171,14 +181,17 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 		return this.tokenCount;
 	}
 
+	@Override
 	public Component getCountAccess() {
 		return new ActionTokenCountRead(this);
 	}
 
+	@Override
 	public Component getPeekAccess() {
 		return new ActionTokenPeek(this);
 	}
 
+	@Override
 	public Component getStatusAccess() {
 		return new ActionPortStatus(this);
 	}
@@ -192,6 +205,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	 * @param to
 	 *            the latter accessor in source document order.
 	 */
+	@Override
 	public int getSpacing(Referencer from, Referencer to) {
 		// Options for accesses to an input are
 		// FifoRead (ActorScalarSimpleInputRead)
@@ -216,7 +230,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 			super(asi, Latency.ZERO);
 
 			Bus done = getExit(Exit.DONE).getDoneBus();
-			Bus result = (Bus) getExit(Exit.DONE).getDataBuses().get(0);
+			Bus result = getExit(Exit.DONE).getDataBuses().get(0);
 
 			final SimplePinRead din = new SimplePinRead(asi.getDataPin());
 			final SimplePinWrite ack = new SimplePinWrite(asi.getAckPin());
@@ -229,6 +243,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 			ack.getGoPort().setBus(getGoPort().getPeer());
 		}
 
+		@Override
 		public boolean consumesClock() {
 			return false;
 		}

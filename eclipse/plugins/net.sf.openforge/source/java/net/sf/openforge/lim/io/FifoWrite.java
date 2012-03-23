@@ -84,6 +84,24 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		data.setUsed(true);
 	}
 
+	protected FifoWrite(NativeOutput targetInterface, Latency operationalLatency) {
+		super(targetInterface);
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single data port on this module, and a GO port
+		// and DONE bus.
+		Exit exit = makeExit(0);
+		Bus done = exit.getDoneBus();
+		done.setUsed(true);
+		// Because we register the DONE signal (and no data is
+		// produced by this node) the component is guaranteed to take
+		// at least one clock cycle, but could take more if the write
+		// is blocked by the full status flag.
+		exit.setLatency(operationalLatency);
+
+		Port data = makeDataPort();
+		data.setUsed(true);
+	}
+
 	/**
 	 * Constructs a new FifoWrite targetting the given FifoIF.
 	 * 
@@ -118,7 +136,7 @@ public class FifoWrite extends FifoAccess implements Visitable {
 
 		// Port data = makeDataPort();
 		// data.setUsed(true);
-		Port data = (Port) getDataPorts().get(0);
+		Port data = getDataPorts().get(0);
 		Bus done = exit.getDoneBus();
 
 		/*
@@ -182,13 +200,13 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		dout.getGoPort().setBus(done_and.getResultBus());
 
 		// Calculate pending
-		((Port) pending.getDataPorts().get(0)).setBus(flop.getResultBus());
-		((Port) pending.getDataPorts().get(1)).setBus(getGoPort().getPeer());
+		pending.getDataPorts().get(0).setBus(flop.getResultBus());
+		pending.getDataPorts().get(1).setBus(getGoPort().getPeer());
 
 		// calculate the done/fifoWR
 		not.getDataPort().setBus(full.getResultBus());
-		((Port) done_and.getDataPorts().get(0)).setBus(pending.getResultBus());
-		((Port) done_and.getDataPorts().get(1)).setBus(not.getResultBus());
+		done_and.getDataPorts().get(0).setBus(pending.getResultBus());
+		done_and.getDataPorts().get(1).setBus(not.getResultBus());
 
 		// Connect the fifoWR
 		write.getDataPort().setBus(done_and.getResultBus());
@@ -198,8 +216,8 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		done.getPeer().setBus(done_and.getResultBus());
 
 		// calculate the flop expression
-		((Port) flop_and.getDataPorts().get(0)).setBus(pending.getResultBus());
-		((Port) flop_and.getDataPorts().get(1)).setBus(full.getResultBus());
+		flop_and.getDataPorts().get(0).setBus(pending.getResultBus());
+		flop_and.getDataPorts().get(1).setBus(full.getResultBus());
 
 		// Connect the flop input
 		flop.getDataPort().setBus(flop_and.getResultBus());
@@ -208,12 +226,17 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		this.feedbackPoints = Collections.singleton(flop);
 	}
 
+	public FifoWrite(NativeOutput targetInterface) {
+		this(targetInterface, null);
+	}
+
 	/**
 	 * Accept the specified visitor
 	 * 
 	 * @param visitor
 	 *            a Visitor
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -223,6 +246,7 @@ public class FifoWrite extends FifoAccess implements Visitable {
 	 * 
 	 * @return true
 	 */
+	@Override
 	public boolean consumesClock() {
 		return true;
 	}
@@ -235,16 +259,19 @@ public class FifoWrite extends FifoAccess implements Visitable {
 	 * 
 	 * @return true
 	 */
+	@Override
 	public boolean consumesGo() {
 		return true;
 	}
 
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		// TBD
 		assert false;
 		return false;
 	}
 
+	@Override
 	public Set getFeedbackPoints() {
 		Set feedback = new HashSet();
 		feedback.addAll(super.getFeedbackPoints());
@@ -257,10 +284,12 @@ public class FifoWrite extends FifoAccess implements Visitable {
 	 * This accessor modifies the {@link Referenceable} target state so it may
 	 * not execute in parallel with other accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return true;
 	}
 
+	@Override
 	protected void cloneNotify(Module clone, Map cloneMap) {
 		super.cloneNotify(clone, cloneMap);
 		// Re-set the feedback points to point to the correct register

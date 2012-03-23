@@ -72,12 +72,12 @@ import net.sf.openforge.lim.op.SimpleConstant;
  */
 public class ActorScalarOutput extends FifoOutput implements ActorPort {
 
-	private String baseName;
-	private SimplePin data;
-	private SimplePin send;
-	private SimplePin ack;
-	private SimplePin rdy;
-	private SimplePin tokenCount;
+	private final String baseName;
+	private final SimplePin data;
+	private final SimplePin send;
+	private final SimplePin ack;
+	private final SimplePin rdy;
+	private final SimplePin tokenCount;
 
 	// public ActorScalarOutput (String idString, int width)
 	public ActorScalarOutput(FifoID fifoID) {
@@ -105,10 +105,12 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 * 
 	 * @return an <code>int</code> value
 	 */
+	@Override
 	public int getType() {
 		return FifoIF.TYPE_ACTOR_QUEUE;
 	}
 
+	@Override
 	public String getPortBaseName() {
 		return this.baseName;
 	}
@@ -117,6 +119,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 * ActorScalarOutput ports have no special naming requirements, this method
 	 * returns portname
 	 */
+	@Override
 	protected String buildPortBaseName(String portName) {
 		return portName;
 	}
@@ -124,6 +127,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	/**
 	 * asserts false
 	 */
+	@Override
 	public void setAttribute(int type, String value) {
 		assert false : "No supported attributes";
 	}
@@ -132,6 +136,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 * Returns a subset of {@link #getPins} that are the output pins of the
 	 * interface, containing only the data, write, and ctrl pins.
 	 */
+	@Override
 	public Collection<SimplePin> getOutputPins() {
 		List<SimplePin> list = new ArrayList<SimplePin>();
 		list.add(this.data);
@@ -147,6 +152,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 * 
 	 * @return a blocking {@link FifoAccess}
 	 */
+	@Override
 	public FifoAccess getAccess() {
 		return getAccess(true);
 	}
@@ -160,6 +166,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 *            non-blocking access.
 	 * @return a {@link FifoAccess}
 	 */
+	@Override
 	public FifoAccess getAccess(boolean blocking) {
 		if (blocking) {
 			return new ActorScalarOutputWrite(this);
@@ -169,6 +176,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	}
 
 	/** Returns the output data pin for this interface */
+	@Override
 	public SimplePin getDataPin() {
 		return this.data;
 	}
@@ -177,6 +185,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 * Returns the output send pin, indicating that the interface is outputting
 	 * valid data
 	 */
+	@Override
 	public SimplePin getSendPin() {
 		return this.send;
 	}
@@ -185,6 +194,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 * Returns the input acknowledge pin, indicating that the queue that the
 	 * interface is sending to has acknowledged reciept of the data
 	 */
+	@Override
 	public SimplePin getAckPin() {
 		return this.ack;
 	}
@@ -193,6 +203,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 * Returns the input ready pin, indicating that the queue is ready to accept
 	 * at least one token.
 	 */
+	@Override
 	public SimplePin getReadyPin() {
 		return this.rdy;
 	}
@@ -203,17 +214,20 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 * @throws UnsupportedOperationException
 	 *             always
 	 */
+	@Override
 	public Component getCountAccess() {
 		throw new UnsupportedOperationException(
 				"Output channels do not have token count facility");
 	}
 
+	@Override
 	public Component getPeekAccess() {
 		throw new UnsupportedOperationException(
 				"Peeking at output interface not yet supported");
 		// return new ActionTokenPeek(this);
 	}
 
+	@Override
 	public Component getStatusAccess() {
 		// throw new
 		// UnsupportedOperationException("Status of output interface not yet supported");
@@ -229,6 +243,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 * @param to
 	 *            the latter accessor in source document order.
 	 */
+	@Override
 	public int getSpacing(Referencer from, Referencer to) {
 		// Options for accesses to an output are
 		// FifoWrite (ActorScalarOutputWrite)
@@ -257,7 +272,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 			// Because the write protocol is different from FSL we
 			// need to fully populate the logic here.
 
-			final Port data = (Port) getDataPorts().get(0);
+			final Port data = getDataPorts().get(0);
 			final Bus done = exit.getDoneBus();
 			/*
 			 * Build the following code: dataLatch = writeData(port) : en GO
@@ -309,15 +324,13 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 			dout.getGoPort().setBus(done_and.getResultBus());
 
 			// Calculate pending
-			((Port) pending.getDataPorts().get(0)).setBus(flop.getResultBus());
-			((Port) pending.getDataPorts().get(1))
-					.setBus(getGoPort().getPeer());
+			pending.getDataPorts().get(0).setBus(flop.getResultBus());
+			pending.getDataPorts().get(1).setBus(getGoPort().getPeer());
 
 			// calculate the pending term
 			not.getDataPort().setBus(ack.getResultBus());
-			((Port) flop_and.getDataPorts().get(0)).setBus(pending
-					.getResultBus());
-			((Port) flop_and.getDataPorts().get(1)).setBus(not.getResultBus());
+			flop_and.getDataPorts().get(0).setBus(pending.getResultBus());
+			flop_and.getDataPorts().get(1).setBus(not.getResultBus());
 
 			// Connect the flop input
 			flop.getDataPort().setBus(flop_and.getResultBus());
@@ -328,9 +341,8 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 			send.getGoPort().setBus(pending.getResultBus());
 
 			// calculate the write complete term
-			((Port) done_and.getDataPorts().get(0)).setBus(pending
-					.getResultBus());
-			((Port) done_and.getDataPorts().get(1)).setBus(ack.getResultBus());
+			done_and.getDataPorts().get(0).setBus(pending.getResultBus());
+			done_and.getDataPorts().get(1).setBus(ack.getResultBus());
 
 			// Connect the done
 			done.getPeer().setBus(done_and.getResultBus());
@@ -342,8 +354,8 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 			// Add a write of a constant 1 to the output tokenCount.
 			final SimplePinWrite countWrite = new SimplePinWrite(aso.tokenCount);
 			final Constant index1 = new SimpleConstant(1,
-					aso.tokenCount.getWidth());
-			final Constant index1_1 = new SimpleConstant(1, 1);
+					aso.tokenCount.getWidth(), false);
+			final Constant index1_1 = new SimpleConstant(1, 1, false);
 			index1.pushValuesForward(); // ensures the bus has a value.
 			index1_1.pushValuesForward(); // ensures the bus has a value.
 			addComponent(index1);
@@ -370,7 +382,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 			addComponent(dout);
 			addComponent(write);
 
-			dout.getDataPort().setBus(((Port) getDataPorts().get(0)).getPeer());
+			dout.getDataPort().setBus(getDataPorts().get(0).getPeer());
 			dout.getGoPort().setBus(getGoPort().getPeer());
 
 			write.getDataPort().setBus(getGoPort().getPeer());
@@ -379,8 +391,8 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 			// Add a write of a constant 1 to the output tokenCount.
 			final SimplePinWrite countWrite = new SimplePinWrite(aso.tokenCount);
 			final Constant index1 = new SimpleConstant(1,
-					aso.tokenCount.getWidth());
-			final Constant index1_1 = new SimpleConstant(1, 1);
+					aso.tokenCount.getWidth(), false);
+			final Constant index1_1 = new SimpleConstant(1, 1, false);
 			index1.pushValuesForward(); // ensures the bus has a value.
 			index1_1.pushValuesForward(); // ensures the bus has a value.
 			addComponent(index1);

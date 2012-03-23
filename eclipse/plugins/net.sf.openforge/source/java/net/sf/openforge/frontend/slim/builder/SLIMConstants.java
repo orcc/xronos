@@ -52,6 +52,7 @@ public class SLIMConstants {
 	public static final String MODULE_MUTEX = "mutex";
 	public static final String OPERATION = "operation";
 	public static final String ACTOR_PORT = "actor-port";
+	public static final String ACTOR_NATIVE_PORT = "actor-native-port";
 	public static final String INTERNAL_PORT = "internal-port";
 
 	public static final String PORT = "port";
