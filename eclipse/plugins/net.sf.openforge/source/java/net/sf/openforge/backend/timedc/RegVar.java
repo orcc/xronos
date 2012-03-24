@@ -42,7 +42,7 @@ import net.sf.openforge.lim.Reg;
  */
 public class RegVar extends OpHandle implements StateVar {
 
-	private Reg reg;
+	private final Reg reg;
 
 	/**
 	 * Constructs a new RegVar based on the specified Reg object.
@@ -65,6 +65,7 @@ public class RegVar extends OpHandle implements StateVar {
 	 * @throws NullPointerException
 	 *             if ps is null
 	 */
+	@Override
 	public void declareGlobal(PrintStream stream) {
 		long initNum = 0;
 		if (this.reg.getInitialValue() != null) {
@@ -88,6 +89,7 @@ public class RegVar extends OpHandle implements StateVar {
 	 * @throws NullPointerException
 	 *             if ps is null
 	 */
+	@Override
 	public void writeTick(PrintStream ps) {
 		ps.println("\t" + getDataOut() + " = " + getDataIn() + ";");
 	}

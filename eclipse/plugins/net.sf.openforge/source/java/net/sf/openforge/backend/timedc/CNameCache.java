@@ -40,7 +40,7 @@ import net.sf.openforge.lim.Component;
  */
 public class CNameCache {
 
-	private Map<Component, String> cacheMap = new HashMap<Component, String>();
+	private final Map<Component, String> cacheMap = new HashMap<Component, String>();
 
 	public CNameCache() {
 	}
@@ -55,7 +55,7 @@ public class CNameCache {
 	 */
 	public String getName(Component comp) {
 		if (cacheMap.containsKey(comp)) {
-			return (String) cacheMap.get(comp);
+			return cacheMap.get(comp);
 		}
 
 		String baseName = uniquify(getLegalIdentifier(comp.toString()));

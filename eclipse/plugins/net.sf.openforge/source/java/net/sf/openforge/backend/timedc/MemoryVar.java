@@ -38,10 +38,10 @@ import net.sf.openforge.lim.memory.LogicalMemoryPort;
  * @version $Id: MemoryVar.java 99 2006-02-02 20:09:53Z imiller $
  */
 class MemoryVar implements StateVar {
-	private String baseName;
-	private String init;
-	private String memType; // The memory type, ie char, short, etc
-	private List<LogicalMemoryPort> memPorts;
+	private final String baseName;
+	private final String init;
+	private final String memType; // The memory type, ie char, short, etc
+	private final List<LogicalMemoryPort> memPorts;
 	private boolean tickWritten = false;
 
 	public MemoryVar(String baseName, String init, String memType,
@@ -52,11 +52,12 @@ class MemoryVar implements StateVar {
 		this.memPorts = new ArrayList<LogicalMemoryPort>(memoryPorts);
 	}
 
+	@Override
 	public void declareGlobal(PrintStream ps) {
 		ps.println(StateVar.STORAGE_CLASS + this.memType + " " + this.baseName
 				+ " [] = " + this.init + ";");
 		// Now declare the memStateStruct for each memory port.
-		for (LogicalMemoryPort memPort: memPorts) {
+		for (LogicalMemoryPort memPort : memPorts) {
 			String name = getStateStructName(memPort);
 			ps.println(StateVar.STORAGE_CLASS + "struct memStateStruct " + name
 					+ " = {0,0,0,0,0,0};");
@@ -65,6 +66,7 @@ class MemoryVar implements StateVar {
 		}
 	}
 
+	@Override
 	public void writeTick(PrintStream ps) {
 		if (!this.tickWritten) {
 			this.tickWritten = true;

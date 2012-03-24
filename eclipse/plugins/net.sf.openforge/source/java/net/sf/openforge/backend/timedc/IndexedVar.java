@@ -36,7 +36,7 @@ import net.sf.openforge.lim.Component;
  */
 public abstract class IndexedVar extends OpHandle {
 
-	private Bus output;
+	private final Bus output;
 
 	public IndexedVar(Component comp, Bus output, CNameCache cache) {
 		super(comp, cache);
@@ -49,6 +49,7 @@ public abstract class IndexedVar extends OpHandle {
 	 * Overrides the super method so that we can append the array select to
 	 * point to the 'index' element
 	 */
+	@Override
 	public String getBusName(Bus b) {
 		String name = getDefaultBusName(b);
 		if (b == this.output) {

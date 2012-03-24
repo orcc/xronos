@@ -184,22 +184,22 @@ public class CycleCTranslator {
 	 * Map of Component to the OpHandle (StateVar) for that component.
 	 * Containing all the sequential elements in the design.
 	 */
-	private Map sequentialElements = new LinkedHashMap();
+	private final Map sequentialElements = new LinkedHashMap();
 
-	private File headerFile;
+	private final File headerFile;
 
 	/*
 	 * A Map of Referenceable to object, may be a MemoryVar or a RegisterVar.
 	 */
-	private Map referenceableMap = new LinkedHashMap();
+	private final Map referenceableMap = new LinkedHashMap();
 
 	/**
 	 * A class which ensures unique naming for all lim objects.
 	 * System.identityHashCode wont do it for us!
 	 */
-	private CNameCache nameCache = new CNameCache();
+	private final CNameCache nameCache = new CNameCache();
 
-	private IOHandler ioHandle;
+	private final IOHandler ioHandle;
 
 	/**
 	 * A set of var names that define the 'go' to each task EXCLUSIVE of those
@@ -446,8 +446,7 @@ public class CycleCTranslator {
 
 		// Write out the iterate decision logic
 		for (Bus b : fbBuses) {
-			OpHandle handle = (OpHandle) tvis.opHandles.get(b.getOwner()
-					.getOwner());
+			OpHandle handle = tvis.opHandles.get(b.getOwner().getOwner());
 			ps.println(iterateVar + " |= (" + handle.getBusName(b, "_prev")
 					+ " != " + handle.getBusName(b) + ");");
 			ps.println(handle.getBusName(b, "_prev") + " = "
@@ -517,7 +516,7 @@ public class CycleCTranslator {
 		/*
 		 * A Set of Component objects, as returned by module.getFeedbackPoints
 		 */
-		private Set fbPoints = new LinkedHashSet();
+		private final Set fbPoints = new LinkedHashSet();
 
 		/**
 		 * Returns a Set of all components which are the feedback points in the
@@ -527,6 +526,7 @@ public class CycleCTranslator {
 			return this.fbPoints;
 		}
 
+		@Override
 		public void visit(Task t) {
 			// The call is a feedback point because of the fact that
 			// the done feeds back to the kicker.
@@ -534,6 +534,7 @@ public class CycleCTranslator {
 			super.visit(t);
 		}
 
+		@Override
 		public void preFilter(Module m) {
 			this.fbPoints.addAll(m.getFeedbackPoints());
 		}
@@ -544,8 +545,8 @@ public class CycleCTranslator {
 		Map<Component, OpHandle> opHandles = new HashMap();
 		private final PrintStream ps;
 		private final PrintStream alternateDeclarationPS; // may be null
-		private Map callBoundryMap = new HashMap();
-		private Map<String, ByteArrayOutputStream> taskImplementationMap = new LinkedHashMap();
+		private final Map callBoundryMap = new HashMap();
+		private final Map<String, ByteArrayOutputStream> taskImplementationMap = new LinkedHashMap();
 
 		public TranslateVisitor(PrintStream ps) {
 			this(ps, null);
@@ -561,6 +562,7 @@ public class CycleCTranslator {
 			return Collections.unmodifiableMap(this.taskImplementationMap);
 		}
 
+		@Override
 		public void visit(Design design) {
 			// The design module contains the kickers.
 			List taskCalls = new ArrayList();
@@ -614,6 +616,7 @@ public class CycleCTranslator {
 			}
 		}
 
+		@Override
 		public void visit(Task task) {
 			final String functionName = CNameCache.getLegalIdentifier(ID
 					.showLogical(task) + "_logic");
@@ -654,8 +657,7 @@ public class CycleCTranslator {
 			outln(iterateVar + "=0;");
 			for (Iterator iter = fbBuses.iterator(); iter.hasNext();) {
 				Bus b = (Bus) iter.next();
-				OpHandle handle = (OpHandle) this.opHandles.get(b.getOwner()
-						.getOwner());
+				OpHandle handle = this.opHandles.get(b.getOwner().getOwner());
 				outln(iterateVar + " |= (" + handle.getBusName(b, "_prev")
 						+ " != " + handle.getBusName(b) + ");");
 				outln(handle.getBusName(b, "_prev") + " = "
@@ -668,6 +670,7 @@ public class CycleCTranslator {
 			outln("} // end of  " + functionName + " implementation");
 		}
 
+		@Override
 		public void visit(Call call) {
 			if (!this.opHandles.containsKey(call)) {
 				// The top level call, due to feedback from done to
@@ -690,6 +693,7 @@ public class CycleCTranslator {
 			super.visit(call);
 		}
 
+		@Override
 		public void visit(InBuf ib) {
 			List buses = new ArrayList();
 			buses.add(ib.getGoBus());
@@ -721,9 +725,9 @@ public class CycleCTranslator {
 			}
 		}
 
+		@Override
 		public void visit(OutBuf ob) {
-			OpHandle ownerHandler = (OpHandle) this.opHandles
-					.get(ob.getOwner());
+			OpHandle ownerHandler = this.opHandles.get(ob.getOwner());
 			assert ownerHandler != null : "Null owner handler for outbuf "
 					+ ob.getOwner();
 
@@ -740,8 +744,8 @@ public class CycleCTranslator {
 					outln(ownerHandler.assign(target, getRValue(source)));
 					if (callBoundryMap.containsKey(target)) {
 						Bus peer = (Bus) callBoundryMap.get(target);
-						OpHandle callHandler = (OpHandle) this.opHandles
-								.get(peer.getOwner().getOwner());
+						OpHandle callHandler = this.opHandles.get(peer
+								.getOwner().getOwner());
 						assert callHandler != null : "Null call handler "
 								+ peer.getOwner().getOwner();
 						preDeclare(callHandler, peer);
@@ -756,6 +760,7 @@ public class CycleCTranslator {
 			}
 		}
 
+		@Override
 		public void visit(Reg reg) {
 			RegVar var = (RegVar) this.opHandles.get(reg);
 			assert var != null : "Unknown register found";
@@ -827,6 +832,7 @@ public class CycleCTranslator {
 			}
 		}
 
+		@Override
 		public void visit(EncodedMux m) {
 			/*
 			 * switch (m.select) { case 0 : out = port_0; break; case 1 : out =
@@ -847,18 +853,20 @@ public class CycleCTranslator {
 			outln("}");
 		}
 
+		@Override
 		public void visit(Mux m) {
 			assert m.getGoPorts().size() == 2 : "Mux with "
 					+ m.getGoPorts().size() + " ports";
 			final OpHandle handle = makeOpHandle(m);
-			Bus select = ((Port) m.getGoPorts().get(0)).getBus();
-			Bus d1 = m.getDataPort((Port) m.getGoPorts().get(0)).getBus();
-			Bus d2 = m.getDataPort((Port) m.getGoPorts().get(1)).getBus();
+			Bus select = m.getGoPorts().get(0).getBus();
+			Bus d1 = m.getDataPort(m.getGoPorts().get(0)).getBus();
+			Bus d2 = m.getDataPort(m.getGoPorts().get(1)).getBus();
 			preDeclare(handle, m.getResultBus());
 			outln(handle.assign(m.getResultBus(), "(" + getRValue(select)
 					+ ") ? " + getRValue(d1) + ":" + getRValue(d2)));
 		}
 
+		@Override
 		public void visit(MemoryRead memRead) {
 			// if GO, set memory address, enable, and wen, current
 			// output is D/C. Set memory read state to pending
@@ -892,11 +900,13 @@ public class CycleCTranslator {
 			// value from the physical output. Do this by defining
 			// the name for the physical output
 			OpHandle physHandle = makeOpHandle(memRead.getPhysicalComponent());
-			physHandle.overrideName((Bus) memRead.getPhysicalComponent()
-					.getExit(Exit.DONE).getDataBuses().get(0),
+			physHandle.overrideName(
+					memRead.getPhysicalComponent().getExit(Exit.DONE)
+							.getDataBuses().get(0),
 					accHandle.getBusName(memRead.getResultBus()));
 		}
 
+		@Override
 		public void visit(MemoryWrite memWrite) {
 			/*
 			 * done = memwrite.pending; if (go) { memwrite.pending = 1;
@@ -923,6 +933,7 @@ public class CycleCTranslator {
 			outln("}");
 		}
 
+		@Override
 		public void visit(RegisterRead regRead) {
 			// Tap off the register.
 			Register target = (Register) regRead.getReferenceable();
@@ -934,6 +945,7 @@ public class CycleCTranslator {
 			outln(handle.assign(regRead.getResultBus(), var.getDataOut()));
 		}
 
+		@Override
 		public void visit(RegisterWrite regWrite) {
 			// Set the state of the enable port and the data in.
 			// Since we do the 'wired OR' approach to sending data,
@@ -960,6 +972,7 @@ public class CycleCTranslator {
 			outln("}");
 		}
 
+		@Override
 		public void visit(OrOp or) {
 			if (or instanceof OrOpMulti) {
 				// System.out.println("SKIPPING OR OP MULTI");
@@ -993,11 +1006,12 @@ public class CycleCTranslator {
 				if (iter.hasNext())
 					rvalue += " | ";
 			}
-			Bus result = (Bus) or.getExit(Exit.DONE).getDataBuses().get(0);
+			Bus result = or.getExit(Exit.DONE).getDataBuses().get(0);
 			preDeclare(handle, result);
 			outln(handle.assign(result, rvalue));
 		}
 
+		@Override
 		public void visit(And a) {
 			if (a.getDataPorts().size() == 2) {
 				writeBinaryOp(a, "&");
@@ -1011,12 +1025,13 @@ public class CycleCTranslator {
 					if (iter.hasNext())
 						rvalue += " & ";
 				}
-				Bus result = (Bus) a.getExit(Exit.DONE).getDataBuses().get(0);
+				Bus result = a.getExit(Exit.DONE).getDataBuses().get(0);
 				preDeclare(handle, result);
 				outln(handle.assign(result, rvalue));
 			}
 		}
 
+		@Override
 		public void visit(ReductionOrOp reducedOr) {
 			// A reduction or op is a bitwise oring of all
 			// bits... thus a one bit value comes out if any bit is
@@ -1027,6 +1042,7 @@ public class CycleCTranslator {
 					.getDataPort().getBus()) + " != 0"));
 		}
 
+		@Override
 		public void visit(SRL16 srl16) {
 			// next = data in
 			// enable = rotate
@@ -1039,6 +1055,7 @@ public class CycleCTranslator {
 			}
 		}
 
+		@Override
 		public void visit(SimplePin pin) {
 			// Unhandled pins include CLK and RESET which need to be
 			// declared. Both CLK and RESET can simply be set to 0
@@ -1052,6 +1069,7 @@ public class CycleCTranslator {
 			}
 		}
 
+		@Override
 		public void visit(SimplePinRead comp) {
 			OpHandle handle = makeOpHandle(comp);
 			String rhs;
@@ -1064,8 +1082,8 @@ public class CycleCTranslator {
 			} else {
 				// Handle Internal pins.
 				SimplePin pin = (SimplePin) comp.getReferenceable();
-				rhs = ((OpHandle) this.opHandles.get(pin)).getBusName(pin
-						.getXLatData().getSource());
+				rhs = this.opHandles.get(pin).getBusName(
+						pin.getXLatData().getSource());
 			}
 
 			preDeclare(handle, comp.getResultBus());
@@ -1076,6 +1094,7 @@ public class CycleCTranslator {
 		 * The simple pin write masks the data that it sends to the pin with the
 		 * enable signal so that we can do a simple wired or of all the writes.
 		 */
+		@Override
 		public void visit(SimplePinWrite comp) {
 			makeOpHandle(comp);
 			String dataValue = getRValue(comp.getDataPort().getBus());
@@ -1092,107 +1111,131 @@ public class CycleCTranslator {
 			} else {
 				// Handle Internal pins.
 				SimplePin pin = (SimplePin) comp.getReferenceable();
-				String pinVar = ((OpHandle) this.opHandles.get(pin))
-						.getBusName(pin.getXLatData().getSource());
+				String pinVar = this.opHandles.get(pin).getBusName(
+						pin.getXLatData().getSource());
 				outln("if (" + enable + ") { " + pinVar + " = " + dataValue
 						+ "; }");
 				// outln(pinVar + " = " + dataValue + ";");
 			}
 		}
 
+		@Override
 		public void visit(AddOp add) {
 			writeBinaryOp(add, "+");
 		}
 
+		@Override
 		public void visit(AndOp andOp) {
 			writeBinaryOp(andOp, "&");
 		}
 
+		@Override
 		public void visit(CastOp cast) {
 			writeUnaryOp(cast, "");
 		}
 
+		@Override
 		public void visit(ComplementOp comp) {
 			writeUnaryOp(comp, "~");
 		}
 
+		@Override
 		public void visit(ConditionalAndOp cand) {
 			writeBinaryOp(cand, "&&");
 		}
 
+		@Override
 		public void visit(ConditionalOrOp cor) {
 			writeBinaryOp(cor, "||");
 		}
 
+		@Override
 		public void visit(DivideOp divide) {
 			writeBinaryOp(divide, "/");
 		}
 
+		@Override
 		public void visit(EqualsOp equals) {
 			writeBinaryOp(equals, "==");
 		}
 
+		@Override
 		public void visit(GreaterThanEqualToOp gte) {
 			writeBinaryOp(gte, ">=");
 		}
 
+		@Override
 		public void visit(GreaterThanOp gt) {
 			writeBinaryOp(gt, ">");
 		}
 
+		@Override
 		public void visit(LeftShiftOp leftShift) {
 			writeBinaryOp(leftShift, "<<");
 		}
 
+		@Override
 		public void visit(LessThanEqualToOp lte) {
 			writeBinaryOp(lte, "<=");
 		}
 
+		@Override
 		public void visit(LessThanOp lt) {
 			writeBinaryOp(lt, "<");
 		}
 
+		@Override
 		public void visit(MinusOp minus) {
 			writeUnaryOp(minus, "-");
 		}
 
+		@Override
 		public void visit(ModuloOp modulo) {
 			writeBinaryOp(modulo, "%");
 		}
 
+		@Override
 		public void visit(MultiplyOp multiply) {
 			writeBinaryOp(multiply, "*");
 		}
 
+		@Override
 		public void visit(NotEqualsOp notEquals) {
 			writeBinaryOp(notEquals, "!=");
 		}
 
+		@Override
 		public void visit(NotOp not) {
 			writeUnaryOp(not, "!");
 		}
 
+		@Override
 		public void visit(PlusOp plus) {
 			writeUnaryOp(plus, "+");
 		}
 
+		@Override
 		public void visit(SubtractOp subtract) {
 			writeBinaryOp(subtract, "-");
 		}
 
+		@Override
 		public void visit(XorOp xor) {
 			writeBinaryOp(xor, "^");
 		}
 
+		@Override
 		public void visit(Not n) {
 			writeUnaryOp(n, "!");
 		}
 
 		// public void visit (Or o) { writeBinaryOp(o, "|"); }
+		@Override
 		public void visit(Or o) {
 			processOr(o);
 		}
 
+		@Override
 		public void visit(RightShiftOp rightShift) {
 			// NOTE!!! FIXME!!! The right shift in C is non-portable.
 			// The behavior of what bits are shifted in from the left,
@@ -1203,17 +1246,16 @@ public class CycleCTranslator {
 			writeBinaryOp(rightShift, ">>");
 		}
 
+		@Override
 		public void visit(RightShiftUnsignedOp rightShiftUnsigned) {
 			// writeBinaryOp(rightShiftUnsigned, ">>");
 			assert rightShiftUnsigned.getDataPorts().size() == 2;
 			OpHandle handle = makeOpHandle(rightShiftUnsigned);
 
-			Bus bus1 = ((Port) rightShiftUnsigned.getDataPorts().get(0))
-					.getBus();
-			Bus bus2 = ((Port) rightShiftUnsigned.getDataPorts().get(1))
-					.getBus();
-			Bus result = (Bus) rightShiftUnsigned.getExit(Exit.DONE)
-					.getDataBuses().get(0);
+			Bus bus1 = rightShiftUnsigned.getDataPorts().get(0).getBus();
+			Bus bus2 = rightShiftUnsigned.getDataPorts().get(1).getBus();
+			Bus result = rightShiftUnsigned.getExit(Exit.DONE).getDataBuses()
+					.get(0);
 
 			// Cast the left operand to an unsigned type
 			String type1 = OpHandle.getTypeDeclaration(bus1.getValue()
@@ -1223,46 +1265,55 @@ public class CycleCTranslator {
 					+ ") >> " + getRValue(bus2)));
 		}
 
+		@Override
 		public void visit(Block block) {
 			makeOpHandle(block);
 			super.visit(block);
 		}
 
+		@Override
 		public void visit(Loop loop) {
 			makeOpHandle(loop);
 			super.visit(loop);
 		}
 
+		@Override
 		public void visit(WhileBody whileBody) {
 			makeOpHandle(whileBody);
 			super.visit(whileBody);
 		}
 
+		@Override
 		public void visit(UntilBody untilBody) {
 			makeOpHandle(untilBody);
 			super.visit(untilBody);
 		}
 
+		@Override
 		public void visit(ForBody forBody) {
 			makeOpHandle(forBody);
 			super.visit(forBody);
 		}
 
+		@Override
 		public void visit(Branch branch) {
 			makeOpHandle(branch);
 			super.visit(branch);
 		}
 
+		@Override
 		public void visit(Decision decision) {
 			makeOpHandle(decision);
 			super.visit(decision);
 		}
 
+		@Override
 		public void visit(Switch sw) {
 			makeOpHandle(sw);
 			super.visit(sw);
 		}
 
+		@Override
 		public void visit(Scoreboard scoreboard) {
 			// A stallboard will be a feedback point in a block, thus
 			// we may have already created an OpHandle for it.
@@ -1272,66 +1323,79 @@ public class CycleCTranslator {
 			super.visit(scoreboard);
 		}
 
+		@Override
 		public void visit(Latch latch) {
 			makeOpHandle(latch);
 			super.visit(latch);
 		}
 
+		@Override
 		public void visit(HeapRead heapRead) {
 			makeOpHandle(heapRead);
 			super.visit(heapRead);
 		}
 
+		@Override
 		public void visit(ArrayRead arrayRead) {
 			makeOpHandle(arrayRead);
 			super.visit(arrayRead);
 		}
 
+		@Override
 		public void visit(HeapWrite heapWrite) {
 			makeOpHandle(heapWrite);
 			super.visit(heapWrite);
 		}
 
+		@Override
 		public void visit(ArrayWrite arrayWrite) {
 			makeOpHandle(arrayWrite);
 			super.visit(arrayWrite);
 		}
 
+		@Override
 		public void visit(AbsoluteMemoryRead absRead) {
 			makeOpHandle(absRead);
 			super.visit(absRead);
 		}
 
+		@Override
 		public void visit(AbsoluteMemoryWrite absWrite) {
 			makeOpHandle(absWrite);
 			super.visit(absWrite);
 		}
 
+		@Override
 		public void visit(Kicker kicker) {
 			makeOpHandle(kicker);
 			super.visit(kicker);
 		}
 
+		@Override
 		public void visit(FifoRead comp) {
 			makeOpHandle(comp);
 			super.visit(comp);
 		}
 
+		@Override
 		public void visit(FifoWrite comp) {
 			makeOpHandle(comp);
 			super.visit(comp);
 		}
 
+		@Override
 		public void visit(FifoAccess comp) {
 			makeOpHandle(comp);
 			super.visit(comp);
 		}
 
+		@Override
 		public void visit(SimplePinAccess comp) {
 			makeOpHandle(comp);
 			super.visit(comp);
 		}
 
+		@Override
 		public void visit(TaskCall comp) {
 			makeOpHandle(comp);
 			super.visit(comp);
@@ -1350,31 +1414,39 @@ public class CycleCTranslator {
 		 * sideband data movement which we ignore since our memory read and
 		 * memory write objects access memory directly.
 		 */
+		@Override
 		public void visit(RegisterGateway regGateway) {
 		}
 
+		@Override
 		public void visit(MemoryReferee memReferee) {
 		}
 
+		@Override
 		public void visit(MemoryGateway memGateway) {
 		}
 
+		@Override
 		public void visit(RegisterReferee vis) {
 		}
 
+		@Override
 		public void visit(PinReferee vis) {
 		}
 
+		@Override
 		public void visit(EndianSwapper vis) {
 		}
 
 		/*
 		 * These we expect to not traverse
 		 */
+		@Override
 		public void visit(MemoryBank vis) {
 			throw new UnexpectedTraversalException(vis.toString());
 		}
 
+		@Override
 		public void visit(NoOp vis) {
 			throw new UnexpectedTraversalException(vis.toString());
 		} // THEY SHOULD ALL BE GONE BY NOW
@@ -1382,38 +1454,47 @@ public class CycleCTranslator {
 		/*
 		 * These are expected to be obsolete
 		 */
+		@Override
 		public void visit(IPCoreCall vis) {
 			throw new ObsoleteTraversalException(vis.toString());
 		}
 
+		@Override
 		public void visit(TimingOp vis) {
 			throw new ObsoleteTraversalException(vis.toString());
 		}
 
+		@Override
 		public void visit(PinRead vis) {
 			throw new ObsoleteTraversalException(vis.toString());
 		}
 
+		@Override
 		public void visit(PinWrite vis) {
 			throw new ObsoleteTraversalException(vis.toString());
 		}
 
+		@Override
 		public void visit(PinStateChange vis) {
 			throw new ObsoleteTraversalException(vis.toString());
 		}
 
+		@Override
 		public void visit(TriBuf vis) {
 			throw new ObsoleteTraversalException(vis.toString());
 		}
 
+		@Override
 		public void visit(ShortcutIfElseOp vis) {
 			throw new ObsoleteTraversalException(vis.toString());
 		}
 
+		@Override
 		public void visit(NumericPromotionOp vis) {
 			throw new ObsoleteTraversalException(vis.toString());
 		}
 
+		@Override
 		public void visit(PriorityMux vis) {
 			throw new ObsoleteTraversalException(vis.toString());
 		}
@@ -1443,8 +1524,8 @@ public class CycleCTranslator {
 		private void writeUnaryOp(Component op, String operation) {
 			OpHandle handle = makeOpHandle(op);
 
-			Bus bus1 = ((Port) op.getDataPorts().get(0)).getBus();
-			Bus result = (Bus) op.getExit(Exit.DONE).getDataBuses().get(0);
+			Bus bus1 = op.getDataPorts().get(0).getBus();
+			Bus result = op.getExit(Exit.DONE).getDataBuses().get(0);
 			preDeclare(handle, result);
 			outln(handle.assign(result, operation + getRValue(bus1)));
 		}
@@ -1455,9 +1536,9 @@ public class CycleCTranslator {
 
 			OpHandle handle = makeOpHandle(op);
 
-			Bus bus1 = ((Port) op.getDataPorts().get(0)).getBus();
-			Bus bus2 = ((Port) op.getDataPorts().get(1)).getBus();
-			Bus result = (Bus) op.getExit(Exit.DONE).getDataBuses().get(0);
+			Bus bus1 = op.getDataPorts().get(0).getBus();
+			Bus bus2 = op.getDataPorts().get(1).getBus();
+			Bus result = op.getExit(Exit.DONE).getDataBuses().get(0);
 			preDeclare(handle, result);
 			outln(handle.assign(result, getRValue(bus1) + " " + operation + " "
 					+ getRValue(bus2)));
@@ -1489,7 +1570,7 @@ public class CycleCTranslator {
 				Component owner = bus.getOwner().getOwner();
 				assert opHandles.containsKey(owner) : "Unknown driver " + owner;
 				assert opHandles.containsKey(owner);
-				OpHandle handle = (OpHandle) this.opHandles.get(owner);
+				OpHandle handle = this.opHandles.get(owner);
 				return handle.getBusName(bus);
 			}
 		}

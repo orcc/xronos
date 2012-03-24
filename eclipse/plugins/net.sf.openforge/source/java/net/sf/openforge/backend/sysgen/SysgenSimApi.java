@@ -94,6 +94,7 @@ public class SysgenSimApi implements OutputEngine {
 	 * Initialize the target or destination for the output of this engine. This
 	 * may include registering files with the ForgeFileHandler.
 	 */
+	@Override
 	public void initEnvironment() {
 		this.fileHandler = EngineThread.getGenericJob().getFileHandler();
 		// File base = this.fileHandler.registerFile(SYSGEN_DIR, "sysgen");
@@ -124,6 +125,7 @@ public class SysgenSimApi implements OutputEngine {
 	 * Generate the output for this engine, including creation of the output
 	 * files and/or directories.
 	 */
+	@Override
 	public void translate(Design design) throws IOException {
 		final File baseDir = this.fileHandler.getFile(SYSGEN_DIR);
 		final String funcName = net.sf.openforge.backend.timedc.CNameCache
@@ -166,6 +168,7 @@ public class SysgenSimApi implements OutputEngine {
 	/**
 	 * Returns a unique string which identifies this engine.
 	 */
+	@Override
 	public String getOutputPhaseId() {
 		return "Generation of System Generator core files";
 	}
@@ -493,9 +496,9 @@ public class SysgenSimApi implements OutputEngine {
 	}
 
 	private static class IOHandler {
-		private String base;
-		private boolean input;
-		private int width;
+		private final String base;
+		private final boolean input;
+		private final int width;
 
 		IOHandler(FifoIF fifoIF) {
 			base = fifoIF.getPortBaseName();

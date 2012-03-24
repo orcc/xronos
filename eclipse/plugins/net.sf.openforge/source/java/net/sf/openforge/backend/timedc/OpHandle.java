@@ -52,9 +52,9 @@ public class OpHandle {
 	private static final boolean DBG = false;
 
 	@SuppressWarnings("unused")
-	private Component comp;
-	private Map<Bus, String> busNames = new HashMap<Bus, String>();
-	private Set<BusTuple> declaredBuses = new HashSet<BusTuple>();
+	private final Component comp;
+	private final Map<Bus, String> busNames = new HashMap<Bus, String>();
+	private final Set<BusTuple> declaredBuses = new HashSet<BusTuple>();
 
 	public OpHandle(Component comp, CNameCache cache) {
 		if (comp == null) {
@@ -173,7 +173,7 @@ public class OpHandle {
 
 	public String getBusName(Bus b, String postFix) {
 		assert busNames.containsKey(b);
-		String value = (String) busNames.get(b);
+		String value = busNames.get(b);
 		return value + postFix;
 	}
 
@@ -236,18 +236,20 @@ public class OpHandle {
 	 * declaredbuses.contains() method.
 	 */
 	private static class BusTuple {
-		private Bus b;
-		private String postfix;
+		private final Bus b;
+		private final String postfix;
 
 		public BusTuple(Bus b, String post) {
 			this.b = b;
 			this.postfix = post;
 		}
 
+		@Override
 		public int hashCode() {
 			return b.hashCode() + postfix.hashCode();
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof BusTuple) {
 				if (!this.b.equals(((BusTuple) o).b))
@@ -260,6 +262,7 @@ public class OpHandle {
 			return false;
 		}
 
+		@Override
 		public String toString() {
 			return b.toString() + ":" + postfix;
 		}

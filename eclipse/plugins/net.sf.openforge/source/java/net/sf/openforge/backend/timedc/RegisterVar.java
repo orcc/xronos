@@ -39,8 +39,8 @@ import net.sf.openforge.util.naming.ID;
 class RegisterVar implements StateVar {
 	public static final AddressStridePolicy ADDRESSING_POLICY = AddressStridePolicy.BYTE_ADDRESSING;
 
-	private Register reg;
-	private String regName;
+	private final Register reg;
+	private final String regName;
 	private boolean tickWritten = false;
 
 	public RegisterVar(Register reg) {
@@ -49,6 +49,7 @@ class RegisterVar implements StateVar {
 				+ System.identityHashCode(reg));
 	}
 
+	@Override
 	public void declareGlobal(PrintStream ps) {
 		String type = StateVar.STORAGE_CLASS
 				+ OpHandle.getTypeDeclaration(this.reg.getInitWidth(),
@@ -60,6 +61,7 @@ class RegisterVar implements StateVar {
 		ps.println(StateVar.STORAGE_CLASS + "char " + getEnable() + " = 0;");
 	}
 
+	@Override
 	public void writeTick(PrintStream ps) {
 		if (!this.tickWritten) {
 			this.tickWritten = true;

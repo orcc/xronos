@@ -38,8 +38,8 @@ import net.sf.openforge.lim.RegisterWrite;
  */
 public class RegWriteVar extends OpHandle implements StateVar {
 
-	private RegisterWrite write;
-	private RegisterVar var;
+	private final RegisterWrite write;
+	private final RegisterVar var;
 
 	public RegWriteVar(RegisterWrite regWrite, RegisterVar regVar,
 			CNameCache cache) {
@@ -48,11 +48,13 @@ public class RegWriteVar extends OpHandle implements StateVar {
 		this.var = regVar;
 	}
 
+	@Override
 	public void declareGlobal(PrintStream ps) {
 		ps.println(StateVar.STORAGE_CLASS + "char " + getPendingIn() + " = 0;");
 		ps.println(StateVar.STORAGE_CLASS + "char " + getPendingOut() + " = 0;");
 	}
 
+	@Override
 	public void writeTick(PrintStream ps) {
 		this.var.writeTick(ps);
 		ps.println("\t" + getPendingOut() + " = " + getPendingIn() + ";");

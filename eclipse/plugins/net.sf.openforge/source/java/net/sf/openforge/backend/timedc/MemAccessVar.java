@@ -42,8 +42,8 @@ import net.sf.openforge.lim.memory.MemoryAccess;
  */
 public class MemAccessVar extends OpHandle implements StateVar {
 
-	private MemoryAccess acc;
-	private MemoryVar memVar;
+	private final MemoryAccess acc;
+	private final MemoryVar memVar;
 
 	/**
 	 * Constructs a new MemAccessVar based on the identified
@@ -73,6 +73,7 @@ public class MemAccessVar extends OpHandle implements StateVar {
 	 * @throws NullPointerException
 	 *             if ps is null
 	 */
+	@Override
 	public void declareGlobal(PrintStream ps) {
 		ps.println(StateVar.STORAGE_CLASS + "char " + getPendingIn() + " = 0;");
 		ps.println(StateVar.STORAGE_CLASS + "char " + getPendingOut() + " = 0;");
@@ -87,6 +88,7 @@ public class MemAccessVar extends OpHandle implements StateVar {
 	 * @throws NullPointerException
 	 *             if ps is null
 	 */
+	@Override
 	public void writeTick(PrintStream ps) {
 		this.memVar.writeTick(ps);
 		// For each access move the done_in->done_out

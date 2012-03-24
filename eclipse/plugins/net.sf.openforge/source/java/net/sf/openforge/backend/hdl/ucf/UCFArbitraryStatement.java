@@ -38,6 +38,7 @@ public class UCFArbitraryStatement implements UCFStatement {
 		this.statement = statement;
 	}
 
+	@Override
 	public String toString() {
 		return statement + ";";
 	}

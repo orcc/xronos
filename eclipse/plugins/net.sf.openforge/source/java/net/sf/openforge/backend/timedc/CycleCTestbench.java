@@ -370,7 +370,7 @@ public class CycleCTestbench {
 		String dbg2 = "";
 		assert !goVars.isEmpty();
 		for (Iterator<String> iter = goVars.iterator(); iter.hasNext();) {
-			String goVar = (String) iter.next();
+			String goVar = iter.next();
 			dbg1 += "%d ";
 			dbg2 += goVar;
 			if (iter.hasNext())
@@ -449,7 +449,7 @@ public class CycleCTestbench {
 		ps.println("    return");
 		assert !goVars.isEmpty();
 		for (Iterator<String> iter = goVars.iterator(); iter.hasNext();) {
-			String goVar = (String) iter.next();
+			String goVar = iter.next();
 			ps.print(" " + goVar);
 			if (iter.hasNext())
 				ps.println(" ||");

@@ -51,17 +51,17 @@ public class VPGenWrapper {
 	/**
 	 * The ioHandler that will take care of naming for our models ports.
 	 */
-	private IOHandler ioHandle;
+	private final IOHandler ioHandle;
 	/** The base of all naming for functions, VP structures, etc. */
-	private String fxnName;
+	private final String fxnName;
 	/** The Virtual Platform wrapper header file. */
-	private File headerFile;
+	private final File headerFile;
 	/** The Virtual Platform wrapper source file */
-	private File sourceFile;
+	private final File sourceFile;
 	/** The File which is the header file for our simulation model. */
-	private File simHeaderFile;
+	private final File simHeaderFile;
 	/* A List of all FifoIF objects for this design. */
-	private List<FifoIF> fifoIFs;
+	private final List<FifoIF> fifoIFs;
 
 	private static final String I_PTR = "iptr";
 	private static final String O_PTR = "optr";
@@ -363,7 +363,7 @@ public class VPGenWrapper {
 		return pin.getName().toLowerCase();
 	}
 
-	private Map nameMap = new HashMap();
+	private final Map nameMap = new HashMap();
 
 	/**
 	 * Generates/caches a name for the given fifo interface. This is the name
@@ -377,8 +377,7 @@ public class VPGenWrapper {
 		if (nameMap.containsKey(fifo))
 			return (String) nameMap.get(fifo);
 
-		String prefix = ((SimplePin) fifo.getPins().iterator().next())
-				.getName();
+		String prefix = fifo.getPins().iterator().next().getName();
 		prefix = prefix.substring(0, prefix.indexOf("_"));
 		prefix = prefix.toLowerCase();
 		prefix = (fifo.isInput()) ? (prefix + "_in") : (prefix + "_out");

@@ -92,7 +92,7 @@ public class MemoryWriter {
 			final List<MemoryBank> banks = sm.getBanks();
 			boolean first = true;
 			final int numBanks = banks.size();
-			final int mbWidth = ((MemoryBank) banks.get(0)).getWidth();
+			final int mbWidth = banks.get(0).getWidth();
 			final int numLines = (int) Math.ceil((double) size
 					/ (double) (mbWidth * numBanks));
 

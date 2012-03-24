@@ -64,12 +64,13 @@ public class UCFDocument {
 	}
 
 	public void write(PrintWriter printer) {
-		for (Object object: statements){
+		for (Object object : statements) {
 			printer.println(object.toString());
 		}
 		printer.flush();
 	}
 
+	@Override
 	public String toString() {
 		StringWriter stringer = new StringWriter();
 		write(stringer);

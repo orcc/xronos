@@ -69,6 +69,7 @@ public class VerilogTranslateEngine implements OutputEngine {
 	public static final ForgeFileKey SYNPRIMINCL = new ForgeFileKey(
 			"Verilog HDL synthesis includes");
 
+	@Override
 	public void initEnvironment() {
 		ForgeFileHandler fileHandler = EngineThread.getGenericJob()
 				.getFileHandler();
@@ -115,6 +116,7 @@ public class VerilogTranslateEngine implements OutputEngine {
 		}
 	}
 
+	@Override
 	public void translate(Design design) throws IOException {
 		GenericJob gj = EngineThread.getGenericJob();
 		ForgeFileHandler fileHandler = gj.getFileHandler();
@@ -176,6 +178,7 @@ public class VerilogTranslateEngine implements OutputEngine {
 	 * 
 	 * @return a non-empty, non-null String
 	 */
+	@Override
 	public String getOutputPhaseId() {
 		return "Verilog HDL";
 	}

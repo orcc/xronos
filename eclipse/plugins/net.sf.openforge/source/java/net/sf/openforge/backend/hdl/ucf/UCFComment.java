@@ -26,7 +26,7 @@ package net.sf.openforge.backend.hdl.ucf;
  */
 public class UCFComment implements UCFStatement {
 
-	private String message;
+	private final String message;
 
 	public UCFComment(String message) {
 		this.message = message;
@@ -36,6 +36,7 @@ public class UCFComment implements UCFStatement {
 		this.message = statement.toString();
 	}
 
+	@Override
 	public String toString() {
 		return "# " + message;
 	}

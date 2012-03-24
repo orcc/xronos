@@ -25,14 +25,15 @@ package net.sf.openforge.backend.hdl.ucf;
  * A UCF constraint is represented as a simple key-value pair.
  */
 public class UCFConstraint {
-	private String key;
-	private String value;
+	private final String key;
+	private final String value;
 
 	public UCFConstraint(String key, String value) {
 		this.key = key;
 		this.value = value;
 	}
 
+	@Override
 	public String toString() {
 		return key + " = " + value;
 	}

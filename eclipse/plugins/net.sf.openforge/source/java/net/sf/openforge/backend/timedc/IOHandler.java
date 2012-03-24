@@ -25,7 +25,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -50,9 +49,9 @@ public abstract class IOHandler {
 	public static final String OUT_VAR = "outputs";
 
 	/** An ordered list of FifoIF (input) objects */
-	private List<FifoIF> inputs;
+	private final List<FifoIF> inputs;
 	/** An ordered list of FifoIF (output) objects */
-	private List<FifoIF> outputs;
+	private final List<FifoIF> outputs;
 
 	public static IOHandler makeIOHandler(Design design) {
 		// Determine the type of IOHandler to use based on the type of
@@ -314,13 +313,13 @@ public abstract class IOHandler {
 	public String getAccessString(Referencer access) {
 		SimplePin pin = (SimplePin) access.getReferenceable();
 		for (int i = 0; i < inputs.size(); i++) {
-			FifoIF fifo = (FifoIF) inputs.get(i);
+			FifoIF fifo = inputs.get(i);
 			if (fifo.getPins().contains(pin)) {
 				return getInputVar() + "[" + i + "]->" + getMemberName(pin);
 			}
 		}
 		for (int i = 0; i < outputs.size(); i++) {
-			FifoIF fifo = (FifoIF) outputs.get(i);
+			FifoIF fifo = outputs.get(i);
 			if (fifo.getPins().contains(pin)) {
 				return getOutputVar() + "[" + i + "]->" + getMemberName(pin);
 			}
@@ -331,14 +330,14 @@ public abstract class IOHandler {
 
 	public void writeOutputInits(PrintStream ps) {
 		for (int i = 0; i < getInputs().size(); i++) {
-			FifoIF fifo = (FifoIF) getInputs().get(i);
+			FifoIF fifo = getInputs().get(i);
 			for (SimplePin pin : fifo.getOutputPins()) {
 				ps.println(getInputVar() + "[" + i + "]->" + getMemberName(pin)
 						+ " = 0;");
 			}
 		}
 		for (int i = 0; i < getOutputs().size(); i++) {
-			FifoIF fifo = (FifoIF) getOutputs().get(i);
+			FifoIF fifo = getOutputs().get(i);
 			for (SimplePin pin : fifo.getOutputPins()) {
 				ps.println(getOutputVar() + "[" + i + "]->"
 						+ getMemberName(pin) + " = 0;");
@@ -360,19 +359,23 @@ public abstract class IOHandler {
 			super(design);
 		}
 
+		@Override
 		protected List sort(List list) {
 			// No sorting.
 			return Collections.unmodifiableList(list);
 		}
 
+		@Override
 		public String getInputType() {
 			return this.IN_TYPE;
 		}
 
+		@Override
 		public String getOutputType() {
 			return this.OUT_TYPE;
 		}
 
+		@Override
 		protected String getMemberName(SimplePin pin) {
 			String name = pin.getName().toLowerCase();
 			if (name.contains("data"))
@@ -389,6 +392,7 @@ public abstract class IOHandler {
 			return name;
 		}
 
+		@Override
 		public void writeTypeDecls(PrintStream ps) {
 			ps.println("typedef struct");
 			ps.println("{");
@@ -408,14 +412,17 @@ public abstract class IOHandler {
 			ps.println("}" + getOutputType() + ";");
 		}
 
+		@Override
 		public String getInputTypeInitString() {
 			return "{0,0,0,0}";
 		}
 
+		@Override
 		public String getOutputTypeInitString() {
 			return "{0,0,0,1,0}";
 		}
 
+		@Override
 		public void writeIsSending(PrintStream ps, boolean declOnly) {
 			ps.print("int isSending (int id)");
 			if (declOnly) {
@@ -438,6 +445,7 @@ public abstract class IOHandler {
 			ps.println("}");
 		}
 
+		@Override
 		public void writeIsAcking(PrintStream ps, boolean declOnly) {
 			ps.print("int isAcking (int id)");
 			if (declOnly) {
@@ -459,6 +467,7 @@ public abstract class IOHandler {
 			ps.println("}");
 		}
 
+		@Override
 		public void writeGetValue(PrintStream ps, boolean declOnly) {
 			ps.print("int getDataValue (int id, int ackValue)");
 			if (declOnly) {
@@ -483,6 +492,7 @@ public abstract class IOHandler {
 			ps.println("}");
 		}
 
+		@Override
 		public void writeSetValue(PrintStream ps, boolean declOnly) {
 			ps.print("void setDataValue (int id, int dataValue, int sendValue)");
 			if (declOnly) {
@@ -522,14 +532,17 @@ public abstract class IOHandler {
 			super(design);
 		}
 
+		@Override
 		public String getInputType() {
 			return this.IN_TYPE;
 		}
 
+		@Override
 		public String getOutputType() {
 			return this.OUT_TYPE;
 		}
 
+		@Override
 		protected List<FifoIF> sort(List<FifoIF> values) {
 			// Sort alphabetically.
 			List<FifoIF> result = new ArrayList<FifoIF>();
@@ -538,9 +551,9 @@ public abstract class IOHandler {
 				final String name = ((SimplePin) fifo.getPins()).getName();
 				boolean inserted = false;
 				for (int i = 0; i < result.size(); i++) {
-					final FifoIF cmp = (FifoIF) result.get(i);
-					final String cmpName = ((SimplePin) cmp.getPins()
-							.iterator().next()).getName();
+					final FifoIF cmp = result.get(i);
+					final String cmpName = cmp.getPins().iterator().next()
+							.getName();
 					final int cmpValue = name.compareToIgnoreCase(cmpName);
 					assert cmpValue != 0 : "Two interfaces share the same name "
 							+ name + " " + cmpName;
@@ -558,6 +571,7 @@ public abstract class IOHandler {
 			return result;
 		}
 
+		@Override
 		public void writeTypeDecls(PrintStream ps) {
 			ps.println("typedef struct");
 			ps.println("{");
@@ -578,14 +592,17 @@ public abstract class IOHandler {
 			ps.println("}" + getOutputType() + ";");
 		}
 
+		@Override
 		public String getInputTypeInitString() {
 			return "{0,0,0,0,0}";
 		}
 
+		@Override
 		public String getOutputTypeInitString() {
 			return "{0,0,0,0,0}";
 		}
 
+		@Override
 		protected String getMemberName(SimplePin pin) {
 			String name = pin.getName().toLowerCase();
 			if (name.contains("data"))
@@ -605,6 +622,7 @@ public abstract class IOHandler {
 			return name;
 		}
 
+		@Override
 		public void writeIsSending(PrintStream ps, boolean declOnly) {
 			ps.print("int isSending (int id)");
 			if (declOnly) {
@@ -627,6 +645,7 @@ public abstract class IOHandler {
 			ps.println("}");
 		}
 
+		@Override
 		public void writeIsAcking(PrintStream ps, boolean declOnly) {
 			ps.print("int isAcking (int id)");
 			if (declOnly) {
@@ -647,6 +666,7 @@ public abstract class IOHandler {
 			ps.println("}");
 		}
 
+		@Override
 		public void writeGetValue(PrintStream ps, boolean declOnly) {
 			ps.print("int getDataValue (int id, int ackValue)");
 			if (declOnly) {
@@ -670,6 +690,7 @@ public abstract class IOHandler {
 			ps.println("}");
 		}
 
+		@Override
 		public void writeSetValue(PrintStream ps, boolean declOnly) {
 			ps.print("void setDataValue (int id, int dataValue, int sendValue)");
 			if (declOnly) {

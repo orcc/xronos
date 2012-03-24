@@ -43,8 +43,8 @@ import net.sf.openforge.lim.GlobalReset;
  */
 public class ResetVar extends IndexedVar implements StateVar {
 
-	private GlobalReset rst;
-	private int resetDelay;
+	private final GlobalReset rst;
+	private final int resetDelay;
 
 	/**
 	 * Constructs a new ResetVar based on the specified GlobalReset object (of
@@ -72,6 +72,7 @@ public class ResetVar extends IndexedVar implements StateVar {
 	 * @throws NullPointerException
 	 *             if ps is null
 	 */
+	@Override
 	public void declareGlobal(PrintStream ps) {
 		String resetString = "{";
 		for (int i = 0; i < this.resetDelay; i++)
@@ -94,6 +95,7 @@ public class ResetVar extends IndexedVar implements StateVar {
 	 * @throws NullPointerException
 	 *             if ps is null
 	 */
+	@Override
 	public void writeTick(PrintStream ps) {
 		/*
 		 * if (counter < DEPTH-1) counter++;
@@ -116,6 +118,7 @@ public class ResetVar extends IndexedVar implements StateVar {
 		return getDefaultBusName(this.rst.getBus());
 	}
 
+	@Override
 	protected String getIndex() {
 		return this.getCountName();
 	}

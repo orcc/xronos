@@ -83,6 +83,7 @@ public class ForgeCoreDescriptor implements OutputEngine {
 	public ForgeCoreDescriptor() {
 	}
 
+	@Override
 	public void initEnvironment() {
 		// Because we need the design name in order to correctly
 		// generate the file names, the files are not registered until
@@ -118,6 +119,7 @@ public class ForgeCoreDescriptor implements OutputEngine {
 		fileHandler.registerFile(EDK_DATA_DIR, rootDir, "data");
 	}
 
+	@Override
 	public void translate(Design design) throws IOException {
 		final ForgeFileHandler fileHandler = EngineThread.getGenericJob()
 				.getFileHandler();
@@ -143,6 +145,7 @@ public class ForgeCoreDescriptor implements OutputEngine {
 	 * 
 	 * @return a non-empty, non-null String
 	 */
+	@Override
 	public String getOutputPhaseId() {
 		return "EDK Project Files";
 	}
@@ -218,7 +221,7 @@ public class ForgeCoreDescriptor implements OutputEngine {
 		ps.println("## Bus Interfaces");
 		ps.println("##================");
 		ps.println();
-		for(FifoIF fifoIF: design.getFifoInterfaces()){
+		for (FifoIF fifoIF : design.getFifoInterfaces()) {
 			if (fifoIF instanceof FifoInput) {
 				ps.println("BUS_INTERFACE BUS = FSL_IN, BUS_STD = FSL, BUS_TYPE = SLAVE");
 			} else if (fifoIF instanceof FifoOutput) {
@@ -233,9 +236,9 @@ public class ForgeCoreDescriptor implements OutputEngine {
 		ps.println();
 		ps.println("PORT CLK = \"\", DIR=IN, SIGIS=CLK");
 		ps.println();
-		for(FifoIF fifoIF: design.getFifoInterfaces()){
+		for (FifoIF fifoIF : design.getFifoInterfaces()) {
 			if (fifoIF instanceof FifoInput) {
-				for (SimplePin pin: fifoIF.getPins()){
+				for (SimplePin pin : fifoIF.getPins()) {
 					if (pin.showIDLogical().endsWith("CLK")) {
 						ps.println("PORT "
 								+ pin.showIDLogical()
@@ -257,7 +260,7 @@ public class ForgeCoreDescriptor implements OutputEngine {
 				}
 				ps.println();
 			} else if (fifoIF instanceof FifoOutput) {
-				for (SimplePin pin: fifoIF.getPins()){
+				for (SimplePin pin : fifoIF.getPins()) {
 					if (pin.showIDLogical().endsWith("CLK")) {
 						ps.println("PORT "
 								+ pin.showIDLogical()

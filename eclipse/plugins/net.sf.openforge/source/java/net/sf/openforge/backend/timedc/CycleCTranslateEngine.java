@@ -49,6 +49,7 @@ public class CycleCTranslateEngine implements OutputEngine {
 	public static final ForgeFileKey VPGEN_WRAPPER = new ForgeFileKey(
 			"C sim model vp compliant wrapper");
 
+	@Override
 	public void initEnvironment() {
 		ForgeFileHandler fileHandler = EngineThread.getGenericJob()
 				.getFileHandler();
@@ -60,6 +61,7 @@ public class CycleCTranslateEngine implements OutputEngine {
 				fileHandler.buildName("_vp", "c"));
 	}
 
+	@Override
 	public void translate(Design design) {
 		ForgeFileHandler fileHandler = EngineThread.getGenericJob()
 				.getFileHandler();
@@ -81,6 +83,7 @@ public class CycleCTranslateEngine implements OutputEngine {
 	 * 
 	 * @return a non-empty, non-null String
 	 */
+	@Override
 	public String getOutputPhaseId() {
 		return "Cycle-accurate C model";
 	}

@@ -38,7 +38,7 @@ import net.sf.openforge.lim.SRL16;
  * @version $Id: SRL16Var.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class SRL16Var extends IndexedVar implements StateVar {
-	private SRL16 srl;
+	private final SRL16 srl;
 
 	/**
 	 * Constructs a new SRL16Var based on the specified {@link SRL16}
@@ -65,6 +65,7 @@ public class SRL16Var extends IndexedVar implements StateVar {
 	 * @throws NullPointerException
 	 *             if ps is null
 	 */
+	@Override
 	public void declareGlobal(PrintStream stream) {
 		assert this.srl.getResultBus().getValue() != null;
 		String declType = StateVar.STORAGE_CLASS
@@ -99,6 +100,7 @@ public class SRL16Var extends IndexedVar implements StateVar {
 	 * @throws NullPointerException
 	 *             if ps is null
 	 */
+	@Override
 	public void writeTick(PrintStream ps) {
 		/*
 		 * if (enable) { int i; for (i=length-1; i > 0; i--) srl16[i] =
@@ -126,6 +128,7 @@ public class SRL16Var extends IndexedVar implements StateVar {
 		return getDefaultBusName(this.srl.getResultBus());
 	}
 
+	@Override
 	protected String getIndex() {
 		return Integer.toString(getDepth() - 1);
 	}

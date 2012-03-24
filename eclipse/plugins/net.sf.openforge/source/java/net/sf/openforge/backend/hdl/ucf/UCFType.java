@@ -27,12 +27,13 @@ public class UCFType {
 	public final static UCFType PIN = new UCFType("PIN");
 	public final static UCFType SET = new UCFType("SET");
 
-	private String type;
+	private final String type;
 
 	private UCFType(String type) {
 		this.type = type;
 	}
 
+	@Override
 	public String toString() {
 		return type;
 	}

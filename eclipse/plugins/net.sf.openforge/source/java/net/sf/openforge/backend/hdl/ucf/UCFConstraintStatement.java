@@ -23,9 +23,9 @@ package net.sf.openforge.backend.hdl.ucf;
 
 public class UCFConstraintStatement implements UCFStatement {
 
-	private UCFType type;
-	private String name;
-	private UCFConstraint constraint;
+	private final UCFType type;
+	private final String name;
+	private final UCFConstraint constraint;
 
 	public UCFConstraintStatement(UCFType type, String name,
 			UCFConstraint constraint) {
@@ -46,6 +46,7 @@ public class UCFConstraintStatement implements UCFStatement {
 		return constraint;
 	}
 
+	@Override
 	public String toString() {
 		return getType().toString() + " " + getName() + " "
 				+ getConstraint().toString() + ";";
