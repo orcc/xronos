@@ -49,6 +49,7 @@ public class SLIMEngine extends Engine {
 		super(job);
 	}
 
+	@Override
 	public Design buildLim() {
 		final File[] targetFiles = getGenericJob().getTargetFiles();
 		assert targetFiles.length == 1 : "SLIM Compilation supports exactly one target file.  Found: "
@@ -75,7 +76,7 @@ public class SLIMEngine extends Engine {
 		String fileName = input.getName();
 		String rootName = fileName.substring(0, fileName.lastIndexOf("."));
 
-		//This should be set already by the XDesignFactory
+		// This should be set already by the XDesignFactory
 		design.setIDLogical(rootName + "_xlim");
 
 		return design;

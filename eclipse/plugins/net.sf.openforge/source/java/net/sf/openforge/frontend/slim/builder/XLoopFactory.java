@@ -149,6 +149,7 @@ public class XLoopFactory extends XModuleFactory {
 	 * @param portCache
 	 *            a value of type 'PortCache'
 	 */
+	@Override
 	protected void buildDependencies(Element moduleElement, PortCache portCache) {
 		// List dependencies =
 		// getChildNodesByTag(moduleElement,XLIMConstants.DEPENDENCY);
@@ -233,14 +234,13 @@ public class XLoopFactory extends XModuleFactory {
 		final Collection<Dependency> goInitDeps = initEntry
 				.getDependencies(loop.getBody().getGoPort());
 		assert goInitDeps.size() == 1;
-		final Bus initDoneBus = ((Dependency) goInitDeps.iterator().next())
-				.getLogicalBus();
+		final Bus initDoneBus = goInitDeps.iterator().next().getLogicalBus();
 		// Populate the initial entry with dependencies. Latch any
 		// input which does not have a feedback dependency.
 		for (java.util.Map.Entry<Port, DepTuple> mapEntry : initialDeps
 				.entrySet()) {
-			Port targetPort = (Port) mapEntry.getKey();
-			Bus sourceBus = ((DepTuple) mapEntry.getValue()).source;
+			Port targetPort = mapEntry.getKey();
+			Bus sourceBus = mapEntry.getValue().source;
 			if (!feedbackDeps.containsKey(targetPort)) {
 				Latch latch = loop.createDataLatch();
 				Entry latchEntry = latch.makeEntry(initDoneBus.getOwner());
@@ -267,8 +267,8 @@ public class XLoopFactory extends XModuleFactory {
 		// final Bus fbControl = fbExit.getDoneBus();
 		for (java.util.Map.Entry<Port, DepTuple> mapEntry : feedbackDeps
 				.entrySet()) {
-			Port targetPort = (Port) mapEntry.getKey();
-			Bus sourceBus = ((DepTuple) mapEntry.getValue()).source;
+			Port targetPort = mapEntry.getKey();
+			Bus sourceBus = mapEntry.getValue().source;
 			Reg fbReg = loop.createDataRegister();
 			Entry entry = fbReg.makeEntry(fbExit);
 			// XXX FIXME! Not doing a dep to the enable port. See
@@ -283,11 +283,11 @@ public class XLoopFactory extends XModuleFactory {
 		}
 
 		// Build the output dependencies
-		Entry outbufEntry = (Entry) loop.getExit(Exit.DONE).getPeer()
-				.getEntries().get(0);
+		Entry outbufEntry = loop.getExit(Exit.DONE).getPeer().getEntries()
+				.get(0);
 		for (java.util.Map.Entry<Port, DepTuple> entry : outputDeps.entrySet()) {
-			Port targetPort = (Port) entry.getKey();
-			Bus sourceBus = ((DepTuple) entry.getValue()).source;
+			Port targetPort = entry.getKey();
+			Bus sourceBus = entry.getValue().source;
 			Dependency dep = (targetPort == targetPort.getOwner().getGoPort()) ? new ControlDependency(
 					sourceBus) : new DataDependency(sourceBus);
 			outbufEntry.addDependency(targetPort, dep);
@@ -373,6 +373,7 @@ public class XLoopFactory extends XModuleFactory {
 		 *            the PortCache which will be updated with the constructed
 		 *            output ports.
 		 */
+		@Override
 		protected void makeModuleExit(Node node, PortCache portCache) {
 			final String exitType = node.getAttributes()
 					.getNamedItem(SLIMConstants.EXIT_KIND).getNodeValue();

@@ -42,6 +42,7 @@ public class NamedFifoID extends FifoID {
 	 * 
 	 * @return a value of type 'String'
 	 */
+	@Override
 	public String getName() {
 		return getID();
 	}

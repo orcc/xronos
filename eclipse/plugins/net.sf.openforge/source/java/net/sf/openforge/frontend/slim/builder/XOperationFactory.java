@@ -29,7 +29,6 @@ import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.ControlDependency;
 import net.sf.openforge.lim.DataDependency;
-import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.HeapRead;
 import net.sf.openforge.lim.HeapWrite;
@@ -89,7 +88,7 @@ public class XOperationFactory extends XFactory {
 	private GenericJob gj;
 
 	XOperationFactory(ResourceCache resources) {
-		this.resourceCache = resources;
+		resourceCache = resources;
 		gj = EngineThread.getEngine().getGenericJob();
 	}
 
@@ -118,14 +117,14 @@ public class XOperationFactory extends XFactory {
 			XModuleFactory factory;
 			if (moduleType.equals(SLIMConstants.IF)) {
 				// Defer to the branch factory.
-				factory = new XBranchFactory(this.resourceCache);
+				factory = new XBranchFactory(resourceCache);
 				comp = ((XBranchFactory) factory).buildBranch(element);
 			} else if (moduleType.equals(SLIMConstants.LOOP)) {
 				// Defer to the loop factory.
-				factory = new XLoopFactory(this.resourceCache);
+				factory = new XLoopFactory(resourceCache);
 				comp = ((XLoopFactory) factory).buildLoop(element);
 			} else {
-				factory = new XModuleFactory(this.resourceCache, element
+				factory = new XModuleFactory(resourceCache, element
 						.getAttribute(SLIMConstants.MODULE_MUTEX).equals(
 								SLIMConstants.TRUE));
 				comp = factory.buildComponent(element);
@@ -134,44 +133,38 @@ public class XOperationFactory extends XFactory {
 		} else if (type.equals(SLIMConstants.PIN_READ)) {
 			// Find the named pin in the resource cache
 			String pinName = element.getAttribute("portName");
-			ActionIOHandler ioHandler = this.resourceCache
-					.getIOHandler(pinName);
+			ActionIOHandler ioHandler = resourceCache.getIOHandler(pinName);
 			comp = ioHandler.getReadAccess(element);
 			// System.out.println("May need to cast pin read result to typed size, or do it in xlim");
 		} else if (type.equals(SLIMConstants.PIN_WRITE)) {
 			// Find the named pin in the resource cache
 			String pinName = element.getAttribute("portName");
-			ActionIOHandler ioHandler = this.resourceCache
-					.getIOHandler(pinName);
+			ActionIOHandler ioHandler = resourceCache.getIOHandler(pinName);
 			comp = ioHandler.getWriteAccess(element);
 		} else if (type.equals(SLIMConstants.PIN_COUNT)) {
 			// Find the named pin in the resource cache
 			String pinName = element.getAttribute("portName");
-			ActionIOHandler ioHandler = this.resourceCache
-					.getIOHandler(pinName);
+			ActionIOHandler ioHandler = resourceCache.getIOHandler(pinName);
 			comp = ioHandler.getTokenCountAccess();
 		} else if (type.equals(SLIMConstants.PIN_STALL)) {
 			// Find the named pin in the resource cache
 			String pinName = element.getAttribute("portName");
-			ActionIOHandler ioHandler = this.resourceCache
-					.getIOHandler(pinName);
+			ActionIOHandler ioHandler = resourceCache.getIOHandler(pinName);
 			comp = ioHandler.getStallAccess();
 		} else if (type.equals(SLIMConstants.PIN_PEEK)) {
 			// Find the named pin in the resource cache
 			String pinName = element.getAttribute("portName");
-			ActionIOHandler ioHandler = this.resourceCache
-					.getIOHandler(pinName);
+			ActionIOHandler ioHandler = resourceCache.getIOHandler(pinName);
 			comp = ioHandler.getTokenPeekAccess();
 			// System.out.println("May need to cast pin peek result to typed size, or do it in xlim");
 		} else if (type.equals(SLIMConstants.PIN_STATUS)) {
 			// Find the named pin in the resource cache
 			String pinName = element.getAttribute("portName");
-			ActionIOHandler ioHandler = this.resourceCache
-					.getIOHandler(pinName);
+			ActionIOHandler ioHandler = resourceCache.getIOHandler(pinName);
 			comp = ioHandler.getStatusAccess();
 		} else if (type.equals(SLIMConstants.TASKCALL)) {
 			comp = new TaskCall();
-			this.resourceCache.addTaskCall(element, (TaskCall) comp);
+			resourceCache.addTaskCall(element, (TaskCall) comp);
 		} else if (type.equals(SLIMConstants.VAR_REF)) {
 			// This is either a local variable or global variable
 			// reference. A local var ref is a noop. A global var
@@ -189,9 +182,8 @@ public class XOperationFactory extends XFactory {
 						SLIMConstants.PORT);
 				// Find the type of the memory read from its output bus.
 				final Element outBus = getSingleOutputPort(element);
-				final Location targetLocation = this.resourceCache
-						.getLocation(name);
-				final LogicalMemoryPort memPort = (LogicalMemoryPort) targetLocation
+				final Location targetLocation = resourceCache.getLocation(name);
+				final LogicalMemoryPort memPort = targetLocation
 						.getLogicalMemory().getLogicalMemoryPorts().iterator()
 						.next();
 
@@ -249,14 +241,18 @@ public class XOperationFactory extends XFactory {
 					Bus result = block.getExit(Exit.DONE).makeDataBus();
 
 					// Add a dependency for the result
-					((Entry) castOp.getEntries().get(0)).addDependency(
-							castOp.getDataPort(),
-							new DataDependency(read.getResultBus()));
-					((Entry) result.getPeer().getOwner().getEntries().get(0))
+					castOp.getEntries()
+							.get(0)
+							.addDependency(castOp.getDataPort(),
+									new DataDependency(read.getResultBus()));
+					result.getPeer()
+							.getOwner()
+							.getEntries()
+							.get(0)
 							.addDependency(result.getPeer(),
 									new DataDependency(castOp.getResultBus()));
 
-					memPort.addAccess((LValue) read, targetLocation);
+					memPort.addAccess(read, targetLocation);
 					comp = block;
 				} else {
 					assert false : "memory read (var_ref) has illegal number of ports "
@@ -270,11 +266,9 @@ public class XOperationFactory extends XFactory {
 			// This is a memory write to the stated variable
 			final String varName = element
 					.getAttribute(SLIMConstants.RESOURCE_TARGET);
-			final Location targetLocation = this.resourceCache
-					.getLocation(varName);
-			final LogicalMemoryPort memPort = (LogicalMemoryPort) targetLocation
-					.getLogicalMemory().getLogicalMemoryPorts().iterator()
-					.next();
+			final Location targetLocation = resourceCache.getLocation(varName);
+			final LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
 
 			final AddressStridePolicy addrPolicy = targetLocation
 					.getAbsoluteBase().getInitialValue()
@@ -312,11 +306,13 @@ public class XOperationFactory extends XFactory {
 				Port data = block.makeDataPort();
 
 				// Add dependency for the data value
-				((Entry) heapWrite.getEntries().get(0)).addDependency(
-						heapWrite.getValuePort(),
-						new DataDependency(data.getPeer()));
+				heapWrite
+						.getEntries()
+						.get(0)
+						.addDependency(heapWrite.getValuePort(),
+								new DataDependency(data.getPeer()));
 
-				memPort.addAccess((LValue) heapWrite, targetLocation);
+				memPort.addAccess(heapWrite, targetLocation);
 				comp = block;
 			} else {
 				assert false : "memory write (assign) has illegal number of ports "
@@ -397,21 +393,21 @@ public class XOperationFactory extends XFactory {
 			List<Node> inputPorts = getChildNodesByTag(element,
 					SLIMConstants.PORT);
 			assert inputPorts.size() == 2;
-			int dataSize = getPortSize((Node) inputPorts.get(0));
+			int dataSize = getPortSize(inputPorts.get(0));
 			int log2N = MathStuff.log2(dataSize);
 			comp = new LeftShiftOp(log2N);
 		} else if (type.equals(SLIMConstants.RSHIFT)) {
 			List<Node> inputPorts = getChildNodesByTag(element,
 					SLIMConstants.PORT);
 			assert inputPorts.size() == 2;
-			int dataSize = getPortSize((Node) inputPorts.get(0));
+			int dataSize = getPortSize(inputPorts.get(0));
 			int log2N = MathStuff.log2(dataSize);
 			comp = new RightShiftOp(log2N);
 		} else if (type.equals(SLIMConstants.URSHIFT)) {
 			List<Node> inputPorts = getChildNodesByTag(element,
 					SLIMConstants.PORT);
 			assert inputPorts.size() == 2;
-			int dataSize = getPortSize((Node) inputPorts.get(0));
+			int dataSize = getPortSize(inputPorts.get(0));
 			int log2N = MathStuff.log2(dataSize);
 			comp = new RightShiftUnsignedOp(log2N);
 		} else if (type.equals(SLIMConstants.NOOP)) {
@@ -420,13 +416,12 @@ public class XOperationFactory extends XFactory {
 					SLIMConstants.PORT);
 			List<Node> exits = getChildNodesByTag(element, SLIMConstants.EXIT);
 			assert exits.size() == 1;
-			List<Node> outputPorts = getChildNodesByTag(
-					((Element) exits.get(0)), SLIMConstants.PORT);
+			List<Node> outputPorts = getChildNodesByTag(exits.get(0),
+					SLIMConstants.PORT);
 			int dataOutputPorts = 0;
 			for (Node nd : outputPorts) {
-				if (!((Element) nd).getAttribute(
-						SLIMConstants.PORT_TYPE).equals(
-						SLIMConstants.CONTROL_TYPE))
+				if (!((Element) nd).getAttribute(SLIMConstants.PORT_TYPE)
+						.equals(SLIMConstants.CONTROL_TYPE))
 					dataOutputPorts++;
 			}
 			assert inputPorts.size() == dataOutputPorts : "input and output sizes dont match";
@@ -453,7 +448,7 @@ public class XOperationFactory extends XFactory {
 		setAttributes(node, comp);
 		mapPorts(node, comp, portCache);
 
-		this.resourceCache.registerConfigurable(node, comp);
+		resourceCache.registerConfigurable(node, comp);
 
 		return comp;
 	}
@@ -479,22 +474,32 @@ public class XOperationFactory extends XFactory {
 		final Port index = block.makeDataPort();
 
 		// Now build the dependencies
-		((Entry) cast.getEntries().get(0)).addDependency(cast.getDataPort(),
-				new DataDependency(index.getPeer()));
-		((Entry) adder.getEntries().get(0)).addDependency(
-				adder.getLeftDataPort(),
-				new DataDependency(locationConst.getValueBus()));
-		((Entry) adder.getEntries().get(0)).addDependency(
-				adder.getRightDataPort(),
-				new DataDependency(cast.getResultBus()));
+		cast.getEntries()
+				.get(0)
+				.addDependency(cast.getDataPort(),
+						new DataDependency(index.getPeer()));
+		adder.getEntries()
+				.get(0)
+				.addDependency(adder.getLeftDataPort(),
+						new DataDependency(locationConst.getValueBus()));
+		adder.getEntries()
+				.get(0)
+				.addDependency(adder.getRightDataPort(),
+						new DataDependency(cast.getResultBus()));
 
-		((Entry) memAccess.getEntries().get(0)).addDependency(
-				memAccess.getBaseAddressPort(),
-				new DataDependency(adder.getResultBus()));
+		memAccess
+				.getEntries()
+				.get(0)
+				.addDependency(memAccess.getBaseAddressPort(),
+						new DataDependency(adder.getResultBus()));
 
-		((Entry) done.getPeer().getEntries().get(0)).addDependency(done
-				.getDoneBus().getPeer(), new ControlDependency(memAccess
-				.getExit(Exit.DONE).getDoneBus()));
+		done.getPeer()
+				.getEntries()
+				.get(0)
+				.addDependency(
+						done.getDoneBus().getPeer(),
+						new ControlDependency(memAccess.getExit(Exit.DONE)
+								.getDoneBus()));
 
 		return block;
 	}
@@ -582,11 +587,13 @@ public class XOperationFactory extends XFactory {
 	 * @return a non-null Element, of type port
 	 */
 	private final Element getSingleOutputPort(Element operation) {
-		final List<Node> exits = getChildNodesByTag(operation, SLIMConstants.EXIT);
+		final List<Node> exits = getChildNodesByTag(operation,
+				SLIMConstants.EXIT);
 		assert exits.size() == 1 : exits.size() + " exits "
 				+ operation.getAttribute("tag");
 		final Element exitNode = (Element) exits.get(0);
-		final List<Node> outBuses = getChildNodesByTag(exitNode, SLIMConstants.PORT);
+		final List<Node> outBuses = getChildNodesByTag(exitNode,
+				SLIMConstants.PORT);
 		Element outBus = null;
 		for (Node node : outBuses) {
 			Element busNode = (Element) node;

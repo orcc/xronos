@@ -55,6 +55,7 @@ public class XLIMEngine extends Engine {
 		super(job);
 	}
 
+	@Override
 	public Design buildLim() {
 		final File[] targetFiles = getGenericJob().getTargetFiles();
 		assert targetFiles.length == 1 : "XLIM Compilation supports exactly one target file.  Found: "

@@ -52,6 +52,7 @@ public class XCallFactory extends XModuleFactory {
 		super(cache, Exit.RETURN);
 	}
 
+	@Override
 	public Component buildComponent(Node moduleNode) {
 		Block procedureBlock = (Block) super.buildComponent(moduleNode);
 
@@ -67,7 +68,7 @@ public class XCallFactory extends XModuleFactory {
 		// Fix the port cache by substituting the call ports for the
 		// block ports
 		PortCache cache = getPortCache();
-		for (Port blockPort : procedureBlock.getPorts()){
+		for (Port blockPort : procedureBlock.getPorts()) {
 			Port callPort = call.getPortFromProcedurePort(blockPort);
 			assert blockPort != null;
 			assert callPort != null;
@@ -80,7 +81,7 @@ public class XCallFactory extends XModuleFactory {
 			}
 		}
 
-		this.generatedCall = call;
+		generatedCall = call;
 
 		// getResourceCache().registerConfigurable(moduleNode, call);
 		getResourceCache().registerConfigurable(moduleNode, proc);
@@ -96,9 +97,10 @@ public class XCallFactory extends XModuleFactory {
 	 * 
 	 * @return a Collection of Port and Bus objects.
 	 */
+	@Override
 	protected Collection<ID> getExternallyVisiblePorts() {
-		final Set<ID> ports = new HashSet<ID>(this.generatedCall.getPorts());
-		ports.addAll(this.generatedCall.getBuses());
+		final Set<ID> ports = new HashSet<ID>(generatedCall.getPorts());
+		ports.addAll(generatedCall.getBuses());
 		return ports;
 	}
 

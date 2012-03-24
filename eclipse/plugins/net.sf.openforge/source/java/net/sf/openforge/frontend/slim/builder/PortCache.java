@@ -64,7 +64,7 @@ public class PortCache extends CacheBase {
 				if (_parser.db)
 					System.out.println("Publishing " + entry.getKey() + " => "
 							+ entry.getValue() + " to " + cache);
-				cache.putSource((Node) entry.getKey(), (Bus) entry.getValue());
+				cache.putSource(entry.getKey(), entry.getValue());
 			}
 		}
 		for (Entry<Node, Port> entry : targetCache.entrySet()) {
@@ -72,7 +72,7 @@ public class PortCache extends CacheBase {
 				if (_parser.db)
 					System.out.println("Publishing " + entry.getKey() + " => "
 							+ entry.getValue() + " to " + cache);
-				cache.putTarget((Node) entry.getKey(), (Port) entry.getValue());
+				cache.putTarget(entry.getKey(), entry.getValue());
 			}
 		}
 	}
@@ -87,7 +87,7 @@ public class PortCache extends CacheBase {
 	 *            a non-null Bus
 	 */
 	public void putSource(Node node, Bus bus) {
-		this.sourceCache.put(node, bus);
+		sourceCache.put(node, bus);
 	}
 
 	/**
@@ -100,7 +100,7 @@ public class PortCache extends CacheBase {
 	 *            a non-null Port
 	 */
 	public void putTarget(Node node, Port port) {
-		this.targetCache.put(node, port);
+		targetCache.put(node, port);
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class PortCache extends CacheBase {
 		Node key = null;
 		for (Entry<Node, Port> entry : targetCache.entrySet()) {
 			if (entry.getValue() == original) {
-				key = (Node) entry.getKey();
+				key = entry.getKey();
 				break;
 			}
 		}
@@ -143,7 +143,7 @@ public class PortCache extends CacheBase {
 		Node key = null;
 		for (Entry<Node, Bus> entry : sourceCache.entrySet()) {
 			if (entry.getValue() == original) {
-				key = (Node) entry.getKey();
+				key = entry.getKey();
 				break;
 			}
 		}
@@ -171,7 +171,7 @@ public class PortCache extends CacheBase {
 	 * @return the non-null Port which was associated with the specified Node.
 	 */
 	public Port getTarget(Node node) {
-		return (Port) this.targetCache.get(node);
+		return targetCache.get(node);
 	}
 
 	/**
@@ -194,7 +194,7 @@ public class PortCache extends CacheBase {
 	 * @return the non-null Bus which was associated with the specified Node.
 	 */
 	public Bus getSource(Node node) {
-		return (Bus) this.sourceCache.get(node);
+		return sourceCache.get(node);
 	}
 
 	public void debug() {

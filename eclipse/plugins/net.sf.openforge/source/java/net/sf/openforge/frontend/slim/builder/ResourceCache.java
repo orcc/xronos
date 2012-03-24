@@ -80,8 +80,7 @@ public class ResourceCache extends CacheBase {
 	 *         Node.
 	 */
 	public Location getLocation(String nodeName) {
-		return (Location) memLocations.get(getNodeForString(nodeName,
-				memLocations));
+		return memLocations.get(getNodeForString(nodeName, memLocations));
 	}
 
 	/**
@@ -108,8 +107,7 @@ public class ResourceCache extends CacheBase {
 	 *         specified Node.
 	 */
 	public ActionIOHandler getIOHandler(String nodeName) {
-		return (ActionIOHandler) ioHandlers.get(getNodeForString(nodeName,
-				ioHandlers));
+		return ioHandlers.get(getNodeForString(nodeName, ioHandlers));
 	}
 
 	public void addTaskCall(Element node, TaskCall call) {
@@ -117,11 +115,11 @@ public class ResourceCache extends CacheBase {
 	}
 
 	public Set<Element> getTaskCallNodes() {
-		return (Set<Element>) taskCalls.keySet();
+		return taskCalls.keySet();
 	}
 
 	public TaskCall getTaskCall(Element node) {
-		return (TaskCall) taskCalls.get(node);
+		return taskCalls.get(node);
 	}
 
 	/**

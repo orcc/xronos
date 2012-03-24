@@ -134,11 +134,11 @@ public abstract class ActionIOHandler {
 		 */
 		@Override
 		public void build(Design design) {
-			final String direction = this.portNode
+			final String direction = portNode
 					.getAttribute(SLIMConstants.PORT_DIRECTION);
-			final String portName = this.portNode
+			final String portName = portNode
 					.getAttribute(SLIMConstants.PORT_NAME);
-			final String portSize = this.portNode
+			final String portSize = portNode
 					.getAttribute(SLIMConstants.PORT_SIZE);
 			if (portSize.length() == 0) {
 				EngineThread.getGenericJob().warn(
@@ -150,15 +150,15 @@ public abstract class ActionIOHandler {
 			fifoId.setDirection(direction.startsWith("in"));
 			fifoId.setType(FifoID.TYPE_ACTION_SCALAR);
 
-			this.resource = (ActorPort) design.getFifoIF(fifoId);
+			resource = (ActorPort) design.getFifoIF(fifoId);
 		}
 
 		@Override
 		public Component getReadAccess(Element accElement) {
-			if (!this.resource.isInput())
+			if (!resource.isInput())
 				throw new UnsupportedOperationException(
 						"Cannot read from an output interface");
-			return this.resource.getAccess(getBlockingState(accElement));
+			return resource.getAccess(getBlockingState(accElement));
 		}
 
 		@Override
@@ -172,28 +172,28 @@ public abstract class ActionIOHandler {
 
 		@Override
 		public Component getWriteAccess(Element accElement) {
-			if (this.resource.isInput())
+			if (resource.isInput())
 				throw new UnsupportedOperationException(
 						"Cannot write to an input interface");
-			return this.resource.getAccess(getBlockingState(accElement));
+			return resource.getAccess(getBlockingState(accElement));
 		}
 
 		@Override
 		public Component getTokenCountAccess() {
-			if (!this.resource.isInput())
+			if (!resource.isInput())
 				throw new UnsupportedOperationException(
 						"Cannot get the token count from an output interface");
-			return this.resource.getCountAccess();
+			return resource.getCountAccess();
 		}
 
 		@Override
 		public Component getTokenPeekAccess() {
-			return this.resource.getPeekAccess();
+			return resource.getPeekAccess();
 		}
 
 		@Override
 		public Component getStatusAccess() {
-			return this.resource.getStatusAccess();
+			return resource.getStatusAccess();
 		}
 
 		private static final boolean getBlockingState(Element element) {
@@ -225,11 +225,11 @@ public abstract class ActionIOHandler {
 
 		@Override
 		public void build(Design design) {
-			final String direction = this.portNode
+			final String direction = portNode
 					.getAttribute(SLIMConstants.PORT_DIRECTION);
-			final String portName = this.portNode
+			final String portName = portNode
 					.getAttribute(SLIMConstants.PORT_NAME);
-			final String portSize = this.portNode
+			final String portSize = portNode
 					.getAttribute(SLIMConstants.PORT_SIZE);
 			if (portSize.length() == 0) {
 				EngineThread.getGenericJob().warn(
@@ -241,16 +241,16 @@ public abstract class ActionIOHandler {
 			fifoId.setDirection(direction.startsWith("in"));
 			fifoId.setType(FifoID.TYPE_ACTION_NATIVE_SCALAR);
 
-			this.resource = (ActorPort) design.getFifoIF(fifoId);
+			resource = (ActorPort) design.getFifoIF(fifoId);
 
 		}
 
 		@Override
 		public Component getReadAccess(Element element) {
-			if (!this.resource.isInput())
+			if (!resource.isInput())
 				throw new UnsupportedOperationException(
 						"Cannot read from an output interface");
-			return this.resource.getAccess(getBlockingState(element));
+			return resource.getAccess(getBlockingState(element));
 		}
 
 		@Override
@@ -261,10 +261,10 @@ public abstract class ActionIOHandler {
 
 		@Override
 		public Component getWriteAccess(Element element) {
-			if (this.resource.isInput())
+			if (resource.isInput())
 				throw new UnsupportedOperationException(
 						"Cannot write to an input interface");
-			return this.resource.getAccess(getBlockingState(element));
+			return resource.getAccess(getBlockingState(element));
 		}
 
 		@Override
@@ -298,13 +298,13 @@ public abstract class ActionIOHandler {
 
 		public InternalPinHandler(Node internalPortNode) {
 			super();
-			this.portNode = (Element) internalPortNode;
+			portNode = (Element) internalPortNode;
 		}
 
 		@Override
 		public void build(Design design) {
-			final String portName = this.portNode.getAttribute("name");
-			final String portSize = this.portNode.getAttribute("size");
+			final String portName = portNode.getAttribute("name");
+			final String portSize = portNode.getAttribute("size");
 
 			SimplePin pin = new SimpleInternalPin(Integer.parseInt(portSize),
 					portName);
@@ -314,17 +314,17 @@ public abstract class ActionIOHandler {
 
 		@Override
 		public Component getReadAccess(Element element) {
-			return new SimplePinRead(this.pin);
+			return new SimplePinRead(pin);
 		}
 
 		@Override
 		public Component getStallAccess() {
-			return new SimplePinStall(this.pin);
+			return new SimplePinStall(pin);
 		}
 
 		@Override
 		public Component getWriteAccess(Element element) {
-			return new SimplePinWrite(this.pin);
+			return new SimplePinWrite(pin);
 		}
 
 		@Override

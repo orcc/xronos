@@ -53,7 +53,6 @@ public class SLIMCompiler {
 	private SLIMCompiler() {
 	}
 
-
 	private void compile(GenericJob job) {
 		@SuppressWarnings("unused")
 		final SLIMEngine engine = new SLIMEngine(job);

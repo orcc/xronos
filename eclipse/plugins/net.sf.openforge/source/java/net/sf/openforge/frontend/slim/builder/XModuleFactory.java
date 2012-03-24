@@ -123,8 +123,8 @@ public class XModuleFactory extends XFactory {
 	@SuppressWarnings("unused")
 	private XModuleFactory(ResourceCache resources, Module mod,
 			Exit.Type exitType) {
-		this.resourceCache = resources;
-		this.module = mod;
+		resourceCache = resources;
+		module = mod;
 		if (_parser.db && mod.isMutexModule()) {
 			System.out.println("NOTE: Module " + mod + " is mutex");
 		}
@@ -139,7 +139,7 @@ public class XModuleFactory extends XFactory {
 	 * @return a non-null PortCache
 	 */
 	public PortCache getPortCache() {
-		return this.portCache;
+		return portCache;
 	}
 
 	/**
@@ -171,7 +171,7 @@ public class XModuleFactory extends XFactory {
 	 * @return a value of type 'ResourceCache'
 	 */
 	protected ResourceCache getResourceCache() {
-		return this.resourceCache;
+		return resourceCache;
 	}
 
 	/**
@@ -180,7 +180,7 @@ public class XModuleFactory extends XFactory {
 	 * @return a non-null, unmodifiable Map
 	 */
 	protected Map<Node, Component> getComponentMap() {
-		return Collections.unmodifiableMap(this.componentMap);
+		return Collections.unmodifiableMap(componentMap);
 	}
 
 	/**
@@ -195,14 +195,14 @@ public class XModuleFactory extends XFactory {
 			throw new IllegalArgumentException(
 					"Cannot set factory to have null module");
 
-		this.module = mod;
+		module = mod;
 	}
 
 	/**
 	 * Retrieve the module that this factory created.
 	 */
 	protected Module getModule() {
-		return this.module;
+		return module;
 	}
 
 	/**
@@ -227,12 +227,11 @@ public class XModuleFactory extends XFactory {
 				componentTags);
 		final List<Component> components = new ArrayList<Component>(
 				operations.size());
-		final XOperationFactory opFactory = new XOperationFactory(
-				this.resourceCache);
+		final XOperationFactory opFactory = new XOperationFactory(resourceCache);
 
 		for (Node node : operations) {
 			Component comp = opFactory.makeOperation(node, portCache);
-			this.componentMap.put(node, comp);
+			componentMap.put(node, comp);
 			components.add(comp);
 		}
 
@@ -246,7 +245,7 @@ public class XModuleFactory extends XFactory {
 
 		buildOptionScope(moduleNode, getModule());
 
-		return (Block) getModule();
+		return getModule();
 	}
 
 	/**
@@ -314,7 +313,7 @@ public class XModuleFactory extends XFactory {
 			Element depNode = (Element) node;
 			if (_parser.db)
 				System.out.println("Building dependency "
-						+ ((Element) depNode).getAttribute("tag"));
+						+ depNode.getAttribute("tag"));
 			String sourceId = depNode.getAttribute(SLIMConstants.DEP_SOURCE);
 			String targetId = depNode.getAttribute(SLIMConstants.DEP_TARGET);
 			String groupId = depNode.getAttribute(SLIMConstants.DEP_GROUP);
@@ -329,7 +328,7 @@ public class XModuleFactory extends XFactory {
 				targetPort.getOwner().makeEntry(null);
 			}
 
-			Entry entry = (Entry) entries.get(group);
+			Entry entry = entries.get(group);
 			Dependency dep;
 			if (depNode.getAttribute("kind").equals("resource")) {
 				int clocks = Integer.parseInt(depNode.getAttribute("cycles"));
@@ -373,8 +372,7 @@ public class XModuleFactory extends XFactory {
 
 		// Ensure that the outbufs of the module have an entry
 		for (OutBuf outbuf : module.getOutBufs()) {
-			addEntry(outbuf, drivingExit, clockBus, resetBus,
-					goBus);
+			addEntry(outbuf, drivingExit, clockBus, resetBus, goBus);
 		}
 	}
 
@@ -433,7 +431,8 @@ public class XModuleFactory extends XFactory {
 	 *            output ports.
 	 */
 	protected void populateExit(Exit exit, Node node, PortCache portCache) {
-		final List<Node> exitPorts = getChildNodesByTag(node, SLIMConstants.PORT);
+		final List<Node> exitPorts = getChildNodesByTag(node,
+				SLIMConstants.PORT);
 		for (Node nd : exitPorts) {
 			Element portNode = (Element) nd;
 			Bus bus;
@@ -466,7 +465,7 @@ public class XModuleFactory extends XFactory {
 			String sourceId = depNode.getAttribute(SLIMConstants.DEP_SOURCE);
 			String targetId = depNode.getAttribute(SLIMConstants.DEP_TARGET);
 			String groupId = depNode.getAttribute(SLIMConstants.DEP_GROUP);
-			//int group = Integer.parseInt(groupId);
+			// int group = Integer.parseInt(groupId);
 			if (sourceId == null || sourceId.length() == 0)
 				throw new IllegalNodeConfigurationException("Source id of "
 						+ tag + " is empty");
