@@ -46,6 +46,7 @@ public class Drain {
 	 */
 	private void drain(final InputStream stream, final ForgeLogger logger) {
 		new Thread() {
+			@Override
 			public void run() {
 				// System.out.println("Starting Drain: " +
 				// Thread.currentThread());

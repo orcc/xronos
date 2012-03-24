@@ -25,8 +25,8 @@ import java.util.logging.LogRecord;
 
 public class ForgeStreamHandler extends Handler {
 
-	private PrintWriter writer;
-	private OutputStream out;
+	private final PrintWriter writer;
+	private final OutputStream out;
 
 	/**
 	 * Create a <tt>StreamHandler</tt> with a given <tt>Formatter</tt> and
@@ -47,6 +47,7 @@ public class ForgeStreamHandler extends Handler {
 	/**
 	 * Flush any buffered messages.
 	 */
+	@Override
 	public synchronized void flush() {
 		try {
 			writer.flush();
@@ -55,11 +56,13 @@ public class ForgeStreamHandler extends Handler {
 		}
 	}
 
+	@Override
 	public synchronized void close() throws SecurityException {
 		flush();
 		writer.close();
 	}
 
+	@Override
 	public synchronized void publish(LogRecord record) {
 		if (!isLoggable(record)) {
 			return;

@@ -109,7 +109,7 @@ public class ForgeProjectWriter {
 		printer.inc();
 
 		if (!explicit) {
-			for (Option definition: option_map.values()){
+			for (Option definition : option_map.values()) {
 				if ((definition.getOptionKey() != OptionRegistry.PFILE)
 						&& (definition.getOptionKey() != OptionRegistry.PROJ_FILE)
 						&& (definition.getOptionKey() != OptionRegistry.PROJ_FILE_DESC)) {
@@ -125,7 +125,7 @@ public class ForgeProjectWriter {
 				}
 			}
 		} else {
-			for (Option definition: option_map.values()){
+			for (Option definition : option_map.values()) {
 				Object obj = definition.getExplicitValue(tag);
 
 				if (obj != null) {

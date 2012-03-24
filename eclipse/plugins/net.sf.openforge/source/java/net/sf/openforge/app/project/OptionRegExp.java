@@ -64,11 +64,13 @@ public class OptionRegExp extends OptionString {
 		}
 	}
 
+	@Override
 	public boolean isValid(String s) {
 		Matcher m = pattern.matcher(s);
 		return m.matches();
 	} // isValid()
 
+	@Override
 	public String getTypeName() {
 		return "regexp";
 	}

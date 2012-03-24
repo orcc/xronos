@@ -49,7 +49,7 @@ import net.sf.openforge.util.XilinxDevice;
 import net.sf.openforge.util.naming.ID;
 
 public class DesignUCFDocument extends UCFDocument implements OutputEngine {
-	private int family;
+	private final int family;
 	private String targetspeed;
 
 	public static final ForgeFileKey UCF_FILE = new ForgeFileKey(
@@ -70,6 +70,7 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 
 	}
 
+	@Override
 	public void initEnvironment() {
 		final GenericJob gj = EngineThread.getGenericJob();
 		final String filename = gj.getOption(OptionRegistry.UCF_FILE)
@@ -87,6 +88,7 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 		}
 	}
 
+	@Override
 	public void translate(Design design) throws IOException {
 		File ucfFile = EngineThread.getGenericJob().getFileHandler()
 				.getFile(UCF_FILE);
@@ -118,6 +120,7 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 	 * 
 	 * @return a non-empty, non-null String
 	 */
+	@Override
 	public String getOutputPhaseId() {
 		return "UCF Document";
 	}
@@ -262,7 +265,7 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 				// arithmentic and create the correct string. Decimal
 				// notation like 1.234 khz is also supported.
 
-				double period = 1.0 / ((double) frequency);
+				double period = 1.0 / frequency;
 				// convert to nanoseconds
 				// convert to nanoseconds, * 1x10^9
 				double periodNs = period * 1000000000.0;

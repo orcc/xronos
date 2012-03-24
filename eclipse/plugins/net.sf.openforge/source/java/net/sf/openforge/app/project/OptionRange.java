@@ -57,6 +57,7 @@ public class OptionRange extends OptionInt {
 		return highest;
 	}
 
+	@Override
 	public boolean isValid(String s) {
 		int value;
 		try {
@@ -74,6 +75,7 @@ public class OptionRange extends OptionInt {
 
 	} // isValid()
 
+	@Override
 	public String getTypeName() {
 		return "range";
 	}

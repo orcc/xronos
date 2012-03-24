@@ -488,14 +488,17 @@ public class OptionRegistry {
 	// Any 'extra' search labels that are needed are defined here.
 	//
 	public static final SearchLabel ORIGINAL_USER_ENTRY_FXN = new SearchLabel() {
+		@Override
 		public List<String> getSearchList() {
 			return Collections.singletonList("ORIGINAL_USER_ENTRY_FXN");
 		}
 
+		@Override
 		public List<String> getSearchList(String postFix) {
 			return Collections.singletonList("ORIGINAL_USER_ENTRY_FXN");
 		}
 
+		@Override
 		public String getLabel() {
 			return null;
 		}
@@ -1114,8 +1117,8 @@ public class OptionRegistry {
 		final Map<OptionKey, Option> defaultOptions = OptionRegistry
 				.getDefaults();
 		int maxLength = 0;
-		for (OptionKey opt : OptionRegistry.OPTION_KEYS){
-			final Option p = (Option) defaultOptions.get(opt);
+		for (OptionKey opt : OptionRegistry.OPTION_KEYS) {
+			final Option p = defaultOptions.get(opt);
 
 			if (!p.isHidden()) {
 				final String key = p.getOptionKey().getHelpFormattedKeyList();

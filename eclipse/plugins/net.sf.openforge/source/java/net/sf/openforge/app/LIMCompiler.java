@@ -86,7 +86,7 @@ public class LIMCompiler {
 	 *            a value of type 'Design'
 	 */
 	public Design processLim(Design design) {
-		//Option op;
+		// Option op;
 		GenericJob gj = EngineThread.getGenericJob();
 		gj.getOption(OptionRegistry.PE_NAME).setValue(CodeLabel.UNSCOPED,
 				design.showIDLogical());
@@ -215,7 +215,7 @@ public class LIMCompiler {
 
 	private List<OutputEngine> generateOutputEngines() {
 		List<OutputEngine> engines = new ArrayList<OutputEngine>();
-		//Option op;
+		// Option op;
 		GenericJob gj = EngineThread.getGenericJob();
 
 		// Cycle C handled seperately because of where it has to run
@@ -309,12 +309,12 @@ public class LIMCompiler {
 	private void reportDesignCharacteristics(Design design) {
 		(new InterfaceReporter()).reportStreams();
 		GenericJob gj = EngineThread.getGenericJob();
-		for (Task task : design.getTasks()){
+		for (Task task : design.getTasks()) {
 			final Call topCall = task.getCall();
 			if (topCall instanceof IPCoreCall)
 				continue;
 			final Latency latency = topCall.getLatency();
-			//final StringBuffer stringBuffer = new StringBuffer();
+			// final StringBuffer stringBuffer = new StringBuffer();
 
 			gj.inc();
 			gj.info("entry module \"" + topCall.showIDLogical() + "\":");
@@ -386,7 +386,7 @@ public class LIMCompiler {
 	 * @param design
 	 *            a {@link Design}
 	 */
-	
+
 	private void report(Design design, ThroughputAnalyzer throughputAnalyzer) {
 		GenericJob gj = EngineThread.getGenericJob();
 		gj.info("generating Resource Utilization Report... ");
@@ -491,7 +491,7 @@ public class LIMCompiler {
 
 		if (xf.isEnvironmentValid()) {
 			Map<String, Object> pin_map = new HashMap<String, Object>();
-			for (Object pin: design.getPins()){
+			for (Object pin : design.getPins()) {
 				pin_map.put(((Pin) pin).showIDLogical(), pin);
 			}
 

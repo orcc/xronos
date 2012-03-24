@@ -42,16 +42,19 @@ public class JobHandlerAdapter implements JobHandler {
 		this.stageName = name;
 	}
 
+	@Override
 	public void start(Engine engine) {
 		this.engine = engine;
 		engine.fireHandlerStart(this);
 	}
 
+	@Override
 	public void stop() {
 		engine.fireHandlerFinish(this);
 		this.engine = null;
 	}
 
+	@Override
 	public String getStageName() {
 		return stageName;
 	}

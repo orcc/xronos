@@ -53,10 +53,10 @@ public class ForgeFileHandler {
 	 * A handle to the job, needed for accessing option values to generate names
 	 * and locations
 	 */
-	private GenericJob job;
+	private final GenericJob job;
 
 	/** The Map of the key to the File object. */
-	private Map<ForgeFileKey, File> fileMap = new HashMap<ForgeFileKey, File>();
+	private final Map<ForgeFileKey, File> fileMap = new HashMap<ForgeFileKey, File>();
 
 	public ForgeFileHandler(GenericJob job) {
 		this.job = job;

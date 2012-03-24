@@ -54,6 +54,7 @@ public class OptionBoolean extends Option {
 	 * @param tokens
 	 *            list of command line arguments.
 	 */
+	@Override
 	public void expand(List<String> tokens) {
 		String key;
 		// some options might have more than one CLA switch! For eg. help has 2
@@ -88,6 +89,7 @@ public class OptionBoolean extends Option {
 	 * @param val
 	 *            value to the option.
 	 */
+	@Override
 	public void setValue(SearchLabel slabel, Object val) {
 		if (!this.isValid(val.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
@@ -107,6 +109,7 @@ public class OptionBoolean extends Option {
 	 * @param val
 	 *            value to the option.
 	 */
+	@Override
 	public void replaceValue(SearchLabel slabel, Object val) {
 		if (!this.isValid(val.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
@@ -122,6 +125,7 @@ public class OptionBoolean extends Option {
 	 * 
 	 * @return valid boolean value (whether the value is valid or not).
 	 */
+	@Override
 	public boolean isValid(String s) {
 		boolean valid = (s.equalsIgnoreCase("true")
 				|| s.equalsIgnoreCase("false") || s.equals("T") || s
@@ -141,6 +145,7 @@ public class OptionBoolean extends Option {
 		return new Boolean(super.getValue(slabel).toString()).booleanValue();
 	}
 
+	@Override
 	public String getTypeName() {
 		return "boolean";
 	}
@@ -150,6 +155,7 @@ public class OptionBoolean extends Option {
 	 * 
 	 * @return a value of type 'String'
 	 */
+	@Override
 	public String getHelpValueDescription() {
 		return "";
 	}

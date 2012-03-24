@@ -41,6 +41,7 @@ public class ForgeLogFormatter extends java.util.logging.Formatter {
 	 *            the log record to be formatted.
 	 * @return a formatted log record
 	 */
+	@Override
 	public synchronized String format(LogRecord record) {
 		StringBuffer buf = new StringBuffer();
 		String message = record.getMessage();
@@ -147,10 +148,10 @@ public class ForgeLogFormatter extends java.util.logging.Formatter {
 				}
 				stringBuffer.append(gj.getLogger().getIndent());
 			}// else {
-			 //	if (stringBuffer.length() > 0) {
-			 //		stringBuffer.append(": ");
-			 //	}
-			//}
+				// if (stringBuffer.length() > 0) {
+				// stringBuffer.append(": ");
+				// }
+				// }
 		}
 
 		// message

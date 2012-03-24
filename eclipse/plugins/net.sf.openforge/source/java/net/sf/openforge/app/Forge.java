@@ -379,6 +379,7 @@ public class Forge implements ForgeDebug {
 			this.eng = e;
 		}
 
+		@Override
 		public void jobNotice(JobEvent je) {
 			eng.getGenericJob().info(
 					eng.getCurrentHandler().getStageName() + " "
@@ -428,8 +429,7 @@ public class Forge implements ForgeDebug {
 		boolean exitError = true;
 
 		try {
-			forgeMainJob.setOptionValues((String[]) finalArgs
-					.toArray(new String[0]));
+			forgeMainJob.setOptionValues(finalArgs.toArray(new String[0]));
 			f.preprocess(forgeMainJob);
 			exitError = f.compile(forgeMainJob);
 		} catch (NewJob.ForgeOptionException foe) {
@@ -443,11 +443,11 @@ public class Forge implements ForgeDebug {
 			System.exit(-1);
 		}
 
-//		if (!runForge(args)) {
-//			System.exit(-1);
-//		} else {
-//			System.exit(0);
-//		}
+		// if (!runForge(args)) {
+		// System.exit(-1);
+		// } else {
+		// System.exit(0);
+		// }
 
 	} // main()
 

@@ -48,9 +48,9 @@ public class ForgeLogger {
 	public static final InputStream consoleIn = System.in;
 
 	private int indentCount = 0;
-	private String indentionString = "		";
-	private Logger logger;
-	private LinkedList<String> prefaces = new LinkedList<String>();
+	private final String indentionString = "		";
+	private final Logger logger;
+	private final LinkedList<String> prefaces = new LinkedList<String>();
 	private static Map<Object, Handler> allocatedHandlers = new HashMap<Object, Handler>();
 
 	public ForgeLogger(String name) {
@@ -79,7 +79,7 @@ public class ForgeLogger {
 	}
 
 	private static Handler getCachedHandler(Object key) {
-		return (Handler) allocatedHandlers.get(key);
+		return allocatedHandlers.get(key);
 	}
 
 	private static void cacheHandler(Object key, Handler h) {
@@ -137,7 +137,7 @@ public class ForgeLogger {
 	 */
 	public String getPreface() {
 		try {
-			return (String) prefaces.getFirst();
+			return prefaces.getFirst();
 		} catch (NoSuchElementException e) {
 			return null;
 		}

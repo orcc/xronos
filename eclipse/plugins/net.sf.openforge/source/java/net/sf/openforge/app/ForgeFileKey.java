@@ -21,7 +21,6 @@
 
 package net.sf.openforge.app;
 
-
 /**
  * The ForgeFileKey is a lightweight class that is used to refer to a particular
  * handled file in the {@link ForgeFileHandler}
@@ -36,6 +35,7 @@ public class ForgeFileKey {
 		this.reason = reason;
 	}
 
+	@Override
 	public String toString() {
 		return super.toString() + "<" + this.reason + ">";
 	}

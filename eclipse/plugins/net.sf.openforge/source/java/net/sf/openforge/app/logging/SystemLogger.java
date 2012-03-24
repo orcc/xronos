@@ -79,10 +79,12 @@ public class SystemLogger extends PrintStream {
 	/**
 	 * not supported
 	 */
+	@Override
 	public void flush() {
 		println();
 	}
 
+	@Override
 	public void close() {
 		flush();
 	}
@@ -90,6 +92,7 @@ public class SystemLogger extends PrintStream {
 	/**
 	 * not supported
 	 */
+	@Override
 	public boolean checkError() {
 		return false;
 	}
@@ -97,24 +100,29 @@ public class SystemLogger extends PrintStream {
 	// this is an oddity
 	// essentially, this really doesn't work for anything but string output
 	// so convert the write's into prints, converting to chars
+	@Override
 	public void write(int b) {
 		print((char) b);
 	}
 
+	@Override
 	public void write(byte buf[]) {
 		write(buf, 0, buf.length);
 	}
 
+	@Override
 	public void write(byte buf[], int off, int len) {
 		for (int i = off; i < len; i++) {
 			write(buf[i]);
 		}
 	}
 
+	@Override
 	public void print(boolean b) {
 		currentMsg.append(b);
 	}
 
+	@Override
 	public void print(char c) {
 		// do line matching
 		if (c == '\n')
@@ -123,80 +131,97 @@ public class SystemLogger extends PrintStream {
 			currentMsg.append(c);
 	}
 
+	@Override
 	public void print(int i) {
 		currentMsg.append(i);
 	}
 
+	@Override
 	public void print(long l) {
 		currentMsg.append(l);
 	}
 
+	@Override
 	public void print(float f) {
 		currentMsg.append(f);
 	}
 
+	@Override
 	public void print(double d) {
 		currentMsg.append(d);
 	}
 
+	@Override
 	public void print(char s[]) {
 		currentMsg.append(s);
 	}
 
+	@Override
 	public void print(String s) {
 		currentMsg.append(s);
 	}
 
+	@Override
 	public void print(Object obj) {
 		currentMsg.append(obj);
 	}
 
+	@Override
 	public void println() {
 		logger.log(level, currentMsg.toString());
 		linePrinted = true;
 		currentMsg = new StringBuffer(80);
 	}
 
+	@Override
 	public void println(boolean x) {
 		currentMsg.append(x);
 		println();
 	}
 
+	@Override
 	public void println(char x) {
 		currentMsg.append(x);
 		println();
 	}
 
+	@Override
 	public void println(int x) {
 		currentMsg.append(x);
 		println();
 	}
 
+	@Override
 	public void println(long x) {
 		currentMsg.append(x);
 		println();
 	}
 
+	@Override
 	public void println(float x) {
 		currentMsg.append(x);
 		println();
 	}
 
+	@Override
 	public void println(double x) {
 		currentMsg.append(x);
 		println();
 	}
 
+	@Override
 	public void println(char x[]) {
 		currentMsg.append(x);
 		println();
 	}
 
+	@Override
 	public void println(String x) {
 		currentMsg.append(x);
 		println();
 	}
 
+	@Override
 	public void println(Object x) {
 		currentMsg.append(x);
 		println();

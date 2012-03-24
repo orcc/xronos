@@ -34,9 +34,9 @@ import java.util.List;
  */
 public class OptionKey {
 
-	private String key;
-	private List<String> claList;
-	private String description;
+	private final String key;
+	private final List<String> claList;
+	private final String description;
 
 	/**
 	 * Constructs an OptionKey.

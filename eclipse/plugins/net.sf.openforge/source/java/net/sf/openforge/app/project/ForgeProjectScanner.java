@@ -59,7 +59,7 @@ public class ForgeProjectScanner {
 
 	private static final String claSwitch = "-opt";
 	private String optionScope = null;
-	private List<String> pfileTokens = new ArrayList<String>();
+	private final List<String> pfileTokens = new ArrayList<String>();
 
 	/** Create new ForgeProjectScanner with org.w3c.dom.Document. */
 	public ForgeProjectScanner(org.w3c.dom.Document document) {
@@ -306,7 +306,7 @@ public class ForgeProjectScanner {
 				// ((org.w3c.dom.CDATASection)node).getData());
 				break;
 			case org.w3c.dom.Node.ELEMENT_NODE:
-				//org.w3c.dom.Element nodeElement = (org.w3c.dom.Element) node;
+				// org.w3c.dom.Element nodeElement = (org.w3c.dom.Element) node;
 				break;
 			case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
 				// ((org.w3c.dom.ProcessingInstruction)node).getTarget();

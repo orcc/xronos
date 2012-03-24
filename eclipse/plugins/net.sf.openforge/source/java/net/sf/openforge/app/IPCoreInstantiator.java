@@ -68,17 +68,18 @@ public class IPCoreInstantiator {
 	private Design design = null;
 
 	/** IPCoreStorage to IPCoreCall map */
-	private Map<IPCoreStorage, Call> ipCoreCallMap = new HashMap<IPCoreStorage, Call>(3);
+	private final Map<IPCoreStorage, Call> ipCoreCallMap = new HashMap<IPCoreStorage, Call>(
+			3);
 
 	/** API Buffer to LIM Pin map */
-	private Map<Buffer, Pin> apiToLimPins = new HashMap<Buffer, Pin>(3);
+	private final Map<Buffer, Pin> apiToLimPins = new HashMap<Buffer, Pin>(3);
 
 	/**
 	 * IPCoreStorage -> Collection of user accessed pins to the core tracked by
 	 * that storage. This contains only those pins that the user actually
 	 * accesses in their design.
 	 */
-	private Map coreStorageToUserPins = new HashMap();
+	private final Map coreStorageToUserPins = new HashMap();
 
 	/**
 	 * Instantiates each ipcore module and ports & buses.
@@ -137,7 +138,7 @@ public class IPCoreInstantiator {
 				 * Create ip core module instantiation and a dummy procedure to
 				 * go with it
 				 */
-				Call call = (Call) ipCoreCallMap.get(storage);
+				Call call = ipCoreCallMap.get(storage);
 				if (call == null) {
 					Block block = new Block(Collections.EMPTY_LIST, true);
 					final Procedure proc = new Procedure(block);
@@ -316,7 +317,7 @@ public class IPCoreInstantiator {
 	private void makeName() {
 		for (Iterator it = ipCoreCallMap.keySet().iterator(); it.hasNext();) {
 			final IPCoreStorage ipcs = (IPCoreStorage) it.next();
-			final Call call = (Call) ipCoreCallMap.get(ipcs);
+			final Call call = ipCoreCallMap.get(ipcs);
 
 			if (ipcs.getHDLInstanceName() == null) {
 				call.setIDLogical(ipcs.getModuleName() + "_instance");
@@ -328,7 +329,7 @@ public class IPCoreInstantiator {
 			/*
 			 * Name procedure ports & buses
 			 */
-			final Block block = (Block) call.getProcedure().getBody();
+			final Block block = call.getProcedure().getBody();
 			call.getProcedure().setIDLogical(ipcs.getModuleName());
 		}
 	}
@@ -347,7 +348,7 @@ public class IPCoreInstantiator {
 				final Buffer buffer = (Buffer) iter.next();
 				final String name = buffer.getName();
 				final int width = buffer.getSize();
-				final Pin pin = (Pin) apiToLimPins.get(buffer);
+				final Pin pin = apiToLimPins.get(buffer);
 
 				if ((pin instanceof InputPin)) {
 					// make a port on both call and procedure
@@ -417,12 +418,12 @@ public class IPCoreInstantiator {
 				final String publish_name = (String) pni.next();
 
 				if (buffer instanceof PinIn) {
-					final Bus bus = ((Exit) call.getExits().iterator().next())
+					final Bus bus = call.getExits().iterator().next()
 							.makeDataBus();
 					bus.setUsed(true);
 
-					final Exit exit = (Exit) proc.getBody().getExits()
-							.iterator().next();
+					final Exit exit = proc.getBody().getExits().iterator()
+							.next();
 					final Bus procBus = exit.makeDataBus();
 					procBus.setIDLogical(buffer.getName());
 					procBus.setUsed(true);
@@ -446,12 +447,12 @@ public class IPCoreInstantiator {
 					design.addInputPin(in);
 				}
 				if (buffer instanceof PinInOutTS) {
-					final Bus bus = ((Exit) call.getExits().iterator().next())
+					final Bus bus = call.getExits().iterator().next()
 							.makeDataBus();
 					bus.setUsed(true);
 
-					final Exit exit = (Exit) proc.getBody().getExits()
-							.iterator().next();
+					final Exit exit = proc.getBody().getExits().iterator()
+							.next();
 					final Bus procBus = exit.makeDataBus();
 					procBus.setIDLogical(buffer.getName());
 					procBus.setUsed(true);

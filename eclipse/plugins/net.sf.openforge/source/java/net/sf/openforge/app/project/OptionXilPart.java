@@ -49,6 +49,7 @@ public class OptionXilPart extends OptionString {
 	 *            a value of type 'String'
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean isValid(String s) {
 		final XilinxDevice testDevice = new XilinxDevice(s);
 		if (!testDevice.isXilinxDevice()) {
@@ -58,6 +59,7 @@ public class OptionXilPart extends OptionString {
 		return super.isValid(s);
 	}
 
+	@Override
 	public String getTypeName() {
 		return "xilinxPartSelect";
 	}

@@ -54,7 +54,7 @@ public class Release {
 
 		InputStreamReader isr = new InputStreamReader(is);
 
-		if (isr.equals(null)){
+		if (isr.equals(null)) {
 			return ("release notes not provided");
 		}
 

@@ -50,6 +50,7 @@ public class JobEvent extends EventObject {
 		return message;
 	}
 
+	@Override
 	public String toString() {
 		return new String("JobEvent[message(" + getMessage() + "), source("
 				+ getSource() + ")]");

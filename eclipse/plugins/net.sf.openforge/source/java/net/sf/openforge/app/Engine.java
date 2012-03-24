@@ -54,8 +54,8 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 	 */
 	private Design design;
 
-	private Set<JobListener> listeners = new HashSet<JobListener>();
-	private GenericJob gj;
+	private final Set<JobListener> listeners = new HashSet<JobListener>();
+	private final GenericJob gj;
 	private JobHandler jobHandler;
 	protected volatile int status = STOPPED;
 
@@ -143,6 +143,7 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 	 * Runs this Job by calling begin(). Allows this Job to be attached to a
 	 * Thread.
 	 */
+	@Override
 	public void run() {
 		begin();
 	}
@@ -192,7 +193,7 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 	 *            the JobEvent to distribute
 	 */
 	public void fireEvent(JobEvent event) {
-		for(JobListener listener: listeners){
+		for (JobListener listener : listeners) {
 			listener.jobNotice(event);
 		}
 	} // fireEvent()

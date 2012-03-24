@@ -40,12 +40,12 @@ import net.sf.openforge.util.IndentWriter;
  */
 public abstract class Option {
 
-	private OptionKey optionKey;
-	private String default_value;
+	private final OptionKey optionKey;
+	private final String default_value;
 	private boolean hidden = false;
 	protected Map<String, Object> localMap = new HashMap<String, Object>();
 
-	private String unscoped;
+	private final String unscoped;
 	int brief_end_index = 0;
 	boolean isFirstTime = true;
 

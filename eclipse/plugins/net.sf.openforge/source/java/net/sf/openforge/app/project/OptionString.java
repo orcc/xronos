@@ -47,6 +47,7 @@ public class OptionString extends Option {
 		super(key, default_value, hidden);
 	} // OptionString()
 
+	@Override
 	public boolean isValid(String s) {
 		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
@@ -114,6 +115,7 @@ public class OptionString extends Option {
 	 * @param tokens
 	 *            list of command line arguments.
 	 */
+	@Override
 	public void expand(List<String> tokens) {
 		for (int i = 0; i < tokens.size(); i++) {
 			String s = tokens.get(i).toString();
@@ -147,6 +149,7 @@ public class OptionString extends Option {
 	 * @param val
 	 *            value to the option.
 	 */
+	@Override
 	public void setValue(SearchLabel slabel, Object val) {
 		if (!this.isValid(val.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
@@ -177,6 +180,7 @@ public class OptionString extends Option {
 	 * @param val
 	 *            value to the option.
 	 */
+	@Override
 	public void replaceValue(SearchLabel slabel, Object val) {
 		if (!this.isValid(val.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
@@ -213,6 +217,7 @@ public class OptionString extends Option {
 		super.replaceValue(slabel, val);
 	}
 
+	@Override
 	public String getTypeName() {
 		return "string";
 	}
@@ -222,6 +227,7 @@ public class OptionString extends Option {
 	 * 
 	 * @return a value of type 'String'
 	 */
+	@Override
 	public String getHelpValueDescription() {
 		return "<value>";
 	}

@@ -53,6 +53,7 @@ public class OptionInt extends Option {
 	 * @param tokens
 	 *            list of command line arguments.
 	 */
+	@Override
 	public void expand(List<String> tokens) {
 		String key = getOptionKey().getCLASwitch();
 		for (int i = 0; i < tokens.size(); i++) {
@@ -86,6 +87,7 @@ public class OptionInt extends Option {
 	 * @param val
 	 *            value to the option.
 	 */
+	@Override
 	public void setValue(SearchLabel slabel, Object val) {
 		if (!this.isValid(val.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
@@ -105,6 +107,7 @@ public class OptionInt extends Option {
 	 * @param val
 	 *            value to the option.
 	 */
+	@Override
 	public void replaceValue(SearchLabel slabel, Object val) {
 		if (!this.isValid(val.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
@@ -125,9 +128,10 @@ public class OptionInt extends Option {
 		return Integer.parseInt(super.getValue(slabel).toString());
 	}
 
+	@Override
 	public boolean isValid(String s) {
 		try {
-			//Integer valid = Integer.valueOf(s);
+			// Integer valid = Integer.valueOf(s);
 		} catch (NumberFormatException nfe) {
 			return false;
 		}
@@ -136,6 +140,7 @@ public class OptionInt extends Option {
 
 	} // isValid()
 
+	@Override
 	public String getTypeName() {
 		return "int";
 	}
@@ -145,6 +150,7 @@ public class OptionInt extends Option {
 	 * 
 	 * @return a value of type 'String'
 	 */
+	@Override
 	public String getHelpValueDescription() {
 		return "<value>";
 	}

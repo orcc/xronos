@@ -113,7 +113,7 @@ public class EngineThread {
 	 * @return a value of type 'Engine'
 	 */
 	public static final Engine getEngine(Thread thread) {
-		return (Engine) threadToJob.get(thread);
+		return threadToJob.get(thread);
 	}
 
 	/**

@@ -69,9 +69,9 @@ public class GenericJob implements NewJob {
 	protected ForgeLogger logger = new ForgeLogger("Forge.Default"
 			+ System.identityHashCode(this));
 	public Map<OptionKey, Option> optionsMap;
-	private PrimitiveMapper primMapper;
+	private final PrimitiveMapper primMapper;
 
-	private ForgeFileHandler fileHandler = new ForgeFileHandler(this);
+	private final ForgeFileHandler fileHandler = new ForgeFileHandler(this);
 
 	/*
 	 * The full resolved (absolute) path name to the forge.h file that can be
@@ -115,6 +115,7 @@ public class GenericJob implements NewJob {
 	 * @throws ForgeOptionException
 	 *             if there is an error in any option syntax/usage
 	 */
+	@Override
 	public void setOptionValues(String[] args) throws ForgeOptionException {
 		List<String> pfTokens = null;
 		boolean usePfile = false;
@@ -364,8 +365,9 @@ public class GenericJob implements NewJob {
 	 *            OptionKey that is to be looked up.
 	 * @return the Option that is mapped to 'key' in the optionsMap.
 	 */
+	@Override
 	public Option getOption(OptionKey key) {
-		return (Option) optionsMap.get(key);
+		return optionsMap.get(key);
 	}
 
 	/**
@@ -376,6 +378,7 @@ public class GenericJob implements NewJob {
 	 *            a value of type 'OptionKey'
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean getUnscopedBooleanOptionValue(OptionKey key) {
 		assert key != null;
 		Option opt = getOption(key);
@@ -391,6 +394,7 @@ public class GenericJob implements NewJob {
 	 * @param opt
 	 *            Option that is mapped to the look-up key
 	 */
+	@Override
 	public void addOption(OptionKey key, Option opt) {
 		optionsMap.put(key, opt);
 	}
@@ -459,6 +463,7 @@ public class GenericJob implements NewJob {
 	 * @param s
 	 *            message to log
 	 */
+	@Override
 	public void info(String s) {
 		getLogger().info(s);
 	}
@@ -469,6 +474,7 @@ public class GenericJob implements NewJob {
 	 * @param s
 	 *            a value of type 'String'
 	 */
+	@Override
 	public void verbose(String s) {
 		getLogger().verbose(s);
 	}
@@ -479,6 +485,7 @@ public class GenericJob implements NewJob {
 	 * @param s
 	 *            a value of type 'String'
 	 */
+	@Override
 	public void warn(String s) {
 		getLogger().warn(s);
 	}
@@ -489,6 +496,7 @@ public class GenericJob implements NewJob {
 	 * @param s
 	 *            a value of type 'String'
 	 */
+	@Override
 	public void error(String s) {
 		getLogger().error(s);
 	}

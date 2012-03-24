@@ -41,7 +41,7 @@ public class OptionMultiFile extends OptionFile {
 	 * The characters that are used to divide a list into elements when
 	 * represented as a string
 	 */
-	private String separators = "[]," + java.io.File.pathSeparator;
+	private final String separators = "[]," + java.io.File.pathSeparator;
 
 	/**
 	 * Constructs a new OptionMultiFile definition of a File based Option.
@@ -63,6 +63,7 @@ public class OptionMultiFile extends OptionFile {
 	/**
 	 * @see net.sf.openforge.app.project.Option#getTypeName()
 	 */
+	@Override
 	public String getTypeName() {
 		return "multi-file";
 	}
@@ -74,9 +75,10 @@ public class OptionMultiFile extends OptionFile {
 	 * @param tokens
 	 *            list of command line arguments.
 	 */
+	@Override
 	public void expand(List<String> tokens) {
-		//boolean consumed_token = false;
-		//int number_consumed = 0;
+		// boolean consumed_token = false;
+		// int number_consumed = 0;
 		for (int i = 0; i < tokens.size(); i++) {
 			String s = tokens.get(i).toString();
 			String key = getOptionKey().getCLASwitch();
@@ -109,6 +111,7 @@ public class OptionMultiFile extends OptionFile {
 	 * @param val
 	 *            value to the option.
 	 */
+	@Override
 	public void setValue(SearchLabel slabel, Object val) {
 		if (!this.isValid(val.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
@@ -137,6 +140,7 @@ public class OptionMultiFile extends OptionFile {
 	 * @param value
 	 *            - value of the option
 	 */
+	@Override
 	public void replaceValue(SearchLabel slabel, Object value) {
 		if (!this.isValid(value.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
@@ -160,6 +164,7 @@ public class OptionMultiFile extends OptionFile {
 	/**
 	 * @see net.sf.openforge.app.project.Option#isValid(java.lang.String)
 	 */
+	@Override
 	public boolean isValid(String s) {
 		List files = this.toList(s);
 		for (Iterator it = files.iterator(); it.hasNext();) {
@@ -199,6 +204,7 @@ public class OptionMultiFile extends OptionFile {
 	 * @see net.sf.openforge.app.project.Option#printXML(net.sf.openforge.util.IndentWriter,
 	 *      java.lang.String)
 	 */
+	@Override
 	public void printXML(IndentWriter printer, String value) {
 		java.util.List files = this.toList(value);
 
