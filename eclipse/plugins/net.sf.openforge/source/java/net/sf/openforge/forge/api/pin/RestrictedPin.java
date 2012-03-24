@@ -106,6 +106,7 @@ public class RestrictedPin {
 	 * 
 	 * @return a <code>String</code> value
 	 */
+	@Override
 	public String toString() {
 		return original.toString();
 	}

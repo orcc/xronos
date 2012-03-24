@@ -339,6 +339,7 @@ public class DEFAULT_FLOAT {
 	//
 
 	private abstract static class DefaultWriter implements HDLWriter {
+		@Override
 		public List<String> writeVerilog(IPCore core, java.io.PrintWriter pw) {
 			pw.println("// synthesis attribute BOX_TYPE of " + name()
 					+ " is \"BLACK_BOX\"");
@@ -362,6 +363,7 @@ public class DEFAULT_FLOAT {
 	}
 
 	private abstract static class DefaultWriterOneInput extends DefaultWriter {
+		@Override
 		public List<String> writeVerilog(IPCore core, java.io.PrintWriter pw) {
 			pw.println("// synthesis attribute BOX_TYPE of " + name()
 					+ " is \"BLACK_BOX\"");
@@ -379,6 +381,7 @@ public class DEFAULT_FLOAT {
 			return "remCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -389,6 +392,7 @@ public class DEFAULT_FLOAT {
 			return "divCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -399,6 +403,7 @@ public class DEFAULT_FLOAT {
 			return "mulCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -409,6 +414,7 @@ public class DEFAULT_FLOAT {
 			return "subCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -419,6 +425,7 @@ public class DEFAULT_FLOAT {
 			return "addCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -429,6 +436,7 @@ public class DEFAULT_FLOAT {
 			return "minusCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -439,6 +447,7 @@ public class DEFAULT_FLOAT {
 			return "gteCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -449,6 +458,7 @@ public class DEFAULT_FLOAT {
 			return "gtCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -459,6 +469,7 @@ public class DEFAULT_FLOAT {
 			return "lteCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -469,6 +480,7 @@ public class DEFAULT_FLOAT {
 			return "ltCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -479,6 +491,7 @@ public class DEFAULT_FLOAT {
 			return "neCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -489,6 +502,7 @@ public class DEFAULT_FLOAT {
 			return "eqCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -499,10 +513,12 @@ public class DEFAULT_FLOAT {
 			return "b2fCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int inWidth() {
 			return 8;
 		}
@@ -513,10 +529,12 @@ public class DEFAULT_FLOAT {
 			return "c2fCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int inWidth() {
 			return 16;
 		}
@@ -527,10 +545,12 @@ public class DEFAULT_FLOAT {
 			return "s2fCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int inWidth() {
 			return 16;
 		}
@@ -541,6 +561,7 @@ public class DEFAULT_FLOAT {
 			return "i2fCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -551,10 +572,12 @@ public class DEFAULT_FLOAT {
 			return "l2fCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int inWidth() {
 			return 64;
 		}
@@ -565,10 +588,12 @@ public class DEFAULT_FLOAT {
 			return "f2bCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 8;
 		}
@@ -579,10 +604,12 @@ public class DEFAULT_FLOAT {
 			return "f2cCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 16;
 		}
@@ -593,10 +620,12 @@ public class DEFAULT_FLOAT {
 			return "f2sCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 16;
 		}
@@ -607,6 +636,7 @@ public class DEFAULT_FLOAT {
 			return "f2iCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -617,10 +647,12 @@ public class DEFAULT_FLOAT {
 			return "f2lCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 64;
 		}
@@ -631,10 +663,12 @@ public class DEFAULT_FLOAT {
 			return "f2dCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 64;
 		}

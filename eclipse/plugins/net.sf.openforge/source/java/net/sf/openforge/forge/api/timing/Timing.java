@@ -18,70 +18,61 @@
 package net.sf.openforge.forge.api.timing;
 
 /**
- * The <code>Timing</code> class contains API primitive method calls
- * for defining user-specified timing information to a
- * design. 
+ * The <code>Timing</code> class contains API primitive method calls for
+ * defining user-specified timing information to a design.
  */
 
-public class Timing
-{
-    /**
-     * Wait for all instructions before this call to complete before
-     * continuing with the following instructions.  The idea is to
-     * synchronize all parallel executing paths that the scheduler has
-     * created prior to this <code>waitSync()</code> call.
-     */
-    public static void waitSync()
-    {
-    }
+public class Timing {
+	/**
+	 * Wait for all instructions before this call to complete before continuing
+	 * with the following instructions. The idea is to synchronize all parallel
+	 * executing paths that the scheduler has created prior to this
+	 * <code>waitSync()</code> call.
+	 */
+	public static void waitSync() {
+	}
 
-    /**
-     * Wait for all instructions before this call to complete and then
-     * waits for the next clock edge before continuing with the following
-     * instructions.  All parallel executing paths are made to
-     * synchronize at this point before being allowed to continue
-     * processing.
-     */
-    public static void waitClock()
-    {
-    }
+	/**
+	 * Wait for all instructions before this call to complete and then waits for
+	 * the next clock edge before continuing with the following instructions.
+	 * All parallel executing paths are made to synchronize at this point before
+	 * being allowed to continue processing.
+	 */
+	public static void waitClock() {
+	}
 
-    /**
-     * Wait for all instructions before this call to complete before
-     * continuing with the following instructions, only within the
-     * scope of the current method.  The idea is to synchronize all
-     * parallel executing paths that the scheduler has created prior
-     * to this <code>waitSyncLocal()</code> call.
-     */
-    public static void waitSyncLocal()
-    {
-    }
+	/**
+	 * Wait for all instructions before this call to complete before continuing
+	 * with the following instructions, only within the scope of the current
+	 * method. The idea is to synchronize all parallel executing paths that the
+	 * scheduler has created prior to this <code>waitSyncLocal()</code> call.
+	 */
+	public static void waitSyncLocal() {
+	}
 
-    /**
-     * Wait for all instructions before this call to complete and then
-     * waits for the next clock edge before continuing with the following
-     * instructions, only within the scope of the current method.  All
-     * parallel executing paths are made to synchronize at this point
-     * before being allowed to continue processing.
-     */
-    public static void waitClockLocal()
-    {
-    }
+	/**
+	 * Wait for all instructions before this call to complete and then waits for
+	 * the next clock edge before continuing with the following instructions,
+	 * only within the scope of the current method. All parallel executing paths
+	 * are made to synchronize at this point before being allowed to continue
+	 * processing.
+	 */
+	public static void waitClockLocal() {
+	}
 
-    /**
-     * Wait for at least the specified clock cycle(s) after calling the
-     * enclosing method before calling the method again.  This value
-     * is used by the scheduler to determine how often data can sent
-     * into a given method, possibly before the previous result is
-     * generated if the method is pipelined.  Normal code that is
-     * being Forged will not use this method, it is intended to
-     * provide scheduling hints for methods that access external
-     * devices such as IPCores or Pins on the design.
-     *
-     * @param i number of clock cycle(s) to wait after calling method
-     * before another call can be made
-     */
-    public static void throughputLocal(int i)
-    {
-    }
+	/**
+	 * Wait for at least the specified clock cycle(s) after calling the
+	 * enclosing method before calling the method again. This value is used by
+	 * the scheduler to determine how often data can sent into a given method,
+	 * possibly before the previous result is generated if the method is
+	 * pipelined. Normal code that is being Forged will not use this method, it
+	 * is intended to provide scheduling hints for methods that access external
+	 * devices such as IPCores or Pins on the design.
+	 * 
+	 * @param i
+	 *            number of clock cycle(s) to wait after calling method before
+	 *            another call can be made
+	 */
+	public static void throughputLocal(int i) {
+	}
 }

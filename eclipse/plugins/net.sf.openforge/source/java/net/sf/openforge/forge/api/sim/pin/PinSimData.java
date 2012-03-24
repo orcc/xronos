@@ -156,7 +156,7 @@ public class PinSimData {
 	 */
 	public static PinData getDriveData(Buffer pin) {
 
-		PinData pd = (PinData) mapPinToDriveData.get(pin);
+		PinData pd = mapPinToDriveData.get(pin);
 
 		if (pd == null) {
 			pd = new SequentialPinData();
@@ -174,7 +174,7 @@ public class PinSimData {
 	 * @return a value of type 'PinSimData'
 	 */
 	public static PinData getTestData(Buffer pin) {
-		PinData pd = (PinData) mapPinToTestData.get(pin);
+		PinData pd = mapPinToTestData.get(pin);
 		if (pd == null) {
 			pd = new SequentialPinData();
 			setTestData(pin, pd);

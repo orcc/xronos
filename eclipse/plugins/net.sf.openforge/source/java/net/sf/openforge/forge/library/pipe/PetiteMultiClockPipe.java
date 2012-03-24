@@ -176,7 +176,7 @@ public class PetiteMultiClockPipe implements HDLWriter {
 		fifoEmpty = new PinIn(asyncFifo, "empty_out", 1);
 		readStatus = new PinIn(asyncFifo, "read_status_out", 2);
 
-		this.bufferDepth = 15;
+		bufferDepth = 15;
 	}
 
 	/**
@@ -189,7 +189,7 @@ public class PetiteMultiClockPipe implements HDLWriter {
 	 *        <code>false</code> to leave them out.
 	 */
 	public void setGlobalClockBuffer(boolean value) {
-		this.gbuf = value;
+		gbuf = value;
 	}
 
 	/**
@@ -200,7 +200,7 @@ public class PetiteMultiClockPipe implements HDLWriter {
 	 * @return the buffer depth
 	 */
 	public int getBufferDepth() {
-		return (this.bufferDepth);
+		return (bufferDepth);
 	}
 
 	/**
@@ -575,10 +575,11 @@ public class PetiteMultiClockPipe implements HDLWriter {
 	}
 
 	// Implement the HDLWriter interface
+	@Override
 	public List<String> writeVerilog(IPCore target, PrintWriter pw) {
 		// create a return list of all the UniSim modules we utilize
 		List<String> result = new ArrayList<String>();
-		if (this.gbuf) {
+		if (gbuf) {
 			result.add("BUFGP");
 		}
 
@@ -698,7 +699,7 @@ public class PetiteMultiClockPipe implements HDLWriter {
 		pw.println("   wire         pwr = 1;");
 		pw.println("   ");
 
-		if (this.gbuf) {
+		if (gbuf) {
 			pw.println("   /**********************************************************************\\");
 			pw.println("    *                                                                      *");
 			pw.println("    * Global input clock buffers are instantianted for both the read_clock *");

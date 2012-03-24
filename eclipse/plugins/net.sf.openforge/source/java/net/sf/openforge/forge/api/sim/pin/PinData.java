@@ -49,6 +49,7 @@ public abstract class PinData {
 	 */
 	public abstract void clear();
 
+	@Override
 	public String toString() {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		PrintWriter pw = new PrintWriter(baos);
@@ -68,7 +69,7 @@ public abstract class PinData {
 	public List<SignalValue> asList() {
 		List<SignalValue> al = new ArrayList<SignalValue>(getCycleCount());
 		for (int i = 0; i < getCycleCount(); i++) {
-			al.add((SignalValue) valueAt(i));
+			al.add(valueAt(i));
 		}
 		return al;
 	}

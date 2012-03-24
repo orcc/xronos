@@ -132,8 +132,9 @@ public class SequentialPinData extends PinData {
 	 * 
 	 * @return a value of type 'long'
 	 */
+	@Override
 	public int getCycleCount() {
-		return (int) pinDataSequence.size();
+		return pinDataSequence.size();
 	}
 
 	/**
@@ -143,14 +144,16 @@ public class SequentialPinData extends PinData {
 	 *            tick between 0 and getCycleCount() -1
 	 * @return a value of type 'SignalValue'
 	 */
+	@Override
 	public SignalValue valueAt(int clockTick) {
-		return (SignalValue) pinDataSequence.get((int) clockTick);
+		return pinDataSequence.get(clockTick);
 	}
 
 	/**
 	 * Empty this pin data set
 	 * 
 	 */
+	@Override
 	public void clear() {
 		pinDataSequence.clear();
 	}
@@ -348,8 +351,8 @@ public class SequentialPinData extends PinData {
 	 */
 	public void set(int clockTick, AbsolutePinData apd) {
 		for (Entry<Integer, SignalValue> me : apd.getMapping().entrySet()) {
-			int tick = ((Integer) me.getKey()).intValue();
-			SignalValue sv = (SignalValue) me.getValue();
+			int tick = me.getKey().intValue();
+			SignalValue sv = me.getValue();
 			set(tick, sv);
 		}
 	}

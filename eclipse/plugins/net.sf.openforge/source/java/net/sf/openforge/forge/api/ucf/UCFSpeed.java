@@ -20,32 +20,30 @@ package net.sf.openforge.forge.api.ucf;
 /**
  * The UCF speed attribute for pins. May be FAST or SLOW.
  */
-public final class UCFSpeed implements UCFAttribute
-{
+public final class UCFSpeed implements UCFAttribute {
 
-    public final static UCFSpeed FAST = new UCFSpeed("FAST");
-    public final static UCFSpeed SLOW = new UCFSpeed("SLOW");
+	public final static UCFSpeed FAST = new UCFSpeed("FAST");
+	public final static UCFSpeed SLOW = new UCFSpeed("SLOW");
 
-    private String value;
-    
-    private UCFSpeed(String value)
-    {
-        this.value = value;
-    }
-    
-    /**
-     * Produces the ucf attribute "value".
-     */
-    public String toString()
-    {
-        return value;
-    }
-    
-    /**
-     * @see net.sf.openforge.forge.api.ucf.UCFAttribute#getBit
-     */
-    public int getBit()
-    {
-        return -1;
-    }
+	private String value;
+
+	private UCFSpeed(String value) {
+		this.value = value;
+	}
+
+	/**
+	 * Produces the ucf attribute "value".
+	 */
+	@Override
+	public String toString() {
+		return value;
+	}
+
+	/**
+	 * @see net.sf.openforge.forge.api.ucf.UCFAttribute#getBit
+	 */
+	@Override
+	public int getBit() {
+		return -1;
+	}
 }

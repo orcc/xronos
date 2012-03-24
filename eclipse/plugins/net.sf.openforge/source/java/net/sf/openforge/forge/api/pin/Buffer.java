@@ -98,7 +98,7 @@ public abstract class Buffer {
 
 		this.resetValue = mapValueToSize(resetValue);
 
-		this.resetEnabled = driveOnReset;
+		resetEnabled = driveOnReset;
 		this.resetValueSupplied = resetValueSupplied;
 
 		// if size is 64, any reset value can be contained
@@ -292,6 +292,7 @@ public abstract class Buffer {
 	 * 
 	 * @return a <code>String</code> value
 	 */
+	@Override
 	public String toString() {
 		return getFullName();
 	}
@@ -400,7 +401,7 @@ public abstract class Buffer {
 	 * @return the associated clock domain
 	 */
 	public ClockDomain getDomain() {
-		return this.domain;
+		return domain;
 	}
 
 	/**

@@ -89,7 +89,7 @@ public class Core {
 	 * @return the IPCoreStorage for the specified IPCore
 	 */
 	public static IPCoreStorage getIPCoreStorage(IPCore ipc) {
-		return (IPCoreStorage) internalCoreMap.get(ipc);
+		return internalCoreMap.get(ipc);
 	}
 
 	/**
@@ -174,7 +174,7 @@ public class Core {
 	 */
 	public static void setIPCoreMap(Map<IPCore, IPCoreStorage> m) {
 		clearIPCoreMap();
-		for (Entry<IPCore, IPCoreStorage> entry: m.entrySet()){
+		for (Entry<IPCore, IPCoreStorage> entry : m.entrySet()) {
 			internalCoreMap.put(entry.getKey(), entry.getValue());
 		}
 	}

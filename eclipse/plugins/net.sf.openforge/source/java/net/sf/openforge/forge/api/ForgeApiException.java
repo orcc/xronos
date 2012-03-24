@@ -17,16 +17,14 @@
 package net.sf.openforge.forge.api;
 
 /**
- * A <code>RuntimeException</code> that is thrown to indicate a
- * malformed API call.  Forge API classes perform design error
- * checking during compilation and throw this exception if an error is
- * detected.  The error message will describe the nature of the error.
+ * A <code>RuntimeException</code> that is thrown to indicate a malformed API
+ * call. Forge API classes perform design error checking during compilation and
+ * throw this exception if an error is detected. The error message will describe
+ * the nature of the error.
  */
 @SuppressWarnings("serial")
-public class ForgeApiException extends RuntimeException
-{
-    public ForgeApiException (String s)
-    {
-        super(s);
-    }
+public class ForgeApiException extends RuntimeException {
+	public ForgeApiException(String s) {
+		super(s);
+	}
 }

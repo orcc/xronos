@@ -39,7 +39,7 @@ public class ClockDomain {
 	/**
 	 * The <code>EntryMethods</code> which are associated with this domain.
 	 */
-	//private Collection entryMethods = new HashSet();
+	// private Collection entryMethods = new HashSet();
 
 	/**
 	 * Constructs a ClockDomain with a specifically named set of pins.
@@ -50,8 +50,8 @@ public class ClockDomain {
 	 *            the frequency of the clock, in Hz
 	 */
 	public ClockDomain(String clock, long frequency) {
-		this.clockPin = new ClockPin(clock, frequency);
-		this.resetPin = new ResetPin(clock + "_RESET");
+		clockPin = new ClockPin(clock, frequency);
+		resetPin = new ResetPin(clock + "_RESET");
 		clockPin.setDomain(this);
 		resetPin.setDomain(this);
 	}

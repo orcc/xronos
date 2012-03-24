@@ -18,39 +18,35 @@
 package net.sf.openforge.forge.api.ucf;
 
 /**
- * The LOC attribute for pins. For a full description of the
- * LOC constraints, please see the Constraints Guide section
- * of the online documentation located
+ * The LOC attribute for pins. For a full description of the LOC constraints,
+ * please see the Constraints Guide section of the online documentation located
  * at:"<path-to-ISE>/doc/usenglish/manuals.pdf".
  */
-public final class UCFLocation implements UCFAttribute
-{
-    private int bit;
-    private String value;
+public final class UCFLocation implements UCFAttribute {
+	private int bit;
+	private String value;
 
-    /**
-     * Creates a new UCFLocation, specifying the location
-     * for a particular bit.
-     */
-    public UCFLocation(int bit, String value)
-    {
-        this.bit = bit;
-        this.value = value;
-    }
+	/**
+	 * Creates a new UCFLocation, specifying the location for a particular bit.
+	 */
+	public UCFLocation(int bit, String value) {
+		this.bit = bit;
+		this.value = value;
+	}
 
-    /**
-     * @see net.sf.openforge.forge.api.ucf.UCFAttribute#getBit
-     */
-    public int getBit()
-    {
-        return bit;
-    }
-    
-    /**
-     * Produces the ucf attribute "LOC=value".
-     */
-    public String toString()
-    {
-        return "LOC=\""+value+"\"";
-    }
+	/**
+	 * @see net.sf.openforge.forge.api.ucf.UCFAttribute#getBit
+	 */
+	@Override
+	public int getBit() {
+		return bit;
+	}
+
+	/**
+	 * Produces the ucf attribute "LOC=value".
+	 */
+	@Override
+	public String toString() {
+		return "LOC=\"" + value + "\"";
+	}
 }

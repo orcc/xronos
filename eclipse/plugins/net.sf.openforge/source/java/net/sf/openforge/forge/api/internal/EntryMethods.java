@@ -129,7 +129,7 @@ class RunThread extends java.lang.Thread {
 	Method method;
 	@SuppressWarnings("rawtypes")
 	Class clazz;
-	
+
 	@SuppressWarnings("rawtypes")
 	public RunThread(Object obj, Class clazz, Method method) {
 		super(method.getName());
@@ -138,6 +138,7 @@ class RunThread extends java.lang.Thread {
 		this.method = method;
 	}
 
+	@Override
 	public void run() {
 		// Call the given method, it should have no arguments since it
 		// is an autostart method, and this fact was verified for us.

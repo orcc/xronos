@@ -20,33 +20,31 @@ package net.sf.openforge.forge.api.ucf;
 /**
  * The UCF pull attribute for pins. May be PULLUP, PULLDOWN or KEEPER
  */
-public final class UCFPull implements UCFAttribute
-{
+public final class UCFPull implements UCFAttribute {
 
-    public final static UCFPull PULLUP = new UCFPull("PULLUP");
-    public final static UCFPull PULLDOWN = new UCFPull("PULLDOWN");
-    public final static UCFPull KEEPER = new UCFPull("KEEPER");
+	public final static UCFPull PULLUP = new UCFPull("PULLUP");
+	public final static UCFPull PULLDOWN = new UCFPull("PULLDOWN");
+	public final static UCFPull KEEPER = new UCFPull("KEEPER");
 
-    private String value;
-    
-    private UCFPull(String value)
-    {
-        this.value = value;
-    }
-    
-    /**
-     * Produces the ucf attribute "value".
-     */
-    public String toString()
-    {
-        return value;
-    }
-    
-    /**
-     * @see net.sf.openforge.forge.api.ucf.UCFAttribute#getBit
-     */
-    public int getBit()
-    {
-        return -1;
-    }
+	private String value;
+
+	private UCFPull(String value) {
+		this.value = value;
+	}
+
+	/**
+	 * Produces the ucf attribute "value".
+	 */
+	@Override
+	public String toString() {
+		return value;
+	}
+
+	/**
+	 * @see net.sf.openforge.forge.api.ucf.UCFAttribute#getBit
+	 */
+	@Override
+	public int getBit() {
+		return -1;
+	}
 }

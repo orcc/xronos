@@ -64,7 +64,7 @@ public class IPCoreStorage {
 	 * Constructs with a IPCore's name
 	 */
 	public IPCoreStorage(String name) {
-		this.module_name = name;
+		module_name = name;
 	}
 
 	/**
@@ -151,7 +151,7 @@ public class IPCoreStorage {
 	}
 
 	public String getHDLInstanceName() {
-		return this.instanceName;
+		return instanceName;
 	}
 
 	/**
@@ -161,14 +161,14 @@ public class IPCoreStorage {
 	 *            HDL source file in the form of /home/john/library/HDL_CORE.v
 	 */
 	public void setHDLSource(String source) {
-		this.hdl_source = source;
+		hdl_source = source;
 	}
 
 	/**
 	 * @return the HDL source file
 	 */
 	public String getHDLSource() {
-		return this.hdl_source;
+		return hdl_source;
 	}
 
 	/**
@@ -176,7 +176,7 @@ public class IPCoreStorage {
 	 * this <code>IPCore</code> instance. Optional Parameter.
 	 */
 	public void setHDLWriter(HDLWriter writer) {
-		this.hdlWriter = writer;
+		hdlWriter = writer;
 	}
 
 	/**
@@ -185,7 +185,7 @@ public class IPCoreStorage {
 	 * state for, or <code>null</code> if none has been registered.
 	 */
 	public HDLWriter getHDLWriter() {
-		return this.hdlWriter;
+		return hdlWriter;
 	}
 
 	/**

@@ -35,6 +35,7 @@ public abstract class ControlPin extends Buffer {
 	 * 
 	 * @see net.sf.openforge.forge.api.pin.Buffer#isSigned()
 	 */
+	@Override
 	public boolean isSigned() {
 		return false;
 	}

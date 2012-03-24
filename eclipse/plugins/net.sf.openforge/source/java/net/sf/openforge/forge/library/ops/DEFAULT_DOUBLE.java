@@ -337,6 +337,7 @@ public class DEFAULT_DOUBLE {
 	//
 
 	private abstract static class DefaultWriter implements HDLWriter {
+		@Override
 		public List<String> writeVerilog(IPCore core, java.io.PrintWriter pw) {
 			pw.println("// synthesis attribute BOX_TYPE of " + name()
 					+ " is \"BLACK_BOX\"");
@@ -360,6 +361,7 @@ public class DEFAULT_DOUBLE {
 	}
 
 	private abstract static class DefaultWriterOneInput extends DefaultWriter {
+		@Override
 		public List<String> writeVerilog(IPCore core, java.io.PrintWriter pw) {
 			pw.println("// synthesis attribute BOX_TYPE of " + name()
 					+ " is \"BLACK_BOX\"");
@@ -377,6 +379,7 @@ public class DEFAULT_DOUBLE {
 			return "remCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -387,6 +390,7 @@ public class DEFAULT_DOUBLE {
 			return "divCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -397,6 +401,7 @@ public class DEFAULT_DOUBLE {
 			return "mulCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -407,6 +412,7 @@ public class DEFAULT_DOUBLE {
 			return "subCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -417,6 +423,7 @@ public class DEFAULT_DOUBLE {
 			return "addCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -427,6 +434,7 @@ public class DEFAULT_DOUBLE {
 			return "minusCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -437,10 +445,12 @@ public class DEFAULT_DOUBLE {
 			return "gteCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 32;
 		}
@@ -451,10 +461,12 @@ public class DEFAULT_DOUBLE {
 			return "gtCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 32;
 		}
@@ -465,10 +477,12 @@ public class DEFAULT_DOUBLE {
 			return "lteCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 32;
 		}
@@ -479,10 +493,12 @@ public class DEFAULT_DOUBLE {
 			return "ltCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 32;
 		}
@@ -493,10 +509,12 @@ public class DEFAULT_DOUBLE {
 			return "neCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 32;
 		}
@@ -507,10 +525,12 @@ public class DEFAULT_DOUBLE {
 			return "eqCore_double";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 32;
 		}
@@ -521,10 +541,12 @@ public class DEFAULT_DOUBLE {
 			return "b2dCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int inWidth() {
 			return 8;
 		}
@@ -535,10 +557,12 @@ public class DEFAULT_DOUBLE {
 			return "c2dCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int inWidth() {
 			return 16;
 		}
@@ -549,10 +573,12 @@ public class DEFAULT_DOUBLE {
 			return "s2dCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int inWidth() {
 			return 16;
 		}
@@ -563,10 +589,12 @@ public class DEFAULT_DOUBLE {
 			return "i2dCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int inWidth() {
 			return 32;
 		}
@@ -577,6 +605,7 @@ public class DEFAULT_DOUBLE {
 			return "l2dCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -587,10 +616,12 @@ public class DEFAULT_DOUBLE {
 			return "d2bCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 8;
 		}
@@ -601,10 +632,12 @@ public class DEFAULT_DOUBLE {
 			return "d2cCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 16;
 		}
@@ -615,10 +648,12 @@ public class DEFAULT_DOUBLE {
 			return "d2sCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 16;
 		}
@@ -629,10 +664,12 @@ public class DEFAULT_DOUBLE {
 			return "d2iCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 32;
 		}
@@ -643,6 +680,7 @@ public class DEFAULT_DOUBLE {
 			return "d2lCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
@@ -653,10 +691,12 @@ public class DEFAULT_DOUBLE {
 			return "d2fCore";
 		}
 
+		@Override
 		String name() {
 			return getName();
 		}
 
+		@Override
 		int outWidth() {
 			return 32;
 		}

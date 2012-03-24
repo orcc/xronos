@@ -134,7 +134,7 @@ public class EntryMethod {
 			this.arguments = arguments = methods[whichOne].getParameterTypes();
 		}
 
-		this.method = clazz.getDeclaredMethod(methodName, arguments);
+		method = clazz.getDeclaredMethod(methodName, arguments);
 		int modifier = method.getModifiers();
 
 		// Check if the method is virtual, but the user gave us a null
@@ -183,6 +183,7 @@ public class EntryMethod {
 	 * 
 	 * @return an int hash code value for this EntryMethod
 	 */
+	@Override
 	public int hashCode() {
 		if (isStatic()) {
 			return getObjectClass().hashCode() + getMethod().hashCode();
@@ -202,6 +203,7 @@ public class EntryMethod {
 	 * 
 	 * @return true if the Object is equivalent to this EntryMethod.
 	 */
+	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof EntryMethod) {
 			EntryMethod entryMethod = (EntryMethod) obj;
@@ -277,6 +279,7 @@ public class EntryMethod {
 	 * 
 	 * @return a string.
 	 */
+	@Override
 	public String toString() {
 		return (external ? "External" : "Auto") + "EntryMethod: " + method;
 	}
@@ -293,7 +296,7 @@ public class EntryMethod {
 					"Cannot use the 'stand in' clock domain on entry methods.  It is only valid for setting the clock domain of an IPCore.");
 		}
 
-		this.clockDomain = domain;
+		clockDomain = domain;
 
 		getGoPin().setDomain(domain);
 		getDonePin().setDomain(domain);

@@ -79,7 +79,7 @@ public class SignalValue {
 	 */
 	public SignalValue(float value) {
 		isX = isZ = false;
-		this.value = (long) Float.floatToRawIntBits(value);
+		this.value = Float.floatToRawIntBits(value);
 	}
 
 	private SignalValue(boolean isX, boolean isZ, boolean isDC) {
@@ -148,7 +148,7 @@ public class SignalValue {
 		List<SignalValue> al = new ArrayList<SignalValue>(11);
 		StringTokenizer st = new StringTokenizer(s);
 		while (st.hasMoreTokens()) {
-			String tok = (String) (st.nextToken());
+			String tok = (st.nextToken());
 			tok = tok.toLowerCase();
 			if (tok.equals("x")) {
 				al.add(SignalValue.X);
@@ -187,6 +187,7 @@ public class SignalValue {
 		return svArray;
 	}
 
+	@Override
 	public String toString() {
 		if (isX())
 			return "x";

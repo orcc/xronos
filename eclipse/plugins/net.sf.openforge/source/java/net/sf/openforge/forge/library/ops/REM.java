@@ -40,13 +40,13 @@ public class REM {
 		int remainder = num;
 		// Cast the denominator to a long so we can use 33 bits. This gets us
 		// around the MIN_INT problem since 33 bits can represent -(MIN_INT).
-		long denom = ((long) den) & 0xFFFFFFFFL;
+		long denom = den & 0xFFFFFFFFL;
 
 		for (int i = 0; i < 32; i++) {
 			// Cast the numerator to a long so we can use 33 bits. This gets us
 			// around the MIN_INT problem since 33 bits can represent
 			// -(MIN_INT).
-			long numer = ((long) (remainder >>> (31 - i))) & 0xFFFFFFFFL;
+			long numer = (remainder >>> (31 - i)) & 0xFFFFFFFFL;
 
 			if (numer >= denom) {
 				remainder = (remainder - (den << (31 - i)));

@@ -27,7 +27,7 @@ package net.sf.openforge.forge.library.ops;
  */
 
 public class DIV{
-    
+     
     /**
      * Implements a functionally correct signed divide according to the
      * JVM specification.  The only deviation is in the handling of divide
@@ -63,7 +63,7 @@ public class DIV{
         
         // Cast the denominator to a long so that MIN_INT looks like
         // a positive number.(We need 33 bits to represent -(MIN_INT)).
-        long denom = ((long)den) & 0xFFFFFFFFL;
+        long denom = den & 0xFFFFFFFFL;
         
         int mask = 0x80000000;
         
@@ -71,7 +71,7 @@ public class DIV{
         {
             // Cast the numerator to a long so that -(MIN_INT) appears as
             // a positive value (we need 33 bits to represent it).
-            long numer = ((long)(remainder >>> (31 - i))) & 0xFFFFFFFFL;
+            long numer = (remainder >>> (31 - i)) & 0xFFFFFFFFL;
             
             if (numer >= denom)
             {

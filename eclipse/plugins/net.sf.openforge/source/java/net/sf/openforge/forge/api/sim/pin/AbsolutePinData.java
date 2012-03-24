@@ -130,11 +130,13 @@ public class AbsolutePinData extends PinData {
 	 * 
 	 * @return count
 	 */
+	@Override
 	public int getCycleCount() {
 		if (pinDataMap.size() == 0) {
 			return 0;
 		} else {
-			return  ((TreeMap<Integer, SignalValue>) pinDataMap).lastKey().intValue() + 1;
+			return ((TreeMap<Integer, SignalValue>) pinDataMap).lastKey()
+					.intValue() + 1;
 		}
 	}
 
@@ -145,10 +147,11 @@ public class AbsolutePinData extends PinData {
 	 *            clock tick whose value you need
 	 * @return value
 	 */
+	@Override
 	public SignalValue valueAt(int clockTick) {
 		Integer temp = new Integer(clockTick);
 		if (pinDataMap.containsKey(temp)) {
-			return (SignalValue) pinDataMap.get(temp);
+			return pinDataMap.get(temp);
 		} else {
 			return SignalValue.X;
 		}
@@ -158,6 +161,7 @@ public class AbsolutePinData extends PinData {
 	 * Empty this data set
 	 * 
 	 */
+	@Override
 	public void clear() {
 		pinDataMap.clear();
 	}
