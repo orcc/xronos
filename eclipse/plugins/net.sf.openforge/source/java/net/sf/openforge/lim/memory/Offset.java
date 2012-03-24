@@ -21,7 +21,6 @@
 
 package net.sf.openforge.lim.memory;
 
-
 /**
  * Offset is an implementation of {@link Location} which describes a memory
  * region in terms of an offset from an existing {@link Location}. The offset
@@ -40,6 +39,7 @@ public class Offset extends Variable {
 	 */
 	private int delta;
 
+	@Override
 	public boolean equals(Object object) {
 		if (object instanceof Offset) {
 			final Offset offset = (Offset) object;
@@ -50,6 +50,7 @@ public class Offset extends Variable {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return baseLocation.hashCode() + delta + getAddressableSize();
 	}
@@ -89,6 +90,7 @@ public class Offset extends Variable {
 	 * @throws IllegalArgumentException
 	 *             if <code>size</code> is negative
 	 */
+	@Override
 	public Location createOffset(int size, int delta) {
 		return ((size == getAddressableSize()) && (delta == 0) ? this
 				: getBaseLocation().createOffset(size, (getMinDelta() + delta)));
@@ -102,8 +104,9 @@ public class Offset extends Variable {
 	 *            the base for the duplicate location
 	 * @return the duplicated location
 	 */
+	@Override
 	public Location duplicateForBaseLocation(Location baseLocation) {
-		return baseLocation.createOffset(getAddressableSize(), this.delta);
+		return baseLocation.createOffset(getAddressableSize(), delta);
 	}
 
 	/**
@@ -112,6 +115,7 @@ public class Offset extends Variable {
 	 * @return the {@link Location location} from which this offset is
 	 *         calculated
 	 */
+	@Override
 	public Location getBaseLocation() {
 		return baseLocation;
 	}
@@ -122,8 +126,9 @@ public class Offset extends Variable {
 	 * @return the minimum number of addressable units beyond the start of the
 	 *         base to which this location refers
 	 */
+	@Override
 	public int getMinDelta() {
-		return this.getMaxDelta();
+		return getMaxDelta();
 	}
 
 	/**
@@ -132,8 +137,9 @@ public class Offset extends Variable {
 	 * @return the maximum number of addressable units beyond the start of the
 	 *         base to which this location refers
 	 */
+	@Override
 	public int getMaxDelta() {
-		return this.delta;
+		return delta;
 	}
 
 	/**
@@ -151,6 +157,7 @@ public class Offset extends Variable {
 	 *             LogicalValue is invalid (null, zero length, or greater than
 	 *             the size of a long).
 	 */
+	@Override
 	public LogicalValue getInitialValue() {
 		return getBaseLocation().getInitialValue().getValueAtOffset(delta,
 				getAddressableSize());
@@ -161,6 +168,7 @@ public class Offset extends Variable {
 	 * Offset, then the min/max delta of this Location will be reduced by the
 	 * <code>units</code> parameter, otherwise this method does nothing.
 	 */
+	@Override
 	public void chopStart(Location loc, int units) {
 		super.chopStart(loc, units); // tests for null
 		Location base = getBaseLocation();
@@ -168,14 +176,15 @@ public class Offset extends Variable {
 				&& loc.getAbsoluteMinDelta() == base.getAbsoluteMinDelta()
 				&& loc.getAbsoluteMaxDelta() == loc.getAbsoluteMaxDelta()
 				&& loc.getAddressableSize() == base.getAddressableSize()) {
-			if (units > this.delta) {
+			if (units > delta) {
 				throw new IllegalArgumentException(
 						"Cannot shift location by more addressable units than in its base");
 			}
-			this.delta = this.delta - units;
+			delta = delta - units;
 		}
 	}
 
+	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 		buf.append("Offset(");
@@ -190,6 +199,7 @@ public class Offset extends Variable {
 		return buf.toString();
 	}
 
+	@Override
 	public String debug() {
 		String ret = "";
 		ret += "<" + getAbsoluteBase().debug() + ">";

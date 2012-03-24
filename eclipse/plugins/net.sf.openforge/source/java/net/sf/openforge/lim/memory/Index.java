@@ -35,6 +35,7 @@ package net.sf.openforge.lim.memory;
 public class Index extends Variable {
 	private Location baseLocation;
 
+	@Override
 	public boolean equals(Object object) {
 		if (object instanceof Index) {
 			final Index index = (Index) object;
@@ -44,6 +45,7 @@ public class Index extends Variable {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return baseLocation.hashCode() + getAddressableSize();
 	}
@@ -69,11 +71,13 @@ public class Index extends Variable {
 	 *            the base for the duplicate location
 	 * @return the duplicated location
 	 */
+	@Override
 	public Location duplicateForBaseLocation(Location baseLocation) {
 		return baseLocation.createIndex(getAddressableSize());
 	}
 
 	/** @inheritDoc */
+	@Override
 	public Location createIndex(int size) {
 		/*
 		 * Defer to the base location to reduce unnecessary indirection.
@@ -87,6 +91,7 @@ public class Index extends Variable {
 	 * @return the {@link Location location} from which this indexed offset is
 	 *         calculated
 	 */
+	@Override
 	public Location getBaseLocation() {
 		return baseLocation;
 	}
@@ -97,6 +102,7 @@ public class Index extends Variable {
 	 * @return the minimum number of addressable units beyond the start of the
 	 *         base to which this location refers
 	 */
+	@Override
 	public int getMinDelta() {
 		// slide by base's absolute min delta..
 		return 0 - getBaseLocation().getAbsoluteMinDelta();
@@ -116,13 +122,13 @@ public class Index extends Variable {
 	 * @return the maximum number of addressable units beyond the start of the
 	 *         base to which this location refers
 	 */
+	@Override
 	public int getMaxDelta() {
 		// absolute's size, minus my size (this is the last byte on the absolute
 		// sace readable
 		// - baselocations absoluteMinDelta() (slide it for the base location's
 		// start)
-		return getAbsoluteBase().getAddressableSize()
-				- this.getAddressableSize()
+		return getAbsoluteBase().getAddressableSize() - getAddressableSize()
 				- getBaseLocation().getAbsoluteMinDelta();
 	}
 
@@ -136,6 +142,7 @@ public class Index extends Variable {
 	 * @throws {@link Location#IllegalInitialValueContextException} because the
 	 *         initial value of a variable index access is undefined.
 	 */
+	@Override
 	public LogicalValue getInitialValue() {
 		throw new Location.IllegalInitialValueContextException(
 				"Variable index access");
@@ -145,17 +152,20 @@ public class Index extends Variable {
 	 * Throws a NullPointerException if <code>loc</code> is null or an
 	 * UnsupportedOperationException otherwise.
 	 */
+	@Override
 	public void chopStart(Location loc, int units) {
 		super.chopStart(loc, units);
 		throw new UnsupportedOperationException(
 				"cannot modify the base of a variably indexed access");
 	}
 
+	@Override
 	public String debug() {
 		return "<" + getAbsoluteBase().debug() + "> index siz: "
 				+ getAddressableSize();
 	}
 
+	@Override
 	public String toString() {
 		return "[Index(" + getAddressableSize() + "U)@"
 				+ Integer.toHexString(hashCode()) + "=" + baseLocation + "]";

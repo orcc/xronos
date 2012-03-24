@@ -38,7 +38,7 @@ import net.sf.openforge.app.EngineThread;
 public class BlockIOInterface {
 
 	/** map of String function name to List of BlockDescriptors */
-	static private HashMap<String,List<BlockDescriptor>> functionToDescriptors = new HashMap<String,List<BlockDescriptor>>();
+	static private HashMap<String, List<BlockDescriptor>> functionToDescriptors = new HashMap<String, List<BlockDescriptor>>();
 
 	/**
 	 * Returns a list of BlockDescriptors for the specific function passed in
@@ -107,26 +107,32 @@ public class BlockIOInterface {
 		// 2 cycles to transfer short a
 		// 2 cycles to transfer long long b
 		BlockIOInterface.addBlockDescriptor("boo", new BlockDescriptor() {
+			@Override
 			public DeclarationGenerator getFunctionDeclaredType() {
 				return new tempDeclGen("int");
 			}
 
+			@Override
 			public String getFunctionName() {
 				return "boo";
 			}
 
+			@Override
 			public String getInterfaceID() {
 				return "0";
 			}
 
+			@Override
 			public boolean isSlave() {
 				return true;
 			}
 
+			@Override
 			public int[] getBlockOrganization() {
 				return new int[] { 0, 0, 0, 0, 0, 1, 2, 2 };
 			}
 
+			@Override
 			public int getByteWidth() {
 				return fifoWidth;
 			}
@@ -135,75 +141,94 @@ public class BlockIOInterface {
 				return this;
 			} // Hack to get 'this'
 
+			@Override
 			public BlockElement[] getBlockElements() {
 				return new BlockElement[] { new BlockElement() {
+					@Override
 					public int getAllocatedSize() {
 						return 5;
 					}
 
+					@Override
 					public BlockDescriptor getBlockDescriptor() {
 						return getThis();
 					}
 
+					@Override
 					public DeclarationGenerator getDeclaredType() {
 						return new tempDeclGen("struct foo *");
 					}
 
+					@Override
 					public String getFormalName() {
 						return "x";
 					}
 
+					@Override
 					public byte[] getStreamFormat() {
 						return new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 								1, 1, 1, 1, 1, 1, 1, 1 };
 					}
 
+					@Override
 					public void deleteStreamBytes(int start, int length) {
 					}
 				}, new BlockElement() {
+					@Override
 					public int getAllocatedSize() {
 						return 2;
 					}
 
+					@Override
 					public BlockDescriptor getBlockDescriptor() {
 						return getThis();
 					}
 
+					@Override
 					public DeclarationGenerator getDeclaredType() {
 						return new tempDeclGen("short");
 					}
 
+					@Override
 					public String getFormalName() {
 						return "a";
 					}
 
+					@Override
 					public byte[] getStreamFormat() {
 						return new byte[] { 1, 0, 0, 0, 1, 0, 0, 0 };
 					}
 
+					@Override
 					public void deleteStreamBytes(int start, int length) {
 					}
 				}, new BlockElement() {
+					@Override
 					public int getAllocatedSize() {
 						return 8;
 					}
 
+					@Override
 					public BlockDescriptor getBlockDescriptor() {
 						return getThis();
 					}
 
+					@Override
 					public DeclarationGenerator getDeclaredType() {
 						return new tempDeclGen("long long");
 					}
 
+					@Override
 					public String getFormalName() {
 						return "b";
 					}
 
+					@Override
 					public byte[] getStreamFormat() {
 						return new byte[] { 1, 1, 1, 1, 1, 1, 1, 1 };
 					}
 
+					@Override
 					public void deleteStreamBytes(int start, int length) {
 					}
 				} };
@@ -212,26 +237,32 @@ public class BlockIOInterface {
 
 		// then the output block... 4 elements out
 		BlockIOInterface.addBlockDescriptor("boo", new BlockDescriptor() {
+			@Override
 			public DeclarationGenerator getFunctionDeclaredType() {
 				return new tempDeclGen("int");
 			}
 
+			@Override
 			public String getFunctionName() {
 				return "boo";
 			}
 
+			@Override
 			public String getInterfaceID() {
 				return "1";
 			}
 
+			@Override
 			public boolean isSlave() {
 				return false;
 			}
 
+			@Override
 			public int[] getBlockOrganization() {
 				return new int[] { 0, 0, 0, 0, 0, 1, 2, 2, 3 };
 			}
 
+			@Override
 			public int getByteWidth() {
 				return fifoWidth;
 			}
@@ -240,98 +271,123 @@ public class BlockIOInterface {
 				return this;
 			} // Hack to get 'this'
 
+			@Override
 			public BlockElement[] getBlockElements() {
 				return new BlockElement[] { new BlockElement() {
+					@Override
 					public int getAllocatedSize() {
 						return 5;
 					}
 
+					@Override
 					public BlockDescriptor getBlockDescriptor() {
 						return getThis();
 					}
 
+					@Override
 					public DeclarationGenerator getDeclaredType() {
 						return new tempDeclGen("struct foo *");
 					}
 
+					@Override
 					public String getFormalName() {
 						return "x";
 					}
 
+					@Override
 					public byte[] getStreamFormat() {
 						return new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 								1, 1, 1, 1, 1, 1, 1, 1 };
 					}
 
+					@Override
 					public void deleteStreamBytes(int start, int length) {
 					}
 				}, new BlockElement() {
+					@Override
 					public int getAllocatedSize() {
 						return 2;
 					}
 
+					@Override
 					public BlockDescriptor getBlockDescriptor() {
 						return getThis();
 					}
 
+					@Override
 					public DeclarationGenerator getDeclaredType() {
 						return new tempDeclGen("short");
 					}
 
+					@Override
 					public String getFormalName() {
 						return "a";
 					}
 
+					@Override
 					public byte[] getStreamFormat() {
 						return new byte[] { 1, 0, 0, 0, 1, 0, 0, 0 };
 					}
 
+					@Override
 					public void deleteStreamBytes(int start, int length) {
 					}
 				}, new BlockElement() {
+					@Override
 					public int getAllocatedSize() {
 						return 8;
 					}
 
+					@Override
 					public BlockDescriptor getBlockDescriptor() {
 						return getThis();
 					}
 
+					@Override
 					public DeclarationGenerator getDeclaredType() {
 						return new tempDeclGen("long long");
 					}
 
+					@Override
 					public String getFormalName() {
 						return "b";
 					}
 
+					@Override
 					public byte[] getStreamFormat() {
 						return new byte[] { 1, 1, 1, 1, 1, 1, 1, 1 };
 					}
 
+					@Override
 					public void deleteStreamBytes(int start, int length) {
 					}
 				}, new BlockElement() {
+					@Override
 					public int getAllocatedSize() {
 						return 4;
 					}
 
+					@Override
 					public BlockDescriptor getBlockDescriptor() {
 						return getThis();
 					}
 
+					@Override
 					public DeclarationGenerator getDeclaredType() {
 						return new tempDeclGen("int");
 					}
 
+					@Override
 					public String getFormalName() {
 						return "return";
 					}
 
+					@Override
 					public byte[] getStreamFormat() {
 						return new byte[] { 1, 1, 1, 1 };
 					}
 
+					@Override
 					public void deleteStreamBytes(int start, int length) {
 					}
 				} };
@@ -348,8 +404,9 @@ class tempDeclGen implements DeclarationGenerator {
 		this.type = type;
 	}
 
+	@Override
 	public String getDeclaration(String id) {
-		return this.type + " " + id;
+		return type + " " + id;
 	}
 
 }

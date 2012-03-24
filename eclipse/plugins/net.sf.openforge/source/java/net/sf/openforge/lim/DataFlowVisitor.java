@@ -21,11 +21,59 @@
 
 package net.sf.openforge.lim;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.Set;
 
-import net.sf.openforge.lim.io.*;
-import net.sf.openforge.lim.memory.*;
-import net.sf.openforge.lim.op.*;
+import net.sf.openforge.lim.io.FifoAccess;
+import net.sf.openforge.lim.io.FifoRead;
+import net.sf.openforge.lim.io.FifoWrite;
+import net.sf.openforge.lim.io.SimplePin;
+import net.sf.openforge.lim.io.SimplePinAccess;
+import net.sf.openforge.lim.io.SimplePinRead;
+import net.sf.openforge.lim.io.SimplePinWrite;
+import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
+import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
+import net.sf.openforge.lim.memory.EndianSwapper;
+import net.sf.openforge.lim.memory.LocationConstant;
+import net.sf.openforge.lim.memory.MemoryAccess;
+import net.sf.openforge.lim.memory.MemoryBank;
+import net.sf.openforge.lim.memory.MemoryGateway;
+import net.sf.openforge.lim.memory.MemoryRead;
+import net.sf.openforge.lim.memory.MemoryReferee;
+import net.sf.openforge.lim.memory.MemoryWrite;
+import net.sf.openforge.lim.op.AddOp;
+import net.sf.openforge.lim.op.AndOp;
+import net.sf.openforge.lim.op.CastOp;
+import net.sf.openforge.lim.op.ComplementOp;
+import net.sf.openforge.lim.op.ConditionalAndOp;
+import net.sf.openforge.lim.op.ConditionalOrOp;
+import net.sf.openforge.lim.op.Constant;
+import net.sf.openforge.lim.op.DivideOp;
+import net.sf.openforge.lim.op.EqualsOp;
+import net.sf.openforge.lim.op.GreaterThanEqualToOp;
+import net.sf.openforge.lim.op.GreaterThanOp;
+import net.sf.openforge.lim.op.LeftShiftOp;
+import net.sf.openforge.lim.op.LessThanEqualToOp;
+import net.sf.openforge.lim.op.LessThanOp;
+import net.sf.openforge.lim.op.MinusOp;
+import net.sf.openforge.lim.op.ModuloOp;
+import net.sf.openforge.lim.op.MultiplyOp;
+import net.sf.openforge.lim.op.NoOp;
+import net.sf.openforge.lim.op.NotEqualsOp;
+import net.sf.openforge.lim.op.NotOp;
+import net.sf.openforge.lim.op.NumericPromotionOp;
+import net.sf.openforge.lim.op.OrOp;
+import net.sf.openforge.lim.op.PlusOp;
+import net.sf.openforge.lim.op.ReductionOrOp;
+import net.sf.openforge.lim.op.RightShiftOp;
+import net.sf.openforge.lim.op.RightShiftUnsignedOp;
+import net.sf.openforge.lim.op.ShortcutIfElseOp;
+import net.sf.openforge.lim.op.SubtractOp;
+import net.sf.openforge.lim.op.TimingOp;
+import net.sf.openforge.lim.op.XorOp;
 
 /**
  * <p>
@@ -80,7 +128,7 @@ public abstract class DataFlowVisitor implements Visitor {
 	 * order.
 	 */
 	public void setRunForward(boolean fwd) {
-		this.forward = fwd;
+		forward = fwd;
 	}
 
 	/**
@@ -88,7 +136,7 @@ public abstract class DataFlowVisitor implements Visitor {
 	 * flow order.
 	 */
 	public boolean isForward() {
-		return this.forward;
+		return forward;
 	}
 
 	protected void preFilter(Design node) {
@@ -289,7 +337,7 @@ public abstract class DataFlowVisitor implements Visitor {
 				module.getComponents());
 
 		while (!queue.isEmpty()) {
-			Component comp = (Component) queue.removeFirst();
+			Component comp = queue.removeFirst();
 			if (processed.contains(comp)) {
 				continue;
 			}
@@ -307,8 +355,7 @@ public abstract class DataFlowVisitor implements Visitor {
 			Set<Component> depenComponentsSet = new HashSet<Component>();
 			for (Port port : comp.getPorts()) {
 				if (port.getBus() != null) {
-					Component depenComp = (Component) port.getBus().getOwner()
-							.getOwner();
+					Component depenComp = port.getBus().getOwner().getOwner();
 					if (!processed.contains(depenComp)) {
 						depenComponentsSet.add(depenComp);
 						queue.remove(depenComp);
@@ -353,7 +400,7 @@ public abstract class DataFlowVisitor implements Visitor {
 		}
 
 		for (Component component : feedback) {
-			final Visitable visitable = (Visitable) component;
+			final Visitable visitable = component;
 			visitable.accept(this);
 		}
 	}
@@ -366,7 +413,7 @@ public abstract class DataFlowVisitor implements Visitor {
 		LinkedList<Component> queue = new LinkedList<Component>(
 				module.getComponents());
 		while (!queue.isEmpty()) {
-			Component comp = (Component) queue.removeFirst();
+			Component comp = queue.removeFirst();
 			if (processed.contains(comp)) {
 				continue;
 			}
@@ -425,361 +472,422 @@ public abstract class DataFlowVisitor implements Visitor {
 
 	// implementation of net.sf.openforge.lim.Visitor interface
 
+	@Override
 	public void visit(Design param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Task param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Call param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(IPCoreCall param1) {
 	}
 
+	@Override
 	public void visit(Procedure param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Block param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Loop param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(WhileBody param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(UntilBody param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(ForBody param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(AddOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(AndOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(CastOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(ComplementOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(ConditionalAndOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(ConditionalOrOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Constant param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(LocationConstant loc) {
 		visit((Constant) loc);
 	}
 
+	@Override
 	public void visit(DivideOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(EqualsOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(GreaterThanEqualToOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(GreaterThanOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(LeftShiftOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(LessThanEqualToOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(LessThanOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(MinusOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(ModuloOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(MultiplyOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(NotEqualsOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(NotOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(OrOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(PlusOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(ReductionOrOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(RightShiftOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(ShortcutIfElseOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(SubtractOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(NumericPromotionOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(XorOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Branch param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Decision param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Switch param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(InBuf param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(OutBuf param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Reg param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Mux param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(EncodedMux param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(PriorityMux param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(And param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Not param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Or or) {
 		preFilter(or);
 		traverse(or);
 		postFilter(or);
 	}
 
+	@Override
 	public void visit(Scoreboard param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Latch param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(NoOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(TimingOp param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(RegisterRead param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(RegisterWrite param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(RegisterGateway param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(RegisterReferee param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(MemoryBank param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(MemoryRead memoryRead) {
 		final Module impl = memoryRead.getPhysicalComponent();
 		if (impl != null) {
@@ -793,6 +901,7 @@ public abstract class DataFlowVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(MemoryWrite memoryWrite) {
 		final Module impl = memoryWrite.getPhysicalComponent();
 		if (impl != null) {
@@ -806,144 +915,168 @@ public abstract class DataFlowVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(MemoryReferee param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(MemoryGateway param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(HeapRead param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(ArrayRead param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(HeapWrite param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(ArrayWrite param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(Kicker param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(PinRead param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(PinWrite param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(PinStateChange param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(SRL16 param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(PinReferee param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(TriBuf param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(TaskCall param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(SimplePin param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(SimplePinAccess param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(SimplePinRead param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(SimplePinWrite param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(FifoAccess param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(FifoRead param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(FifoWrite param1) {
 		preFilter(param1);
 		traverse(param1);
 		postFilter(param1);
 	}
 
+	@Override
 	public void visit(EndianSwapper param1) {
 		preFilter(param1);
 		traverse(param1);

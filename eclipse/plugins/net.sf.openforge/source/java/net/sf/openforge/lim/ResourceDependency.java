@@ -51,13 +51,14 @@ public class ResourceDependency extends ControlDependency {
 	 */
 	public ResourceDependency(Bus logicalBus, int clocks) {
 		super(logicalBus);
-		this.delayClocks = clocks;
+		delayClocks = clocks;
 	}
 
 	/**
 	 * Returns a new resourcedependency with the same number of delay clocks as
 	 * this one.
 	 */
+	@Override
 	public Dependency createSameType(Bus logicalBus) {
 		return new ResourceDependency(logicalBus, getDelayClocks());
 	}
@@ -66,10 +67,12 @@ public class ResourceDependency extends ControlDependency {
 	 * Gets the number of clocks by which the dependent component should delay
 	 * before accessing the resource.
 	 */
+	@Override
 	public int getDelayClocks() {
 		return delayClocks;
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof ResourceDependency && super.equals(obj)) {
 			ResourceDependency dep = (ResourceDependency) obj;
@@ -78,6 +81,7 @@ public class ResourceDependency extends ControlDependency {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return super.hashCode() + getDelayClocks();
 	}
@@ -98,9 +102,10 @@ public class ResourceDependency extends ControlDependency {
 		}
 
 		public boolean preconditionIsValid() {
-			return this.preconditionIsValid;
+			return preconditionIsValid;
 		}
 
+		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof ResourceDependency.GoToGoDep
 					&& super.equals(obj)) {
@@ -110,10 +115,12 @@ public class ResourceDependency extends ControlDependency {
 			return false;
 		}
 
+		@Override
 		public int hashCode() {
 			return super.hashCode() - 1;
 		}
 
+		@Override
 		public void postSchedule(LatencyTracker lt, Component comp) {
 			// Once the component has been scheduled determine if the
 			// precondition still holds. Specifically, the scheduled
@@ -124,7 +131,7 @@ public class ResourceDependency extends ControlDependency {
 				throw new IllegalStateException(
 						"Could not determine latency of scheduled component (source of resource dependency)");
 			if (latency.getMaxClocks() != 0) {
-				this.preconditionIsValid = false;
+				preconditionIsValid = false;
 			}
 			comp.removePostScheduleCallback(this);
 		}

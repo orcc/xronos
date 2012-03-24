@@ -54,16 +54,19 @@ public class TimingOp extends Operation {
 		isGlobal = b;
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
 
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		TimingOp clone = (TimingOp) super.clone();
 		clone.setGlobal(isGlobal);
 		return clone;
 	}
 
+	@Override
 	public boolean consumesGo() {
 		return true;
 	}

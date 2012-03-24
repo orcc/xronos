@@ -49,6 +49,7 @@ public class ReductionOrOp extends ReductionOp {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -60,6 +61,7 @@ public class ReductionOrOp extends ReductionOp {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return isPassthrough() ? 0 : 1;
 	}
@@ -69,6 +71,7 @@ public class ReductionOrOp extends ReductionOp {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
 
@@ -99,6 +102,7 @@ public class ReductionOrOp extends ReductionOp {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -120,6 +124,7 @@ public class ReductionOrOp extends ReductionOp {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

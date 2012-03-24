@@ -70,16 +70,16 @@ public class PriorityMux extends Module implements Cloneable {
 		while (queue.size() > 1) {
 			List<SelectDataPair> subList = new LinkedList<SelectDataPair>();
 			while (queue.size() > 1) {
-				SelectDataPair low = (SelectDataPair) queue.remove(0);
-				SelectDataPair high = (SelectDataPair) queue.remove(0);
+				SelectDataPair low = queue.remove(0);
+				SelectDataPair high = queue.remove(0);
 				EncodedMux emux = new EncodedMux(2);
 				Or or = new Or(2);
 				addComponent(or);
 				addComponent(emux);
 
 				// wire up the new mux and or
-				((Port) or.getDataPorts().get(0)).setBus(high.getSelect());
-				((Port) or.getDataPorts().get(1)).setBus(low.getSelect());
+				or.getDataPorts().get(0).setBus(high.getSelect());
+				or.getDataPorts().get(1).setBus(low.getSelect());
 
 				emux.getSelectPort().setBus(high.getSelect());
 				// Reversed order to eliminate need for a 'not'
@@ -97,7 +97,7 @@ public class PriorityMux extends Module implements Cloneable {
 			}
 		}
 
-		SelectDataPair last = (SelectDataPair) queue.get(0);
+		SelectDataPair last = queue.get(0);
 		resultBus.getPeer().setBus(last.getData());
 		done_bus.getPeer().setBus(last.getSelect());
 	}
@@ -109,8 +109,8 @@ public class PriorityMux extends Module implements Cloneable {
 	 * @return a 'List' of {@link Port Ports}
 	 */
 	public List<Port> getSelectPorts() {
-		return Collections
-				.unmodifiableList(new ArrayList<Port>(selectToData.keySet()));
+		return Collections.unmodifiableList(new ArrayList<Port>(selectToData
+				.keySet()));
 	}
 
 	/**
@@ -118,7 +118,7 @@ public class PriorityMux extends Module implements Cloneable {
 	 */
 	public Port getDataPort(Port select) {
 		assert (selectToData.containsKey(select)) : "Unknown select Port, can't return a data Port";
-		return (Port) selectToData.get(select);
+		return selectToData.get(select);
 	}
 
 	/**
@@ -131,6 +131,7 @@ public class PriorityMux extends Module implements Cloneable {
 	/**
 	 * Throws an exception, replacement in this class not supported.
 	 */
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		throw new UnsupportedOperationException("Cannot replace components in "
 				+ getClass());
@@ -140,28 +141,29 @@ public class PriorityMux extends Module implements Cloneable {
 	 * Calls the super, then removes any reference to the given bus in this
 	 * class.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
-			if (bus == this.resultBus)
-				this.resultBus = null;
+			if (bus == resultBus)
+				resultBus = null;
 			return true;
 		}
 		return false;
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		PriorityMux clone = (PriorityMux) moduleClone;
 		clone.selectToData = new LinkedHashMap<Port, Port>();
-		for (Map.Entry<Port, Port> entry  :selectToData.entrySet()) {
-			final Port selectClone = getPortClone((Port) entry.getKey(),
-					cloneMap);
-			final Port dataClone = getPortClone((Port) entry.getValue(),
-					cloneMap);
+		for (Map.Entry<Port, Port> entry : selectToData.entrySet()) {
+			final Port selectClone = getPortClone(entry.getKey(), cloneMap);
+			final Port dataClone = getPortClone(entry.getValue(), cloneMap);
 			clone.selectToData.put(selectClone, dataClone);
 		}
 		clone.resultBus = getBusClone(resultBus, cloneMap);

@@ -196,6 +196,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * 
 	 * @return true if this component is opaque, false otherwise
 	 */
+	@Override
 	public boolean isOpaque() {
 		/*
 		 * By default, any Module that is not owned by another Module will be
@@ -234,14 +235,14 @@ public abstract class Module extends Component implements Cloneable {
 	 * @return the set of identified feedback points.
 	 */
 	public Set<Component> getFeedbackPoints() {
-		return Collections.unmodifiableSet(this.feedbackPoints);
+		return Collections.unmodifiableSet(feedbackPoints);
 	}
 
 	public void addFeedbackPoint(Component comp) {
-		if (this.feedbackPoints == Collections.EMPTY_SET) {
-			this.feedbackPoints = new HashSet<Component>(3);
+		if (feedbackPoints == Collections.EMPTY_SET) {
+			feedbackPoints = new HashSet<Component>(3);
 		}
-		this.feedbackPoints.add(comp);
+		feedbackPoints.add(comp);
 	}
 
 	/**
@@ -256,6 +257,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * @param label
 	 *            the lable of the exit
 	 */
+	@Override
 	public Exit makeExit(int dataCount, Exit.Type type, String label) {
 		// Exit exit = new Exit(this, dataCount, type, label);
 		Exit exit = createExit(dataCount, type, label);
@@ -284,6 +286,7 @@ public abstract class Module extends Component implements Cloneable {
 	 *            the lable of the exit
 	 * @return the new exit, which will be added to the list for this component
 	 */
+	@Override
 	protected Exit createExit(int dataCount, Exit.Type type, String label) {
 		// MUST override the super because the constructor for the
 		// Exit differentiates between a Component and Module.
@@ -293,6 +296,7 @@ public abstract class Module extends Component implements Cloneable {
 	/**
 	 * Removes a given {@link Exit} and its peer {@link Component}.
 	 */
+	@Override
 	public void removeExit(Exit exit) {
 		super.removeExit(exit);
 		removeComponent(exit.getPeer());
@@ -307,6 +311,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * 
 	 * @return the new port
 	 */
+	@Override
 	public Port makeDataPort(Component.Type tag) {
 		Port port = super.makeDataPort(tag);
 		if (isConstructed()) {
@@ -317,6 +322,7 @@ public abstract class Module extends Component implements Cloneable {
 		return port;
 	}
 
+	@Override
 	public Port makeThisPort() {
 		Port port = super.makeThisPort();
 		if (isConstructed()) {
@@ -332,6 +338,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * 
 	 * @return a collection of {@link Resource}
 	 */
+	@Override
 	public Collection getAccessedResources() {
 		final Set set = new HashSet();
 		for (Component component : getComponents()) {
@@ -349,6 +356,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * 
 	 * @return true if all components in the module are balanceable.
 	 */
+	@Override
 	public boolean isBalanceable() {
 		for (Component component : getComponents()) {
 			if (!component.isBalanceable()) {
@@ -362,6 +370,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * Tests whether this component requires a connection to its <em>go</em>
 	 * {@link Port} in order to commence processing.
 	 */
+	@Override
 	public boolean consumesGo() {
 		return consumesGo;
 	}
@@ -379,6 +388,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * Tests whether this component produces a signal on the done {@link Bus} of
 	 * each of its {@link Exit Exits}.
 	 */
+	@Override
 	public boolean producesDone() {
 		return producesDone;
 	}
@@ -402,6 +412,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * 
 	 * @see Module#producesDone()
 	 */
+	@Override
 	public boolean isDoneSynchronous() {
 		return isDoneSynchronous;
 	}
@@ -422,6 +433,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * Tests whether this component requires a connection to its clock
 	 * {@link Port}.
 	 */
+	@Override
 	public boolean consumesClock() {
 		return consumesClock;
 	}
@@ -439,6 +451,7 @@ public abstract class Module extends Component implements Cloneable {
 	 * {@link Port}. By default, returns the value of
 	 * {@link Component#consumesClock()}.
 	 */
+	@Override
 	public boolean consumesReset() {
 		return consumesReset;
 	}
@@ -564,16 +577,17 @@ public abstract class Module extends Component implements Cloneable {
 	}
 
 	public void specifySearchScope(String label) {
-		this.odbLabel = new BlockSearchLabel(label);
+		odbLabel = new BlockSearchLabel(label);
 	}
 
 	/**
 	 * Returns the string label associated with this Configurable.
 	 * 
 	 */
+	@Override
 	public SearchLabel getSearchLabel() {
-		if (this.odbLabel != null) {
-			return this.odbLabel;
+		if (odbLabel != null) {
+			return odbLabel;
 		}
 		return super.getSearchLabel();
 	}
@@ -583,14 +597,15 @@ public abstract class Module extends Component implements Cloneable {
 	 * Support for cloning
 	 */
 
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		final Module clone = (Module) super.clone();
 
 		assert !clone.isConstructed();
 
 		clone.components = new HashSet();
-		if (this.odbLabel != null) {
-			clone.odbLabel = new BlockSearchLabel(this.odbLabel.localLabel);
+		if (odbLabel != null) {
+			clone.odbLabel = new BlockSearchLabel(odbLabel.localLabel);
 		}
 
 		/* Map of original Component to cloned Component. */
@@ -626,7 +641,7 @@ public abstract class Module extends Component implements Cloneable {
 		 * convert the clones feedback points map to the right set of components
 		 */
 		clone.feedbackPoints = Collections.emptySet();
-		for (Component component : this.feedbackPoints) {
+		for (Component component : feedbackPoints) {
 			clone.addFeedbackPoint((Component) cloneMap.get(component));
 		}
 
@@ -646,7 +661,7 @@ public abstract class Module extends Component implements Cloneable {
 			final Iterator<Port> piter = outbuf.getDataPorts().iterator();
 			final Iterator<Port> pciter = outbufClone.getDataPorts().iterator();
 			while (pciter.hasNext()) {
-				((Port) pciter.next()).copyAttributes((Port) piter.next());
+				pciter.next().copyAttributes(piter.next());
 			}
 		}
 
@@ -657,6 +672,7 @@ public abstract class Module extends Component implements Cloneable {
 		return clone;
 	}
 
+	@Override
 	protected void cloneExit(Component clone, Exit exit) {
 		/*
 		 * Prevents cloning of Exits until super.clone() returns.
@@ -702,7 +718,7 @@ public abstract class Module extends Component implements Cloneable {
 			/*
 			 * Connect Entries and their Dependencies.
 			 */
-			for (Entry entry: component.getEntries()) {
+			for (Entry entry : component.getEntries()) {
 				final Exit drivingExit = entry.getDrivingExit();
 				final Exit drivingExitClone = (drivingExit == null ? null
 						: getExitClone(drivingExit, cloneMap));
@@ -758,7 +774,7 @@ public abstract class Module extends Component implements Cloneable {
 			return componentClone.getGoPort();
 		} else {
 			final int index = component.getDataPorts().indexOf(port);
-			return (Port) componentClone.getDataPorts().get(index);
+			return componentClone.getDataPorts().get(index);
 		}
 	}
 
@@ -772,7 +788,7 @@ public abstract class Module extends Component implements Cloneable {
 	 */
 	protected static Entry getEntryClone(Entry entry,
 			Map<Component, Entry> cloneMap) {
-		return (Entry) cloneMap.get(entry);
+		return cloneMap.get(entry);
 	}
 
 	/**
@@ -800,28 +816,28 @@ public abstract class Module extends Component implements Cloneable {
 		/*
 		 * Create an InBuf and map all the module's ports to its buses.
 		 */
-		this.inBuf = new InBuf(0/* dataCount */);
-		addComponent(this.inBuf);
+		inBuf = new InBuf(0/* dataCount */);
+		addComponent(inBuf);
 
-		getClockPort().setPeer(this.inBuf.getClockBus());
-		this.inBuf.getClockBus().setPeer(getClockPort());
+		getClockPort().setPeer(inBuf.getClockBus());
+		inBuf.getClockBus().setPeer(getClockPort());
 
-		getResetPort().setPeer(this.inBuf.getResetBus());
-		this.inBuf.getResetBus().setPeer(getResetPort());
+		getResetPort().setPeer(inBuf.getResetBus());
+		inBuf.getResetBus().setPeer(getResetPort());
 
-		getGoPort().setPeer(this.inBuf.getGoBus());
-		this.inBuf.getGoBus().setPeer(getGoPort());
+		getGoPort().setPeer(inBuf.getGoBus());
+		inBuf.getGoBus().setPeer(getGoPort());
 
 		Iterator<Port> portIter = getDataPorts().iterator();
 		if (getThisPort() != null) {
-			Port thisPort = (Port) portIter.next();
+			Port thisPort = portIter.next();
 			Bus thisBus = inBuf.makeThisBus();
 			thisPort.setPeer(thisBus);
 			thisBus.setPeer(thisPort);
 		}
 
 		while (portIter.hasNext()) {
-			Port port = (Port) portIter.next();
+			Port port = portIter.next();
 			Bus bus = inBuf.getExit(Exit.DONE).makeDataBus();
 			port.setPeer(bus);
 			bus.setPeer(port);
@@ -832,29 +848,32 @@ public abstract class Module extends Component implements Cloneable {
 		private String localLabel;
 
 		private BlockSearchLabel(String local) {
-			this.localLabel = local;
+			localLabel = local;
 		}
 
+		@Override
 		public List<String> getSearchList() {
 			final SearchLabel searchLabel = Module.super.getSearchLabel();
 			List<String> searchList = searchLabel.getSearchList();
 			List<String> modified = new ArrayList<String>();
-			modified.add(((String) searchList.get(0)) + "." + this.localLabel);
+			modified.add(searchList.get(0) + "." + localLabel);
 			modified.addAll(searchList);
 			return modified;
 		}
 
+		@Override
 		public List<String> getSearchList(String postfix) {
 			final SearchLabel searchLabel = Module.super.getSearchLabel();
 			List<String> searchList = searchLabel.getSearchList(postfix);
 			List<String> modified = new ArrayList<String>();
-			modified.add(((String) searchList.get(0)) + "." + this.localLabel);
+			modified.add(searchList.get(0) + "." + localLabel);
 			modified.addAll(searchList);
 			return modified;
 		}
 
+		@Override
 		public String getLabel() {
-			final SearchLabel searchLabel = Module.this.getSearchLabel();
+			final SearchLabel searchLabel = getSearchLabel();
 			return searchLabel.getLabel();
 		}
 	}

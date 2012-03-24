@@ -119,8 +119,8 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		Exit exit = getExit(Exit.DONE);
 		exit.setLatency(Latency.ZERO.open(exit));
 
-		this.setProducesDone(true);
-		this.setDoneSynchronous(true);
+		setProducesDone(true);
+		setDoneSynchronous(true);
 
 		// // Excluding 'sideband' ports/buses (those connecting to pins)
 		// // there is a single data port on this module, and a GO port
@@ -173,22 +173,22 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		flop.getResultBus().pushValueForward(new Value(1, false));
 
 		// Connect the clock ports
-		flop.getClockPort().setBus(this.getClockPort().getPeer());
-		flop.getResetPort().setBus(this.getResetPort().getPeer());
-		flop.getInternalResetPort().setBus(this.getResetPort().getPeer());
-		capture.getClockPort().setBus(this.getClockPort().getPeer());
+		flop.getClockPort().setBus(getClockPort().getPeer());
+		flop.getResetPort().setBus(getResetPort().getPeer());
+		flop.getInternalResetPort().setBus(getResetPort().getPeer());
+		capture.getClockPort().setBus(getClockPort().getPeer());
 
 		// add all the components
-		this.addComponent(flop);
-		this.addComponent(pending);
-		this.addComponent(done_and);
-		this.addComponent(flop_and);
-		this.addComponent(not);
-		this.addComponent(doutCast);
-		this.addComponent(dout);
-		this.addComponent(write);
-		this.addComponent(full);
-		this.addComponent(capture);
+		addComponent(flop);
+		addComponent(pending);
+		addComponent(done_and);
+		addComponent(flop_and);
+		addComponent(not);
+		addComponent(doutCast);
+		addComponent(dout);
+		addComponent(write);
+		addComponent(full);
+		addComponent(capture);
 
 		// Hook up data capture latch
 		capture.getDataPort().setBus(data.getPeer());
@@ -223,7 +223,7 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		flop.getDataPort().setBus(flop_and.getResultBus());
 
 		// Define the feedback point
-		this.feedbackPoints = Collections.singleton(flop);
+		feedbackPoints = Collections.singleton(flop);
 	}
 
 	public FifoWrite(NativeOutput targetInterface) {
@@ -275,7 +275,7 @@ public class FifoWrite extends FifoAccess implements Visitable {
 	public Set getFeedbackPoints() {
 		Set feedback = new HashSet();
 		feedback.addAll(super.getFeedbackPoints());
-		feedback.addAll(this.feedbackPoints);
+		feedback.addAll(feedbackPoints);
 
 		return feedback;
 	}
@@ -295,12 +295,12 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		// Re-set the feedback points to point to the correct register
 		// in the clone instead of the register in the original IFF it
 		// exists... subclasses may have alternate structure
-		if (this.feedbackPoints.isEmpty()) {
+		if (feedbackPoints.isEmpty()) {
 			((FifoWrite) clone).feedbackPoints = Collections.EMPTY_SET;
 		} else {
 			Set cloneSet = new HashSet();
 			((FifoWrite) clone).feedbackPoints = cloneSet;
-			for (Iterator iter = this.feedbackPoints.iterator(); iter.hasNext();)
+			for (Iterator iter = feedbackPoints.iterator(); iter.hasNext();)
 				cloneSet.add(cloneMap.get(iter.next()));
 			assert !cloneSet.contains(null);
 		}

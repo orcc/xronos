@@ -157,21 +157,21 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		super();
 		parseFlags(flags);
 
-		this.graph = new Graph(name);
+		graph = new Graph(name);
 		// this.graph.setSize(7, 10); ruins the ratio statement below...
-		this.graph.setLabel(name);
+		graph.setLabel(name);
 		// some attributes to make the graph smaller, and to print
 		// to several pages when printed via: dot -Tps file.dot | lpr
-		this.graph.setGVAttribute("ratio", "auto");
-		this.graph.setGVAttribute("ranksep", ".5");
-		this.graph.setGVAttribute("nodesep", ".12");
-		this.graph.setGVAttribute("fontsize", "10");
-		this.graph.setGVAttribute("fontname", "Helvetica");
-		this.graph.setGVAttribute("page", "8.5,11.0");
+		graph.setGVAttribute("ratio", "auto");
+		graph.setGVAttribute("ranksep", ".5");
+		graph.setGVAttribute("nodesep", ".12");
+		graph.setGVAttribute("fontsize", "10");
+		graph.setGVAttribute("fontname", "Helvetica");
+		graph.setGVAttribute("page", "8.5,11.0");
 		if ((flags & LANDSCAPE) == LANDSCAPE) {
 			setLandscape();
 		}
-		this.topGraph = graph;
+		topGraph = graph;
 
 		if (top != null) {
 			top.accept(this);
@@ -199,7 +199,7 @@ public class LGraph extends FilteredVisitor implements Visitor {
 			graphPhysical = true;
 		}
 		if ((flags & DETAIL) == DETAIL) {
-			this.isDetailed = true;
+			isDetailed = true;
 		}
 	}
 
@@ -267,7 +267,7 @@ public class LGraph extends FilteredVisitor implements Visitor {
 	 * use less paper - it depends on the graph. hence it is an option
 	 */
 	public void setLandscape() {
-		this.topGraph.setGVAttribute("rotate", "90");
+		topGraph.setGVAttribute("rotate", "90");
 	}
 
 	private void pushGraph(Object obj) {
@@ -277,7 +277,7 @@ public class LGraph extends FilteredVisitor implements Visitor {
 	}
 
 	private void popGraph() {
-		graph = (Graph) graphStack.removeFirst();
+		graph = graphStack.removeFirst();
 	}
 
 	private static String getName(Object o, String defaultName) {
@@ -615,7 +615,6 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		}
 	}
 
-	
 	private void graphExit(Exit exit, int id) {
 		@SuppressWarnings("unused")
 		Component component = exit.getOwner();
@@ -671,7 +670,7 @@ public class LGraph extends FilteredVisitor implements Visitor {
 			if (target != null) {
 				topGraph.connect(target, source, edge);
 			} else {
-				Unresolved ur = (Unresolved) unresolvedNodes.get(logicalBus);
+				Unresolved ur = unresolvedNodes.get(logicalBus);
 				if (ur == null) {
 					ur = new Unresolved(logicalBus, source, edge);
 					unresolvedNodes.put(logicalBus, ur);
@@ -722,7 +721,7 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		if (source != null) {
 			topGraph.connect(source, target, edge);
 		} else {
-			Unresolved ur = (Unresolved) unresolvedNodes.get(bus);
+			Unresolved ur = unresolvedNodes.get(bus);
 			if (ur == null) {
 				ur = new Unresolved(bus, target, edge);
 				unresolvedNodes.put(bus, ur);
@@ -750,14 +749,13 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		}
 
 		if (unresolvedNodes.containsKey(key)) {
-			Unresolved ur = (Unresolved) unresolvedNodes.get(key);
+			Unresolved ur = unresolvedNodes.get(key);
 			Node target = (Node) nodeMapDeps.get(ur.getBus());
 			assert target != null : "How can the target still be null!";
 			List<Node> sources = ur.getSources();
 			List<Edge> edges = ur.getEdges();
 			for (int i = 0; i < sources.size(); i++) {
-				topGraph.connect(target, (Node) sources.get(i),
-						(Edge) edges.get(i));
+				topGraph.connect(target, sources.get(i), edges.get(i));
 			}
 			unresolvedNodes.remove(key);
 		}
@@ -795,6 +793,7 @@ public class LGraph extends FilteredVisitor implements Visitor {
 			edges.add(e);
 		}
 
+		@Override
 		public String toString() {
 			return "Unresolved: bus: " + bus + " owner: "
 					+ bus.getOwner().getOwner();
@@ -815,10 +814,12 @@ public class LGraph extends FilteredVisitor implements Visitor {
 			this.port = port;
 		}
 
+		@Override
 		public int hashCode() {
 			return entry.hashCode() + port.hashCode();
 		}
 
+		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof EntryPort) {
 				EntryPort ep = (EntryPort) obj;
@@ -828,6 +829,7 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(Procedure procedure) {
 		pushGraph(procedure);
 		graph.setLabel(getName(procedure));
@@ -837,16 +839,19 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		popGraph();
 	}
 
+	@Override
 	public void preFilter(Module m) {
 		if (!(m instanceof Composable))
 			graphPreVisit(m);
 	}
 
+	@Override
 	public void filter(Module m) {
 		if (!(m instanceof Composable))
 			graphPostVisit(m);
 	}
 
+	@Override
 	public void filterAny(Component c) {
 		graph(c);
 	}

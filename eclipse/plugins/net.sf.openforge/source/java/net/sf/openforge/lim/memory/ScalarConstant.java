@@ -83,7 +83,7 @@ public class ScalarConstant extends MemoryConstant {
 		aurep[aurep.length - 1] = new AddressableUnit(bytes[aurep.length - 1]
 				.getValue().and(mask).intValue(), true);
 
-		this.rep = new AURepBundle(aurep, policy.getStride());
+		rep = new AURepBundle(aurep, policy.getStride());
 
 		pushValuesForward();
 	}
@@ -105,6 +105,7 @@ public class ScalarConstant extends MemoryConstant {
 	 * 
 	 * @return a singleton Set containing this object.
 	 */
+	@Override
 	public Set<Constant> getContents() {
 		return Collections.unmodifiableSet(Collections
 				.singleton((Constant) this));
@@ -116,7 +117,7 @@ public class ScalarConstant extends MemoryConstant {
 	 */
 	@Override
 	public AURepBundle getRepBundle() {
-		return this.rep;
+		return rep;
 	}
 
 }// ScalarConstant

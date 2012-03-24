@@ -87,7 +87,7 @@ public abstract class FifoAccess extends Module implements Referencer,
 	 * @return a non null 'FifoIF'.
 	 */
 	public FifoIF getFifoIF() {
-		return this.targetInterface;
+		return targetInterface;
 	}
 
 	/**
@@ -111,7 +111,7 @@ public abstract class FifoAccess extends Module implements Referencer,
 	 */
 	@Override
 	public Referenceable getReferenceable() {
-		return this.getFifoIF();
+		return getFifoIF();
 	}
 
 	/**
@@ -121,7 +121,7 @@ public abstract class FifoAccess extends Module implements Referencer,
 	 */
 	@Override
 	public StateHolder getStateHolder() {
-		return this.getFifoIF();
+		return getFifoIF();
 	}
 
 }// FifoAccess

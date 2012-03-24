@@ -68,6 +68,7 @@ public abstract class Variable extends ID implements Location {
 	 * @return the number of continguous addressable units in memory that this
 	 *         location represents
 	 */
+	@Override
 	public int getAddressableSize() {
 		return size;
 	}
@@ -77,6 +78,7 @@ public abstract class Variable extends ID implements Location {
 	 * 
 	 * @return the logical memory containing this location
 	 */
+	@Override
 	public LogicalMemory getLogicalMemory() {
 		return logicalMemory;
 	}
@@ -92,6 +94,7 @@ public abstract class Variable extends ID implements Location {
 	 * @throws IllegalArgumentException
 	 *             if <code>size</code> is negative
 	 */
+	@Override
 	public Location createOffset(int size, int delta) {
 		return ((size == getAddressableSize()) && (delta == 0)) ? this
 				: new Offset(size, this, delta);
@@ -108,6 +111,7 @@ public abstract class Variable extends ID implements Location {
 	 *         addressable units from this location; may return
 	 *         <code>this</code> if <code>size</code> is 0.
 	 */
+	@Override
 	public Location createIndex(int size) {
 		return new Index(size, this);
 	}
@@ -117,6 +121,7 @@ public abstract class Variable extends ID implements Location {
 	 * 
 	 * @return the base location, possibly <code>this</code>
 	 */
+	@Override
 	public Location getBaseLocation() {
 		return this;
 	}
@@ -135,6 +140,7 @@ public abstract class Variable extends ID implements Location {
 	 * 
 	 * @return the ultimate root Location of this Location.
 	 */
+	@Override
 	public Location getAbsoluteBase() {
 		Location absBase = this;
 		while (absBase.getBaseLocation() != absBase) {
@@ -150,8 +156,9 @@ public abstract class Variable extends ID implements Location {
 	 * @return the minimum number of addressable units beyond the start of the
 	 *         base to which this location refers
 	 */
+	@Override
 	public int getMinDelta() {
-		return this.getMaxDelta();
+		return getMaxDelta();
 	}
 
 	/**
@@ -160,6 +167,7 @@ public abstract class Variable extends ID implements Location {
 	 * @return the minimum number of addressable units beyond the start of the
 	 *         absolute base Location to which this location refers
 	 */
+	@Override
 	public int getAbsoluteMinDelta() {
 		// if the absolute is different from this location, then recursive call
 		if (getAbsoluteBase() != this) {
@@ -175,6 +183,7 @@ public abstract class Variable extends ID implements Location {
 	 * @return the maximum number of addressable units beyond the start of the
 	 *         base to which this location refers
 	 */
+	@Override
 	public int getMaxDelta() {
 		return 0;
 	}
@@ -185,6 +194,7 @@ public abstract class Variable extends ID implements Location {
 	 * @return the maximum number of addressable units beyond the start of the
 	 *         absolute base Location to which this location refers
 	 */
+	@Override
 	public int getAbsoluteMaxDelta() {
 		// if the absolute is different from this location, then recursive call
 		if (getAbsoluteBase() != this) {
@@ -212,13 +222,14 @@ public abstract class Variable extends ID implements Location {
 	 * @throws IllegalArgumenException
 	 *             if 'loc' is null
 	 */
+	@Override
 	public boolean overlaps(Location loc) {
 		if (loc == null) {
 			throw new IllegalArgumentException(
 					"Null location cannot test for overlap");
 		}
 
-		final Location thisBase = this.getAbsoluteBase();
+		final Location thisBase = getAbsoluteBase();
 		final Location testBase = loc.getAbsoluteBase();
 
 		if (thisBase != testBase)
@@ -235,7 +246,7 @@ public abstract class Variable extends ID implements Location {
 		// Define the 'window' or range of addressable units
 		// (relative to the common base) that each Location may access.
 		final int thisWindowMin = thisMinDelta;
-		final int thisWindowMax = thisMaxDelta + this.getAddressableSize();
+		final int thisWindowMax = thisMaxDelta + getAddressableSize();
 		final int testWindowMin = testMinDelta;
 		final int testWindowMax = testMaxDelta + loc.getAddressableSize();
 
@@ -255,6 +266,7 @@ public abstract class Variable extends ID implements Location {
 	 * Does nothing except throw a NullPointerException if <code>loc</code> is
 	 * null, or an IllegalArgumentException if units is < 0.
 	 */
+	@Override
 	public void chopStart(Location loc, int units) {
 		if (loc == null)
 			throw new NullPointerException("null location not allowed");
@@ -291,8 +303,8 @@ public abstract class Variable extends ID implements Location {
 	 *             is not contained in correlation. Or thrown if any Location is
 	 *             found in which the maxDelta is less than the minDelta.
 	 */
-	public static Location getCorrelatedLocation(Map<Location, Location> correlation,
-			Location oldLoc) {
+	public static Location getCorrelatedLocation(
+			Map<Location, Location> correlation, Location oldLoc) {
 		if (oldLoc == null) {
 			throw new NullPointerException(
 					"Null Location not allowed in this context");
@@ -302,11 +314,11 @@ public abstract class Variable extends ID implements Location {
 		// simply return that one to avoid creating too many copies of
 		// the same thing.
 		if (correlation.containsKey(oldLoc)) {
-			return (Location) correlation.get(oldLoc);
+			return correlation.get(oldLoc);
 		}
 
 		Location baseLocation = oldLoc.getBaseLocation();
-		Location correlatedBase = (Location) correlation.get(baseLocation);
+		Location correlatedBase = correlation.get(baseLocation);
 
 		if (correlatedBase == null) {
 			if (baseLocation == oldLoc) {

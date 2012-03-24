@@ -37,6 +37,7 @@ class DefaultCloneListener implements CloneListener {
 	/**
 	 * The effect of calling this method multiple times is cumulative.
 	 */
+	@Override
 	public void setCloneMap(Map cloneMap) {
 		this.cloneMap.putAll(cloneMap);
 	}

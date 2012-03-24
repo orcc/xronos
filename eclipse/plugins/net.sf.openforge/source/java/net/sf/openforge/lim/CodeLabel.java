@@ -38,6 +38,7 @@ import net.sf.openforge.util.naming.IDSourceInfo;
 public class CodeLabel implements SearchLabel {
 	/** The label that is used when the user does not specify a scope */
 	public static final CodeLabel UNSCOPED = new CodeLabel() {
+		@Override
 		public List getSearchList() {
 			return Collections.singletonList("UNSCOPED");
 		}
@@ -70,7 +71,7 @@ public class CodeLabel implements SearchLabel {
 	}
 
 	public CodeLabel(String s) {
-		this.label = s;
+		label = s;
 	}
 
 	/**
@@ -78,6 +79,7 @@ public class CodeLabel implements SearchLabel {
 	 * 
 	 * @return String
 	 */
+	@Override
 	public String getLabel() {
 		return label;
 	}
@@ -87,8 +89,9 @@ public class CodeLabel implements SearchLabel {
 	 * strings, substituting the provided label for the CodeLabel's own.
 	 * 
 	 */
+	@Override
 	public List<String> getSearchList() {
-		List sList = getSearchList(this.label);
+		List sList = getSearchList(label);
 		return sList;
 	}
 
@@ -97,6 +100,7 @@ public class CodeLabel implements SearchLabel {
 	 * strings, substituting the provided label for the CodeLabel's own.
 	 * 
 	 */
+	@Override
 	public List<String> getSearchList(String label) {
 		List searchList = new ArrayList();
 		if (label != null) {
@@ -107,6 +111,7 @@ public class CodeLabel implements SearchLabel {
 		return searchList;
 	}
 
+	@Override
 	public String toString() {
 		if (enclosingProcedure != null)
 			return new String(

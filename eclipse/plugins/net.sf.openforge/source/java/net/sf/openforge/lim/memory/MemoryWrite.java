@@ -61,7 +61,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 	}
 
 	public Port getDataPort() {
-		return (Port) getDataPorts().get(1);
+		return getDataPorts().get(1);
 	}
 
 	/**
@@ -69,6 +69,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 	 * 
 	 * @return the targetted Register
 	 */
+	@Override
 	public StateHolder getStateHolder() {
 		return getMemoryPort().getLogicalMemory();
 	}
@@ -82,6 +83,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 	 * 
 	 * @return true if any of the bus values was modified, false otherwise
 	 */
+	@Override
 	protected boolean pushValuesForward() {
 		/*
 		 * The is really handled by the physical implementation.
@@ -98,6 +100,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 	 * 
 	 * @return true if any of the port values was modified, false otherwise
 	 */
+	@Override
 	protected boolean pushValuesBackward() {
 		/*
 		 * This is really handled by the physical implementation.
@@ -111,6 +114,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 		return physical;
 	}
 
+	@Override
 	public Module getPhysicalComponent() {
 		return physical;
 	}
@@ -118,6 +122,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 	/**
 	 * returns false
 	 */
+	@Override
 	public boolean isReadAccess() {
 		return false;
 	}
@@ -125,6 +130,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 	/**
 	 * returns true
 	 */
+	@Override
 	public boolean isWriteAccess() {
 		return true;
 	}
@@ -132,6 +138,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -140,6 +147,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 	 * This accessor modifies the {@link Referenceable} target state so it may
 	 * not execute in parallel with other accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return true;
 	}
@@ -153,12 +161,13 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 	 * 
 	 * @return a MemoryWrite object.
 	 */
+	@Override
 	public Object clone() {
 		assert physical == null : "Cloning Physical not implemented";
 		final MemoryWrite clone = new MemoryWrite(isVolatile(), getWidth(),
-				this.isSigned());
+				isSigned());
 		clone.setMemoryPort(getMemoryPort());
-		this.copyComponentAttributes(clone);
+		copyComponentAttributes(clone);
 		return clone;
 	}
 
@@ -191,7 +200,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 
 			// one normal port for the address
 			Port addressIn = makeDataPort();
-			Port memWriteAddress = (Port) MemoryWrite.this.getAddressPort();
+			Port memWriteAddress = getAddressPort();
 			assert (memWriteAddress.getBus() != null) : "MemoryWrite's address port not attached to a bus.";
 
 			// addressIn.getPeer().setSize(memWriteAddress.getBus().getSize(),
@@ -201,7 +210,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 
 			// and one normal port for the data
 			Port dataIn = makeDataPort();
-			Port memWriteData = (Port) MemoryWrite.this.getDataPort();
+			Port memWriteData = getDataPort();
 			assert (memWriteData.getBus() != null) : "MemoryWrite's address port not attached to a bus.";
 
 			// and another normal port for the size input.
@@ -252,8 +261,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			// appropriate the done bus
 			Exit physicalExit = makeExit(0);
 			Bus done = physicalExit.getDoneBus();
-			Bus memWriteDone = (Bus) MemoryWrite.this.getExit(Exit.DONE)
-					.getDoneBus();
+			Bus memWriteDone = MemoryWrite.this.getExit(Exit.DONE).getDoneBus();
 			done.setUsed(memWriteDone.isUsed());
 			done.setIDLogical(ID.showLogical(memWriteDone));
 			// done.setValue(new Value(done, memWriteDone.getValue()));
@@ -285,13 +293,12 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 
 			sideSize = physicalExit.makeDataBus(Component.SIDEBAND);
 			sideSize.setIDLogical(ID.showLogical(MemoryWrite.this) + "_WS");
-			sideSize.setSize(MemoryWrite.this.getSizePort().getBus().getSize(),
-					MemoryWrite.this.getSizePort().getBus().getValue()
-							.isSigned());
+			sideSize.setSize(getSizePort().getBus().getSize(), getSizePort()
+					.getBus().getValue().isSigned());
 			sideSize.getPeer().setBus(sizeIn.getPeer());
 
 			// create internal done-caching logic
-			this.goRegister = Reg.getConfigurableReg(Reg.REGRS, null);
+			goRegister = Reg.getConfigurableReg(Reg.REGRS, null);
 			Port goRegSet = goRegister.getSetPort();
 			Port goRegIn = goRegister.getDataPort();
 			Bus goRegOut = goRegister.getResultBus();
@@ -313,8 +320,8 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			sideAddress.getPeer().setBus(addressIn.getPeer());
 			sideData.getPeer().setBus(dataIn.getPeer());
 
-			((Port) resetOrPorts.get(0)).setBus(doneAndResult);
-			((Port) resetOrPorts.get(1)).setBus(reset.getPeer());
+			resetOrPorts.get(0).setBus(doneAndResult);
+			resetOrPorts.get(1).setBus(reset.getPeer());
 
 			/*
 			 * XXX: It seems the internal reset is what's intended, but just to
@@ -327,8 +334,8 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			goRegIn.setBus(goRegOut);
 			goRegSet.setBus(go.getPeer());
 
-			((Port) doneAndPorts.get(0)).setBus(goRegOut);
-			((Port) doneAndPorts.get(1)).setBus(sideWriteFinished.getPeer());
+			doneAndPorts.get(0).setBus(goRegOut);
+			doneAndPorts.get(1).setBus(sideWriteFinished.getPeer());
 
 			done.getPeer().setBus(doneAndResult);
 		}
@@ -353,18 +360,22 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			return sideSize;
 		}
 
+		@Override
 		public Set getFeedbackPoints() {
 			return Collections.singleton(goRegister);
 		}
 
+		@Override
 		public void accept(Visitor v) {
 		}
 
+		@Override
 		public boolean removeDataBus(Bus bus) {
 			assert false : "remove data port not supported on " + this;
 			return false;
 		}
 
+		@Override
 		public boolean removeDataPort(Port port) {
 			assert false : "remove data port not supported on " + this;
 			return false;

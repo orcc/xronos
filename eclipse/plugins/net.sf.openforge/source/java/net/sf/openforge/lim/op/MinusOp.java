@@ -58,6 +58,7 @@ public class MinusOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		final int width = getDataPort().getValue().getSize();
 		return (3 * (width - 1)) + 2;
@@ -66,6 +67,7 @@ public class MinusOp extends UnaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -78,8 +80,9 @@ public class MinusOp extends UnaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger inval = (SizedInteger) portValues.get(getDataPort());
+		final SizedInteger inval = portValues.get(getDataPort());
 		return Collections.singletonMap(getResultBus(), inval.negate());
 	}
 
@@ -97,6 +100,7 @@ public class MinusOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 
 		boolean mod = false;
@@ -151,6 +155,7 @@ public class MinusOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

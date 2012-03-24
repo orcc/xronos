@@ -55,6 +55,7 @@ public class ComplementOp extends UnaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -66,6 +67,7 @@ public class ComplementOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return 1;
 	}
@@ -75,6 +77,7 @@ public class ComplementOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
 
@@ -100,8 +103,9 @@ public class ComplementOp extends UnaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger inval = (SizedInteger) portValues.get(getDataPort());
+		final SizedInteger inval = portValues.get(getDataPort());
 		return Collections.singletonMap(getResultBus(), inval.not());
 	}
 
@@ -124,10 +128,11 @@ public class ComplementOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
-		Value in0 = ((Port) getDataPorts().get(0)).getValue();
+		Value in0 = getDataPorts().get(0).getValue();
 
 		int newSize = in0.getSize();
 		boolean isSigned = in0.isSigned();
@@ -193,6 +198,7 @@ public class ComplementOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
@@ -208,7 +214,7 @@ public class ComplementOp extends UnaryOp implements Emulatable {
 			}
 		}
 
-		mod |= ((Port) getDataPorts().get(0)).pushValueBackward(newValue);
+		mod |= getDataPorts().get(0).pushValueBackward(newValue);
 
 		return mod;
 	}

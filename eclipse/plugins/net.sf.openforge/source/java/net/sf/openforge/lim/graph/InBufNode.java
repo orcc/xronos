@@ -37,6 +37,7 @@ class InBufNode extends ComponentNode {
 		super(inbuf, id, fontSize);
 	}
 
+	@Override
 	protected void graphBuses(Exit exit, Record.Port busBox) {
 		InBuf inbuf = (InBuf) getComponent();
 

@@ -95,13 +95,14 @@ public class Decision extends Module {
 		addComponent(not = new Not());
 		addComponent(trueAnd = new And(2));
 		addComponent(falseAnd = new And(2));
-		this.trueExit = makeExit(0, Exit.DONE, "true");
-		this.falseExit = makeExit(0, Exit.DONE, "false");
+		trueExit = makeExit(0, Exit.DONE, "true");
+		falseExit = makeExit(0, Exit.DONE, "false");
 		setControlDependencies();
 		setDataDependencies();
 		setProducesDone(true);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -184,9 +185,9 @@ public class Decision extends Module {
 	 * @return a value of type 'Bus'
 	 */
 	public Bus getDecisionDataBus() {
-		assert this.not.getEntries().size() == 1;
-		Entry notEntry = (Entry) this.not.getEntries().get(0);
-		Collection notDeps = notEntry.getDependencies(this.not.getDataPort());
+		assert not.getEntries().size() == 1;
+		Entry notEntry = not.getEntries().get(0);
+		Collection notDeps = notEntry.getDependencies(not.getDataPort());
 		assert notDeps.size() == 1;
 		Bus decisionData = ((Dependency) notDeps.iterator().next())
 				.getLogicalBus();
@@ -214,16 +215,17 @@ public class Decision extends Module {
 		return noDecision.getDoneBus();
 	}
 
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		assert removed != null;
 		if (removed == getTestBlock()) {
-			this.testBlock = (Block) inserted;
+			testBlock = (Block) inserted;
 		} else if (removed == getNot()) {
-			this.not = (Not) inserted;
+			not = (Not) inserted;
 		} else if (removed == getTrueAnd()) {
-			this.trueAnd = (And) inserted;
+			trueAnd = (And) inserted;
 		} else if (removed == getFalseAnd()) {
-			this.trueAnd = (And) inserted;
+			trueAnd = (And) inserted;
 		} else
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
@@ -233,6 +235,7 @@ public class Decision extends Module {
 		return mod;
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		component.disconnect();
 		boolean removed = super.removeComponent(component);
@@ -337,7 +340,7 @@ public class Decision extends Module {
 		/*
 		 * Connect the test Block outBuf.
 		 */
-		final OutBuf testBlockBuf = (OutBuf) testBlockExit.getPeer();
+		final OutBuf testBlockBuf = testBlockExit.getPeer();
 		Entry entry = testBlockBuf.getMainEntry();
 		entry.addDependency(testBlockBus.getPeer(), new DataDependency(boolBus));
 
@@ -347,10 +350,10 @@ public class Decision extends Module {
 		 */
 		final And trueAnd = getTrueAnd();
 		entry = trueAnd.getMainEntry();
-		entry.addDependency((Port) trueAnd.getDataPorts().get(0),
-				new DataDependency(testDoneBus));
-		entry.addDependency((Port) trueAnd.getDataPorts().get(1),
-				new DataDependency(testBlockBus));
+		entry.addDependency(trueAnd.getDataPorts().get(0), new DataDependency(
+				testDoneBus));
+		entry.addDependency(trueAnd.getDataPorts().get(1), new DataDependency(
+				testBlockBus));
 
 		/*
 		 * Connect the NOT's data input to the same boolean data bus.
@@ -365,10 +368,10 @@ public class Decision extends Module {
 		 */
 		final And falseAnd = getFalseAnd();
 		entry = falseAnd.getMainEntry();
-		entry.addDependency((Port) falseAnd.getDataPorts().get(0),
-				new DataDependency(notDoneBus));
-		entry.addDependency((Port) falseAnd.getDataPorts().get(1),
-				new DataDependency(notBus));
+		entry.addDependency(falseAnd.getDataPorts().get(0), new DataDependency(
+				notDoneBus));
+		entry.addDependency(falseAnd.getDataPorts().get(1), new DataDependency(
+				notBus));
 	}
 
 	/**
@@ -387,6 +390,7 @@ public class Decision extends Module {
 	 * @param resetBus
 	 *            the reset bus for each new exit
 	 */
+	@Override
 	protected void mergeExits(Map exitMap, Bus clockBus, Bus resetBus) {
 		exitMap.remove(getTrueExit().getTag());
 		exitMap.remove(getFalseExit().getTag());
@@ -437,6 +441,7 @@ public class Decision extends Module {
 		return ordered;
 	}
 
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		/*
 		 * Use a CloneListener to obtain the clone of testComponent, which is
@@ -450,6 +455,7 @@ public class Decision extends Module {
 		return clone;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		/*

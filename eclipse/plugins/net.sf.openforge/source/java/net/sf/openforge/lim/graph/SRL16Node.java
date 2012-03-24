@@ -27,6 +27,7 @@ public class SRL16Node extends ComponentNode {
 		super(component, id, fontSize);
 	}
 
+	@Override
 	protected String getBodyLabel() {
 		StringBuffer labelBuf = new StringBuffer();
 		labelBuf.append(getShortClassName(getComponent()));

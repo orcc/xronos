@@ -80,6 +80,7 @@ public class Branch extends Module {
 		this(decision, trueBranch, new Block(Collections.EMPTY_LIST));
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -116,6 +117,7 @@ public class Branch extends Module {
 	 *            a value of type 'Component'
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean removeComponent(Component component) {
 		component.disconnect();
 		if (component == decision) {
@@ -128,16 +130,17 @@ public class Branch extends Module {
 		return super.removeComponent(component);
 	}
 
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		assert removed != null;
 		if (removed == getDecision()) {
-			this.decision = (Decision) inserted;
+			decision = (Decision) inserted;
 		} else if (removed == getTrueBranch()) {
 			assert (inserted instanceof Module) : "Replacement for true must be a module";
-			this.trueBranch = (Module) inserted;
+			trueBranch = (Module) inserted;
 		} else if (removed == getFalseBranch()) {
 			assert (inserted instanceof Module) : "Replacement for false must be a module";
-			this.falseBranch = (Module) inserted;
+			falseBranch = (Module) inserted;
 		} else
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
@@ -181,6 +184,7 @@ public class Branch extends Module {
 		mergeExits(exitMap, clockBus, resetBus);
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final Branch clone = (Branch) moduleClone;

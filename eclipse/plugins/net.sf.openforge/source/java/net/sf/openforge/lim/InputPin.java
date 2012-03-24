@@ -30,7 +30,6 @@ import java.util.Collections;
  * @version $Id: InputPin.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class InputPin extends Pin {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	private InPinBuf buf;
 	private Bus bus;
@@ -47,7 +46,7 @@ public class InputPin extends Pin {
 	 */
 	public InputPin(Port port) {
 		this(port.getValue().getSize(), port.getValue().isSigned());
-		this.isInferred = true;
+		isInferred = true;
 	}
 
 	/**
@@ -71,9 +70,9 @@ public class InputPin extends Pin {
 	 */
 	private InputPin(int pinWidth, int busWidth, boolean isSigned) {
 		super(Math.min(pinWidth, busWidth), isSigned);
-		this.buf = new InPinBuf(this);
+		buf = new InPinBuf(this);
 		Exit exit = makeExit(0);
-		this.bus = (Bus) exit.makeDataBus();
+		bus = exit.makeDataBus();
 		bus.setSize(pinWidth, isSigned);
 	}
 
@@ -87,10 +86,12 @@ public class InputPin extends Pin {
 		return isInferred;
 	}
 
+	@Override
 	public InPinBuf getInPinBuf() {
 		return buf;
 	}
 
+	@Override
 	public Collection getPinBufs() {
 		return Collections.singleton(getInPinBuf());
 	}
@@ -99,6 +100,7 @@ public class InputPin extends Pin {
 		return bus;
 	}
 
+	@Override
 	public int getWidth() {
 		// Because the width is the default size when this pin is
 		// created , and it never got changed after the constant
@@ -123,6 +125,7 @@ public class InputPin extends Pin {
 	 * @param s
 	 *            the new logical ID
 	 */
+	@Override
 	public void setIDLogical(String s) {
 		super.setIDLogical(s);
 		if (getBus() != null) {
@@ -134,6 +137,7 @@ public class InputPin extends Pin {
 	 * Calls the super, then removes any reference to the given bus in this
 	 * class.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
 			if (bus == this.bus)
@@ -151,10 +155,12 @@ public class InputPin extends Pin {
 	/**
 	 * Pushes the size of the pin onto the Bus as all care bits.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		return false;
 	}
 
+	@Override
 	public boolean pushValuesBackward() {
 		return false;
 	}
@@ -171,6 +177,7 @@ public class InputPin extends Pin {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}

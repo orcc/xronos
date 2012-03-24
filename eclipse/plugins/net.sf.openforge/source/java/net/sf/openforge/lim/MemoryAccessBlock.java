@@ -56,11 +56,12 @@ public abstract class MemoryAccessBlock extends Block implements LValue {
 
 	public MemoryAccessBlock(MemoryAccess access, int addressableLocationCount) {
 		super(false);
-		this.memoryAccess = access;
-		this.addressableCount = addressableLocationCount;
-		insertComponent(this.memoryAccess, 0);
+		memoryAccess = access;
+		addressableCount = addressableLocationCount;
+		insertComponent(memoryAccess, 0);
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -79,6 +80,7 @@ public abstract class MemoryAccessBlock extends Block implements LValue {
 	 * @return the logical memory port accessed by this component, or null if
 	 *         there is none
 	 */
+	@Override
 	public LogicalMemoryPort getLogicalMemoryPort() {
 		return getMemoryAccess().getMemoryPort();
 	}
@@ -93,6 +95,7 @@ public abstract class MemoryAccessBlock extends Block implements LValue {
 	 *            the logical memory port accessed by this component, or null if
 	 *            there is none
 	 */
+	@Override
 	public void setLogicalMemoryPort(LogicalMemoryPort logicalMemoryPort) {
 		getMemoryAccess().setMemoryPort(logicalMemoryPort);
 	}
@@ -110,13 +113,15 @@ public abstract class MemoryAccessBlock extends Block implements LValue {
 	 * Returns the number of addressable locations accessed by this memory
 	 * access.
 	 */
+	@Override
 	public int getAccessLocationCount() {
-		return this.addressableCount;
+		return addressableCount;
 	}
 
 	/**
 	 * Returns true if this access is a write.
 	 */
+	@Override
 	public abstract boolean isWrite();
 
 	/**
@@ -127,8 +132,9 @@ public abstract class MemoryAccessBlock extends Block implements LValue {
 	 * @param element
 	 *            a BlockElement, may be null
 	 */
+	@Override
 	public void setBlockElement(BlockElement element) {
-		this.ioBlockElement = element;
+		ioBlockElement = element;
 	}
 
 	/**
@@ -138,8 +144,9 @@ public abstract class MemoryAccessBlock extends Block implements LValue {
 	 * 
 	 * @return a BlockElement, may be null
 	 */
+	@Override
 	public BlockElement getBlockElement() {
-		return this.ioBlockElement;
+		return ioBlockElement;
 	}
 
 	/**
@@ -149,10 +156,11 @@ public abstract class MemoryAccessBlock extends Block implements LValue {
 		return false;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		MemoryAccessBlock clone = (MemoryAccessBlock) moduleClone;
-		clone.memoryAccess = (MemoryAccess) cloneMap.get(this.memoryAccess);
+		clone.memoryAccess = (MemoryAccess) cloneMap.get(memoryAccess);
 		clone.memoryAccess.setMemoryPort(getLogicalMemoryPort());
 		// Nothing to do for the ioBlockElement since we want the
 		// clone to be associated with the same element.

@@ -74,6 +74,7 @@ public class LoopDecisionEmulator extends ModuleEmulator {
 	 * @throws UnEmulatableLoopException
 	 *             - the loop is unEmulatable.
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> inputValues)
 			throws UnEmulatableLoopException {
 		// System.out.println("\nEMULATING DECISION -- " + module +
@@ -93,7 +94,8 @@ public class LoopDecisionEmulator extends ModuleEmulator {
 		while (iter.hasNext()) {
 			Component component = (Component) iter.next();
 
-			Map<Port, SizedInteger> portValues = busToPortValues(component, busValues);
+			Map<Port, SizedInteger> portValues = busToPortValues(component,
+					busValues);
 
 			// If component is a testblock emulate it accordingly //
 			if (component == loop.getBody().getDecision().getTestBlock()) {

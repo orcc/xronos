@@ -29,7 +29,6 @@ package net.sf.openforge.lim;
  * @see Visitor
  */
 public interface Visitable {
-	static final String _RCS_ = "$Rev: 2 $";
 
 	void accept(Visitor visitor);
 

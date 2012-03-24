@@ -54,6 +54,7 @@ public class PrimitiveValue implements InitialValue {
 	/**
 	 * returns false.
 	 */
+	@Override
 	public boolean isObjectHandle() {
 		return false;
 	}
@@ -61,6 +62,7 @@ public class PrimitiveValue implements InitialValue {
 	/**
 	 * returns true
 	 */
+	@Override
 	public boolean isPrimitive() {
 		return true;
 	}
@@ -70,6 +72,7 @@ public class PrimitiveValue implements InitialValue {
 	 * 
 	 * @return a value of type 'long'
 	 */
+	@Override
 	public Number toNumber() {
 		return initialValue;
 	}
@@ -78,34 +81,39 @@ public class PrimitiveValue implements InitialValue {
 	 * Identifies where this primitive value was created in the users design for
 	 * reporting.
 	 */
+	@Override
 	public void setDeclaringLocation(String clazz, String field) {
-		this.decClassName = clazz;
-		this.decFieldName = field;
+		decClassName = clazz;
+		decFieldName = field;
 	}
 
 	/**
 	 * Retrieves the name of the users class that is responsible for the
 	 * instantiation of this PointerValue.
 	 */
+	@Override
 	public String getDeclaringClass() {
-		return this.decClassName;
+		return decClassName;
 	}
 
 	/**
 	 * Retrieves the name of the users field (within the declaring class) that
 	 * is responsible for the instantiation of this PointerValue.
 	 */
+	@Override
 	public String getDeclaringField() {
-		return this.decFieldName;
+		return decFieldName;
 	}
 
 	/**
 	 * Returns a new PrimitiveValue with the same Number initial value.
 	 */
+	@Override
 	public InitialValue treeCopy() {
-		return new PrimitiveValue(this.initialValue);
+		return new PrimitiveValue(initialValue);
 	}
 
+	@Override
 	public String toString() {
 		return "PrimitiveValue: " + toNumber();
 	}

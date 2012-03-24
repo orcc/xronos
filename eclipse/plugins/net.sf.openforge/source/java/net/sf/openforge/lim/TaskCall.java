@@ -51,8 +51,8 @@ public class TaskCall extends Module {
 	public TaskCall() {
 		super();
 
-		this.setProducesDone(true);
-		this.setDoneSynchronous(true);
+		setProducesDone(true);
+		setDoneSynchronous(true);
 
 		makeExit(0);
 	}
@@ -73,11 +73,11 @@ public class TaskCall extends Module {
 			throw new IllegalArgumentException(
 					"Cannot set Task Call to null target");
 
-		if (this.targetTask != null)
+		if (targetTask != null)
 			throw new IllegalStateException(
 					"Cannot change the target of a Task Call");
 
-		this.targetTask = target;
+		targetTask = target;
 		build();
 	}
 
@@ -85,20 +85,23 @@ public class TaskCall extends Module {
 	 * Returns the target of this task.
 	 */
 	public Task getTarget() {
-		return this.targetTask;
+		return targetTask;
 	}
 
 	/**
 	 * Returns the latency of this call by deferring to the target task latency.
 	 */
+	@Override
 	public Latency getLatency() {
 		return getTarget().getCall().getLatency();
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
 
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		throw new UnsupportedOperationException(
 				"Cannot modify the components internal to a task call");
@@ -148,14 +151,15 @@ public class TaskCall extends Module {
 		// Create a write to the go pin and a read from the done pin.
 		final SimplePinWrite goWrite = new SimplePinWrite(goPin);
 		final SimplePinRead doneRead = new SimplePinRead(donePin);
-		this.addComponent(goWrite);
-		this.addComponent(doneRead);
+		addComponent(goWrite);
+		addComponent(doneRead);
 		goWrite.getDataPort().setBus(getGoPort().getPeer());
 		goWrite.getGoPort().setBus(getGoPort().getPeer());
 		getExit(Exit.DONE).getDoneBus().getPeer()
 				.setBus(doneRead.getResultBus());
 	}
 
+	@Override
 	protected Exit createExit(int dataCount, Exit.Type type, String label) {
 		return new VariableLatencyExit(this, dataCount, type, label);
 	}
@@ -170,6 +174,7 @@ public class TaskCall extends Module {
 			super(owner, dataCount, type, label);
 		}
 
+		@Override
 		public Latency getLatency() {
 			return getOwner().getLatency();
 		}
@@ -180,13 +185,15 @@ public class TaskCall extends Module {
 	 * can be 'deep' cloned by calling setTarget with the target of the
 	 * original.
 	 */
+	@Override
 	public Object clone() {
 		TaskCall clone = new TaskCall();
-		this.copyComponentAttributes(clone);
+		copyComponentAttributes(clone);
 
 		return clone;
 	}
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		ret += "<" + ID.showLogical(this) + ">";

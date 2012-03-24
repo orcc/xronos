@@ -110,12 +110,12 @@ public abstract class Dependency implements Cloneable {
 	 * Sets the logical bus connection implied by this dependency.
 	 */
 	public void setLogicalBus(Bus bus) {
-		if (this.logicalBus != null) {
+		if (logicalBus != null) {
 			// this.logicalBus.logicalDependents.remove(this);
 			assert false : "Logical Bus in Dependency is immutable";
 		}
 
-		this.logicalBus = bus;
+		logicalBus = bus;
 
 		if (bus != null && getPort() != null) {
 			bus.logicalDependents.add(this);
@@ -136,7 +136,7 @@ public abstract class Dependency implements Cloneable {
 		removeFromBuses();
 
 		// setLogicalBus(null);
-		this.logicalBus = null;
+		logicalBus = null;
 	}
 
 	/**
@@ -147,6 +147,7 @@ public abstract class Dependency implements Cloneable {
 	 *            a value of type 'Object'
 	 * @return true if the port and logical bus match.
 	 */
+	@Override
 	public boolean equals(Object obj) {
 		if ((obj != null) && (obj instanceof Dependency)) {
 			Dependency dep = (Dependency) obj;
@@ -162,6 +163,7 @@ public abstract class Dependency implements Cloneable {
 	 * 
 	 * @return a value of type 'int'
 	 */
+	@Override
 	public int hashCode() {
 		int code = getClass().hashCode();
 		code += port == null ? 0 : port.hashCode();
@@ -175,6 +177,7 @@ public abstract class Dependency implements Cloneable {
 	 * @return a copy of this dependency with a null port, logical bus, and
 	 *         entry.
 	 */
+	@Override
 	public Object clone() {
 		try {
 			Dependency clone = (Dependency) super.clone();
@@ -192,11 +195,11 @@ public abstract class Dependency implements Cloneable {
 	 * Sets the port to which this dependency belongs.
 	 */
 	public void setPort(Port depPort) {
-		if (this.port != null) {
+		if (port != null) {
 			assert false : "Port field in dependency is immutable";
 		}
 
-		this.port = depPort;
+		port = depPort;
 
 		if (port != null) {
 			addToBuses();
@@ -225,6 +228,7 @@ public abstract class Dependency implements Cloneable {
 		}
 	}
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		ret = ret.replaceAll("net.sf.openforge.lim.", "");

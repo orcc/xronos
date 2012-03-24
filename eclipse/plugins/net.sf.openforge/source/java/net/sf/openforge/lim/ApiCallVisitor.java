@@ -48,14 +48,17 @@ public class ApiCallVisitor extends FilteredVisitor implements Optimization {
 	 * @param target
 	 *            the target on which to run this optimization
 	 */
+	@Override
 	public void run(Visitable target) {
 		target.accept(this);
 	}
 
+	@Override
 	public void visit(Design design) {
 		super.visit(design);
 	}
 
+	@Override
 	public void filter(Call call) {
 		/* quit if call is not an API call */
 		if (call.isForgeableAPICall())
@@ -116,8 +119,8 @@ public class ApiCallVisitor extends FilteredVisitor implements Optimization {
 
 			final ApiCallIdentifier aci = call.getApiIdentifier(
 					ApiCallIdentifier.THROUGHPUT_LOCAL, ID.showLogical(call));
-			enclosingCall.setThroughputLocal(((Number) aci.getSpecifications()
-					.iterator().next()).intValue());
+			enclosingCall.setThroughputLocal(aci.getSpecifications().iterator()
+					.next().intValue());
 		}
 	}
 
@@ -128,6 +131,7 @@ public class ApiCallVisitor extends FilteredVisitor implements Optimization {
 	/**
 	 * Reports, via {@link Job#info}, what optimization is being performed
 	 */
+	@Override
 	public void preStatus() {
 	}
 
@@ -135,6 +139,7 @@ public class ApiCallVisitor extends FilteredVisitor implements Optimization {
 	 * Reports, via {@link Job#verbose}, the results of <b>this</b> pass of the
 	 * optimization.
 	 */
+	@Override
 	public void postStatus() {
 	}
 
@@ -142,6 +147,7 @@ public class ApiCallVisitor extends FilteredVisitor implements Optimization {
 	 * Returns false, the didModify is used to determine if this optimization
 	 * caused a change which necessitates other optimizations to re-run.
 	 */
+	@Override
 	public boolean didModify() {
 		return false;
 	}
@@ -149,6 +155,7 @@ public class ApiCallVisitor extends FilteredVisitor implements Optimization {
 	/**
 	 * Does nothing.
 	 */
+	@Override
 	public void clear() {
 	}
 

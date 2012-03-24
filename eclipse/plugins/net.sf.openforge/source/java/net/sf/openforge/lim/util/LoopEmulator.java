@@ -134,7 +134,7 @@ public class LoopEmulator extends Emulator {
 		Map<Port, SizedInteger> startPorts = new HashMap<Port, SizedInteger>();
 		Iterator<Port> iter = loop.getBody().getDataPorts().iterator();
 		while (iter.hasNext()) {
-			Port port = (Port) iter.next();
+			Port port = iter.next();
 
 			final Collection<Dependency> initDeps = loop.getBodyInitEntry()
 					.getDependencies(port);
@@ -142,7 +142,7 @@ public class LoopEmulator extends Emulator {
 				continue;
 			}
 
-			final Dependency initDep = (Dependency) initDeps.iterator().next();
+			final Dependency initDep = initDeps.iterator().next();
 			final Bus initBus = initDep.getLogicalBus();
 			final Value initValue = initBus.getValue();
 
@@ -175,8 +175,8 @@ public class LoopEmulator extends Emulator {
 		Entry feedbackEntry = loop.getBodyFeedbackEntry();
 		Reg reg = null;
 		if (!feedbackEntry.getDependencies(port).isEmpty()) {
-			Dependency dep = (Dependency) feedbackEntry.getDependencies(port)
-					.iterator().next();
+			Dependency dep = feedbackEntry.getDependencies(port).iterator()
+					.next();
 			reg = (Reg) dep.getLogicalBus().getOwner().getOwner();
 		}
 		return reg;
@@ -198,8 +198,7 @@ public class LoopEmulator extends Emulator {
 		if (feedbackEntry.getDependencies(port).isEmpty()) {
 			return null;
 		}
-		Dependency dep = (Dependency) feedbackEntry.getDependencies(port)
-				.iterator().next();
+		Dependency dep = feedbackEntry.getDependencies(port).iterator().next();
 		Object component = dep.getLogicalBus().getOwner().getOwner();
 
 		Reg register = null;
@@ -209,10 +208,8 @@ public class LoopEmulator extends Emulator {
 			return null;
 		}
 
-		Dependency regDep = (Dependency) ((Entry) register.getEntries()
-				.iterator().next())
-				.getDependencies(
-						(Port) register.getDataPorts().iterator().next())
+		Dependency regDep = register.getEntries().iterator().next()
+				.getDependencies(register.getDataPorts().iterator().next())
 				.iterator().next();
 
 		return regDep.getLogicalBus();
@@ -233,8 +230,8 @@ public class LoopEmulator extends Emulator {
 		Entry feedbackEntry = loop.getBodyFeedbackEntry();
 		Latch latch = null;
 		if (!feedbackEntry.getDependencies(port).isEmpty()) {
-			Dependency dep = (Dependency) feedbackEntry.getDependencies(port)
-					.iterator().next();
+			Dependency dep = feedbackEntry.getDependencies(port).iterator()
+					.next();
 			latch = (Latch) dep.getLogicalBus().getOwner().getOwner();
 		}
 		return latch;
@@ -257,8 +254,7 @@ public class LoopEmulator extends Emulator {
 		if (feedbackEntry.getDependencies(port).isEmpty()) {
 			return null;
 		}
-		Dependency dep = (Dependency) feedbackEntry.getDependencies(port)
-				.iterator().next();
+		Dependency dep = feedbackEntry.getDependencies(port).iterator().next();
 		Object component = dep.getLogicalBus().getOwner().getOwner();
 
 		Latch latch = null;
@@ -284,9 +280,9 @@ public class LoopEmulator extends Emulator {
 		Entry feedbackEntry = loop.getBodyFeedbackEntry();
 		Component component = null;
 		if (!feedbackEntry.getDependencies(port).isEmpty()) {
-			Dependency dep = (Dependency) feedbackEntry.getDependencies(port)
-					.iterator().next();
-			component = (Component) dep.getLogicalBus().getOwner().getOwner();
+			Dependency dep = feedbackEntry.getDependencies(port).iterator()
+					.next();
+			component = dep.getLogicalBus().getOwner().getOwner();
 		}
 
 		return component;
@@ -306,7 +302,7 @@ public class LoopEmulator extends Emulator {
 		feedbackRegMap = new HashMap<Port, Reg>();
 		Iterator<Port> iter = loop.getBody().getDataPorts().iterator();
 		while (iter.hasNext()) {
-			Port port = (Port) iter.next();
+			Port port = iter.next();
 			Bus bus = getLoopBodyInputRegBus(loop, port);
 			if (bus != null) {
 				feedbackMap.put(port, bus);
@@ -329,7 +325,7 @@ public class LoopEmulator extends Emulator {
 		latchValues = new HashMap<Port, SizedInteger>();
 		Iterator<Port> iter = loop.getBody().getDataPorts().iterator();
 		while (iter.hasNext()) {
-			Port port = (Port) iter.next();
+			Port port = iter.next();
 			if (getLoopBodyInputComponent(loop, port) instanceof Latch) {
 				Latch latch = getLoopBodyInputLatch(loop, port);
 				if (latch != null) {
@@ -401,7 +397,8 @@ public class LoopEmulator extends Emulator {
 
 		Map<Bus, SizedInteger> busValues = portToBusValues(inputValues);
 		Component loopBody = loop.getBody();
-		Map<Port, SizedInteger> portValues = busToPortValues(loopBody, busValues);
+		Map<Port, SizedInteger> portValues = busToPortValues(loopBody,
+				busValues);
 
 		outputValues = loopBodyEmulator.emulate(portValues);
 		isDone = loopBodyEmulator.getDone();
@@ -426,8 +423,8 @@ public class LoopEmulator extends Emulator {
 			/* we dont care about latches */
 			if (comp instanceof Reg) {
 				Reg loopbodyReg = getLoopBodyInputReg(loop, port);
-				((LinkedList<SizedInteger>) feedbackRegisterValues.get(loopbodyReg))
-						.add(busValues.get(feedbackMap.get(port)));
+				feedbackRegisterValues.get(loopbodyReg).add(
+						busValues.get(feedbackMap.get(port)));
 			}
 		}
 
@@ -448,8 +445,7 @@ public class LoopEmulator extends Emulator {
 	protected Bus getInitBlockInputBus(Port port) {
 		final Component entryOwner = port.getOwner();
 		entryOwner.getEntries().iterator().next();
-		final Entry initEntry = (Entry) entryOwner.getEntries().iterator()
-				.next();
+		final Entry initEntry = entryOwner.getEntries().iterator().next();
 		final Collection<Dependency> deps = initEntry.getDependencies(port);
 
 		/*
@@ -466,7 +462,7 @@ public class LoopEmulator extends Emulator {
 
 		Bus inputBus = null;
 		if (deps.size() != 0) {
-			final Dependency dep = (Dependency) deps.iterator().next();
+			final Dependency dep = deps.iterator().next();
 			inputBus = dep.getLogicalBus();
 		}
 

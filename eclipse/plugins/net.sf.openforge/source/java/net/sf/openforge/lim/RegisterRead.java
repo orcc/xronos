@@ -20,7 +20,6 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
  * A {@link Register} read access.
  * 
@@ -28,7 +27,6 @@ package net.sf.openforge.lim;
  * @version $Id: RegisterRead.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class RegisterRead extends Access implements StateAccessor {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	/** records whether this read is a signed memory read. */
 	private boolean isSigned;
@@ -57,6 +55,7 @@ public class RegisterRead extends Access implements StateAccessor {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -66,17 +65,19 @@ public class RegisterRead extends Access implements StateAccessor {
 	 * 
 	 * @return the targetted Register
 	 */
+	@Override
 	public StateHolder getStateHolder() {
 		return getRegister();
 	}
 
 	public Bus getResultBus() {
-		return (Bus) getExit(Exit.DONE).getDataBuses().get(0);
+		return getExit(Exit.DONE).getDataBuses().get(0);
 	}
 
 	/**
 	 * Returns true if the accessed register is stores a floating point value.
 	 */
+	@Override
 	public boolean isFloat() {
 		return getRegister().isFloat();
 	}
@@ -87,12 +88,12 @@ public class RegisterRead extends Access implements StateAccessor {
 	 * @return a value of type 'boolean'
 	 */
 	public boolean isSigned() {
-		return this.isSigned;
+		return isSigned;
 	}
 
 	public Port getSidebandDataPort() {
 		if (getDataPorts().size() > 0) {
-			return (Port) getDataPorts().get(0);
+			return getDataPorts().get(0);
 		}
 
 		return null;
@@ -102,6 +103,7 @@ public class RegisterRead extends Access implements StateAccessor {
 	 * Returns a fixed latency of ZERO since all register reads are
 	 * combinational.
 	 */
+	@Override
 	public Latency getLatency() {
 		return Latency.ZERO;
 	}
@@ -119,6 +121,7 @@ public class RegisterRead extends Access implements StateAccessor {
 	 * This accessor may execute in parallel with other similar (non state
 	 * modifying) accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return false;
 	}
@@ -146,15 +149,16 @@ public class RegisterRead extends Access implements StateAccessor {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
 		Value newValue;
 		if (getSidebandDataPort() == null) {
-			newValue = new Value(getRegister().getInitWidth(), this.isSigned);
+			newValue = new Value(getRegister().getInitWidth(), isSigned);
 		} else {
 			Value inValue = getSidebandDataPort().getValue();
-			newValue = new Value(inValue.getSize(), this.isSigned);
+			newValue = new Value(inValue.getSize(), isSigned);
 			for (int i = 0; i < inValue.getSize(); i++) {
 				newValue.setBit(i, inValue.getBit(i));
 			}
@@ -170,13 +174,14 @@ public class RegisterRead extends Access implements StateAccessor {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
 		Port sideband = getSidebandDataPort();
 		if (sideband != null) {
 			Value resultBusValue = getResultBus().getValue();
-			Value newValue = new Value(resultBusValue.getSize(), this.isSigned);
+			Value newValue = new Value(resultBusValue.getSize(), isSigned);
 			for (int i = 0; i < resultBusValue.getSize(); i++) {
 				Bit bit = resultBusValue.getBit(i);
 				if (!bit.isCare() || bit.isConstant()) {
@@ -205,9 +210,10 @@ public class RegisterRead extends Access implements StateAccessor {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
-		RegisterRead clone = getRegister().makeReadAccess(this.isSigned);
-		this.copyComponentAttributes(clone);
+		RegisterRead clone = getRegister().makeReadAccess(isSigned);
+		copyComponentAttributes(clone);
 		return clone;
 	}
 

@@ -75,6 +75,7 @@ public class ApiCallIdentifier {
 			return id;
 		}
 
+		@Override
 		public String toString() {
 			switch (getId()) {
 			case ID_THROUGHPUT_LOCAL:
@@ -118,10 +119,12 @@ public class ApiCallIdentifier {
 			return type;
 		}
 
+		@Override
 		public int hashCode() {
 			return type.hashCode();
 		}
 
+		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof Tag) {
 				Tag tag = (Tag) obj;
@@ -130,6 +133,7 @@ public class ApiCallIdentifier {
 			return false;
 		}
 
+		@Override
 		public String toString() {
 			return type.toString();
 		}
@@ -230,7 +234,7 @@ public class ApiCallIdentifier {
 		this.owner = owner;
 
 		if (api_name.compareTo("throughputLocal(int)") == 0) {
-			this.tag = new Tag(THROUGHPUT_LOCAL, api_name);
+			tag = new Tag(THROUGHPUT_LOCAL, api_name);
 		} else {
 			assert false : "Unknown API method " + api_name;
 		}

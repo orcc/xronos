@@ -86,7 +86,7 @@ public class SimpleMemoryReferee extends MemoryReferee {
 
 		if (numTaskSlots == 1) {
 			// Wire straight through
-			TaskSlot slot = (TaskSlot) getTaskSlots().get(0);
+			TaskSlot slot = getTaskSlots().get(0);
 			slot.getDoneBus().getPeer()
 					.setBus(globalSide.getDonePort().getPeer());
 			if (slot.getDataOutBus() != null) {
@@ -114,10 +114,8 @@ public class SimpleMemoryReferee extends MemoryReferee {
 			if (slot.getGoRPort() != null && slot.getGoWPort() != null) {
 				Or or = new Or(2);
 				addComponent(or);
-				((Port) or.getDataPorts().get(0)).setBus(slot.getGoRPort()
-						.getPeer());
-				((Port) or.getDataPorts().get(1)).setBus(slot.getGoWPort()
-						.getPeer());
+				or.getDataPorts().get(0).setBus(slot.getGoRPort().getPeer());
+				or.getDataPorts().get(1).setBus(slot.getGoWPort().getPeer());
 				go = or.getResultBus();
 			} else if (slot.getGoRPort() != null) {
 				go = slot.getGoRPort().getPeer();
@@ -169,8 +167,8 @@ public class SimpleMemoryReferee extends MemoryReferee {
 			Iterator<Port> sizeMuxGo = sizeMux.getGoPorts().iterator();
 			Iterator<Port> addrMuxGo = addrMux.getGoPorts().iterator();
 			Iterator<Port> enOrPorts = enOr.getDataPorts().iterator();
-			Iterator<Port> wenOrPorts = wenOr == null ? null : wenOr.getDataPorts()
-					.iterator();
+			Iterator<Port> wenOrPorts = wenOr == null ? null : wenOr
+					.getDataPorts().iterator();
 			for (TaskSlot slot : getTaskSlots()) {
 				Bus ren = null;
 				Bus wen = null;
@@ -184,12 +182,12 @@ public class SimpleMemoryReferee extends MemoryReferee {
 				{
 					wen = slot.getGoWPort().getPeer();
 					if (wenOr != null) {
-						((Port) wenOrPorts.next()).setBus(wen);
+						wenOrPorts.next().setBus(wen);
 					}
 					if (wenResult == null)
 						wenResult = wen;// in case of 1 write slot, pick up the
 										// wen here
-					Port goPort = (Port) writeMuxGo.next();
+					Port goPort = writeMuxGo.next();
 					Port dataPort = writeDataMux.getDataPort(goPort);
 					goPort.setBus(slot.getGoWPort().getPeer());
 					dataPort.setBus(slot.getDataInPort().getPeer());
@@ -198,8 +196,8 @@ public class SimpleMemoryReferee extends MemoryReferee {
 				Bus go = null;
 				if (ren != null && wen != null) {
 					Or or = new Or(2);
-					((Port) or.getDataPorts().get(0)).setBus(ren);
-					((Port) or.getDataPorts().get(1)).setBus(wen);
+					or.getDataPorts().get(0).setBus(ren);
+					or.getDataPorts().get(1).setBus(wen);
 					addComponent(or);
 					go = or.getResultBus();
 				} else if (ren != null) {
@@ -209,15 +207,15 @@ public class SimpleMemoryReferee extends MemoryReferee {
 				} else {
 					assert false : "Slot must either read or write!";
 				}
-				((Port) enOrPorts.next()).setBus(go);
+				enOrPorts.next().setBus(go);
 
-				final Port addrGoPort = (Port) addrMuxGo.next();
+				final Port addrGoPort = addrMuxGo.next();
 				final Port addrPort = addrMux.getDataPort(addrGoPort);
 				addrGoPort.setBus(go);
 				addrPort.setBus(slot.getAddressPort().getPeer());
 
-				final Port sizeGoPort = (Port) sizeMuxGo.next();
-				final Port sizePort = (Port) sizeMux.getDataPort(sizeGoPort);
+				final Port sizeGoPort = sizeMuxGo.next();
+				final Port sizePort = sizeMux.getDataPort(sizeGoPort);
 				sizeGoPort.setBus(go);
 				sizePort.setBus(slot.getSizePort().getPeer());
 
@@ -251,16 +249,13 @@ public class SimpleMemoryReferee extends MemoryReferee {
 				addComponent(notDone);
 				addFeedbackPoint(reg);
 
-				((Port) goOr.getDataPorts().get(0)).setBus(go);
-				((Port) goOr.getDataPorts().get(1)).setBus(reg.getResultBus());
+				goOr.getDataPorts().get(0).setBus(go);
+				goOr.getDataPorts().get(1).setBus(reg.getResultBus());
 				notDone.getDataPort().setBus(done);
-				((Port) regAnd.getDataPorts().get(0)).setBus(goOr
-						.getResultBus());
-				((Port) regAnd.getDataPorts().get(1)).setBus(notDone
-						.getResultBus());
-				((Port) doneAnd.getDataPorts().get(0)).setBus(goOr
-						.getResultBus());
-				((Port) doneAnd.getDataPorts().get(1)).setBus(done);
+				regAnd.getDataPorts().get(0).setBus(goOr.getResultBus());
+				regAnd.getDataPorts().get(1).setBus(notDone.getResultBus());
+				doneAnd.getDataPorts().get(0).setBus(goOr.getResultBus());
+				doneAnd.getDataPorts().get(1).setBus(done);
 
 				slot.getDoneBus().getPeer().setBus(doneAnd.getResultBus());
 			}

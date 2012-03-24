@@ -73,7 +73,7 @@ public class BusResizer {
 	 */
 	public BusResizer(int size, boolean needControlDependency) {
 		this(size);
-		this.createControlDependency = needControlDependency;
+		createControlDependency = needControlDependency;
 	}
 
 	/**
@@ -133,7 +133,7 @@ public class BusResizer {
 		// move all bus dependencies from busToMask to recastOp's result bus //
 		Iterator<Dependency> iter = busToMask.getLogicalDependents().iterator();
 		while (iter.hasNext()) {
-			Dependency dependency = (Dependency) iter.next();
+			Dependency dependency = iter.next();
 			Port port = dependency.getPort();
 			Entry entry = dependency.getEntry();
 			createDataDependency(entry, port, reCastOp.getResultBus());
@@ -147,11 +147,11 @@ public class BusResizer {
 		busToMask.clearDependents();
 
 		// connect up cast op and recastop //
-		Entry reCastOpEntry = (Entry) reCastOp.getEntries().iterator().next();
+		Entry reCastOpEntry = reCastOp.getEntries().iterator().next();
 		createDataDependency(reCastOpEntry, reCastOp.getDataPort(),
 				castOp.getResultBus());
 
-		Entry castOpEntry = (Entry) castOp.getEntries().iterator().next();
+		Entry castOpEntry = castOp.getEntries().iterator().next();
 		// connect castOp's input port to busToMask //
 		createDataDependency(castOpEntry, castOp.getDataPort(), busToMask);
 		createControlDependency(castOpEntry, castOp, busToMask.getOwner());

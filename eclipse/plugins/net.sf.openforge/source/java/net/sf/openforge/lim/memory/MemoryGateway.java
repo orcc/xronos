@@ -56,7 +56,7 @@ public class MemoryGateway extends Gateway {
 	private List<ReadSlot> readSlots;
 	private List<WriteSlot> writeSlots;
 
-	//private List localDataPorts;
+	// private List localDataPorts;
 
 	private Port memoryDonePort;
 	private Port memoryDataReadPort;
@@ -172,10 +172,10 @@ public class MemoryGateway extends Gateway {
 				.iterator() : null;
 
 		if (writes > 0) {
-			Iterator<Port> dataMuxPorts = (dataMux != null) ? dataMux.getGoPorts()
-					.iterator() : null;
-			Iterator<Port> writeOrPorts = (writeOr != null) ? writeOr.getDataPorts()
-					.iterator() : null;
+			Iterator<Port> dataMuxPorts = (dataMux != null) ? dataMux
+					.getGoPorts().iterator() : null;
+			Iterator<Port> writeOrPorts = (writeOr != null) ? writeOr
+					.getDataPorts().iterator() : null;
 
 			for (int i = 0; i < writes; i++) {
 				Port localWriteEnablePort = makeDataPort();
@@ -188,7 +188,7 @@ public class MemoryGateway extends Gateway {
 						gatedDoneBus));
 
 				if (addressMux != null) {
-					Port addressMuxGoPort = (Port) addressMuxPorts.next();
+					Port addressMuxGoPort = addressMuxPorts.next();
 					addressMuxGoPort.setBus(localWriteEnablePort.getPeer());
 					Port addressMuxDataPort = addressMux
 							.getDataPort(addressMuxGoPort);
@@ -198,7 +198,7 @@ public class MemoryGateway extends Gateway {
 				}
 
 				if (sizeMux != null) {
-					Port p = (Port) sizeMuxPorts.next();
+					Port p = sizeMuxPorts.next();
 					p.setBus(localWriteEnablePort.getPeer());
 					p = sizeMux.getDataPort(p);
 					p.setBus(localSizePort.getPeer());
@@ -216,7 +216,7 @@ public class MemoryGateway extends Gateway {
 				addComponent(castOp);
 
 				if (dataMux != null) {
-					Port dataMuxGoPort = (Port) dataMuxPorts.next();
+					Port dataMuxGoPort = dataMuxPorts.next();
 					dataMuxGoPort.setBus(localWriteEnablePort.getPeer());
 
 					Port dataMuxDataPort = dataMux.getDataPort(dataMuxGoPort);
@@ -226,7 +226,7 @@ public class MemoryGateway extends Gateway {
 				}
 
 				if (writeOr != null) {
-					Port orDataPort = (Port) writeOrPorts.next();
+					Port orDataPort = writeOrPorts.next();
 					orDataPort.setBus(localWriteEnablePort.getPeer());
 				} else {
 					internalWriteEnable = localWriteEnablePort.getPeer();
@@ -235,8 +235,8 @@ public class MemoryGateway extends Gateway {
 		}
 
 		if (reads > 0) {
-			Iterator<Port> readOrPorts = (readOr != null) ? readOr.getDataPorts()
-					.iterator() : null;
+			Iterator<Port> readOrPorts = (readOr != null) ? readOr
+					.getDataPorts().iterator() : null;
 
 			for (int i = 0; i < reads; i++) {
 				Port localReadEnablePort = makeDataPort();
@@ -248,7 +248,7 @@ public class MemoryGateway extends Gateway {
 						gatedDataBus));
 
 				if (addressMux != null) {
-					Port addressMuxGoPort = (Port) addressMuxPorts.next();
+					Port addressMuxGoPort = addressMuxPorts.next();
 					addressMuxGoPort.setBus(localReadEnablePort.getPeer());
 					Port addressMuxDataPort = addressMux
 							.getDataPort(addressMuxGoPort);
@@ -258,7 +258,7 @@ public class MemoryGateway extends Gateway {
 				}
 
 				if (sizeMux != null) {
-					Port p = (Port) sizeMuxPorts.next();
+					Port p = sizeMuxPorts.next();
 					p.setBus(localReadEnablePort.getPeer());
 					p = sizeMux.getDataPort(p);
 					p.setBus(localSizePort.getPeer());
@@ -267,7 +267,7 @@ public class MemoryGateway extends Gateway {
 				}
 
 				if (readOr != null) {
-					Port orDataPort = (Port) readOrPorts.next();
+					Port orDataPort = readOrPorts.next();
 					orDataPort.setBus(localReadEnablePort.getPeer());
 				} else {
 					internalReadEnable = localReadEnablePort.getPeer();
@@ -320,13 +320,14 @@ public class MemoryGateway extends Gateway {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
 
-	//public List getLocalDataPorts() {
-	//	return localDataPorts;
-	//}
+	// public List getLocalDataPorts() {
+	// return localDataPorts;
+	// }
 
 	/**
 	 * Returns the port which receives the done signal for the current memory
@@ -381,7 +382,7 @@ public class MemoryGateway extends Gateway {
 	 * memory.
 	 */
 	public Bus getMemorySizeBus() {
-		return this.memorySizeBus;
+		return memorySizeBus;
 	}
 
 	/**

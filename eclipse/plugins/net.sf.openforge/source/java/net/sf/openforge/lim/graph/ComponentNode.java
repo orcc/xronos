@@ -99,7 +99,7 @@ class ComponentNode extends Record {
 	 * that are connected.
 	 */
 	Node getNode(net.sf.openforge.lim.Port port) {
-		return (Node) nodeMap.get(port);
+		return nodeMap.get(port);
 	}
 
 	/**
@@ -109,7 +109,7 @@ class ComponentNode extends Record {
 	 * {@link ComponentNode#getExitNodes()}.
 	 */
 	Node getNode(Exit exit) {
-		return (Node) nodeMap.get(exit);
+		return nodeMap.get(exit);
 	}
 
 	/**
@@ -119,7 +119,7 @@ class ComponentNode extends Record {
 	 * {@link ComponentNode#getExitNodes}.
 	 */
 	Node getNode(Bus bus) {
-		return (Node) nodeMap.get(bus);
+		return nodeMap.get(bus);
 	}
 
 	/**
@@ -190,8 +190,7 @@ class ComponentNode extends Record {
 			}
 			int index = 0;
 			for (net.sf.openforge.lim.Port port : component.getDataPorts()) {
-				graphPort((net.sf.openforge.lim.Port) port, entryBox, "din"
-						+ index, "d" + index);
+				graphPort(port, entryBox, "din" + index, "d" + index);
 				index++;
 			}
 		}
@@ -224,7 +223,7 @@ class ComponentNode extends Record {
 				boundingBox.setSeparated(false);
 				Record.Port exitBox = boundingBox.getPort(EXIT);
 				exitBox.setSeparated(false);
-				graphExit((Exit) exits.iterator().next(), exitBox);
+				graphExit(exits.iterator().next(), exitBox);
 			} else {
 				int index = 0;
 				for (Exit exit : exits) {

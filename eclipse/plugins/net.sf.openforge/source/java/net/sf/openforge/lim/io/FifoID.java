@@ -98,13 +98,13 @@ public abstract class FifoID {
 
 			if (keyValue[0].equals(ID)) {
 				// this.interfaceNumber = new Integer(keyValue[1]).intValue();
-				this.interfaceName = keyValue[1];
+				interfaceName = keyValue[1];
 			} else if (keyValue[0].equals(WIDTH)) {
-				this.interfaceWidth = new Integer(keyValue[1]).intValue();
+				interfaceWidth = new Integer(keyValue[1]).intValue();
 			} else if (keyValue[0].equals(DIR)) {
-				this.isInput = new Boolean(keyValue[1]).booleanValue();
+				isInput = new Boolean(keyValue[1]).booleanValue();
 			} else if (keyValue[0].equals(TYPE)) {
-				this.interfaceType = new Integer(keyValue[1]).intValue();
+				interfaceType = new Integer(keyValue[1]).intValue();
 			} else {
 				throw new IllegalArgumentException(
 						"Illegal Syntax for Fifo Identification " + encoded
@@ -136,7 +136,7 @@ public abstract class FifoID {
 	 * @return a positive int, the byte width of the interface.
 	 */
 	public int getByteWidth() {
-		return this.interfaceWidth / 8;
+		return interfaceWidth / 8;
 	}
 
 	/**
@@ -150,7 +150,7 @@ public abstract class FifoID {
 			throw new IllegalArgumentException("Fifo bit width must be > 0");
 		}
 
-		this.interfaceWidth = width;
+		interfaceWidth = width;
 	}
 
 	/**
@@ -160,7 +160,7 @@ public abstract class FifoID {
 	 *            a value of type 'int'
 	 */
 	public int getBitWidth() {
-		return this.interfaceWidth;
+		return interfaceWidth;
 	}
 
 	/**
@@ -171,7 +171,7 @@ public abstract class FifoID {
 	 *            any String
 	 */
 	public void setID(String id) {
-		this.interfaceName = id;
+		interfaceName = id;
 	}
 
 	/**
@@ -180,7 +180,7 @@ public abstract class FifoID {
 	 * @return a 'String'
 	 */
 	public String getID() {
-		return this.interfaceName;
+		return interfaceName;
 	}
 
 	public void setType(int type) {
@@ -190,7 +190,7 @@ public abstract class FifoID {
 			throw new IllegalArgumentException(
 					"Unknown interface type specified " + type);
 		}
-		this.interfaceType = type;
+		interfaceType = type;
 	}
 
 	/**
@@ -200,7 +200,7 @@ public abstract class FifoID {
 	 *         class.
 	 */
 	public int getType() {
-		return this.interfaceType;
+		return interfaceType;
 	}
 
 	/**
@@ -219,7 +219,7 @@ public abstract class FifoID {
 	 *            a value of type 'boolean'
 	 */
 	public void setDirection(boolean read) {
-		this.isInput = read;
+		isInput = read;
 	}
 
 	/**
@@ -229,7 +229,7 @@ public abstract class FifoID {
 	 * @return a 'boolean'
 	 */
 	public boolean isInputFifo() {
-		return this.isInput;
+		return isInput;
 	}
 
 	/**
@@ -242,10 +242,10 @@ public abstract class FifoID {
 	 */
 	private String getEncodedID() {
 		// &dir=XXXX&id=YYYY&width=ZZZZ&type=QQQQ
-		String encoded = DELIMITER + DIR + EQUALS + this.isInput;
-		encoded += DELIMITER + ID + EQUALS + this.interfaceName;
-		encoded += DELIMITER + WIDTH + EQUALS + this.interfaceWidth;
-		encoded += DELIMITER + TYPE + EQUALS + this.interfaceType;
+		String encoded = DELIMITER + DIR + EQUALS + isInput;
+		encoded += DELIMITER + ID + EQUALS + interfaceName;
+		encoded += DELIMITER + WIDTH + EQUALS + interfaceWidth;
+		encoded += DELIMITER + TYPE + EQUALS + interfaceType;
 		return encoded;
 	}
 
@@ -258,11 +258,11 @@ public abstract class FifoID {
 	 *             if the direction of this fifo is not input.
 	 */
 	public String getReadID() {
-		if (!this.isInput) {
+		if (!isInput) {
 			throw new UnsupportedOperationException(
 					"Cannot read from an output fifo interface");
 		}
-		return READ_PREFIX + this.getEncodedID();
+		return READ_PREFIX + getEncodedID();
 	}
 
 	/**
@@ -274,11 +274,11 @@ public abstract class FifoID {
 	 *             if the direction of this fifo is not output.
 	 */
 	public String getWriteID() {
-		if (this.isInput) {
+		if (isInput) {
 			throw new UnsupportedOperationException(
 					"Cannot write to an input fifo interface");
 		}
-		return WRITE_PREFIX + this.getEncodedID();
+		return WRITE_PREFIX + getEncodedID();
 	}
 
 }// FifoID

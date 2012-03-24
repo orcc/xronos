@@ -99,6 +99,7 @@ public abstract class Referent extends ID implements Cloneable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		Referent clone = (Referent) super.clone();
 		clone.references = new HashSet<Reference>(11);

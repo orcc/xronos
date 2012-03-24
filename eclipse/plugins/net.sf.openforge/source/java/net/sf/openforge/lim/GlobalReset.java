@@ -166,13 +166,13 @@ public class GlobalReset extends HiddenPin {
 				// leve element and we hook up all resets of design
 				// level elements to the appropriate reset module.
 				// This could cause a loop.
-				this.publishedReset = makeDataPort();
-				this.publishedReset.setUsed(true);
-				this.publishedReset.setIDLogical("PUBLISHED_RESET");
-				this.publishedReset.setSize(1, false);
+				publishedReset = makeDataPort();
+				publishedReset.setUsed(true);
+				publishedReset.setIDLogical("PUBLISHED_RESET");
+				publishedReset.setSize(1, false);
 				Or orgate = new Or(2);
 				List<Port> ports = orgate.getDataPorts();
-				ports.get(0).setBus(this.publishedReset.getPeer());
+				ports.get(0).setBus(publishedReset.getPeer());
 				ports.get(0).pushValueForward();
 				ports.get(1).setBus(finalReset);
 				ports.get(1).pushValueForward();
@@ -203,20 +203,21 @@ public class GlobalReset extends HiddenPin {
 		// return false;
 		// }
 
+		@Override
 		public boolean isOpaque() {
 			return true;
 		}
 
 		public Port getClockInput() {
-			return this.clock;
+			return clock;
 		}
 
 		public Port getResetInput() {
-			return this.publishedReset;
+			return publishedReset;
 		}
 
 		public Bus getResetOutput() {
-			return this.reset;
+			return reset;
 		}
 
 		public Reg getSampleReg() {

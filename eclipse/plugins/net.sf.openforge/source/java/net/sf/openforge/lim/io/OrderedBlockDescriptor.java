@@ -56,11 +56,12 @@ public abstract class OrderedBlockDescriptor extends BlockDescriptor {
 	 *         of one complete transfer, the value denotes which BlockElement is
 	 *         transferred on that cycle.
 	 */
+	@Override
 	public int[] getBlockOrganization() {
 		// Derive from the list of elements. This code assumes that
 		// we transfer all of each block contiguously. ie, all of
 		// block 0 then all of block 1, etc.
-		List<Integer> blocks = new ArrayList<Integer> ();
+		List<Integer> blocks = new ArrayList<Integer>();
 		BlockElement elements[] = getBlockElements();
 		for (int count = 0; count < elements.length; count++) {
 			BlockElement element = elements[count];
@@ -74,7 +75,7 @@ public abstract class OrderedBlockDescriptor extends BlockDescriptor {
 		}
 		int org[] = new int[blocks.size()];
 		for (int i = 0; i < blocks.size(); i++) {
-			org[i] = ((Integer) blocks.get(i)).intValue();
+			org[i] = blocks.get(i).intValue();
 		}
 		return org;
 	}

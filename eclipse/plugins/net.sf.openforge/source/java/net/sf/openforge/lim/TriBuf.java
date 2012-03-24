@@ -47,19 +47,20 @@ public class TriBuf extends Component {
 	public TriBuf() {
 		super(2); // 2 data port
 		Exit exit = makeExit(1);
-		resultBus = (Bus) exit.getDataBuses().iterator().next();
+		resultBus = exit.getDataBuses().iterator().next();
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
 
 	public Port getInputPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
 	public Port getEnablePort() {
-		return (Port) getDataPorts().get(1);
+		return getDataPorts().get(1);
 	}
 
 	public Bus getResultBus() {
@@ -79,6 +80,7 @@ public class TriBuf extends Component {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		return false;
 	}
@@ -89,6 +91,7 @@ public class TriBuf extends Component {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		return false;
 	}

@@ -154,6 +154,7 @@ public abstract class FifoIF implements Referenceable, StateHolder {
 	 * @param to
 	 *            the latter accessor in source document order.
 	 */
+	@Override
 	public int getSpacing(Referencer from, Referencer to) {
 		if (from instanceof FifoRead)
 			return 1;
@@ -168,6 +169,7 @@ public abstract class FifoIF implements Referenceable, StateHolder {
 	 * Returns -1 indicating that the referencers must be scheduled using the
 	 * default DONE to GO spacing.
 	 */
+	@Override
 	public int getGoSpacing(Referencer from, Referencer to) {
 		return -1;
 	}

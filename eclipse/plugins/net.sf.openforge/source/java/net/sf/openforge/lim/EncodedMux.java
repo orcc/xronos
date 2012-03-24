@@ -73,13 +73,15 @@ public class EncodedMux extends Primitive {
 	 * Gets the Data Port which is paird with the given Go port.
 	 */
 	public Port getDataPort(int num) {
-		return (Port) inputPorts.get(num);
+		return inputPorts.get(num);
 	}
 
+	@Override
 	public List<Port> getDataPorts() {
 		return Collections.unmodifiableList(inputPorts);
 	}
 
+	@Override
 	public boolean removeDataPort(Port port) {
 		assert false : "remove data port not supported for " + this;
 		return false;
@@ -92,6 +94,7 @@ public class EncodedMux extends Primitive {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		if (isPassThrough()) {
 			return 0;
@@ -119,6 +122,7 @@ public class EncodedMux extends Primitive {
 		return dataPort;
 	}
 
+	@Override
 	public List getPorts() {
 		List ports = new ArrayList();
 		ports.add(getClockPort());
@@ -138,10 +142,12 @@ public class EncodedMux extends Primitive {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean hasWait() {
 		return false;
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -156,6 +162,7 @@ public class EncodedMux extends Primitive {
 	 * data ports are same constant and pass through if all data ports are same
 	 * pass through bit.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		/*
 		 * The pushed value must be big enough to accommodate the largest input.
@@ -180,7 +187,7 @@ public class EncodedMux extends Primitive {
 			assert (selection >= 0) && (selection < getDataPorts().size()) : "select out of bounds: "
 					+ selection + " size: " + getDataPorts().size();
 
-			final Port selectedPort = (Port) getDataPorts().get(selection);
+			final Port selectedPort = getDataPorts().get(selection);
 			pushedValue = selectedPort.getValue();
 		} else {
 			/*
@@ -218,6 +225,7 @@ public class EncodedMux extends Primitive {
 	 * Any constant or dont care bits on the result propagate backwards to be
 	 * dont care bits on all data inputs.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
@@ -255,6 +263,7 @@ public class EncodedMux extends Primitive {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		EncodedMux clone = (EncodedMux) super.clone();
 		// DONT USE getDataPorts because it's overridden to return the
@@ -274,6 +283,7 @@ public class EncodedMux extends Primitive {
 	 *         or the value of a single input, based upon the current
 	 *         {@link Value} of each data {@link Port}
 	 */
+	@Override
 	public boolean isPassThrough() {
 		boolean constantSelect = false;
 		if (getSelectPort().getValue() != null)

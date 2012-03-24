@@ -80,7 +80,7 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 			throw new NullPointerException("null logicalMemory arg");
 		}
 		this.logicalMemory = logicalMemory;
-		this.doSimpleArbiter = EngineThread.getGenericJob()
+		doSimpleArbiter = EngineThread.getGenericJob()
 				.getUnscopedBooleanOptionValue(
 						OptionRegistry.SIMPLE_STATE_ARBITRATION);
 	}
@@ -102,6 +102,7 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 	 * @param to
 	 *            the latter accessor in source document order.
 	 */
+	@Override
 	public int getSpacing(Referencer from, Referencer to) {
 		if ((from instanceof MemoryRead) || (from instanceof MemoryWrite)) {
 			if (((MemoryAccess) from).getLatency().getMinClocks() == 0) {
@@ -118,6 +119,7 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 	 * Returns -1 indicating that the referencers must be scheduled using the
 	 * default DONE to GO spacing.
 	 */
+	@Override
 	public int getGoSpacing(Referencer from, Referencer to) {
 		return -1;
 	}
@@ -128,7 +130,7 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 	 */
 	public boolean isArbitrated() {
 		// return this.arbitrated && !this.doSimpleArbiter;
-		return this.arbitrated;
+		return arbitrated;
 	}
 
 	/**
@@ -152,7 +154,7 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 	 *            true if this memory port needs to be arbitrated.
 	 */
 	public void setArbitrated(boolean value) {
-		this.arbitrated = value;
+		arbitrated = value;
 	}
 
 	/**
@@ -174,10 +176,10 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 	 *            writes mean there is no read or write for that task
 	 */
 	public MemoryReferee makePhysicalComponent(List readList, List writeList) {
-		if (this.doSimpleArbiter) {
-			this.referee = new SimpleMemoryReferee(this, readList, writeList);
+		if (doSimpleArbiter) {
+			referee = new SimpleMemoryReferee(this, readList, writeList);
 		} else {
-			this.referee = new MemoryReferee(this, readList, writeList);
+			referee = new MemoryReferee(this, readList, writeList);
 		}
 
 		return referee;
@@ -256,6 +258,7 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 	 *            is an {@link Exit} which is used to find the type of the
 	 *            access by getting the owner of the exit.
 	 */
+	@Override
 	public Latency getLatency(Exit exit) {
 		Component owner = exit.getOwner();
 		// Sometimes we end up asking by the HeapRead/ArrayWrite,
@@ -340,18 +343,22 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 	//
 	// //////////////////////////////////////////////////
 
+	@Override
 	public int getDataPathWidth() {
 		return getStructuralMemory().getDataWidth();
 	}
 
+	@Override
 	public int getAddrPathWidth() {
 		return getStructuralMemory().getAddrWidth();
 	}
 
+	@Override
 	public boolean isAddressable() {
 		return getStructuralMemory().getAddressableLocations() > 1;
 	}
 
+	@Override
 	public boolean allowsCombinationalReads() {
 		return getStructuralMemory().allowsCombinationalReads();
 	}

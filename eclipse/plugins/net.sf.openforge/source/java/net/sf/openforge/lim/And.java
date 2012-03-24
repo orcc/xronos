@@ -53,6 +53,7 @@ public class And extends Primitive {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return log2(getMaxCareBits());
 	}
@@ -62,6 +63,7 @@ public class And extends Primitive {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int terms = getDataPorts().size();
 		int groupedCount = 0;
@@ -84,6 +86,7 @@ public class And extends Primitive {
 		return hwResource;
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -96,15 +99,16 @@ public class And extends Primitive {
 	/**
 	 * Defers to {@link AndOp#pushValueForwardAnd} for rules.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
 		assert getDataPorts().size() > 0;
 
 		Iterator<Port> dpIter = getDataPorts().iterator();
-		Value andValue = ((Port) dpIter.next()).getValue();
+		Value andValue = dpIter.next().getValue();
 		while (dpIter.hasNext()) {
-			Value nextValue = ((Port) dpIter.next()).getValue();
+			Value nextValue = dpIter.next().getValue();
 			andValue = AndOp.pushValuesForwardAnd(andValue, nextValue);
 		}
 		mod |= getResultBus().pushValueForward(andValue);
@@ -116,6 +120,7 @@ public class And extends Primitive {
 	 * back to the Ports. Any constant/dc bits in the output produce don't care
 	 * bits on the inputs.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
@@ -131,7 +136,7 @@ public class And extends Primitive {
 			}
 		}
 
-		for (Port port: getDataPorts()) {
+		for (Port port : getDataPorts()) {
 			mod |= port.pushValueBackward(newValue);
 		}
 

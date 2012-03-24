@@ -47,22 +47,21 @@ public abstract class OffsetMemoryRead extends OffsetMemoryAccess {
 	 * @param maxAddressWidth
 	 *            the pre-optimized number of bits in the address bus
 	 */
-	
+
 	protected OffsetMemoryRead(MemoryRead memoryRead, int addressableLocations,
 			int maxAddressWidth) {
 		super(memoryRead, addressableLocations, maxAddressWidth);
 		@SuppressWarnings("unused")
-		final Bus readBus = (Bus) memoryRead.getExit(Exit.DONE).getDataBuses()
-				.get(0);
+		final Bus readBus = memoryRead.getExit(Exit.DONE).getDataBuses().get(0);
 
 		/*
 		 * Connect the MemoryRead's data output to the output of this module.
 		 */
 		Exit exit = getExit(Exit.DONE);
 		exit.getDoneBus().setUsed(true);
-		final OutBuf ob = (OutBuf) exit.getPeer();
-		final Entry obEntry = (Entry) ob.getEntries().get(0);
-		this.resultBus = exit.makeDataBus();
+		final OutBuf ob = exit.getPeer();
+		final Entry obEntry = ob.getEntries().get(0);
+		resultBus = exit.makeDataBus();
 		obEntry.addDependency(resultBus.getPeer(), new DataDependency(
 				memoryRead.getResultBus()));
 	}
@@ -81,10 +80,11 @@ public abstract class OffsetMemoryRead extends OffsetMemoryAccess {
 	 *            the bus to remove
 	 * @return true if the bus was removed.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		final boolean isRemoved = super.removeDataBus(bus);
 		if (isRemoved && (bus == resultBus)) {
-			this.resultBus = null;
+			resultBus = null;
 		}
 		return isRemoved;
 	}
@@ -92,6 +92,7 @@ public abstract class OffsetMemoryRead extends OffsetMemoryAccess {
 	/**
 	 * Returns false
 	 */
+	@Override
 	public boolean isWrite() {
 		return false;
 	}
@@ -103,6 +104,7 @@ public abstract class OffsetMemoryRead extends OffsetMemoryAccess {
 		return (MemoryRead) getMemoryAccess();
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		// XXX WARNING! This is probably never called since all the
 		// concrete subclasses override cloneNotify and do not call

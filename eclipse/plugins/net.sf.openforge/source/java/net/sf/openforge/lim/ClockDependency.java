@@ -38,10 +38,12 @@ public class ClockDependency extends Dependency {
 		super(logicalBus);
 	}
 
+	@Override
 	public Dependency createSameType(Bus logicalBus) {
 		return new ClockDependency(logicalBus);
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof ClockDependency) {
 			return super.equals(obj);
@@ -49,6 +51,7 @@ public class ClockDependency extends Dependency {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return super.hashCode();
 	}

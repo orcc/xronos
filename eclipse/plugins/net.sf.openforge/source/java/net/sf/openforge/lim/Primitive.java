@@ -20,7 +20,6 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
  * A Primitive is a low level component that performs a simple logic function.
  * It has a single Exit, and the clock, reset, go, and done Buses are unused.
@@ -49,6 +48,7 @@ public abstract class Primitive extends Component {
 		this(dataCount, true);
 	}
 
+	@Override
 	public Exit makeExit(int dataCount) {
 		throw new UnsupportedOperationException("Primitive has one Exit");
 	}
@@ -58,17 +58,18 @@ public abstract class Primitive extends Component {
 	 * primitive operation.
 	 */
 	public Bus getResultBus() {
-		return this.resultBus;
+		return resultBus;
 	}
 
 	/**
 	 * Calls the super, then removes any reference to the given bus in this
 	 * class.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
-			if (bus == this.resultBus)
-				this.resultBus = null;
+			if (bus == resultBus)
+				resultBus = null;
 			return true;
 		}
 		return false;
@@ -86,6 +87,7 @@ public abstract class Primitive extends Component {
 	/**
 	 * Asserts false until rule is supported.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		assert false : "new pushValuesForward propagation of constants through "
 				+ this.getClass() + " not yet supported";
@@ -95,6 +97,7 @@ public abstract class Primitive extends Component {
 	/**
 	 * Asserts false until rule is supported.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		assert false : "new pushValuesBackward propagation of constants through "
 				+ this.getClass() + " not yet supported";
@@ -113,11 +116,11 @@ public abstract class Primitive extends Component {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		Primitive clone = (Primitive) super.clone();
-		if (this.resultBus != null) {
-			clone.resultBus = (Bus) clone.getExit(Exit.DONE).getDataBuses()
-					.get(0);
+		if (resultBus != null) {
+			clone.resultBus = clone.getExit(Exit.DONE).getDataBuses().get(0);
 		}
 		return clone;
 	}

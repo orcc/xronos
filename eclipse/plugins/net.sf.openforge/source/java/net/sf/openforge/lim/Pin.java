@@ -39,9 +39,9 @@ public abstract class Pin extends Component {
 	Buffer apiPin;
 
 	/** the clock that controls this pin */
-	//private InputPin clockPin = null;
+	// private InputPin clockPin = null;
 	/** the reset that controls this pin */
-	//private InputPin resetPin = null;
+	// private InputPin resetPin = null;
 
 	/** The pin referee used to arbitrate all accesses to this pin. */
 	private PinReferee referee = null;
@@ -65,7 +65,7 @@ public abstract class Pin extends Component {
 	 * @return a value of type 'boolean'
 	 */
 	protected boolean isUserCreatedPin() {
-		return this.apiPin != null;
+		return apiPin != null;
 	}
 
 	public InPinBuf getInPinBuf() {
@@ -96,7 +96,7 @@ public abstract class Pin extends Component {
 	 * subclasses to update the pin size during constant prop.
 	 */
 	protected void setWidth(int value) {
-		this.width = value;
+		width = value;
 	}
 
 	public long getResetValue() {
@@ -107,6 +107,7 @@ public abstract class Pin extends Component {
 		return apiPin.getDriveOnReset();
 	}
 
+	@Override
 	public boolean consumesClock() {
 		if ((getInPinBuf() != null) && (getInPinBuf().consumesClock())) {
 			return true;
@@ -117,6 +118,7 @@ public abstract class Pin extends Component {
 		return false;
 	}
 
+	@Override
 	public boolean consumesReset() {
 		if ((getInPinBuf() != null) && (getInPinBuf().consumesReset())) {
 			return true;
@@ -131,6 +133,7 @@ public abstract class Pin extends Component {
 		return false;
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		// assert (false) : "Pins should not be visited.";
 		throw new UnexpectedVisitationException();
@@ -144,6 +147,7 @@ public abstract class Pin extends Component {
 	/**
 	 * Asserts false until rule is supported.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		assert false : "new pushValuesForward propagation of constants through "
 				+ this.getClass() + " not yet supported";
@@ -153,6 +157,7 @@ public abstract class Pin extends Component {
 	/**
 	 * Asserts false until rule is supported.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		assert false : "new pushValuesBackward propagation of constants through "
 				+ this.getClass() + " not yet supported";
@@ -164,10 +169,10 @@ public abstract class Pin extends Component {
 	 * pin.
 	 */
 	public PinReferee getReferee() {
-		if (this.referee == null) {
-			this.referee = new PinReferee(this);
+		if (referee == null) {
+			referee = new PinReferee(this);
 		}
-		return this.referee;
+		return referee;
 	}
 
 	/*

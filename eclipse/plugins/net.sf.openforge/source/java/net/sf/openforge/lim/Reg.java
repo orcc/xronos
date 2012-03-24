@@ -133,7 +133,7 @@ public class Reg extends Primitive implements Emulatable {
 	public Reg(int type, String id) {
 		super(4);
 
-		this.regState = type;
+		regState = type;
 
 		if (((type & RESET) != 0) && ((type & CLEAR) != 0))
 			throw new IllegalArgumentException(
@@ -151,7 +151,7 @@ public class Reg extends Primitive implements Emulatable {
 				state = true;
 			else if ((i == 3) && ((type & ENABLE) != 0))
 				state = true;
-			((Port) getDataPorts().get(i)).setUsed(state);
+			getDataPorts().get(i).setUsed(state);
 		}
 
 		// the clock is always used, and must be connected by the user
@@ -172,11 +172,11 @@ public class Reg extends Primitive implements Emulatable {
 	}
 
 	public void setHardInstantiate(boolean value) {
-		this.hardInstantiate = value;
+		hardInstantiate = value;
 	}
 
 	public boolean hardInstantiate() {
-		return this.hardInstantiate;
+		return hardInstantiate;
 	}
 
 	/**
@@ -190,9 +190,8 @@ public class Reg extends Primitive implements Emulatable {
 			return;
 		}
 
-		final boolean isSync = ((OptionBoolean) this.getGenericJob().getOption(
-				OptionRegistry.SYNC_RESET)).getValueAsBoolean(this
-				.getSearchLabel());
+		final boolean isSync = ((OptionBoolean) getGenericJob().getOption(
+				OptionRegistry.SYNC_RESET)).getValueAsBoolean(getSearchLabel());
 
 		int type = getType();
 		// RESET and SET are synchronous
@@ -217,7 +216,7 @@ public class Reg extends Primitive implements Emulatable {
 			}
 		}
 
-		this.regState = type;
+		regState = type;
 	}
 
 	/**
@@ -234,7 +233,7 @@ public class Reg extends Primitive implements Emulatable {
 		if (value == null)
 			throw new IllegalArgumentException(
 					"Illegal null initial value for reg");
-		this.initialValue = value;
+		initialValue = value;
 	}
 
 	/**
@@ -244,30 +243,31 @@ public class Reg extends Primitive implements Emulatable {
 	 * @return a value of type 'Port'
 	 */
 	public Port getDataPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
 	/**
 	 * gets the sync set port
 	 */
 	public Port getSetPort() {
-		return (Port) getDataPorts().get(1);
+		return getDataPorts().get(1);
 	}
 
 	/** gets the sync reset port */
 	public Port getInternalResetPort() {
-		return (Port) getDataPorts().get(2);
+		return getDataPorts().get(2);
 	}
 
 	/** gets the enable port */
 	public Port getEnablePort() {
-		return (Port) getDataPorts().get(3);
+		return getDataPorts().get(3);
 	}
 
 	/**
 	 * Tests whether this component requires a connection to its clock
 	 * {@link Port}.
 	 */
+	@Override
 	public boolean consumesClock() {
 		return true;
 	}
@@ -277,6 +277,7 @@ public class Reg extends Primitive implements Emulatable {
 	 * {@link Port}. Returns true if this Reg has a 'reset' value or was
 	 * constructed to consume reset.
 	 */
+	@Override
 	public boolean consumesReset() {
 		return ((getType() & (RESET | CLEAR)) != 0);
 	}
@@ -286,7 +287,7 @@ public class Reg extends Primitive implements Emulatable {
 	 * it is if it is part of the control chain of the module that contains it.
 	 */
 	public void setIsSyncDone(boolean val) {
-		this.isSyncDone = val;
+		isSyncDone = val;
 	}
 
 	/**
@@ -294,8 +295,9 @@ public class Reg extends Primitive implements Emulatable {
 	 * part of the control chain, in which case it is producing a Done which is
 	 * synchronous.
 	 */
+	@Override
 	public boolean isDoneSynchronous() {
-		return this.isSyncDone;
+		return isSyncDone;
 	}
 
 	/**
@@ -317,12 +319,13 @@ public class Reg extends Primitive implements Emulatable {
 	 */
 	public int getType() {
 		validate();
-		return this.regState;
+		return regState;
 	}
 
 	/**
 	 * Implemented for the {@link Visitable} interface.
 	 */
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -335,7 +338,7 @@ public class Reg extends Primitive implements Emulatable {
 	 *            a value of type 'boolean'
 	 */
 	public void setGroupableFlag(boolean value) {
-		this.mayBeGrouped = value;
+		mayBeGrouped = value;
 	}
 
 	/**
@@ -343,7 +346,7 @@ public class Reg extends Primitive implements Emulatable {
 	 * SRL16.
 	 */
 	public boolean isGroupable() {
-		return this.mayBeGrouped;
+		return mayBeGrouped;
 	}
 
 	/**
@@ -351,6 +354,7 @@ public class Reg extends Primitive implements Emulatable {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int flopCount = 0;
 
@@ -377,6 +381,7 @@ public class Reg extends Primitive implements Emulatable {
 	 * @return a map of {@link Bus} to
 	 *         {@link net.sf.openforge.util.SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 		return Collections.singletonMap(getResultBus(),
 				portValues.get(getDataPort()));
@@ -391,6 +396,7 @@ public class Reg extends Primitive implements Emulatable {
 	 * Bit states propagate through after being unioned with the reset value (if
 	 * any), except that pass through bits become care bits.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -400,21 +406,21 @@ public class Reg extends Primitive implements Emulatable {
 
 		// If the register has an initial value or reset value
 		// specified, it MUST be accounted for in the 'driven' value.
-		if (this.initialValue != null) {
-			int newSize = Math.max(this.initialValue.getSize(),
+		if (initialValue != null) {
+			int newSize = Math.max(initialValue.getSize(),
 					drivenValue.getSize());
 			newValue = new Value(newSize, drivenValue.isSigned()
-					&& this.initialValue.isSigned());
+					&& initialValue.isSigned());
 			Bit drivenExtendBit = drivenValue.isSigned() ? drivenValue
 					.getBit(drivenValue.getSize() - 1) : Bit.ZERO;
-			Bit initExtendBit = this.initialValue.isSigned() ? this.initialValue
-					.getBit(this.initialValue.getSize() - 1) : Bit.ZERO;
+			Bit initExtendBit = initialValue.isSigned() ? initialValue
+					.getBit(initialValue.getSize() - 1) : Bit.ZERO;
 
 			for (int i = 0; i < newValue.getSize(); i++) {
 				Bit b1 = ((i >= drivenValue.getSize()) ? drivenExtendBit
 						: drivenValue.getBit(i));
-				Bit b2 = (i >= this.initialValue.getSize() ? initExtendBit
-						: this.initialValue.getBit(i));
+				Bit b2 = (i >= initialValue.getSize() ? initExtendBit
+						: initialValue.getBit(i));
 				if (b1 == b2) { // otherwise, leave it as a care bit.
 					newValue.setBit(i, b1);
 				}
@@ -461,6 +467,7 @@ public class Reg extends Primitive implements Emulatable {
 	 * Any bit of the consumed output that is dont care becomes a dont care on
 	 * the inputs, all other bits are care.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		return getDataPort().pushValueBackward(getResultBus().getValue());
 	}
@@ -470,6 +477,7 @@ public class Reg extends Primitive implements Emulatable {
 	 * =================================================
 	 */
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		return ret;
@@ -484,15 +492,15 @@ public class Reg extends Primitive implements Emulatable {
 		if (getSetPort().isUsed() != ((regState & (PRESET | SET)) != 0))
 			throw new IllegalRegisterConfiguration(
 					"Inconsistent internal state for Set Port of Reg "
-							+ this.hashCode());
+							+ hashCode());
 		if (getInternalResetPort().isUsed() != ((regState & (RESET | CLEAR)) != 0))
 			throw new IllegalRegisterConfiguration(
 					"Inconsistent internal state for Reset/Clear Port of Reg "
-							+ this.hashCode());
+							+ hashCode());
 		if (getEnablePort().isUsed() != ((regState & ENABLE) != 0))
 			throw new IllegalRegisterConfiguration(
 					"Inconsistent internal state for Enable Port of Reg "
-							+ this.hashCode());
+							+ hashCode());
 		// if (getPresetPort().isUsed() != ((regState & (PRESET|SET)) != 0))
 		// throw new
 		// IllegalRegisterConfiguration("Inconsistent internal state for Set/Preset port of Reg "
@@ -507,7 +515,7 @@ public class Reg extends Primitive implements Emulatable {
 		int isSync = (regState & SET) | (regState & RESET);
 		if (isAsync != 0 && isSync != 0) {
 			throw new IllegalRegisterConfiguration(
-					"Inconsistent internal state Reg " + this.hashCode()
+					"Inconsistent internal state Reg " + hashCode()
 							+ " it cannot be both synchronous and asynchronous");
 		}
 	}

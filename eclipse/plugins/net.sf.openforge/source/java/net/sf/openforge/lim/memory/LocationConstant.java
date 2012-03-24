@@ -86,7 +86,7 @@ public class LocationConstant extends MemoryConstant implements
 			// Set each byte to 'indeterminate' for now.
 			aurep[i] = new AddressableUnit(0, false);
 		}
-		this.rep = new AURepBundle(aurep, policy.getStride());
+		rep = new AURepBundle(aurep, policy.getStride());
 
 		pushValuesForward();
 	}
@@ -97,6 +97,7 @@ public class LocationConstant extends MemoryConstant implements
 	 * 
 	 * @return a List containing only this constant
 	 */
+	@Override
 	public List getConstituents() {
 		return Collections.unmodifiableList(Collections.singletonList(this));
 	}
@@ -106,6 +107,7 @@ public class LocationConstant extends MemoryConstant implements
 	 * 
 	 * @return a singleton Set containing this object.
 	 */
+	@Override
 	public Set getContents() {
 		return Collections.unmodifiableSet(Collections.singleton(this));
 	}
@@ -116,15 +118,17 @@ public class LocationConstant extends MemoryConstant implements
 	 * indeterminate until this constant is locked. The value ordering returned
 	 * depends on the endianness of the compilation.
 	 */
+	@Override
 	public AURepBundle getRepBundle() {
-		return this.rep;
+		return rep;
 	}
 
 	/**
 	 * Retrieves the {@link Location} that this constant is based upon.
 	 */
+	@Override
 	public Location getTarget() {
-		return this.location;
+		return location;
 	}
 
 	/**
@@ -139,32 +143,34 @@ public class LocationConstant extends MemoryConstant implements
 	 * @throws UnsupportedOperationException
 	 *             if this constant is locked.
 	 */
+	@Override
 	public void setTarget(Location newLoc) {
 		if (newLoc == null)
 			throw new IllegalArgumentException(
 					"Cannot change target location to null");
-		if (this.isLocked())
+		if (isLocked())
 			throw new UnsupportedOperationException(
 					"Cannot change target location of a locked constant");
 
 		removeFromMemory();
-		this.location = newLoc;
+		location = newLoc;
 		newLoc.getLogicalMemory().addLocationConstant(this);
 	}
 
 	/**
 	 * Derives, if necessary, the numeric value represented by this constant.
 	 */
+	@Override
 	public void lock() {
-		this.isLocked = true;
+		isLocked = true;
 		final Location location = getTarget();
 
 		final long addr = location.getLogicalMemory().getAddress(location);
 
 		// The address is in 'little endian' format, so if this is a
 		// big endian compilation, byte swap.
-		AddressableUnit[] fixedRep = new AddressableUnit[this.rep.getLength()];
-		int bitsPerUnit = this.rep.getBitsPerUnit();
+		AddressableUnit[] fixedRep = new AddressableUnit[rep.getLength()];
+		int bitsPerUnit = rep.getBitsPerUnit();
 		long mask = 0;
 		for (int i = 0; i < bitsPerUnit; i++)
 			mask = (mask << 1) | 1L;
@@ -178,7 +184,7 @@ public class LocationConstant extends MemoryConstant implements
 			fixedRep = swapEndian(fixedRep);
 		}
 
-		this.rep = new AURepBundle(fixedRep, this.rep.getBitsPerUnit());
+		rep = new AURepBundle(fixedRep, rep.getBitsPerUnit());
 
 		pushValuesForward();
 	}
@@ -187,8 +193,9 @@ public class LocationConstant extends MemoryConstant implements
 	 * Returns true if this symbolic constant has been resolved to a true
 	 * constant.
 	 */
+	@Override
 	public boolean isLocked() {
-		return this.isLocked;
+		return isLocked;
 	}
 
 	/**
@@ -204,6 +211,7 @@ public class LocationConstant extends MemoryConstant implements
 	/**
 	 * returns true
 	 */
+	@Override
 	public boolean isPointerValue() {
 		return true;
 	}
@@ -226,6 +234,7 @@ public class LocationConstant extends MemoryConstant implements
 	 * @return true if the given constant is not null and has the same numerical
 	 *         value.
 	 */
+	@Override
 	public boolean isSameValue(Constant constant) {
 		// if we are locked, abdicate responsibility up the line
 		if (isLocked()) {
@@ -269,10 +278,12 @@ public class LocationConstant extends MemoryConstant implements
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
 
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		LocationConstant clone = (LocationConstant) super.clone();
 		if (clone.getTarget() != null) {

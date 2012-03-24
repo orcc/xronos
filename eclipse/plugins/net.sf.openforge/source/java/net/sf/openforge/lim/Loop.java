@@ -51,7 +51,6 @@ import net.sf.openforge.util.naming.IDSourceInfo;
  * @version $Id: Loop.java 280 2006-08-11 17:00:32Z imiller $
  */
 public class Loop extends Module {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 280 $";
 
 	/** An unknown number of iterations */
 	public static final int ITERATIONS_UNKNOWN = -1;
@@ -113,7 +112,7 @@ public class Loop extends Module {
 		addComponent(this.initBlock = initBlock);
 		addComponent(this.body = body);
 		// Needs RESET b/c it is in the control path
-		addComponent(this.controlRegister = Reg.getConfigurableReg(Reg.REGR,
+		addComponent(controlRegister = Reg.getConfigurableReg(Reg.REGR,
 				"loopControl"));
 		setControlDependencies();
 	}
@@ -128,6 +127,7 @@ public class Loop extends Module {
 		this(new Block(Collections.EMPTY_LIST), body);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -146,23 +146,24 @@ public class Loop extends Module {
 		return body;
 	}
 
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		assert removed != null;
 
 		if (removed == getInitBlock()) {
-			this.initBlock = (Block) inserted;
+			initBlock = (Block) inserted;
 		} else if (removed == getBody()) {
-			this.body = (LoopBody) inserted;
+			body = (LoopBody) inserted;
 		} else if (removed == getControlRegister()) {
-			this.controlRegister = (Reg) inserted;
+			controlRegister = (Reg) inserted;
 		} else if (getDataLatches().contains(removed)) {
-			int index = this.dataLatches.indexOf(removed);
-			this.dataLatches.add(index, inserted);
-			this.dataLatches.remove(removed);
+			int index = dataLatches.indexOf(removed);
+			dataLatches.add(index, inserted);
+			dataLatches.remove(removed);
 		} else if (getDataRegisters().contains(removed)) {
-			int index = this.dataRegisters.indexOf(removed);
-			this.dataRegisters.add(index, inserted);
-			this.dataRegisters.remove(removed);
+			int index = dataRegisters.indexOf(removed);
+			dataRegisters.add(index, inserted);
+			dataRegisters.remove(removed);
 		} else
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
@@ -213,6 +214,7 @@ public class Loop extends Module {
 	 * @return a Set containing the data registers and control register if
 	 *         non-null
 	 */
+	@Override
 	public Set<Component> getFeedbackPoints() {
 		Set feedback = new HashSet();
 		feedback.addAll(super.getFeedbackPoints());
@@ -258,6 +260,7 @@ public class Loop extends Module {
 		return latch;
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		// disconnect exits
 		for (Iterator iter = component.getExits().iterator(); iter.hasNext();) {
@@ -306,6 +309,7 @@ public class Loop extends Module {
 	 *         of clocks. False if not bounded, contains a non-balanceable
 	 *         component, orcontains a break, continue, or return.
 	 */
+	@Override
 	public boolean isBalanceable() {
 		boolean containsContinue = false;
 		HashSet exits = new HashSet();
@@ -313,8 +317,8 @@ public class Loop extends Module {
 			exits.addAll(getBody().getBody().getExits());
 			exits.remove(getBody().getBody().getExit(Exit.DONE));
 
-			for (Iterator iter = ((Module) getBody().getBody()).getComponents()
-					.iterator(); iter.hasNext();) {
+			for (Iterator iter = getBody().getBody().getComponents().iterator(); iter
+					.hasNext();) {
 				Component comp = (Component) iter.next();
 				containsContinue |= (comp.getExit(Exit.CONTINUE) != null);
 			}
@@ -389,8 +393,8 @@ public class Loop extends Module {
 		 * Init Block to LoopBody.
 		 */
 		final LoopBody body = getBody();
-		this.bodyInitEntry = body.makeEntry(initBlockExit);
-		addDependencies(this.bodyInitEntry, clockBus, resetBus,
+		bodyInitEntry = body.makeEntry(initBlockExit);
+		addDependencies(bodyInitEntry, clockBus, resetBus,
 				initBlockExit.getDoneBus());
 
 		/*
@@ -417,9 +421,8 @@ public class Loop extends Module {
 			/*
 			 * Feedback control Reg to LoopBody.
 			 */
-			this.bodyFeedbackEntry = body.makeEntry(controlReg
-					.getExit(Exit.DONE));
-			addDependencies(this.bodyFeedbackEntry, clockBus, resetBus,
+			bodyFeedbackEntry = body.makeEntry(controlReg.getExit(Exit.DONE));
+			addDependencies(bodyFeedbackEntry, clockBus, resetBus,
 					controlReg.getResultBus());
 		} else {
 			removeComponent(getControlRegister());
@@ -429,7 +432,7 @@ public class Loop extends Module {
 		 * LoopBody exit to Loop exit.
 		 */
 		final Exit loopExit = getExit(Exit.DONE);
-		final OutBuf outBuf = (OutBuf) loopExit.getPeer();
+		final OutBuf outBuf = loopExit.getPeer();
 		final Entry outbufEntry = outBuf.makeEntry(body.getLoopCompleteExit());
 		addDependencies(outbufEntry, clockBus, resetBus, body
 				.getLoopCompleteExit().getDoneBus());
@@ -447,6 +450,7 @@ public class Loop extends Module {
 		mergeExits(exitMap, clockBus, resetBus);
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final Loop clone = (Loop) moduleClone;
@@ -511,7 +515,7 @@ public class Loop extends Module {
 	 */
 	private Bus getSingleBus(Port port) {
 		assert port.getOwner().getEntries().size() == 1;
-		Entry entry = (Entry) port.getOwner().getEntries().get(0);
+		Entry entry = port.getOwner().getEntries().get(0);
 		Collection deps = entry.getDependencies(port);
 		assert deps.size() == 1;
 		return ((Dependency) deps.iterator().next()).getLogicalBus();
@@ -520,13 +524,13 @@ public class Loop extends Module {
 	// Convenience methods for getting particular compile-time options
 
 	public boolean isLoopUnrollingEnabled() {
-		if (this.forceLoopUnrolling) {
+		if (forceLoopUnrolling) {
 			return true;
 		}
 
 		Option op = getGenericJob().getOption(
 				OptionRegistry.LOOP_UNROLLING_ENABLE);
-		return ((OptionBoolean) op).getValueAsBoolean(this.getSearchLabel());
+		return ((OptionBoolean) op).getValueAsBoolean(getSearchLabel());
 	}
 
 	/**
@@ -537,18 +541,19 @@ public class Loop extends Module {
 	 *            a value of type 'boolean'
 	 */
 	public void setForceUnroll(boolean value) {
-		this.forceLoopUnrolling = value;
+		forceLoopUnrolling = value;
 	}
 
 	public int getUnrollLimit() {
 		Option op = getGenericJob().getOption(
 				OptionRegistry.LOOP_UNROLLING_LIMIT);
-		return ((OptionInt) op).getValueAsInt(this.getSearchLabel());
+		return ((OptionInt) op).getValueAsInt(getSearchLabel());
 	}
 
 	/**
 	 * Tests whether this loop requires a go signal.
 	 */
+	@Override
 	public boolean consumesGo() {
 		return super.consumesGo() || isIterative();
 	}
@@ -556,6 +561,7 @@ public class Loop extends Module {
 	/**
 	 * Tests whether this loop produces done signals on its {@link Exit Exits}.
 	 */
+	@Override
 	public boolean producesDone() {
 		return super.producesDone() || isIterative();
 	}
@@ -568,6 +574,7 @@ public class Loop extends Module {
 	 * 
 	 * @see Module#producesDone()
 	 */
+	@Override
 	public boolean isDoneSynchronous() {
 		return super.isDoneSynchronous() || isIterative();
 	}
@@ -575,6 +582,7 @@ public class Loop extends Module {
 	/**
 	 * Tests whether this loop requires a clock signal.
 	 */
+	@Override
 	public boolean consumesClock() {
 		return super.consumesClock() || isIterative();
 	}
@@ -582,6 +590,7 @@ public class Loop extends Module {
 	/**
 	 * Tests whether this loop requires a reset signal.
 	 */
+	@Override
 	public boolean consumesReset() {
 		return super.consumesReset() || isIterative();
 	}
@@ -601,38 +610,47 @@ public class Loop extends Module {
 }
 
 class RemoveMemoryAccessVisitor extends DefaultVisitor {
+	@Override
 	public void visit(ArrayRead ar) {
 		ar.removeFromMemory();
 	}
 
+	@Override
 	public void visit(ArrayWrite aw) {
 		aw.removeFromMemory();
 	}
 
+	@Override
 	public void visit(LocationConstant lc) {
 		lc.removeFromMemory();
 	}
 
+	@Override
 	public void visit(HeapRead hr) {
 		hr.removeFromMemory();
 	}
 
+	@Override
 	public void visit(HeapWrite hw) {
 		hw.removeFromMemory();
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead comp) {
 		comp.removeFromMemory();
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite comp) {
 		comp.removeFromMemory();
 	}
 
+	@Override
 	public void visit(RegisterRead rr) {
 		rr.getReferent().removeReference(rr);
 	}
 
+	@Override
 	public void visit(RegisterWrite rw) {
 		rw.getReferent().removeReference(rw);
 	}

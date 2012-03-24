@@ -122,9 +122,8 @@ public class MemoryBuilder {
 			packedMemMap.put(logicalMemory,
 					buildMemory(logicalMemory, addrBits, 0));
 		}
-		for ( LogicalMemory logicalMemory : design.getLogicalMemories()) {
-			final PackedMemory packedMem = (PackedMemory) packedMemMap
-					.get(logicalMemory);
+		for (LogicalMemory logicalMemory : design.getLogicalMemories()) {
+			final PackedMemory packedMem = packedMemMap.get(logicalMemory);
 			if (!packMemory(logicalMemory, packedMem)) {
 				design.removeMemory(logicalMemory);
 			}
@@ -146,8 +145,7 @@ public class MemoryBuilder {
 		// the largest address width needed.
 		int maxBytes = 0;
 		for (LogicalMemory logicalMemory : logicalMems) {
-			maxBytes = Math.max(maxBytes,
-					(logicalMemory).getAddressableSize());
+			maxBytes = Math.max(maxBytes, (logicalMemory).getAddressableSize());
 		}
 		// The number of address bits needed then is Log2 of
 		// maxBytes+1 (plus 1 to account for padding bits which are
@@ -265,7 +263,7 @@ public class MemoryBuilder {
 			final int numLines = packedMem.getAddressCount()
 					/ packedMem.getAddrsPerLine();
 
-			final int addressableBytes = (int) Math.max(mem.getSizeInBytes(),
+			final int addressableBytes = Math.max(mem.getSizeInBytes(),
 					(bitWidth / 8) * numLines);
 
 			// Bank width is in bits, access size is in addressable
@@ -390,7 +388,7 @@ public class MemoryBuilder {
 			}
 
 			this.addrsPerLine = addrsPerLine;
-			this.memID = memoryID;
+			memID = memoryID;
 			this.addrBits = addrBits;
 		}
 
@@ -398,11 +396,11 @@ public class MemoryBuilder {
 			if (acc <= 0)
 				throw new IllegalArgumentException(
 						"illegal minimum access width " + acc);
-			this.smallestAccessWidth = acc;
+			smallestAccessWidth = acc;
 		}
 
 		public int getSmallestAccess() {
-			return this.smallestAccessWidth;
+			return smallestAccessWidth;
 		}
 
 		/**
@@ -421,11 +419,10 @@ public class MemoryBuilder {
 				baseAddressMap.put(loc, getAddress(nextAddress));
 				nextAddress += locAddresses;
 
-				if (this.addrsPerLine > 0) {
+				if (addrsPerLine > 0) {
 					// Pad it to the end of the line.
-					final int modulo = locAddresses % this.addrsPerLine;
-					final int extra = modulo == 0 ? 0 : this.addrsPerLine
-							- modulo;
+					final int modulo = locAddresses % addrsPerLine;
+					final int extra = modulo == 0 ? 0 : addrsPerLine - modulo;
 
 					if (_memory.db)
 						_memory.ln(_memory.BUILD, "\textra: " + extra);
@@ -437,7 +434,7 @@ public class MemoryBuilder {
 						_memory.ln(_memory.BUILD, "\tnext: " + nextAddress);
 				}
 			} else {
-				this.zeroLengthAllocations.add(loc);
+				zeroLengthAllocations.add(loc);
 			}
 		}
 
@@ -446,7 +443,7 @@ public class MemoryBuilder {
 		 * number of addressable locations that must be accessed contiguously.
 		 */
 		public int getAddrsPerLine() {
-			return this.addrsPerLine;
+			return addrsPerLine;
 		}
 
 		/**
@@ -462,16 +459,16 @@ public class MemoryBuilder {
 		 * base address map is locked, no address can be correctly obtained.
 		 */
 		public void lock() {
-			this.locked = true;
+			locked = true;
 
 			// Cache the address locally so that we dont modify it,
 			// because it is used to determine the physical depth of
 			// this memory.
-			int addr = this.nextAddress;
+			int addr = nextAddress;
 			for (Iterator iter = zeroLengthAllocations.iterator(); iter
 					.hasNext();) {
 				Allocation alloc = (Allocation) iter.next();
-				this.baseAddressMap.put(alloc, getAddress(addr++));
+				baseAddressMap.put(alloc, getAddress(addr++));
 			}
 		}
 
@@ -484,7 +481,7 @@ public class MemoryBuilder {
 		 */
 		public Map getBaseAddressMap() {
 			assert locked : "Physical implementation of memory not yet fully populated.  Cannot generate a complete base address map.";
-			return Collections.unmodifiableMap(this.baseAddressMap);
+			return Collections.unmodifiableMap(baseAddressMap);
 		}
 
 		/**
@@ -563,7 +560,7 @@ public class MemoryBuilder {
 		 * @return a value of type 'Integer'
 		 */
 		private Integer getAddress(int addr) {
-			addr |= this.memID << this.addrBits;
+			addr |= memID << addrBits;
 			return new Integer(addr);
 		}
 	}

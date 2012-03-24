@@ -51,6 +51,7 @@ public class MutexBlock extends Block {
 		super(sequence, isProcedureBody);
 	}
 
+	@Override
 	public boolean isMutexModule() {
 		return true;
 	}

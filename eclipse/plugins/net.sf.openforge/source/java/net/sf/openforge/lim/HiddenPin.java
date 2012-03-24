@@ -31,7 +31,6 @@ import java.util.Collections;
  * @version $Id: HiddenPin.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class HiddenPin extends InputPin {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	private Port port;
 	private int width;
@@ -41,6 +40,7 @@ public class HiddenPin extends InputPin {
 	 * @param width
 	 * @deprecated
 	 */
+	@Deprecated
 	public HiddenPin(int width) {
 		this(width, false);
 	}
@@ -57,10 +57,11 @@ public class HiddenPin extends InputPin {
 	public HiddenPin(int width, boolean isSigned) {
 		super(width, isSigned);
 		this.width = width;
-		this.port = makeDataPort();
-		this.port.setSize(width, isSigned);
+		port = makeDataPort();
+		port.setSize(width, isSigned);
 	}
 
+	@Override
 	public Collection getPinBufs() {
 		return Collections.EMPTY_LIST;
 	}
@@ -84,6 +85,7 @@ public class HiddenPin extends InputPin {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}

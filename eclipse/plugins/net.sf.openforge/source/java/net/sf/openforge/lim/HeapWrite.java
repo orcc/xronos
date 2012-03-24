@@ -38,7 +38,6 @@ import net.sf.openforge.lim.op.SimpleConstant;
  * @version $Id: HeapWrite.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class HeapWrite extends OffsetMemoryWrite {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	private int offset;
 
@@ -109,7 +108,7 @@ public class HeapWrite extends OffsetMemoryWrite {
 		 * Create a Constant to drive the offset value.
 		 */
 		this.offset = offset;
-		this.offsetConstant = new SimpleConstant(offset, maxAddressWidth, true);
+		offsetConstant = new SimpleConstant(offset, maxAddressWidth, true);
 		insertComponent(offsetConstant, 0);
 		final Entry offsetEntry = offsetConstant.makeEntry(getInBuf().getExit(
 				Exit.DONE));
@@ -122,7 +121,7 @@ public class HeapWrite extends OffsetMemoryWrite {
 		 * Connect the offset Constant as the righthand input to the add.
 		 */
 		final AddOp addOp = getAddOp();
-		final Entry addEntry = (Entry) addOp.getEntries().get(0);
+		final Entry addEntry = addOp.getEntries().get(0);
 		addEntry.addDependency(addOp.getRightDataPort(), new DataDependency(
 				offsetConstant.getValueBus()));
 	}
@@ -147,9 +146,9 @@ public class HeapWrite extends OffsetMemoryWrite {
 	public void setOffset(int offset) {
 		if ((this.offset != offset) || (getAddOp().getOwner() == null)) {
 			this.offset = offset;
-			this.offsetConstant = new SimpleConstant(this.offset,
+			offsetConstant = new SimpleConstant(this.offset,
 					getMaxAddressWidth(), true);
-			this.rebuildAdder();
+			rebuildAdder();
 		}
 	}
 
@@ -162,10 +161,12 @@ public class HeapWrite extends OffsetMemoryWrite {
 		return offsetConstant;
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
 
+	@Override
 	protected void rebuildAdder() {
 		super.rebuildAdder();
 
@@ -182,15 +183,16 @@ public class HeapWrite extends OffsetMemoryWrite {
 		 * Connect the offset Constant as the righthand input to the add.
 		 */
 		final AddOp addOp = getAddOp();
-		final Entry addEntry = (Entry) addOp.getEntries().get(0);
+		final Entry addEntry = addOp.getEntries().get(0);
 		addEntry.addDependency(addOp.getRightDataPort(), new DataDependency(
 				offsetConst.getValueBus()));
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == this.offsetConstant)
-			this.offsetConstant = null;
+		if (component == offsetConstant)
+			offsetConstant = null;
 		return ret;
 	}
 
@@ -202,6 +204,7 @@ public class HeapWrite extends OffsetMemoryWrite {
 	 * 
 	 * @return the clone
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		// final HeapWrite clone = new HeapWrite(getAccessLocationCount(),
 		// offsetConstant.getValueBus().getValue().getSize(),
@@ -221,9 +224,10 @@ public class HeapWrite extends OffsetMemoryWrite {
 		return clone;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		((HeapWrite) moduleClone).offsetConstant = (Constant) cloneMap
-				.get(this.offsetConstant);
+				.get(offsetConstant);
 	}
 }

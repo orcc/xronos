@@ -48,6 +48,7 @@ public class SharedProcedure extends Resource {
 	/**
 	 * Gets the latency of a reference's exit.
 	 */
+	@Override
 	public Latency getLatency(Exit exit) {
 		/*
 		 * tbd.
@@ -88,15 +89,18 @@ public class SharedProcedure extends Resource {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}
 
+	@Override
 	public int getSpacing(Referencer from, Referencer to) {
 		throw new UnsupportedOperationException(
 				"Shared procedure unsupported.  Call to unsupported method");
 	}
 
+	@Override
 	public int getGoSpacing(Referencer from, Referencer to) {
 		throw new UnsupportedOperationException(
 				"Shared procedure unsupported.  Call to unsupported method");

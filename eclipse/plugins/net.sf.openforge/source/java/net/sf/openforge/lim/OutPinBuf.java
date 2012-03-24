@@ -44,6 +44,7 @@ public class OutPinBuf extends PinBuf {
 	/**
 	 * Gets the latency of a reference's exit.
 	 */
+	@Override
 	public Latency getLatency(Exit exit) {
 		/*
 		 * tbd.
@@ -51,11 +52,13 @@ public class OutPinBuf extends PinBuf {
 		return Latency.ZERO;
 	}
 
+	@Override
 	public boolean consumesReset() {
 		// if we have an api pin, yes
 		return (getPhysicalComponent() != null);
 	}
 
+	@Override
 	public boolean consumesClock() {
 		return (getPhysicalComponent() != null);
 	}
@@ -111,7 +114,7 @@ public class OutPinBuf extends PinBuf {
 			Exit exit = makeExit(0);
 
 			// make a result bus
-			resultBus = (Bus) exit.makeDataBus();
+			resultBus = exit.makeDataBus();
 			resultBus.setSize(size, true);
 
 			this.size = size;
@@ -173,13 +176,13 @@ public class OutPinBuf extends PinBuf {
 			//
 
 			// 0th -- now port
-			Port sel = (Port) l.get(0);
+			Port sel = l.get(0);
 			Port data = mux1.getDataPort(sel);
 			sel.setBus(getNowValueEnablePort().getPeer());
 			data.setBus(getNowValuePort().getPeer());
 
 			// 1th -- result from the reg above
-			sel = (Port) l.get(1);
+			sel = l.get(1);
 			data = mux1.getDataPort(sel);
 			sel.setBus(getNowValueEnablePort().getPeer());
 			data.setBus(reg1.getResultBus());
@@ -219,13 +222,13 @@ public class OutPinBuf extends PinBuf {
 			//
 
 			// 0th -- now port
-			Port sel = (Port) l.get(0);
+			Port sel = l.get(0);
 			Port data = mux1.getDataPort(sel);
 			sel.setBus(getNowDriveEnablePort().getPeer());
 			data.setBus(getNowDrivePort().getPeer());
 
 			// 1th -- result from the reg above
-			sel = (Port) l.get(1);
+			sel = l.get(1);
 			data = mux1.getDataPort(sel);
 			sel.setBus(getNowDriveEnablePort().getPeer());
 			data.setBus(reg1.getResultBus());
@@ -238,37 +241,38 @@ public class OutPinBuf extends PinBuf {
 		}
 
 		public Port getNextValuePort() {
-			return (Port) getDataPorts().get(0);
+			return getDataPorts().get(0);
 		}
 
 		public Port getNextValueEnablePort() {
-			return (Port) getDataPorts().get(1);
+			return getDataPorts().get(1);
 		}
 
 		public Port getNowValuePort() {
-			return (Port) getDataPorts().get(2);
+			return getDataPorts().get(2);
 		}
 
 		public Port getNowValueEnablePort() {
-			return (Port) getDataPorts().get(3);
+			return getDataPorts().get(3);
 		}
 
 		public Port getNextDrivePort() {
-			return (Port) getDataPorts().get(4);
+			return getDataPorts().get(4);
 		}
 
 		public Port getNextDriveEnablePort() {
-			return (Port) getDataPorts().get(5);
+			return getDataPorts().get(5);
 		}
 
 		public Port getNowDrivePort() {
-			return (Port) getDataPorts().get(6);
+			return getDataPorts().get(6);
 		}
 
 		public Port getNowDriveEnablePort() {
-			return (Port) getDataPorts().get(7);
+			return getDataPorts().get(7);
 		}
 
+		@Override
 		public void accept(Visitor visitor) {
 			throw new UnexpectedVisitationException(
 					"InPinBuf's should not be visited!");

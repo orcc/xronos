@@ -125,8 +125,8 @@ public class Design extends ID implements Visitable, Cloneable {
 		super();
 		apiClockNameToLIMClockMap.clear();
 		apiResetNameToLIMResetMap.clear();
-		this.designModule = new DesignModule();
-		this.searchLabel = new CodeLabel("design");
+		designModule = new DesignModule();
+		searchLabel = new CodeLabel("design");
 	}
 
 	@Override
@@ -135,10 +135,10 @@ public class Design extends ID implements Visitable, Cloneable {
 	}
 
 	public void addTask(Task tk) {
-		if (this.taskList == Collections.EMPTY_LIST) {
-			this.taskList = new ArrayList<Task>(3);
+		if (taskList == Collections.EMPTY_LIST) {
+			taskList = new ArrayList<Task>(3);
 		}
-		this.taskList.add(tk);
+		taskList.add(tk);
 		addComponentToDesign(tk.getCall());
 	}
 
@@ -149,10 +149,10 @@ public class Design extends ID implements Visitable, Cloneable {
 	 *            {@link Register Register}
 	 */
 	public void addRegister(Register reg) {
-		if (this.registers == Collections.EMPTY_LIST) {
-			this.registers = new ArrayList<Register>(3);
+		if (registers == Collections.EMPTY_LIST) {
+			registers = new ArrayList<Register>(3);
 		}
-		this.registers.add(reg);
+		registers.add(reg);
 	}
 
 	/**
@@ -162,17 +162,17 @@ public class Design extends ID implements Visitable, Cloneable {
 	 *            true if removed, false if not found
 	 */
 	public boolean removeRegister(Register register) {
-		return this.registers.remove(register);
+		return registers.remove(register);
 	}
 
 	/**
 	 * Adds the given {@link LogicalMemory} to this design
 	 */
 	public void addMemory(LogicalMemory mem) {
-		if (this.logicalMemories == Collections.EMPTY_LIST) {
-			this.logicalMemories = new ArrayList(3);
+		if (logicalMemories == Collections.EMPTY_LIST) {
+			logicalMemories = new ArrayList(3);
 		}
-		this.logicalMemories.add(mem);
+		logicalMemories.add(mem);
 		// TBD. When we have full flow we will need to come back
 		// through and ensure that any object/struct reference has a
 		// unique identifier regardless of what memory it is in.
@@ -185,9 +185,9 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * Removes the given {@link LogicalMemory} from this design
 	 */
 	public void removeMemory(LogicalMemory mem) {
-		this.logicalMemories.remove(mem);
-		if (this.logicalMemories.size() == 0) {
-			this.logicalMemories = Collections.EMPTY_LIST;
+		logicalMemories.remove(mem);
+		if (logicalMemories.size() == 0) {
+			logicalMemories = Collections.EMPTY_LIST;
 		}
 	}
 
@@ -195,8 +195,8 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * Retrieves the next non-allocated memory ID.
 	 */
 	public int getNextMemoryId() {
-		int id = this.memoryId;
-		this.memoryId += 1;
+		int id = memoryId;
+		memoryId += 1;
 		if (id < 0) {
 			EngineThread.getEngine().fatalError(
 					"Too many memory objects allocated in design");
@@ -211,8 +211,8 @@ public class Design extends ID implements Visitable, Cloneable {
 	public void addInputPin(InputPin pin, Port port) {
 		addInputPin(pin);
 
-		this.pinPortBusMap.put(pin, port);
-		this.pinPortBusMap.put(port, pin);
+		pinPortBusMap.put(pin, port);
+		pinPortBusMap.put(port, pin);
 	}
 
 	/**
@@ -222,10 +222,10 @@ public class Design extends ID implements Visitable, Cloneable {
 	 *            {@link InputPin}
 	 */
 	public void addInputPin(InputPin pin) {
-		if (this.inputPins == Collections.EMPTY_LIST) {
-			this.inputPins = new ArrayList(3);
+		if (inputPins == Collections.EMPTY_LIST) {
+			inputPins = new ArrayList(3);
 		}
-		this.inputPins.add(pin);
+		inputPins.add(pin);
 	}
 
 	/**
@@ -236,8 +236,8 @@ public class Design extends ID implements Visitable, Cloneable {
 	 */
 	public void addOutputPin(OutputPin pin, Bus bus) {
 		this.addOutputPin(pin);
-		this.pinPortBusMap.put(pin, bus);
-		this.pinPortBusMap.put(bus, pin);
+		pinPortBusMap.put(pin, bus);
+		pinPortBusMap.put(bus, pin);
 	}
 
 	/**
@@ -247,10 +247,10 @@ public class Design extends ID implements Visitable, Cloneable {
 	 *            {@link OutputPin}
 	 */
 	public void addOutputPin(OutputPin pin) {
-		if (this.outputPins == Collections.EMPTY_LIST) {
-			this.outputPins = new ArrayList(3);
+		if (outputPins == Collections.EMPTY_LIST) {
+			outputPins = new ArrayList(3);
 		}
-		this.outputPins.add(pin);
+		outputPins.add(pin);
 	}
 
 	/**
@@ -315,7 +315,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	}
 
 	public Collection<LogicalMemory> getLogicalMemories() {
-		return Collections.unmodifiableCollection(this.logicalMemories);
+		return Collections.unmodifiableCollection(logicalMemories);
 	}
 
 	/**
@@ -480,7 +480,7 @@ public class Design extends ID implements Visitable, Cloneable {
 		// FifoIF object.
 
 		String key = fifoID.getName() + "" + fifoID.isInputFifo();
-		FifoIF fifoIF = this.fifoInterfaces.get(key);
+		FifoIF fifoIF = fifoInterfaces.get(key);
 
 		if (fifoIF == null) {
 			String id = fifoID.getName();
@@ -510,7 +510,7 @@ public class Design extends ID implements Visitable, Cloneable {
 				// break;
 			}
 
-			this.fifoInterfaces.put(key, fifoIF);
+			fifoInterfaces.put(key, fifoIF);
 		} else {
 			// Rule checking
 			if (fifoIF.getWidth() != fifoID.getBitWidth())
@@ -535,7 +535,7 @@ public class Design extends ID implements Visitable, Cloneable {
 		// Jump through these hoops so that the fifo interfaces come
 		// back in the same order each time.
 		List<FifoIF> interfaces = new LinkedList();
-		for (Iterator iter = this.fifoInterfaces.entrySet().iterator(); iter
+		for (Iterator iter = fifoInterfaces.entrySet().iterator(); iter
 				.hasNext();) {
 			interfaces.add((FifoIF) ((Map.Entry) iter.next()).getValue());
 		}
@@ -554,7 +554,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @return a <code>ClockDomain</code> value
 	 */
 	public ClockDomain getClockDomain(String domainSpec) {
-		ClockDomain domain = this.clockDomains.get(domainSpec);
+		ClockDomain domain = clockDomains.get(domainSpec);
 		if (domain == null) {
 			domain = new ClockDomain(domainSpec);
 			addComponentToDesign(domain.getClockPin());
@@ -563,7 +563,7 @@ public class Design extends ID implements Visitable, Cloneable {
 				addComponentToDesign(domain.getResetPin());
 			}
 			addComponentToDesign(domain.getGSR());
-			this.clockDomains.put(domainSpec, domain);
+			clockDomains.put(domainSpec, domain);
 		}
 		return domain;
 	}
@@ -573,7 +573,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * design.
 	 */
 	public Collection<ClockDomain> getAllocatedClockDomains() {
-		return Collections.unmodifiableCollection(this.clockDomains.values());
+		return Collections.unmodifiableCollection(clockDomains.values());
 	}
 
 	/**
@@ -595,11 +595,11 @@ public class Design extends ID implements Visitable, Cloneable {
 	 *         doesn't have a {@link Tester}.
 	 */
 	public Tester getTester() {
-		return (this.tester);
+		return (tester);
 	}
 
 	public int getMaxGateDepth() {
-		return this.maxGateDepth;
+		return maxGateDepth;
 	}
 
 	public void setMaxGateDepth(int maxGateDepth) {
@@ -607,7 +607,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	}
 
 	public int getUnbreakableGateDepth() {
-		return this.unbreakableGateDepth;
+		return unbreakableGateDepth;
 	}
 
 	public void setUnbreakableGateDepth(int unbreakableGateDepth) {
@@ -870,7 +870,7 @@ public class Design extends ID implements Visitable, Cloneable {
 
 	public SearchLabel getSearchLabel() {
 		// return CodeLabel.UNSCOPED;
-		return this.searchLabel;
+		return searchLabel;
 	}
 
 	/**
@@ -1028,7 +1028,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	private final DesignModule designModule;
 
 	public DesignModule getDesignModule() {
-		return this.designModule;
+		return designModule;
 	}
 
 	/**
@@ -1099,41 +1099,39 @@ public class Design extends ID implements Visitable, Cloneable {
 			String[] parsed = parse(domainSpec);
 			String clk = parsed[0];
 			String rst = parsed[1];
-			this.clock = new ControlPin(clk);
+			clock = new ControlPin(clk);
 			if (rst != null && rst.length() > 0) {
-				this.reset = new ControlPin(rst);
+				reset = new ControlPin(rst);
 			}
-			gsr = new GlobalReset.Physical(this.reset != null);
-			this.clock.connectBus(Collections.singleton(gsr.getClockInput()));
-			if (this.reset != null) {
-				this.reset
-						.connectBus(Collections.singleton(gsr.getResetInput()));
+			gsr = new GlobalReset.Physical(reset != null);
+			clock.connectBus(Collections.singleton(gsr.getClockInput()));
+			if (reset != null) {
+				reset.connectBus(Collections.singleton(gsr.getResetInput()));
 			}
 		}
 
 		// Private methods are accessible to Design
 		public SimplePin getClockPin() {
-			return this.clock;
+			return clock;
 		}
 
 		public SimplePin getResetPin() {
-			return this.reset;
+			return reset;
 		}
 
 		private GlobalReset.Physical getGSR() {
-			return this.gsr;
+			return gsr;
 		}
 
 		public String getDomainKeyString() {
-			return this.domainSpec;
+			return domainSpec;
 		}
 
 		public void connectComponentToDomain(Component comp) {
 			if (comp.getClockPort().isUsed())
-				this.clock
-						.connectBus(Collections.singleton(comp.getClockPort()));
+				clock.connectBus(Collections.singleton(comp.getClockPort()));
 			if (comp.getResetPort().isUsed())
-				comp.getResetPort().setBus(this.gsr.getResetOutput());
+				comp.getResetPort().setBus(gsr.getResetOutput());
 		}
 
 		public static String[] parse(String spec) {

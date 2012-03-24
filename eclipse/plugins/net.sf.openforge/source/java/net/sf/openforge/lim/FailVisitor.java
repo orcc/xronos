@@ -83,360 +83,445 @@ import net.sf.openforge.lim.op.XorOp;
  * @version $Id: FailVisitor.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class FailVisitor implements Visitor {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	private String messageLocator;
 
 	protected FailVisitor(String messageLocation) {
-		this.messageLocator = messageLocation;
+		messageLocator = messageLocation;
 	}
 
 	protected void fail(Visitable vis) {
 		EngineThread.getEngine().fatalError(
-				"Internal error at: " + this.messageLocator
+				"Internal error at: " + messageLocator
 						+ ".  Unexpected traversal of " + vis + " encountered");
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(AddOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(And vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(AndOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(ArrayRead vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(ArrayWrite vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Block vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Branch vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Call vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(CastOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(ComplementOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(ConditionalAndOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(ConditionalOrOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Constant vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Decision vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Design vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(DivideOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(EncodedMux vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(EndianSwapper vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(EqualsOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(FifoAccess vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(FifoRead vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(FifoWrite vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(ForBody vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(GreaterThanEqualToOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(GreaterThanOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(HeapWrite vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(HeapRead vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(InBuf vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(IPCoreCall vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Kicker vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Latch vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(LeftShiftOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(LessThanEqualToOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(LessThanOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(LocationConstant vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Loop vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(MemoryBank vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(MemoryGateway vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(MemoryRead vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(MemoryReferee vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(MemoryWrite vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(MinusOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(ModuloOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(MultiplyOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Mux vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(NoOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Not vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(NotEqualsOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(NotOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(NumericPromotionOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Or vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(OrOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(OutBuf vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(PinRead vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(PinReferee vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(PinStateChange vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(PinWrite vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(PlusOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(PriorityMux vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Procedure vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(ReductionOrOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Reg vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(RegisterGateway vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(RegisterRead vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(RegisterReferee vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(RegisterWrite vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(RightShiftOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Scoreboard vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(ShortcutIfElseOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(SimplePin vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(SimplePinAccess vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(SimplePinRead vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(SimplePinWrite vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(SRL16 vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(SubtractOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Switch vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(Task vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(TaskCall vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(TimingOp vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(TriBuf vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(UntilBody vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(WhileBody vis) {
 		fail(vis);
 	}
 
+	@Override
 	public void visit(XorOp vis) {
 		fail(vis);
 	}

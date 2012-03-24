@@ -60,7 +60,7 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 */
 	public Pointer(Location target, AddressStridePolicy policy) {
 		this.target = target;
-		this.stridePolicy = policy;
+		stridePolicy = policy;
 	}
 
 	/**
@@ -79,6 +79,7 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 * @throws NullPointerException
 	 *             if memVis is null
 	 */
+	@Override
 	public void accept(MemoryVisitor memVis) {
 		memVis.visit(this);
 	}
@@ -88,10 +89,12 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 * 
 	 * @return the number of addressable units needed to represent this pointer.
 	 */
+	@Override
 	public int getSize() {
-		return getBitSize() / this.stridePolicy.getStride();
+		return getBitSize() / stridePolicy.getStride();
 	}
 
+	@Override
 	public int getBitSize() {
 		return net.sf.openforge.app.TypeLimits.C.getPointerSize();
 	}
@@ -99,8 +102,9 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	/**
 	 * Returns the address stride policy governing this pointer.
 	 */
+	@Override
 	public AddressStridePolicy getAddressStridePolicy() {
-		return this.stridePolicy;
+		return stridePolicy;
 	}
 
 	/**
@@ -108,6 +112,7 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 * 
 	 * @return a value of type 'int'
 	 */
+	@Override
 	public int getAlignmentSize() {
 		return getSize();
 	}
@@ -122,6 +127,7 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 *         the array may have no elements in the case that this is the value
 	 *         of an empty data item, such as a struct with no fields
 	 */
+	@Override
 	public AddressableUnit[] getRep() {
 		AddressableUnit rep[] = new AddressableUnit[getSize()];
 		Location target = getTarget();
@@ -133,8 +139,8 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 		else
 			address = target.getLogicalMemory().getAddress(target);
 
-		assert this.stridePolicy.getStride() <= 64;
-		int stride = this.stridePolicy.getStride();
+		assert stridePolicy.getStride() <= 64;
+		int stride = stridePolicy.getStride();
 		int mask = 0;
 		for (int i = 0; i < stride; i++)
 			mask |= (1 << i);
@@ -162,6 +168,7 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 * 
 	 * @return the symbolic location which this pointer references
 	 */
+	@Override
 	public Location getTarget() {
 		return target;
 	}
@@ -172,8 +179,9 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 * @param location
 	 *            the symbolic location which this pointer references
 	 */
+	@Override
 	public void setTarget(Location location) {
-		this.target = location;
+		target = location;
 	}
 
 	/**
@@ -191,8 +199,9 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 * 
 	 * @return a new LogicalValue which points to the same Location object.
 	 */
+	@Override
 	public LogicalValue copy() {
-		return new Pointer(this.target);
+		return new Pointer(target);
 	}
 
 	/**
@@ -212,6 +221,7 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 *             resulting context would be non-meaningful (eg removal of a
 	 *             portion of a pointers value)
 	 */
+	@Override
 	public LogicalValue removeRange(int min, int max)
 			throws NonRemovableRangeException {
 		throw new NonRemovableRangeException(
@@ -223,9 +233,10 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 * 
 	 * @see net.sf.openforge.lim.memory.LogicalValue#toConstant()
 	 */
+	@Override
 	public MemoryConstant toConstant() {
 		return new LocationConstant(getTarget(), getBitSize(),
-				this.getAddressStridePolicy());
+				getAddressStridePolicy());
 	}
 
 	/**
@@ -234,11 +245,13 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 * @return the location, or {@link Location#INVALID} if this value does not
 	 *         denote a valid location
 	 */
+	@Override
 	public Location toLocation() {
 		return getTarget();
 	}
 
 	/** @inheritDoc */
+	@Override
 	public LogicalValue getValueAtOffset(int delta, int size) {
 		if ((delta == 0) && (size == getSize())) {
 			return this;
@@ -247,6 +260,7 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 		return new Slice(this, delta, size);
 	}
 
+	@Override
 	public String toString() {
 		return "Pointer<" + Integer.toHexString(hashCode()) + ">->"
 				+ getTarget();

@@ -35,6 +35,7 @@ class LatchNode extends ComponentNode {
 		super(latch, id, fontSize);
 	}
 
+	@Override
 	protected void graphPorts(Record.Port boundingBox) {
 		if (needPortGraph()) {
 			Record.Port entryBox = boundingBox.getPort(ENTRY);

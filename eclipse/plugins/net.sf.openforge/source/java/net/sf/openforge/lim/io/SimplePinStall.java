@@ -26,7 +26,6 @@ import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Latency;
 import net.sf.openforge.lim.Not;
 import net.sf.openforge.lim.Or;
-import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Referenceable;
 import net.sf.openforge.lim.Reg;
 
@@ -96,26 +95,22 @@ public class SimplePinStall extends SimplePinAccess {
 
 			read.getGoPort().setBus(getGoPort().getPeer());
 
-			((Port) goOr.getDataPorts().get(0)).setBus(getGoPort().getPeer());
-			((Port) goOr.getDataPorts().get(1)).setBus(goReg.getResultBus());
+			goOr.getDataPorts().get(0).setBus(getGoPort().getPeer());
+			goOr.getDataPorts().get(1).setBus(goReg.getResultBus());
 
 			not.getDataPort().setBus(read.getResultBus());
 
-			((Port) doneAnd.getDataPorts().get(0)).setBus(goOr.getResultBus());
-			((Port) doneAnd.getDataPorts().get(1)).setBus(read.getResultBus());
+			doneAnd.getDataPorts().get(0).setBus(goOr.getResultBus());
+			doneAnd.getDataPorts().get(1).setBus(read.getResultBus());
 
 			// ((Port)captureAnd.getDataPorts().get(0)).setBus(goOr.getResultBus());
 			// ((Port)captureAnd.getDataPorts().get(1)).setBus(not.getResultBus());
 
-			((Port) goPrimeAnd.getDataPorts().get(0)).setBus(goReg
-					.getResultBus());
-			((Port) goPrimeAnd.getDataPorts().get(1))
-					.setBus(not.getResultBus());
+			goPrimeAnd.getDataPorts().get(0).setBus(goReg.getResultBus());
+			goPrimeAnd.getDataPorts().get(1).setBus(not.getResultBus());
 
-			((Port) goPrimeOr.getDataPorts().get(0)).setBus(getGoPort()
-					.getPeer());
-			((Port) goPrimeOr.getDataPorts().get(1)).setBus(goPrimeAnd
-					.getResultBus());
+			goPrimeOr.getDataPorts().get(0).setBus(getGoPort().getPeer());
+			goPrimeOr.getDataPorts().get(1).setBus(goPrimeAnd.getResultBus());
 
 			goReg.getClockPort().setBus(getClockPort().getPeer());
 			goReg.getResetPort().setBus(getResetPort().getPeer());
@@ -131,6 +126,7 @@ public class SimplePinStall extends SimplePinAccess {
 	 * This accessor modifies the {@link Referenceable} target state so it may
 	 * not execute in parallel with other accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return true;
 	}

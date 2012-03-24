@@ -180,6 +180,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Design)
 	 */
+	@Override
 	public void visit(Design design) {
 		// Make the TOP_MODULE_NAME setting the absolute name
 		Option op = EngineThread.getGenericJob().getOption(
@@ -211,12 +212,12 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 																				// Do
 																				// BlockIO
 			{
-				derivedModuleName = (String) BlockIOInterface
-						.getFunctionNames().iterator().next();
+				derivedModuleName = BlockIOInterface.getFunctionNames()
+						.iterator().next();
 			} else {
 				if (design.getTasks().iterator().hasNext()) {
-					derivedModuleName = ((Task) design.getTasks().iterator()
-							.next()).getCall().getProcedure().showIDLogical();
+					derivedModuleName = design.getTasks().iterator().next()
+							.getCall().getProcedure().showIDLogical();
 				}
 			}
 
@@ -248,7 +249,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	}
 
 	/** Maps simple pin names to a list of pins with that name. */
-	private Map<String,List<Pin>> pinNameMap = new HashMap<String,List<Pin>>();
+	private Map<String, List<Pin>> pinNameMap = new HashMap<String, List<Pin>>();
 
 	/**
 	 * Because this code uses the IDSourceInfo to generate a unique name, all
@@ -286,7 +287,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 					}
 				}
 			} else {
-				Pin pin = (Pin) commonlyNamedPins.get(0);
+				Pin pin = commonlyNamedPins.get(0);
 				pin.setIDLogical(simplePinName);
 			}
 		}
@@ -297,6 +298,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Task)
 	 */
+	@Override
 	public void visit(Task task) {
 		Procedure procedure = task.getCall().getProcedure();
 		IDSourceInfo info = procedure.getIDSourceInfo();
@@ -373,6 +375,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Call)
 	 */
+	@Override
 	public void visit(Call call) {
 		// all call naming is based on the procedure, so name that first.
 		super.visit(call);
@@ -402,6 +405,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Procedure)
 	 */
+	@Override
 	public void visit(Procedure procedure) {
 
 		procedure.setIDLogical(makeMethodName(procedure));
@@ -410,7 +414,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 			debugln(ID.showDebug(procedure) + " given logical name \""
 					+ ID.showLogical(procedure) + "\"");
 
-		Block block = (Block) procedure.getBody();
+		Block block = procedure.getBody();
 		block.accept(this);
 
 		String domainSpec = (String) EngineThread.getGenericJob()
@@ -429,9 +433,9 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		else
 			resetPort.getPeer().setIDLogical("RESET");
 		Port goPort = block.getGoPort();
-		//goPort.getIDSourceInfo().setFieldName(procedure.getGoName());
+		// goPort.getIDSourceInfo().setFieldName(procedure.getGoName());
 		goPort.getIDSourceInfo().setFieldName("GO");
-		//goPort.getPeer().setIDLogical(procedure.getGoName());
+		// goPort.getPeer().setIDLogical(procedure.getGoName());
 		goPort.getPeer().setIDLogical("GO");
 
 		// Naming the parameter ports
@@ -450,7 +454,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		 * Naming the output Buses of a procedure block. The Procedure
 		 * translator requires them.
 		 */
-	
+
 		for (Exit exit : block.getExits()) {
 			exit.getDoneBus().setIDLogical("DONE");
 			for (Bus bus : exit.getDataBuses()) {
@@ -464,6 +468,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Kicker)
 	 */
+	@Override
 	public void visit(Kicker kicker) {
 		kicker.setIDLogical("kicker");
 
@@ -474,6 +479,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		super.visit(kicker);
 	}
 
+	@Override
 	public void visit(MemoryBank memBank) {
 		memBank.setIDLogical("memBank");
 
@@ -487,6 +493,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Block)
 	 */
+	@Override
 	public void visit(Block block) {
 		block.setIDLogical("block");
 
@@ -516,8 +523,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 				exit.getDoneBus().setIDLogical(
 						ID.showLogical(block) + "_DONE" + i++);
 				for (Bus bus : exit.getDataBuses()) {
-					bus.setIDLogical(ID.showLogical(block)
-							+ "_OUT" + j++);
+					bus.setIDLogical(ID.showLogical(block) + "_OUT" + j++);
 				}
 			}
 		}
@@ -526,6 +532,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Loop)
 	 */
+	@Override
 	public void visit(Loop loop) {
 		loop.setIDLogical("loop");
 
@@ -539,6 +546,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.WhileBody)
 	 */
+	@Override
 	public void visit(WhileBody whileBody) {
 		whileBody.setIDLogical("whileBody");
 
@@ -552,6 +560,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.UntilBody)
 	 */
+	@Override
 	public void visit(UntilBody untilBody) {
 		untilBody.setIDLogical("untilBody");
 
@@ -565,6 +574,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.ForBody)
 	 */
+	@Override
 	public void visit(ForBody forBody) {
 		forBody.setIDLogical("forBody");
 
@@ -578,6 +588,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.AddOp)
 	 */
+	@Override
 	public void visit(AddOp add) {
 		add.setIDLogical("add");
 
@@ -591,6 +602,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.AndOp)
 	 */
+	@Override
 	public void visit(AndOp andOp) {
 		andOp.setIDLogical("andOp");
 
@@ -604,6 +616,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.CastOp)
 	 */
+	@Override
 	public void visit(CastOp cast) {
 		cast.setIDLogical("cast");
 
@@ -617,6 +630,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.ComplementOp)
 	 */
+	@Override
 	public void visit(ComplementOp complement) {
 		complement.setIDLogical("complement");
 
@@ -630,6 +644,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.ConditionalAndOp)
 	 */
+	@Override
 	public void visit(ConditionalAndOp conditionalAnd) {
 		conditionalAnd.setIDLogical("conditionalAnd");
 
@@ -643,6 +658,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.ConditionalOrOp)
 	 */
+	@Override
 	public void visit(ConditionalOrOp conditionalOr) {
 		conditionalOr.setIDLogical("conditionalOr");
 
@@ -656,6 +672,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.Constant)
 	 */
+	@Override
 	public void visit(Constant constant) {
 		constant.setIDLogical("constant");
 
@@ -669,6 +686,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see visit(Constant)
 	 */
+	@Override
 	public void visit(LocationConstant loc) {
 		visit((Constant) loc);
 	}
@@ -676,6 +694,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.DivideOp)
 	 */
+	@Override
 	public void visit(DivideOp divide) {
 		divide.setIDLogical("divide");
 
@@ -689,6 +708,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.EqualsOp)
 	 */
+	@Override
 	public void visit(EqualsOp equals) {
 		equals.setIDLogical("equals");
 
@@ -702,6 +722,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.GreaterThanEqualToOp)
 	 */
+	@Override
 	public void visit(GreaterThanEqualToOp greaterThanEqualTo) {
 		greaterThanEqualTo.setIDLogical("greaterThanEqualTo");
 
@@ -715,6 +736,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.GreaterThanOp)
 	 */
+	@Override
 	public void visit(GreaterThanOp greaterThan) {
 		greaterThan.setIDLogical("greaterThan");
 
@@ -728,6 +750,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.LeftShiftOp)
 	 */
+	@Override
 	public void visit(LeftShiftOp leftShift) {
 		leftShift.setIDLogical("leftShift");
 
@@ -741,6 +764,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.LessThanEqualToOp)
 	 */
+	@Override
 	public void visit(LessThanEqualToOp lessThanEqualTo) {
 		lessThanEqualTo.setIDLogical("lessThanEqualTo");
 
@@ -754,6 +778,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.LessThanOp)
 	 */
+	@Override
 	public void visit(LessThanOp lessThan) {
 		lessThan.setIDLogical("lessThan");
 
@@ -767,6 +792,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.MinusOp)
 	 */
+	@Override
 	public void visit(MinusOp minus) {
 		minus.setIDLogical("minus");
 
@@ -780,6 +806,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.ModuloOp)
 	 */
+	@Override
 	public void visit(ModuloOp modulo) {
 		modulo.setIDLogical("modulo");
 
@@ -793,6 +820,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.MultiplyOp)
 	 */
+	@Override
 	public void visit(MultiplyOp multiply) {
 		multiply.setIDLogical("multiply");
 
@@ -806,6 +834,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.NotEqualsOp)
 	 */
+	@Override
 	public void visit(NotEqualsOp notEquals) {
 		notEquals.setIDLogical("notEquals");
 
@@ -819,6 +848,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.NotOp)
 	 */
+	@Override
 	public void visit(NotOp not) {
 		not.setIDLogical("not");
 
@@ -832,6 +862,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.OrOp)
 	 */
+	@Override
 	public void visit(OrOp or) {
 		// The SimplePinConnector sets the name of the OrOpMulti and
 		// we dont want to override that here.
@@ -849,6 +880,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.PlusOp)
 	 */
+	@Override
 	public void visit(PlusOp plus) {
 		plus.setIDLogical("plus");
 
@@ -863,6 +895,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	 * * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.
 	 * ReductionOrOp)
 	 * */
+	@Override
 	public void visit(ReductionOrOp reductionOr) {
 		reductionOr.setIDLogical("reductionOr");
 
@@ -876,6 +909,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.RightShiftOp)
 	 */
+	@Override
 	public void visit(RightShiftOp rightShift) {
 		rightShift.setIDLogical("rightShift");
 
@@ -889,6 +923,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.RightShiftUnsignedOp)
 	 */
+	@Override
 	public void visit(RightShiftUnsignedOp rightShiftUnsigned) {
 		rightShiftUnsigned.setIDLogical("rightShiftUnsigned");
 
@@ -902,6 +937,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.ShortcutIfElseOp)
 	 */
+	@Override
 	public void visit(ShortcutIfElseOp shortcutIfElse) {
 		shortcutIfElse.setIDLogical("shortcutIfElse");
 
@@ -912,6 +948,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		super.visit(shortcutIfElse);
 	}
 
+	@Override
 	public void visit(TaskCall comp) {
 		comp.setIDLogical("taskCall");
 
@@ -922,11 +959,13 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(SimplePin comp) {
 		// Do nothing.... leave the pins alone, their names are
 		// handled elsewhere (they have a setName method).
 	}
 
+	@Override
 	public void visit(SimplePinAccess comp) {
 		comp.setIDLogical("simplePinAccess");
 
@@ -937,6 +976,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(SimplePinRead comp) {
 		comp.setIDLogical("simplePinRead");
 
@@ -947,6 +987,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(SimplePinWrite comp) {
 		comp.setIDLogical("simplePinWrite");
 
@@ -960,6 +1001,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.SubtractOp)
 	 */
+	@Override
 	public void visit(SubtractOp subtract) {
 		subtract.setIDLogical("subtract");
 
@@ -973,6 +1015,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.NumericPromotionOp)
 	 */
+	@Override
 	public void visit(NumericPromotionOp numericPromotion) {
 		numericPromotion.setIDLogical("numericPromotion");
 
@@ -986,6 +1029,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.XorOp)
 	 */
+	@Override
 	public void visit(XorOp xor) {
 		xor.setIDLogical("xor");
 
@@ -999,6 +1043,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Branch)
 	 */
+	@Override
 	public void visit(Branch branch) {
 		branch.setIDLogical("branch");
 
@@ -1012,6 +1057,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Decision)
 	 */
+	@Override
 	public void visit(Decision decision) {
 		decision.setIDLogical("decision");
 
@@ -1025,6 +1071,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Switch)
 	 */
+	@Override
 	public void visit(Switch sw) {
 		sw.setIDLogical("switch");
 
@@ -1038,6 +1085,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.InBuf)
 	 */
+	@Override
 	public void visit(InBuf ib) {
 		ib.setIDLogical("ib");
 
@@ -1050,6 +1098,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.OutBuf)
 	 */
+	@Override
 	public void visit(OutBuf ob) {
 		ob.setIDLogical("ob");
 
@@ -1062,6 +1111,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Reg)
 	 */
+	@Override
 	public void visit(Reg reg) {
 		String regName = ID.showLogical(reg);
 
@@ -1086,6 +1136,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Mux)
 	 */
+	@Override
 	public void visit(Mux m) {
 		m.setIDLogical("mux");
 
@@ -1099,6 +1150,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.EncodedMux)
 	 */
+	@Override
 	public void visit(EncodedMux m) {
 		m.setIDLogical("emux");
 
@@ -1112,6 +1164,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.PriorityMux)
 	 */
+	@Override
 	public void visit(PriorityMux pmux) {
 		pmux.setIDLogical("pmux");
 
@@ -1125,6 +1178,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.And)
 	 */
+	@Override
 	public void visit(And a) {
 		a.setIDLogical("and");
 
@@ -1138,6 +1192,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Not)
 	 */
+	@Override
 	public void visit(Not n) {
 		n.setIDLogical("not");
 
@@ -1151,6 +1206,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Or)
 	 */
+	@Override
 	public void visit(Or o) {
 		o.setIDLogical("or");
 
@@ -1164,6 +1220,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Scoreboard)
 	 */
+	@Override
 	public void visit(Scoreboard scoreboard) {
 		scoreboard.setIDLogical("scoreboard");
 
@@ -1177,6 +1234,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Latch)
 	 */
+	@Override
 	public void visit(Latch latch) {
 		latch.setIDLogical("latch");
 
@@ -1190,6 +1248,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.NoOp)
 	 */
+	@Override
 	public void visit(NoOp nop) {
 		nop.setIDLogical("nop");
 
@@ -1203,6 +1262,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.op.TimingOp)
 	 */
+	@Override
 	public void visit(TimingOp nop) {
 		nop.setIDLogical("tnop");
 
@@ -1216,6 +1276,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.RegisterRead)
 	 */
+	@Override
 	public void visit(RegisterRead regRead) {
 		regRead.setIDLogical("regRead");
 
@@ -1229,6 +1290,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.RegisterWrite)
 	 */
+	@Override
 	public void visit(RegisterWrite regWrite) {
 		regWrite.setIDLogical("regWrite");
 
@@ -1242,6 +1304,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.RegisterGateway)
 	 */
+	@Override
 	public void visit(RegisterGateway regGateway) {
 		regGateway.setIDLogical("regGateway");
 
@@ -1255,6 +1318,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.RegisterReferee)
 	 */
+	@Override
 	public void visit(RegisterReferee regReferee) {
 		regReferee.setIDLogical("regReferee");
 
@@ -1268,6 +1332,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.memory.MemoryRead)
 	 */
+	@Override
 	public void visit(MemoryRead memRead) {
 		memRead.setIDLogical("memRead");
 
@@ -1281,6 +1346,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.memory.MemoryWrite)
 	 */
+	@Override
 	public void visit(MemoryWrite memWrite) {
 		memWrite.setIDLogical("memWrite");
 
@@ -1294,6 +1360,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.memory.MemoryReferee)
 	 */
+	@Override
 	public void visit(MemoryReferee memReferee) {
 		memReferee.setIDLogical("memReferee");
 
@@ -1307,6 +1374,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.memory.MemoryGateway)
 	 */
+	@Override
 	public void visit(MemoryGateway memGateway) {
 		memGateway.setIDLogical("memGateway");
 
@@ -1320,6 +1388,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.HeapRead)
 	 */
+	@Override
 	public void visit(HeapRead heapRead) {
 		heapRead.setIDLogical("heapRead");
 
@@ -1333,6 +1402,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.ArrayRead)
 	 */
+	@Override
 	public void visit(ArrayRead arrayRead) {
 		arrayRead.setIDLogical("arrayRead");
 
@@ -1346,6 +1416,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.ArrayRead)
 	 */
+	@Override
 	public void visit(AbsoluteMemoryRead read) {
 		read.setIDLogical("absoluteRead");
 
@@ -1359,6 +1430,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.HeapWrite)
 	 */
+	@Override
 	public void visit(HeapWrite heapWrite) {
 		heapWrite.setIDLogical("heapWrite");
 
@@ -1372,6 +1444,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.ArrayWrite)
 	 */
+	@Override
 	public void visit(ArrayWrite arrayWrite) {
 		arrayWrite.setIDLogical("arrayWrite");
 
@@ -1385,6 +1458,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.ArrayWrite)
 	 */
+	@Override
 	public void visit(AbsoluteMemoryWrite write) {
 		write.setIDLogical("absoluteWrite");
 
@@ -1398,6 +1472,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.PinRead)
 	 */
+	@Override
 	public void visit(PinRead pinRead) {
 		pinRead.setIDLogical("pinRead");
 
@@ -1411,6 +1486,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.PinWrite)
 	 */
+	@Override
 	public void visit(PinWrite pinWrite) {
 		pinWrite.setIDLogical("pinWrite");
 
@@ -1424,6 +1500,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.PinStateChange)
 	 */
+	@Override
 	public void visit(PinStateChange pinChange) {
 		pinChange.setIDLogical("pinChange");
 
@@ -1437,6 +1514,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.SRL16)
 	 */
+	@Override
 	public void visit(SRL16 srl16) {
 		srl16.setIDLogical("srl16");
 
@@ -1450,6 +1528,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.PinReferee)
 	 */
+	@Override
 	public void visit(PinReferee pinReferee) {
 		pinReferee.setIDLogical("pinReferee");
 
@@ -1463,6 +1542,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.TriBuf)
 	 */
+	@Override
 	public void visit(TriBuf tbuf) {
 		tbuf.setIDLogical("tbuf");
 
@@ -1473,6 +1553,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		super.visit(tbuf);
 	}
 
+	@Override
 	public void visit(FifoAccess comp) {
 		comp.setIDLogical("fifoAccess");
 
@@ -1483,6 +1564,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(FifoRead comp) {
 		comp.setIDLogical("fifoRead");
 
@@ -1493,6 +1575,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(FifoWrite comp) {
 		comp.setIDLogical("fifoWrite");
 
@@ -1506,6 +1589,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.FilteredVisitor#filterAny(net.sf.openforge.lim.Component)
 	 */
+	@Override
 	public void filterAny(Component c) {
 		String baseName = c.showIDLogical();
 		for (Exit exit : c.getExits()) {
@@ -1518,8 +1602,8 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	}
 
 	private String uniquifyCoreName(String name) {
-		if (this.topModuleName.length() > 0) {
-			return this.topModuleName + "_" + name;
+		if (topModuleName.length() > 0) {
+			return topModuleName + "_" + name;
 		}
 		return name;
 	}
@@ -1535,6 +1619,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 
 	private class DesignElementNamingVisitor extends FilteredVisitor {
 
+		@Override
 		public void visit(Design design) {
 			// Avoid all task calls...
 			Set<Call> taskCalls = new HashSet<Call>();
@@ -1542,8 +1627,8 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 				taskCalls.add(task.getCall());
 			}
 
-			List<Component> elements = new ArrayList<Component>(design.getDesignModule()
-					.getComponents());
+			List<Component> elements = new ArrayList<Component>(design
+					.getDesignModule().getComponents());
 
 			while (!elements.isEmpty()) {
 				Visitable vis = elements.remove(0);
@@ -1566,6 +1651,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 			}
 		}
 
+		@Override
 		public void filter(Module mod) {
 			// It will likely be instantiated as an hdl module.
 			// Give it a name that is unique to this compilation
@@ -1573,13 +1659,14 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 			if (mod.getSourceName() != null) {
 				idLogical = idLogical.replaceAll("_" + mod.getSourceName(), "");
 			}
-			mod.setIDLogical(LIMLogicalNamer.this.uniquifyCoreName(idLogical));
+			mod.setIDLogical(uniquifyCoreName(idLogical));
 		}
 
+		@Override
 		public void visit(MemoryBank vis) {
 			String moduleName = "forge_memory_" + vis.getDepth() + "x"
 					+ vis.getWidth();
-			vis.setIDLogical(LIMLogicalNamer.this.uniquifyCoreName(moduleName));
+			vis.setIDLogical(uniquifyCoreName(moduleName));
 		}
 	}
 

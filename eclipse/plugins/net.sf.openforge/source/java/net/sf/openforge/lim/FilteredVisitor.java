@@ -102,7 +102,6 @@ import net.sf.openforge.lim.op.XorOp;
  * @see Visitable
  */
 public class FilteredVisitor implements Visitor {
-	private static final String _RCS_ = "$Rev: 558 $";
 
 	protected Scanner scanner;
 
@@ -115,401 +114,477 @@ public class FilteredVisitor implements Visitor {
 		scanner.setTraverseComposable(traversesComposable);
 	}
 
+	@Override
 	public void visit(Design design) {
 		traverse(design);
 	}
 
+	@Override
 	public void visit(Task task) {
 		traverse(task);
 	}
 
+	@Override
 	public void visit(Call call) {
 		preFilter(call);
 		traverse(call);
 		filter(call);
 	}
 
+	@Override
 	public void visit(IPCoreCall call) {
 	}
 
+	@Override
 	public void visit(Procedure procedure) {
 		traverse(procedure);
 	}
 
+	@Override
 	public void visit(Block block) {
 		preFilter(block);
 		traverse(block);
 		filter(block);
 	}
 
+	@Override
 	public void visit(HeapRead heapRead) {
 		preFilter(heapRead);
 		traverse(heapRead);
 		filter(heapRead);
 	}
 
+	@Override
 	public void visit(ArrayRead arrayRead) {
 		preFilter(arrayRead);
 		traverse(arrayRead);
 		filter(arrayRead);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead read) {
 		preFilter(read);
 		traverse(read);
 		filter(read);
 	}
 
+	@Override
 	public void visit(HeapWrite heapWrite) {
 		preFilter(heapWrite);
 		traverse(heapWrite);
 		filter(heapWrite);
 	}
 
+	@Override
 	public void visit(ArrayWrite arrayWrite) {
 		preFilter(arrayWrite);
 		traverse(arrayWrite);
 		filter(arrayWrite);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite write) {
 		preFilter(write);
 		traverse(write);
 		filter(write);
 	}
 
+	@Override
 	public void visit(Loop loop) {
 		preFilter(loop);
 		traverse(loop);
 		filter(loop);
 	}
 
+	@Override
 	public void visit(WhileBody whileBody) {
 		preFilter(whileBody);
 		traverse(whileBody);
 		filter(whileBody);
 	}
 
+	@Override
 	public void visit(UntilBody untilBody) {
 		preFilter(untilBody);
 		traverse(untilBody);
 		filter(untilBody);
 	}
 
+	@Override
 	public void visit(ForBody forBody) {
 		preFilter(forBody);
 		traverse(forBody);
 		filter(forBody);
 	}
 
+	@Override
 	public void visit(Decision decision) {
 		preFilter(decision);
 		traverse(decision);
 		filter(decision);
 	}
 
+	@Override
 	public void visit(Branch branch) {
 		preFilter(branch);
 		traverse(branch);
 		filter(branch);
 	}
 
+	@Override
 	public void visit(Switch sw) {
 		preFilter(sw);
 		traverse(sw);
 		filter(sw);
 	}
 
+	@Override
 	public void visit(FifoAccess mod) {
 		preFilter(mod);
 		traverse(mod);
 		filter(mod);
 	}
 
+	@Override
 	public void visit(FifoRead mod) {
 		preFilter(mod);
 		traverse(mod);
 		filter(mod);
 	}
 
+	@Override
 	public void visit(FifoWrite mod) {
 		preFilter(mod);
 		traverse(mod);
 		filter(mod);
 	}
 
+	@Override
 	public void visit(EndianSwapper mod) {
 		preFilter(mod);
 		traverse(mod);
 		filter(mod);
 	}
 
+	@Override
 	public void visit(AddOp add) {
 		preFilter(add);
 		filter(add);
 	}
 
+	@Override
 	public void visit(AndOp and) {
 		preFilter(and);
 		filter(and);
 	}
 
+	@Override
 	public void visit(NumericPromotionOp numericPromotion) {
 		preFilter(numericPromotion);
 		filter(numericPromotion);
 	}
 
+	@Override
 	public void visit(CastOp cast) {
 		preFilter(cast);
 		filter(cast);
 	}
 
+	@Override
 	public void visit(ComplementOp complement) {
 		preFilter(complement);
 		filter(complement);
 	}
 
+	@Override
 	public void visit(ConditionalAndOp conditionalAnd) {
 		preFilter(conditionalAnd);
 		filter(conditionalAnd);
 	}
 
+	@Override
 	public void visit(ConditionalOrOp conditionalOr) {
 		preFilter(conditionalOr);
 		filter(conditionalOr);
 	}
 
+	@Override
 	public void visit(Constant constant) {
 		preFilter(constant);
 		filter(constant);
 	}
 
+	@Override
 	public void visit(LocationConstant loc) {
 		visit((Constant) loc);
 	}
 
+	@Override
 	public void visit(DivideOp divide) {
 		preFilter(divide);
 		filter(divide);
 	}
 
+	@Override
 	public void visit(EqualsOp equals) {
 		preFilter(equals);
 		filter(equals);
 	}
 
+	@Override
 	public void visit(GreaterThanEqualToOp greaterThanEqualTo) {
 		preFilter(greaterThanEqualTo);
 		filter(greaterThanEqualTo);
 	}
 
+	@Override
 	public void visit(GreaterThanOp greaterThan) {
 		preFilter(greaterThan);
 		filter(greaterThan);
 	}
 
+	@Override
 	public void visit(LeftShiftOp leftShift) {
 		preFilter(leftShift);
 		filter(leftShift);
 	}
 
+	@Override
 	public void visit(LessThanEqualToOp lessThanEqualTo) {
 		preFilter(lessThanEqualTo);
 		filter(lessThanEqualTo);
 	}
 
+	@Override
 	public void visit(LessThanOp lessThan) {
 		preFilter(lessThan);
 		filter(lessThan);
 	}
 
+	@Override
 	public void visit(MinusOp minus) {
 		preFilter(minus);
 		filter(minus);
 	}
 
+	@Override
 	public void visit(ModuloOp modulo) {
 		preFilter(modulo);
 		filter(modulo);
 	}
 
+	@Override
 	public void visit(MultiplyOp multiply) {
 		preFilter(multiply);
 		filter(multiply);
 	}
 
+	@Override
 	public void visit(NotEqualsOp notEquals) {
 		preFilter(notEquals);
 		filter(notEquals);
 	}
 
+	@Override
 	public void visit(NoOp nop) {
 		preFilter(nop);
 		filter(nop);
 	}
 
+	@Override
 	public void visit(TimingOp top) {
 		preFilter(top);
 		filter(top);
 	}
 
+	@Override
 	public void visit(NotOp not) {
 		preFilter(not);
 		filter(not);
 	}
 
+	@Override
 	public void visit(OrOp or) {
 		preFilter(or);
 		filter(or);
 	}
 
+	@Override
 	public void visit(PlusOp plus) {
 		preFilter(plus);
 		filter(plus);
 	}
 
+	@Override
 	public void visit(ReductionOrOp reductionOr) {
 		preFilter(reductionOr);
 		filter(reductionOr);
 	}
 
+	@Override
 	public void visit(RightShiftOp rightShift) {
 		preFilter(rightShift);
 		filter(rightShift);
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp rightShiftUnsigned) {
 		preFilter(rightShiftUnsigned);
 		filter(rightShiftUnsigned);
 	}
 
+	@Override
 	public void visit(ShortcutIfElseOp shortcutIfElse) {
 		preFilter(shortcutIfElse);
 		filter(shortcutIfElse);
 	}
 
+	@Override
 	public void visit(SimplePin comp) {
 		preFilterAny(comp);
 		filterAny(comp);
 	}
 
+	@Override
 	public void visit(SimplePinAccess mod) {
 		preFilter(mod);
 		traverse(mod);
 		filter(mod);
 	}
 
+	@Override
 	public void visit(SimplePinRead comp) {
 		preFilterAny(comp);
 		filterAny(comp);
 	}
 
+	@Override
 	public void visit(SimplePinWrite comp) {
 		preFilterAny(comp);
 		filterAny(comp);
 	}
 
+	@Override
 	public void visit(TaskCall mod) {
 		preFilter(mod);
 		traverse(mod);
 		filter(mod);
 	}
 
+	@Override
 	public void visit(SubtractOp subtract) {
 		preFilter(subtract);
 		filter(subtract);
 	}
 
+	@Override
 	public void visit(XorOp xor) {
 		preFilter(xor);
 		filter(xor);
 	}
 
+	@Override
 	public void visit(InBuf ib) {
 		preFilterAny(ib);
 		filterAny(ib);
 	}
 
+	@Override
 	public void visit(OutBuf ob) {
 		preFilterAny(ob);
 		filterAny(ob);
 	}
 
+	@Override
 	public void visit(PriorityMux pmux) {
 		preFilter(pmux);
 		traverse(pmux);
 		filter(pmux);
 	}
 
+	@Override
 	public void visit(EncodedMux m) {
 		preFilter(m);
 		filter(m);
 	}
 
+	@Override
 	public void visit(Mux m) {
 		preFilter(m);
 		filter(m);
 	}
 
+	@Override
 	public void visit(And a) {
 		preFilter(a);
 		filter(a);
 	}
 
+	@Override
 	public void visit(Not n) {
 		preFilter(n);
 		filter(n);
 	}
 
+	@Override
 	public void visit(Or o) {
 		preFilter(o);
 		filter(o);
 	}
 
+	@Override
 	public void visit(Reg reg) {
 		preFilter(reg);
 		filter(reg);
 	}
 
+	@Override
 	public void visit(SRL16 srl16) {
 		preFilter(srl16);
 		filter(srl16);
 	}
 
+	@Override
 	public void visit(Scoreboard scoreboard) {
 		preFilter(scoreboard);
 		traverse(scoreboard);
 		filter(scoreboard);
 	}
 
+	@Override
 	public void visit(RegisterRead rr) {
 		preFilter(rr);
 		filter(rr);
 	}
 
+	@Override
 	public void visit(RegisterWrite rw) {
 		preFilter(rw);
 		filter(rw);
 	}
 
+	@Override
 	public void visit(RegisterReferee regReferee) {
 		preFilter(regReferee);
 		traverse(regReferee);
 		filter(regReferee);
 	}
 
+	@Override
 	public void visit(RegisterGateway regGateway) {
 		preFilter(regGateway);
 		traverse(regGateway);
 		filter(regGateway);
 	}
 
+	@Override
 	public void visit(MemoryReferee memReferee) {
 		preFilter(memReferee);
 		traverse(memReferee);
 		filter(memReferee);
 	}
 
+	@Override
 	public void visit(MemoryGateway memGateway) {
 		preFilter(memGateway);
 		traverse(memGateway);
@@ -520,12 +595,14 @@ public class FilteredVisitor implements Visitor {
 	 * Traverse the MemoryRead to be sure that we pick up any Physical
 	 * implementation that exists for the component.
 	 */
+	@Override
 	public void visit(MemoryRead memRead) {
 		preFilter(memRead);
 		traverse(memRead);
 		filter(memRead);
 	}
 
+	@Override
 	public void visit(MemoryBank comp) {
 		preFilterAny(comp);
 		filterAny(comp);
@@ -535,6 +612,7 @@ public class FilteredVisitor implements Visitor {
 	 * Traverse the MemoryWrite to be sure that we pick up any Physical
 	 * implementation that exists for the component.
 	 */
+	@Override
 	public void visit(MemoryWrite memWrite) {
 		preFilter(memWrite);
 		traverse(memWrite);
@@ -545,6 +623,7 @@ public class FilteredVisitor implements Visitor {
 	 * Traverse the PinRead to be sure that we pick up any Physical
 	 * implementation that exists for the component.
 	 */
+	@Override
 	public void visit(PinRead pinRead) {
 		preFilter(pinRead);
 		traverse(pinRead);
@@ -555,6 +634,7 @@ public class FilteredVisitor implements Visitor {
 	 * Traverse the PinWrite to be sure that we pick up any Physical
 	 * implementation that exists for the component.
 	 */
+	@Override
 	public void visit(PinWrite pinWrite) {
 		preFilter(pinWrite);
 		traverse(pinWrite);
@@ -565,30 +645,35 @@ public class FilteredVisitor implements Visitor {
 	 * Traverse the PinStageChange to be sure that we pick up any Physical
 	 * implementation that exists for the component.
 	 */
+	@Override
 	public void visit(PinStateChange pinChange) {
 		preFilter(pinChange);
 		traverse(pinChange);
 		filter(pinChange);
 	}
 
+	@Override
 	public void visit(PinReferee pinReferee) {
 		preFilter(pinReferee);
 		traverse(pinReferee);
 		filter(pinReferee);
 	}
 
+	@Override
 	public void visit(Latch latch) {
 		preFilter(latch);
 		traverse(latch);
 		filter(latch);
 	}
 
+	@Override
 	public void visit(Kicker kicker) {
 		preFilter(kicker);
 		traverse(kicker);
 		filter(kicker);
 	}
 
+	@Override
 	public void visit(TriBuf tbuf) {
 		preFilterAny(tbuf);
 		filterAny(tbuf);

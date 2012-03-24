@@ -96,7 +96,7 @@ public class MemoryBank extends Component {
 	 * @param addrWidth
 	 *            , the bit width of the address lines to this bank
 	 */
-	
+
 	public MemoryBank(int width, int depth, AddressStridePolicy addrPolicy,
 			MemoryImplementation imp, int addrWidth) {
 		super();
@@ -104,8 +104,8 @@ public class MemoryBank extends Component {
 		this.width = width;
 		this.depth = depth;
 		this.addrPolicy = addrPolicy;
-		this.implementation = imp;
-		
+		implementation = imp;
+
 		@SuppressWarnings("unused")
 		Exit exit = makeExit(0, Exit.DONE);
 
@@ -149,10 +149,10 @@ public class MemoryBank extends Component {
 
 		Bus b = getExit(Exit.DONE).makeDataBus();
 
-		if (this.ports == Collections.EMPTY_LIST)
-			this.ports = new ArrayList<BankPort>(2);
+		if (ports == Collections.EMPTY_LIST)
+			ports = new ArrayList<BankPort>(2);
 		BankPort port = createBankPort(a, d, e, w, b, read, write, writeMode);
-		this.ports.add(port);
+		ports.add(port);
 		return port;
 	}
 
@@ -173,8 +173,7 @@ public class MemoryBank extends Component {
 		// Offset in number of locations. If this is bank 2 and banks are
 		// 16 bits wide each, and each addressable location is 8 bits
 		// then our offset is 2 * 16/8 = 4.
-		final int numLocations = (this.width / getAddressStridePolicy()
-				.getStride());
+		final int numLocations = (width / getAddressStridePolicy().getStride());
 		offset = offset * numLocations;
 
 		for (int i = 0; i < getDepth(); i++) {
@@ -188,13 +187,13 @@ public class MemoryBank extends Component {
 
 	private void clearInitValues() {
 		int stride = getAddressStridePolicy().getStride();
-		assert (this.width % stride) == 0 : "unbalanced stride (" + stride
-				+ ")and bank width(" + this.width + ")";
-		final int numLocations = (this.width / stride);
-		this.initValues = new AddressableUnit[depth][numLocations];
+		assert (width % stride) == 0 : "unbalanced stride (" + stride
+				+ ")and bank width(" + width + ")";
+		final int numLocations = (width / stride);
+		initValues = new AddressableUnit[depth][numLocations];
 		for (int i = 0; i < depth; i++) {
 			for (int j = 0; j < numLocations; j++) {
-				this.initValues[i][j] = AddressableUnit.ZERO_UNIT;
+				initValues[i][j] = AddressableUnit.ZERO_UNIT;
 			}
 		}
 	}
@@ -210,14 +209,14 @@ public class MemoryBank extends Component {
 	 * Returns the bit width of this MemoryBank.
 	 */
 	public int getWidth() {
-		return this.width;
+		return width;
 	}
 
 	/**
 	 * Returns the number of addressable locations in this MemoryBank.
 	 */
 	public int getDepth() {
-		return this.depth;
+		return depth;
 	}
 
 	/**
@@ -225,7 +224,7 @@ public class MemoryBank extends Component {
 	 * up one addressable location in this bank.
 	 */
 	public AddressStridePolicy getAddressStridePolicy() {
-		return this.addrPolicy;
+		return addrPolicy;
 	}
 
 	/**
@@ -234,7 +233,7 @@ public class MemoryBank extends Component {
 	 */
 	public int getAddrWidth() {
 		// We must always have at least 1 bit for address...
-		return Math.max(this.addrWidth, 1);
+		return Math.max(addrWidth, 1);
 	}
 
 	/**
@@ -243,7 +242,7 @@ public class MemoryBank extends Component {
 	 * the number of bytes wide this bank is.
 	 */
 	public AddressableUnit[][] getInitValues() {
-		return this.initValues;
+		return initValues;
 	}
 
 	/**
@@ -252,7 +251,7 @@ public class MemoryBank extends Component {
 	 * (combinational or sequential read).
 	 */
 	public MemoryImplementation getImplementation() {
-		return this.implementation;
+		return implementation;
 	}
 
 	/**
@@ -306,8 +305,8 @@ public class MemoryBank extends Component {
 			owner.addComponent(trunc);
 
 			And enAnd = new And(2);
-			((Port) enAnd.getDataPorts().get(0)).setBus(trunc.getResultBus());
-			((Port) enAnd.getDataPorts().get(1)).setBus(enable);
+			enAnd.getDataPorts().get(0).setBus(trunc.getResultBus());
+			enAnd.getDataPorts().get(1).setBus(enable);
 			enAnd.setIDLogical("enAnd");
 			owner.addComponent(enAnd);
 
@@ -326,9 +325,9 @@ public class MemoryBank extends Component {
 			owner.addComponent(trunc);
 
 			And wenAnd = new And(2);
-			((Port) wenAnd.getDataPorts().get(0)).setBus(trunc.getResultBus());
-			((Port) wenAnd.getDataPorts().get(1)).setBus(memPort
-					.getWriteEnablePort().getPeer());
+			wenAnd.getDataPorts().get(0).setBus(trunc.getResultBus());
+			wenAnd.getDataPorts().get(1)
+					.setBus(memPort.getWriteEnablePort().getPeer());
 			wenAnd.setIDLogical("wenAnd");
 			owner.addComponent(wenAnd);
 
@@ -421,6 +420,7 @@ public class MemoryBank extends Component {
 	 * 
 	 * @return true if any of the bus values was modified, false otherwise
 	 */
+	@Override
 	protected boolean pushValuesForward() {
 		/*
 		 * Ensure that the data output bus is the width of the memory.
@@ -440,31 +440,34 @@ public class MemoryBank extends Component {
 	 * 
 	 * @return true if any of the port values was modified, false otherwise
 	 */
+	@Override
 	protected boolean pushValuesBackward() {
 		return false;
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
 
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		MemoryBank clone = (MemoryBank) super.clone();
-		if (this.ports == Collections.EMPTY_LIST) {
+		if (ports == Collections.EMPTY_LIST) {
 			clone.ports = Collections.emptyList();
 		} else {
-			clone.ports = new ArrayList<BankPort>(this.ports.size());
+			clone.ports = new ArrayList<BankPort>(ports.size());
 			List<Port> cPorts = clone.getDataPorts();
-			List<Port> oPorts = this.getDataPorts();
+			List<Port> oPorts = getDataPorts();
 			List<Bus> cBus = clone.getExit(Exit.DONE).getDataBuses();
 			List<Bus> oBus = this.getExit(Exit.DONE).getDataBuses();
-			for (BankPort orig : this.ports) {
+			for (BankPort orig : ports) {
 				BankPort clonePort = clone.createBankPort(
-						(Port) cPorts.get(oPorts.indexOf(orig.addr)),
-						(Port) cPorts.get(oPorts.indexOf(orig.din)),
-						(Port) cPorts.get(oPorts.indexOf(orig.en)),
-						(Port) cPorts.get(oPorts.indexOf(orig.we)),
-						(Bus) cBus.get(oBus.indexOf(orig.dout)), orig.isRead(),
+						cPorts.get(oPorts.indexOf(orig.addr)),
+						cPorts.get(oPorts.indexOf(orig.din)),
+						cPorts.get(oPorts.indexOf(orig.en)),
+						cPorts.get(oPorts.indexOf(orig.we)),
+						cBus.get(oBus.indexOf(orig.dout)), orig.isRead(),
 						orig.isWrite(), new String(orig.getWriteMode()));
 				clone.ports.add(clonePort);
 			}
@@ -490,58 +493,58 @@ public class MemoryBank extends Component {
 
 		public BankPort(Port a, Port d, Port e, Port w, Bus b, boolean rd,
 				boolean wr, String writeMode) {
-			this.addr = a;
-			this.din = d;
-			this.en = e;
-			this.we = w;
-			this.dout = b;
-			this.read = rd;
-			this.write = wr;
+			addr = a;
+			din = d;
+			en = e;
+			we = w;
+			dout = b;
+			read = rd;
+			write = wr;
 			this.writeMode = writeMode;
 		}
 
 		public Port getAddressPort() {
-			return this.addr;
+			return addr;
 		}
 
 		public Port getDataInPort() {
-			return this.din;
+			return din;
 		}
 
 		public Port getEnablePort() {
-			return this.en;
+			return en;
 		}
 
 		public Port getWriteEnablePort() {
-			return this.we;
+			return we;
 		}
 
 		public Bus getDataOutBus() {
-			return this.dout;
+			return dout;
 		}
 
 		public boolean isRead() {
-			return this.read;
+			return read;
 		}
 
 		public boolean isWrite() {
-			return this.write;
+			return write;
 		}
 
 		public String getWriteMode() {
-			return this.writeMode;
+			return writeMode;
 		}
 
 		public void remove() {
-			assert MemoryBank.this.ports.contains(this);
+			assert ports.contains(this);
 
-			MemoryBank.this.ports.remove(this);
+			ports.remove(this);
 
-			MemoryBank.this.removeDataPort(this.addr);
-			MemoryBank.this.removeDataPort(this.din);
-			MemoryBank.this.removeDataPort(this.en);
-			MemoryBank.this.removeDataPort(this.we);
-			MemoryBank.this.getExit(Exit.DONE).removeDataBus(this.dout);
+			removeDataPort(addr);
+			removeDataPort(din);
+			removeDataPort(en);
+			removeDataPort(we);
+			MemoryBank.this.getExit(Exit.DONE).removeDataBus(dout);
 		}
 	}
 
@@ -570,40 +573,40 @@ public class MemoryBank extends Component {
 		private MemoryImplementation impl;
 
 		public Signature(MemoryBank bank) {
-			this.bankPorts = new ArrayList<BankPort>(bank.getBankPorts());
-			this.initValues = bank.getInitValues();
-			this.width = bank.getWidth();
-			this.depth = bank.getDepth();
-			this.impl = bank.getImplementation();
+			bankPorts = new ArrayList<BankPort>(bank.getBankPorts());
+			initValues = bank.getInitValues();
+			width = bank.getWidth();
+			depth = bank.getDepth();
+			impl = bank.getImplementation();
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (!(o instanceof Signature))
 				return false;
 			Signature comp = (Signature) o;
-			if (comp.bankPorts.size() != this.bankPorts.size())
+			if (comp.bankPorts.size() != bankPorts.size())
 				return false;
-			if (comp.width != this.width)
+			if (comp.width != width)
 				return false;
-			if (comp.depth != this.depth)
+			if (comp.depth != depth)
 				return false;
 			if (initValues.length != comp.initValues.length)
 				return false;
 
 			// Test implementation char.
-			if (!comp.impl.getReadLatency().equals(this.impl.getReadLatency()))
+			if (!comp.impl.getReadLatency().equals(impl.getReadLatency()))
 				return false;
-			if (comp.impl.isROM() != this.impl.isROM())
+			if (comp.impl.isROM() != impl.isROM())
 				return false;
-			if (!comp.impl.isROM() && !this.impl.isROM())
-				if (!comp.impl.getWriteLatency().equals(
-						this.impl.getWriteLatency()))
+			if (!comp.impl.isROM() && !impl.isROM())
+				if (!comp.impl.getWriteLatency().equals(impl.getWriteLatency()))
 					return false;
-			if (comp.impl.isLUT() != this.impl.isLUT())
+			if (comp.impl.isLUT() != impl.isLUT())
 				return false;
-			if (comp.impl.isDefault() != this.impl.isDefault())
+			if (comp.impl.isDefault() != impl.isDefault())
 				return false;
-			if (comp.impl.isDPReadFirst() != this.impl.isDPReadFirst())
+			if (comp.impl.isDPReadFirst() != impl.isDPReadFirst())
 				return false;
 
 			for (int i = 0; i < initValues.length; i++) {
@@ -614,10 +617,8 @@ public class MemoryBank extends Component {
 			Iterator<BankPort> thisIter = bankPorts.iterator();
 			Iterator<BankPort> compIter = comp.bankPorts.iterator();
 			while (thisIter.hasNext()) {
-				MemoryBank.BankPort local = (MemoryBank.BankPort) thisIter
-						.next();
-				MemoryBank.BankPort test = (MemoryBank.BankPort) compIter
-						.next();
+				MemoryBank.BankPort local = thisIter.next();
+				MemoryBank.BankPort test = compIter.next();
 				if (local.isRead() != test.isRead())
 					return false;
 				if (local.isWrite() != test.isWrite())
@@ -642,21 +643,22 @@ public class MemoryBank extends Component {
 			return b1.getValue().getSize() == b2.getValue().getSize();
 		}
 
+		@Override
 		public int hashCode() {
 			// Generate the hash. Any multipliers are to help space
 			// out the values.
-			int hash = (this.width + this.depth) * 1000;
+			int hash = (width + depth) * 1000;
 			for (int i = 0; i < initValues.length; i++)
 				for (int j = 0; j < initValues[i].length; j++)
 					hash += initValues[i][j].hashCode();
 
-			hash += this.impl.getReadLatency().getMinClocks();
-			if (!this.impl.isROM())
-				hash += this.impl.getWriteLatency().getMinClocks();
-			hash += this.impl.isLUT() ? 250 : 0;
-			hash += this.impl.isROM() ? 500 : 0;
-			hash += this.impl.isDefault() ? 1000 : 0;
-			hash += this.impl.isDPReadFirst() ? 2000 : 0;
+			hash += impl.getReadLatency().getMinClocks();
+			if (!impl.isROM())
+				hash += impl.getWriteLatency().getMinClocks();
+			hash += impl.isLUT() ? 250 : 0;
+			hash += impl.isROM() ? 500 : 0;
+			hash += impl.isDefault() ? 1000 : 0;
+			hash += impl.isDPReadFirst() ? 2000 : 0;
 
 			hash += bankPorts.size();
 			for (MemoryBank.BankPort bp : bankPorts) {

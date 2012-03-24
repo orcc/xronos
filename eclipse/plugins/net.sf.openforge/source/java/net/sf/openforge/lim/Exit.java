@@ -51,7 +51,6 @@ import net.sf.openforge.util.naming.IDSourceInfo;
  * @version $Id: Exit.java 109 2006-02-24 18:10:34Z imiller $
  */
 public class Exit extends ID implements LatencyKey {
-	private static final String _RCS_ = "$Rev: 109 $";
 
 	/** The identifier tag of exit */
 	private Tag tag;
@@ -116,6 +115,7 @@ public class Exit extends ID implements LatencyKey {
 			return id;
 		}
 
+		@Override
 		public String toString() {
 			switch (getId()) {
 			case ID_DONE:
@@ -178,10 +178,12 @@ public class Exit extends ID implements LatencyKey {
 			return type;
 		}
 
+		@Override
 		public int hashCode() {
 			return type.hashCode() + (label == null ? 0 : label.hashCode());
 		}
 
+		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof Tag) {
 				Tag tag = (Tag) obj;
@@ -191,6 +193,7 @@ public class Exit extends ID implements LatencyKey {
 			return false;
 		}
 
+		@Override
 		public String toString() {
 			return type + (label.equals(NOLABEL) ? "" : (":" + label));
 		}
@@ -238,6 +241,7 @@ public class Exit extends ID implements LatencyKey {
 	 * 
 	 * @return this exit owner id source info
 	 */
+	@Override
 	public IDSourceInfo getIDSourceInfo() {
 		return getOwner().getIDSourceInfo();
 	}
@@ -357,7 +361,7 @@ public class Exit extends ID implements LatencyKey {
 	public Bus makeDataBus(Component.Type type) {
 		Bus bus = new Bus(this);
 		bus.setUsed(true);
-		this.dataBuses.add(bus);
+		dataBuses.add(bus);
 		if (peer != null) {
 			Port port = peer.makeDataPort(type);
 			port.setUsed(true);
@@ -369,9 +373,9 @@ public class Exit extends ID implements LatencyKey {
 	}
 
 	void moveDataBusLocation(Bus bus, int index) {
-		assert this.dataBuses.contains(bus) : "Exit doesn't know bus";
-		this.dataBuses.remove(bus);
-		this.dataBuses.add(index, bus);
+		assert dataBuses.contains(bus) : "Exit doesn't know bus";
+		dataBuses.remove(bus);
+		dataBuses.add(index, bus);
 	}
 
 	/**
@@ -390,7 +394,7 @@ public class Exit extends ID implements LatencyKey {
 	 *            a value of type 'Entry'
 	 */
 	void drives(Entry entry) {
-		this.drivenEntries.add(entry);
+		drivenEntries.add(entry);
 	}
 
 	/**
@@ -400,8 +404,8 @@ public class Exit extends ID implements LatencyKey {
 	 *            a value of type 'Entry'
 	 */
 	void removeEntry(Entry entry) {
-		assert this.drivenEntries.contains(entry) : "unknown entry";
-		this.drivenEntries.remove(entry);
+		assert drivenEntries.contains(entry) : "unknown entry";
+		drivenEntries.remove(entry);
 	}
 
 	public void disconnect() {
@@ -418,14 +422,14 @@ public class Exit extends ID implements LatencyKey {
 		// "Disconnecting an exit that is still listed as the driving exit of something. "
 		// + this + " drives " + drivenEntries;
 
-		for (Iterator entryIter = (new LinkedList(this.drivenEntries))
-				.iterator(); entryIter.hasNext();) {
+		for (Iterator entryIter = (new LinkedList(drivenEntries)).iterator(); entryIter
+				.hasNext();) {
 			((Entry) entryIter.next()).setDrivingExit(null);
 		}
 	}
 
 	public Set<Entry> getDrivenEntries() {
-		return Collections.unmodifiableSet(this.drivenEntries);
+		return Collections.unmodifiableSet(drivenEntries);
 	}
 
 	/**
@@ -442,18 +446,18 @@ public class Exit extends ID implements LatencyKey {
 	 */
 	public Exit(Component owner, int dataCount, Type type, String label) {
 		this.owner = owner;
-		this.doneBus = new Bus(this);
-		this.doneBus.setSize(1, false);
-		this.doneBus.setUsed(false);
-		this.dataBuses = new ArrayList(dataCount);
-		this.drivenEntries = new HashSet();
+		doneBus = new Bus(this);
+		doneBus.setSize(1, false);
+		doneBus.setUsed(false);
+		dataBuses = new ArrayList(dataCount);
+		drivenEntries = new HashSet();
 		for (int i = 0; i < dataCount; i++) {
 			Bus b = new Bus(this);
 			b.setUsed(true); // ABK - data buses should always be used
-			this.dataBuses.add(b);
+			dataBuses.add(b);
 		}
 
-		this.tag = new Tag(type, label);
+		tag = new Tag(type, label);
 	}
 
 	/**
@@ -497,13 +501,13 @@ public class Exit extends ID implements LatencyKey {
 	 */
 	Exit(Module owner, int dataCount, Type type, String label) {
 		this((Component) owner, dataCount);
-		this.peer = new OutBuf(owner, this);
-		owner.addComponent(this.peer);
+		peer = new OutBuf(owner, this);
+		owner.addComponent(peer);
 
-		doneBus.setPeer(this.peer.getGoPort());
-		this.peer.getGoPort().setPeer(doneBus);
-		Iterator busIter = this.dataBuses.iterator();
-		Iterator portIter = this.peer.getDataPorts().iterator();
+		doneBus.setPeer(peer.getGoPort());
+		peer.getGoPort().setPeer(doneBus);
+		Iterator busIter = dataBuses.iterator();
+		Iterator portIter = peer.getDataPorts().iterator();
 		while (busIter.hasNext()) {
 			Bus bus = (Bus) busIter.next();
 			Port port = (Port) portIter.next();
@@ -511,7 +515,7 @@ public class Exit extends ID implements LatencyKey {
 			port.setPeer(bus);
 		}
 
-		this.tag = new Tag(type, label);
+		tag = new Tag(type, label);
 	}
 
 	/**
@@ -542,6 +546,7 @@ public class Exit extends ID implements LatencyKey {
 		this(owner, dataCount, DONE);
 	}
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		ret = ret.replaceAll("net.sf.openforge.", "");
@@ -570,6 +575,7 @@ public class Exit extends ID implements LatencyKey {
 	}
 
 	public static class ClearDrivingExitVisitor extends FilteredVisitor {
+		@Override
 		public void filterAny(Component c) {
 			for (Iterator it = c.getEntries().iterator(); it.hasNext();) {
 				Entry e = (Entry) it.next();

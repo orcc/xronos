@@ -39,7 +39,6 @@ import net.sf.openforge.lim.op.CastOp;
  * @version $Id: RegisterAccessBlock.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class RegisterAccessBlock extends Block {
-	private static final String _RCS_ = "$Rev: 2 $";
 
 	private Access acc;
 
@@ -55,7 +54,7 @@ public class RegisterAccessBlock extends Block {
 	 * @return a value of type 'Access'
 	 */
 	public Access getAccessComponent() {
-		return this.acc;
+		return acc;
 	}
 
 	/**
@@ -76,7 +75,7 @@ public class RegisterAccessBlock extends Block {
 			setControlDependencies(false);
 
 			assert convert.getEntries().size() > 0;
-			Entry castEntry = (Entry) convert.getEntries().iterator().next();
+			Entry castEntry = convert.getEntries().iterator().next();
 			castEntry.addDependency(convert.getDataPort(), new DataDependency(
 					acc.getResultBus()));
 
@@ -86,8 +85,8 @@ public class RegisterAccessBlock extends Block {
 			 */
 			Exit exit = getExit(Exit.DONE);
 			exit.getDoneBus().setUsed(true);
-			final OutBuf ob = (OutBuf) exit.getPeer();
-			final Entry obEntry = (Entry) ob.getEntries().get(0);
+			final OutBuf ob = exit.getPeer();
+			final Entry obEntry = ob.getEntries().get(0);
 			Bus resultBus = exit.makeDataBus();
 			obEntry.addDependency(resultBus.getPeer(), new DataDependency(
 					convert.getResultBus()));
@@ -113,12 +112,12 @@ public class RegisterAccessBlock extends Block {
 			Port din = makeDataPort();
 
 			assert convert.getEntries().size() > 0;
-			Entry castEntry = (Entry) convert.getEntries().iterator().next();
+			Entry castEntry = convert.getEntries().iterator().next();
 			castEntry.addDependency(convert.getDataPort(), new DataDependency(
 					din.getPeer()));
 
 			assert acc.getEntries().size() > 0;
-			Entry accEntry = (Entry) acc.getEntries().iterator().next();
+			Entry accEntry = acc.getEntries().iterator().next();
 			accEntry.addDependency(acc.getDataPort(), new DataDependency(
 					convert.getResultBus()));
 

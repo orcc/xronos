@@ -21,7 +21,6 @@
 
 package net.sf.openforge.lim;
 
-import java.util.Iterator;
 import java.util.Map;
 
 import net.sf.openforge.lim.memory.MemoryAccess;
@@ -80,16 +79,16 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 	protected OffsetMemoryAccess(MemoryAccess memoryAccess,
 			int addressableLocations, int maxAddressWidth) {
 		super(memoryAccess, addressableLocations);
-		this.baseAddressPort = makeDataPort();
+		baseAddressPort = makeDataPort();
 		this.maxAddressWidth = maxAddressWidth;
 
 		/*
 		 * Cast the base address to the max number of address bits, so that all
 		 * inputs to the adder will be the same width.
 		 */
-		this.castOp = new CastOp(maxAddressWidth, false);
+		castOp = new CastOp(maxAddressWidth, false);
 		insertComponent(castOp, 0);
-		insertComponent(this.add, 1);
+		insertComponent(add, 1);
 
 		Constant encodedSize = StructuralMemory
 				.encodeAccessCount(getAccessLocationCount());
@@ -101,14 +100,14 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 		 * Create the data dependency from the cast's input to the base address
 		 * input.
 		 */
-		final Entry castEntry = (Entry) castOp.getEntries().iterator().next();
+		final Entry castEntry = castOp.getEntries().iterator().next();
 		castEntry.addDependency(castOp.getDataPort(), new DataDependency(
 				getBaseAddressPort().getPeer()));
 
 		/*
 		 * Create the data dependency from the add's left input to the cast.
 		 */
-		final Entry addEntry = (Entry) add.getEntries().iterator().next();
+		final Entry addEntry = add.getEntries().iterator().next();
 		addEntry.addDependency(add.getLeftDataPort(),
 				new DataDependency(castOp.getResultBus()));
 
@@ -116,8 +115,7 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 		 * Create the data dependency from the MemoryAccess address input to the
 		 * add's result Bus.
 		 */
-		final Entry memoryAccessEntry = (Entry) getMemoryAccess().getEntries()
-				.get(0);
+		final Entry memoryAccessEntry = getMemoryAccess().getEntries().get(0);
 		Port addrPort = getMemoryAccess().getAddressPort();
 		memoryAccessEntry.addDependency(addrPort,
 				new DataDependency(add.getResultBus()));
@@ -144,18 +142,18 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 	 * removes the adder.
 	 */
 	protected void rebuildAdder() {
-		final AddOp theAdd = this.add;
-		final CastOp theCast = this.castOp;
+		final AddOp theAdd = add;
+		final CastOp theCast = castOp;
 
-		if (this.add.getOwner() == this) {
-			removeComponent(this.add);
+		if (add.getOwner() == this) {
+			removeComponent(add);
 		}
-		this.add = theAdd;
+		add = theAdd;
 
-		if (this.castOp.getOwner() == this) {
-			removeComponent(this.castOp);
+		if (castOp.getOwner() == this) {
+			removeComponent(castOp);
 		}
-		this.castOp = theCast;
+		castOp = theCast;
 
 		final InBuf inBuf = getInBuf();
 		final Bus clockBus = inBuf.getClockBus();
@@ -166,25 +164,25 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 		Exit nextExit = getInBuf().getExit(Exit.DONE);
 		Entry entry = null;
 
-		insertComponent(this.castOp, 0);
-		entry = this.castOp.makeEntry(nextExit);
+		insertComponent(castOp, 0);
+		entry = castOp.makeEntry(nextExit);
 		addDependencies(entry, clockBus, resetBus, goBus);
 		entry.addDependency(castOp.getDataPort(), new DataDependency(
 				getBaseAddressPort().getPeer()));
-		nextExit = this.castOp.getExit(Exit.DONE);
+		nextExit = castOp.getExit(Exit.DONE);
 
-		insertComponent(this.add, 1);
-		entry = this.add.makeEntry(nextExit);
+		insertComponent(add, 1);
+		entry = add.makeEntry(nextExit);
 		entry.addDependency(add.getLeftDataPort(),
 				new DataDependency(castOp.getResultBus()));
 		addDependencies(entry, clockBus, resetBus, goBus);
-		nextExit = this.add.getExit(Exit.DONE);
+		nextExit = add.getExit(Exit.DONE);
 
-		entry = (Entry) firstComponent.getEntries().iterator().next();
+		entry = firstComponent.getEntries().iterator().next();
 		entry.setDrivingExit(nextExit);
 		nextExit = firstComponent.getExit(Exit.DONE);
 
-		entry = (Entry) getMemoryAccess().getEntries().iterator().next();
+		entry = getMemoryAccess().getEntries().iterator().next();
 		entry.setDrivingExit(nextExit);
 		entry.addDependency(getMemoryAccess().getAddressPort(),
 				new DataDependency(add.getResultBus()));
@@ -201,6 +199,7 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 		return maxAddressWidth;
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -219,6 +218,7 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 	 * Once we add support for running full/half constant and dead component
 	 * removal after scheduling we can remove these methods.
 	 */
+	@Override
 	public int getEntryGateDepth() {
 		return getMemoryAccess().getEntryGateDepth();
 	}
@@ -230,6 +230,7 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 	 * Once we add support for running full/half constant and dead component
 	 * removal after scheduling we can remove these methods.
 	 */
+	@Override
 	public int getExitGateDepth() {
 		return getMemoryAccess().getExitGateDepth();
 	}
@@ -238,23 +239,26 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 	 * Overrides the super in order to set the same id source info on all
 	 * components contained in this Module.
 	 */
+	@Override
 	public void setIDSourceInfo(IDSourceInfo sinfo) {
 		super.setIDSourceInfo(sinfo);
-		for (Component component: getComponents()) {
+		for (Component component : getComponents()) {
 			((ID) component).setIDSourceInfo(sinfo);
 		}
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == this.add)
-			this.add = null;
-		if (component == this.castOp)
-			this.castOp = null;
+		if (component == add)
+			add = null;
+		if (component == castOp)
+			castOp = null;
 
 		return ret;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		OffsetMemoryAccess clone = (OffsetMemoryAccess) moduleClone;

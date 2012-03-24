@@ -56,6 +56,7 @@ public class RightShiftUnsignedOp extends ShiftOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -68,11 +69,10 @@ public class RightShiftUnsignedOp extends ShiftOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger lval = (SizedInteger) portValues
-				.get(getLeftDataPort());
-		final SizedInteger rval = (SizedInteger) portValues
-				.get(getRightDataPort());
+		final SizedInteger lval = portValues.get(getLeftDataPort());
+		final SizedInteger rval = portValues.get(getRightDataPort());
 		return Collections.singletonMap(getResultBus(),
 				lval.shiftRightUnsigned(rval));
 	}
@@ -95,6 +95,7 @@ public class RightShiftUnsignedOp extends ShiftOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -139,12 +140,13 @@ public class RightShiftUnsignedOp extends ShiftOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
 		Value resultBusValue = getResultBus().getValue();
 
-		//Value inValue0 = getLeftDataPort().getValue();
+		// Value inValue0 = getLeftDataPort().getValue();
 		Value inValue1 = getRightDataPort().getValue();
 
 		Value newValue0 = new Value(resultBusValue.getSize(),

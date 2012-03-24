@@ -59,6 +59,7 @@ public class LessThanOp extends ConditionalOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		final int width = Math.max(getLeftDataPort().getValue().getSize(),
 				getRightDataPort().getValue().getSize());
@@ -70,6 +71,7 @@ public class LessThanOp extends ConditionalOp implements Emulatable {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 1;
 
@@ -94,7 +96,7 @@ public class LessThanOp extends ConditionalOp implements Emulatable {
 			}
 		}
 
-		//final int muxCount = lutCount - 1;
+		// final int muxCount = lutCount - 1;
 
 		FPGAResource hwResource = new FPGAResource();
 		hwResource.addLUT(lutCount);
@@ -105,6 +107,7 @@ public class LessThanOp extends ConditionalOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -117,11 +120,10 @@ public class LessThanOp extends ConditionalOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger lval = (SizedInteger) portValues
-				.get(getLeftDataPort());
-		final SizedInteger rval = (SizedInteger) portValues
-				.get(getRightDataPort());
+		final SizedInteger lval = portValues.get(getLeftDataPort());
+		final SizedInteger rval = portValues.get(getRightDataPort());
 
 		final Value resultValue = getResultBus().getValue();
 		final int intValue = (lval.compareTo(rval) < 0 ? 1 : 0);
@@ -144,6 +146,7 @@ public class LessThanOp extends ConditionalOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -160,6 +163,7 @@ public class LessThanOp extends ConditionalOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

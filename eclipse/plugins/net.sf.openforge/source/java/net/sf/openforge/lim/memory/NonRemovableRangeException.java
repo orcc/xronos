@@ -21,7 +21,6 @@
 
 package net.sf.openforge.lim.memory;
 
-
 /**
  * NonRemovableRangeException is an exception thrown when attempting to remove a
  * range from a context in which that range cannot be removed.

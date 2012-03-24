@@ -64,7 +64,7 @@ public class MultiplyOp extends BinaryOp implements Emulatable {
 	 * build shifts for implementation.
 	 */
 	public int getNaturalSize() {
-		return this.naturalSize;
+		return naturalSize;
 	}
 
 	/**
@@ -88,6 +88,7 @@ public class MultiplyOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		final int width = Math.max(getLeftDataPort().getValue().getSize(),
 				getRightDataPort().getValue().getSize());
@@ -99,9 +100,10 @@ public class MultiplyOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
-		//int muxCount = 0;
+		// int muxCount = 0;
 		int mult18x18Count = 0;
 
 		Value leftValue = getLeftDataPort().getValue();
@@ -125,7 +127,7 @@ public class MultiplyOp extends BinaryOp implements Emulatable {
 			}
 		}
 
-		//muxCount = lutCount - 2;
+		// muxCount = lutCount - 2;
 
 		if (lutCount < 18) {
 			mult18x18Count = 1;
@@ -149,6 +151,7 @@ public class MultiplyOp extends BinaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -161,11 +164,10 @@ public class MultiplyOp extends BinaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger lval = (SizedInteger) portValues
-				.get(getLeftDataPort());
-		final SizedInteger rval = (SizedInteger) portValues
-				.get(getRightDataPort());
+		final SizedInteger lval = portValues.get(getLeftDataPort());
+		final SizedInteger rval = portValues.get(getRightDataPort());
 		return Collections.singletonMap(getResultBus(), lval.multiply(rval));
 	}
 
@@ -174,6 +176,7 @@ public class MultiplyOp extends BinaryOp implements Emulatable {
 	 * prop rules implementation.
 	 */
 
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -210,6 +213,7 @@ public class MultiplyOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

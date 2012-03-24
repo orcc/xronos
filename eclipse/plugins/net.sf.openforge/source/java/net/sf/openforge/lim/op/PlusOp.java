@@ -52,6 +52,7 @@ public class PlusOp extends UnaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -64,6 +65,7 @@ public class PlusOp extends UnaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 		return Collections.singletonMap(getResultBus(),
 				portValues.get(getDataPort()));
@@ -82,6 +84,7 @@ public class PlusOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return true if new information was generated on the result bus.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -108,6 +111,7 @@ public class PlusOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return true if new information was generated on the input port
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

@@ -111,7 +111,7 @@ public class HeapRead extends OffsetMemoryRead {
 		 * Create a Constant to drive the offset value.
 		 */
 		this.offset = offset;
-		this.offsetConstant = new SimpleConstant(offset, maxAddressWidth, true);
+		offsetConstant = new SimpleConstant(offset, maxAddressWidth, true);
 		insertComponent(offsetConstant, 0);
 		final Entry offsetEntry = offsetConstant.makeEntry(getInBuf().getExit(
 				Exit.DONE));
@@ -124,7 +124,7 @@ public class HeapRead extends OffsetMemoryRead {
 		 * Connect the offset Constant as the righthand input to the add.
 		 */
 		final AddOp addOp = getAddOp();
-		final Entry addEntry = (Entry) addOp.getEntries().get(0);
+		final Entry addEntry = addOp.getEntries().get(0);
 		addEntry.addDependency(addOp.getRightDataPort(), new DataDependency(
 				offsetConstant.getValueBus()));
 	}
@@ -149,9 +149,9 @@ public class HeapRead extends OffsetMemoryRead {
 	public void setOffset(int offset) {
 		if ((this.offset != offset) || (getAddOp().getOwner() == null)) {
 			this.offset = offset;
-			this.offsetConstant = new SimpleConstant(this.offset,
+			offsetConstant = new SimpleConstant(this.offset,
 					getMaxAddressWidth(), true);
-			this.rebuildAdder();
+			rebuildAdder();
 		}
 	}
 
@@ -164,6 +164,7 @@ public class HeapRead extends OffsetMemoryRead {
 		return offsetConstant;
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -172,6 +173,7 @@ public class HeapRead extends OffsetMemoryRead {
 		return false;
 	}
 
+	@Override
 	protected void rebuildAdder() {
 		super.rebuildAdder();
 		Constant offsetConst = getOffsetConstant();
@@ -186,15 +188,16 @@ public class HeapRead extends OffsetMemoryRead {
 		 * Connect the offset Constant as the righthand input to the add.
 		 */
 		final AddOp addOp = getAddOp();
-		final Entry addEntry = (Entry) addOp.getEntries().get(0);
+		final Entry addEntry = addOp.getEntries().get(0);
 		addEntry.addDependency(addOp.getRightDataPort(), new DataDependency(
 				offsetConst.getValueBus()));
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == this.offsetConstant)
-			this.offsetConstant = null;
+		if (component == offsetConstant)
+			offsetConstant = null;
 		return ret;
 	}
 
@@ -206,6 +209,7 @@ public class HeapRead extends OffsetMemoryRead {
 	 * 
 	 * @return the clone
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		/*
 		 * final MemoryRead cloneRead = new MemoryRead(false,
@@ -232,9 +236,10 @@ public class HeapRead extends OffsetMemoryRead {
 		return clone;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		((HeapRead) moduleClone).offsetConstant = (Constant) cloneMap
-				.get(this.offsetConstant);
+				.get(offsetConstant);
 	}
 }

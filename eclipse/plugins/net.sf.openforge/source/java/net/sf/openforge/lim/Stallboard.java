@@ -45,6 +45,7 @@ public class Stallboard extends Scoreboard {
 		super(buses);
 	}
 
+	@Override
 	protected boolean isStallable() {
 		return true;
 	}

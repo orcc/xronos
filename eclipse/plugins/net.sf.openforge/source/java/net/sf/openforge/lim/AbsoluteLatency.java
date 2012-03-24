@@ -31,10 +31,12 @@ class AbsoluteLatency extends Latency implements Cloneable {
 	/** An Object that can be used to differentiate this latency */
 	// private Object key;
 
+	@Override
 	public boolean isOpen() {
 		return false;
 	}
 
+	@Override
 	public boolean isGT(Latency latency) {
 		// An absolute latency cannot descend from an open latency. There
 		// no way for this latency to be GT the open latency.
@@ -45,6 +47,7 @@ class AbsoluteLatency extends Latency implements Cloneable {
 		}
 	}
 
+	@Override
 	public boolean isGE(Latency latency) {
 		if (latency.isOpen()) {
 			return false;
@@ -60,14 +63,17 @@ class AbsoluteLatency extends Latency implements Cloneable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean isFixed() {
 		return (getMinClocks() == getMaxClocks());
 	}
 
+	@Override
 	public Latency addTo(Latency latency) {
 		return latency.increment(getMinClocks(), getMaxClocks());
 	}
 
+	@Override
 	public boolean equals(Object object) {
 		if (object instanceof AbsoluteLatency) {
 			AbsoluteLatency latency = (AbsoluteLatency) object;
@@ -79,12 +85,14 @@ class AbsoluteLatency extends Latency implements Cloneable {
 		}
 	}
 
+	@Override
 	public int hashCode() {
 		// return getMinClocks() + getMaxClocks() + (getKey() == null ? 0 :
 		// getKey().hashCode());
 		return getMinClocks() + getMaxClocks() + getKey().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "AbsLat{" + getMinClocks() + "," + getMaxClocks() + "}";
 	}
@@ -106,10 +114,12 @@ class AbsoluteLatency extends Latency implements Cloneable {
 		this(0);
 	}
 
+	@Override
 	boolean isDescendantOf(Latency latency) {
 		return false;
 	}
 
+	@Override
 	protected Latency increment(int minClocks, int maxClocks) {
 		if (minClocks == 0 && maxClocks == 0) {
 			return this;
@@ -119,6 +129,7 @@ class AbsoluteLatency extends Latency implements Cloneable {
 		}
 	}
 
+	@Override
 	protected Latency increment(int minClocks, LatencyKey key) {
 		return new OpenLatency(this, key, minClocks);
 	}
@@ -135,6 +146,7 @@ class AbsoluteLatency extends Latency implements Cloneable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		if (this == Latency.ZERO || this == Latency.ONE) {
 			return this;

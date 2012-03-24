@@ -55,7 +55,6 @@ import net.sf.openforge.util.SizedInteger;
  * @version $Id: InBuf.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class InBuf extends Component implements Emulatable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	/** The estimated 'gate depth' of the default IOB's */
 	public static final int IOB_DEFAULT = 10;
@@ -87,9 +86,9 @@ public class InBuf extends Component implements Emulatable {
 	InBuf(int dataBusCount) {
 		super(0);
 		Exit exit = super.makeExit(0);
-		this.clockBus = exit.makeOneBitBus();
-		this.resetBus = exit.makeOneBitBus();
-		this.goBus = exit.getDoneBus();
+		clockBus = exit.makeOneBitBus();
+		resetBus = exit.makeOneBitBus();
+		goBus = exit.getDoneBus();
 		clockBus.setUsed(false);
 		resetBus.setUsed(false);
 		goBus.setUsed(false);
@@ -127,14 +126,14 @@ public class InBuf extends Component implements Emulatable {
 	}
 
 	public Bus getThisBus() {
-		return this.thisBus;
+		return thisBus;
 	}
 
 	public Bus makeThisBus() {
-		assert this.thisBus == null : "Can only make the this bus once";
+		assert thisBus == null : "Can only make the this bus once";
 		Exit exit = getExit(Exit.DONE);
 		Bus bus = exit.makeDataBus();
-		this.thisBus = bus;
+		thisBus = bus;
 		// Put it just after the clock and reset
 		exit.moveDataBusLocation(bus, 2);
 		return bus;
@@ -148,6 +147,7 @@ public class InBuf extends Component implements Emulatable {
 	 *         by {@link Exit#getDataBuses()} in that it does not contain the
 	 *         clock or reset bus
 	 */
+	@Override
 	public Collection<Bus> getDataBuses() {
 		List<Bus> list = new LinkedList<Bus>(getExit(Exit.DONE).getDataBuses());
 		list.remove(getClockBus());
@@ -159,16 +159,17 @@ public class InBuf extends Component implements Emulatable {
 	 * Calls the super, then removes any reference to the given bus in this
 	 * class.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
-			if (bus == this.clockBus)
-				this.clockBus = null;
-			else if (bus == this.resetBus)
-				this.resetBus = null;
-			else if (bus == this.goBus)
-				this.goBus = null;
-			else if (bus == this.thisBus)
-				this.thisBus = null;
+			if (bus == clockBus)
+				clockBus = null;
+			else if (bus == resetBus)
+				resetBus = null;
+			else if (bus == goBus)
+				goBus = null;
+			else if (bus == thisBus)
+				thisBus = null;
 
 			return true;
 		}
@@ -182,6 +183,7 @@ public class InBuf extends Component implements Emulatable {
 	public void updatePhysical() {
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -194,6 +196,7 @@ public class InBuf extends Component implements Emulatable {
 	 * Tests whether this component produces a signal on the done {@link Bus} of
 	 * each of its {@link Exit Exits}.
 	 */
+	@Override
 	public boolean producesDone() {
 		return producesDone;
 	}
@@ -211,15 +214,16 @@ public class InBuf extends Component implements Emulatable {
 	 * depth on the inputs of a task to account for IOBs
 	 */
 	public void setGateDepth(int value) {
-		this.gateDepth = value;
+		gateDepth = value;
 	}
 
 	/**
 	 * Overrides method in Component to provide the InBuf depth when it exists
 	 * at the boundry of a task to account for IOBs
 	 */
+	@Override
 	public int getGateDepth() {
-		return this.gateDepth;
+		return gateDepth;
 	}
 
 	/**
@@ -232,6 +236,7 @@ public class InBuf extends Component implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map emulate(Map portValues) {
 		final Map outputValues = new HashMap();
 		for (Iterator iter = getOwner().getDataPorts().iterator(); iter
@@ -268,6 +273,7 @@ public class InBuf extends Component implements Emulatable {
 	 * 
 	 * @return true if any bus values were modified
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean isModified = false;
 		for (Iterator iter = getBuses().iterator(); iter.hasNext();) {
@@ -327,6 +333,7 @@ public class InBuf extends Component implements Emulatable {
 	 * pushes that information back across to it's peer. Returns true if any new
 	 * information was pushed across the boundry.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean isModified = false;
 		for (Iterator iter = getBuses().iterator(); iter.hasNext();) {
@@ -351,6 +358,7 @@ public class InBuf extends Component implements Emulatable {
 	 * @throws CloneNotSupportedException
 	 *             always
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException("attempt to clone InBuf");
 	}

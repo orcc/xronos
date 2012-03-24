@@ -63,8 +63,8 @@ public class BidirectionalPin extends Pin {
 	 */
 	public BidirectionalPin(int width, boolean isSigned, String name) {
 		super(width, isSigned);
-		this.inBuf = new InPinBuf(this);
-		this.outBuf = new OutPinBuf(this);
+		inBuf = new InPinBuf(this);
+		outBuf = new OutPinBuf(this);
 		setIDLogical(name);
 		makeBus();
 		makePort();
@@ -72,13 +72,13 @@ public class BidirectionalPin extends Pin {
 
 	private void makeBus() {
 		Exit exit = makeExit(0);
-		this.bus = (Bus) exit.makeDataBus();
+		bus = exit.makeDataBus();
 		bus.setSize(getWidth(), true);
 		bus.setIDLogical(ID.showLogical(this));
 	}
 
 	private void makePort() {
-		this.port = makeDataPort();
+		port = makeDataPort();
 		port.setIDLogical(ID.showLogical(this));
 	}
 
@@ -90,14 +90,17 @@ public class BidirectionalPin extends Pin {
 		return bus;
 	}
 
+	@Override
 	public InPinBuf getInPinBuf() {
 		return inBuf;
 	}
 
+	@Override
 	public OutPinBuf getOutPinBuf() {
 		return outBuf;
 	}
 
+	@Override
 	public Collection<PinBuf> getPinBufs() {
 		Set<PinBuf> bufs = new LinkedHashSet<PinBuf>();
 		bufs.add(getInPinBuf());
@@ -113,6 +116,7 @@ public class BidirectionalPin extends Pin {
 	/**
 	 * Pushes the size of the pin onto the Port as all care bits.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
@@ -135,6 +139,7 @@ public class BidirectionalPin extends Pin {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}

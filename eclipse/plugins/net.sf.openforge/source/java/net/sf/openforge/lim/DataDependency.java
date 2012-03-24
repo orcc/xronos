@@ -41,10 +41,12 @@ public class DataDependency extends Dependency {
 		super(logicalBus);
 	}
 
+	@Override
 	public Dependency createSameType(Bus logicalBus) {
 		return new DataDependency(logicalBus);
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof DataDependency) {
 			return super.equals(obj);
@@ -52,6 +54,7 @@ public class DataDependency extends Dependency {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return super.hashCode();
 	}

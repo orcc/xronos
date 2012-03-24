@@ -46,14 +46,14 @@ public abstract class UnaryOp extends Operation {
 	public UnaryOp() {
 		super(1);
 		Exit exit = makeExit(1);
-		result_bus = (Bus) exit.getDataBuses().iterator().next();
+		result_bus = exit.getDataBuses().iterator().next();
 	}
 
 	/**
 	 * Gets the single data input Port.
 	 */
 	public Port getDataPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
 	/**
@@ -66,6 +66,7 @@ public abstract class UnaryOp extends Operation {
 	/**
 	 * Returns true if this UnaryOp returns a floating point value.
 	 */
+	@Override
 	public boolean isFloat() {
 		return getResultBus().isFloat();
 	}
@@ -74,10 +75,11 @@ public abstract class UnaryOp extends Operation {
 	 * Calls the super, then removes any reference to the given bus in this
 	 * class.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
 			if (bus == result_bus)
-				this.result_bus = null;
+				result_bus = null;
 			return true;
 		}
 		return false;
@@ -90,10 +92,11 @@ public abstract class UnaryOp extends Operation {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		UnaryOp clone = (UnaryOp) super.clone();
-		clone.result_bus = (Bus) clone.getExit(Exit.DONE).getDataBuses()
-				.iterator().next();
+		clone.result_bus = clone.getExit(Exit.DONE).getDataBuses().iterator()
+				.next();
 		return clone;
 	}
 

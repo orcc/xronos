@@ -31,7 +31,6 @@ package net.sf.openforge.lim;
  * @version $Id: Gateway.java 2 2005-06-09 20:00:48Z imiller $
  */
 public abstract class Gateway extends Module {
-	private static final String _RCS_ = "$Rev: 2 $";
 
 	/** the associated resource for this Gateway */
 	private Storage resource;
@@ -43,6 +42,7 @@ public abstract class Gateway extends Module {
 	/**
 	 * Throws an exception, replacement in this class not supported.
 	 */
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		throw new UnsupportedOperationException("Cannot replace components in "
 				+ getClass());
@@ -51,6 +51,7 @@ public abstract class Gateway extends Module {
 	/**
 	 * returns true.
 	 */
+	@Override
 	public boolean isGateway() {
 		return true;
 	}
@@ -70,6 +71,7 @@ public abstract class Gateway extends Module {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		assert false : "tbd";
 
@@ -77,11 +79,13 @@ public abstract class Gateway extends Module {
 				"Clone not implemented for RegisterGateway yet");
 	}
 
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		assert false : "remove data bus not supported on " + this;
 		return false;
 	}
 
+	@Override
 	public boolean removeDataPort(Port port) {
 		assert false : "remove data port not supported on " + this;
 		return false;

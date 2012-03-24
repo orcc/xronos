@@ -56,7 +56,7 @@ public abstract class ShiftOp extends BinaryOp {
 	 */
 	public ShiftOp(int maxStages) {
 		super();
-		this.max_stages = maxStages;
+		max_stages = maxStages;
 	}
 
 	/**
@@ -66,6 +66,7 @@ public abstract class ShiftOp extends BinaryOp {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		if ((getRightDataPort().getValue() != null)
 				&& getRightDataPort().getValue().isConstant()) {
@@ -79,7 +80,8 @@ public abstract class ShiftOp extends BinaryOp {
 	 * 
 	 * @return a FPGAResource objec
 	 */
-	
+
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
 

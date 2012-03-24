@@ -55,6 +55,7 @@ public class NotOp extends UnaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -66,6 +67,7 @@ public class NotOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return isPassthrough() ? 0 : 1;
 	}
@@ -75,6 +77,7 @@ public class NotOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
 
@@ -100,8 +103,9 @@ public class NotOp extends UnaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger inval = (SizedInteger) portValues.get(getDataPort());
+		final SizedInteger inval = portValues.get(getDataPort());
 
 		final Value resultValue = getResultBus().getValue();
 		final int intValue = (inval.isZero() ? 1 : 0);
@@ -124,6 +128,7 @@ public class NotOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -172,6 +177,7 @@ public class NotOp extends UnaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

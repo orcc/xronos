@@ -37,7 +37,6 @@ import java.util.Map;
  * @version $Id: ForBody.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class ForBody extends LoopBody implements Cloneable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	/** The iteration test */
 	private Decision decision;
@@ -106,7 +105,7 @@ public class ForBody extends LoopBody implements Cloneable {
 			 * Module.
 			 */
 			removeComponent(update);
-			this.update = null;
+			update = null;
 		} else {
 			/*
 			 * If both DONE and CONTINUE exist, they have to be merged into one
@@ -118,9 +117,8 @@ public class ForBody extends LoopBody implements Cloneable {
 				/*
 				 * Merge the CONTINUE OutBuf Entries onto the DONE OutBuf.
 				 */
-				final OutBuf doneOutBuf = (OutBuf) bodyDoneExit.getPeer();
-				final OutBuf continueOutBuf = (OutBuf) bodyContinueExit
-						.getPeer();
+				final OutBuf doneOutBuf = bodyDoneExit.getPeer();
+				final OutBuf continueOutBuf = bodyContinueExit.getPeer();
 
 				for (Iterator iter = continueOutBuf.getEntries().iterator(); iter
 						.hasNext();) {
@@ -205,6 +203,7 @@ public class ForBody extends LoopBody implements Cloneable {
 		super.mergeExits(exitMap, clockBus, resetBus);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -212,6 +211,7 @@ public class ForBody extends LoopBody implements Cloneable {
 	/**
 	 * Gets the iteration test.
 	 */
+	@Override
 	public Decision getDecision() {
 		return decision;
 	}
@@ -219,6 +219,7 @@ public class ForBody extends LoopBody implements Cloneable {
 	/**
 	 * Gets the iteration contents.
 	 */
+	@Override
 	public Module getBody() {
 		return body;
 	}
@@ -226,6 +227,7 @@ public class ForBody extends LoopBody implements Cloneable {
 	/**
 	 * Gets the update expression block.
 	 */
+	@Override
 	public Module getUpdate() {
 		return update;
 	}
@@ -235,10 +237,12 @@ public class ForBody extends LoopBody implements Cloneable {
 	 * if after. This is needed to compute the number of iterations for loop
 	 * unrolling
 	 */
+	@Override
 	public boolean isDecisionFirst() {
 		return true;
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		component.disconnect();
 		if (component == decision) {
@@ -251,14 +255,15 @@ public class ForBody extends LoopBody implements Cloneable {
 		return super.removeComponent(component);
 	}
 
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		assert removed != null;
 		if (removed == getDecision()) {
-			this.decision = (Decision) inserted;
+			decision = (Decision) inserted;
 		} else if (removed == getBody()) {
-			this.body = (Module) inserted;
+			body = (Module) inserted;
 		} else if (removed == getUpdate()) {
-			this.update = (Module) inserted;
+			update = (Module) inserted;
 		} else
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
@@ -277,6 +282,7 @@ public class ForBody extends LoopBody implements Cloneable {
 	 * @return the port which corresponds to the initial value of the feedback
 	 *         data flow
 	 */
+	@Override
 	public Port getInitalValuePort(Bus feedbackBus) {
 		/*
 		 * tbd
@@ -284,6 +290,7 @@ public class ForBody extends LoopBody implements Cloneable {
 		return null;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final ForBody clone = (ForBody) moduleClone;

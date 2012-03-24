@@ -59,12 +59,13 @@ public class DivideOp extends BinaryOp implements Emulatable {
 	 * build shifts for implementation.
 	 */
 	public int getNaturalSize() {
-		return this.naturalSize;
+		return naturalSize;
 	}
 
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -76,6 +77,7 @@ public class DivideOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		final int width = Math.max(getLeftDataPort().getValue().getSize(),
 				getRightDataPort().getValue().getSize());
@@ -98,11 +100,10 @@ public class DivideOp extends BinaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger lval = (SizedInteger) portValues
-				.get(getLeftDataPort());
-		final SizedInteger rval = (SizedInteger) portValues
-				.get(getRightDataPort());
+		final SizedInteger lval = portValues.get(getLeftDataPort());
+		final SizedInteger rval = portValues.get(getRightDataPort());
 		return Collections.singletonMap(getResultBus(), lval.divide(rval));
 	}
 
@@ -119,6 +120,7 @@ public class DivideOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -142,6 +144,7 @@ public class DivideOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

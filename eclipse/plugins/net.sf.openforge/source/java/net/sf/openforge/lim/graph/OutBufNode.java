@@ -35,6 +35,7 @@ class OutBufNode extends ComponentNode {
 		super(outbuf, id, fontSize);
 	}
 
+	@Override
 	protected String getBodyLabel() {
 		String label = super.getBodyLabel();
 		OutBuf outbuf = (OutBuf) getComponent();

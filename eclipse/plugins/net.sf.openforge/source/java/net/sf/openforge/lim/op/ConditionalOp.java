@@ -43,15 +43,16 @@ public abstract class ConditionalOp extends BinaryOp {
 	 * Used to set the floating point type of this operation.
 	 */
 	public void setFloat(boolean value) {
-		this.isFloatType = value;
+		isFloatType = value;
 	}
 
 	/**
 	 * Returns true if this operation has been marked as floating point, the
 	 * default value is false.
 	 */
+	@Override
 	public boolean isFloat() {
-		return this.isFloatType;
+		return isFloatType;
 	}
 
 	/**
@@ -61,9 +62,10 @@ public abstract class ConditionalOp extends BinaryOp {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		ConditionalOp clone = (ConditionalOp) super.clone();
-		clone.isFloatType = this.isFloatType;
+		clone.isFloatType = isFloatType;
 		return clone;
 	}
 

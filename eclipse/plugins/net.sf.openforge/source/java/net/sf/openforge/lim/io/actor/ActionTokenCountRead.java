@@ -48,7 +48,7 @@ public class ActionTokenCountRead extends FifoAccess {
 		// there is a single result bus on this module. Since the
 		// count is always valid, the go/done are not needed
 		Exit exit = makeExit(1);
-		Bus result = (Bus) exit.getDataBuses().get(0);
+		Bus result = exit.getDataBuses().get(0);
 		// Bus done = exit.getDoneBus();
 		// done.setUsed(true);
 		result.setUsed(true);
@@ -72,6 +72,7 @@ public class ActionTokenCountRead extends FifoAccess {
 	 * This accessor may execute in parallel with other similar (non state
 	 * modifying) accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return false;
 	}

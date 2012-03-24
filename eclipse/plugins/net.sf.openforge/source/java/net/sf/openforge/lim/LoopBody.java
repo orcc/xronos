@@ -45,7 +45,6 @@ import java.util.Map;
  * @version $Id: LoopBody.java 2 2005-06-09 20:00:48Z imiller $
  */
 public abstract class LoopBody extends Module {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	public static final Exit.Tag FEEDBACK_TAG = Exit.getTag(Exit.DONE,
 			"#feedback#");
@@ -129,6 +128,7 @@ public abstract class LoopBody extends Module {
 	 *            the port to remove
 	 * @return true if the port was removed, false if it was not found
 	 */
+	@Override
 	public boolean removeDataPort(Port port) {
 		if (super.removeDataPort(port)) {
 			portNameMap.remove(port);
@@ -144,6 +144,7 @@ public abstract class LoopBody extends Module {
 	 *            the bus to remove
 	 * @return true if the bus was removed, false if it was not found
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
 			busNameMap.remove(bus);
@@ -200,7 +201,7 @@ public abstract class LoopBody extends Module {
 	 * @return a boolean
 	 */
 	public boolean isLoopFlopNeeded() {
-		return this.flopNeeded;
+		return flopNeeded;
 	}
 
 	/**
@@ -212,9 +213,10 @@ public abstract class LoopBody extends Module {
 	 *            removed.
 	 */
 	public void setLoopFlopNeeded(boolean value) {
-		this.flopNeeded = value;
+		flopNeeded = value;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final LoopBody clone = (LoopBody) moduleClone;
@@ -242,6 +244,7 @@ public abstract class LoopBody extends Module {
 		return l;
 	}
 
+	@Override
 	public void changeExit(Exit exit, Exit.Type type) {
 		super.changeExit(exit, type);
 
@@ -258,12 +261,14 @@ public abstract class LoopBody extends Module {
 }
 
 class TwoWayMap extends HashMap {
+	@Override
 	public Object put(Object key, Object value) {
 		super.put(key, value);
 		super.put(value, key);
 		return null;
 	}
 
+	@Override
 	public Object remove(Object key) {
 		Object value = get(key);
 		super.remove(key);

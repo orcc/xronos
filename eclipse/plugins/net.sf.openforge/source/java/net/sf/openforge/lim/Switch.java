@@ -61,10 +61,12 @@ public class Switch extends Block {
 		return body;
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
 
+	@Override
 	protected void cloneNotify(Module module, Map cloneMap) {
 		super.cloneNotify(module, cloneMap);
 		final Switch clone = (Switch) module;

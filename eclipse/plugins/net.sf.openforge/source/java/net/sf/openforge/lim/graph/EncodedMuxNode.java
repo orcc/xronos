@@ -36,6 +36,7 @@ public class EncodedMuxNode extends ComponentNode {
 		super(component, id, fontSize);
 	}
 
+	@Override
 	protected void graphPorts(Record.Port boundingBox) {
 		EncodedMux em = (EncodedMux) getComponent();
 
@@ -53,8 +54,7 @@ public class EncodedMuxNode extends ComponentNode {
 		graphPort(em.getSelectPort(), entryBox, "select", "SEL");
 		int index = 0;
 		for (net.sf.openforge.lim.Port port : em.getDataPorts()) {
-			graphPort((net.sf.openforge.lim.Port) port, entryBox,
-					"din" + index, "d" + index);
+			graphPort(port, entryBox, "din" + index, "d" + index);
 			index++;
 		}
 	}

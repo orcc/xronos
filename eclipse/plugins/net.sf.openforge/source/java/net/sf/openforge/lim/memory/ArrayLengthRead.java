@@ -58,6 +58,7 @@ public class ArrayLengthRead extends HeapRead {
 	/**
 	 * returns true
 	 */
+	@Override
 	public boolean isArrayLengthRead() {
 		return true;
 	}

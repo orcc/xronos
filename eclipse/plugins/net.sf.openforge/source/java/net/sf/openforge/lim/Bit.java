@@ -90,8 +90,8 @@ public class Bit {
 	 * Used only to create global, owner-less bits.
 	 */
 	private Bit() {
-		this.owner = null;
-		this.position = ILLEGAL_POSITION;
+		owner = null;
+		position = ILLEGAL_POSITION;
 	}
 
 	/**
@@ -209,14 +209,15 @@ public class Bit {
 		}
 
 		if (bit.invertedBit == null) {
-			this.invertedBit = bit;
+			invertedBit = bit;
 		}
-		this.owner = bit.owner;
+		owner = bit.owner;
 	}
 
 	/**
 	 * Gets the string value of this bit ("C", "c", "0", "1", or "x").
 	 */
+	@Override
 	public String toString() {
 		if (isCare()) {
 			if (isConstant()) {

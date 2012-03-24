@@ -31,7 +31,6 @@ package net.sf.openforge.lim;
  * @version $Id: InitialValue.java 2 2005-06-09 20:00:48Z imiller $
  */
 public interface InitialValue {
-	static final String _RCS_ = "$Rev: 2 $";
 
 	/**
 	 * Returns true if this InitialValue represents an object reference.

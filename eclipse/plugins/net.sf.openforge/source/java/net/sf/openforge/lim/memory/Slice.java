@@ -70,7 +70,7 @@ public class Slice implements LogicalValue {
 		this.targetValue = targetValue;
 		this.delta = delta;
 		this.size = size;
-		this.bitSize = size * targetValue.getAddressStridePolicy().getStride();
+		bitSize = size * targetValue.getAddressStridePolicy().getStride();
 	}
 
 	/**
@@ -81,25 +81,29 @@ public class Slice implements LogicalValue {
 	 * @throws NullPointerException
 	 *             if memVis is null
 	 */
+	@Override
 	public void accept(MemoryVisitor memVis) {
 		memVis.visit(this);
 	}
 
 	/** @inheritDoc */
+	@Override
 	public int getSize() {
 		return size;
 	}
 
+	@Override
 	public int getBitSize() {
-		return this.bitSize;
+		return bitSize;
 	}
 
 	/**
 	 * Returns the address stride policy governing this slice, deferring to the
 	 * policy of the base logical value being sliced.
 	 */
+	@Override
 	public AddressStridePolicy getAddressStridePolicy() {
-		return this.targetValue.getAddressStridePolicy();
+		return targetValue.getAddressStridePolicy();
 	}
 
 	/**
@@ -109,7 +113,7 @@ public class Slice implements LogicalValue {
 	 * @return the addressable unit offset.
 	 */
 	public int getDelta() {
-		return this.delta;
+		return delta;
 	}
 
 	/**
@@ -117,6 +121,7 @@ public class Slice implements LogicalValue {
 	 * 
 	 * @return a value of type 'int'
 	 */
+	@Override
 	public int getAlignmentSize() {
 		// defer to the alignment size of the backing logical value
 		return getSourceValue().getAlignmentSize();
@@ -127,6 +132,7 @@ public class Slice implements LogicalValue {
 	}
 
 	/** @inheritDoc */
+	@Override
 	public AddressableUnit[] getRep() {
 		final AddressableUnit[] rep = new AddressableUnit[getSize()];
 		System.arraycopy(targetValue.getRep(), delta, rep, 0, getSize());
@@ -134,11 +140,13 @@ public class Slice implements LogicalValue {
 	}
 
 	/** @inheritDoc */
+	@Override
 	public LogicalValue copy() {
 		return new Slice(targetValue.copy(), delta, size);
 	}
 
 	/** @inheritDoc */
+	@Override
 	public LogicalValue removeRange(int min, int max)
 			throws NonRemovableRangeException {
 		if ((min < 0) || (min >= size) || (max >= size) || (max <= min)) {
@@ -169,21 +177,25 @@ public class Slice implements LogicalValue {
 	}
 
 	/** @inheritDoc */
+	@Override
 	public MemoryConstant toConstant() {
 		final MemoryConstant targetConstant = targetValue.toConstant();
 		return new SliceConstant(targetConstant, delta, getSize());
 	}
 
 	/** @inheritDoc */
+	@Override
 	public Location toLocation() {
 		return Location.INVALID;
 	}
 
 	/** @inheritDoc */
+	@Override
 	public LogicalValue getValueAtOffset(int delta, int size) {
 		return targetValue.getValueAtOffset(delta + this.delta, size);
 	}
 
+	@Override
 	public String toString() {
 		return "[Slice(" + targetValue + ", " + delta + ", " + getSize() + ")]";
 	}
@@ -223,7 +235,7 @@ class SliceConstant extends MemoryConstant {
 		// super((size * 8), false);
 		super((size * sourceConstant.getRepBundle().getBitsPerUnit()), false);
 		this.sourceConstant = sourceConstant;
-		this.sliceUnits = size;
+		sliceUnits = size;
 		this.delta = delta;
 
 		pushValuesForward();
@@ -235,6 +247,7 @@ class SliceConstant extends MemoryConstant {
 	 * 
 	 * @return a List containing only this constant
 	 */
+	@Override
 	public List<Constant> getConstituents() {
 		return Collections.unmodifiableList(Collections
 				.singletonList((Constant) this));
@@ -246,10 +259,11 @@ class SliceConstant extends MemoryConstant {
 	 * 
 	 * @return a Set containing this object and its backing constant.
 	 */
+	@Override
 	public Set<Constant> getContents() {
 		Set<Constant> contents = new HashSet<Constant>();
 		contents.add(this);
-		contents.add(this.sourceConstant);
+		contents.add(sourceConstant);
 		return Collections.unmodifiableSet(contents);
 	}
 
@@ -264,8 +278,8 @@ class SliceConstant extends MemoryConstant {
 	 */
 	@Override
 	public AURepBundle getRepBundle() {
-		AURepBundle backing = this.sourceConstant.getRepBundle();
-		AddressableUnit[] ourRep = new AddressableUnit[this.sliceUnits];
+		AURepBundle backing = sourceConstant.getRepBundle();
+		AddressableUnit[] ourRep = new AddressableUnit[sliceUnits];
 		for (int i = 0; i < ourRep.length; i++) {
 			// If the slice falls off the end of the backing constant,
 			// just fill with zeros.
@@ -278,6 +292,7 @@ class SliceConstant extends MemoryConstant {
 		return new AURepBundle(ourRep, backing.getBitsPerUnit());
 	}
 
+	@Override
 	public String toString() {
 		return super.toString() + " delta " + delta;
 	}

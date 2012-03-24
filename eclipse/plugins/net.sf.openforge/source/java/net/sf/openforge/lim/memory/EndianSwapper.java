@@ -95,12 +95,12 @@ public class EndianSwapper extends Module {
 			ShiftOp shiftOp = null;
 
 			if (i < byteWidth / 2) {
-				shiftMagnitude = (long) (byteWidth - (2 * i) - 1);
+				shiftMagnitude = (byteWidth - (2 * i) - 1);
 				shiftConstant = new SimpleConstant((8 * shiftMagnitude),
 						maxShiftStage, false);
 				shiftOp = new RightShiftUnsignedOp(maxShiftStage);
 			} else {
-				shiftMagnitude = (long) (2 * (i + 1) - byteWidth - 1);
+				shiftMagnitude = (2 * (i + 1) - byteWidth - 1);
 				shiftConstant = new SimpleConstant((8 * shiftMagnitude),
 						maxShiftStage, false);
 				shiftOp = new LeftShiftOp(maxShiftStage);
@@ -127,11 +127,11 @@ public class EndianSwapper extends Module {
 	}
 
 	public Port getInputPort() {
-		return (Port) getDataPorts().iterator().next();
+		return getDataPorts().iterator().next();
 	}
 
 	public Bus getOutputBus() {
-		return (Bus) getDataBuses().iterator().next();
+		return getDataBuses().iterator().next();
 	}
 
 	/**
@@ -144,6 +144,7 @@ public class EndianSwapper extends Module {
 	 * 
 	 * @return true if successful, else false
 	 */
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		if (super.removeComponent(removed)) {
 			addComponent(inserted);
@@ -152,10 +153,12 @@ public class EndianSwapper extends Module {
 		return false;
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
 
+	@Override
 	public boolean isOpaque() {
 		return true;
 	}

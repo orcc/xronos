@@ -69,7 +69,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 	}
 
 	public Bus getResultBus() {
-		return (Bus) getExit(Exit.DONE).getDataBuses().get(0);
+		return getExit(Exit.DONE).getDataBuses().get(0);
 	}
 
 	/**
@@ -77,6 +77,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 	 * 
 	 * @return the targetted Register
 	 */
+	@Override
 	public StateHolder getStateHolder() {
 		return getMemoryPort().getLogicalMemory();
 	}
@@ -90,10 +91,11 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 	 * 
 	 * @return true if any of the bus values was modified, false otherwise
 	 */
+	@Override
 	protected boolean pushValuesForward() {
 		final Bus resultBus = getResultBus();
 		if (resultBus.getValue() == null) {
-			resultBus.setSize(getWidth(), this.isSigned());
+			resultBus.setSize(getWidth(), isSigned());
 		}
 
 		/*
@@ -111,6 +113,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 	 * 
 	 * @return true if any of the port values was modified, false otherwise
 	 */
+	@Override
 	protected boolean pushValuesBackward() {
 		/*
 		 * This is really handled by the physical implementation.
@@ -124,6 +127,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 		return physical;
 	}
 
+	@Override
 	public Module getPhysicalComponent() {
 		return physical;
 	}
@@ -131,6 +135,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 	/**
 	 * returns true
 	 */
+	@Override
 	public boolean isReadAccess() {
 		return true;
 	}
@@ -138,6 +143,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 	/**
 	 * returns false
 	 */
+	@Override
 	public boolean isWriteAccess() {
 		return false;
 	}
@@ -145,6 +151,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -153,6 +160,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 	 * This accessor forces contention on the {@link Referenceable} target so it
 	 * may not execute in parallel with other accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return true;
 	}
@@ -168,12 +176,13 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() {
 		assert physical == null : "Cloning Physical not implemented";
 		final MemoryRead clone = new MemoryRead(isVolatile(), getWidth(),
-				this.isSigned());
+				isSigned());
 		clone.setMemoryPort(getMemoryPort());
-		this.copyComponentAttributes(clone);
+		copyComponentAttributes(clone);
 		return clone;
 	}
 
@@ -203,7 +212,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 
 			// one normal port for the address
 			Port addressIn = makeDataPort();
-			Port memReadAddress = (Port) MemoryRead.this.getAddressPort();
+			Port memReadAddress = getAddressPort();
 			assert (memReadAddress.getBus() != null) : "MemoryRead's address port not attached to a bus.";
 			assert (memReadAddress.getBus().getValue() != null) : "MemoryRead address port has no value";
 			addressIn.setUsed(memReadAddress.isUsed());
@@ -238,8 +247,8 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 			// appropriate the data out bus
 			Exit physicalExit = makeExit(0);
 			Bus dataOut = physicalExit.makeDataBus();
-			Bus memReadData = (Bus) MemoryRead.this.getExit(Exit.DONE)
-					.getDataBuses().get(0);
+			Bus memReadData = MemoryRead.this.getExit(Exit.DONE).getDataBuses()
+					.get(0);
 			final int dataWidth = memReadData.getValue().getSize();
 			dataOut.setUsed(memReadData.isUsed());
 			dataOut.setIDLogical(ID.showLogical(memReadData));
@@ -250,8 +259,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 
 			// appropriate the done bus
 			Bus done = physicalExit.getDoneBus();
-			Bus memReadDone = (Bus) MemoryRead.this.getExit(Exit.DONE)
-					.getDoneBus();
+			Bus memReadDone = MemoryRead.this.getExit(Exit.DONE).getDoneBus();
 			done.setUsed(memReadDone.isUsed());
 			done.setIDLogical(ID.showLogical(memReadDone));
 			for (Port consumer : memReadDone.getPorts()) {
@@ -273,9 +281,8 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 
 			sideSize = physicalExit.makeDataBus(Component.SIDEBAND);
 			sideSize.setIDLogical(ID.showLogical(MemoryRead.this) + "_RS");
-			sideSize.setSize(MemoryRead.this.getSizePort().getBus().getSize(),
-					MemoryRead.this.getSizePort().getBus().getValue()
-							.isSigned());
+			sideSize.setSize(getSizePort().getBus().getSize(), getSizePort()
+					.getBus().getValue().isSigned());
 			sideSize.getPeer().setBus(sizeIn.getPeer());
 
 			/*
@@ -301,7 +308,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 					dc = new ZeroPlusDoneCache(this);
 			}
 			// For feedback handling in the data flow visitor.
-			this.goRegister = dc.goRegister;
+			goRegister = dc.goRegister;
 
 			dc.connectReset(reset.getPeer());
 			dc.connectClock(clk.getPeer());
@@ -330,6 +337,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 			return sideSize;
 		}
 
+		@Override
 		public Set<Component> getFeedbackPoints() {
 			Set<Component> feedback = new HashSet<Component>();
 			feedback.addAll(super.getFeedbackPoints());
@@ -338,14 +346,17 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 			return feedback;
 		}
 
+		@Override
 		public void accept(Visitor v) {
 		}
 
+		@Override
 		public boolean removeDataBus(Bus bus) {
 			assert false : "remove data bus not supported on " + this;
 			return false;
 		}
 
+		@Override
 		public boolean removeDataPort(Port port) {
 			assert false : "remove data port not supported on " + this;
 			return false;
@@ -371,7 +382,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 		public DoneCache(Module owner) {
 			// create internal done-caching logic
 			// this.goRegister = new Reg(Reg.REGRS, null);
-			this.goRegister = Reg.getConfigurableReg(Reg.REGRS, "done_cache");
+			goRegister = Reg.getConfigurableReg(Reg.REGRS, "done_cache");
 			// goRegister.useSetPort();
 			// goRegister.useInternalResetPort();
 			final Port goRegIn = goRegister.getDataPort();
@@ -379,16 +390,15 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 			goRegOut.setSize(1, false);
 			owner.addComponent(goRegister);
 
-			this.doneAnd = new And(2);
+			doneAnd = new And(2);
 			owner.addComponent(doneAnd);
 
-			this.resetOr = new Or(2);
+			resetOr = new Or(2);
 			owner.addComponent(resetOr);
 
 			// now wire everything up
 
-			((Port) resetOr.getDataPorts().get(0)).setBus(doneAnd
-					.getResultBus());
+			resetOr.getDataPorts().get(0).setBus(doneAnd.getResultBus());
 
 			/*
 			 * XXX: It seems the internal reset is what's intended, but just to
@@ -399,14 +409,14 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 
 			goRegIn.setBus(goRegOut);
 
-			((Port) doneAnd.getDataPorts().get(0)).setBus(goRegOut);
+			doneAnd.getDataPorts().get(0).setBus(goRegOut);
 		}
 
 		protected DoneCache() {
 		}
 
 		public void connectReset(Bus resetBus) {
-			((Port) resetOr.getDataPorts().get(1)).setBus(resetBus);
+			resetOr.getDataPorts().get(1).setBus(resetBus);
 		}
 
 		public void connectClock(Bus clock) {
@@ -418,7 +428,7 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 		}
 
 		public void connectMemoryDone(Bus memDone) {
-			((Port) doneAnd.getDataPorts().get(1)).setBus(memDone);
+			doneAnd.getDataPorts().get(1).setBus(memDone);
 		}
 
 		public void connectComponentDone(Port done) {
@@ -448,20 +458,19 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 			// to include a combinational path for the 0 latency
 			// case. NOTE. The flop used MUST have reset take
 			// precedence over set (the FDRS does!).
-			this.combOr = new Or(2);
-			owner.addComponent(this.combOr);
+			combOr = new Or(2);
+			owner.addComponent(combOr);
 
-			((Port) doneAnd.getDataPorts().get(0)).setBus(null);
-			((Port) doneAnd.getDataPorts().get(0))
-					.setBus(combOr.getResultBus());
+			doneAnd.getDataPorts().get(0).setBus(null);
+			doneAnd.getDataPorts().get(0).setBus(combOr.getResultBus());
 
-			((Port) combOr.getDataPorts().get(0)).setBus(goRegister
-					.getResultBus());
+			combOr.getDataPorts().get(0).setBus(goRegister.getResultBus());
 		}
 
+		@Override
 		public void connectComponentGo(Bus goBus) {
 			super.connectComponentGo(goBus);
-			((Port) combOr.getDataPorts().get(1)).setBus(goBus);
+			combOr.getDataPorts().get(1).setBus(goBus);
 		}
 	}
 
@@ -476,24 +485,29 @@ public class MemoryRead extends MemoryAccess implements StateAccessor {
 		private And and = null;
 
 		public ZeroDoneCache(Module owner) {
-			this.and = new And(2);
-			owner.addComponent(this.and);
+			and = new And(2);
+			owner.addComponent(and);
 		}
 
+		@Override
 		public void connectReset(Bus resetBus) {
 		}
 
+		@Override
 		public void connectClock(Bus clock) {
 		}
 
+		@Override
 		public void connectComponentGo(Bus goBus) {
-			((Port) and.getDataPorts().get(0)).setBus(goBus);
+			and.getDataPorts().get(0).setBus(goBus);
 		}
 
+		@Override
 		public void connectMemoryDone(Bus memDone) {
-			((Port) and.getDataPorts().get(1)).setBus(memDone);
+			and.getDataPorts().get(1).setBus(memDone);
 		}
 
+		@Override
 		public void connectComponentDone(Port done) {
 			done.setBus(and.getResultBus());
 		}

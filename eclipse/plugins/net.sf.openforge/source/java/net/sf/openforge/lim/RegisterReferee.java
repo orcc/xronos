@@ -35,7 +35,6 @@ import net.sf.openforge.lim.op.SimpleConstant;
  * @version $Id: RegisterReferee.java 18 2005-08-12 20:32:51Z imiller $
  */
 public class RegisterReferee extends MemoryReferee implements Cloneable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 18 $";
 
 	/**
 	 * Constructs a RegisterReferee.
@@ -49,15 +48,18 @@ public class RegisterReferee extends MemoryReferee implements Cloneable {
 		super(register, readList, writeList);
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
 
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		assert false : "remove data bus not supported on " + this;
 		return false;
 	}
 
+	@Override
 	public boolean removeDataPort(Port port) {
 		assert false : "remove data port not supported on " + this;
 		return false;
@@ -71,6 +73,7 @@ public class RegisterReferee extends MemoryReferee implements Cloneable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}

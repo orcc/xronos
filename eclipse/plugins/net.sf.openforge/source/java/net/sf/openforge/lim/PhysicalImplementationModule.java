@@ -45,6 +45,7 @@ public abstract class PhysicalImplementationModule extends Module {
 	/**
 	 * Throws an exception, replacement in this class not supported.
 	 */
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		throw new UnsupportedOperationException("Cannot replace components in "
 				+ getClass());

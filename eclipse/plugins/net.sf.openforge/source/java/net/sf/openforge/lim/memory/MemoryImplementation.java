@@ -172,33 +172,36 @@ public abstract class MemoryImplementation {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return super.toString().replaceAll("net.sf.openforge.lim.memory.", "");
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof MemoryImplementation))
 			return false;
 		MemoryImplementation test = (MemoryImplementation) o;
 
-		if (!this.getReadLatency().equals(test.getReadLatency()))
+		if (!getReadLatency().equals(test.getReadLatency()))
 			return false;
-		if (this.isROM() != test.isROM())
+		if (isROM() != test.isROM())
 			return false;
-		if (!this.isROM()) {
-			if (!this.getWriteLatency().equals(test.getWriteLatency()))
+		if (!isROM()) {
+			if (!getWriteLatency().equals(test.getWriteLatency()))
 				return false;
 		}
-		if (this.isLUT() != test.isLUT())
+		if (isLUT() != test.isLUT())
 			return false;
-		if (this.isDPReadFirst() != test.isDPReadFirst())
+		if (isDPReadFirst() != test.isDPReadFirst())
 			return false;
-		if (this.isDefault() != test.isDefault())
+		if (isDefault() != test.isDefault())
 			return false;
 
 		return true;
 	}
 
+	@Override
 	public int hashCode() {
 		int base = 103598574;
 		base += getReadLatency().hashCode();
@@ -223,122 +226,150 @@ public abstract class MemoryImplementation {
 	// writer from that.
 
 	private static class LutRAM extends MemoryImplementation {
+		@Override
 		public Latency getReadLatency() {
 			return Latency.ZERO;
 		}
 
+		@Override
 		public Latency getWriteLatency() {
 			return Latency.ONE;
 		}
 
+		@Override
 		public boolean isLUT() {
 			return true;
 		}
 
+		@Override
 		public boolean isROM() {
 			return false;
 		}
 
+		@Override
 		public boolean isDPReadFirst() {
 			return true;
 		}
 
+		@Override
 		public boolean isDefault() {
 			return false;
 		}
 	}
 
 	private static class RegisteredLutRAM extends MemoryImplementation {
+		@Override
 		public Latency getReadLatency() {
 			return Latency.ONE;
 		}
 
+		@Override
 		public Latency getWriteLatency() {
 			return Latency.ONE;
 		}
 
+		@Override
 		public boolean isLUT() {
 			return true;
 		}
 
+		@Override
 		public boolean isROM() {
 			return false;
 		}
 
+		@Override
 		public boolean isDPReadFirst() {
 			return true;
 		}
 
+		@Override
 		public boolean isDefault() {
 			return false;
 		}
 	}
 
 	private static class LutROM extends MemoryImplementation {
+		@Override
 		public Latency getReadLatency() {
 			return Latency.ZERO;
 		}
 
+		@Override
 		public Latency getWriteLatency() {
 			throw new UnsupportedOperationException("Cannot write to a ROM");
 		}
 
+		@Override
 		public boolean isLUT() {
 			return true;
 		}
 
+		@Override
 		public boolean isROM() {
 			return true;
 		}
 
+		@Override
 		public boolean isDPReadFirst() {
 			return true;
 		}
 
+		@Override
 		public boolean isDefault() {
 			return false;
 		}
 	}
 
 	private static class RegisteredLutROM extends MemoryImplementation {
+		@Override
 		public Latency getReadLatency() {
 			return Latency.ONE;
 		}
 
+		@Override
 		public Latency getWriteLatency() {
 			throw new UnsupportedOperationException("Cannot write to a ROM");
 		}
 
+		@Override
 		public boolean isLUT() {
 			return true;
 		}
 
+		@Override
 		public boolean isROM() {
 			return true;
 		}
 
+		@Override
 		public boolean isDPReadFirst() {
 			return true;
 		}
 
+		@Override
 		public boolean isDefault() {
 			return false;
 		}
 	}
 
 	private static class BlockRAM extends MemoryImplementation {
+		@Override
 		public Latency getReadLatency() {
 			return Latency.ONE;
 		}
 
+		@Override
 		public Latency getWriteLatency() {
 			return Latency.ONE;
 		}
 
+		@Override
 		public boolean isLUT() {
 			return false;
 		}
 
+		@Override
 		public boolean isROM() {
 			return false;
 		}
@@ -348,28 +379,34 @@ public abstract class MemoryImplementation {
 		// data on the read port, as per V4 user guide. If this is
 		// changed, then the parameter setting in DualPortBlockRam
 		// must also be changed.
+		@Override
 		public boolean isDPReadFirst() {
 			return true;
 		}
 
+		@Override
 		public boolean isDefault() {
 			return false;
 		}
 	}
 
 	private static class BlockROM extends MemoryImplementation {
+		@Override
 		public Latency getReadLatency() {
 			return Latency.ONE;
 		}
 
+		@Override
 		public Latency getWriteLatency() {
 			throw new UnsupportedOperationException("Cannot write to a ROM");
 		}
 
+		@Override
 		public boolean isLUT() {
 			return false;
 		}
 
+		@Override
 		public boolean isROM() {
 			return true;
 		}
@@ -379,10 +416,12 @@ public abstract class MemoryImplementation {
 		// data on the read port, as per V4 user guide. If this is
 		// changed, then the parameter setting in DualPortBlockRam
 		// must also be changed.
+		@Override
 		public boolean isDPReadFirst() {
 			return true;
 		}
 
+		@Override
 		public boolean isDefault() {
 			return false;
 		}
@@ -392,52 +431,64 @@ public abstract class MemoryImplementation {
 	// structures with combinational reads and single cycle writes.
 	// These structures are only implementable in distributed RAM.
 	private static class DefaultRAM extends MemoryImplementation {
+		@Override
 		public Latency getReadLatency() {
 			return Latency.ZERO;
 		}
 
+		@Override
 		public Latency getWriteLatency() {
 			return Latency.ONE;
 		}
 
+		@Override
 		public boolean isLUT() {
 			return false;
 		}
 
+		@Override
 		public boolean isROM() {
 			return false;
 		}
 
+		@Override
 		public boolean isDPReadFirst() {
 			return true;
 		}
 
+		@Override
 		public boolean isDefault() {
 			return true;
 		}
 	}
 
 	private static class DefaultROM extends MemoryImplementation {
+		@Override
 		public Latency getReadLatency() {
 			return Latency.ZERO;
 		}
 
+		@Override
 		public Latency getWriteLatency() {
 			throw new UnsupportedOperationException("Cannot write to a ROM");
 		}
 
+		@Override
 		public boolean isLUT() {
 			return false;
 		}
 
+		@Override
 		public boolean isROM() {
 			return true;
 		}
 
+		@Override
 		public boolean isDPReadFirst() {
 			return true;
 		}
 
+		@Override
 		public boolean isDefault() {
 			return true;
 		}

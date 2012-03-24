@@ -47,6 +47,7 @@ public class Or extends Primitive {
 		assert (goCount > 1) : "A one-input Or? What for?";
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -58,6 +59,7 @@ public class Or extends Primitive {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return log2(getMaxCareBits());
 	}
@@ -67,6 +69,7 @@ public class Or extends Primitive {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int terms = getDataPorts().size();
 		int groupedCount = 0;
@@ -108,15 +111,16 @@ public class Or extends Primitive {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
 		assert getDataPorts().size() > 0;
 
 		Iterator<Port> dpIter = getDataPorts().iterator();
-		Value orValue = ((Port) dpIter.next()).getValue();
+		Value orValue = dpIter.next().getValue();
 		while (dpIter.hasNext()) {
-			Value nextValue = ((Port) dpIter.next()).getValue();
+			Value nextValue = dpIter.next().getValue();
 			orValue = OrOp.pushValuesForwardOr(orValue, nextValue);
 		}
 
@@ -132,6 +136,7 @@ public class Or extends Primitive {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

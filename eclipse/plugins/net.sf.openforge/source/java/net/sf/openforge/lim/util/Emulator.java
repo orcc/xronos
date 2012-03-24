@@ -31,7 +31,6 @@ import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Emulatable;
-import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.InBuf;
 import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Module;
@@ -99,8 +98,8 @@ public abstract class Emulator {
 			return null;
 		}
 
-		final Collection<Dependency> deps = ((Entry) entryOwner.getEntries()
-				.iterator().next()).getDependencies(port);
+		final Collection<Dependency> deps = entryOwner.getEntries().iterator()
+				.next().getDependencies(port);
 
 		/*
 		 * Handle connections that were established manually rather than through
@@ -119,7 +118,7 @@ public abstract class Emulator {
 
 		Bus inputBus = null;
 		if (deps.size() != 0) {
-			final Dependency dep = (Dependency) deps.iterator().next();
+			final Dependency dep = deps.iterator().next();
 			inputBus = dep.getLogicalBus();
 		}
 
@@ -154,7 +153,7 @@ public abstract class Emulator {
 			Component nextComponent = (Component) iter.next();
 			Iterator<Port> ports = nextComponent.getDataPorts().iterator();
 			while (ports.hasNext()) {
-				Port port = (Port) ports.next();
+				Port port = ports.next();
 				inputMap.put(port, getInputBus(port));
 			}
 		}
@@ -172,7 +171,7 @@ public abstract class Emulator {
 			Map<Port, SizedInteger> portMap) {
 		final Map<Bus, SizedInteger> busValues = new HashMap<Bus, SizedInteger>();
 		for (Port port : portMap.keySet()) {
-			Bus inputBus = (Bus) inputMap.get(port);
+			Bus inputBus = inputMap.get(port);
 			busValues.put(inputBus, portMap.get(port));
 		}
 		return busValues;
@@ -202,7 +201,7 @@ public abstract class Emulator {
 		List<Port> dataPorts = isInBuf(component) ? component.getOwner()
 				.getDataPorts() : component.getDataPorts();
 		for (Port dataPort : dataPorts) {
-			final Bus dataBus = (Bus) inputMap.get(dataPort);
+			final Bus dataBus = inputMap.get(dataPort);
 			if (dataBus != null) {
 
 				boolean isModule = component instanceof Module;

@@ -35,7 +35,6 @@ import net.sf.openforge.app.OptionRegistry;
  * @version $Id: Scalar.java 70 2005-12-01 17:43:11Z imiller $
  */
 public class Scalar implements LogicalValue, MemoryVisitable {
-	
 
 	private AddressableUnit[] rep;
 	private boolean isLittleEndian;
@@ -88,11 +87,11 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	private Scalar(AddressableUnit[] rep, boolean adjust,
 			AddressStridePolicy policy) {
 		this.rep = new AddressableUnit[rep.length];
-		this.stridePolicy = policy;
+		stridePolicy = policy;
 		if (policy == null)
 			throw new IllegalArgumentException("Cannot have null stride policy");
 
-		this.isLittleEndian = EngineThread.getGenericJob()
+		isLittleEndian = EngineThread.getGenericJob()
 				.getUnscopedBooleanOptionValue(OptionRegistry.LITTLE_ENDIAN);
 
 		if (!adjust || isLittleEndian) {
@@ -112,6 +111,7 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	 * @throws NullPointerException
 	 *             if memVis is null
 	 */
+	@Override
 	public void accept(MemoryVisitor memVis) {
 		memVis.visit(this);
 	}
@@ -122,6 +122,7 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	 * @return the number of addresses needed to represent this value; this
 	 *         number is at least 1 for a scalar value
 	 */
+	@Override
 	public int getSize() {
 		return rep.length;
 	}
@@ -130,15 +131,17 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	 * Returns the number of bits allocated based on analysis of the
 	 * AddressableUnit representation.
 	 */
+	@Override
 	public int getBitSize() {
-		return getSize() * this.stridePolicy.getStride();
+		return getSize() * stridePolicy.getStride();
 	}
 
 	/**
 	 * Returns the address stride policy governing this pointer.
 	 */
+	@Override
 	public AddressStridePolicy getAddressStridePolicy() {
-		return this.stridePolicy;
+		return stridePolicy;
 	}
 
 	/**
@@ -147,6 +150,7 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	 * 
 	 * @return a value of type 'int'
 	 */
+	@Override
 	public int getAlignmentSize() {
 		return getSize();
 	}
@@ -160,6 +164,7 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	 *         the array may have no elements in the case that this is the value
 	 *         of an empty data item, such as a struct with no fields
 	 */
+	@Override
 	public AddressableUnit[] getRep() {
 		final AddressableUnit[] copy = new AddressableUnit[rep.length];
 		System.arraycopy(rep, 0, copy, 0, rep.length);
@@ -173,8 +178,9 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	 * @return a new LogicalValue with the same structure and initial values as
 	 *         this LogicalValue.
 	 */
+	@Override
 	public LogicalValue copy() {
-		return new Scalar(this.rep, false, this.stridePolicy);
+		return new Scalar(rep, false, stridePolicy);
 	}
 
 	/**
@@ -196,6 +202,7 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	 *             resulting context would be non-meaningful (eg removal of a
 	 *             portion of a pointers value)
 	 */
+	@Override
 	public LogicalValue removeRange(int min, int max)
 			throws NonRemovableRangeException {
 		AddressableUnit[] rep = getRep();
@@ -221,7 +228,7 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 			}
 		}
 
-		return new Scalar(newRep, false, this.stridePolicy);
+		return new Scalar(newRep, false, stridePolicy);
 	}
 
 	/**
@@ -230,15 +237,17 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	 * @return the location, or {@link Location#INVALID} if this value does not
 	 *         denote a valid location
 	 */
+	@Override
 	public Location toLocation() {
 		return Location.INVALID;
 	}
 
+	@Override
 	public String toString() {
 		final StringBuffer buf = new StringBuffer();
 		for (int i = 0; i < rep.length; i++) {
 			// buf.append(Integer.toHexString(0xff & rep[i]));
-			buf.append(this.rep[i].getValue().toString(16));
+			buf.append(rep[i].getValue().toString(16));
 			if (i < (rep.length - 1)) {
 				buf.append(".");
 			}
@@ -251,6 +260,7 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	 * 
 	 * @see net.sf.openforge.lim.memory.LogicalValue#toConstant()
 	 */
+	@Override
 	public MemoryConstant toConstant() {
 		AddressableUnit[] rep = getRep();
 		return new ScalarConstant(rep, getBitSize(), false,
@@ -258,6 +268,7 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	}
 
 	/** @inheritDoc */
+	@Override
 	public LogicalValue getValueAtOffset(int delta, int size) {
 		if ((delta == 0) && (size == getSize())) {
 			return this;

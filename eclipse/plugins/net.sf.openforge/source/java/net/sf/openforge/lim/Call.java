@@ -81,8 +81,8 @@ public class Call extends Reference {
 		Exit callExit = getExit(Exit.DONE);
 		if (procedure.hasReturnValue()) {
 			final Exit procExit = body.getExit(Exit.RETURN);
-			final Bus returnBus = (Bus) callExit.getDataBuses().get(0);
-			addBusMap(returnBus, (Bus) procExit.getDataBuses().get(0));
+			final Bus returnBus = callExit.getDataBuses().get(0);
+			addBusMap(returnBus, procExit.getDataBuses().get(0));
 		}
 
 		// Set up some default naming
@@ -120,8 +120,8 @@ public class Call extends Reference {
 
 		for (Iterator<Port> iter = getDataPorts().iterator(), bodyIter = body
 				.getDataPorts().iterator(); iter.hasNext();) {
-			Port dp = (Port) iter.next();
-			Port bp = (Port) bodyIter.next();
+			Port dp = iter.next();
+			Port bp = bodyIter.next();
 			addPortMap(dp, bp);
 		}
 
@@ -130,7 +130,7 @@ public class Call extends Reference {
 		busMap = new HashMap<Bus, Bus>(body.getBuses().size());
 		for (Iterator<Exit> exitIter = body.getExits().iterator(); exitIter
 				.hasNext();) {
-			Exit bodyExit = (Exit) exitIter.next();
+			Exit bodyExit = exitIter.next();
 			Exit.Tag tag = bodyExit.getTag();
 			// First see if the exit already exists
 			// (in the case where we are re-setting the referent), if
@@ -149,18 +149,20 @@ public class Call extends Reference {
 			// Map buses to procedure body's buses.
 			for (Iterator<Bus> bodyIter = bodyExit.getDataBuses().iterator(), iter = exit
 					.getDataBuses().iterator(); bodyIter.hasNext();) {
-				Bus db = (Bus) iter.next();
-				Bus bb = (Bus) bodyIter.next();
+				Bus db = iter.next();
+				Bus bb = bodyIter.next();
 				addBusMap(db, bb);
 			}
 			addBusMap(exit.getDoneBus(), bodyExit.getDoneBus());
 		}
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
 
+	@Override
 	public Port makeThisPort() {
 		assert getProcedure().getBody().getThisPort() != null : "Cannot make a 'this' port on a call to a procedure without a 'this'";
 		// Port bodyPort = getProcedure().getBody().getThisPort();
@@ -177,6 +179,7 @@ public class Call extends Reference {
 	 * @throws ClassCastException
 	 *             if the given referent is not an instance of {@link Procedure}
 	 */
+	@Override
 	public void setReferent(Referent ref) {
 		super.setRef(ref);
 		generateMaps(((Procedure) ref).getBody());
@@ -187,6 +190,7 @@ public class Call extends Reference {
 	 * 
 	 * @return a collection of {@link Resource}
 	 */
+	@Override
 	public Collection getAccessedResources() {
 		return getProcedure().getBody().getAccessedResources();
 	}
@@ -209,6 +213,7 @@ public class Call extends Reference {
 	 * Tests whether this component requires a connection to its <em>go</em>
 	 * {@link Port} in order to commence processing.
 	 */
+	@Override
 	public boolean consumesGo() {
 		return getProcedure().getBody().consumesGo();
 	}
@@ -217,6 +222,7 @@ public class Call extends Reference {
 	 * Tests whether this component produces a signal on the done {@link Bus} of
 	 * each of its {@link Exit Exits}.
 	 */
+	@Override
 	public boolean producesDone() {
 		return getProcedure().getBody().producesDone();
 	}
@@ -228,6 +234,7 @@ public class Call extends Reference {
 	 * @see Component#isDoneSynchronous()
 	 * @return true if called procedure's body isdonesynchronous.
 	 */
+	@Override
 	public boolean isDoneSynchronous() {
 		return getProcedure().getBody().isDoneSynchronous();
 	}
@@ -236,6 +243,7 @@ public class Call extends Reference {
 	 * Tests whether this component requires a connection to its clock
 	 * {@link Port}.
 	 */
+	@Override
 	public boolean consumesClock() {
 		return getProcedure().getBody().consumesClock();
 	}
@@ -245,6 +253,7 @@ public class Call extends Reference {
 	 * {@link Port}. By default, returns the value of
 	 * {@link Component#consumesClock()}.
 	 */
+	@Override
 	public boolean consumesReset() {
 		return getProcedure().getBody().consumesReset();
 	}
@@ -256,6 +265,7 @@ public class Call extends Reference {
 	 * @return the clock name
 	 * @deprecated
 	 */
+	@Deprecated
 	public String getSuspendName() {
 		return getProcedure().getSuspendName();
 	}
@@ -267,6 +277,7 @@ public class Call extends Reference {
 	 * @return the clock name
 	 * @deprecated
 	 */
+	@Deprecated
 	public String getGoName() {
 		return getProcedure().getGoName();
 	}
@@ -300,6 +311,7 @@ public class Call extends Reference {
 	 * 
 	 * @return true if the called procedures body is balanceable.
 	 */
+	@Override
 	public boolean isBalanceable() {
 		return getProcedure().getBody().isBalanceable();
 	}
@@ -307,6 +319,7 @@ public class Call extends Reference {
 	/**
 	 * Calls the super then removes the port from the port mapping.
 	 */
+	@Override
 	public boolean removeDataPort(Port port) {
 		boolean ret = super.removeDataPort(port);
 		portMap.remove(port);
@@ -316,6 +329,7 @@ public class Call extends Reference {
 	/**
 	 * Calls the super then removes the bus from the bus mapping.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		boolean ret = super.removeDataBus(bus);
 		busMap.remove(bus);
@@ -379,7 +393,7 @@ public class Call extends Reference {
 	}
 
 	public void setProcedureReturnBus(Bus returnBus) {
-		Bus localBus = (Bus) getExit(Exit.DONE).getDataBuses().get(0);
+		Bus localBus = getExit(Exit.DONE).getDataBuses().get(0);
 		addBusMap(localBus, returnBus);
 		// propagate the value across the exit. IDM. Let constant
 		// prop handle this.
@@ -431,6 +445,7 @@ public class Call extends Reference {
 	/**
 	 * Gets the end-to-end Latency of the referent.
 	 */
+	@Override
 	public Latency getLatency() {
 		// return getProcedure().getLatency(getMainExit());
 		return getProcedure().getLatency(getExit(Exit.DONE));
@@ -451,6 +466,7 @@ public class Call extends Reference {
 		return procedureType == Exit.RETURN ? Exit.DONE : procedureType;
 	}
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		// for (Iterator portIter = getPorts().iterator(); portIter.hasNext();)
@@ -470,6 +486,7 @@ public class Call extends Reference {
 		return ret;
 	}
 
+	@Override
 	public String cpDebug(boolean verbose) {
 		String ret = toString();
 		for (Port p : getDataPorts()) {
@@ -514,6 +531,7 @@ public class Call extends Reference {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		return false;
 	}
@@ -622,6 +640,7 @@ public class Call extends Reference {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		return false;
 	}
@@ -703,11 +722,12 @@ public class Call extends Reference {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		final Procedure procedureClone = (Procedure) getProcedure().clone();
 		final Call clone = procedureClone.makeCall();
 
-		this.copyComponentAttributes(clone);
+		copyComponentAttributes(clone);
 
 		/*
 		 * Copy ApiCallIdentifier attributes
@@ -715,7 +735,7 @@ public class Call extends Reference {
 		clone.apiIdentifiers = new LinkedHashMap<ApiCallIdentifier.Tag, ApiCallIdentifier>();
 		for (Map.Entry<ApiCallIdentifier.Tag, ApiCallIdentifier> mapEntry : apiIdentifiers
 				.entrySet()) {
-			ApiCallIdentifier api = (ApiCallIdentifier) mapEntry.getValue();
+			ApiCallIdentifier api = mapEntry.getValue();
 			cloneApiIdentifier(clone, api);
 		}
 
@@ -751,6 +771,7 @@ public class Call extends Reference {
 		exitMap.put(e2, e1);
 	}
 
+	@Override
 	public String show() {
 		String ret = super.show();
 		ret = ret + "PortMap: " + portMap;

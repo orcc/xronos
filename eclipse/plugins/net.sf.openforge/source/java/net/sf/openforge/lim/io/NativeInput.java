@@ -29,7 +29,6 @@
 
 package net.sf.openforge.lim.io;
 
-
 /**
  * {@link NativeInput} is an abstract class which contains only the data part of
  * fifo input

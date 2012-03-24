@@ -55,7 +55,7 @@ class PinGraph extends BlackBoxGraph {
 
 			Bus b = ipin.getBus();
 			for (Port p : b.getPorts()) {
-				Component c = (Component) p.getOwner();
+				Component c = p.getOwner();
 				graph(c, nodeCount++);
 				graphEdges(c, b);
 			}

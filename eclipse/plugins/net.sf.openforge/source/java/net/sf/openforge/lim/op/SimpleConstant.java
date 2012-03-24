@@ -58,6 +58,7 @@ public class SimpleConstant extends Constant implements Emulatable {
 	 *            the int value of a specified width (in bits)
 	 * @deprecated use SimpleConstant(long lval, int width, boolean isSigned)
 	 */
+	@Deprecated
 	public SimpleConstant(int ival, int width) {
 		this((long) ival, width);
 	}
@@ -75,6 +76,7 @@ public class SimpleConstant extends Constant implements Emulatable {
 	 *            the int value of a specified width (in bits)
 	 * @deprecated use SimpleConstant(long lval, int width, boolean isSigned)
 	 */
+	@Deprecated
 	public SimpleConstant(long lval, int width) {
 		this(lval, width, lval < 0);
 	}
@@ -108,7 +110,7 @@ public class SimpleConstant extends Constant implements Emulatable {
 	public SimpleConstant(BigInteger bigInt, int width, boolean isSigned) {
 		super(width, isSigned);
 
-		final int byteWidth = (int) Math.ceil(((double) width) / 8.0);
+		final int byteWidth = (int) Math.ceil(width / 8.0);
 		if (byteWidth <= 0)
 			throw new IllegalArgumentException("Illegal width for constant "
 					+ width);
@@ -120,7 +122,7 @@ public class SimpleConstant extends Constant implements Emulatable {
 			final BigInteger byteValue = bigInt.shiftRight(8 * i).and(mask);
 			aurep[i] = new AddressableUnit((int) byteValue.longValue(), true);
 		}
-		this.rep = new AURepBundle(aurep, 8);
+		rep = new AURepBundle(aurep, 8);
 
 		setIDLogical("const_" + bigInt.toString());
 
@@ -201,7 +203,7 @@ public class SimpleConstant extends Constant implements Emulatable {
 	 */
 	@Override
 	public AURepBundle getRepBundle() {
-		return this.rep;
+		return rep;
 	}
 
 	/**
@@ -211,6 +213,7 @@ public class SimpleConstant extends Constant implements Emulatable {
 	 * @return a List containing only this constant
 	 */
 
+	@Override
 	public List<SimpleConstant> getConstituents() {
 		return Collections.unmodifiableList(Collections.singletonList(this));
 	}
@@ -220,6 +223,7 @@ public class SimpleConstant extends Constant implements Emulatable {
 	 * 
 	 * @return a singleton Set containing this object.
 	 */
+	@Override
 	public Set<SimpleConstant> getContents() {
 		return Collections.unmodifiableSet(Collections.singleton(this));
 	}
@@ -227,13 +231,14 @@ public class SimpleConstant extends Constant implements Emulatable {
 	/**
 	 * Value bus size is already set at creation.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
 		Value oldValue = getValueBus().getValue();
 
 		Value newValue = new Value(oldValue.getSize(), oldValue.isSigned());
-		AURepBundle repBundle = this.getRepBundle();
+		AURepBundle repBundle = getRepBundle();
 		for (int i = 0; i < oldValue.getSize(); i++) {
 			// int byteIndex = i / 8;
 			// int bitIndex = i % 8;
@@ -259,6 +264,7 @@ public class SimpleConstant extends Constant implements Emulatable {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		return false;
 	}
@@ -269,18 +275,19 @@ public class SimpleConstant extends Constant implements Emulatable {
 	private long getLval() {
 		long value = 0;
 		long mask = 0;
-		for (int i = 0; i < this.rep.getBitsPerUnit(); i++)
+		for (int i = 0; i < rep.getBitsPerUnit(); i++)
 			mask = (mask << 1) | 1L;
 
-		for (int i = 0; i < this.rep.getLength(); i++) {
+		for (int i = 0; i < rep.getLength(); i++) {
 			// value |= (this.rep.getRep()[i].value() << (8*i));
-			value |= ((this.rep.getRep()[i].getValue().longValue() & mask) << this.rep
+			value |= ((rep.getRep()[i].getValue().longValue() & mask) << rep
 					.getBitsPerUnit() * i);
 		}
 
 		return value;
 	}
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		if (getValueBus() != null && getValueBus().getValue() != null) {

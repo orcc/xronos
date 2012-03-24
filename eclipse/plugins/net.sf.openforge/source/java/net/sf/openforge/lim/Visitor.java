@@ -78,7 +78,6 @@ import net.sf.openforge.lim.op.XorOp;
  * @see Visitable
  */
 public interface Visitor {
-	static final String _RCS_ = "$Rev: 98 $";
 
 	void visit(Design vis);
 

@@ -52,11 +52,11 @@ public class ActorNativeScalarOutput extends NativeOutput implements ActorPort {
 
 	public ActorNativeScalarOutput(FifoID fifoID) {
 		super(fifoID.getBitWidth());
-		this.baseName = fifoID.getName();
-		final String pinBaseName = buildPortBaseName(this.baseName);
+		baseName = fifoID.getName();
+		final String pinBaseName = buildPortBaseName(baseName);
 
-		this.data = new SimpleFifoPin(this, getWidth(), pinBaseName + "_DATA");
-		this.addPin(this.data);
+		data = new SimpleFifoPin(this, getWidth(), pinBaseName + "_DATA");
+		addPin(data);
 	}
 
 	/**

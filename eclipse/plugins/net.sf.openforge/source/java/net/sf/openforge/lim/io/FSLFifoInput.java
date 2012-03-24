@@ -68,24 +68,24 @@ public class FSLFifoInput extends FifoInput {
 		 * FSLx_S_READ 1 bit output FSLx_S_CONTROL 1 bit input, FSLx_S_CLK 1 bit
 		 * input
 		 */
-		this.baseName = idString;
+		baseName = idString;
 		final String pinBaseName = buildPortBaseName(idString);
 		// The direction of the pin is dependent only on how we access it
 		// this.data = new SimpleFifoPin(this, width * 8, pinBaseName +
 		// "_DATA");
-		this.data = new SimpleFifoPin(this, width, pinBaseName + "_DATA");
-		this.exists = new SimpleFifoPin(this, 1, pinBaseName + "_EXISTS");
-		this.ctrl = new SimpleFifoPin(this, 1, pinBaseName + "_CONTROL");
-		this.clk = new SimpleFifoPin(this, 1, pinBaseName + "_CLK");
-		this.read = new SimpleFifoPin(this, 1, pinBaseName + "_READ");
+		data = new SimpleFifoPin(this, width, pinBaseName + "_DATA");
+		exists = new SimpleFifoPin(this, 1, pinBaseName + "_EXISTS");
+		ctrl = new SimpleFifoPin(this, 1, pinBaseName + "_CONTROL");
+		clk = new SimpleFifoPin(this, 1, pinBaseName + "_CLK");
+		read = new SimpleFifoPin(this, 1, pinBaseName + "_READ");
 
 		// The order that these are added here determines the order
 		// they show up in the translated inteface.
-		this.addPin(data);
-		this.addPin(exists);
-		this.addPin(read);
-		this.addPin(ctrl);
-		this.addPin(clk);
+		addPin(data);
+		addPin(exists);
+		addPin(read);
+		addPin(ctrl);
+		addPin(clk);
 
 		// Tie off the unused outputs.
 		// None.
@@ -103,7 +103,7 @@ public class FSLFifoInput extends FifoInput {
 
 	@Override
 	public String getPortBaseName() {
-		return this.baseName;
+		return baseName;
 	}
 
 	/**
@@ -120,23 +120,22 @@ public class FSLFifoInput extends FifoInput {
 	 */
 	@Override
 	public Collection<SimplePin> getOutputPins() {
-		return Collections.unmodifiableList(Collections
-				.singletonList(this.read));
+		return Collections.unmodifiableList(Collections.singletonList(read));
 	}
 
 	@Override
 	public SimplePin getDataPin() {
-		return this.data;
+		return data;
 	}
 
 	@Override
 	public SimplePin getSendPin() {
-		return this.exists;
+		return exists;
 	}
 
 	@Override
 	public SimplePin getAckPin() {
-		return this.read;
+		return read;
 	}
 
 }// FSLFifoInput

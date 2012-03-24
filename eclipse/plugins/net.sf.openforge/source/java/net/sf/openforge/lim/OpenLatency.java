@@ -41,6 +41,7 @@ class OpenLatency extends Latency implements Cloneable {
 	/** An Object that can be used to differentiate this latency */
 	// private Object key;
 
+	@Override
 	public boolean isOpen() {
 		return true;
 	}
@@ -55,10 +56,12 @@ class OpenLatency extends Latency implements Cloneable {
 	 *            the latency which is to be added to this latency
 	 * @return the resulting latency
 	 */
+	@Override
 	public Latency addTo(Latency latency) {
 		return latency.increment(getMinClocks(), getKey());
 	}
 
+	@Override
 	public boolean isGT(Latency latency) {
 		if (latency.isOpen()) {
 			return isDescendantOf(latency)
@@ -68,6 +71,7 @@ class OpenLatency extends Latency implements Cloneable {
 		}
 	}
 
+	@Override
 	public boolean isGE(Latency latency) {
 		if (latency.equals(this)) {
 			return true;
@@ -86,10 +90,12 @@ class OpenLatency extends Latency implements Cloneable {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean isFixed() {
 		return false;
 	}
 
+	@Override
 	public boolean equals(Object object) {
 		if (object instanceof OpenLatency) {
 			OpenLatency latency = (OpenLatency) object;
@@ -101,10 +107,12 @@ class OpenLatency extends Latency implements Cloneable {
 		}
 	}
 
+	@Override
 	public int hashCode() {
 		return base.hashCode() + getKey().hashCode() + getMinClocks();
 	}
 
+	@Override
 	public String toString() {
 		return "OpenLat{Op minclks=" + getMinClocks() + " key=" + getKey()
 				+ " base=" + base + "}";
@@ -120,14 +128,17 @@ class OpenLatency extends Latency implements Cloneable {
 		this(base, key, 0);
 	}
 
+	@Override
 	boolean isDescendantOf(Latency latency) {
 		return base.equals(latency) || base.isDescendantOf(latency);
 	}
 
+	@Override
 	protected Latency increment(int minClocks, int maxClocks) {
 		return new OpenLatency(this, getKey(), minClocks);
 	}
 
+	@Override
 	protected Latency increment(int minClocks, LatencyKey key) {
 		return new OpenLatency(this, key, minClocks);
 	}
@@ -140,6 +151,7 @@ class OpenLatency extends Latency implements Cloneable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		return super.clone();
 	}

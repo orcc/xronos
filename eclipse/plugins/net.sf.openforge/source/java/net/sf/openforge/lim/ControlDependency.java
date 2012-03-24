@@ -39,10 +39,12 @@ public class ControlDependency extends Dependency {
 		super(logicalBus);
 	}
 
+	@Override
 	public Dependency createSameType(Bus logicalBus) {
 		return new ControlDependency(logicalBus);
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof ControlDependency) {
 			return super.equals(obj);
@@ -50,6 +52,7 @@ public class ControlDependency extends Dependency {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return super.hashCode();
 	}

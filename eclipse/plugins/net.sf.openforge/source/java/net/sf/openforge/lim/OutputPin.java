@@ -33,7 +33,7 @@ public class OutputPin extends Pin {
 
 	private OutPinBuf buf;
 	private Port port;
-	
+
 	@SuppressWarnings("unused")
 	private int portWidth = -1;
 
@@ -56,7 +56,7 @@ public class OutputPin extends Pin {
 	public OutputPin(Bus bus) {
 		this(bus.getValue().getSize(), bus.getValue().isSigned());
 		getPort().setBus(bus);
-		this.isInferred = true;
+		isInferred = true;
 	}
 
 	/**
@@ -68,8 +68,8 @@ public class OutputPin extends Pin {
 		super(Math.min(pinWidth, portWidth), isSigned);
 
 		this.portWidth = portWidth;
-		this.buf = new OutPinBuf(this);
-		this.port = makeDataPort();
+		buf = new OutPinBuf(this);
+		port = makeDataPort();
 	}
 
 	/**
@@ -82,10 +82,12 @@ public class OutputPin extends Pin {
 		this(width, width, isSigned);
 	}
 
+	@Override
 	public OutPinBuf getOutPinBuf() {
 		return buf;
 	}
 
+	@Override
 	public Collection<OutPinBuf> getPinBufs() {
 		return Collections.singleton(getOutPinBuf());
 	}
@@ -94,6 +96,7 @@ public class OutputPin extends Pin {
 		return port;
 	}
 
+	@Override
 	public int getWidth() {
 		// Because the width is the default size when this pin is
 		// created , and it never got changed after the constant
@@ -117,10 +120,12 @@ public class OutputPin extends Pin {
 	 * @param s
 	 *            the new logical ID
 	 */
+	@Override
 	public void setIDLogical(String s) {
 		super.setIDLogical(s);
 	}
 
+	@Override
 	public boolean removeDataPort(Port port) {
 		if (super.removeDataPort(port)) {
 			if (port == this.port)
@@ -138,6 +143,7 @@ public class OutputPin extends Pin {
 	/**
 	 * Returns false, does nothing.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		return false;
 	}
@@ -146,6 +152,7 @@ public class OutputPin extends Pin {
 	 * Looks at the Value on the input Port and replaces the all the MSB
 	 * constants with don't cares (except for a leading sign bit, if necessary).
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
@@ -184,6 +191,7 @@ public class OutputPin extends Pin {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}

@@ -50,7 +50,6 @@ import net.sf.openforge.lim.op.SimpleConstant;
  * @version $Id: Register.java 538 2007-11-21 06:22:39Z imiller $
  */
 public class Register extends Storage implements StateHolder, Arbitratable {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 538 $";
 
 	/** True if this is a volatile register */
 	private boolean isVolatile = false;
@@ -92,26 +91,26 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 */
 	public Register(LogicalValue init, int width, boolean isVolatile) {
 		super();
-		this.initialValue = init;
+		initialValue = init;
 		this.isVolatile = isVolatile;
 		if (width < 1) {
 			throw new IllegalArgumentException(
 					"Illegal initial width specified for register: " + width);
 		}
-		this.initWidth = width;
+		initWidth = width;
 	}
 
 	public void addEndianSwappers(EndianSwapper front, EndianSwapper back) {
-		this.inputSwapper = front;
-		this.outputSwapper = back;
+		inputSwapper = front;
+		outputSwapper = back;
 	}
 
 	public EndianSwapper getInputSwapper() {
-		return this.inputSwapper;
+		return inputSwapper;
 	}
 
 	public EndianSwapper getOutputSwapper() {
-		return this.outputSwapper;
+		return outputSwapper;
 	}
 
 	/**
@@ -121,7 +120,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 * @return a {@link LogicalValue} or null.
 	 */
 	public LogicalValue getInitialValue() {
-		return this.initialValue;
+		return initialValue;
 	}
 
 	/**
@@ -153,7 +152,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 * @return a non-negative 'int'
 	 */
 	public int getInitWidth() {
-		return this.initWidth;
+		return initWidth;
 	}
 
 	/**
@@ -164,6 +163,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 * @param to
 	 *            the latter accessor in source 'document' order.
 	 */
+	@Override
 	public int getSpacing(Referencer from, Referencer to) {
 		if (from instanceof RegisterWrite)
 			return 1;
@@ -181,6 +181,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 * Returns -1 indicating that the referencers must be scheduled using the
 	 * default DONE to GO spacing.
 	 */
+	@Override
 	public int getGoSpacing(Referencer from, Referencer to) {
 		return -1;
 	}
@@ -205,7 +206,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 */
 	public Component makePhysicalComponent(List readers, List writers) {
 		String logicalId = showIDLogical();
-		this.registerComponent = new Physical(readers, writers, logicalId);
+		registerComponent = new Physical(readers, writers, logicalId);
 		registerComponent.setIDLogical(logicalId);
 		return registerComponent;
 	}
@@ -215,7 +216,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 * either be a {@link RegisterReferee} or a {@link Register.Physical}.
 	 */
 	public Module getPhysicalComponent() {
-		return this.registerComponent;
+		return registerComponent;
 	}
 
 	/**
@@ -223,10 +224,12 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 * succeed and the resource dependencies will ensure that multiple accesses
 	 * are seperated by a cycle.
 	 */
+	@Override
 	public Latency getLatency(Exit exit) {
 		return Latency.ZERO;
 	}
 
+	@Override
 	public Collection getReferences() {
 		Collection list = new ArrayList(reads.size() + writes.size());
 		list.addAll(reads);
@@ -300,6 +303,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 		return Collections.unmodifiableCollection(writes);
 	}
 
+	@Override
 	public void removeReference(Reference ref) {
 		if (!(reads.remove(ref) || writes.remove(ref))) {
 			throw new IllegalArgumentException("unknown access");
@@ -318,10 +322,12 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		ret = ret.replaceAll("net.sf.openforge.lim.", "");
@@ -334,19 +340,23 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	//
 	// //////////////////////////////////////////////////
 
+	@Override
 	public int getDataPathWidth() {
 		return getInitWidth();
 	}
 
+	@Override
 	public int getAddrPathWidth() {
 		// Default to something reasonable even though it is not used.
 		return 32;
 	}
 
+	@Override
 	public boolean isAddressable() {
 		return false;
 	}
 
+	@Override
 	public boolean allowsCombinationalReads() {
 		return true;
 	}
@@ -399,8 +409,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 					enablePort.getPeer().setSize(1, false);
 					Port dataPort = makeDataPort();
 					dataPort.setUsed(true);
-					dataPort.getPeer().setSize(Register.this.getInitWidth(),
-							Register.this.isSigned());
+					dataPort.getPeer().setSize(getInitWidth(), isSigned());
 				}
 			}
 
@@ -416,7 +425,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 					getInitialValue().getRep(), getInitialValue()
 							.getAddressStridePolicy());
 			Constant initConstant = new SimpleConstant(initValue,
-					Register.this.getInitWidth(), Register.this.isSigned());
+					getInitWidth(), isSigned());
 
 			// A Constant object representing the register's initial value
 			// Constant initConstant = getInitialValue().toConstant();
@@ -440,11 +449,9 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 				reg.getInternalResetPort().setBus(getResetPort().getPeer());
 
 				if (writers.size() == 1) {
-					assert this.getDataPorts().size() == 2;
-					reg.getEnablePort().setBus(
-							((Port) getDataPorts().get(0)).getPeer());
-					reg.getDataPort().setBus(
-							((Port) getDataPorts().get(1)).getPeer());
+					assert getDataPorts().size() == 2;
+					reg.getEnablePort().setBus(getDataPorts().get(0).getPeer());
+					reg.getDataPort().setBus(getDataPorts().get(1).getPeer());
 				} else {
 					if (doSimpleMerge) {
 						// Merge the data by a Mux. Merge the enable
@@ -489,7 +496,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 						RegisterReferee referee = new RegisterReferee(
 								Register.this, readers, writers);
 						addComponent(referee);
-						referee.connectImplementation(reg, this.getDataPorts());
+						referee.connectImplementation(reg, getDataPorts());
 						// The referee ends up being a feedback point b/c
 						// it manages both the read and write sides of the
 						// reg.
@@ -524,13 +531,14 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 				addComponent(outSwapper);
 			}
 
-			this.registerOutput = makeExit(0).makeDataBus();
-			this.registerOutput.setSize(getInitWidth(), isSigned());
+			registerOutput = makeExit(0).makeDataBus();
+			registerOutput.setSize(getInitWidth(), isSigned());
 			// Regardless of whether it is arbitrated, a read from a
 			// register is just a wire from the reg output.
-			this.registerOutput.getPeer().setBus(dataSource);
+			registerOutput.getPeer().setBus(dataSource);
 		}
 
+		@Override
 		public String toString() {
 			// String oneBits = (oneBitRegs == null ?
 			// "null":Integer.toString(oneBitRegs.length));
@@ -542,24 +550,28 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 		}
 
 		public Bus getRegisterOutput() {
-			return this.registerOutput;
+			return registerOutput;
 		}
 
+		@Override
 		public boolean isOpaque() {
 			return true;
 		}
 
+		@Override
 		public void accept(Visitor v) {
 			// assert false : "Nobody should visit this directly. " +
 			// getClass(); // nobody should be visiting this component directly
 			throw new UnexpectedVisitationException();
 		}
 
+		@Override
 		public boolean removeDataBus(Bus bus) {
 			assert false : "remove data bus not supported on " + this;
 			return false;
 		}
 
+		@Override
 		public boolean removeDataPort(Port port) {
 			assert false : "remove data port not supported on " + this;
 			return false;

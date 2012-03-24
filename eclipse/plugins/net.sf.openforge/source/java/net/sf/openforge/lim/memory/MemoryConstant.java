@@ -54,7 +54,7 @@ public abstract class MemoryConstant extends Constant {
 	 */
 	public MemoryConstant(int bitWidth, boolean isSigned) {
 		super(bitWidth, isSigned);
-		this.bigEndian = !getGenericJob().getUnscopedBooleanOptionValue(
+		bigEndian = !getGenericJob().getUnscopedBooleanOptionValue(
 				OptionRegistry.LITTLE_ENDIAN);
 
 	}
@@ -67,7 +67,7 @@ public abstract class MemoryConstant extends Constant {
 	 *         endian order. False if internally it is in little endian order.
 	 */
 	protected boolean isBigEndian() {
-		return this.bigEndian;
+		return bigEndian;
 	}
 
 	/**
@@ -78,6 +78,7 @@ public abstract class MemoryConstant extends Constant {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 		AURepBundle thisRep = getRepBundle();
@@ -96,7 +97,7 @@ public abstract class MemoryConstant extends Constant {
 			thisRep = new AURepBundle(newRep, thisRep.getBitsPerUnit());
 		}
 
-		if (this.isBigEndian()) {
+		if (isBigEndian()) {
 			AddressableUnit[] swapped = swapEndian(thisRep.getRep());
 			thisRep = new AURepBundle(swapped, thisRep.getBitsPerUnit());
 		}
@@ -137,6 +138,7 @@ public abstract class MemoryConstant extends Constant {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		return false;
 	}

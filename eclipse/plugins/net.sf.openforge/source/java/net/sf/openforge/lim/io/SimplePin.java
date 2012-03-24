@@ -96,13 +96,14 @@ public abstract class SimplePin extends Component implements Referenceable,
 			throw new IllegalArgumentException("Illegal pin name '" + pinName
 					+ "'");
 
-		this.bitWidth = width;
-		this.name = pinName;
+		bitWidth = width;
+		name = pinName;
 
 		// Naming stuff
 		this.setIDLogical(pinName);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -111,14 +112,14 @@ public abstract class SimplePin extends Component implements Referenceable,
 	 * Allows sub-classes accesses to the source bus.
 	 */
 	protected Bus getSource() {
-		return this.source;
+		return source;
 	}
 
 	/**
 	 * Allows sub-classes accesses to the sink port.
 	 */
 	protected Port getSink() {
-		return this.sink;
+		return sink;
 	}
 
 	/**
@@ -127,14 +128,14 @@ public abstract class SimplePin extends Component implements Referenceable,
 	 * @return an int, defined as the number of <b>bits</b> of this pin.
 	 */
 	public int getWidth() {
-		return this.bitWidth;
+		return bitWidth;
 	}
 
 	/**
 	 * Retrieves the name given to this simple pin at contstruction.
 	 */
 	public String getName() {
-		return this.name;
+		return name;
 	}
 
 	/**
@@ -150,18 +151,17 @@ public abstract class SimplePin extends Component implements Referenceable,
 
 	protected void buildPort() {
 		if (getSink() == null) {
-			this.sink = makeDataPort(Component.SIDEBAND);
-			this.sink.setSize(getWidth(), false);
+			sink = makeDataPort(Component.SIDEBAND);
+			sink.setSize(getWidth(), false);
 		}
 	}
 
 	protected void buildBus() {
 		if (getSource() == null) {
 			assert getExit(Exit.SIDEBAND) == null;
-			this.source = makeExit(0, Exit.SIDEBAND).makeDataBus(
-					Component.SIDEBAND);
-			this.source.setSize(getWidth(), false);
-			this.source.setIDLogical(getName());
+			source = makeExit(0, Exit.SIDEBAND).makeDataBus(Component.SIDEBAND);
+			source.setSize(getWidth(), false);
+			source.setIDLogical(getName());
 		}
 	}
 
@@ -187,13 +187,12 @@ public abstract class SimplePin extends Component implements Referenceable,
 		// rules. No need to have this be a component with all that
 		// overhead
 		if (getSource() != null && getSource().isConnected()) {
-			throw new UnsupportedOperationException("Source bus of '"
-					+ this.name
+			throw new UnsupportedOperationException("Source bus of '" + name
 					+ "' is already connected.  Cannot connect the sink port");
 		}
 		if (getSink().isConnected()) {
-			throw new UnsupportedOperationException("Sink port of '"
-					+ this.name + "' is already connected");
+			throw new UnsupportedOperationException("Sink port of '" + name
+					+ "' is already connected");
 		}
 		getSink().setBus(valueBus);
 	}
@@ -256,8 +255,7 @@ public abstract class SimplePin extends Component implements Referenceable,
 
 		public boolean isInput() {
 
-			return SimplePin.this.sink == null
-					|| !SimplePin.this.sink.isConnected();
+			return sink == null || !sink.isConnected();
 		}
 	}
 
@@ -268,6 +266,7 @@ public abstract class SimplePin extends Component implements Referenceable,
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	protected boolean pushValuesForward() {
 		if (getSink() != null)
 			return getSink().pushValueForward();
@@ -292,6 +291,7 @@ public abstract class SimplePin extends Component implements Referenceable,
 	 * @param to
 	 *            the latter accessor in source document order.
 	 */
+	@Override
 	public int getSpacing(Referencer from, Referencer to) {
 		if (from instanceof SimplePinWrite)
 			return 1;
@@ -307,6 +307,7 @@ public abstract class SimplePin extends Component implements Referenceable,
 	 * Returns -1 indicating that the referencers must be scheduled using the
 	 * default DONE to GO spacing.
 	 */
+	@Override
 	public int getGoSpacing(Referencer from, Referencer to) {
 		return -1;
 	}
@@ -314,9 +315,10 @@ public abstract class SimplePin extends Component implements Referenceable,
 	/**
 	 * For debug.
 	 */
+	@Override
 	public String toString() {
-		return "SimplePin<" + Integer.toHexString(this.hashCode()) + ">="
-				+ this.getName();
+		return "SimplePin<" + Integer.toHexString(hashCode()) + ">="
+				+ getName();
 	}
 
 }// SimplePin

@@ -60,7 +60,7 @@ public abstract class SimplePinAccess extends Module implements Referencer,
 			throw new IllegalArgumentException("Target pin cannot be null");
 		}
 
-		this.targetPin = pin;
+		targetPin = pin;
 	}
 
 	/**
@@ -69,10 +69,12 @@ public abstract class SimplePinAccess extends Module implements Referencer,
 	 * @param visitor
 	 *            a Visitor
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
 
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		// TBD
 		assert false;
@@ -85,7 +87,7 @@ public abstract class SimplePinAccess extends Module implements Referencer,
 	 * @return a non null 'SimplePin'.
 	 */
 	public SimplePin getTargetPin() {
-		return this.targetPin;
+		return targetPin;
 	}
 
 	/**
@@ -95,6 +97,7 @@ public abstract class SimplePinAccess extends Module implements Referencer,
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean isBalanceable() {
 		return false;
 	}
@@ -105,8 +108,9 @@ public abstract class SimplePinAccess extends Module implements Referencer,
 	 * 
 	 * @return a non-null {@link Referenceable}
 	 */
+	@Override
 	public Referenceable getReferenceable() {
-		return this.getTargetPin();
+		return getTargetPin();
 	}
 
 	/**
@@ -114,8 +118,9 @@ public abstract class SimplePinAccess extends Module implements Referencer,
 	 * 
 	 * @return a non-null StateHolder
 	 */
+	@Override
 	public StateHolder getStateHolder() {
-		return this.getTargetPin();
+		return getTargetPin();
 	}
 
 }// SimplePinAccess

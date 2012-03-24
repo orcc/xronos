@@ -47,7 +47,7 @@ public abstract class ValueOp extends Operation {
 		Exit exit = makeExit(1);
 		// setMainExit(exit);
 		// exit.getDoneBus().setUsed(false);
-		this.valueBus = (Bus) exit.getDataBuses().iterator().next();
+		valueBus = exit.getDataBuses().iterator().next();
 	}
 
 	/**
@@ -60,6 +60,7 @@ public abstract class ValueOp extends Operation {
 	/**
 	 * Returns true if this ValueOp returns a floating point value.
 	 */
+	@Override
 	public boolean isFloat() {
 		return getValueBus().isFloat();
 	}
@@ -68,10 +69,11 @@ public abstract class ValueOp extends Operation {
 	 * Calls the super, then removes any reference to the given bus in this
 	 * class.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
 			if (bus == valueBus)
-				this.valueBus = null;
+				valueBus = null;
 			return true;
 		}
 		return false;
@@ -84,10 +86,11 @@ public abstract class ValueOp extends Operation {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		ValueOp clone = (ValueOp) super.clone();
-		clone.valueBus = (Bus) clone.getExit(Exit.DONE).getDataBuses()
-				.iterator().next();
+		clone.valueBus = clone.getExit(Exit.DONE).getDataBuses().iterator()
+				.next();
 		return clone;
 	}
 

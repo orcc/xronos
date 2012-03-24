@@ -94,7 +94,7 @@ public class Task extends ID implements Visitable, Cloneable {
 	}
 
 	public Allocation getMemoryKey() {
-		return this.memoryKey;
+		return memoryKey;
 	}
 
 	/**
@@ -105,21 +105,22 @@ public class Task extends ID implements Visitable, Cloneable {
 	 *            a value of type 'Constant'
 	 */
 	public void setHiddenConstant(Constant constant) {
-		assert this.thisConstant == null : "Can only set the hidden constant once";
-		this.thisConstant = constant;
-		connectConstant(this.call, this.thisConstant);
+		assert thisConstant == null : "Can only set the hidden constant once";
+		thisConstant = constant;
+		connectConstant(call, thisConstant);
 	}
 
 	public Constant getThisConstant() {
-		return this.thisConstant;
+		return thisConstant;
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
 
 	public int getMaxGateDepth() {
-		return this.maxGateDepth;
+		return maxGateDepth;
 	}
 
 	public void setMaxGateDepth(int maxGateDepth) {
@@ -135,11 +136,11 @@ public class Task extends ID implements Visitable, Cloneable {
 	}
 
 	public void setBalanced(boolean value) {
-		this.isBalanced = value;
+		isBalanced = value;
 	}
 
 	public boolean isBalanced() {
-		return this.isBalanced;
+		return isBalanced;
 	}
 
 	/**
@@ -147,7 +148,7 @@ public class Task extends ID implements Visitable, Cloneable {
 	 * of GO for this task in order to maintain data integrity.
 	 */
 	public void setGoSpacing(int value) {
-		this.goSpacing = value;
+		goSpacing = value;
 	}
 
 	/**
@@ -157,7 +158,7 @@ public class Task extends ID implements Visitable, Cloneable {
 	 * spacing could not be determined.
 	 */
 	public int getGoSpacing() {
-		return this.goSpacing;
+		return goSpacing;
 	}
 
 	/**
@@ -177,7 +178,7 @@ public class Task extends ID implements Visitable, Cloneable {
 	 *            a <code>boolean</code> value
 	 */
 	public void setKickerRequired(boolean value) {
-		this.kickerRequired = value;
+		kickerRequired = value;
 	}
 
 	/**
@@ -187,7 +188,7 @@ public class Task extends ID implements Visitable, Cloneable {
 	 * @return a <code>boolean</code> value
 	 */
 	public boolean isKickerRequired() {
-		return this.kickerRequired;
+		return kickerRequired;
 	}
 
 	/**
@@ -198,6 +199,7 @@ public class Task extends ID implements Visitable, Cloneable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}
@@ -208,7 +210,7 @@ public class Task extends ID implements Visitable, Cloneable {
 		if (call.getEntries().size() == 0)
 			entry = call.makeEntry(null);
 		else
-			entry = (Entry) call.getEntries().get(0);
+			entry = call.getEntries().get(0);
 
 		Dependency dep = new DataDependency(constant.getValueBus());
 		entry.addDependency(call.getThisPort(), dep);

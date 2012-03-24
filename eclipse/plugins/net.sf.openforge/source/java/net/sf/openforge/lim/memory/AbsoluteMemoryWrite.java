@@ -122,7 +122,7 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 		insertComponent(sizeConst, 0);
 
 		// Create the deferred (address) constant.
-		this.addrConst = new LocationConstant(target, maxAddressWidth, target
+		addrConst = new LocationConstant(target, maxAddressWidth, target
 				.getAbsoluteBase().getLogicalMemory().getAddressStridePolicy());
 		insertComponent(addrConst, 0);
 
@@ -133,13 +133,13 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 		/*
 		 * Connect the MemoryWrite's data input to the value port's peer.
 		 */
-		this.valuePort = makeDataPort();
+		valuePort = makeDataPort();
 		final Bus valueBus = valuePort.getPeer();
 		// valueBus.setBits(getDataWidth());
 
 		// valueBus.setSize(addressableLocations * 8, false);
 
-		final Entry writeEntry = (Entry) memoryWrite.getEntries().get(0);
+		final Entry writeEntry = memoryWrite.getEntries().get(0);
 		writeEntry.addDependency(memoryWrite.getDataPort(), new DataDependency(
 				valueBus));
 
@@ -154,12 +154,13 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 	 * Gets the input data {@link Port}.
 	 */
 	public Port getValuePort() {
-		return this.valuePort;
+		return valuePort;
 	}
 
 	/**
 	 * Returns true
 	 */
+	@Override
 	public boolean isWrite() {
 		return true;
 	}
@@ -169,7 +170,7 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 	 * the memory.
 	 */
 	public LocationConstant getAddressConstant() {
-		return this.addrConst;
+		return addrConst;
 	}
 
 	/**
@@ -179,10 +180,11 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 	 *            the port to remove
 	 * @return true if the port was removed.
 	 */
+	@Override
 	public boolean removeDataPort(Port port) {
 		final boolean isRemoved = super.removeDataPort(port);
 		if (isRemoved && (port == getValuePort())) {
-			this.valuePort = null;
+			valuePort = null;
 		}
 		return isRemoved;
 	}
@@ -201,6 +203,7 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 	 *            the instance to be visited with
 	 *            {@link Visitor#visit(AbsoluteMemoryWrite)}
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -209,16 +212,18 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 	 * Remove the underlying {@link MemoryAccess} as a reference of the
 	 * targetted memory.
 	 */
+	@Override
 	public void removeFromMemory() {
 		super.removeFromMemory();
 		getLogicalMemoryPort().getLogicalMemory().removeLocationConstant(
 				addrConst);
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == this.addrConst)
-			this.addrConst = null;
+		if (component == addrConst)
+			addrConst = null;
 		return ret;
 	}
 
@@ -230,6 +235,7 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 	 * 
 	 * @return the clone
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		/*
 		 * final LocationConstant addrConst = getAddressConstant(); final
@@ -258,11 +264,12 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 		return clone;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		AbsoluteMemoryWrite clone = (AbsoluteMemoryWrite) moduleClone;
-		clone.valuePort = getPortClone(this.valuePort, cloneMap);
-		clone.addrConst = (LocationConstant) cloneMap.get(this.addrConst);
+		clone.valuePort = getPortClone(valuePort, cloneMap);
+		clone.addrConst = (LocationConstant) cloneMap.get(addrConst);
 	}
 
 }// AbsoluteMemoryWrite

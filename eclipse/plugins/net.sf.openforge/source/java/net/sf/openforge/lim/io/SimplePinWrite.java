@@ -106,8 +106,9 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 	 * 
 	 * @return true
 	 */
+	@Override
 	public boolean consumesGo() {
-		return this.needsGo;
+		return needsGo;
 	}
 
 	/**
@@ -116,8 +117,8 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 	 * needed.
 	 */
 	public void setGoNeeded(boolean value) {
-		this.needsGo = value;
-		this.getGoPort().setUsed(value);
+		needsGo = value;
+		getGoPort().setUsed(value);
 	}
 
 	/**
@@ -127,9 +128,10 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 	 * @return a value of type 'Port'
 	 */
 	public Port getDataPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -138,18 +140,21 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 	 * Returns the {@link Referenceable} {@link SimplePin} which this node
 	 * targets.
 	 */
+	@Override
 	public Referenceable getReferenceable() {
-		return this.targetPin;
+		return targetPin;
 	}
 
 	/**
 	 * This accessor modifies the {@link Referenceable} target state so it may
 	 * not execute in parallel with other accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return true;
 	}
 
+	@Override
 	public boolean pushValuesForward() {
 		// Do nothing except ensure that the sideband write bus has a
 		// value as there is no push-forward to the pin.
@@ -158,13 +163,13 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 		// data port with the GO. Thus this is NOT a passthrough like
 		// that.
 		if (!getExit(Exit.DONE).getDataBuses().isEmpty()) {
-			((Bus) getExit(Exit.DONE).getDataBuses().get(0))
-					.pushValueForward(new Value(this.targetPin.getWidth(),
-							false));
+			getExit(Exit.DONE).getDataBuses().get(0)
+					.pushValueForward(new Value(targetPin.getWidth(), false));
 		}
 		return false;
 	}
 
+	@Override
 	public boolean pushValuesBackward() {
 		Exit exit = getExit(Exit.DONE);
 		Bus sideband = exit.getDataBuses().isEmpty() ? null : (Bus) exit
@@ -173,7 +178,7 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 		if (sideband != null && sideband.isConnected()) {
 			newValue = sideband.getValue();
 		} else {
-			newValue = new Value(this.targetPin.getWidth(), false);
+			newValue = new Value(targetPin.getWidth(), false);
 		}
 
 		return getDataPort().pushValueBackward(newValue);

@@ -67,7 +67,7 @@ public abstract class TernaryOp extends Operation {
 	// }
 
 	public Bus getResultBus() {
-		return (Bus) getExit(Exit.DONE).getDataBuses().iterator().next();
+		return getExit(Exit.DONE).getDataBuses().iterator().next();
 	}
 
 	/**
@@ -77,6 +77,7 @@ public abstract class TernaryOp extends Operation {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		TernaryOp clone = (TernaryOp) super.clone();
 

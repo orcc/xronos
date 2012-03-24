@@ -50,6 +50,7 @@ class LoopGraph extends ModuleGraph {
 		graphComponentsDelayed();
 	}
 
+	@Override
 	protected void graphComponents() {
 		/*
 		 * Delay until we are fully constructed.
@@ -59,14 +60,15 @@ class LoopGraph extends ModuleGraph {
 	private void graphComponentsDelayed() {
 		Loop loop = (Loop) getModule();
 		Reg controlRegister = loop.getControlRegister();
-		Collection<Reg> dataRegisters =  loop.getDataRegisters();
+		Collection<Reg> dataRegisters = loop.getDataRegisters();
 
-		Collection<Component> components = new HashSet<Component>(loop.getComponents());
+		Collection<Component> components = new HashSet<Component>(
+				loop.getComponents());
 		components.remove(controlRegister);
 		components.removeAll(dataRegisters);
 
 		for (Component comp : components) {
-			graph((Component) comp, nodeCount++);
+			graph(comp, nodeCount++);
 		}
 		if (controlRegister != null) {
 			graphRegister(controlRegister);
@@ -80,8 +82,8 @@ class LoopGraph extends ModuleGraph {
 		}
 
 		for (Entry<Reg, FeedbackRegSinkNode> entry : sinkNodeMap.entrySet()) {
-			Reg reg = (Reg) entry.getKey();
-			ComponentNode regNode = (ComponentNode) entry.getValue();
+			Reg reg = entry.getKey();
+			ComponentNode regNode = entry.getValue();
 			graphEdge(regNode, reg.getEnablePort());
 			graphEdge(regNode, reg.getDataPort());
 		}

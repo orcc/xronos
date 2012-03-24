@@ -29,7 +29,6 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: InPinBuf.java 280 2006-08-11 17:00:32Z imiller $
  */
 public class InPinBuf extends PinBuf {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 280 $";
 
 	private Physical phys = null;
 
@@ -43,6 +42,7 @@ public class InPinBuf extends PinBuf {
 	/**
 	 * Gets the latency of a reference's exit.
 	 */
+	@Override
 	public Latency getLatency(Exit exit) {
 		/*
 		 * tbd.
@@ -50,10 +50,12 @@ public class InPinBuf extends PinBuf {
 		return Latency.ZERO;
 	}
 
+	@Override
 	public boolean consumesReset() {
 		return false;
 	}
 
+	@Override
 	public boolean consumesClock() {
 		net.sf.openforge.forge.api.pin.Buffer b = getPin().getApiPin();
 		if (b != null) {
@@ -100,7 +102,7 @@ public class InPinBuf extends PinBuf {
 
 		Physical(int size, int piplinedDepth) {
 			this.size = size;
-			this.pDepth = piplinedDepth;
+			pDepth = piplinedDepth;
 
 			Exit exit = makeExit(0);
 
@@ -109,7 +111,7 @@ public class InPinBuf extends PinBuf {
 			// getInputPort().getPeer().setSize(size, true);
 
 			// make a result bus
-			resultBus = (Bus) exit.makeDataBus();
+			resultBus = exit.makeDataBus();
 			resultBus.setUsed(true);
 			resultBus.setSize(size, true);
 		}
@@ -162,9 +164,10 @@ public class InPinBuf extends PinBuf {
 		 * @return a value of type 'Port'
 		 */
 		public Port getInputPort() {
-			return (Port) getDataPorts().get(0);
+			return getDataPorts().get(0);
 		}
 
+		@Override
 		public void accept(Visitor v) {
 			throw new UnexpectedVisitationException(
 					"InPinBuf's should not be visited!");

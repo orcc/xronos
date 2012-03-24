@@ -27,7 +27,6 @@ package net.sf.openforge.lim;
  * @version $Id: ResetDependency.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class ResetDependency extends Dependency {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	/**
 	 * Constructs a ResetDependency.
@@ -39,10 +38,12 @@ public class ResetDependency extends Dependency {
 		super(logicalBus);
 	}
 
+	@Override
 	public Dependency createSameType(Bus logicalBus) {
 		return new ResetDependency(logicalBus);
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof ResetDependency) {
 			return super.equals(obj);
@@ -50,6 +51,7 @@ public class ResetDependency extends Dependency {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return super.hashCode();
 	}

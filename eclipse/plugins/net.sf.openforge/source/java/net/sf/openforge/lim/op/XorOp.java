@@ -55,6 +55,7 @@ public class XorOp extends BinaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -66,6 +67,7 @@ public class XorOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return isBitwisePassthrough() ? 0 : 1;
 	}
@@ -75,6 +77,7 @@ public class XorOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
 
@@ -113,11 +116,10 @@ public class XorOp extends BinaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger lval = (SizedInteger) portValues
-				.get(getLeftDataPort());
-		final SizedInteger rval = (SizedInteger) portValues
-				.get(getRightDataPort());
+		final SizedInteger lval = portValues.get(getLeftDataPort());
+		final SizedInteger rval = portValues.get(getRightDataPort());
 		return Collections.singletonMap(getResultBus(), lval.xor(rval));
 	}
 
@@ -142,6 +144,7 @@ public class XorOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -216,6 +219,7 @@ public class XorOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
@@ -243,6 +247,7 @@ public class XorOp extends BinaryOp implements Emulatable {
 	 * =================================================
 	 */
 
+	@Override
 	protected boolean isSignificant(Bit leftBit, Bit rightBit) {
 		if ((leftBit == Bit.ZERO) || (rightBit == Bit.ZERO)) {
 			return false;

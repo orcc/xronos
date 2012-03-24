@@ -45,6 +45,7 @@ public abstract class Referee extends Module {
 	/**
 	 * Throws an exception, replacement in this class not supported.
 	 */
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		throw new UnsupportedOperationException("Cannot replace components in "
 				+ getClass());
@@ -58,6 +59,7 @@ public abstract class Referee extends Module {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}

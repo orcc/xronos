@@ -36,10 +36,12 @@ class FeedbackRegSourceNode extends ComponentNode {
 		super(reg, id, fontSize);
 	}
 
+	@Override
 	protected boolean needPortGraph() {
 		return false;
 	}
 
+	@Override
 	protected String getBodyLabel() {
 		StringBuffer labelBuf = new StringBuffer();
 		labelBuf.append(getShortClassName(getComponent()));

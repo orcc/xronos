@@ -37,6 +37,7 @@ class ConstantNode extends ComponentNode {
 		super(constant, id, fontSize);
 	}
 
+	@Override
 	protected String getBodyLabel() {
 		String label = super.getBodyLabel();
 		Constant constant = (Constant) getComponent();

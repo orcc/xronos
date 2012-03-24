@@ -21,14 +21,12 @@
 
 package net.sf.openforge.lim;
 
-
 /**
  * A {@link Register} write access.
  * 
  * @version $Id: RegisterWrite.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class RegisterWrite extends Access implements StateAccessor {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	/** records whether this read is a signed memory read. */
 	private boolean isSigned;
@@ -48,6 +46,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -57,6 +56,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 	 * 
 	 * @return the targetted Register
 	 */
+	@Override
 	public StateHolder getStateHolder() {
 		return getRegister();
 	}
@@ -64,6 +64,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 	/**
 	 * Returns true if the accessed register is stores a floating point value.
 	 */
+	@Override
 	public boolean isFloat() {
 		return getRegister().isFloat();
 	}
@@ -74,11 +75,11 @@ public class RegisterWrite extends Access implements StateAccessor {
 	 * @return a value of type 'boolean'
 	 */
 	public boolean isSigned() {
-		return this.isSigned;
+		return isSigned;
 	}
 
 	public Port getDataPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
 	public Bus getSidebandWEBus() {
@@ -86,7 +87,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 			return null;
 		// The ordering here MUST match the sizing applied in
 		// makeSidebandConnections
-		return (Bus) getExit(Exit.SIDEBAND).getDataBuses().get(0);
+		return getExit(Exit.SIDEBAND).getDataBuses().get(0);
 	}
 
 	public Bus getSidebandDataBus() {
@@ -94,7 +95,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 			return null;
 		// The ordering here MUST match the sizing applied in
 		// makeSidebandConnections
-		return (Bus) getExit(Exit.SIDEBAND).getDataBuses().get(1);
+		return getExit(Exit.SIDEBAND).getDataBuses().get(1);
 	}
 
 	/**
@@ -110,13 +111,14 @@ public class RegisterWrite extends Access implements StateAccessor {
 		we.setSize(1, true);
 
 		Bus data = exit.makeDataBus(Component.SIDEBAND);
-		data.setSize(getRegister().getInitWidth(), this.isSigned());
+		data.setSize(getRegister().getInitWidth(), isSigned());
 	}
 
 	/**
 	 * Tests whether this component requires a connection to its <em>go</em>
 	 * {@link Port} in order to commence processing.
 	 */
+	@Override
 	public boolean consumesGo() {
 		return true;
 	}
@@ -134,6 +136,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 	 * This accessor modifies the {@link Referenceable} target state so it may
 	 * not execute in parallel with other accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return true;
 	}
@@ -149,6 +152,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -160,7 +164,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 			mod |= getSidebandWEBus().pushValueForward(weValue);
 
 			Value inValue = getDataPort().getValue();
-			Value newValue = new Value(inValue.getSize(), this.isSigned());
+			Value newValue = new Value(inValue.getSize(), isSigned());
 			for (int i = 0; i < inValue.getSize(); i++)
 				newValue.setBit(i, inValue.getBit(i));
 			mod |= getSidebandDataBus().pushValueForward(newValue);
@@ -175,15 +179,16 @@ public class RegisterWrite extends Access implements StateAccessor {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
 		Value newValue;
 		if (getSidebandDataBus() == null) {
-			newValue = new Value(getRegister().getInitWidth(), this.isSigned());
+			newValue = new Value(getRegister().getInitWidth(), isSigned());
 		} else {
 			Value resValue = getSidebandDataBus().getValue();
-			newValue = new Value(resValue.getSize(), this.isSigned());
+			newValue = new Value(resValue.getSize(), isSigned());
 			for (int i = 0; i < resValue.getSize(); i++) {
 				Bit bit = resValue.getBit(i);
 				// if (!bit.isCare() || bit.isConstant())
@@ -213,9 +218,10 @@ public class RegisterWrite extends Access implements StateAccessor {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
-		RegisterWrite clone = getRegister().makeWriteAccess(this.isSigned);
-		this.copyComponentAttributes(clone);
+		RegisterWrite clone = getRegister().makeWriteAccess(isSigned);
+		copyComponentAttributes(clone);
 		return clone;
 	}
 

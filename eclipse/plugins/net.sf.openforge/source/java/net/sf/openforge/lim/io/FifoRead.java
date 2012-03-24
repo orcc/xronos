@@ -92,8 +92,8 @@ public class FifoRead extends FifoAccess implements Visitable {
 		Exit exit = getExit(Exit.DONE);
 		exit.setLatency(Latency.ZERO.open(exit));
 
-		this.setProducesDone(true);
-		this.setDoneSynchronous(true);
+		setProducesDone(true);
+		setDoneSynchronous(true);
 
 		/*
 		 * Build up the correct logic in this module to implement the
@@ -125,9 +125,9 @@ public class FifoRead extends FifoAccess implements Visitable {
 		// 1 fifo ACK write
 		// Needs RESET b/c it is in the control path
 		final Reg flop = Reg.getConfigurableReg(Reg.REGR, "fifoReadFlop");
-		flop.getClockPort().setBus(this.getClockPort().getPeer());
-		flop.getResetPort().setBus(this.getResetPort().getPeer());
-		flop.getInternalResetPort().setBus(this.getResetPort().getPeer());
+		flop.getClockPort().setBus(getClockPort().getPeer());
+		flop.getResetPort().setBus(getResetPort().getPeer());
+		flop.getInternalResetPort().setBus(getResetPort().getPeer());
 		// Because the flop is a feedback point it needs to be
 		// pre-initialized with its value
 		flop.getResultBus().pushValueForward(new Value(1, false));
@@ -141,14 +141,14 @@ public class FifoRead extends FifoAccess implements Visitable {
 				targetInterface.getSendPin());
 		final SimplePinWrite ack = new SimplePinWrite(
 				targetInterface.getAckPin());
-		this.addComponent(flop);
-		this.addComponent(pending);
-		this.addComponent(done_and);
-		this.addComponent(flop_and);
-		this.addComponent(not);
-		this.addComponent(din);
-		this.addComponent(exists);
-		this.addComponent(ack);
+		addComponent(flop);
+		addComponent(pending);
+		addComponent(done_and);
+		addComponent(flop_and);
+		addComponent(not);
+		addComponent(din);
+		addComponent(exists);
+		addComponent(ack);
 
 		// Hook fifo DIN pin to the result of the module. Easy
 		// straight wire through.
@@ -176,7 +176,7 @@ public class FifoRead extends FifoAccess implements Visitable {
 		flop.getDataPort().setBus(flop_and.getResultBus());
 
 		// Define the feedback point
-		this.feedbackPoints = Collections.singleton(flop);
+		feedbackPoints = Collections.singleton(flop);
 	}
 
 	public FifoRead(NativeInput targetInterface) {
@@ -184,8 +184,8 @@ public class FifoRead extends FifoAccess implements Visitable {
 		Exit exit = makeExit(1);
 		exit.setLatency(Latency.ZERO.open(exit));
 
-		this.setProducesDone(true);
-		this.setDoneSynchronous(true);
+		setProducesDone(true);
+		setDoneSynchronous(true);
 
 		// Build up the correct logic in this module to implement the
 		// functionality:
@@ -215,9 +215,9 @@ public class FifoRead extends FifoAccess implements Visitable {
 
 		// Needs RESET b/c it is in the control path
 		final Reg flop = Reg.getConfigurableReg(Reg.REGR, "fifoReadFlop");
-		flop.getClockPort().setBus(this.getClockPort().getPeer());
-		flop.getResetPort().setBus(this.getResetPort().getPeer());
-		flop.getInternalResetPort().setBus(this.getResetPort().getPeer());
+		flop.getClockPort().setBus(getClockPort().getPeer());
+		flop.getResetPort().setBus(getResetPort().getPeer());
+		flop.getInternalResetPort().setBus(getResetPort().getPeer());
 		// Because the flop is a feedback point it needs to be
 		// pre-initialized with its value
 		flop.getResultBus().pushValueForward(new Value(1, false));
@@ -225,9 +225,9 @@ public class FifoRead extends FifoAccess implements Visitable {
 
 		final SimplePinRead din = new SimplePinRead(
 				targetInterface.getDataPin());
-		this.addComponent(flop);
-		this.addComponent(pending);
-		this.addComponent(din);
+		addComponent(flop);
+		addComponent(pending);
+		addComponent(din);
 
 		// Hook fifo DIN pin to the result of the module. Easy
 		// straight wire through.
@@ -244,7 +244,7 @@ public class FifoRead extends FifoAccess implements Visitable {
 		flop.getDataPort().setBus(pending.getResultBus());
 
 		// Define the feedback point
-		this.feedbackPoints = Collections.singleton(flop);
+		feedbackPoints = Collections.singleton(flop);
 	}
 
 	/**
@@ -292,7 +292,7 @@ public class FifoRead extends FifoAccess implements Visitable {
 	public Set<Component> getFeedbackPoints() {
 		Set<Component> feedback = new HashSet<Component>();
 		feedback.addAll(super.getFeedbackPoints());
-		feedback.addAll(this.feedbackPoints);
+		feedback.addAll(feedbackPoints);
 
 		return feedback;
 	}
@@ -312,12 +312,12 @@ public class FifoRead extends FifoAccess implements Visitable {
 		// Re-set the feedback points to point to the correct register
 		// in the clone instead of the register in the original IFF it
 		// exists... subclasses may have alternate structure
-		if (this.feedbackPoints.isEmpty()) {
+		if (feedbackPoints.isEmpty()) {
 			((FifoRead) clone).feedbackPoints = Collections.emptySet();
 		} else {
 			Set cloneSet = new HashSet();
 			((FifoRead) clone).feedbackPoints = cloneSet;
-			for (Iterator iter = this.feedbackPoints.iterator(); iter.hasNext();)
+			for (Iterator iter = feedbackPoints.iterator(); iter.hasNext();)
 				cloneSet.add(cloneMap.get(iter.next()));
 			assert !cloneSet.contains(null);
 		}

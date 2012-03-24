@@ -59,6 +59,7 @@ public class SubtractOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		final int width = Math.max(getLeftDataPort().getValue().getSize(),
 				getRightDataPort().getValue().getSize());
@@ -70,9 +71,10 @@ public class SubtractOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
-		//int muxCount = 0;
+		// int muxCount = 0;
 
 		Value leftValue = getLeftDataPort().getValue();
 		Value rightValue = getRightDataPort().getValue();
@@ -95,7 +97,7 @@ public class SubtractOp extends BinaryOp implements Emulatable {
 			}
 		}
 
-		//muxCount = lutCount - 1;
+		// muxCount = lutCount - 1;
 
 		FPGAResource hwResource = new FPGAResource();
 		hwResource.addLUT(lutCount);
@@ -106,6 +108,7 @@ public class SubtractOp extends BinaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -118,11 +121,10 @@ public class SubtractOp extends BinaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger lval = (SizedInteger) portValues
-				.get(getLeftDataPort());
-		final SizedInteger rval = (SizedInteger) portValues
-				.get(getRightDataPort());
+		final SizedInteger lval = portValues.get(getLeftDataPort());
+		final SizedInteger rval = portValues.get(getRightDataPort());
 		return Collections.singletonMap(getResultBus(), lval.subtract(rval));
 	}
 
@@ -139,6 +141,7 @@ public class SubtractOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -178,12 +181,13 @@ public class SubtractOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
 		Value resultBusValue = getResultBus().getValue();
 
-		for (Port port :  getDataPorts()) {
+		for (Port port : getDataPorts()) {
 			mod |= port.pushValueBackward(resultBusValue);
 		}
 

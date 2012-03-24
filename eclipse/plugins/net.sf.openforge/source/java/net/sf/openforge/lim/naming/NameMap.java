@@ -111,7 +111,7 @@ public class NameMap {
 	 * @return name of the operation in String
 	 */
 	public static String getOpClassBusBaseName(Class<?> opClass) {
-		return (String) opClassToOpBusBaseNameMap.get(opClass);
+		return opClassToOpBusBaseNameMap.get(opClass);
 	}
 
 }

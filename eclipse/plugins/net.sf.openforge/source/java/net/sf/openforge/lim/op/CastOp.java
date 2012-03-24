@@ -63,6 +63,7 @@ public class CastOp extends UnaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -103,8 +104,9 @@ public class CastOp extends UnaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger inVal = (SizedInteger) portValues.get(getDataPort());
+		final SizedInteger inVal = portValues.get(getDataPort());
 		final Value resultValue = getResultBus().getValue();
 		final SizedInteger outVal = SizedInteger.valueOf(inVal.numberValue(),
 				resultValue.getSize(), resultValue.isSigned());
@@ -120,6 +122,7 @@ public class CastOp extends UnaryOp implements Emulatable {
 	 * The value on the data input is propagated to the output and either sign
 	 * extended or truncated to the result size.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -149,6 +152,7 @@ public class CastOp extends UnaryOp implements Emulatable {
 	 * The value on the result bus is propagated to the input port, truncated to
 	 * the input size if needed.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
@@ -245,6 +249,7 @@ public class CastOp extends UnaryOp implements Emulatable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		CastOp clone = (CastOp) super.clone();
 		clone.setSize(castSize);
@@ -257,6 +262,7 @@ public class CastOp extends UnaryOp implements Emulatable {
 			super(size, signed);
 		}
 
+		@Override
 		public boolean isFloat() {
 			return true;
 		}

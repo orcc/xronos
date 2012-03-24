@@ -37,7 +37,6 @@ package net.sf.openforge.lim;
  * @version $Id: Referenceable.java 538 2007-11-21 06:22:39Z imiller $
  */
 public interface Referenceable {
-	static final String _RCS_ = "$Rev: 538 $";
 
 	/**
 	 * Returns the minimum number of clock edges that must seperate the given

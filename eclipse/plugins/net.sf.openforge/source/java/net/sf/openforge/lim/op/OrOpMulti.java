@@ -52,6 +52,7 @@ public class OrOpMulti extends OrOp {
 	/**
 	 * Gets the left-hand side input Port.
 	 */
+	@Override
 	public Port getLeftDataPort() {
 		if (getDataPorts().size() > 0)
 			return super.getLeftDataPort();
@@ -61,6 +62,7 @@ public class OrOpMulti extends OrOp {
 	/**
 	 * Gets the right-hand side input Port.
 	 */
+	@Override
 	public Port getRightDataPort() {
 		if (getDataPorts().size() > 1)
 			return super.getRightDataPort();
@@ -75,12 +77,13 @@ public class OrOpMulti extends OrOp {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 		final Value resultValue = getResultBus().getValue();
 		SizedInteger result = SizedInteger.valueOf(0, resultValue.getSize(),
 				resultValue.isSigned());
 		for (Port port : getDataPorts()) {
-			final SizedInteger arg = (SizedInteger) portValues.get(port);
+			final SizedInteger arg = portValues.get(port);
 			result = result.or(arg);
 		}
 		return Collections.singletonMap(getResultBus(), result);
@@ -91,6 +94,7 @@ public class OrOpMulti extends OrOp {
 	 * 
 	 * @return a FPGAResource object
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
 
@@ -121,6 +125,7 @@ public class OrOpMulti extends OrOp {
 		return hwResource;
 	}
 
+	@Override
 	protected boolean isBitwisePassthrough() {
 		// An array of whether each bit is significant or not (any
 		// constant ONE bit in any value makes a position not significant)
@@ -131,7 +136,7 @@ public class OrOpMulti extends OrOp {
 			careBits[i] = 0;
 		}
 
-		for (Port port :  getDataPorts()) {
+		for (Port port : getDataPorts()) {
 			Value value = port.getValue();
 			assert value.getSize() <= careBits.length;
 			for (int i = 0; i < value.getSize(); i++) {

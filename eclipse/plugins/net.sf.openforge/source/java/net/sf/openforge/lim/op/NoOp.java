@@ -190,6 +190,7 @@ public class NoOp extends Operation implements Emulatable {
 		return reason;
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -199,13 +200,14 @@ public class NoOp extends Operation implements Emulatable {
 	 * bus.
 	 */
 	public Bus getResultBus() {
-		return (Bus) exit.getDataBuses().iterator().next();
+		return exit.getDataBuses().iterator().next();
 	}
 
 	/**
 	 * Returns true if all data buses on this NoOp are float types, or false if
 	 * there are no data buses.
 	 */
+	@Override
 	public boolean isFloat() {
 		for (Bus bus : getExit().getDataBuses()) {
 			if (!bus.isFloat())
@@ -215,9 +217,10 @@ public class NoOp extends Operation implements Emulatable {
 		return getExit().getDataBuses().size() > 0;
 	}
 
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		NoOp clone = (NoOp) super.clone();
-		clone.exit = clone.getExit(this.exit.getTag());
+		clone.exit = clone.getExit(exit.getTag());
 		return clone;
 	}
 
@@ -229,11 +232,13 @@ public class NoOp extends Operation implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 		final Map<Bus, SizedInteger> resultMap = new HashMap<Bus, SizedInteger>();
 		// FIXME: put an implicit iterator
 		final Iterator<Port> portIter = getDataPorts().iterator();
-		final Iterator<Bus> busIter = getExit(Exit.DONE).getDataBuses().iterator();
+		final Iterator<Bus> busIter = getExit(Exit.DONE).getDataBuses()
+				.iterator();
 		while (portIter.hasNext()) {
 			resultMap.put(busIter.next(), portValues.get(portIter.next()));
 		}
@@ -245,6 +250,7 @@ public class NoOp extends Operation implements Emulatable {
 	 * prop rules implementation.
 	 */
 
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -254,7 +260,7 @@ public class NoOp extends Operation implements Emulatable {
 		if (ports.size() == buses.size()) {
 			Iterator<Bus> iter = buses.iterator();
 			for (Port p : ports) {
-				Bus b = (Bus) iter.next();
+				Bus b = iter.next();
 				boolean m = b.pushValueForward(p.getValue());
 				if (m)
 					mod = true;
@@ -264,6 +270,7 @@ public class NoOp extends Operation implements Emulatable {
 		return mod;
 	}
 
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
@@ -273,7 +280,7 @@ public class NoOp extends Operation implements Emulatable {
 		if (ports.size() == buses.size()) {
 			Iterator<Bus> iter = buses.iterator();
 			for (Port p : ports) {
-				final Bus b = (Bus) iter.next();
+				final Bus b = iter.next();
 				final Value resultBusValue = b.getValue();
 				if (!p.getValue().isConstant()) {
 					Value newPushBackValue = new Value(p.getValue().getSize(),

@@ -32,7 +32,6 @@ package net.sf.openforge.lim;
  * @version $Id: Referencer.java 62 2005-11-17 18:10:30Z imiller $
  */
 public interface Referencer {
-	static final String _RCS_ = "$Rev: 62 $";
 
 	/**
 	 * Returns the {@link Referenceable} target of this Referencer.

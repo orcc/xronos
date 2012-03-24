@@ -40,10 +40,12 @@ public class WaitDependency extends ControlDependency {
 		super(logicalBus);
 	}
 
+	@Override
 	public Dependency createSameType(Bus logicalBus) {
 		return new WaitDependency(logicalBus);
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof WaitDependency) {
 			return super.equals(obj);
@@ -51,6 +53,7 @@ public class WaitDependency extends ControlDependency {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return super.hashCode();
 	}

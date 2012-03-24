@@ -31,7 +31,6 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: Kicker.java 562 2008-03-17 21:33:12Z imiller $
  */
 public class Kicker extends Module implements Composable {
-	private static final String _RCS_ = "$Rev: 562 $";
 
 	private static final int GATE_DEPTH = 0;
 
@@ -113,8 +112,8 @@ public class Kicker extends Module implements Composable {
 		reg1.getClockPort().setBus(getClockPort().getPeer()); // connect clock
 
 		// the and1 connected to the ... not1 & reg1
-		((Port) and1.getDataPorts().get(0)).setBus(not1.getResultBus());
-		((Port) and1.getDataPorts().get(1)).setBus(reg1.getResultBus());
+		and1.getDataPorts().get(0).setBus(not1.getResultBus());
+		and1.getDataPorts().get(1).setBus(reg1.getResultBus());
 
 		// the reg2 connected to the and1
 		reg2.getDataPort().setBus(and1.getResultBus());
@@ -124,9 +123,9 @@ public class Kicker extends Module implements Composable {
 		not2.getDataPort().setBus(reg2.getResultBus());
 
 		// the and21 connected to the reg1, not1, not2
-		((Port) and2.getDataPorts().get(0)).setBus(reg1.getResultBus());
-		((Port) and2.getDataPorts().get(1)).setBus(not1.getResultBus());
-		((Port) and2.getDataPorts().get(2)).setBus(not2.getResultBus());
+		and2.getDataPorts().get(0).setBus(reg1.getResultBus());
+		and2.getDataPorts().get(1).setBus(not1.getResultBus());
+		and2.getDataPorts().get(2).setBus(not2.getResultBus());
 
 		regFinal.getDataPort().setBus(and2.getResultBus());
 		regFinal.getClockPort().setBus(getClockPort().getPeer()); // connect
@@ -139,6 +138,7 @@ public class Kicker extends Module implements Composable {
 	/**
 	 * Throws an exception, replacement in this class not supported.
 	 */
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		throw new UnsupportedOperationException("Cannot replace components in "
 				+ getClass());
@@ -159,6 +159,7 @@ public class Kicker extends Module implements Composable {
 		return getExit(Exit.DONE).getDoneBus();
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -170,6 +171,7 @@ public class Kicker extends Module implements Composable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return GATE_DEPTH;
 	}
@@ -178,6 +180,7 @@ public class Kicker extends Module implements Composable {
 	 * Tests whether this component requires a connection to its clock
 	 * {@link Port}.
 	 */
+	@Override
 	public boolean consumesClock() {
 		return true;
 	}
@@ -187,6 +190,7 @@ public class Kicker extends Module implements Composable {
 	 * {@link Port}. By default, returns the value of
 	 * {@link Component#consumesClock()}.
 	 */
+	@Override
 	public boolean consumesReset() {
 		return true;
 	}
@@ -197,6 +201,7 @@ public class Kicker extends Module implements Composable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean isOpaque() {
 		return true;
 	}
@@ -204,6 +209,7 @@ public class Kicker extends Module implements Composable {
 	/**
 	 * @return false
 	 */
+	@Override
 	public boolean isBalanceable() {
 		return false;
 	}
@@ -228,10 +234,10 @@ public class Kicker extends Module implements Composable {
 		public KickerPerpetual(boolean fbFlopRequired) {
 			super();
 
-			this.repeatPort = this.makeDataPort();
-			this.repeatPort.setUsed(true);
-			this.repeatPort.setSize(1, false);
-			final Bus repeatBus = this.repeatPort.getPeer();
+			repeatPort = this.makeDataPort();
+			repeatPort.setUsed(true);
+			repeatPort.setSize(1, false);
+			final Bus repeatBus = repeatPort.getPeer();
 			repeatBus.setSize(1, false);
 
 			// Now grab the done bus and put the logical OR in front
@@ -240,7 +246,7 @@ public class Kicker extends Module implements Composable {
 			assert doneDriver != null;
 
 			Or or = new Or(2);
-			this.addComponent(or);
+			addComponent(or);
 			or.setIDLogical(ID.showLogical(this) + "_or1");
 
 			final Bus rptBus;
@@ -263,7 +269,7 @@ public class Kicker extends Module implements Composable {
 				// Needs RESET b/c it is in the control path
 				Reg delay = Reg.getConfigurableReg(Reg.REGR,
 						ID.showLogical(this) + "_fb_delay");
-				this.addComponent(delay);
+				addComponent(delay);
 
 				delay.getDataPort().setBus(repeatBus);
 				delay.getClockPort().setBus(getClockPort().getPeer()); // connect
@@ -278,8 +284,8 @@ public class Kicker extends Module implements Composable {
 			}
 
 			// ((Port)or.getDataPorts().get(1)).setBus(delay.getResultBus());
-			((Port) or.getDataPorts().get(1)).setBus(rptBus);
-			((Port) or.getDataPorts().get(0)).setBus(doneDriver);
+			or.getDataPorts().get(1).setBus(rptBus);
+			or.getDataPorts().get(0).setBus(doneDriver);
 
 			getDoneBus().getPeer().setBus(or.getResultBus());
 			getDoneBus().setUsed(true);
@@ -292,8 +298,9 @@ public class Kicker extends Module implements Composable {
 		 * 
 		 * @return a non null Port
 		 */
+		@Override
 		public Port getRepeatPort() {
-			return this.repeatPort;
+			return repeatPort;
 		}
 
 	}
@@ -315,7 +322,7 @@ public class Kicker extends Module implements Composable {
 			assert doneDriver != null;
 
 			Or or = new Or(2);
-			this.addComponent(or);
+			addComponent(or);
 			or.setIDLogical(ID.showLogical(this) + "_or1");
 
 			//
@@ -332,12 +339,12 @@ public class Kicker extends Module implements Composable {
 			delay.getInternalResetPort().setBus(getResetPort().getPeer()); // connect
 																			// reset
 			delay.getResultBus().setSize(1, false);
-			this.addComponent(delay);
+			addComponent(delay);
 			addFeedbackPoint(delay);
 
 			delay.getDataPort().setBus(or.getResultBus());
-			((Port) or.getDataPorts().get(0)).setBus(doneDriver);
-			((Port) or.getDataPorts().get(1)).setBus(delay.getResultBus());
+			or.getDataPorts().get(0).setBus(doneDriver);
+			or.getDataPorts().get(1).setBus(delay.getResultBus());
 
 			getDoneBus().getPeer().setBus(or.getResultBus());
 			getDoneBus().setUsed(true);
@@ -350,8 +357,9 @@ public class Kicker extends Module implements Composable {
 		 * 
 		 * @return a non null Port
 		 */
+		@Override
 		public Port getRepeatPort() {
-			return this.repeatPort;
+			return repeatPort;
 		}
 
 	}

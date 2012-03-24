@@ -87,13 +87,13 @@ public class LXModularGraph extends DefaultVisitor {
 		System.err
 				.println("\tBe patient, this may take a while for large designs");
 
-		this.callListPS = null;
+		callListPS = null;
 		try {
 			// The list of calls, ie the call tree hierarchy
 			File callList = new File(directory, "callList.html");
 			callList.createNewFile();
-			this.callListPS = new PrintStream(new FileOutputStream(callList));
-			openCallList(this.callListPS);
+			callListPS = new PrintStream(new FileOutputStream(callList));
+			openCallList(callListPS);
 
 			// The top level, may be design, or whatever module the
 			// use starts with.
@@ -119,36 +119,42 @@ public class LXModularGraph extends DefaultVisitor {
 		doPNGConvert = !Boolean.getBoolean("LXM_NOCONVERT");
 	}
 
+	@Override
 	public void visit(Design design) {
 		graphVisitable(design);
 		super.visit(design);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(ArrayRead module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(ArrayWrite module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(Block module) {
 		// If it is a procedure body, then LXGraph wrote it out as
 		// part of the call, so we don't need to here.
@@ -161,6 +167,7 @@ public class LXModularGraph extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(Branch module) {
 		graphVisitable(module);
 		super.visit(module);
@@ -171,15 +178,16 @@ public class LXModularGraph extends DefaultVisitor {
 	 * Each call is written in its own HTML file to keep things small enough for
 	 * the browser to render.
 	 */
+	@Override
 	public void visit(Call call) {
 		String baseName = getBaseName(call);
 		String callName = baseName + ".html";
-		File callIndex = new File(this.directory, callName);
+		File callIndex = new File(directory, callName);
 		PrintStream ps = openCallStream(callIndex);
 		writeCallListEntry(callIndex.getName(), baseName);
 
-		int oldDepth = this.indentDepth;
-		this.indentDepth = 0;
+		int oldDepth = indentDepth;
+		indentDepth = 0;
 		printStreamStack.push(ps);
 
 		graphVisitable(call);
@@ -187,89 +195,103 @@ public class LXModularGraph extends DefaultVisitor {
 		exitVisitable();
 
 		printStreamStack.pop();
-		this.indentDepth = oldDepth;
+		indentDepth = oldDepth;
 
 		closeCallStream(ps, baseName + ".png");
 	}
 
+	@Override
 	public void visit(Decision module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(ForBody module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(HeapRead module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(HeapWrite module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(Kicker module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(Latch module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(Loop module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(TaskCall module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(SimplePinAccess module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(FifoAccess module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(FifoRead module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(FifoWrite module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(MemoryGateway module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(MemoryRead mr) {
 		super.visit(mr);
 		// if (mr.getPhysicalComponent() != null)
@@ -279,6 +301,7 @@ public class LXModularGraph extends DefaultVisitor {
 		// }
 	}
 
+	@Override
 	public void visit(MemoryWrite mr) {
 		super.visit(mr);
 		// if (mr.getPhysicalComponent() != null)
@@ -288,18 +311,21 @@ public class LXModularGraph extends DefaultVisitor {
 		// }
 	}
 
+	@Override
 	public void visit(MemoryReferee module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(PinReferee module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(PinRead acc) {
 		super.visit(acc);
 		if (acc.getPhysicalComponent() != null) {
@@ -308,6 +334,7 @@ public class LXModularGraph extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(PinWrite acc) {
 		super.visit(acc);
 		if (acc.getPhysicalComponent() != null) {
@@ -316,42 +343,49 @@ public class LXModularGraph extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(PriorityMux module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(RegisterGateway module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(RegisterReferee module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(Scoreboard module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(Switch module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(UntilBody module) {
 		graphVisitable(module);
 		super.visit(module);
 		exitVisitable();
 	}
 
+	@Override
 	public void visit(WhileBody module) {
 		graphVisitable(module);
 		super.visit(module);
@@ -359,17 +393,17 @@ public class LXModularGraph extends DefaultVisitor {
 	}
 
 	private void graphVisitable(Visitable module) {
-		PrintStream ps = (PrintStream) printStreamStack.peek();
+		PrintStream ps = printStreamStack.peek();
 		visitableStack.push(module);
-		this.indentDepth++;
+		indentDepth++;
 
 		String baseName = getBaseName(module);
 		String imgName = baseName + ".png";
 		File dotFile = new File(directory, baseName + ".dot");
 		File imgFile = new File(directory, imgName);
 
-		if (this.graphRoot == null)
-			this.graphRoot = imgName;
+		if (graphRoot == null)
+			graphRoot = imgName;
 
 		LXGraph.graphTo(module, dotFile.getPath(), 1); // graph only 1 layer
 		indent(ps);
@@ -396,13 +430,12 @@ public class LXModularGraph extends DefaultVisitor {
 
 	private void exitVisitable() {
 		visitableStack.pop();
-		this.indentDepth--;
+		indentDepth--;
 
 		if (visitableStack.isEmpty()) {
-			closeCallList(this.callListPS);
+			closeCallList(callListPS);
 			assert printStreamStack.size() == 1;
-			closeCallStream((PrintStream) printStreamStack.pop(),
-					this.graphRoot);
+			closeCallStream(printStreamStack.pop(), graphRoot);
 			// convertDotToPNG();
 		}
 	}
@@ -413,7 +446,7 @@ public class LXModularGraph extends DefaultVisitor {
 		callListPS.println("<a href=\"" + file + "\" target=\"targetFrame\">"
 				+ name + "</a><br>");
 
-		PrintStream ps = (PrintStream) printStreamStack.peek();
+		PrintStream ps = printStreamStack.peek();
 		indent(ps);
 		ps.println("<a href=\"" + file + "\" target=\"targetFrame\">" + name
 				+ "</a><br>");
@@ -504,7 +537,7 @@ public class LXModularGraph extends DefaultVisitor {
 		// imgFile.getName();
 		System.out.println("Execing " + command + " in " + directory);
 		try {
-			Runtime.getRuntime().exec(command, new String[] {}, this.directory);
+			Runtime.getRuntime().exec(command, new String[] {}, directory);
 		} catch (Exception e) {
 			System.err.println("Could not convert dot graph to PNG: " + e);
 		}

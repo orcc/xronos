@@ -44,6 +44,7 @@ public abstract class PinBuf extends Resource {
 
 	public abstract boolean consumesReset();
 
+	@Override
 	public int getSpacing(Referencer from, Referencer to) {
 		throw new UnsupportedOperationException(
 				"PinBuf is obsolete, unexpected call to getSpacing");
@@ -53,6 +54,7 @@ public abstract class PinBuf extends Resource {
 	 * Returns -1 indicating that the referencers must be scheduled using the
 	 * default DONE to GO spacing.
 	 */
+	@Override
 	public int getGoSpacing(Referencer from, Referencer to) {
 		return -1;
 	}

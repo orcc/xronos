@@ -127,6 +127,7 @@ public final class Scanner extends DefaultVisitor {
 	 * Modules.
 	 */
 
+	@Override
 	public void visit(Design design) {
 		visitor.visit(design);
 	}
@@ -138,6 +139,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(design);
 	}
 
+	@Override
 	public void visit(Task task) {
 		visitor.visit(task);
 	}
@@ -149,6 +151,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(task);
 	}
 
+	@Override
 	public void visit(Call call) {
 		visitor.visit(call);
 	}
@@ -160,6 +163,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(call);
 	}
 
+	@Override
 	public void visit(Procedure procedure) {
 		visitor.visit(procedure);
 	}
@@ -171,6 +175,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(procedure);
 	}
 
+	@Override
 	public void visit(Block block) {
 		visitor.visit(block);
 	}
@@ -182,6 +187,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(block);
 	}
 
+	@Override
 	public void visit(Loop loop) {
 		visitor.visit(loop);
 	}
@@ -193,6 +199,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(loop);
 	}
 
+	@Override
 	public void visit(WhileBody whileBody) {
 		visitor.visit(whileBody);
 	}
@@ -204,6 +211,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(whileBody);
 	}
 
+	@Override
 	public void visit(UntilBody untilBody) {
 		visitor.visit(untilBody);
 	}
@@ -215,6 +223,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(untilBody);
 	}
 
+	@Override
 	public void visit(ForBody forBody) {
 		visitor.visit(forBody);
 	}
@@ -226,6 +235,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(forBody);
 	}
 
+	@Override
 	public void visit(Branch branch) {
 		visitor.visit(branch);
 	}
@@ -237,6 +247,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(branch);
 	}
 
+	@Override
 	public void visit(Decision decision) {
 		visitor.visit(decision);
 	}
@@ -248,6 +259,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(decision);
 	}
 
+	@Override
 	public void visit(Switch sw) {
 		visitor.visit(sw);
 	}
@@ -263,6 +275,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(scbd);
 	}
 
+	@Override
 	public void visit(Scoreboard scbd) {
 		visitor.visit(scbd);
 	}
@@ -271,6 +284,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(pmux);
 	}
 
+	@Override
 	public void visit(PriorityMux pmux) {
 		visitor.visit(pmux);
 	}
@@ -279,6 +293,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(regReferee);
 	}
 
+	@Override
 	public void visit(RegisterReferee regReferee) {
 		visitor.visit(regReferee);
 	}
@@ -287,6 +302,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(regGateway);
 	}
 
+	@Override
 	public void visit(RegisterGateway regGateway) {
 		visitor.visit(regGateway);
 	}
@@ -295,6 +311,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(memReferee);
 	}
 
+	@Override
 	public void visit(MemoryReferee memReferee) {
 		visitor.visit(memReferee);
 	}
@@ -303,6 +320,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(memGateway);
 	}
 
+	@Override
 	public void visit(MemoryGateway memGateway) {
 		visitor.visit(memGateway);
 	}
@@ -311,6 +329,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(latch);
 	}
 
+	@Override
 	public void visit(Latch latch) {
 		visitor.visit(latch);
 	}
@@ -319,6 +338,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(kicker);
 	}
 
+	@Override
 	public void visit(Kicker kicker) {
 		visitor.visit(kicker);
 	}
@@ -327,6 +347,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(ArrayWrite comp) {
 		visitor.visit(comp);
 	}
@@ -335,6 +356,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(ArrayRead comp) {
 		visitor.visit(comp);
 	}
@@ -343,6 +365,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(HeapWrite comp) {
 		visitor.visit(comp);
 	}
@@ -351,6 +374,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(HeapRead comp) {
 		visitor.visit(comp);
 	}
@@ -359,6 +383,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead comp) {
 		visitor.visit(comp);
 	}
@@ -367,6 +392,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite comp) {
 		visitor.visit(comp);
 	}
@@ -375,6 +401,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(MemoryRead comp) {
 		visitor.visit(comp);
 	}
@@ -383,6 +410,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(MemoryWrite comp) {
 		visitor.visit(comp);
 	}
@@ -391,6 +419,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(PinRead comp) {
 		visitor.visit(comp);
 	}
@@ -399,6 +428,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(PinWrite comp) {
 		visitor.visit(comp);
 	}
@@ -407,6 +437,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(PinStateChange comp) {
 		visitor.visit(comp);
 	}
@@ -415,6 +446,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(pinReferee);
 	}
 
+	@Override
 	public void visit(PinReferee pinReferee) {
 		visitor.visit(pinReferee);
 	}
@@ -423,6 +455,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(mod);
 	}
 
+	@Override
 	public void visit(TaskCall mod) {
 		visitor.visit(mod);
 	}
@@ -431,6 +464,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(mod);
 	}
 
+	@Override
 	public void visit(SimplePinAccess mod) {
 		visitor.visit(mod);
 	}
@@ -439,6 +473,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(mod);
 	}
 
+	@Override
 	public void visit(FifoAccess mod) {
 		visitor.visit(mod);
 	}
@@ -447,6 +482,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(mod);
 	}
 
+	@Override
 	public void visit(FifoRead mod) {
 		visitor.visit(mod);
 	}
@@ -455,6 +491,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(mod);
 	}
 
+	@Override
 	public void visit(FifoWrite mod) {
 		visitor.visit(mod);
 	}
@@ -463,6 +500,7 @@ public final class Scanner extends DefaultVisitor {
 		super.visit(mod);
 	}
 
+	@Override
 	public void visit(EndianSwapper mod) {
 		visitor.visit(mod);
 	}
@@ -470,182 +508,227 @@ public final class Scanner extends DefaultVisitor {
 	/*
 	 * Primitive Components.
 	 */
+	@Override
 	public void visit(AddOp add) {
 		visitor.visit(add);
 	}
 
+	@Override
 	public void visit(AndOp andOp) {
 		visitor.visit(andOp);
 	}
 
+	@Override
 	public void visit(NumericPromotionOp numericPromotion) {
 		visitor.visit(numericPromotion);
 	}
 
+	@Override
 	public void visit(CastOp cast) {
 		visitor.visit(cast);
 	}
 
+	@Override
 	public void visit(ComplementOp complement) {
 		visitor.visit(complement);
 	}
 
+	@Override
 	public void visit(ConditionalAndOp conditionalAnd) {
 		visitor.visit(conditionalAnd);
 	}
 
+	@Override
 	public void visit(ConditionalOrOp conditionalOr) {
 		visitor.visit(conditionalOr);
 	}
 
+	@Override
 	public void visit(Constant constant) {
 		visitor.visit(constant);
 	}
 
+	@Override
 	public void visit(DivideOp divide) {
 		visitor.visit(divide);
 	}
 
+	@Override
 	public void visit(EqualsOp equals) {
 		visitor.visit(equals);
 	}
 
+	@Override
 	public void visit(GreaterThanEqualToOp greaterThanEqualTo) {
 		visitor.visit(greaterThanEqualTo);
 	}
 
+	@Override
 	public void visit(GreaterThanOp greaterThan) {
 		visitor.visit(greaterThan);
 	}
 
+	@Override
 	public void visit(LeftShiftOp leftShift) {
 		visitor.visit(leftShift);
 	}
 
+	@Override
 	public void visit(LessThanEqualToOp lessThanEqualTo) {
 		visitor.visit(lessThanEqualTo);
 	}
 
+	@Override
 	public void visit(LessThanOp lessThan) {
 		visitor.visit(lessThan);
 	}
 
+	@Override
 	public void visit(MinusOp minus) {
 		visitor.visit(minus);
 	}
 
+	@Override
 	public void visit(ModuloOp modulo) {
 		visitor.visit(modulo);
 	}
 
+	@Override
 	public void visit(MultiplyOp multiply) {
 		visitor.visit(multiply);
 	}
 
+	@Override
 	public void visit(NoOp nop) {
 		visitor.visit(nop);
 	}
 
+	@Override
 	public void visit(TimingOp top) {
 		visitor.visit(top);
 	}
 
+	@Override
 	public void visit(NotEqualsOp notEquals) {
 		visitor.visit(notEquals);
 	}
 
+	@Override
 	public void visit(NotOp not) {
 		visitor.visit(not);
 	}
 
+	@Override
 	public void visit(OrOp or) {
 		visitor.visit(or);
 	}
 
+	@Override
 	public void visit(PlusOp plus) {
 		visitor.visit(plus);
 	}
 
+	@Override
 	public void visit(ReductionOrOp reductionOr) {
 		visitor.visit(reductionOr);
 	}
 
+	@Override
 	public void visit(RegisterRead read) {
 		visitor.visit(read);
 	}
 
+	@Override
 	public void visit(RegisterWrite write) {
 		visitor.visit(write);
 	}
 
+	@Override
 	public void visit(RightShiftOp rightShift) {
 		visitor.visit(rightShift);
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp rightShiftUnsigned) {
 		visitor.visit(rightShiftUnsigned);
 	}
 
+	@Override
 	public void visit(ShortcutIfElseOp shortcutIfElse) {
 		visitor.visit(shortcutIfElse);
 	}
 
+	@Override
 	public void visit(SubtractOp subtract) {
 		visitor.visit(subtract);
 	}
 
+	@Override
 	public void visit(XorOp xor) {
 		visitor.visit(xor);
 	}
 
+	@Override
 	public void visit(InBuf ib) {
 		visitor.visit(ib);
 	}
 
+	@Override
 	public void visit(OutBuf ob) {
 		visitor.visit(ob);
 	}
 
+	@Override
 	public void visit(Reg reg) {
 		visitor.visit(reg);
 	}
 
+	@Override
 	public void visit(SRL16 srl_16) {
 		visitor.visit(srl_16);
 	}
 
+	@Override
 	public void visit(Mux m) {
 		visitor.visit(m);
 	}
 
+	@Override
 	public void visit(And a) {
 		visitor.visit(a);
 	}
 
+	@Override
 	public void visit(Not n) {
 		visitor.visit(n);
 	}
 
+	@Override
 	public void visit(Or o) {
 		visitor.visit(o);
 	}
 
+	@Override
 	public void visit(EncodedMux m) {
 		visitor.visit(m);
 	}
 
+	@Override
 	public void visit(MemoryBank m) {
 		visitor.visit(m);
 	}
 
+	@Override
 	public void visit(SimplePin m) {
 		visitor.visit(m);
 	}
 
+	@Override
 	public void visit(SimplePinRead m) {
 		visitor.visit(m);
 	}
 
+	@Override
 	public void visit(SimplePinWrite m) {
 		visitor.visit(m);
 	}
@@ -659,6 +742,7 @@ public final class Scanner extends DefaultVisitor {
 	 *            the 'Collection' to iterate over
 	 * @return an 'Iterator' over the given collection
 	 */
+	@Override
 	protected Iterator getIterator(Collection collection) {
 		if (safeMode) {
 			return (new LinkedList(collection)).iterator();

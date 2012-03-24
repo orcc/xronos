@@ -52,7 +52,6 @@ import java.util.List;
  * @version $Id: RegisterGateway.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class RegisterGateway extends Gateway {
-	private static final String _RCS_ = "$Rev: 2 $";
 
 	/** the mux at the center of the RegisterGateway */
 	private Mux mux;
@@ -97,7 +96,7 @@ public class RegisterGateway extends Gateway {
 			localEnablePorts.add(localEnablePort);
 			localDataPorts.add(localDataPort);
 
-			Port muxGoPort = (Port) mux.getGoPorts().get(i);
+			Port muxGoPort = mux.getGoPorts().get(i);
 			Port muxDataPort = mux.getDataPort(muxGoPort);
 			Bus inbufEnable = localEnablePort.getPeer();
 			inbufEnable.setSize(1, true);
@@ -112,16 +111,16 @@ public class RegisterGateway extends Gateway {
 			muxDataPort.setBus(inbufData);
 
 			// and to the Or
-			Port orDataPort = (Port) or.getDataPorts().get(i);
+			Port orDataPort = or.getDataPorts().get(i);
 			orDataPort.setBus(inbufEnable);
 		}
 
 		// wire the mux and enable buses to the outbuf
-		OutBuf outbuf = (OutBuf) getExit(Exit.DONE).getPeer();
+		OutBuf outbuf = getExit(Exit.DONE).getPeer();
 		Port enablePort = outbuf.getGoPort();
 		enablePort.setBus(or.getResultBus());
 
-		Port dataPort = (Port) outbuf.getDataPorts().get(0);
+		Port dataPort = outbuf.getDataPorts().get(0);
 		dataPort.setBus(mux.getResultBus());
 		dataPort.getPeer()
 				.setSize(resource.getInitWidth(), resource.isSigned());
@@ -130,6 +129,7 @@ public class RegisterGateway extends Gateway {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 		// ABK -- well, RegisterGateways get visited for now so that they can be
@@ -143,15 +143,15 @@ public class RegisterGateway extends Gateway {
 	}
 
 	public Bus getGlobalDataBus() {
-		return (Bus) getExit(Exit.DONE).getDataBuses().get(0);
+		return getExit(Exit.DONE).getDataBuses().get(0);
 	}
 
 	public Bus getLocalEnableBus() {
-		return (Bus) getExit(Exit.DONE).getDataBuses().get(1);
+		return getExit(Exit.DONE).getDataBuses().get(1);
 	}
 
 	public Bus getLocalDataBus() {
-		return (Bus) getExit(Exit.DONE).getDataBuses().get(2);
+		return getExit(Exit.DONE).getDataBuses().get(2);
 	}
 
 	/**
@@ -173,6 +173,7 @@ public class RegisterGateway extends Gateway {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		assert false : "tbd";
 

@@ -46,6 +46,7 @@ public class ShortcutIfElseOp extends TernaryOp {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -57,6 +58,7 @@ public class ShortcutIfElseOp extends TernaryOp {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		/*
 		 * XXX: This isn't necessarily correct. Only one of the second and third
@@ -69,6 +71,7 @@ public class ShortcutIfElseOp extends TernaryOp {
 	 * =================================================== Begin new constant
 	 * prop rules implementation.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -77,6 +80,7 @@ public class ShortcutIfElseOp extends TernaryOp {
 		return mod;
 	}
 
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

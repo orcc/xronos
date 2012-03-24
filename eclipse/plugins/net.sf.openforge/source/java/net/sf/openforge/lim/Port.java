@@ -158,7 +158,7 @@ public class Port extends ID {
 		}
 
 		boolean isInputComplete = true;
-		//boolean modified = false;
+		// boolean modified = false;
 		Value derived;
 
 		// two cases, connected or not
@@ -191,7 +191,7 @@ public class Port extends ID {
 			}
 
 			// now to combine. use the size/signage of the first one
-			Value firstVal = (Value) vlist.get(0);
+			Value firstVal = vlist.get(0);
 			derived = new Value(firstVal.getSize(), firstVal.isSigned());
 
 			// for each bit
@@ -214,7 +214,7 @@ public class Port extends ID {
 					// now, do we have all the same bits?
 					if (testBucket.size() == 1) {
 						// could be care, const, or owned bit, but it is unique!
-						derived.setBit(i, (Bit) testBucket.iterator().next());
+						derived.setBit(i, testBucket.iterator().next());
 					} else {
 						// multiples, you make this a care
 						derived.setBit(i, Bit.CARE);
@@ -350,7 +350,7 @@ public class Port extends ID {
 
 		assert (v.getSize() <= getSize());
 		valueForced = true;
-		this.value = v;
+		value = v;
 	}
 
 	/*
@@ -485,6 +485,7 @@ public class Port extends ID {
 	 * 
 	 * @return this port owner id source info
 	 */
+	@Override
 	public IDSourceInfo getIDSourceInfo() {
 		return super.getIDSourceInfo();
 		// return getOwner().getIDSourceInfo();
@@ -495,6 +496,7 @@ public class Port extends ID {
 	 * 
 	 * @return DOCUMENT ME!
 	 */
+	@Override
 	public String toString() {
 		return ID.glob(this);
 	}

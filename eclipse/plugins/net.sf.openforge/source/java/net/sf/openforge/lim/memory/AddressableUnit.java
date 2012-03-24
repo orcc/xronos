@@ -43,17 +43,19 @@ public class AddressableUnit {
 	private BigInteger initValue;
 	private boolean locked = true;
 
+	@Override
 	public int hashCode() {
 		return initValue.hashCode() + (isLocked() ? 0 : 1);
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof AddressableUnit))
 			return false;
 		AddressableUnit target = (AddressableUnit) o;
 
-		return this.initValue.equals(target.initValue)
-				&& this.isLocked() == target.isLocked();
+		return initValue.equals(target.initValue)
+				&& isLocked() == target.isLocked();
 	}
 
 	/**
@@ -94,13 +96,14 @@ public class AddressableUnit {
 		if (!isLocked())
 			throw new UnsupportedOperationException(
 					"Cannot access the value of an unlocked addressable unit");
-		return this.initValue;
+		return initValue;
 	}
 
 	public boolean isLocked() {
-		return this.locked;
+		return locked;
 	}
 
+	@Override
 	public String toString() {
 		return "AU:" + getValue();
 	}

@@ -56,6 +56,7 @@ public class OrOp extends BinaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -67,6 +68,7 @@ public class OrOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return isBitwisePassthrough() ? 0 : 1;
 	}
@@ -76,6 +78,7 @@ public class OrOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a FPGAResource object
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
 
@@ -114,11 +117,10 @@ public class OrOp extends BinaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger lval = (SizedInteger) portValues
-				.get(getLeftDataPort());
-		final SizedInteger rval = (SizedInteger) portValues
-				.get(getRightDataPort());
+		final SizedInteger lval = portValues.get(getLeftDataPort());
+		final SizedInteger rval = portValues.get(getRightDataPort());
 		return Collections.singletonMap(getResultBus(), lval.or(rval));
 	}
 
@@ -133,6 +135,7 @@ public class OrOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		Value newValue;
 		if (getRightDataPort() == null) {
@@ -147,10 +150,10 @@ public class OrOp extends BinaryOp implements Emulatable {
 			// any ports size or the compacted size of the merged
 			// value.
 			final Iterator<Port> portIter = getDataPorts().iterator();
-			newValue = ((Port) portIter.next()).getValue();
+			newValue = portIter.next().getValue();
 			int minPortSize = newValue.getSize();
 			while (portIter.hasNext()) {
-				final Port nextPort = (Port) portIter.next();
+				final Port nextPort = portIter.next();
 				final Value nextPortValue = nextPort.getValue();
 				minPortSize = Math.min(nextPortValue.getSize(), minPortSize);
 				newValue = pushValuesForwardOr(newValue, nextPortValue);
@@ -182,6 +185,7 @@ public class OrOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

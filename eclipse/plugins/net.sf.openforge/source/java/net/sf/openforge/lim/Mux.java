@@ -75,6 +75,7 @@ public class Mux extends Primitive {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		final int maxCareInputs = getMaxCareInputs();
 		return (maxCareInputs < 2) ? 0 : (log2(maxCareInputs) + 1);
@@ -85,6 +86,7 @@ public class Mux extends Primitive {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int terms = 2 * goPorts.size();
 		int groupedCount = 0;
@@ -120,9 +122,10 @@ public class Mux extends Primitive {
 	 * Gets the Data Port which is paird with the given Go port.
 	 */
 	public Port getDataPort(Port go) {
-		return (Port) muxMap.get(go);
+		return muxMap.get(go);
 	}
 
+	@Override
 	public boolean removeDataPort(Port port) {
 		assert false : "remove data port not supported for " + this;
 		return false;
@@ -147,14 +150,15 @@ public class Mux extends Primitive {
 		Port goPort = makeDataPort();
 		Port dataPort = makeDataPort();
 
-		if (this.goPorts == Collections.EMPTY_LIST) {
-			this.goPorts = new LinkedList<Port>();
+		if (goPorts == Collections.EMPTY_LIST) {
+			goPorts = new LinkedList<Port>();
 		}
-		this.goPorts.add(goPort);
+		goPorts.add(goPort);
 		muxMap.put(goPort, dataPort);
 		return goPort;
 	}
 
+	@Override
 	public List<Port> getPorts() {
 		List<Port> ports = new ArrayList<Port>();
 		ports.add(getClockPort());
@@ -169,10 +173,12 @@ public class Mux extends Primitive {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean hasWait() {
 		return false;
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -185,6 +191,7 @@ public class Mux extends Primitive {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		Mux clone = (Mux) super.clone();
 
@@ -193,8 +200,8 @@ public class Mux extends Primitive {
 
 		for (Iterator<Port> iter = clone.getDataPorts().iterator(); iter
 				.hasNext();) {
-			Port goPort = (Port) iter.next();
-			Port dataPort = (Port) iter.next();
+			Port goPort = iter.next();
+			Port dataPort = iter.next();
 			clone.goPorts.add(goPort);
 			clone.muxMap.put(goPort, dataPort);
 		}
@@ -214,6 +221,7 @@ public class Mux extends Primitive {
 	 * that the result bus has had it's 'bits' set via the {@link Bus#setBits}
 	 * method since Muxes get added during scheduling.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -226,7 +234,7 @@ public class Mux extends Primitive {
 
 			for (Iterator<Port> goPortIter = getGoPorts().iterator(); goPortIter
 					.hasNext();) {
-				Port goPort = (Port) goPortIter.next();
+				Port goPort = goPortIter.next();
 				Port dataPort = getDataPort(goPort);
 				Value drivingValue = dataPort.getValue();
 				samePositionBits.setBit(index++,
@@ -254,7 +262,7 @@ public class Mux extends Primitive {
 			int compactedSize = 1;
 			for (Iterator<Port> goPortIter = getGoPorts().iterator(); goPortIter
 					.hasNext();) {
-				Port goPort = (Port) goPortIter.next();
+				Port goPort = goPortIter.next();
 				Port dataPort = getDataPort(goPort);
 				compactedSize = Math.min(newValue.getSize(), Math.max(
 						compactedSize, dataPort.getValue().getCompactedSize()));
@@ -277,6 +285,7 @@ public class Mux extends Primitive {
 	 * Any constant or dont care bits on the result propagate backwards to be
 	 * dont care bits on all data inputs.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

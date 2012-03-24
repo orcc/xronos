@@ -21,7 +21,6 @@
 
 package net.sf.openforge.lim.memory;
 
-
 /**
  * AddressStridePolicy defines the way in which a particular allocation of bits
  * in a memory is converted to addressable locations. In the most common and
@@ -42,15 +41,17 @@ public class AddressStridePolicy {
 	/** positive integer, bits per address for this policy */
 	private int stride;
 
+	@Override
 	public int hashCode() {
 		return getStride();
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof AddressStridePolicy))
 			return false;
 
-		return ((AddressStridePolicy) o).getStride() == this.getStride();
+		return ((AddressStridePolicy) o).getStride() == getStride();
 	}
 
 	/**
@@ -77,13 +78,14 @@ public class AddressStridePolicy {
 	 * addressable unit.
 	 */
 	public int getStride() {
-		return this.stride;
+		return stride;
 	}
 
+	@Override
 	public String toString() {
 		return super.toString().replaceAll("net.sf.openforge.lim.", "") + "["
 				+ Integer.toHexString(System.identityHashCode(this)) + "]="
-				+ this.stride;
+				+ stride;
 	}
 
 } // AddressStridePolicy

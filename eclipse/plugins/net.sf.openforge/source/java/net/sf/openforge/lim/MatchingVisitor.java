@@ -36,7 +36,6 @@ import java.util.List;
  * @version $Id: MatchingVisitor.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class MatchingVisitor extends DefaultVisitor {
-	private static final String _RCS_ = "$Rev: 2 $";
 
 	public static final boolean FIFO = true;
 	public static final boolean LIFO = false;

@@ -53,6 +53,7 @@ public class PinRead extends PinAccess implements Cloneable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		/*
 		 * The InBuf identity is dynamic. The best we could do here is choose
@@ -68,6 +69,7 @@ public class PinRead extends PinAccess implements Cloneable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		return false;
 	}
@@ -77,13 +79,15 @@ public class PinRead extends PinAccess implements Cloneable {
 	 * =================================================
 	 */
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
 
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		final PinRead clone = (PinRead) super.clone();
-		this.copyComponentAttributes(clone);
+		copyComponentAttributes(clone);
 		return clone;
 	}
 
@@ -93,6 +97,7 @@ public class PinRead extends PinAccess implements Cloneable {
 		return physical;
 	}
 
+	@Override
 	public Module getPhysicalComponent() {
 		return physical;
 	}
@@ -110,7 +115,7 @@ public class PinRead extends PinAccess implements Cloneable {
 
 			// one normal port for the address
 			Port addressPort = makeDataPort();
-			Port pinReadAddress = (Port) PinRead.this.getDataPorts().get(0);
+			Port pinReadAddress = PinRead.this.getDataPorts().get(0);
 			assert (pinReadAddress.getBus() != null) : "PinRead's address port not attached to a bus.";
 			assert (pinReadAddress.getBus().getValue() != null) : "PinRead address port has no value";
 			{
@@ -124,8 +129,8 @@ public class PinRead extends PinAccess implements Cloneable {
 			// appropriate the data out bus
 			Exit physicalExit = makeExit(0);
 			Bus dataBus = physicalExit.makeDataBus();
-			Bus pinRead_data = (Bus) PinRead.this.getExit(Exit.DONE)
-					.getDataBuses().get(0);
+			Bus pinRead_data = PinRead.this.getExit(Exit.DONE).getDataBuses()
+					.get(0);
 			final int dataWidth = pinRead_data.getValue().getSize();
 			dataBus.setUsed(pinRead_data.isUsed());
 			dataBus.setIDLogical(ID.showLogical(pinRead_data));
@@ -167,14 +172,17 @@ public class PinRead extends PinAccess implements Cloneable {
 			return sideAddressBus;
 		}
 
+		@Override
 		public void accept(Visitor v) {
 		}
 
+		@Override
 		public boolean removeDataBus(Bus bus) {
 			assert false : "remove data bus not supported on " + this;
 			return false;
 		}
 
+		@Override
 		public boolean removeDataPort(Port port) {
 			assert false : "remove data port not supported on " + this;
 			return false;

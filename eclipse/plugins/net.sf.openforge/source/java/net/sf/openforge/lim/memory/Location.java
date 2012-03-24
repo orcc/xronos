@@ -35,61 +35,76 @@ public interface Location {
 
 	/** A constant to represent any invalid location, e.g. (int *)1234. */
 	public static final Location INVALID = new Location() {
+		@Override
 		public int getAddressableSize() {
 			return 0;
 		}
 
+		@Override
 		public LogicalMemory getLogicalMemory() {
 			return null;
 		}
 
+		@Override
 		public Location createOffset(int size, int delta) {
 			return this;
 		}
 
+		@Override
 		public Location createIndex(int size) {
 			return this;
 		}
 
+		@Override
 		public Location duplicateForBaseLocation(Location base) {
 			return this;
 		}
 
+		@Override
 		public Location getBaseLocation() {
 			return this;
 		}
 
+		@Override
 		public Location getAbsoluteBase() {
 			return this;
 		}
 
+		@Override
 		public int getMinDelta() {
 			return 0;
 		}
 
+		@Override
 		public int getAbsoluteMinDelta() {
 			return 0;
 		}
 
+		@Override
 		public int getMaxDelta() {
 			return 0;
 		}
 
+		@Override
 		public int getAbsoluteMaxDelta() {
 			return 0;
 		}
 
+		@Override
 		public boolean overlaps(Location loc) {
 			return loc == this;
 		}
 
+		@Override
 		public LogicalValue getInitialValue() {
 			throw new UnsupportedOperationException("INVALID Location");
 		}
 
+		@Override
 		public void chopStart(Location loc, int delta) {
 		}
 
+		@Override
 		public String debug() {
 			return "INVALID";
 		}

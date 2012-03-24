@@ -48,14 +48,14 @@ public class ActionPortStatus extends FifoAccess {
 		// the status of the target interface (status of the full or
 		// exists port)
 		Exit exit = makeExit(1);
-		Bus result = (Bus) exit.getDataBuses().get(0);
-		//Bus done = exit.getDoneBus();
+		Bus result = exit.getDataBuses().get(0);
+		// Bus done = exit.getDoneBus();
 		result.setUsed(true);
 
 		exit.setLatency(Latency.ZERO);
 
 		final SimplePinRead status = new SimplePinRead(statusPin);
-		this.addComponent(status);
+		addComponent(status);
 
 		result.getPeer().setBus(status.getResultBus());
 	}
@@ -73,6 +73,7 @@ public class ActionPortStatus extends FifoAccess {
 	 * This accessor may execute in parallel with other similar (non state
 	 * modifying) accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return false;
 	}

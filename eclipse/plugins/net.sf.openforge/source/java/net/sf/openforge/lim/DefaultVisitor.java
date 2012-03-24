@@ -104,8 +104,8 @@ public class DefaultVisitor implements Visitor {
 
 	public DefaultVisitor() {
 		if (_lim.db) {
-			this.stream = _lim.getPrintStream();
-			this.writer = new IndentWriter(stream);
+			stream = _lim.getPrintStream();
+			writer = new IndentWriter(stream);
 			writer.setIndentString("   ");
 		}
 	}
@@ -115,9 +115,10 @@ public class DefaultVisitor implements Visitor {
 	 * Components.
 	 */
 	public void setTraverseComposable(boolean value) {
-		this.traverseComposable = value;
+		traverseComposable = value;
 	}
 
+	@Override
 	public void visit(Design design) {
 		if (_lim.db)
 			writeln("Design: " + design.toString());
@@ -139,6 +140,7 @@ public class DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(Task task) {
 		if (_lim.db)
 			writeln("Task: " + task.toString());
@@ -152,6 +154,7 @@ public class DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(Call call) {
 		if (_lim.db)
 			writeln("Call: " + call.toString());
@@ -167,9 +170,11 @@ public class DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(IPCoreCall call) {
 	}
 
+	@Override
 	public void visit(Procedure procedure) {
 		if (_lim.db)
 			writeln("Procedure: " + procedure.toString());
@@ -182,42 +187,49 @@ public class DefaultVisitor implements Visitor {
 			writer.decrease();
 	}
 
+	@Override
 	public void visit(Block block) {
 		if (_lim.db)
 			writeln("Block: " + block.toString());
 		genericBlockVisit(block);
 	}
 
+	@Override
 	public void visit(HeapRead heapRead) {
 		if (_lim.db)
 			writeln("HeapRead: " + heapRead.toString());
 		genericBlockVisit(heapRead);
 	}
 
+	@Override
 	public void visit(HeapWrite heapWrite) {
 		if (_lim.db)
 			writeln("HeapWrite: " + heapWrite.toString());
 		genericBlockVisit(heapWrite);
 	}
 
+	@Override
 	public void visit(ArrayRead arrayRead) {
 		if (_lim.db)
 			writeln("Arrayread: " + arrayRead.toString());
 		genericBlockVisit(arrayRead);
 	}
 
+	@Override
 	public void visit(ArrayWrite arrayWrite) {
 		if (_lim.db)
 			writeln("ArrayWrite: " + arrayWrite.toString());
 		genericBlockVisit(arrayWrite);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead read) {
 		if (_lim.db)
 			writeln("AbsoluteMemoryRead: " + read.toString());
 		genericBlockVisit(read);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite write) {
 		if (_lim.db)
 			writeln("AbsoluteMemoryWrite: " + write.toString());
@@ -246,6 +258,7 @@ public class DefaultVisitor implements Visitor {
 		visit(block.getOutBufs());
 	}
 
+	@Override
 	public void visit(Loop loop) {
 		if (_lim.db)
 			writeln("Loop: " + loop.toString());
@@ -274,6 +287,7 @@ public class DefaultVisitor implements Visitor {
 			writer.dec();
 	}
 
+	@Override
 	public void visit(WhileBody whileBody) {
 		if (_lim.db)
 			writeln("While Body");
@@ -286,6 +300,7 @@ public class DefaultVisitor implements Visitor {
 		visit(whileBody.getOutBufs());
 	}
 
+	@Override
 	public void visit(UntilBody untilBody) {
 		if (_lim.db)
 			writeln("Until Body");
@@ -298,6 +313,7 @@ public class DefaultVisitor implements Visitor {
 		visit(untilBody.getOutBufs());
 	}
 
+	@Override
 	public void visit(ForBody forBody) {
 		if (_lim.db)
 			writeln("For Body");
@@ -310,6 +326,7 @@ public class DefaultVisitor implements Visitor {
 		visit(forBody.getOutBufs());
 	}
 
+	@Override
 	public void visit(Decision decision) {
 		if (_lim.db)
 			writeln("Decision: " + decision.toString());
@@ -326,10 +343,12 @@ public class DefaultVisitor implements Visitor {
 		visit(decision.getOutBufs());
 	}
 
+	@Override
 	public void visit(Switch swich) {
 		visit((Block) swich);
 	}
 
+	@Override
 	public void visit(Branch branch) {
 		if (_lim.db)
 			writeln("Branch: " + branch.toString());
@@ -394,182 +413,218 @@ public class DefaultVisitor implements Visitor {
 			writer.decrease();
 	}
 
+	@Override
 	public void visit(AddOp add) {
 		if (_lim.db)
 			writeln("Operation: " + add.toString());
 	}
 
+	@Override
 	public void visit(AndOp and) {
 		if (_lim.db)
 			writeln("Operation: " + and.toString());
 	}
 
+	@Override
 	public void visit(NumericPromotionOp numericPromotion) {
 		if (_lim.db)
 			writeln("Operation: " + numericPromotion.toString());
 	}
 
+	@Override
 	public void visit(CastOp cast) {
 		if (_lim.db)
 			writeln("Operation: " + cast.toString());
 	}
 
+	@Override
 	public void visit(ComplementOp complement) {
 		if (_lim.db)
 			writeln("Operation: " + complement.toString());
 	}
 
+	@Override
 	public void visit(ConditionalAndOp conditionalAnd) {
 		if (_lim.db)
 			writeln("Operation: " + conditionalAnd.toString());
 	}
 
+	@Override
 	public void visit(ConditionalOrOp conditionalOr) {
 		if (_lim.db)
 			writeln("Operation: " + conditionalOr.toString());
 	}
 
+	@Override
 	public void visit(Constant constant) {
 		if (_lim.db)
 			writeln("Operation: " + constant.toString());
 	}
 
+	@Override
 	public void visit(DivideOp divide) {
 		if (_lim.db)
 			writeln("Operation: " + divide.toString());
 	}
 
+	@Override
 	public void visit(EqualsOp equals) {
 		if (_lim.db)
 			writeln("Operation: " + equals.toString());
 	}
 
+	@Override
 	public void visit(GreaterThanEqualToOp greaterThanEqualTo) {
 		if (_lim.db)
 			writeln("Operation: " + greaterThanEqualTo.toString());
 	}
 
+	@Override
 	public void visit(GreaterThanOp greaterThan) {
 		if (_lim.db)
 			writeln("Operation: " + greaterThan.toString());
 	}
 
+	@Override
 	public void visit(LeftShiftOp leftShift) {
 		if (_lim.db)
 			writeln("Operation: " + leftShift.toString());
 	}
 
+	@Override
 	public void visit(LessThanEqualToOp lessThanEqualTo) {
 		if (_lim.db)
 			writeln("Operation: " + lessThanEqualTo.toString());
 	}
 
+	@Override
 	public void visit(LessThanOp lessThan) {
 		if (_lim.db)
 			writeln("Operation: " + lessThan.toString());
 	}
 
+	@Override
 	public void visit(LocationConstant loc) {
 		if (_lim.db)
 			writeln("Location Constant Operation: " + loc.toString());
 		visit((Constant) loc);
 	}
 
+	@Override
 	public void visit(MinusOp minus) {
 		if (_lim.db)
 			writeln("Operation: " + minus.toString());
 	}
 
+	@Override
 	public void visit(ModuloOp modulo) {
 		if (_lim.db)
 			writeln("Operation: " + modulo.toString());
 	}
 
+	@Override
 	public void visit(MultiplyOp multiply) {
 		if (_lim.db)
 			writeln("Operation: " + multiply.toString());
 	}
 
+	@Override
 	public void visit(NotEqualsOp notEquals) {
 		if (_lim.db)
 			writeln("Operation: " + notEquals.toString());
 	}
 
+	@Override
 	public void visit(NotOp not) {
 		if (_lim.db)
 			writeln("Operation: " + not.toString());
 	}
 
+	@Override
 	public void visit(OrOp or) {
 		if (_lim.db)
 			writeln("Operation: " + or.toString());
 	}
 
+	@Override
 	public void visit(PlusOp plus) {
 		if (_lim.db)
 			writeln("Operation: " + plus.toString());
 	}
 
+	@Override
 	public void visit(ReductionOrOp reductionOr) {
 		if (_lim.db)
 			writeln("Operation: " + reductionOr.toString());
 	}
 
+	@Override
 	public void visit(RightShiftOp rightShift) {
 		if (_lim.db)
 			writeln("Operation: " + rightShift.toString());
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp rightShiftUnsigned) {
 		if (_lim.db)
 			writeln("Operation: " + rightShiftUnsigned.toString());
 	}
 
+	@Override
 	public void visit(ShortcutIfElseOp shortcutIfElse) {
 		if (_lim.db)
 			writeln("Operation: " + shortcutIfElse.toString());
 	}
 
+	@Override
 	public void visit(SubtractOp subtract) {
 		if (_lim.db)
 			writeln("Operation: " + subtract.toString());
 	}
 
+	@Override
 	public void visit(XorOp xor) {
 		if (_lim.db)
 			writeln("Operation: " + xor.toString());
 	}
 
+	@Override
 	public void visit(InBuf ib) {
 		if (_lim.db)
 			writeln("InBuf: " + ib);
 	}
 
+	@Override
 	public void visit(OutBuf ob) {
 		if (_lim.db)
 			writeln("OutBuf: " + ob);
 	}
 
+	@Override
 	public void visit(Reg reg) {
 		if (_lim.db)
 			writeln("Reg: " + reg);
 	}
 
+	@Override
 	public void visit(SRL16 srl16) {
 		if (_lim.db)
 			writeln("SRL16: " + srl16);
 	}
 
+	@Override
 	public void visit(Mux m) {
 		if (_lim.db)
 			writeln("Mux: " + m);
 	}
 
+	@Override
 	public void visit(EncodedMux m) {
 		if (_lim.db)
 			writeln("EnabledMux: " + m);
 	}
 
+	@Override
 	public void visit(PriorityMux pmux) {
 		if (_lim.db)
 			writeln("PriorityMux: " + pmux);
@@ -599,26 +654,31 @@ public class DefaultVisitor implements Visitor {
 			writer.dec();
 	}
 
+	@Override
 	public void visit(And a) {
 		if (_lim.db)
 			writeln("And: " + a);
 	}
 
+	@Override
 	public void visit(Not n) {
 		if (_lim.db)
 			writeln("Not: " + n);
 	}
 
+	@Override
 	public void visit(Or o) {
 		if (_lim.db)
 			writeln("Or: " + o);
 	}
 
+	@Override
 	public void visit(TriBuf tbuf) {
 		if (_lim.db)
 			writeln("TriBuf: " + tbuf);
 	}
 
+	@Override
 	public void visit(Scoreboard scoreboard) {
 		if (_lim.db)
 			writeln("Scoreboard: " + scoreboard);
@@ -641,6 +701,7 @@ public class DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(Latch latch) {
 		if (_lim.db)
 			writeln("Latch: " + latch);
@@ -663,6 +724,7 @@ public class DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(Kicker kicker) {
 		if (_lim.db)
 			writeln("Kicker: " + kicker);
@@ -685,26 +747,31 @@ public class DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(NoOp nop) {
 		if (_lim.db)
 			writeln("NoOp: " + nop);
 	}
 
+	@Override
 	public void visit(TimingOp timingOp) {
 		if (_lim.db)
 			writeln("TimingOp: " + timingOp);
 	}
 
+	@Override
 	public void visit(RegisterRead regRead) {
 		if (_lim.db)
 			writeln("RegisterRead: " + regRead);
 	}
 
+	@Override
 	public void visit(RegisterWrite regWrite) {
 		if (_lim.db)
 			writeln("RegisterWrite: " + regWrite);
 	}
 
+	@Override
 	public void visit(RegisterGateway gw) {
 		if (_lim.db)
 			writeln("RegisterGateway: " + gw.toString());
@@ -719,6 +786,7 @@ public class DefaultVisitor implements Visitor {
 		visit(gw.getOutBufs());
 	}
 
+	@Override
 	public void visit(RegisterReferee regReferee) {
 		if (_lim.db)
 			writeln("RegisterReferee: " + regReferee);
@@ -749,6 +817,7 @@ public class DefaultVisitor implements Visitor {
 			writer.dec();
 	}
 
+	@Override
 	public void visit(MemoryReferee memReferee) {
 		if (_lim.db)
 			writeln("MemoryReferee: " + memReferee);
@@ -773,6 +842,7 @@ public class DefaultVisitor implements Visitor {
 			writer.dec();
 	}
 
+	@Override
 	public void visit(MemoryBank memBank) {
 		if (_lim.db)
 			writeln("MemoryBank: " + memBank);
@@ -782,6 +852,7 @@ public class DefaultVisitor implements Visitor {
 	 * Extends the visitation by explicitly visiting any
 	 * {@link MemoryRead#Physical} if defined for this component.
 	 */
+	@Override
 	public void visit(MemoryRead memRead) {
 		if (_lim.db)
 			writeln("MemoryRead: " + memRead);
@@ -795,6 +866,7 @@ public class DefaultVisitor implements Visitor {
 	 * Extends the visitation by explicitly visiting any
 	 * {@link MemoryWrite#Physical} if defined for this component.
 	 */
+	@Override
 	public void visit(MemoryWrite memWrite) {
 		if (_lim.db)
 			writeln("Memorywrite: " + memWrite);
@@ -804,6 +876,7 @@ public class DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(MemoryGateway mg) {
 		if (_lim.db)
 			writeln("MemoryGateway: " + mg.toString());
@@ -818,6 +891,7 @@ public class DefaultVisitor implements Visitor {
 		visit(mg.getOutBufs());
 	}
 
+	@Override
 	public void visit(PinRead pinRead) {
 		if (_lim.db)
 			writeln("PinRead: " + pinRead);
@@ -831,6 +905,7 @@ public class DefaultVisitor implements Visitor {
 	 * Extends the visitation by explicitly visiting any
 	 * {@link PinWrite.Physical} if defined for this component.
 	 */
+	@Override
 	public void visit(PinWrite pinWrite) {
 		if (_lim.db)
 			writeln("PinWrite: " + pinWrite);
@@ -844,6 +919,7 @@ public class DefaultVisitor implements Visitor {
 	 * Extends the visitation by explicitly visiting any
 	 * {@link PinStateChange.Physical} if defined for this component.
 	 */
+	@Override
 	public void visit(PinStateChange pinChange) {
 		if (_lim.db)
 			writeln("PinStateChange: " + pinChange);
@@ -853,6 +929,7 @@ public class DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(PinReferee pinReferee) {
 		if (_lim.db)
 			writeln("PinReferee: " + pinReferee);
@@ -874,51 +951,60 @@ public class DefaultVisitor implements Visitor {
 			writer.dec();
 	}
 
+	@Override
 	public void visit(SimplePin comp) {
 		if (_lim.db)
 			writeln("SimplePin: " + comp);
 	}
 
+	@Override
 	public void visit(TaskCall mod) {
 		if (_lim.db)
 			writeln("TaskCall: " + mod);
 		visitGenericModule(mod);
 	}
 
+	@Override
 	public void visit(SimplePinAccess mod) {
 		if (_lim.db)
 			writeln("SimplePinAccess: " + mod);
 		visitGenericModule(mod);
 	}
 
+	@Override
 	public void visit(SimplePinRead comp) {
 		if (_lim.db)
 			writeln("SimplePinRead: " + comp);
 	}
 
+	@Override
 	public void visit(SimplePinWrite comp) {
 		if (_lim.db)
 			writeln("SimplePinWrite: " + comp);
 	}
 
+	@Override
 	public void visit(FifoAccess mod) {
 		if (_lim.db)
 			writeln("FifoAccess: " + mod);
 		visitGenericModule(mod);
 	}
 
+	@Override
 	public void visit(FifoRead mod) {
 		if (_lim.db)
 			writeln("FifoRead: " + mod);
 		visitGenericModule(mod);
 	}
 
+	@Override
 	public void visit(FifoWrite mod) {
 		if (_lim.db)
 			writeln("FifoWrite: " + mod);
 		visitGenericModule(mod);
 	}
 
+	@Override
 	public void visit(EndianSwapper mod) {
 		if (_lim.db)
 			writeln("EndianSwapper: " + mod);
@@ -926,11 +1012,11 @@ public class DefaultVisitor implements Visitor {
 	}
 
 	public IndentWriter getWriter() {
-		return this.writer;
+		return writer;
 	}
 
 	public OutputStream getOutputStream() {
-		return this.stream;
+		return stream;
 	}
 
 	public void writeln(String s) {

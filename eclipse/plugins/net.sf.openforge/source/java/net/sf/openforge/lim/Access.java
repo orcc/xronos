@@ -59,8 +59,9 @@ public abstract class Access extends Reference implements Referencer {
 	 * 
 	 * @return a value of type 'Referenceable'
 	 */
+	@Override
 	public Referenceable getReferenceable() {
-		return this.getResource();
+		return getResource();
 	}
 
 	/**
@@ -79,6 +80,7 @@ public abstract class Access extends Reference implements Referencer {
 	 * @return the {@link Latency} of the accessed referent or ZERO if the
 	 *         resource is null.
 	 */
+	@Override
 	public Latency getLatency() {
 		assert getResource() != null : "Intenal state error.  Access has nothing to reference";
 		return getResource().getLatency(null);
@@ -97,6 +99,7 @@ public abstract class Access extends Reference implements Referencer {
 	 * @param ref
 	 *            the new target Referent
 	 */
+	@Override
 	public void setReferent(Referent ref) {
 		super.setRef(ref);
 	}
@@ -111,6 +114,7 @@ public abstract class Access extends Reference implements Referencer {
 	 * @return a collection of {@link Resource} or the empty collection if the
 	 *         targetted resource is null.
 	 */
+	@Override
 	public Collection getAccessedResources() {
 		assert getResource() != null : "Intenal state error.  Access has nothing to reference";
 		return Collections.singletonList(getResource());

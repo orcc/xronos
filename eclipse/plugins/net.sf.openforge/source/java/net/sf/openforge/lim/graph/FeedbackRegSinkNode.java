@@ -37,6 +37,7 @@ class FeedbackRegSinkNode extends ComponentNode {
 		super(reg, id, fontSize);
 	}
 
+	@Override
 	protected void graphPorts(Record.Port boundingBox) {
 		Reg reg = (Reg) getComponent();
 
@@ -49,12 +50,14 @@ class FeedbackRegSinkNode extends ComponentNode {
 		graphPort(reg.getDataPort(), entryBox, "din", "d");
 	}
 
+	@Override
 	protected void graphExits(Record.Port boundingBox) {
 		/*
 		 * Disable graphing of Exits.
 		 */
 	}
 
+	@Override
 	protected String getBodyLabel() {
 		StringBuffer labelBuf = new StringBuffer();
 		labelBuf.append(getShortClassName(getComponent()));

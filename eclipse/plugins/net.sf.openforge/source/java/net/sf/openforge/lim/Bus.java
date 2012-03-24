@@ -358,7 +358,7 @@ public class Bus extends ID {
 
 		assert (v.getSize() <= getSize());
 		valueForced = true;
-		this.value = v;
+		value = v;
 	}
 
 	/*
@@ -495,6 +495,7 @@ public class Bus extends ID {
 	 * 
 	 * @return this bus owner id source info
 	 */
+	@Override
 	public IDSourceInfo getIDSourceInfo() {
 		return getOwner().getIDSourceInfo();
 	}
@@ -504,6 +505,7 @@ public class Bus extends ID {
 	 * 
 	 * @return DOCUMENT ME!
 	 */
+	@Override
 	public String toString() {
 		return ID.glob(this);
 	}
@@ -537,7 +539,7 @@ public class Bus extends ID {
 		ID.copy(sourceBus, this);
 		setFloat(sourceBus.isFloat());
 
-		this.value = null;
+		value = null;
 		Value sourceValue = sourceBus.getValue();
 
 		if (sourceValue != null)// !(sourceBus.bits.length == 0))
@@ -575,13 +577,13 @@ public class Bus extends ID {
 	 * Sets the state of the isFloat method.
 	 */
 	public void setFloat(boolean value) {
-		this.isFloatBus = value;
+		isFloatBus = value;
 	}
 
 	/**
 	 * Returns true if the implementation of this bus is floating point.
 	 */
 	public boolean isFloat() {
-		return this.isFloatBus;
+		return isFloatBus;
 	}
 }

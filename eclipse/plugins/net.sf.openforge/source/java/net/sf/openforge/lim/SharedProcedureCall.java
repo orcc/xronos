@@ -52,6 +52,7 @@ public class SharedProcedureCall extends Access {
 		generateMaps(body);
 	}
 
+	@Override
 	public boolean isSequencingPoint() {
 		throw new UnsupportedOperationException(
 				"Shared procedure unsupported.  Call to unsupported method");
@@ -60,6 +61,7 @@ public class SharedProcedureCall extends Access {
 	/**
 	 * Calls the super then removes the port from the port mapping.
 	 */
+	@Override
 	public boolean removeDataPort(Port port) {
 		boolean ret = super.removeDataPort(port);
 		portMap.remove(port);
@@ -69,6 +71,7 @@ public class SharedProcedureCall extends Access {
 	/**
 	 * Calls the super then removes the bus from the bus mapping.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		boolean ret = super.removeDataBus(bus);
 		busMap.remove(bus);
@@ -122,6 +125,7 @@ public class SharedProcedureCall extends Access {
 	 * @param ref
 	 *            the new target Referent
 	 */
+	@Override
 	public void setReferent(Referent ref) {
 		super.setRef(ref);
 		assert ref instanceof Procedure : "Referent of shared procedure call is NOT a procedure!";
@@ -180,6 +184,7 @@ public class SharedProcedureCall extends Access {
 	/**
 	 * Gets the end-to-end Latency of the referent.
 	 */
+	@Override
 	public Latency getLatency() {
 		/*
 		 * tbd.
@@ -205,33 +210,34 @@ public class SharedProcedureCall extends Access {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		SharedProcedureCall clone = (SharedProcedureCall) super.clone();
 
 		clone.portMap = new HashMap();
-		Iterator origPortIter = this.getPorts().iterator();
+		Iterator origPortIter = getPorts().iterator();
 		Iterator clonePortIter = clone.getPorts().iterator();
 		while (origPortIter.hasNext()) {
 			// Map the clone's ports to the _same_ procedure ports as
 			// the original
-			Object bodyPort = this.portMap.get(origPortIter.next());
+			Object bodyPort = portMap.get(origPortIter.next());
 			clone.portMap.put(clonePortIter.next(), bodyPort);
 		}
 
 		clone.exitMap = new HashMap();
 		clone.busMap = new HashMap();
-		Iterator origExitIter = this.getExits().iterator();
+		Iterator origExitIter = getExits().iterator();
 		Iterator cloneExitIter = clone.getExits().iterator();
 		while (origExitIter.hasNext()) {
 			Exit origExit = (Exit) origExitIter.next();
 			Exit cloneExit = (Exit) cloneExitIter.next();
-			Object bodyExit = this.exitMap.get(origExit);
+			Object bodyExit = exitMap.get(origExit);
 			clone.exitMap.put(cloneExit, bodyExit);
 
 			Iterator origBusIter = origExit.getDataBuses().iterator();
 			Iterator cloneBusIter = cloneExit.getDataBuses().iterator();
 			while (origBusIter.hasNext()) {
-				Object bodyBus = this.busMap.get(origBusIter.next());
+				Object bodyBus = busMap.get(origBusIter.next());
 				clone.busMap.put(cloneBusIter.next(), bodyBus);
 			}
 		}
@@ -248,6 +254,7 @@ public class SharedProcedureCall extends Access {
 	 * Propagate the Procedures data bus {@link Value} to the corresponding Bus
 	 * on this Call.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		// All we need to do here is update the output bus(es) with
 		// the outputs from the Procedure.
@@ -271,6 +278,7 @@ public class SharedProcedureCall extends Access {
 	 * Back propagate procedure Port {@link Value Values} to the corresponding
 	 * Port on the Call.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		// All we need to do here is back propagate the procedure Port
 		// values to the Call's ports.

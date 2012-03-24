@@ -74,28 +74,28 @@ public class FSLFifoOutput extends FifoOutput {
 		 * bit input
 		 */
 
-		this.baseName = idString;
+		baseName = idString;
 		final String pinBaseName = buildPortBaseName(idString);
 		// this.data = new SimpleFifoPin(this, width * 8, pinBaseName +
 		// "_DATA");
-		this.data = new SimpleFifoPin(this, width, pinBaseName + "_DATA");
-		this.full = new SimpleFifoPin(this, 1, pinBaseName + "_FULL");
-		this.write = new SimpleFifoPin(this, 1, pinBaseName + "_WRITE");
-		this.ctrl = new SimpleFifoPin(this, 1, pinBaseName + "_CONTROL");
-		this.clk = new SimpleFifoPin(this, 1, pinBaseName + "_CLK");
+		data = new SimpleFifoPin(this, width, pinBaseName + "_DATA");
+		full = new SimpleFifoPin(this, 1, pinBaseName + "_FULL");
+		write = new SimpleFifoPin(this, 1, pinBaseName + "_WRITE");
+		ctrl = new SimpleFifoPin(this, 1, pinBaseName + "_CONTROL");
+		clk = new SimpleFifoPin(this, 1, pinBaseName + "_CLK");
 
 		// The order that these are added here determines the order
 		// they show up in the translated inteface.
-		this.addPin(data);
-		this.addPin(full);
-		this.addPin(write);
-		this.addPin(ctrl);
-		this.addPin(clk);
+		addPin(data);
+		addPin(full);
+		addPin(write);
+		addPin(ctrl);
+		addPin(clk);
 
 		// Tie off the unused outputs.
-		final Constant ctrl0 = new SimpleConstant(0, this.ctrl.getWidth());
+		final Constant ctrl0 = new SimpleConstant(0, ctrl.getWidth());
 		ctrl0.pushValuesForward(); // ensures the bus has a value.
-		this.ctrl.connectPort(ctrl0.getValueBus());
+		ctrl.connectPort(ctrl0.getValueBus());
 	}
 
 	/**
@@ -103,17 +103,20 @@ public class FSLFifoOutput extends FifoOutput {
 	 * 
 	 * @return an <code>int</code> value
 	 */
+	@Override
 	public int getType() {
 		return FifoIF.TYPE_FSL_FIFO;
 	}
 
+	@Override
 	public String getPortBaseName() {
-		return this.baseName;
+		return baseName;
 	}
 
 	/**
 	 * Fifo output ports are master queues, this method returns portname_M
 	 */
+	@Override
 	protected String buildPortBaseName(String portName) {
 		return portName + "_M";
 	}
@@ -122,27 +125,32 @@ public class FSLFifoOutput extends FifoOutput {
 	 * Returns a subset of {@link #getPins} that are the output pins of the
 	 * interface, containing only the data, write, and ctrl pins.
 	 */
+	@Override
 	public Collection<SimplePin> getOutputPins() {
 		List<SimplePin> list = new ArrayList<SimplePin>();
-		list.add(this.data);
-		list.add(this.write);
-		list.add(this.ctrl);
+		list.add(data);
+		list.add(write);
+		list.add(ctrl);
 
 		return Collections.unmodifiableList(list);
 	}
 
+	@Override
 	public SimplePin getDataPin() {
-		return this.data;
+		return data;
 	}
 
+	@Override
 	public SimplePin getAckPin() {
-		return this.full;
+		return full;
 	}
 
+	@Override
 	public SimplePin getSendPin() {
-		return this.write;
+		return write;
 	}
 
+	@Override
 	public SimplePin getReadyPin() {
 		return null;
 	}

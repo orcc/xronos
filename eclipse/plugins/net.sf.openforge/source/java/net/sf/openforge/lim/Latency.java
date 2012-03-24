@@ -309,7 +309,7 @@ public abstract class Latency implements Cloneable {
 	}
 
 	protected LatencyKey getKey() {
-		return this.key;
+		return key;
 	}
 
 	/**
@@ -389,6 +389,7 @@ public abstract class Latency implements Cloneable {
 		ONE = new AbsoluteLatency(1, 1);
 	}
 
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		return super.clone();
 	}

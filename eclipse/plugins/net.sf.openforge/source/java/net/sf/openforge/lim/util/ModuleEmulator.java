@@ -74,7 +74,8 @@ public class ModuleEmulator extends Emulator {
 	 *             is a loop that cannot be emulated.
 	 */
 
-	protected Map<Bus, SizedInteger> emulateComponent(Component component, Map<Port, SizedInteger> portValues)
+	protected Map<Bus, SizedInteger> emulateComponent(Component component,
+			Map<Port, SizedInteger> portValues)
 			throws UnEmulatableLoopException {
 		Map<Bus, SizedInteger> outputValues = null;
 
@@ -149,7 +150,8 @@ public class ModuleEmulator extends Emulator {
 
 			// System.out.println("EMULATING COMPONENT  - " + component +
 			// "with busValues " + busValues);
-			Map<Port, SizedInteger> portValues = busToPortValues(component, busValues);
+			Map<Port, SizedInteger> portValues = busToPortValues(component,
+					busValues);
 			// System.out.println("Port Values = " + portValues);
 			outputValues = emulateComponent(component, portValues);
 			// System.out.println("Output values = " + outputValues);

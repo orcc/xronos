@@ -71,6 +71,7 @@ public class Allocation extends Variable implements MemoryVisitable {
 	 *            the base for the duplicate location
 	 * @return the duplicated location
 	 */
+	@Override
 	public Location duplicateForBaseLocation(Location baseLocation) {
 		return baseLocation;
 	}
@@ -83,6 +84,7 @@ public class Allocation extends Variable implements MemoryVisitable {
 	 * @throws NullPointerException
 	 *             if memVis is null
 	 */
+	@Override
 	public void accept(MemoryVisitor memVis) {
 		memVis.visit(this);
 	}
@@ -92,6 +94,7 @@ public class Allocation extends Variable implements MemoryVisitable {
 	 * 
 	 * @return the value that was used to initialize this memory location
 	 */
+	@Override
 	public LogicalValue getInitialValue() {
 		return initialValue;
 	}
@@ -111,7 +114,7 @@ public class Allocation extends Variable implements MemoryVisitable {
 
 		Allocation template = (Allocation) loc;
 		for (BlockElement blockElement : template.getBlockElements()) {
-			this.addBlockElement(blockElement);
+			addBlockElement(blockElement);
 		}
 	}
 
@@ -131,11 +134,11 @@ public class Allocation extends Variable implements MemoryVisitable {
 					"Cannot add a null io element to a memory allocation");
 		}
 
-		if (this.blockElements == Collections.EMPTY_SET) {
-			this.blockElements = new HashSet<BlockElement>();
+		if (blockElements == Collections.EMPTY_SET) {
+			blockElements = new HashSet<BlockElement>();
 		}
 
-		this.blockElements.add(element);
+		blockElements.add(element);
 	}
 
 	/**
@@ -154,7 +157,7 @@ public class Allocation extends Variable implements MemoryVisitable {
 			throw new IllegalArgumentException("Null element cannot be removed");
 		}
 		// Do the remove and test that it worked.
-		if (!this.blockElements.remove(element)) {
+		if (!blockElements.remove(element)) {
 			throw new IllegalArgumentException(
 					"Unknown element was not removed from memory allocation");
 		}
@@ -169,16 +172,18 @@ public class Allocation extends Variable implements MemoryVisitable {
 	 *         the empty set.
 	 */
 	public Set<BlockElement> getBlockElements() {
-		return Collections.unmodifiableSet(this.blockElements);
+		return Collections.unmodifiableSet(blockElements);
 	}
 
+	@Override
 	public String toString() {
 		return "[Allocation@" + Integer.toHexString(hashCode()) + "="
 				+ initialValue + "]";
 	}
 
+	@Override
 	public String debug() {
-		return this.toString().replaceAll("net.sf.openforge.", "") + " <"
+		return toString().replaceAll("net.sf.openforge.", "") + " <"
 				+ getInitialValue().toString() + ">";
 	}
 }

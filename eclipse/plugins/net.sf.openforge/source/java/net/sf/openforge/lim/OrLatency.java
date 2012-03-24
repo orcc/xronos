@@ -46,10 +46,12 @@ class OrLatency extends Latency implements Cloneable {
 	 */
 	private boolean openState;
 
+	@Override
 	public boolean isOpen() {
-		return this.openState;
+		return openState;
 	}
 
+	@Override
 	public boolean isGT(Latency latency) {
 		for (Latency next : latencies) {
 			if (!next.isGT(latency)) {
@@ -59,8 +61,9 @@ class OrLatency extends Latency implements Cloneable {
 		return true;
 	}
 
+	@Override
 	public boolean isGE(Latency latency) {
-		if (this.equals(latency)) {
+		if (equals(latency)) {
 			return true;
 		}
 
@@ -77,10 +80,12 @@ class OrLatency extends Latency implements Cloneable {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean isFixed() {
 		return false;
 	}
 
+	@Override
 	public Latency addTo(Latency latency) {
 		Set<Latency> newSet = new HashSet<Latency>(latencies.size());
 		for (Latency next : latencies) {
@@ -89,6 +94,7 @@ class OrLatency extends Latency implements Cloneable {
 		return new OrLatency(newSet, getKey());
 	}
 
+	@Override
 	public boolean equals(Object object) {
 		if (object == this) {
 			return true;
@@ -101,10 +107,12 @@ class OrLatency extends Latency implements Cloneable {
 		}
 	}
 
+	@Override
 	public int hashCode() {
 		return latencies.hashCode() + getKey().hashCode();
 	}
 
+	@Override
 	boolean isDescendantOf(Latency latency) {
 		for (Latency next : latencies) {
 			if (!next.isDescendantOf(latency)) {
@@ -114,6 +122,7 @@ class OrLatency extends Latency implements Cloneable {
 		return true;
 	}
 
+	@Override
 	protected Latency increment(int minClocks, int maxClocks) {
 		Set<Latency> newSet = new HashSet<Latency>(latencies.size());
 		for (Latency next : latencies) {
@@ -122,6 +131,7 @@ class OrLatency extends Latency implements Cloneable {
 		return new OrLatency(newSet, getKey());
 	}
 
+	@Override
 	protected Latency increment(int minClocks, LatencyKey key) {
 		Set<Latency> newSet = new HashSet<Latency>(latencies.size());
 		for (Latency next : latencies) {
@@ -135,13 +145,13 @@ class OrLatency extends Latency implements Cloneable {
 	OrLatency(Set<Latency> lats, LatencyKey key) {
 		super(getMinClocks(lats), getMaxClocks(lats), key);
 
-		this.latencies = flatten(lats);
+		latencies = flatten(lats);
 
 		// Cache the 'open' state
-		this.openState = false;
-		for (Latency latency : this.latencies) {
+		openState = false;
+		for (Latency latency : latencies) {
 			if (latency.isOpen()) {
-				this.openState = true;
+				openState = true;
 			}
 		}
 	}
@@ -194,9 +204,10 @@ class OrLatency extends Latency implements Cloneable {
 		return max;
 	}
 
+	@Override
 	public String toString() {
 		String ret = "OrLatency<" + getKey() + "> {";
-		for (Iterator<Latency> iter = this.latencies.iterator(); iter.hasNext();) {
+		for (Iterator<Latency> iter = latencies.iterator(); iter.hasNext();) {
 			ret += iter.next();
 
 			if (iter.hasNext()) {
@@ -216,12 +227,13 @@ class OrLatency extends Latency implements Cloneable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		OrLatency clone = (OrLatency) super.clone();
 
 		clone.latencies = new HashSet<Latency>();
 
-		for (Latency latency : this.latencies) {
+		for (Latency latency : latencies) {
 			clone.latencies.add(latency);
 		}
 

@@ -73,6 +73,7 @@ public abstract class Operation extends Component {
 	/**
 	 * Asserts false until rule is supported.
 	 */
+	@Override
 	protected boolean pushValuesForward() {
 		assert false : "new pushValuesForward propagation of constants through "
 				+ this.getClass() + " not yet supported";
@@ -82,6 +83,7 @@ public abstract class Operation extends Component {
 	/**
 	 * Asserts false until rule is supported.
 	 */
+	@Override
 	protected boolean pushValuesBackward() {
 		assert false : "new pushValuesBackward propagation of constants through "
 				+ this.getClass() + " not yet supported";

@@ -70,15 +70,16 @@ public abstract class Reference extends Operation {
 	 *            reference from all references.
 	 */
 	protected void setRef(Referent ref) {
-		if (this.referent != null) {
-			this.referent.removeReference(this);
+		if (referent != null) {
+			referent.removeReference(this);
 		}
-		this.referent = ref;
+		referent = ref;
 		if (ref != null) {
-			this.referent.addReference(this);
+			referent.addReference(this);
 		}
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		throw new UnsupportedOperationException();
 	}
@@ -92,6 +93,7 @@ public abstract class Reference extends Operation {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		Reference clone = (Reference) super.clone();
 		return clone;

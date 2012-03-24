@@ -56,7 +56,7 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 	private Block body;
 
 	/** True if this procedure returns a value */
-	//private boolean hasReturnValue;
+	// private boolean hasReturnValue;
 
 	/** DOCUMENT ME */
 	private EntryMethod entryMethod = null;
@@ -90,7 +90,7 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 		super();
 		odbLabel = new CodeLabel(this, null);
 		this.body = body;
-		this.entryMethod = em;
+		entryMethod = em;
 		body.setProcedure(this);
 		if (hasReturnValue) {
 			body.getExit(Exit.RETURN).makeDataBus();
@@ -109,6 +109,7 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 		assert (returnExit == null) || (returnExit.getDataBuses().size() == 0);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -159,11 +160,13 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 	/**
 	 * Gets the latency of a reference's exit.
 	 */
+	@Override
 	public Latency getLatency(Exit exit) {
 		Call call = (Call) exit.getOwner();
 		return call.getProcedureExit(exit).getLatency();
 	}
 
+	@Override
 	public GenericJob getGenericJob() {
 		return EngineThread.getGenericJob();
 	}
@@ -177,10 +180,12 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 	 * 
 	 * @return null
 	 */
+	@Override
 	public Configurable getConfigurableParent() {
 		return null;
 	}
 
+	@Override
 	public String getOptionLabel() {
 		if (odbLabel.getLabel() == null)
 			return getClass().getName() + "@" + Integer.toHexString(hashCode());
@@ -190,13 +195,14 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 	}
 
 	public void setSearchLabel(SearchLabel sl) {
-		this.odbLabel = sl;
+		odbLabel = sl;
 	}
 
 	/**
 	 * Returns the string label associated with this Configurable.
 	 * 
 	 */
+	@Override
 	public SearchLabel getSearchLabel() {
 		return odbLabel;
 	}
@@ -221,9 +227,10 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		Procedure clone = (Procedure) super.clone();
-		clone.body = (Block) this.body.clone();
+		clone.body = (Block) body.clone();
 		clone.body.setProcedure(clone);
 		copy(this, clone);
 
@@ -242,6 +249,7 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 		entryMethod = em;
 	}
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		// for (Iterator portIter = body.getPorts().iterator();
@@ -279,6 +287,7 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 	 * @return the name of the reset signal
 	 * @deprecated
 	 */
+	@Deprecated
 	public String getSuspendName() {
 		/*
 		 * FIXME: commented out until the halt signal is fully supported. The
@@ -296,6 +305,7 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 	 * @return the name of the go signal
 	 * @deprecated
 	 */
+	@Deprecated
 	public String getGoName() {
 		return "GO";
 		// if (entryMethod == null)
@@ -314,6 +324,7 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 	 * @return the name of the done signal
 	 * @deprecated
 	 */
+	@Deprecated
 	public String getDoneName() {
 		return "DONE";
 		// if (entryMethod == null)
@@ -332,6 +343,7 @@ public class Procedure extends Referent implements Visitable, Cloneable,
 	 * @return the name of the result signal
 	 * @deprecated
 	 */
+	@Deprecated
 	public String getResultName() {
 		if (entryMethod == null) {
 			return net.sf.openforge.forge.api.pin.ResultPin.GLOBAL.getName();

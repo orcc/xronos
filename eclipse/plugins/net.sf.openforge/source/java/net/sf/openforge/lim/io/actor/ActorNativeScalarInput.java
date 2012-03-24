@@ -54,7 +54,7 @@ public class ActorNativeScalarInput extends NativeInput implements ActorPort {
 	public ActorNativeScalarInput(FifoID fifoID) {
 		super(fifoID.getBitWidth());
 		baseName = fifoID.getName();
-		final String pinBaseName = buildPortBaseName(this.baseName);
+		final String pinBaseName = buildPortBaseName(baseName);
 
 		data = new SimpleFifoPin(this, getWidth(), pinBaseName + "_DATA");
 		addPin(data);

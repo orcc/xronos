@@ -55,6 +55,7 @@ public class ConditionalOrOp extends BinaryOp implements Emulatable {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -66,6 +67,7 @@ public class ConditionalOrOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return 1;
 	}
@@ -75,6 +77,7 @@ public class ConditionalOrOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int lutCount = 0;
 
@@ -113,11 +116,10 @@ public class ConditionalOrOp extends BinaryOp implements Emulatable {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
-		final SizedInteger lval = (SizedInteger) portValues
-				.get(getLeftDataPort());
-		final SizedInteger rval = (SizedInteger) portValues
-				.get(getRightDataPort());
+		final SizedInteger lval = portValues.get(getLeftDataPort());
+		final SizedInteger rval = portValues.get(getRightDataPort());
 		final int resultInt = (lval.isZero() && rval.isZero()) ? 0 : 1;
 		final Value resultValue = getResultBus().getValue();
 		return Collections.singletonMap(getResultBus(), SizedInteger.valueOf(
@@ -145,6 +147,7 @@ public class ConditionalOrOp extends BinaryOp implements Emulatable {
 	 *         input Values.
 	 */
 
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -195,6 +198,7 @@ public class ConditionalOrOp extends BinaryOp implements Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

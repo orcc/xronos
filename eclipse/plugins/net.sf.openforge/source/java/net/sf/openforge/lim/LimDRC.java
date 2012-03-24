@@ -43,7 +43,6 @@ import net.sf.openforge.util.naming.ID;
  */
 public class LimDRC extends FilteredVisitor {
 
-	private static final String _RCS_ = "$Rev: 2 $";
 	private Map failures = new LinkedHashMap();
 	private Set procedureBodies = new HashSet();
 
@@ -80,6 +79,7 @@ public class LimDRC extends FilteredVisitor {
 	 * @param design
 	 *            DOCUMENT ME!
 	 */
+	@Override
 	public void visit(Design design) {
 		for (Iterator iter = design.getLogicalMemories().iterator(); iter
 				.hasNext();) {
@@ -101,6 +101,7 @@ public class LimDRC extends FilteredVisitor {
 	 * @param proc
 	 *            DOCUMENT ME!
 	 */
+	@Override
 	public void visit(Procedure proc) {
 		procedureBodies.add(proc.getBody());
 		super.visit(proc);
@@ -112,6 +113,7 @@ public class LimDRC extends FilteredVisitor {
 	 * @param call
 	 *            DOCUMENT ME!
 	 */
+	@Override
 	public void visit(Call call) {
 		super.visit(call);
 
@@ -173,6 +175,7 @@ public class LimDRC extends FilteredVisitor {
 	 * @param c
 	 *            DOCUMENT ME!
 	 */
+	@Override
 	public void filterAny(Component c) {
 		// Job.info("DRC Checking: "+ID.showLogical(c));
 		if (_lim.db) {

@@ -30,6 +30,7 @@ public class RegNode extends ComponentNode {
 		super(component, id, fontSize);
 	}
 
+	@Override
 	protected String getBodyLabel() {
 		String label = super.getBodyLabel();
 		final int type = ((Reg) getComponent()).getType();
@@ -43,6 +44,7 @@ public class RegNode extends ComponentNode {
 	/**
 	 * Creates sub-nodes in a given bounding box for each port of the component.
 	 */
+	@Override
 	protected void graphPorts(Record.Port boundingBox) {
 		Reg reg = (Reg) getComponent();
 		if (needPortGraph()) {

@@ -53,7 +53,7 @@ public class AggregateConstant extends MemoryConstant {
 	public AggregateConstant(List<Constant> constants, int width) {
 		super(width, false);
 
-		this.aggregatedConstants = new ArrayList<Constant>(constants);
+		aggregatedConstants = new ArrayList<Constant>(constants);
 
 		pushValuesForward();
 	}
@@ -92,7 +92,7 @@ public class AggregateConstant extends MemoryConstant {
 	public Set<Constant> getContents() {
 		Set<Constant> contents = new HashSet<Constant>();
 		contents.add(this);
-		for (Constant c : this.getAggregatedConstants()) {
+		for (Constant c : getAggregatedConstants()) {
 			contents.addAll(c.getContents());
 		}
 		return Collections.unmodifiableSet(contents);
@@ -140,6 +140,7 @@ public class AggregateConstant extends MemoryConstant {
 		return flat;
 	}
 
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -147,7 +148,7 @@ public class AggregateConstant extends MemoryConstant {
 		// little endian representation for pushing out as a
 		// constant. Remember that all values as data flows are
 		// little endian (because of how the pushValue works).
-		AURepBundle thisRep = getRepBundle(this.isBigEndian());
+		AURepBundle thisRep = getRepBundle(isBigEndian());
 
 		Value oldValue = getValueBus().getValue();
 

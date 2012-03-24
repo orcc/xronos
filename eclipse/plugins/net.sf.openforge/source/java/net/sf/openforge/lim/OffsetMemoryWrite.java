@@ -51,10 +51,9 @@ public abstract class OffsetMemoryWrite extends OffsetMemoryAccess {
 			int maxAddressWidth) {
 		super(memoryWrite, addressableLocations, maxAddressWidth);
 
-		this.valuePort = makeDataPort();
+		valuePort = makeDataPort();
 		final Bus valueBus = valuePort.getPeer();
-		final Entry writeEntry = (Entry) memoryWrite.getEntries().iterator()
-				.next();
+		final Entry writeEntry = memoryWrite.getEntries().iterator().next();
 		writeEntry.addDependency(memoryWrite.getDataPort(), new DataDependency(
 				valueBus));
 
@@ -71,6 +70,7 @@ public abstract class OffsetMemoryWrite extends OffsetMemoryAccess {
 	/**
 	 * Returns true
 	 */
+	@Override
 	public boolean isWrite() {
 		return true;
 	}
@@ -86,14 +86,16 @@ public abstract class OffsetMemoryWrite extends OffsetMemoryAccess {
 	 *            the port to remove
 	 * @return true if the port was removed.
 	 */
+	@Override
 	public boolean removeDataPort(Port port) {
 		final boolean isRemoved = super.removeDataPort(port);
 		if (isRemoved && (port == getValuePort())) {
-			this.valuePort = null;
+			valuePort = null;
 		}
 		return isRemoved;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		// XXX WARNING! This is probably never called since all the
 		// concrete subclasses override cloneNotify and do not call

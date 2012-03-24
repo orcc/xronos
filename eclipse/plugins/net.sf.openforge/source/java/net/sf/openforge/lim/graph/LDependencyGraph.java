@@ -243,23 +243,23 @@ public class LDependencyGraph extends DefaultVisitor {
 		super();
 		parseFlags(DEFAULT | DEXITS); // flags);
 
-		this.scanner = new net.sf.openforge.lim.Scanner(this);
+		scanner = new net.sf.openforge.lim.Scanner(this);
 
-		this.graph = new Graph(name);
+		graph = new Graph(name);
 		// this.graph.setSize(7, 10); ruins the ratio statement below...
-		this.graph.setLabel(name);
+		graph.setLabel(name);
 		// some attributes to make the graph smaller, and to print
 		// to several pages when printed via: dot -Tps file.dot | lpr
-		this.graph.setGVAttribute("ratio", "auto");
-		this.graph.setGVAttribute("ranksep", ".1");
-		this.graph.setGVAttribute("nodesep", ".12");
-		this.graph.setGVAttribute("fontsize", "10");
-		this.graph.setGVAttribute("fontname", "Helvetica");
-		this.graph.setGVAttribute("page", "8.5,11.0");
+		graph.setGVAttribute("ratio", "auto");
+		graph.setGVAttribute("ranksep", ".1");
+		graph.setGVAttribute("nodesep", ".12");
+		graph.setGVAttribute("fontsize", "10");
+		graph.setGVAttribute("fontname", "Helvetica");
+		graph.setGVAttribute("page", "8.5,11.0");
 		if ((flags & LANDSCAPE) == LANDSCAPE) {
 			setLandscape();
 		}
-		this.topGraph = graph;
+		topGraph = graph;
 
 		top.accept(this);
 	}
@@ -282,13 +282,13 @@ public class LDependencyGraph extends DefaultVisitor {
 			drawCR = true;
 		}
 		if ((flags & DETAIL) == DETAIL) {
-			this.isDetailed = true;
+			isDetailed = true;
 		}
 		if ((flags & HASHCODES) == HASHCODES) {
-			this.hashcodes = true;
+			hashcodes = true;
 		}
 		if ((flags & DEXITS) == DEXITS) {
-			this.graphDExits = true;
+			graphDExits = true;
 		}
 	}
 
@@ -366,7 +366,7 @@ public class LDependencyGraph extends DefaultVisitor {
 	 * use less paper - it depends on the graph. hence it is an option
 	 */
 	public void setLandscape() {
-		this.topGraph.setGVAttribute("rotate", "90");
+		topGraph.setGVAttribute("rotate", "90");
 	}
 
 	private void pushGraph(Object obj) {
@@ -376,7 +376,7 @@ public class LDependencyGraph extends DefaultVisitor {
 	}
 
 	private void popGraph() {
-		graph = (Graph) graphStack.removeFirst();
+		graph = graphStack.removeFirst();
 	}
 
 	private String getName(Object o, String defaultName) {
@@ -411,8 +411,7 @@ public class LDependencyGraph extends DefaultVisitor {
 
 		net.sf.openforge.util.graphviz.Record.Port main = box.getPort("main");
 		if (component.getEntries().size() == 1) {
-			final Entry entry = (Entry) component.getEntries().iterator()
-					.next();
+			final Entry entry = component.getEntries().iterator().next();
 			net.sf.openforge.util.graphviz.Record.Port entryPort = main
 					.getPort("entry");
 			addToNodeMap(entry, entryPort, DEPENDENCY);
@@ -442,7 +441,7 @@ public class LDependencyGraph extends DefaultVisitor {
 			}
 
 			for (int i = 0; i < component.getDataPorts().size(); i++) {
-				Port dp = (Port) component.getDataPorts().get(i);
+				Port dp = component.getDataPorts().get(i);
 				String label = "d" + i;
 				net.sf.openforge.util.graphviz.Record.Port dataPort = entryPort
 						.getPort("p_" + label);
@@ -480,7 +479,7 @@ public class LDependencyGraph extends DefaultVisitor {
 
 	private void graphSingleExit(Component component,
 			net.sf.openforge.util.graphviz.Record node) {
-		final Exit exit = (Exit) component.getExits().iterator().next();
+		final Exit exit = component.getExits().iterator().next();
 		net.sf.openforge.util.graphviz.Record.Port exitPort = node
 				.getPort("exit");
 		addToNodeMap(exit, exitPort, DEPENDENCY);
@@ -491,7 +490,7 @@ public class LDependencyGraph extends DefaultVisitor {
 		donePort.setSeparated(true);
 		addToNodeMap(exit.getDoneBus(), donePort, DEPENDENCY);
 		for (int i = 0; i < exit.getDataBuses().size(); i++) {
-			Bus dBus = (Bus) exit.getDataBuses().get(i);
+			Bus dBus = exit.getDataBuses().get(i);
 			String label = "d" + i;
 			net.sf.openforge.util.graphviz.Record.Port dataPort = exitPort
 					.getPort("b_" + label);
@@ -503,7 +502,7 @@ public class LDependencyGraph extends DefaultVisitor {
 
 	private void graphSingleExit(InBuf inbuf,
 			net.sf.openforge.util.graphviz.Record node) {
-		final Exit exit = (Exit) inbuf.getExits().iterator().next();
+		final Exit exit = inbuf.getExits().iterator().next();
 		net.sf.openforge.util.graphviz.Record.Port exitPort = node
 				.getPort("exit");
 		addToNodeMap(exit, exitPort, DEPENDENCY);
@@ -794,7 +793,7 @@ public class LDependencyGraph extends DefaultVisitor {
 	}
 
 	private void graphExit(Exit exit, int id) {
-		//Component component = exit.getOwner();
+		// Component component = exit.getOwner();
 
 		net.sf.openforge.util.graphviz.Record record = new net.sf.openforge.util.graphviz.Record(
 				"exit" + nodeCount++);
@@ -860,7 +859,7 @@ public class LDependencyGraph extends DefaultVisitor {
 			if (target != null) {
 				topGraph.connect(target, source, edge);
 			} else {
-				Unresolved ur = (Unresolved) unresolvedNodes.get(logicalBus);
+				Unresolved ur = unresolvedNodes.get(logicalBus);
 				if (ur == null) {
 					ur = new Unresolved(logicalBus, source, edge);
 					unresolvedNodes.put(logicalBus, ur);
@@ -891,14 +890,13 @@ public class LDependencyGraph extends DefaultVisitor {
 		}
 
 		if (unresolvedNodes.containsKey(key)) {
-			Unresolved ur = (Unresolved) unresolvedNodes.get(key);
+			Unresolved ur = unresolvedNodes.get(key);
 			Node target = (Node) nodeMapDeps.get(ur.getBus());
 			assert target != null : "How can the target still be null!";
 			List<Node> sources = ur.getSources();
 			List<Edge> edges = ur.getEdges();
 			for (int i = 0; i < sources.size(); i++) {
-				topGraph.connect(target, (Node) sources.get(i),
-						(Edge) edges.get(i));
+				topGraph.connect(target, sources.get(i), edges.get(i));
 			}
 			unresolvedNodes.remove(key);
 		}
@@ -936,6 +934,7 @@ public class LDependencyGraph extends DefaultVisitor {
 			edges.add(e);
 		}
 
+		@Override
 		public String toString() {
 			return "Unresolved: bus: " + bus + " owner: "
 					+ bus.getOwner().getOwner();
@@ -956,10 +955,12 @@ public class LDependencyGraph extends DefaultVisitor {
 			this.port = port;
 		}
 
+		@Override
 		public int hashCode() {
 			return entry.hashCode() + port.hashCode();
 		}
 
+		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof EntryPort) {
 				EntryPort ep = (EntryPort) obj;
@@ -969,6 +970,7 @@ public class LDependencyGraph extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(Design design) {
 		/*
 		 * XXX -- We don't do designs yet.
@@ -976,6 +978,7 @@ public class LDependencyGraph extends DefaultVisitor {
 		scanner.enter(design);
 	}
 
+	@Override
 	public void visit(Task task) {
 		/*
 		 * XXX -- nor tasks.
@@ -983,6 +986,7 @@ public class LDependencyGraph extends DefaultVisitor {
 		scanner.enter(task);
 	}
 
+	@Override
 	public void visit(Call call) {
 		/*
 		 * XXX -- Calls are also tbd.
@@ -991,6 +995,7 @@ public class LDependencyGraph extends DefaultVisitor {
 		scanner.enter(call);
 	}
 
+	@Override
 	public void visit(Procedure procedure) {
 		pushGraph(procedure);
 		graph.setLabel(getName(procedure));
@@ -1000,30 +1005,35 @@ public class LDependencyGraph extends DefaultVisitor {
 		popGraph();
 	}
 
+	@Override
 	public void visit(Block block) {
 		graphPreVisit(block);
 		scanner.enter(block);
 		graphPostVisit(block);
 	}
 
+	@Override
 	public void visit(Branch branch) {
 		graphPreVisit(branch);
 		scanner.enter(branch);
 		graphPostVisit(branch);
 	}
 
+	@Override
 	public void visit(Decision decision) {
 		graphPreVisit(decision);
 		scanner.enter(decision);
 		graphPostVisit(decision);
 	}
 
+	@Override
 	public void visit(Loop loop) {
 		graphPreVisit(loop);
 		scanner.enter(loop);
 		graphPostVisit(loop);
 	}
 
+	@Override
 	public void visit(Switch sw) {
 		graphPreVisit(sw);
 		scanner.enter(sw);
@@ -1044,60 +1054,70 @@ public class LDependencyGraph extends DefaultVisitor {
 	// graphPostVisit(swc);
 	// }
 
+	@Override
 	public void visit(ForBody body) {
 		graphPreVisit(body);
 		scanner.enter(body);
 		graphPostVisit(body);
 	}
 
+	@Override
 	public void visit(WhileBody body) {
 		graphPreVisit(body);
 		scanner.enter(body);
 		graphPostVisit(body);
 	}
 
+	@Override
 	public void visit(UntilBody body) {
 		graphPreVisit(body);
 		scanner.enter(body);
 		graphPostVisit(body);
 	}
 
+	@Override
 	public void visit(ArrayWrite comp) {
 		graphPreVisit(comp);
 		scanner.enter(comp);
 		graphPostVisit(comp);
 	}
 
+	@Override
 	public void visit(ArrayRead comp) {
 		graphPreVisit(comp);
 		scanner.enter(comp);
 		graphPostVisit(comp);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead comp) {
 		graphPreVisit(comp);
 		scanner.enter(comp);
 		graphPostVisit(comp);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite comp) {
 		graphPreVisit(comp);
 		scanner.enter(comp);
 		graphPostVisit(comp);
 	}
 
+	@Override
 	public void visit(HeapWrite comp) {
 		graphPreVisit(comp);
 		scanner.enter(comp);
 		graphPostVisit(comp);
 	}
 
+	@Override
 	public void visit(HeapRead comp) {
 		graphPreVisit(comp);
 		scanner.enter(comp);
 		graphPostVisit(comp);
 	}
 
+	@Override
 	public void visit(FifoAccess comp) {
 		if (graphComposable) {
 			graphPreVisit(comp);
@@ -1108,6 +1128,7 @@ public class LDependencyGraph extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(FifoWrite comp) {
 		if (graphComposable) {
 			graphPreVisit(comp);
@@ -1118,6 +1139,7 @@ public class LDependencyGraph extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(FifoRead comp) {
 		if (graphComposable) {
 			graphPreVisit(comp);
@@ -1128,22 +1150,27 @@ public class LDependencyGraph extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(InBuf buf) {
 		graph(buf);
 	}
 
+	@Override
 	public void visit(OutBuf buf) {
 		graph(buf);
 	}
 
+	@Override
 	public void visit(Reg reg) {
 		graph(reg);
 	}
 
+	@Override
 	public void visit(Scoreboard scbd) {
 		graph(scbd);
 	}
 
+	@Override
 	public void visit(Latch latch) {
 		graph(latch);
 		// graphPreVisit(latch);
@@ -1151,132 +1178,163 @@ public class LDependencyGraph extends DefaultVisitor {
 		// graphPostVisit(latch);
 	}
 
+	@Override
 	public void visit(Mux mux) {
 		graph(mux);
 	}
 
+	@Override
 	public void visit(EncodedMux mux) {
 		graph(mux);
 	}
 
+	@Override
 	public void visit(PriorityMux pmux) {
 		graphPreVisit(pmux);
 		scanner.enter(pmux);
 		graphPostVisit(pmux);
 	}
 
+	@Override
 	public void visit(RegisterReferee regReferee) {
 		graphPreVisit(regReferee);
 		scanner.enter(regReferee);
 		graphPostVisit(regReferee);
 	}
 
+	@Override
 	public void visit(MemoryReferee memReferee) {
 		graphPreVisit(memReferee);
 		scanner.enter(memReferee);
 		graphPostVisit(memReferee);
 	}
 
+	@Override
 	public void visit(And and) {
 		graph(and);
 	}
 
+	@Override
 	public void visit(Not not) {
 		graph(not);
 	}
 
+	@Override
 	public void visit(Or or) {
 		graph(or);
 	}
 
+	@Override
 	public void visit(AddOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(AndOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(NumericPromotionOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(CastOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(ComplementOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(ConditionalAndOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(ConditionalOrOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(Constant op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(DivideOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(EqualsOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(GreaterThanEqualToOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(GreaterThanOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(LeftShiftOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(LessThanEqualToOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(LessThanOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(MinusOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(MemoryRead op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(MemoryWrite op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(ModuloOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(MultiplyOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(NotEqualsOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(TimingOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(NoOp nop) {
 		/*
 		 * If a NoOp has no data flows, then it is not significant: skip it.
@@ -1296,70 +1354,86 @@ public class LDependencyGraph extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(RegisterRead op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(RegisterWrite op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(NotOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(OrOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(PinRead op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(PinWrite op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(PlusOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(RightShiftOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(ShortcutIfElseOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(SubtractOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(XorOp op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(SimplePinAccess comp) {
 		graphPreVisit(comp);
 		scanner.enter(comp);
 		graphPostVisit(comp);
 	}
 
+	@Override
 	public void visit(TaskCall comp) {
 		graphPreVisit(comp);
 		scanner.enter(comp);
 		graphPostVisit(comp);
 	}
 
+	@Override
 	public void visit(SimplePinRead op) {
 		graph(op);
 	}
 
+	@Override
 	public void visit(SimplePinWrite op) {
 		graph(op);
 	}

@@ -44,7 +44,7 @@ public class DesignCopier {
 	 * Returns the Map of original component to new (cloned) component.
 	 */
 	public Map getCorrelation() {
-		return Collections.unmodifiableMap(this.cloneMap.cloneMap);
+		return Collections.unmodifiableMap(cloneMap.cloneMap);
 	}
 
 	/**
@@ -63,9 +63,9 @@ public class DesignCopier {
 		for (Task task : design.getTasks()) {
 			try {
 				Call originalCall = task.getCall();
-				this.cloneMap.addSelf(originalCall);
+				cloneMap.addSelf(originalCall);
 				Call clonedCall = (Call) originalCall.clone();
-				this.cloneMap.removeSelf(originalCall);
+				cloneMap.removeSelf(originalCall);
 				Task cloneTask = new Task(clonedCall);
 				cloneTask.setKickerRequired(task.isKickerRequired());
 				newDesign.addTask(cloneTask);
@@ -76,28 +76,29 @@ public class DesignCopier {
 						"Cloning of design logic failed " + cnse);
 			}
 		}
-		taskCorrelation.putAll(this.cloneMap.cloneMap);
+		taskCorrelation.putAll(cloneMap.cloneMap);
 		design.accept(new TaskCallRetarget(taskCorrelation));
 
 		return newDesign;
 	}
 
 	private void correlateTopLevel(Task orig, Task clone) {
-		this.cloneMap.cloneMap.put(orig, clone);
-		this.cloneMap.cloneMap.put(orig.getCall(), clone.getCall());
-		this.cloneMap.cloneMap.put(orig.getCall().getProcedure(), clone
-				.getCall().getProcedure());
-		this.cloneMap.cloneMap.put(orig.getCall().getProcedure().getBody(),
-				clone.getCall().getProcedure().getBody());
+		cloneMap.cloneMap.put(orig, clone);
+		cloneMap.cloneMap.put(orig.getCall(), clone.getCall());
+		cloneMap.cloneMap.put(orig.getCall().getProcedure(), clone.getCall()
+				.getProcedure());
+		cloneMap.cloneMap.put(orig.getCall().getProcedure().getBody(), clone
+				.getCall().getProcedure().getBody());
 	}
 
 	private static class TaskCallRetarget extends DefaultVisitor {
 		private Map corr;
 
 		private TaskCallRetarget(Map corrMap) {
-			this.corr = corrMap;
+			corr = corrMap;
 		}
 
+		@Override
 		public void visit(TaskCall taskCall) {
 			Task origTask = taskCall.getTarget();
 			Task cloneTask = (Task) corr.get(origTask);
@@ -112,19 +113,21 @@ public class DesignCopier {
 		boolean add = true;
 
 		public void addSelf(Visitable vis) {
-			this.add = true;
+			add = true;
 			vis.accept(this);
 		}
 
 		public void removeSelf(Visitable vis) {
-			this.add = false;
+			add = false;
 			vis.accept(this);
 		}
 
+		@Override
 		public void setCloneMap(Map cloneMap) {
 			this.cloneMap.putAll(cloneMap);
 		}
 
+		@Override
 		public void filterAny(Component comp) {
 			if (add)
 				comp.addCloneListener(this);

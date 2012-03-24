@@ -102,6 +102,7 @@ public class Scoreboard extends Module implements Composable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return log2(getDataPorts().size()) + 1;
 	}
@@ -114,10 +115,11 @@ public class Scoreboard extends Module implements Composable {
 	 * 
 	 * @return a 'Set' of {@link Reg Reg's}
 	 */
+	@Override
 	public Set getFeedbackPoints() {
 		Set feedback = new HashSet();
 		feedback.addAll(super.getFeedbackPoints());
-		feedback.addAll(this.feedbackPoints);
+		feedback.addAll(feedbackPoints);
 
 		return Collections.unmodifiableSet(feedback);
 	}
@@ -125,17 +127,18 @@ public class Scoreboard extends Module implements Composable {
 	/**
 	 * Throws an exception, replacement in this class not supported.
 	 */
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		throw new UnsupportedOperationException("Cannot replace components in "
 				+ getClass());
 	}
 
 	protected Bus getScbdResult() {
-		return this.resultBus;
+		return resultBus;
 	}
 
 	protected And getScbdAnd() {
-		return this.scbdAnd;
+		return scbdAnd;
 	}
 
 	protected boolean isStallable() {
@@ -149,7 +152,7 @@ public class Scoreboard extends Module implements Composable {
 		int size = getDataPorts().size();
 		And and = new And(size);
 		and.getResultBus().setIDLogical(ID.showLogical(this) + "_and");
-		this.scbdAnd = and;
+		scbdAnd = and;
 		Bus commonResultBus;
 		// add the component
 		addComponent(and);
@@ -166,7 +169,7 @@ public class Scoreboard extends Module implements Composable {
 			// in this case we also need an or with the reset signal
 			Or or = new Or(2);
 			addComponent(or);
-			List l = (List) or.getDataPorts();
+			List l = or.getDataPorts();
 
 			// or together the result of the and
 			Port port = (Port) l.get(0);
@@ -181,7 +184,7 @@ public class Scoreboard extends Module implements Composable {
 			getResultBus().getPeer().setBus(and.getResultBus());
 		}
 
-		this.resultBus = commonResultBus;
+		resultBus = commonResultBus;
 
 		// iterator for the and
 		Iterator it = and.getDataPorts().iterator();
@@ -216,7 +219,7 @@ public class Scoreboard extends Module implements Composable {
 			addComponent(resetOr);
 			resetOr.getResultBus().setIDLogical(
 					ID.showLogical(this) + "_sliceOr" + number);
-			final List l = (List) resetOr.getDataPorts();
+			final List l = resetOr.getDataPorts();
 			if (isStallPort) {
 				// set bus is the or of the input and reset
 				((Port) l.get(0)).setBus(inputPort.getPeer());
@@ -232,9 +235,8 @@ public class Scoreboard extends Module implements Composable {
 				maskNot.getResultBus().setIDLogical(
 						ID.showLogical(this) + "_sliceMaskNot" + number);
 				maskNot.getDataPort().setBus(setBus);
-				((Port) maskAnd.getDataPorts().get(0)).setBus(getScbdResult());
-				((Port) maskAnd.getDataPorts().get(1)).setBus(maskNot
-						.getResultBus());
+				maskAnd.getDataPorts().get(0).setBus(getScbdResult());
+				maskAnd.getDataPorts().get(1).setBus(maskNot.getResultBus());
 				// resetBus = getScbdResult();
 				resetBus = maskAnd.getResultBus();
 			} else {
@@ -262,7 +264,7 @@ public class Scoreboard extends Module implements Composable {
 		// set value and record reg
 		r.getResultBus().setSize(1, true);
 		addComponent(r);
-		this.feedbackPoints.add(r);
+		feedbackPoints.add(r);
 
 		// If this is a stall port, break any possible combinational
 		// path through the process by only having the flop path
@@ -276,7 +278,7 @@ public class Scoreboard extends Module implements Composable {
 			or.getResultBus().setIDLogical(
 					ID.showLogical(this) + "_resOr" + number);
 			addComponent(or);
-			List l = (List) or.getDataPorts();
+			List l = or.getDataPorts();
 			// or together the input and the reg result
 			((Port) l.get(0)).setBus(inputPort.getPeer());
 			((Port) l.get(1)).setBus(r.getResultBus());
@@ -289,6 +291,7 @@ public class Scoreboard extends Module implements Composable {
 		andPort.setBus(sliceDoneBus);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}

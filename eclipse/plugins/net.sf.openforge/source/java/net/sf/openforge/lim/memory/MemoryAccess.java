@@ -66,7 +66,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	public MemoryAccess(int portCount, boolean isVolatile, boolean isSigned,
 			int width) {
 		super(null, portCount, isVolatile);
-		this.logicalMemoryPort = null;
+		logicalMemoryPort = null;
 		this.isSigned = isSigned;
 		this.width = width;
 	}
@@ -87,7 +87,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 *            the logical memory port, or null if there is none
 	 */
 	public void setMemoryPort(LogicalMemoryPort memoryPort) {
-		this.logicalMemoryPort = memoryPort;
+		logicalMemoryPort = memoryPort;
 	}
 
 	/**
@@ -95,12 +95,14 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 * 
 	 * @return the logical memory port, or null if there is none
 	 */
+	@Override
 	public Resource getResource() {
 		return getMemoryPort();
 	}
 
+	@Override
 	public Referenceable getReferenceable() {
-		return this.getMemoryPort().getLogicalMemory();
+		return getMemoryPort().getLogicalMemory();
 	}
 
 	/**
@@ -114,11 +116,11 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	}
 
 	public Port getAddressPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
 	public Bus getDoneBus() {
-		return (Bus) getExit(Exit.DONE).getDoneBus();
+		return getExit(Exit.DONE).getDoneBus();
 	}
 
 	/**
@@ -145,6 +147,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 * Returns true since both {@link MemoryRead} and {@link MemoryWrite} use
 	 * the clock in their Physical implementation.
 	 */
+	@Override
 	public boolean consumesClock() {
 		return true;
 	}
@@ -153,6 +156,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 * Returns true since both {@link MemoryRead} and {@link MemoryWrite} use
 	 * the reset in their Physical implementation.
 	 */
+	@Override
 	public boolean consumesReset() {
 		return true;
 	}
@@ -161,6 +165,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 * Tests whether this component requires a connection to its <em>go</em>
 	 * {@link Port} in order to commence processing.
 	 */
+	@Override
 	public boolean consumesGo() {
 		return true;
 	}
@@ -170,6 +175,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 * each of its {@link Exit Exits}, returns true if the accessed
 	 * {@link LogicalMemoryPort} is arbitrated.
 	 */
+	@Override
 	public boolean producesDone() {
 		return getMemoryPort().isArbitrated();
 	}
@@ -178,6 +184,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 * Returns true if this access takes more than one clock cycle, or if the
 	 * latency is open.
 	 */
+	@Override
 	public boolean isDoneSynchronous() {
 		return getLatency() != Latency.ZERO;
 	}
@@ -185,6 +192,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	/**
 	 * returns true if the accessed {@link LogicalMemoryPort} is not arbitrated.
 	 */
+	@Override
 	public boolean isBalanceable() {
 		return !getMemoryPort().isArbitrated();
 	}
@@ -193,6 +201,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 * Returns the {@link Latency} reported for this access by the accessed
 	 * resource.
 	 */
+	@Override
 	public Latency getLatency() {
 		return getMemoryPort().getLatency(getOnlyExit());
 	}
@@ -202,10 +211,12 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 * 
 	 * @return a collection of {@link Resource}
 	 */
+	@Override
 	public Collection<LogicalMemoryPort> getAccessedResources() {
 		return Collections.singletonList(getMemoryPort());
 	}
 
+	@Override
 	protected Exit createExit(int dataCount, Exit.Type type, String label) {
 		return new VariableLatencyExit(this, dataCount, type, label);
 	}
@@ -220,6 +231,7 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 			super(memoryAccess, dataCount, type, label);
 		}
 
+		@Override
 		public Latency getLatency() {
 			return ((MemoryAccess) getOwner()).getLatency();
 		}

@@ -52,7 +52,7 @@ public class PinStateChange extends PinAccess {
 	 * Gets the port which determines whether or not to drive the Pin.
 	 */
 	public Port getDrivingPort() {
-		return (Port) getDataPorts().get(1);
+		return getDataPorts().get(1);
 	}
 
 	/**
@@ -66,15 +66,17 @@ public class PinStateChange extends PinAccess {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		PinStateChange clone = (PinStateChange) super.clone();
-		this.copyComponentAttributes(clone);
+		copyComponentAttributes(clone);
 		return clone;
 	}
 
 	/**
 	 * @return true
 	 */
+	@Override
 	public boolean consumesGo() {
 		return true;
 	}
@@ -84,10 +86,12 @@ public class PinStateChange extends PinAccess {
 	 * prop rules implementation.
 	 */
 
+	@Override
 	public boolean pushValuesForward() {
 		return false;
 	}
 
+	@Override
 	public boolean pushValuesBackward() {
 		return false;
 	}
@@ -97,6 +101,7 @@ public class PinStateChange extends PinAccess {
 	 * =================================================
 	 */
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -107,6 +112,7 @@ public class PinStateChange extends PinAccess {
 		return physical;
 	}
 
+	@Override
 	public Module getPhysicalComponent() {
 		return physical;
 	}
@@ -127,14 +133,14 @@ public class PinStateChange extends PinAccess {
 		 * Constructs a new Physical which appropriates all the port-bus
 		 * connections of the PinStateChange.
 		 */
-		
+
 		public Physical() {
 			super(0);
 
 			// one normal port for the address
 			Port addressIn = makeDataPort();
-			Port pinStateChangeAddress = (Port) PinStateChange.this
-					.getDataPorts().get(0);
+			Port pinStateChangeAddress = PinStateChange.this.getDataPorts()
+					.get(0);
 			assert (pinStateChangeAddress.getBus() != null) : "PinStateChange's address port not attached to a bus.";
 
 			{
@@ -148,8 +154,7 @@ public class PinStateChange extends PinAccess {
 
 			// and one normal port for the data
 			Port dataIn = makeDataPort();
-			Port pinStateChangeData = (Port) PinStateChange.this.getDataPorts()
-					.get(1);
+			Port pinStateChangeData = PinStateChange.this.getDataPorts().get(1);
 			assert (pinStateChangeData.getBus() != null) : "PinStateChange's address port not attached to a bus.";
 
 			{
@@ -216,14 +221,17 @@ public class PinStateChange extends PinAccess {
 			return sideEnable;
 		}
 
+		@Override
 		public void accept(Visitor v) {
 		}
 
+		@Override
 		public boolean removeDataBus(Bus bus) {
 			assert false : "remove data port not supported on " + this;
 			return false;
 		}
 
+		@Override
 		public boolean removeDataPort(Port port) {
 			assert false : "remove data port not supported on " + this;
 			return false;

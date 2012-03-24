@@ -49,7 +49,7 @@ public class ArrayWrite extends OffsetMemoryWrite implements ArrayAccess {
 	 * The number of housekeeping locations between the base address and the
 	 * first data element.
 	 */
-	//private final int skip;
+	// private final int skip;
 
 	/** A constant representing the <code>skip</code> value */
 	private Constant skipConstant;
@@ -110,8 +110,8 @@ public class ArrayWrite extends OffsetMemoryWrite implements ArrayAccess {
 			int maxAddressWidth, int skip) {
 		super(memoryWrite, addressableLocations, maxAddressWidth);
 
-		this.offsetPort = makeDataPort();
-		final Bus offsetBus = this.offsetPort.getPeer();
+		offsetPort = makeDataPort();
+		final Bus offsetBus = offsetPort.getPeer();
 
 		/*
 		 * Multiply the offset (which is in number of array elements) by the
@@ -138,8 +138,8 @@ public class ArrayWrite extends OffsetMemoryWrite implements ArrayAccess {
 		multEntry.addDependency(multiplier.getGoPort(), new ControlDependency(
 				multEntry.getDrivingExit().getDoneBus()));
 
-		//this.skip = skip;
-		this.skipConstant = new SimpleConstant(skip, maxAddressWidth, false);
+		// this.skip = skip;
+		skipConstant = new SimpleConstant(skip, maxAddressWidth, false);
 		insertComponent(skipConstant, 2);
 		final Entry skipEntry = skipConstant.makeEntry(getInBuf().getExit(
 				Exit.DONE));
@@ -147,7 +147,7 @@ public class ArrayWrite extends OffsetMemoryWrite implements ArrayAccess {
 				new ControlDependency(skipEntry.getDrivingExit().getDoneBus()));
 
 		final AddMultiOp addOp = (AddMultiOp) getAddOp();
-		final Entry addEntry = (Entry) addOp.getEntries().get(0);
+		final Entry addEntry = addOp.getEntries().get(0);
 		addEntry.addDependency(addOp.getRightDataPort(), new DataDependency(
 				multiplier.getResultBus()));
 		final Port skipPort = addOp.makeDataPort();
@@ -158,14 +158,16 @@ public class ArrayWrite extends OffsetMemoryWrite implements ArrayAccess {
 	/**
 	 * Gets the port which receives the address offset value.
 	 */
+	@Override
 	public Port getOffsetPort() {
-		return this.offsetPort;
+		return offsetPort;
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == this.skipConstant)
-			this.skipConstant = null;
+		if (component == skipConstant)
+			skipConstant = null;
 		return ret;
 	}
 
@@ -177,6 +179,7 @@ public class ArrayWrite extends OffsetMemoryWrite implements ArrayAccess {
 	 * 
 	 * @return the clone
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		/*
 		 * final MemoryWrite cloneWrite = new MemoryWrite(false,
@@ -201,21 +204,24 @@ public class ArrayWrite extends OffsetMemoryWrite implements ArrayAccess {
 		return clone();
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		((ArrayWrite) moduleClone).skipConstant = (Constant) cloneMap
-				.get(this.skipConstant);
-		((ArrayWrite) moduleClone).offsetPort = getPortClone(this.offsetPort,
+				.get(skipConstant);
+		((ArrayWrite) moduleClone).offsetPort = getPortClone(offsetPort,
 				cloneMap);
 	}
 
 	/**
 	 * Returns true if this memory access is an array access. returns true.
 	 */
+	@Override
 	public boolean isArrayAccess() {
 		return true;
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}

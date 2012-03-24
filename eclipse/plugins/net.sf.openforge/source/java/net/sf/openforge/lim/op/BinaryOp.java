@@ -48,21 +48,21 @@ public abstract class BinaryOp extends Operation {
 	public BinaryOp() {
 		super(2);
 		Exit exit = makeExit(1);
-		result_bus = (Bus) exit.getDataBuses().iterator().next();
+		result_bus = exit.getDataBuses().iterator().next();
 	}
 
 	/**
 	 * Gets the left-hand side input Port.
 	 */
 	public Port getLeftDataPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
 	/**
 	 * Gets the right-hand side input Port.
 	 */
 	public Port getRightDataPort() {
-		return (Port) getDataPorts().get(1);
+		return getDataPorts().get(1);
 	}
 
 	public Bus getResultBus() {
@@ -73,10 +73,11 @@ public abstract class BinaryOp extends Operation {
 	 * Calls the super, then removes any reference to the given bus in this
 	 * class.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
 			if (bus == result_bus)
-				this.result_bus = null;
+				result_bus = null;
 			return true;
 		}
 		return false;
@@ -99,6 +100,7 @@ public abstract class BinaryOp extends Operation {
 	/**
 	 * Returns true if this BinaryOp returns a floating point value.
 	 */
+	@Override
 	public boolean isFloat() {
 		return getResultBus().isFloat();
 	}
@@ -110,10 +112,11 @@ public abstract class BinaryOp extends Operation {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		BinaryOp clone = (BinaryOp) super.clone();
-		clone.result_bus = (Bus) clone.getExit(Exit.DONE).getDataBuses()
-				.iterator().next();
+		clone.result_bus = clone.getExit(Exit.DONE).getDataBuses().iterator()
+				.next();
 		return clone;
 	}
 

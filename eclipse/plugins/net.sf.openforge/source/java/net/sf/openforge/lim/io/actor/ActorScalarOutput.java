@@ -83,21 +83,21 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	public ActorScalarOutput(FifoID fifoID) {
 		super(fifoID.getBitWidth());
 
-		this.baseName = fifoID.getName();
-		final String pinBaseName = buildPortBaseName(this.baseName);
+		baseName = fifoID.getName();
+		final String pinBaseName = buildPortBaseName(baseName);
 
-		this.data = new SimpleFifoPin(this, getWidth(), pinBaseName + "_DATA");
-		this.send = new SimpleFifoPin(this, 1, pinBaseName + "_SEND");
-		this.ack = new SimpleFifoPin(this, 1, pinBaseName + "_ACK");
-		this.rdy = new SimpleFifoPin(this, 1, pinBaseName + "_RDY");
-		this.tokenCount = new SimpleFifoPin(this, ActorPort.COUNT_PORT_WIDTH,
+		data = new SimpleFifoPin(this, getWidth(), pinBaseName + "_DATA");
+		send = new SimpleFifoPin(this, 1, pinBaseName + "_SEND");
+		ack = new SimpleFifoPin(this, 1, pinBaseName + "_ACK");
+		rdy = new SimpleFifoPin(this, 1, pinBaseName + "_RDY");
+		tokenCount = new SimpleFifoPin(this, ActorPort.COUNT_PORT_WIDTH,
 				pinBaseName + "_COUNT");
 
-		this.addPin(this.data);
-		this.addPin(this.send);
-		this.addPin(this.ack);
-		this.addPin(this.rdy);
-		this.addPin(this.tokenCount);
+		addPin(data);
+		addPin(send);
+		addPin(ack);
+		addPin(rdy);
+		addPin(tokenCount);
 	}
 
 	/**
@@ -112,7 +112,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 
 	@Override
 	public String getPortBaseName() {
-		return this.baseName;
+		return baseName;
 	}
 
 	/**
@@ -139,9 +139,9 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	@Override
 	public Collection<SimplePin> getOutputPins() {
 		List<SimplePin> list = new ArrayList<SimplePin>();
-		list.add(this.data);
-		list.add(this.send);
-		list.add(this.tokenCount);
+		list.add(data);
+		list.add(send);
+		list.add(tokenCount);
 
 		return Collections.unmodifiableList(list);
 	}
@@ -178,7 +178,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	/** Returns the output data pin for this interface */
 	@Override
 	public SimplePin getDataPin() {
-		return this.data;
+		return data;
 	}
 
 	/**
@@ -187,7 +187,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 */
 	@Override
 	public SimplePin getSendPin() {
-		return this.send;
+		return send;
 	}
 
 	/**
@@ -196,7 +196,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 */
 	@Override
 	public SimplePin getAckPin() {
-		return this.ack;
+		return ack;
 	}
 
 	/**
@@ -205,7 +205,7 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 	 */
 	@Override
 	public SimplePin getReadyPin() {
-		return this.rdy;
+		return rdy;
 	}
 
 	/**
@@ -266,8 +266,8 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 			final Exit exit = getExit(Exit.DONE);
 			exit.setLatency(Latency.ZERO.open(exit));
 
-			this.setProducesDone(true);
-			this.setDoneSynchronous(true);
+			setProducesDone(true);
+			setDoneSynchronous(true);
 			// super(aso);
 			// Because the write protocol is different from FSL we
 			// need to fully populate the logic here.
@@ -297,22 +297,22 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 			flop.getResultBus().pushValueForward(new Value(1, false));
 
 			// Connect the clock ports
-			flop.getClockPort().setBus(this.getClockPort().getPeer());
-			flop.getResetPort().setBus(this.getResetPort().getPeer());
-			flop.getInternalResetPort().setBus(this.getResetPort().getPeer());
-			capture.getClockPort().setBus(this.getClockPort().getPeer());
+			flop.getClockPort().setBus(getClockPort().getPeer());
+			flop.getResetPort().setBus(getResetPort().getPeer());
+			flop.getInternalResetPort().setBus(getResetPort().getPeer());
+			capture.getClockPort().setBus(getClockPort().getPeer());
 
 			// add all the components
-			this.addComponent(flop);
-			this.addComponent(pending);
-			this.addComponent(done_and);
-			this.addComponent(flop_and);
-			this.addComponent(not);
-			this.addComponent(doutCast);
-			this.addComponent(dout);
-			this.addComponent(send);
-			this.addComponent(ack);
-			this.addComponent(capture);
+			addComponent(flop);
+			addComponent(pending);
+			addComponent(done_and);
+			addComponent(flop_and);
+			addComponent(not);
+			addComponent(doutCast);
+			addComponent(dout);
+			addComponent(send);
+			addComponent(ack);
+			addComponent(capture);
 
 			// Hook up data capture latch
 			capture.getDataPort().setBus(data.getPeer());

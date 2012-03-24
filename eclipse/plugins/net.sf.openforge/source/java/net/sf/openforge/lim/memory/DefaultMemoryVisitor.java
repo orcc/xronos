@@ -21,7 +21,6 @@
 
 package net.sf.openforge.lim.memory;
 
-
 /**
  * DefaultMemoryVisitor.java
  * 
@@ -50,10 +49,11 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	 * @throws NullPointerException
 	 *             if mem is null
 	 */
+	@Override
 	public void visit(LogicalMemory mem) {
 		_memory.ln(_memory.MEMVISIT, "Visiting " + mem);
 		for (Allocation allocation : mem.getAllocations()) {
-			MemoryVisitable alloc = (MemoryVisitable) allocation;
+			MemoryVisitable alloc = allocation;
 			alloc.accept(this);
 		}
 	}
@@ -67,10 +67,11 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	 * @throws NullPointerException
 	 *             if alloc is null
 	 */
+	@Override
 	public void visit(Allocation alloc) {
 		_memory.ln(_memory.MEMVISIT, "Visiting " + alloc);
 		assert alloc.getInitialValue() != null : "Illegal internal structure.  An allocation has null initial value";
-		MemoryVisitable value = (MemoryVisitable) alloc.getInitialValue();
+		MemoryVisitable value = alloc.getInitialValue();
 		value.accept(this);
 	}
 
@@ -82,6 +83,7 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	 * @throws NullPointerException
 	 *             if ptr is null
 	 */
+	@Override
 	public void visit(Pointer ptr) {
 		_memory.ln(_memory.MEMVISIT, "Visiting " + ptr);
 		if (ptr == null)
@@ -97,10 +99,11 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	 * @throws NullPointerException
 	 *             if rec is null
 	 */
+	@Override
 	public void visit(Record rec) {
 		_memory.ln(_memory.MEMVISIT, "Visiting " + rec);
 		for (LogicalValue logicalValue : rec.getComponentValues()) {
-			MemoryVisitable value = (MemoryVisitable) logicalValue;
+			MemoryVisitable value = logicalValue;
 			value.accept(this);
 		}
 	}
@@ -113,6 +116,7 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	 * @throws NullPointerException
 	 *             if ptr is null
 	 */
+	@Override
 	public void visit(Scalar sclr) {
 		_memory.ln(_memory.MEMVISIT, "Visiting " + sclr);
 		if (sclr == null)
@@ -127,6 +131,7 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	 * @throws NullPointerException
 	 *             if slice is null
 	 */
+	@Override
 	public void visit(Slice slice) {
 		_memory.ln(_memory.MEMVISIT, "Visiting " + slice);
 		if (slice == null)

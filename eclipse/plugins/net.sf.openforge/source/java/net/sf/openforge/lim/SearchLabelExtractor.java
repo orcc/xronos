@@ -31,6 +31,7 @@ import java.util.List;
  * @author sb
  */
 public class SearchLabelExtractor extends FilteredVisitor {
+
 	List<String> tagList = new ArrayList<String>();
 
 	private Procedure currentProcedure;
@@ -46,11 +47,12 @@ public class SearchLabelExtractor extends FilteredVisitor {
 	 * Adds tags for all permutations of the procedure name using CodeLabel's
 	 * searchList.
 	 */
+	@Override
 	public void visit(Procedure procedure) {
 		CodeLabel procedureLabel = new CodeLabel(procedure, null);
 		List<String> procList = procedureLabel.getSearchList();
 		for (int idx = 0; idx < procList.size(); idx++) {
-			String tag = (String) procList.get(idx);
+			String tag = procList.get(idx);
 			if (!tagList.contains(tag))
 				tagList.add(tag);
 		}
@@ -62,13 +64,14 @@ public class SearchLabelExtractor extends FilteredVisitor {
 	 * Adds tags for all permutations of the component's label (if any) using
 	 * CodeLabel's searchList.
 	 */
+	@Override
 	public void filterAny(Component c) {
 		String optionLabel = c.getOptionLabel();
 		if (optionLabel != null) {
 			CodeLabel label = new CodeLabel(currentProcedure, optionLabel);
 			List<String> list = label.getSearchList(optionLabel);
 			for (int idx = 0; idx < list.size(); idx++) {
-				String tag = (String) list.get(idx);
+				String tag = list.get(idx);
 				if (!tagList.contains(tag))
 					tagList.add(tag);
 			}

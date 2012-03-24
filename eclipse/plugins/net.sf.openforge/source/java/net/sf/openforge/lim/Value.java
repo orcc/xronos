@@ -189,24 +189,23 @@ public class Value {
 	 */
 	public Value(Value value, boolean isSigned) {
 
-		this.size = value.size;
+		size = value.size;
 		state = new int[size];
-		System.arraycopy(value.state, 0, this.state, 0, size);
+		System.arraycopy(value.state, 0, state, 0, size);
 
-		this.owner = value.owner;
+		owner = value.owner;
 		if (value.ownerArray != null) {
 			assert size == value.ownerArray.length;
 
-			this.ownerArray = new Bus[size];
-			System.arraycopy(value.ownerArray, 0, this.ownerArray, 0, size);
+			ownerArray = new Bus[size];
+			System.arraycopy(value.ownerArray, 0, ownerArray, 0, size);
 		}
 
-		this.ownerInv = value.ownerInv;
+		ownerInv = value.ownerInv;
 		if (value.ownerInvArray != null) {
 			assert size == value.ownerInvArray.length;
-			this.ownerInvArray = new Bus[size];
-			System.arraycopy(value.ownerInvArray, 0, this.ownerInvArray, 0,
-					size);
+			ownerInvArray = new Bus[size];
+			System.arraycopy(value.ownerInvArray, 0, ownerInvArray, 0, size);
 		}
 		this.isSigned = isSigned;
 	}
@@ -415,10 +414,10 @@ public class Value {
 		// bits?
 
 		// update owner
-		if (this.ownerInv != null) {
+		if (ownerInv != null) {
 			ownerInvArray = new Bus[size];
 			for (int i = 0; i < size; i++) {
-				ownerInvArray[i] = this.ownerInv;
+				ownerInvArray[i] = ownerInv;
 			}
 			ownerInvArray[position] = owner;
 
@@ -954,11 +953,11 @@ public class Value {
 	 * @return true if they are equivalent Values.
 	 */
 	public boolean equivalent(Value test) {
-		if (test.isSigned() != this.isSigned()) {
+		if (test.isSigned() != isSigned()) {
 			return false;
 		}
 
-		if (test.getSize() != this.getSize()) {
+		if (test.getSize() != getSize()) {
 			return false;
 		}
 
@@ -1242,6 +1241,7 @@ public class Value {
 		return newValue;
 	}
 
+	@Override
 	public String toString() {
 		return debug();
 	}

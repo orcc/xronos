@@ -22,7 +22,6 @@
 package net.sf.openforge.lim;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +46,7 @@ public class Latch extends Module implements Composable, Emulatable {
 
 	private Bus resultBus;
 
-	//private boolean initialized = false;
+	// private boolean initialized = false;
 
 	public Reg getRegister() {
 		return reg;
@@ -63,6 +62,7 @@ public class Latch extends Module implements Composable, Emulatable {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean consumesGo() {
 		return true;
 	}
@@ -76,11 +76,10 @@ public class Latch extends Module implements Composable, Emulatable {
 		Exit exit = makeExit(0);
 
 		// No reset needed, data path element only and no reset value
-		addComponent(this.reg = Reg.getConfigurableReg(Reg.REGE,
-				makeName("_reg")));
-		addComponent(this.mux = new Mux(2)); // create 2 input mux
-		this.mux.getResultBus().setIDLogical(makeName("_out"));
-		this.resultBus = (Bus) exit.makeDataBus();
+		addComponent(reg = Reg.getConfigurableReg(Reg.REGE, makeName("_reg")));
+		addComponent(mux = new Mux(2)); // create 2 input mux
+		mux.getResultBus().setIDLogical(makeName("_out"));
+		resultBus = exit.makeDataBus();
 		resultBus.setUsed(true);
 
 		// make two data ports
@@ -106,25 +105,25 @@ public class Latch extends Module implements Composable, Emulatable {
 
 		// now, construct the guts of this.
 		// create a sync reg with enable and reset
-		//Entry regEntry = reg.makeEntry(getInBuf().getExit(Exit.DONE));
+		// Entry regEntry = reg.makeEntry(getInBuf().getExit(Exit.DONE));
 
 		reg.getClockPort().setBus(getClockPort().getPeer()); // connect clock
 		reg.getDataPort().setBus(getDataPort().getPeer()); // connect data
 		reg.getEnablePort().setBus(getEnablePort().getPeer()); // connect enable
 
-		//Entry muxEntry = mux.makeEntry(reg.getResultBus().getOwner());
+		// Entry muxEntry = mux.makeEntry(reg.getResultBus().getOwner());
 		List<Port> muxEnablesList = mux.getGoPorts();
 		// 0th entry is DataPort if EnablePort
 		// 1th entry is r.resultBus is !EnablePort
 
 		// 0th
-		Port sel = (Port) muxEnablesList.get(0);
+		Port sel = muxEnablesList.get(0);
 		Port data = mux.getDataPort(sel);
 		sel.setBus(getEnablePort().getPeer());
 		data.setBus(getDataPort().getPeer());
 
 		// 1th
-		sel = (Port) muxEnablesList.get(1);
+		sel = muxEnablesList.get(1);
 		data = mux.getDataPort(sel);
 
 		// This sel will NOT be used b/c this is a 2:1 mux and
@@ -135,12 +134,13 @@ public class Latch extends Module implements Composable, Emulatable {
 		// finally, connect the resultbus from the mux to resultbus for the
 		// module
 		resultBus.getPeer().setBus(mux.getResultBus());
-		//Entry outEntry = resultBus.getPeer().getOwner()
-		//		.makeEntry(mux.getResultBus().getOwner());
+		// Entry outEntry = resultBus.getPeer().getOwner()
+		// .makeEntry(mux.getResultBus().getOwner());
 
 		resultBus.setIDLogical(makeName("_result"));
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -152,7 +152,7 @@ public class Latch extends Module implements Composable, Emulatable {
 	 * @return a value of type 'Port'
 	 */
 	public Port getDataPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
 	/**
@@ -175,6 +175,7 @@ public class Latch extends Module implements Composable, Emulatable {
 	/**
 	 * Throws an exception, replacement in this class not supported.
 	 */
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		throw new UnsupportedOperationException("Cannot replace components in "
 				+ getClass());
@@ -184,11 +185,10 @@ public class Latch extends Module implements Composable, Emulatable {
 	 * Performes a high level numerical emulation of this component.
 	 * 
 	 * @param portValues
-	 *            a map of {@link Port} to
-	 *            {@link SizedInteger} input value
-	 * @return a map of {@link Bus} to
-	 *         {@link SizedInteger} result value
+	 *            a map of {@link Port} to {@link SizedInteger} input value
+	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 		return Collections.singletonMap(getResultBus(),
 				portValues.get(getDataPort()));
@@ -198,10 +198,11 @@ public class Latch extends Module implements Composable, Emulatable {
 	 * Calls the super, then removes any reference to the given bus in this
 	 * class.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
-			if (bus == this.resultBus)
-				this.resultBus = null;
+			if (bus == resultBus)
+				resultBus = null;
 			return true;
 		}
 		return false;
@@ -214,6 +215,7 @@ public class Latch extends Module implements Composable, Emulatable {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return GATE_DEPTH;
 	}
@@ -222,6 +224,7 @@ public class Latch extends Module implements Composable, Emulatable {
 	 * Tests whether this component requires a connection to its clock
 	 * {@link Port}.
 	 */
+	@Override
 	public boolean consumesClock() {
 		return true;
 	}
@@ -231,6 +234,7 @@ public class Latch extends Module implements Composable, Emulatable {
 	 * {@link Port}. By default, returns the value of
 	 * {@link Component#consumesClock()}.
 	 */
+	@Override
 	public boolean consumesReset() {
 		return true;
 	}
@@ -243,10 +247,12 @@ public class Latch extends Module implements Composable, Emulatable {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean isBalanceable() {
 		return false;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		Latch clone = (Latch) moduleClone;

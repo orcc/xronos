@@ -48,14 +48,16 @@ public class Not extends Primitive {
 	 * 
 	 * @return a non-negative integer
 	 */
+	@Override
 	public int getGateDepth() {
 		return getDataPort().getValue().isConstant() ? 0 : 1;
 	}
 
 	public Port getDataPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
+	@Override
 	public Port makeDataPort() {
 		List<Port> dps = getDataPorts();
 		assert (dps.size() == 0) : "Not only accepts a single data input.";
@@ -63,6 +65,7 @@ public class Not extends Primitive {
 		return super.makeDataPort();
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -87,6 +90,7 @@ public class Not extends Primitive {
 	 * 
 	 * @return true if any of the bus values was modified, false otherwise
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -132,6 +136,7 @@ public class Not extends Primitive {
 	 * 
 	 * @return a value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 

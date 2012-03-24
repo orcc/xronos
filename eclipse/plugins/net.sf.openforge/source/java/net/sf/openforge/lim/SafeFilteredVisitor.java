@@ -38,7 +38,7 @@ public class SafeFilteredVisitor extends FilteredVisitor {
 
 	public SafeFilteredVisitor() {
 		super();
-		this.scanner = new Scanner(this, true);
+		scanner = new Scanner(this, true);
 	}
 
 }// SafeFilteredVisitor

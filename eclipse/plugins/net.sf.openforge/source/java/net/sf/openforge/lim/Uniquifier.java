@@ -124,6 +124,7 @@ class ReferenceCleaner extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(Call call) {
 		if (!visitedCalls.contains(call)) {
 			visitedCalls.add(call);
@@ -131,40 +132,49 @@ class ReferenceCleaner extends DefaultVisitor {
 		}
 	}
 
+	@Override
 	public void visit(RegisterRead ref) {
 		super.visit(ref);
 		removeRef(ref);
 	}
 
+	@Override
 	public void visit(RegisterWrite ref) {
 		super.visit(ref);
 		removeRef(ref);
 	}
 
+	@Override
 	public void visit(HeapRead heapRead) {
 		removeMemoryAccessBlock(heapRead);
 	}
 
+	@Override
 	public void visit(HeapWrite heapWrite) {
 		removeMemoryAccessBlock(heapWrite);
 	}
 
+	@Override
 	public void visit(ArrayRead arrayRead) {
 		removeMemoryAccessBlock(arrayRead);
 	}
 
+	@Override
 	public void visit(ArrayWrite arrayWrite) {
 		removeMemoryAccessBlock(arrayWrite);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead read) {
 		removeMemoryAccessBlock(read);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite write) {
 		removeMemoryAccessBlock(write);
 	}
 
+	@Override
 	public void visit(LocationConstant locConst) {
 		locConst.removeFromMemory();
 	}

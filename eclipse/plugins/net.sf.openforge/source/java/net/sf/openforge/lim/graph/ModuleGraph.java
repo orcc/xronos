@@ -70,10 +70,11 @@ class ModuleGraph extends Graph {
 	/**
 	 * Adds a child nod to this graph.
 	 */
+	@Override
 	public void add(Node node) {
 		super.add(node);
 		nodeCount++;
-		this.setGVAttribute("fontsize", "" + fontSize);
+		setGVAttribute("fontsize", "" + fontSize);
 	}
 
 	/**
@@ -86,7 +87,7 @@ class ModuleGraph extends Graph {
 		super(SUBGRAPH, CLUSTER + nodeCount);
 		this.nodeCount = nodeCount;
 		this.fontSize = fontSize;
-		this.setGVAttribute("fontsize", "" + fontSize);
+		setGVAttribute("fontsize", "" + fontSize);
 	}
 
 	/**
@@ -103,7 +104,7 @@ class ModuleGraph extends Graph {
 		this.module = module;
 		this.nodeCount = nodeCount;
 		this.fontSize = fontSize;
-		this.setGVAttribute("fontsize", "" + fontSize);
+		setGVAttribute("fontsize", "" + fontSize);
 		setLabel(ComponentNode.getShortClassName(module) + " @"
 				+ Integer.toHexString(module.hashCode()));
 		graphComponents();
@@ -130,11 +131,11 @@ class ModuleGraph extends Graph {
 	 */
 	protected void graphComponents() {
 		for (Component comp : module.getComponents()) {
-			graph((Component) comp, nodeCount);
+			graph(comp, nodeCount);
 		}
 
 		for (Component comp : module.getComponents()) {
-			graphEdges((Component) comp);
+			graphEdges(comp);
 		}
 	}
 
@@ -170,7 +171,7 @@ class ModuleGraph extends Graph {
 		// fontSize);
 		// }
 		else if (component instanceof EncodedMux) {
-			node = new EncodedMuxNode((EncodedMux) component, id, fontSize);
+			node = new EncodedMuxNode(component, id, fontSize);
 		} else if (component instanceof MemoryRead) {
 			Component physComp = ((MemoryRead) component)
 					.getPhysicalComponent();

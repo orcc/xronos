@@ -128,7 +128,7 @@ public class OrderFinder extends DataFlowVisitor {
 	public OrderFinder() {
 		// Call the constructor of the super class
 		super();
-		this.setRunForward(true);
+		setRunForward(true);
 	}
 
 	public static List<ID> getOrder(Module module) {
@@ -138,345 +138,430 @@ public class OrderFinder extends DataFlowVisitor {
 	}
 
 	private List<ID> getOrder() {
-		return this.order;
+		return order;
 	}
 
+	@Override
 	public void visit(Design param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(TaskCall param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Task param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Call param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(IPCoreCall param1) {
 	}
 
+	@Override
 	public void visit(Procedure param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Block param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Loop param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(WhileBody param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(UntilBody param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(ForBody param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(AddOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(AndOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(CastOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(ComplementOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(ConditionalAndOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(ConditionalOrOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Constant param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(LocationConstant loc) {
-		this.order.add(loc);
+		order.add(loc);
 	}
 
+	@Override
 	public void visit(DivideOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(EqualsOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(GreaterThanEqualToOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(GreaterThanOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(LeftShiftOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(LessThanEqualToOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(LessThanOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(MinusOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(ModuloOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(MultiplyOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(NotEqualsOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(NotOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(OrOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(PlusOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(ReductionOrOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(RightShiftOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(ShortcutIfElseOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(SubtractOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(NumericPromotionOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(XorOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Branch param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Decision param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Switch param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(InBuf param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(OutBuf param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Reg param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Mux param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(EncodedMux param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(PriorityMux param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(And param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Not param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Or or) {
-		this.order.add(or);
+		order.add(or);
 	}
 
+	@Override
 	public void visit(Scoreboard param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Latch param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(NoOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(TimingOp param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(RegisterRead param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(RegisterWrite param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(RegisterGateway param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(RegisterReferee param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(MemoryBank param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(MemoryRead memoryRead) {
-		this.order.add(memoryRead);
+		order.add(memoryRead);
 	}
 
+	@Override
 	public void visit(MemoryWrite memoryWrite) {
-		this.order.add(memoryWrite);
+		order.add(memoryWrite);
 	}
 
+	@Override
 	public void visit(MemoryReferee param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(MemoryGateway param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(HeapRead param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(ArrayRead param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(HeapWrite param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(ArrayWrite param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryRead param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(AbsoluteMemoryWrite param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(Kicker param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(PinRead param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(PinWrite param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(PinStateChange param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(SRL16 param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(PinReferee param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(TriBuf param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(SimplePinAccess param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(SimplePinRead param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(SimplePinWrite param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(FifoAccess param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(FifoRead param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(FifoWrite param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 
+	@Override
 	public void visit(EndianSwapper param1) {
-		this.order.add(param1);
+		order.add(param1);
 	}
 }

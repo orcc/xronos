@@ -116,27 +116,26 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 		insertComponent(sizeConst, 0);
 
 		// Create the deferred (address) constant.
-		this.addrConst = new LocationConstant(location, maxAddressWidth,
-				location.getAbsoluteBase().getLogicalMemory()
-						.getAddressStridePolicy());
+		addrConst = new LocationConstant(location, maxAddressWidth, location
+				.getAbsoluteBase().getLogicalMemory().getAddressStridePolicy());
 		insertComponent(addrConst, 0);
 
 		setControlDependencies(false);
 
 		Exit exit = getExit(Exit.DONE);
 		exit.getDoneBus().setUsed(true);
-		this.resultBus = exit.makeDataBus();
+		resultBus = exit.makeDataBus();
 
 		/*
 		 * Connect the MemoryRead's data output to the output of this module.
 		 */
-		final OutBuf ob = (OutBuf) exit.getPeer();
-		final Entry obEntry = (Entry) ob.getEntries().get(0);
-		this.resultBus.setSize(memoryRead.getWidth(), memoryRead.isSigned());
+		final OutBuf ob = exit.getPeer();
+		final Entry obEntry = ob.getEntries().get(0);
+		resultBus.setSize(memoryRead.getWidth(), memoryRead.isSigned());
 		obEntry.addDependency(resultBus.getPeer(), new DataDependency(
 				memoryRead.getResultBus()));
 
-		final Entry memReadEntry = (Entry) memoryRead.getEntries().get(0);
+		final Entry memReadEntry = memoryRead.getEntries().get(0);
 		// Connect up the constants.
 		memReadEntry.addDependency(memoryRead.getSizePort(),
 				new DataDependency(sizeConst.getValueBus()));
@@ -158,7 +157,7 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 	 * the memory.
 	 */
 	public LocationConstant getAddressConstant() {
-		return this.addrConst;
+		return addrConst;
 	}
 
 	/**
@@ -168,10 +167,11 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 	 *            the bus to remove
 	 * @return true if the bus was removed.
 	 */
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		final boolean isRemoved = super.removeDataBus(bus);
 		if (isRemoved && (bus == resultBus)) {
-			this.resultBus = null;
+			resultBus = null;
 		}
 		return isRemoved;
 	}
@@ -179,6 +179,7 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 	/**
 	 * Returns false
 	 */
+	@Override
 	public boolean isWrite() {
 		return false;
 	}
@@ -197,6 +198,7 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 	 *            the instance to be visited with
 	 *            {@link Visitor#visit(AbsoluteMemoryRead)}
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -205,16 +207,18 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 	 * Remove the underlying {@link MemoryAccess} as a reference of the
 	 * targetted memory.
 	 */
+	@Override
 	public void removeFromMemory() {
 		super.removeFromMemory();
 		getLogicalMemoryPort().getLogicalMemory().removeLocationConstant(
 				addrConst);
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == this.addrConst)
-			this.addrConst = null;
+		if (component == addrConst)
+			addrConst = null;
 		return ret;
 	}
 
@@ -226,6 +230,7 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 	 * 
 	 * @return the clone
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		/*
 		 * final LocationConstant addrConst = getAddressConstant(); final
@@ -253,11 +258,12 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 		return clone;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		AbsoluteMemoryRead clone = (AbsoluteMemoryRead) moduleClone;
-		clone.resultBus = getBusClone(this.resultBus, cloneMap);
-		clone.addrConst = (LocationConstant) cloneMap.get(this.addrConst);
+		clone.resultBus = getBusClone(resultBus, cloneMap);
+		clone.addrConst = (LocationConstant) cloneMap.get(addrConst);
 	}
 
 }// AbsoluteMemoryRead

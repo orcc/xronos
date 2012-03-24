@@ -49,6 +49,7 @@ public class PinWrite extends PinAccess {
 	/**
 	 * @return true
 	 */
+	@Override
 	public boolean consumesGo() {
 		return true;
 	}
@@ -62,9 +63,10 @@ public class PinWrite extends PinAccess {
 	 * 
 	 * @return a PinWrite object.
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		PinWrite clone = (PinWrite) super.clone();
-		this.copyComponentAttributes(clone);
+		copyComponentAttributes(clone);
 		return clone;
 	}
 
@@ -78,6 +80,7 @@ public class PinWrite extends PinAccess {
 	 * 
 	 * @return A value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		return false;
 	}
@@ -88,6 +91,7 @@ public class PinWrite extends PinAccess {
 	 * 
 	 * @return A value of type 'boolean'
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		/*
 		 * The OutBuf identity is dynamic. The best we could do here is choose
@@ -102,6 +106,7 @@ public class PinWrite extends PinAccess {
 	 * =================================================
 	 */
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -116,6 +121,7 @@ public class PinWrite extends PinAccess {
 		return physical;
 	}
 
+	@Override
 	public Module getPhysicalComponent() {
 		return physical;
 	}
@@ -141,7 +147,7 @@ public class PinWrite extends PinAccess {
 
 			// one normal port for the address
 			Port address_in = makeDataPort();
-			Port pinWrite_address = (Port) PinWrite.this.getDataPorts().get(0);
+			Port pinWrite_address = PinWrite.this.getDataPorts().get(0);
 			assert (pinWrite_address.getBus() != null) : "PinWrite's address port not attached to a bus.";
 
 			{
@@ -154,7 +160,7 @@ public class PinWrite extends PinAccess {
 
 			// and one normal port for the data
 			Port data_in = makeDataPort();
-			Port pinWrite_data = (Port) PinWrite.this.getDataPorts().get(1);
+			Port pinWrite_data = PinWrite.this.getDataPorts().get(1);
 			assert (pinWrite_data.getBus() != null) : "PinWrite's data port not attached to a bus.";
 
 			{
@@ -218,14 +224,17 @@ public class PinWrite extends PinAccess {
 			return side_enable;
 		}
 
+		@Override
 		public void accept(Visitor v) {
 		}
 
+		@Override
 		public boolean removeDataBus(Bus bus) {
 			assert false : "remove data port not supported on " + this;
 			return false;
 		}
 
+		@Override
 		public boolean removeDataPort(Port port) {
 			assert false : "remove data port not supported on " + this;
 			return false;

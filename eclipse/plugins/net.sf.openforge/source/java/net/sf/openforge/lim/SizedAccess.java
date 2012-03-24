@@ -62,7 +62,7 @@ public abstract class SizedAccess extends Access {
 
 	public SizedAccess(Resource resource, int dataPortCount, boolean isVolatile) {
 		super(resource, dataPortCount, isVolatile);
-		this.sizePort = makeDataPort();
+		sizePort = makeDataPort();
 	}
 
 	/**
@@ -70,14 +70,15 @@ public abstract class SizedAccess extends Access {
 	 * this access.
 	 */
 	public Port getSizePort() {
-		return this.sizePort;
+		return sizePort;
 	}
 
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		SizedAccess clone = (SizedAccess) super.clone();
 		List<Port> ports = getPorts();
 		List<Port> clonePorts = clone.getPorts();
-		clone.sizePort = (Port) clonePorts.get(ports.indexOf(this.sizePort));
+		clone.sizePort = clonePorts.get(ports.indexOf(sizePort));
 		return clone;
 	}
 

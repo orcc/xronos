@@ -103,16 +103,19 @@ public abstract class Constant extends ValueOp implements Emulatable {
 	/**
 	 * Push the numerical value of the constant onto the bus
 	 */
+	@Override
 	public abstract boolean pushValuesForward();
 
 	/**
 	 * Reverse constant prop has no rules applied on a Constant.
 	 */
+	@Override
 	public abstract boolean pushValuesBackward();
 
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
@@ -120,6 +123,7 @@ public abstract class Constant extends ValueOp implements Emulatable {
 	/**
 	 * Returns true
 	 */
+	@Override
 	public boolean isConstant() {
 		return true;
 	}
@@ -182,11 +186,13 @@ public abstract class Constant extends ValueOp implements Emulatable {
 	 * @return a map of {@link Bus} to
 	 *         {@link net.sf.openforge.util.SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 		return Collections.singletonMap(getValueBus(), getValueBus().getValue()
 				.toNumber());
 	}
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		if (getValueBus() != null && getValueBus().getValue() != null) {
@@ -221,23 +227,24 @@ public abstract class Constant extends ValueOp implements Emulatable {
 		}
 
 		public AddressableUnit[] getRep() {
-			return this.rep;
+			return rep;
 		}
 
 		public int getLength() {
-			return this.rep.length;
+			return rep.length;
 		}
 
 		public int getBitsPerUnit() {
-			return this.bitsPerUnit;
+			return bitsPerUnit;
 		}
 
+		@Override
 		public String toString() {
 			String values = "";
-			for (int i = 0; i < this.rep.length; i++)
+			for (int i = 0; i < rep.length; i++)
 				values += rep[rep.length - 1 - i]
 						+ (i == rep.length - 1 ? "" : ", ");
-			return "AURepBundle<" + this.bitsPerUnit + "> 0x[" + values + "]";
+			return "AURepBundle<" + bitsPerUnit + "> 0x[" + values + "]";
 		}
 	}
 
@@ -271,7 +278,7 @@ public abstract class Constant extends ValueOp implements Emulatable {
 		 * @return a byte
 		 */
 		public int value() {
-			return this.value;
+			return value;
 		}
 
 		/**
@@ -282,9 +289,10 @@ public abstract class Constant extends ValueOp implements Emulatable {
 		 * @return true if the value method returns a valid value.
 		 */
 		public boolean isLocked() {
-			return this.locked;
+			return locked;
 		}
 
+		@Override
 		public String toString() {
 			return (isLocked() ? "" : "?") + value();
 		}

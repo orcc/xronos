@@ -50,66 +50,69 @@ public class PinReferee extends Referee implements Cloneable {
 		clock.setUsed(true);
 
 		PinSlot pinSlot = new PinSlot(pin);
-		this.logic = new PinLogic(pinSlot);
+		logic = new PinLogic(pinSlot);
 	}
 
 	public void addWriteNow(PinAccess acc) {
-		this.logic.addWriteNow(acc, new WriteSlot());
+		logic.addWriteNow(acc, new WriteSlot());
 	}
 
 	public void addWriteNext(PinAccess acc) {
-		this.logic.addWriteNext(acc, new WriteSlot());
+		logic.addWriteNext(acc, new WriteSlot());
 	}
 
 	public void addDriveNow(PinAccess acc) {
-		this.logic.addDriveNow(acc, new WriteSlot());
+		logic.addDriveNow(acc, new WriteSlot());
 	}
 
 	public void addDriveNext(PinAccess acc) {
-		this.logic.addDriveNext(acc, new WriteSlot());
+		logic.addDriveNext(acc, new WriteSlot());
 	}
 
 	public void addRead(PinRead acc) {
-		this.logic.addRead(acc, new ReadSlot(acc));
+		logic.addRead(acc, new ReadSlot(acc));
 	}
 
 	public void build() {
-		this.logic.build();
+		logic.build();
 	}
 
 	public PinSlot getPinSlot(Pin p) {
-		return this.logic.pinSlot;
+		return logic.pinSlot;
 	}
 
 	public ReadSlot getReadSlot(PinRead pinRead) {
-		return (ReadSlot) this.logic.reads.get(pinRead);
+		return logic.reads.get(pinRead);
 	}
 
 	public WriteSlot getWriteNowSlot(PinAccess pinAccess) {
-		return (WriteSlot) this.logic.writeNows.get(pinAccess);
+		return logic.writeNows.get(pinAccess);
 	}
 
 	public WriteSlot getWriteNextSlot(PinAccess pinAccess) {
-		return (WriteSlot) this.logic.writeNexts.get(pinAccess);
+		return logic.writeNexts.get(pinAccess);
 	}
 
 	public WriteSlot getDriveNowSlot(PinAccess pinAccess) {
-		return (WriteSlot) this.logic.driveNows.get(pinAccess);
+		return logic.driveNows.get(pinAccess);
 	}
 
 	public WriteSlot getDriveNextSlot(PinAccess pinAccess) {
-		return (WriteSlot) this.logic.driveNexts.get(pinAccess);
+		return logic.driveNexts.get(pinAccess);
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
 
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		assert false : "remove data bus not supported on " + this;
 		return false;
 	}
 
+	@Override
 	public boolean removeDataPort(Port port) {
 		assert false : "remove data port not supported on " + this;
 		return false;
@@ -124,6 +127,7 @@ public class PinReferee extends Referee implements Cloneable {
 	 * @exception CloneNotSupportedException
 	 *                if an error occurs
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}
@@ -146,8 +150,8 @@ public class PinReferee extends Referee implements Cloneable {
 		Bus driveNextState;
 
 		private PinSlot(Pin p) {
-			this.pin = p;
-			this.exit = makeExit(0, Exit.SIDEBAND, ID.showLogical(p));
+			pin = p;
+			exit = makeExit(0, Exit.SIDEBAND, ID.showLogical(p));
 
 			// Only create the interfaces necessary for the type of pin.
 			int width = p.getWidth();
@@ -161,14 +165,14 @@ public class PinReferee extends Referee implements Cloneable {
 		}
 
 		private void makeWriteSide(int width) {
-			this.writeNowEnable = this.exit.makeDataBus(Component.SIDEBAND);
-			this.writeNowData = this.exit.makeDataBus(Component.SIDEBAND);
-			this.writeNextEnable = this.exit.makeDataBus(Component.SIDEBAND);
-			this.writeNextData = this.exit.makeDataBus(Component.SIDEBAND);
-			this.driveNowEnable = this.exit.makeDataBus(Component.SIDEBAND);
-			this.driveNowState = this.exit.makeDataBus(Component.SIDEBAND);
-			this.driveNextEnable = this.exit.makeDataBus(Component.SIDEBAND);
-			this.driveNextState = this.exit.makeDataBus(Component.SIDEBAND);
+			writeNowEnable = exit.makeDataBus(Component.SIDEBAND);
+			writeNowData = exit.makeDataBus(Component.SIDEBAND);
+			writeNextEnable = exit.makeDataBus(Component.SIDEBAND);
+			writeNextData = exit.makeDataBus(Component.SIDEBAND);
+			driveNowEnable = exit.makeDataBus(Component.SIDEBAND);
+			driveNowState = exit.makeDataBus(Component.SIDEBAND);
+			driveNextEnable = exit.makeDataBus(Component.SIDEBAND);
+			driveNextState = exit.makeDataBus(Component.SIDEBAND);
 			// this.writeNowEnable.setSize(1, true);
 			// this.writeNowData.setSize(width, true);
 			// this.writeNextEnable.setSize(1, true);
@@ -180,7 +184,7 @@ public class PinReferee extends Referee implements Cloneable {
 		}
 
 		private void makeReadSide(int width) {
-			this.readData = makeDataPort(Component.SIDEBAND);
+			readData = makeDataPort(Component.SIDEBAND);
 			// this.readData.getPeer().setSize(width, true);
 		}
 
@@ -190,11 +194,11 @@ public class PinReferee extends Referee implements Cloneable {
 		 */
 		public boolean containsWriteSide() {
 			// If the writeNowEnable exists, all the write side exists.
-			return this.writeNowEnable != null;
+			return writeNowEnable != null;
 		}
 
 		public Pin getPin() {
-			return this.pin;
+			return pin;
 		}
 
 		public Port getReadData() {
@@ -245,9 +249,9 @@ public class PinReferee extends Referee implements Cloneable {
 		Port data;
 
 		public WriteSlot() {
-			this.address = makeDataPort(Component.SIDEBAND);
-			this.enable = makeDataPort(Component.SIDEBAND);
-			this.data = makeDataPort(Component.SIDEBAND);
+			address = makeDataPort(Component.SIDEBAND);
+			enable = makeDataPort(Component.SIDEBAND);
+			data = makeDataPort(Component.SIDEBAND);
 		}
 
 		public Port getAddress() {
@@ -272,7 +276,7 @@ public class PinReferee extends Referee implements Cloneable {
 		Bus data;
 
 		public ReadSlot(PinRead read) {
-			this.address = makeDataPort(Component.SIDEBAND);
+			address = makeDataPort(Component.SIDEBAND);
 			Exit exit = makeExit(0, Exit.SIDEBAND, ID.showLogical(read) + "@"
 					+ Integer.toHexString(read.hashCode()));
 			data = exit.makeDataBus(Component.SIDEBAND);
@@ -313,7 +317,7 @@ public class PinReferee extends Referee implements Cloneable {
 		private PinSlot pinSlot;
 
 		public PinLogic(PinSlot slot) {
-			this.pinSlot = slot;
+			pinSlot = slot;
 		}
 
 		public void addWriteNow(PinAccess access, WriteSlot write) {
@@ -388,8 +392,8 @@ public class PinReferee extends Referee implements Cloneable {
 				pinSlot.getDriveNextState().getPeer()
 						.setBus(dnext.getDataBus());
 			} else {
-				PinReferee.this.getClockPort().setUsed(false);
-				PinReferee.this.getResetPort().setUsed(false);
+				getClockPort().setUsed(false);
+				getResetPort().setUsed(false);
 			}
 			@SuppressWarnings("unused")
 			PinReadLogic readLogic = new PinReadLogic(new ArrayList<ReadSlot>(
@@ -424,13 +428,15 @@ public class PinReferee extends Referee implements Cloneable {
 
 		public TieOffLogic(boolean on, int width) {
 			constant = new SimpleConstant(on ? 1 : 0, width, false);
-			PinReferee.this.addComponent(constant);
+			addComponent(constant);
 		}
 
+		@Override
 		public Bus getEnableBus() {
 			return constant.getValueBus();
 		}
 
+		@Override
 		public Bus getDataBus() {
 			return constant.getValueBus();
 		}
@@ -449,13 +455,13 @@ public class PinReferee extends Referee implements Cloneable {
 				Or or = new Or(writeSlots.size());
 				PriorityMux mux = new PriorityMux(writeSlots.size());
 
-				this.enableBus = or.getResultBus();
-				this.dataBus = mux.getResultBus();
+				enableBus = or.getResultBus();
+				dataBus = mux.getResultBus();
 
 				// mux.getResultBus().setSize(width, true);
 
-				PinReferee.this.addComponent(or);
-				PinReferee.this.addComponent(mux);
+				addComponent(or);
+				addComponent(mux);
 
 				for (Iterator<?> iter = writeSlots.iterator(), orIter = or
 						.getDataPorts().iterator(), muxIter = mux
@@ -472,18 +478,20 @@ public class PinReferee extends Referee implements Cloneable {
 					muxDataPort.setBus(slot.getData().getPeer());
 				}
 			} else {
-				WriteSlot writeSlot = (WriteSlot) writeSlots.get(0);
-				this.dataBus = writeSlot.getData().getPeer();
-				this.enableBus = writeSlot.getEnable().getPeer();
+				WriteSlot writeSlot = writeSlots.get(0);
+				dataBus = writeSlot.getData().getPeer();
+				enableBus = writeSlot.getEnable().getPeer();
 				// this.dataBus.setSize(width, true);
 				// this.enableBus.setSize(1, true);
 			}
 		}
 
+		@Override
 		public Bus getEnableBus() {
 			return enableBus;
 		}
 
+		@Override
 		public Bus getDataBus() {
 			return dataBus;
 		}

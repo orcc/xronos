@@ -81,10 +81,12 @@ public class TypeCode {
 		return new TypeCode(info.getFullyQualifiedName());
 	}
 
+	@Override
 	public String toString() {
 		return code;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof TypeCode))
 			return false;
@@ -93,6 +95,7 @@ public class TypeCode {
 		return toString().equals(o.toString());
 	}
 
+	@Override
 	public int hashCode() {
 		return code.hashCode();
 	}

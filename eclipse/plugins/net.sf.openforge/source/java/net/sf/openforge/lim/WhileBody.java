@@ -124,6 +124,7 @@ public class WhileBody extends LoopBody implements Cloneable {
 		mergeExits(exitMap, clockBus, resetBus);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -131,6 +132,7 @@ public class WhileBody extends LoopBody implements Cloneable {
 	/**
 	 * Gets the iteration test.
 	 */
+	@Override
 	public Decision getDecision() {
 		return decision;
 	}
@@ -138,6 +140,7 @@ public class WhileBody extends LoopBody implements Cloneable {
 	/**
 	 * Gets the iteration contents.
 	 */
+	@Override
 	public Module getBody() {
 		return body;
 	}
@@ -147,10 +150,12 @@ public class WhileBody extends LoopBody implements Cloneable {
 	 * if after. This is needed to compute the number of iterations for loop
 	 * unrolling
 	 */
+	@Override
 	public boolean isDecisionFirst() {
 		return true;
 	}
 
+	@Override
 	public boolean removeComponent(Component component) {
 		component.disconnect();
 		if (component == decision) {
@@ -161,12 +166,13 @@ public class WhileBody extends LoopBody implements Cloneable {
 		return super.removeComponent(component);
 	}
 
+	@Override
 	public boolean replaceComponent(Component removed, Component inserted) {
 		assert removed != null;
 		if (removed == getDecision()) {
-			this.decision = (Decision) inserted;
+			decision = (Decision) inserted;
 		} else if (removed == getBody()) {
-			this.body = (Module) inserted;
+			body = (Module) inserted;
 		} else
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
@@ -200,6 +206,7 @@ public class WhileBody extends LoopBody implements Cloneable {
 	 * @return the port which corresponds to the initial value of the feedback
 	 *         data flow
 	 */
+	@Override
 	public Port getInitalValuePort(Bus feedbackBus) {
 		/*
 		 * tbd
@@ -207,6 +214,7 @@ public class WhileBody extends LoopBody implements Cloneable {
 		return null;
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final WhileBody clone = (WhileBody) moduleClone;

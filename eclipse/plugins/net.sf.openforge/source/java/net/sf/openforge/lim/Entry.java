@@ -46,7 +46,6 @@ import net.sf.openforge.util.naming.IDSourceInfo;
  * @version $Id: Entry.java 74 2005-12-14 21:05:47Z imiller $
  */
 public class Entry {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 74 $";
 
 	/** Map of Port to Collection of Dependency */
 	private Map portMap = new LinkedHashMap();
@@ -138,7 +137,7 @@ public class Entry {
 	public void removeDependency(Port port, Dependency toRemove) {
 		assert portMap.containsKey(port) : "Unknown port";
 
-		Collection depsForPort = (Collection) this.portMap.get(port);
+		Collection depsForPort = (Collection) portMap.get(port);
 		assert depsForPort.contains(toRemove) : "Entry doesn't contain dependency for port. Dep: "
 				+ toRemove + " deps " + depsForPort;
 		depsForPort.remove(toRemove);
@@ -187,11 +186,11 @@ public class Entry {
 	 * Sets the {@link Exit} whose path of control leads to this Entry.
 	 */
 	public void setDrivingExit(Exit exit) {
-		if (this.drivingExit != null) {
-			this.drivingExit.removeEntry(this);
+		if (drivingExit != null) {
+			drivingExit.removeEntry(this);
 		}
 
-		this.drivingExit = exit;
+		drivingExit = exit;
 
 		if (exit != null) {
 			exit.drives(this);
@@ -246,8 +245,8 @@ public class Entry {
 
 	public String debug() {
 		String ret = "";
-		ret += "Entry " + this + " owner: " + this.getOwner()
-				+ " driving exit " + drivingExit + "\n";
+		ret += "Entry " + this + " owner: " + getOwner() + " driving exit "
+				+ drivingExit + "\n";
 		for (Iterator iter = portMap.keySet().iterator(); iter.hasNext();) {
 			Port port = (Port) iter.next();
 			String pname = port.toString();
@@ -266,6 +265,7 @@ public class Entry {
 		return ret;
 	}
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 		ret = ret.replaceAll("net.sf.openforge.", "");

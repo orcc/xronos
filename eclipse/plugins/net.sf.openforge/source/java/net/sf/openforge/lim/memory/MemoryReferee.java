@@ -92,12 +92,12 @@ public class MemoryReferee extends Referee {
 
 	protected MemoryReferee(Arbitratable resource) {
 		super();
-		this.dataWidth = resource.getDataPathWidth();
+		dataWidth = resource.getDataPathWidth();
 		@SuppressWarnings("unused")
 		Exit mainExit = makeExit(0, Exit.DONE);
 
 		// Make the global side interface
-		this.globalSlot = new GlobalSlot(this);
+		globalSlot = new GlobalSlot(this);
 	}
 
 	/**
@@ -124,8 +124,8 @@ public class MemoryReferee extends Referee {
 		final boolean isAddressable = resource.isAddressable();
 		final boolean combinationalMemoryReads = resource
 				.allowsCombinationalReads();
-		this.globalSlot.setSizes(memoryWidth, addressWidth,
-				LogicalMemory.SIZE_WIDTH);
+		globalSlot
+				.setSizes(memoryWidth, addressWidth, LogicalMemory.SIZE_WIDTH);
 		getClockPort().setUsed(true);
 		getResetPort().setUsed(true);
 
@@ -163,7 +163,7 @@ public class MemoryReferee extends Referee {
 		// done = globalDone
 		final int taskCount = getTaskSlots().size();
 		if (taskCount == 1) {
-			TaskSlot ts = (TaskSlot) getTaskSlots().get(0);
+			TaskSlot ts = getTaskSlots().get(0);
 
 			boolean readUsed = ts.getGoRPort() != null;
 			boolean writeUsed = ts.getGoWPort() != null;
@@ -175,10 +175,8 @@ public class MemoryReferee extends Referee {
 				addComponent(goOr);
 				goOr.setIDLogical(this, "goOr");
 				// now connect the components
-				((Port) goOr.getDataPorts().get(0)).setBus(ts.getGoRPort()
-						.getPeer());
-				((Port) goOr.getDataPorts().get(1)).setBus(ts.getGoWPort()
-						.getPeer());
+				goOr.getDataPorts().get(0).setBus(ts.getGoRPort().getPeer());
+				goOr.getDataPorts().get(1).setBus(ts.getGoWPort().getPeer());
 
 				globalSlot.getGoBus().getPeer().setBus(goOr.getResultBus());
 				globalSlot.getWriteEnableBus().getPeer()
@@ -272,15 +270,13 @@ public class MemoryReferee extends Referee {
 
 			TaskCapture tc = new TaskCapture(stateWidth, addressWidth,
 					memoryWidth, getResetPort().getPeer(), df.getResultBus(),
-					globalSlot.getReadDataPort().getPeer(),
-					(TaskSlot) getTaskSlots().get(i), i,
-					combinationalMemoryReads);
+					globalSlot.getReadDataPort().getPeer(), getTaskSlots().get(
+							i), i, combinationalMemoryReads);
 			taskCaptures.add(tc);
-			this.feedbackPoints.addAll(tc.getFeedbackPoints());
+			feedbackPoints.addAll(tc.getFeedbackPoints());
 			// hook up the task capture to the mux ports
 			goMux.getDataPort(i).setBus(tc.getTaskMemGoBus());
-			((Port) advanceOr.getDataPorts().get(i)).setBus(tc
-					.getTaskMemGoBus());
+			advanceOr.getDataPorts().get(i).setBus(tc.getTaskMemGoBus());
 			if (addrMux != null) {
 				addrMux.getDataPort(i).setBus(tc.getTaskMemAddrBus());
 			}
@@ -299,7 +295,7 @@ public class MemoryReferee extends Referee {
 
 		// update the state machine with the task captures
 		stateMachine.setTaskCaptures(taskCaptures);
-		this.feedbackPoints.addAll(stateMachine.getFeedbackPoints());
+		feedbackPoints.addAll(stateMachine.getFeedbackPoints());
 
 		// update the global slot with the mux outputs
 		globalSlot.getGoBus().getPeer().setBus(goMux.getResultBus());
@@ -337,20 +333,21 @@ public class MemoryReferee extends Referee {
 	 * 
 	 * @return true if this component is opaque, false otherwise
 	 */
+	@Override
 	public boolean isOpaque() {
 		return true;
 	}
 
 	protected void addTaskSlot(TaskSlot slot) {
-		this.taskSlots.add(slot);
+		taskSlots.add(slot);
 	}
 
 	public List<TaskSlot> getTaskSlots() {
-		return Collections.unmodifiableList(this.taskSlots);
+		return Collections.unmodifiableList(taskSlots);
 	}
 
 	protected GlobalSlot getGlobalSlot() {
-		return this.globalSlot;
+		return globalSlot;
 	}
 
 	public void connectImplementation(StructuralMemory.StructuralMemoryPort port) {
@@ -372,9 +369,9 @@ public class MemoryReferee extends Referee {
 			 * MemoryReferee; Otherwise, it will cause the const prop looping
 			 * infinitely.
 			 */
-			Constant zeroCon = new SimpleConstant(0, this.dataWidth, false);
-			if (this.getOwner() != null)
-				this.getOwner().addComponent(zeroCon);
+			Constant zeroCon = new SimpleConstant(0, dataWidth, false);
+			if (getOwner() != null)
+				getOwner().addComponent(zeroCon);
 			globalSlot.getReadDataPort().setBus(zeroCon.getValueBus());
 		}
 
@@ -389,6 +386,7 @@ public class MemoryReferee extends Referee {
 	 * 
 	 * @return a 'Set' of {@link Component Components}
 	 */
+	@Override
 	public Set<Component> getFeedbackPoints() {
 		Set<Component> feedback = new HashSet<Component>();
 		feedback.addAll(super.getFeedbackPoints());
@@ -399,20 +397,24 @@ public class MemoryReferee extends Referee {
 	/**
 	 * Accept method for the Visitor interface
 	 */
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
 
+	@Override
 	public boolean removeDataBus(Bus bus) {
 		assert false : "remove data bus not supported on " + this;
 		return false;
 	}
 
+	@Override
 	public boolean removeDataPort(Port port) {
 		assert false : "remove data port not supported on " + this;
 		return false;
 	}
 
+	@Override
 	public String show() {
 		String ret = toString();
 		for (Port port : getPorts()) {
@@ -428,7 +430,7 @@ public class MemoryReferee extends Referee {
 				ret = ret + " GL_read:" + port + "/" + port.getPeer() + "\n";
 			else {
 				String id = null;
-				for (TaskSlot ts : this.taskSlots) {
+				for (TaskSlot ts : taskSlots) {
 					if (port == ts.getGoRPort()) {
 						id = " task go R: " + port + "/" + port.getPeer();
 					} else if (port == ts.getGoWPort()) {
@@ -466,7 +468,7 @@ public class MemoryReferee extends Referee {
 							+ "\n";
 				else {
 					String id = null;
-					for (TaskSlot ts: this.taskSlots) {
+					for (TaskSlot ts : taskSlots) {
 						if (bus == ts.getDataOutBus()) {
 							id = " task data out bus:" + bus + "/"
 									+ bus.getPeer();
@@ -514,12 +516,11 @@ public class MemoryReferee extends Referee {
 			addComponent(and);
 			and.setIDLogical(this, "DFand_" + stage);
 
-			((Port) equalsOp.getDataPorts().get(0)).setBus(constant
-					.getValueBus());
-			((Port) equalsOp.getDataPorts().get(1)).setBus(delayStateBus);
+			equalsOp.getDataPorts().get(0).setBus(constant.getValueBus());
+			equalsOp.getDataPorts().get(1).setBus(delayStateBus);
 
-			((Port) and.getDataPorts().get(0)).setBus(equalsOp.getResultBus());
-			((Port) and.getDataPorts().get(1)).setBus(globalDoneBus);
+			and.getDataPorts().get(0).setBus(equalsOp.getResultBus());
+			and.getDataPorts().get(1).setBus(globalDoneBus);
 		}
 
 		Bus getResultBus() {
@@ -738,17 +739,16 @@ public class MemoryReferee extends Referee {
 				if (combinationalRead) {
 					readMux.getDataPort(0).setBus(readGoReg.getResultBus());
 					readGoReg.getDataPort().setBus(readAnd.getResultBus());
-					((Port) readAnd.getDataPorts().get(0)).setBus(readMux
-							.getResultBus());
+					readAnd.getDataPorts().get(0)
+							.setBus(readMux.getResultBus());
 				} else {
 					readMux.getDataPort(0).setBus(readAnd.getResultBus());
 					readGoReg.getDataPort().setBus(readMux.getResultBus());
-					((Port) readAnd.getDataPorts().get(0)).setBus(readGoReg
-							.getResultBus());
+					readAnd.getDataPorts().get(0)
+							.setBus(readGoReg.getResultBus());
 				}
 
-				((Port) readAnd.getDataPorts().get(1)).setBus(readNot
-						.getResultBus());
+				readAnd.getDataPorts().get(1).setBus(readNot.getResultBus());
 
 				readNot.getDataPort().setBus(doneBus);
 			}
@@ -759,58 +759,51 @@ public class MemoryReferee extends Referee {
 
 				writeGoReg.getDataPort().setBus(writeMux.getResultBus());
 
-				((Port) writeAnd.getDataPorts().get(0)).setBus(writeGoReg
-						.getResultBus());
-				((Port) writeAnd.getDataPorts().get(1)).setBus(writeNot
-						.getResultBus());
+				writeAnd.getDataPorts().get(0)
+						.setBus(writeGoReg.getResultBus());
+				writeAnd.getDataPorts().get(1).setBus(writeNot.getResultBus());
 
 				writeNot.getDataPort().setBus(doneBus);
 			}
 			// if both are used:
 			if (readUsed && writeUsed) {
 				if (combinationalRead) {
-					((Port) readOr.getDataPorts().get(0)).setBus(readGoReg
-							.getResultBus());
+					readOr.getDataPorts().get(0)
+							.setBus(readGoReg.getResultBus());
 				} else {
-					((Port) readOr.getDataPorts().get(0)).setBus(readAnd
-							.getResultBus());
+					readOr.getDataPorts().get(0).setBus(readAnd.getResultBus());
 				}
 
-				((Port) readOr.getDataPorts().get(1)).setBus(goRBus);
-				((Port) readOr.getDataPorts().get(2)).setBus(writeAnd
-						.getResultBus());
-				((Port) readOr.getDataPorts().get(3)).setBus(goWBus);
+				readOr.getDataPorts().get(1).setBus(goRBus);
+				readOr.getDataPorts().get(2).setBus(writeAnd.getResultBus());
+				readOr.getDataPorts().get(3).setBus(goWBus);
 
-				((Port) writeOr.getDataPorts().get(0)).setBus(writeAnd
-						.getResultBus());
-				((Port) writeOr.getDataPorts().get(1)).setBus(goWBus);
+				writeOr.getDataPorts().get(0).setBus(writeAnd.getResultBus());
+				writeOr.getDataPorts().get(1).setBus(goWBus);
 			} else if (readUsed) // read only - write not used!
 			{
 				if (combinationalRead) {
-					((Port) readOr.getDataPorts().get(0)).setBus(readGoReg
-							.getResultBus());
+					readOr.getDataPorts().get(0)
+							.setBus(readGoReg.getResultBus());
 				} else {
-					((Port) readOr.getDataPorts().get(0)).setBus(readAnd
-							.getResultBus());
+					readOr.getDataPorts().get(0).setBus(readAnd.getResultBus());
 				}
 
-				((Port) readOr.getDataPorts().get(1)).setBus(goRBus);
+				readOr.getDataPorts().get(1).setBus(goRBus);
 			} else // write only
 			{
-				((Port) readOr.getDataPorts().get(0)).setBus(writeAnd
-						.getResultBus());
-				((Port) readOr.getDataPorts().get(1)).setBus(goWBus);
+				readOr.getDataPorts().get(0).setBus(writeAnd.getResultBus());
+				readOr.getDataPorts().get(1).setBus(goWBus);
 
-				((Port) writeOr.getDataPorts().get(0)).setBus(writeAnd
-						.getResultBus());
-				((Port) writeOr.getDataPorts().get(1)).setBus(goWBus);
+				writeOr.getDataPorts().get(0).setBus(writeAnd.getResultBus());
+				writeOr.getDataPorts().get(1).setBus(goWBus);
 			}
 
 			// addr capture
 			Bus addrSelectBus;
 			if (readUsed && writeUsed) {
-				((Port) addrOr.getDataPorts().get(0)).setBus(goRBus);
-				((Port) addrOr.getDataPorts().get(1)).setBus(goWBus);
+				addrOr.getDataPorts().get(0).setBus(goRBus);
+				addrOr.getDataPorts().get(1).setBus(goWBus);
 				addrSelectBus = addrOr.getResultBus();
 			} else if (readUsed)// read only
 			{
@@ -864,13 +857,13 @@ public class MemoryReferee extends Referee {
 		Bus getTaskMemDataInBus() {
 			if (dinMux == null) {
 				// return getZeroConstant().getValueBus();
-				return MemoryReferee.this.zeroDataConstant.getValueBus();
+				return zeroDataConstant.getValueBus();
 			}
 			return dinMux.getResultBus();
 		}
 
 		public Set<Component> getFeedbackPoints() {
-			return this.feedbackPoints;
+			return feedbackPoints;
 		}
 	}
 
@@ -983,10 +976,8 @@ public class MemoryReferee extends Referee {
 			// stateAnd gets inverted global reset, stateOr and last mux (done
 			// below)
 			stateNot.getDataPort().setBus(resetBus);
-			((Port) stateAnd.getDataPorts().get(0)).setBus(stateNot
-					.getResultBus());
-			((Port) stateAnd.getDataPorts().get(1)).setBus(stateOr
-					.getResultBus());
+			stateAnd.getDataPorts().get(0).setBus(stateNot.getResultBus());
+			stateAnd.getDataPorts().get(1).setBus(stateOr.getResultBus());
 
 			/*
 			 * stateAnd only produces 1 bit, so it has to be extended to the
@@ -1002,8 +993,8 @@ public class MemoryReferee extends Referee {
 					.setBus(stateAndSignChange.getResultBus());
 			addComponent(stateAndCast);
 
-			((Port) stateAndOp.getDataPorts().get(0)).setBus(stateAndCast
-					.getResultBus());
+			stateAndOp.getDataPorts().get(0)
+					.setBus(stateAndCast.getResultBus());
 
 			Bus mux0Input = stateAndOp.getResultBus();
 			for (int i = 0; i < size; i++) {
@@ -1013,7 +1004,7 @@ public class MemoryReferee extends Referee {
 				m.setIDLogical(this, "stateMux_" + i);
 				stateMuxList.add(m);
 
-				TaskCapture tc = (TaskCapture) taskCaptures.get(i);
+				TaskCapture tc = taskCaptures.get(i);
 				Bus tcResultBus = tc.getTaskMemGoBus();
 
 				// first mux port is the output of the previous mux, or the
@@ -1044,14 +1035,14 @@ public class MemoryReferee extends Referee {
 					port = stateMux.getDataPort(0);
 					port.setBus(mux0Input);
 					// and the last input to the stateAnd
-					port = ((Port) stateAndOp.getDataPorts().get(1));
+					port = stateAndOp.getDataPorts().get(1);
 					port.setBus(mux0Input);
 
 					feedbackPoints.add(m);
 					m.getResultBus().setSize(stateWidth, false);
 				}
 
-				port = ((Port) stateOr.getDataPorts().get(i));
+				port = stateOr.getDataPorts().get(i);
 				port.setBus(tcResultBus);
 			}
 
@@ -1071,7 +1062,7 @@ public class MemoryReferee extends Referee {
 		}
 
 		public Set<Component> getFeedbackPoints() {
-			return this.feedbackPoints;
+			return feedbackPoints;
 		}
 	}
 
@@ -1167,6 +1158,7 @@ public class MemoryReferee extends Referee {
 			return done;
 		}
 
+		@Override
 		public String toString() {
 			String ret = super.toString();
 			ret += " erp: "
@@ -1240,33 +1232,34 @@ public class MemoryReferee extends Referee {
 		}
 
 		public Port getDonePort() {
-			return this.done;
+			return done;
 		}
 
 		public Port getReadDataPort() {
-			return this.readData;
+			return readData;
 		}
 
 		public Bus getWriteDataBus() {
-			return this.writeData;
+			return writeData;
 		}
 
 		public Bus getAddressBus() {
-			return this.address;
+			return address;
 		}
 
 		public Bus getWriteEnableBus() {
-			return this.writeEnable;
+			return writeEnable;
 		}
 
 		public Bus getGoBus() {
-			return this.go;
+			return go;
 		}
 
 		public Bus getSizeBus() {
-			return this.size;
+			return size;
 		}
 
+		@Override
 		public String toString() {
 			String ret = super.toString();
 			ret += " donep: " + getDonePort() + "/" + getDonePort().getPeer();

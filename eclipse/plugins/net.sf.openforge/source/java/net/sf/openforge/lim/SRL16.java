@@ -63,7 +63,7 @@ public class SRL16 extends Primitive {
 		super(2);
 		setIDLogical(id);
 
-		this.regs = regs_chain;
+		regs = regs_chain;
 
 		// ports are always used.
 		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
@@ -108,25 +108,26 @@ public class SRL16 extends Primitive {
 	}
 
 	public int getStages() {
-		return this.regs.size();
+		return regs.size();
 	}
 
 	public List getCompactedRegs() {
-		return this.regs;
+		return regs;
 	}
 
 	public int getType() {
-		return this.type;
+		return type;
 	}
 
 	public Port getInDataPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
 	public Port getEnablePort() {
-		return (Port) getDataPorts().get(1);
+		return getDataPorts().get(1);
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -136,6 +137,7 @@ public class SRL16 extends Primitive {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		int srl16Count = 0;
 
@@ -162,6 +164,7 @@ public class SRL16 extends Primitive {
 	 * Bit states propagate straight through, except that pass through bits
 	 * become care bits.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 
@@ -194,6 +197,7 @@ public class SRL16 extends Primitive {
 	 * Any bit of the consumed output that is dont care or constant becomes a
 	 * dont care or that constant on the inputs, all other bits are care.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 
@@ -218,6 +222,7 @@ public class SRL16 extends Primitive {
 	 * =================================================
 	 */
 
+	@Override
 	public String toString() {
 		String ret = super.toString();
 

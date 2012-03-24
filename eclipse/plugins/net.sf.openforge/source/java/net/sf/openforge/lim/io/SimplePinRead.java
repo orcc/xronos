@@ -79,9 +79,10 @@ public class SimplePinRead extends Component implements Visitable, Referencer {
 	 * @return a non-null Bus
 	 */
 	public Bus getResultBus() {
-		return (Bus) getExit(Exit.DONE).getDataBuses().get(0);
+		return getExit(Exit.DONE).getDataBuses().get(0);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -90,18 +91,21 @@ public class SimplePinRead extends Component implements Visitable, Referencer {
 	 * Returns the {@link Referenceable} {@link SimplePin} which this node
 	 * targets.
 	 */
+	@Override
 	public Referenceable getReferenceable() {
-		return this.targetPin;
+		return targetPin;
 	}
 
 	/**
 	 * This accessor may execute in parallel with other similar (non state
 	 * modifying) accesses.
 	 */
+	@Override
 	public boolean isSequencingPoint() {
 		return false;
 	}
 
+	@Override
 	public boolean pushValuesForward() {
 		Port sideband = getDataPorts().isEmpty() ? null : (Port) getDataPorts()
 				.get(0);
@@ -110,18 +114,19 @@ public class SimplePinRead extends Component implements Visitable, Referencer {
 			newValue = sideband.getValue();
 		} else {
 			// The input pin always supplies 'n' bits of valid data
-			newValue = new Value(this.targetPin.getWidth(), false);
+			newValue = new Value(targetPin.getWidth(), false);
 		}
 
 		return getResultBus().pushValueForward(newValue);
 	}
 
+	@Override
 	public boolean pushValuesBackward() {
 		// Do nothing except ensure that the sideband port has a
 		// value as there is no push-back to the pin.
 		if (!getDataPorts().isEmpty()) {
-			((Port) getDataPorts().get(0)).pushValueBackward(new Value(
-					this.targetPin.getWidth(), false));
+			getDataPorts().get(0).pushValueBackward(
+					new Value(targetPin.getWidth(), false));
 		}
 		return false;
 	}

@@ -87,6 +87,7 @@ public class Block extends Module {
 		this(sequence, false);
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -109,6 +110,7 @@ public class Block extends Module {
 		return getProcedure() != null;
 	}
 
+	@Override
 	public SearchLabel getSearchLabel() {
 		SearchLabel sl = null;
 		if (getOwner() != null) {
@@ -150,6 +152,7 @@ public class Block extends Module {
 	 * 
 	 * @return the Configurable parent
 	 */
+	@Override
 	public Configurable getConfigurableParent() {
 		return ((isProcedureBody()) ? (Configurable) getProcedure()
 				: (Configurable) getOwner());
@@ -179,6 +182,7 @@ public class Block extends Module {
 	 *            the component to be removed
 	 * @return true if the component was removed, false if not found
 	 */
+	@Override
 	public boolean removeComponent(Component component) {
 		// first clear the exits
 		for (Iterator iter = component.getExits().iterator(); iter.hasNext();) {
@@ -266,6 +270,7 @@ public class Block extends Module {
 	 *            component to insert
 	 * @return true if successful, else false
 	 */
+	@Override
 	public boolean replaceComponent(Component remove, Component insert) {
 		int offset = sequence.indexOf(remove);
 		if (offset == -1 || !removeComponent(remove)
@@ -415,6 +420,7 @@ public class Block extends Module {
 		}
 	}
 
+	@Override
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final Block clone = (Block) moduleClone;

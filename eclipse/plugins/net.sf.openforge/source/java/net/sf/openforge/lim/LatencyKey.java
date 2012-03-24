@@ -20,7 +20,6 @@
  */
 package net.sf.openforge.lim;
 
-
 /**
  * LatencyKey is an interface implemented by any object which can uniquely
  * identify the 'source' of a latency. The latency source must be sufficeintly
@@ -32,9 +31,9 @@ package net.sf.openforge.lim;
  * @version $Id: LatencyKey.java 109 2006-02-24 18:10:34Z imiller $
  */
 public interface LatencyKey {
-	public static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	public static final LatencyKey BASE = new LatencyKey() {
+		@Override
 		public String toString() {
 			return "BASE";
 		}

@@ -48,13 +48,14 @@ public abstract class PinAccess extends Access {
 	}
 
 	public Port getAddressPort() {
-		return (Port) getDataPorts().get(0);
+		return getDataPorts().get(0);
 	}
 
 	public Bus getDoneBus() {
-		return (Bus) getExit(Exit.DONE).getDoneBus();
+		return getExit(Exit.DONE).getDoneBus();
 	}
 
+	@Override
 	public boolean isSequencingPoint() {
 		throw new UnsupportedOperationException(
 				"PinAccess is obsolete.  Access to unsupported method");
@@ -67,14 +68,15 @@ public abstract class PinAccess extends Access {
 	}
 
 	public void setFloat(boolean isFloat) {
-		this.isFloatType = isFloat;
+		isFloatType = isFloat;
 	}
 
 	/**
 	 * Returns true if this PinRead was declared a floating point read.
 	 */
+	@Override
 	public boolean isFloat() {
-		return this.isFloatType;
+		return isFloatType;
 	}
 
 	/**
@@ -82,7 +84,7 @@ public abstract class PinAccess extends Access {
 	 * access.
 	 */
 	public void setDoublePrecisionFloat(boolean value) {
-		this.isDouble = value;
+		isDouble = value;
 	}
 
 	/**
@@ -90,7 +92,7 @@ public abstract class PinAccess extends Access {
 	 * double precision.
 	 */
 	public boolean isDoublePrecisionFloat() {
-		return isFloat() && this.isDouble;
+		return isFloat() && isDouble;
 	}
 
 }// PinAccess

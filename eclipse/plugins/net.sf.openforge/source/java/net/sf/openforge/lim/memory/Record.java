@@ -68,8 +68,8 @@ public class Record implements LogicalValue, MemoryVisitable {
 	public Record(List<LogicalValue> values) {
 		this.values = new ArrayList<LogicalValue>(values);
 		for (LogicalValue lv : this.values) {
-			this.size += lv.getSize();
-			this.bitSize += lv.getBitSize();
+			size += lv.getSize();
+			bitSize += lv.getBitSize();
 		}
 	}
 
@@ -81,6 +81,7 @@ public class Record implements LogicalValue, MemoryVisitable {
 	 * @throws NullPointerException
 	 *             if memVis is null
 	 */
+	@Override
 	public void accept(MemoryVisitor memVis) {
 		memVis.visit(this);
 	}
@@ -91,6 +92,7 @@ public class Record implements LogicalValue, MemoryVisitable {
 	 * @return the number of addressable needed to represent this value, always
 	 *         greater than or equal to 0 (&gt;=0)
 	 */
+	@Override
 	public int getSize() {
 		return size;
 	}
@@ -99,22 +101,23 @@ public class Record implements LogicalValue, MemoryVisitable {
 	 * Returns the number of bits allocated based on analysis of the
 	 * AddressableUnit representation.
 	 */
+	@Override
 	public int getBitSize() {
-		return this.bitSize;
+		return bitSize;
 	}
 
 	/**
 	 * Returns the address stride policy governing this logical value.
 	 */
+	@Override
 	public AddressStridePolicy getAddressStridePolicy() {
-		assert !this.values.isEmpty();
-		if (this.values.isEmpty())
+		assert !values.isEmpty();
+		if (values.isEmpty())
 			return null;
 
 		// Test that the stride policy is consistent throughout this
 		// record
-		AddressStridePolicy policy = ((LogicalValue) values.get(0))
-				.getAddressStridePolicy();
+		AddressStridePolicy policy = values.get(0).getAddressStridePolicy();
 		for (LogicalValue logicalValue : getComponentValues()) {
 			if (!(logicalValue.getAddressStridePolicy().equals(policy))) {
 				throw new MixedAddressStridePolicyException(policy
@@ -132,6 +135,7 @@ public class Record implements LogicalValue, MemoryVisitable {
 	 * @return The largest constituent alignment size, greater than or equal to
 	 *         0.
 	 */
+	@Override
 	public int getAlignmentSize() {
 		int max = 0;
 		for (LogicalValue logicalValue : getComponentValues()) {
@@ -149,6 +153,7 @@ public class Record implements LogicalValue, MemoryVisitable {
 	 *         have no elements in the case that this is the value of an empty
 	 *         data item, such as a struct with no fields
 	 */
+	@Override
 	public AddressableUnit[] getRep() {
 		final AddressableUnit[] rep = new AddressableUnit[getSize()];
 		int index = 0;
@@ -184,8 +189,10 @@ public class Record implements LogicalValue, MemoryVisitable {
 	 * 
 	 * @return a new Record with the same structure and initial values as this.
 	 */
+	@Override
 	public LogicalValue copy() {
-		List<LogicalValue> copiedList = new ArrayList<LogicalValue> (values.size());
+		List<LogicalValue> copiedList = new ArrayList<LogicalValue>(
+				values.size());
 		for (LogicalValue lv : values) {
 			copiedList.add(lv.copy());
 		}
@@ -213,6 +220,7 @@ public class Record implements LogicalValue, MemoryVisitable {
 	 *             resulting context would be non-meaningful (eg removal of a
 	 *             portion of a pointers value)
 	 */
+	@Override
 	public LogicalValue removeRange(int min, int max)
 			throws NonRemovableRangeException {
 		/*
@@ -293,6 +301,7 @@ public class Record implements LogicalValue, MemoryVisitable {
 	 * @return the location, or {@link Location#INVALID} if this value does not
 	 *         denote a valid location
 	 */
+	@Override
 	public Location toLocation() {
 		return Location.INVALID;
 	}
@@ -302,21 +311,24 @@ public class Record implements LogicalValue, MemoryVisitable {
 	 * 
 	 * @see net.sf.openforge.lim.memory.LogicalValue#toConstant()
 	 */
+	@Override
 	public MemoryConstant toConstant() {
 		ArrayList<Constant> constants = new ArrayList<Constant>(values.size());
-		//int bitwidth = 0;
+		// int bitwidth = 0;
 		for (LogicalValue lv : values) {
 			constants.add(lv.toConstant());
 		}
-		return new AggregateConstant(constants, this.bitSize);
+		return new AggregateConstant(constants, bitSize);
 	}
 
+	@Override
 	public String toString() {
 		final StringBuffer buf = new StringBuffer();
 		buf.append("Record@");
 		buf.append(Integer.toHexString(hashCode()));
 		buf.append("={");
-		for (Iterator<LogicalValue> iter = getComponentValues().iterator(); iter.hasNext();) {
+		for (Iterator<LogicalValue> iter = getComponentValues().iterator(); iter
+				.hasNext();) {
 			buf.append(iter.next().toString());
 			if (iter.hasNext()) {
 				buf.append(",");
@@ -327,6 +339,7 @@ public class Record implements LogicalValue, MemoryVisitable {
 	}
 
 	/** @inheritDoc */
+	@Override
 	public LogicalValue getValueAtOffset(int delta, int size) {
 		if ((delta == 0) && (size == getSize())) {
 			return this;

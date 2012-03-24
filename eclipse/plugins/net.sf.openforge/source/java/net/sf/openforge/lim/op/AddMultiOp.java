@@ -51,6 +51,7 @@ public class AddMultiOp extends AddOp {
 	/**
 	 * returns true
 	 */
+	@Override
 	public boolean hasMulti() {
 		return getDataPorts().size() > 2;
 	}
@@ -60,6 +61,7 @@ public class AddMultiOp extends AddOp {
 	 * 
 	 * @return a FPGAResource objec
 	 */
+	@Override
 	public FPGAResource getHardwareResourceUsage() {
 		FPGAResource hwResource = new FPGAResource();
 
@@ -78,12 +80,13 @@ public class AddMultiOp extends AddOp {
 	 *            value
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 
 		final Iterator<Port> iter = getDataPorts().iterator();
-		SizedInteger result = (SizedInteger) portValues.get(iter.next());
+		SizedInteger result = portValues.get(iter.next());
 		while (iter.hasNext()) {
-			result = result.add((SizedInteger) portValues.get(iter.next()));
+			result = result.add(portValues.get(iter.next()));
 		}
 
 		return Collections.singletonMap(getResultBus(), result);
@@ -99,6 +102,7 @@ public class AddMultiOp extends AddOp {
 	 * 
 	 * @return true if a change was made to the result bus Value.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean mod = false;
 

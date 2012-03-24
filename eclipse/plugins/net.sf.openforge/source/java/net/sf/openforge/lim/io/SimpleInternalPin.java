@@ -55,6 +55,7 @@ public class SimpleInternalPin extends SimplePin {
 	 * @throws IllegalArgumentException
 	 *             if valueBus is null
 	 */
+	@Override
 	public void connectPort(Bus valueBus) {
 		buildPort();
 		if (valueBus == null)
@@ -78,6 +79,7 @@ public class SimpleInternalPin extends SimplePin {
 	 * @throws UnsupportedOperationException
 	 *             if connectPort has already been called on this pin.
 	 */
+	@Override
 	public void connectBus(Collection<Port> ports) {
 		buildBus();
 		// The idea here is to have a 'dangling' Bus that can be
@@ -88,7 +90,7 @@ public class SimpleInternalPin extends SimplePin {
 		final List<Port> toConnect = new ArrayList<Port>(ports);
 		toConnect.removeAll(getSource().getPorts());
 		// connect up what's left.
-		for (Port port: toConnect) {
+		for (Port port : toConnect) {
 			(port).setBus(getSource());
 		}
 	}
@@ -100,6 +102,7 @@ public class SimpleInternalPin extends SimplePin {
 	 * 
 	 * @return false
 	 */
+	@Override
 	public boolean isPublished() {
 		return false;
 	}

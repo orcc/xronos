@@ -36,7 +36,6 @@ import java.util.Map;
  * @version $Id: IPCoreCall.java 2 2005-06-09 20:00:48Z imiller $
  */
 public class IPCoreCall extends Call {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	private Writer hdlWriter = null;
 
@@ -53,9 +52,10 @@ public class IPCoreCall extends Call {
 
 	public IPCoreCall(Writer writer) {
 		super();
-		this.hdlWriter = writer;
+		hdlWriter = writer;
 	}
 
+	@Override
 	public void accept(Visitor vis) {
 		vis.visit(this);
 	}
@@ -77,9 +77,10 @@ public class IPCoreCall extends Call {
 	}
 
 	public Writer getHDLWriter() {
-		return this.hdlWriter;
+		return hdlWriter;
 	}
 
+	@Override
 	public Port getProcedurePort(Port port) {
 		if (port.getOwner() != this) {
 			throw new IllegalArgumentException("unknown port");
@@ -87,6 +88,7 @@ public class IPCoreCall extends Call {
 		return (Port) portMap.get(port);
 	}
 
+	@Override
 	public Bus getProcedureBus(Bus bus) {
 		if (bus.getOwner().getOwner() != this) {
 			throw new IllegalArgumentException("unknown bus");
@@ -95,13 +97,15 @@ public class IPCoreCall extends Call {
 	}
 
 	public void setHDLWriter(Writer writer) {
-		this.hdlWriter = writer;
+		hdlWriter = writer;
 	}
 
+	@Override
 	public void setProcedure(Procedure proc) {
 		setReferent(proc);
 	}
 
+	@Override
 	public void setReferent(Referent ref) {
 		setRef(ref);
 		generateMaps(((Procedure) ref).getBody());

@@ -81,10 +81,12 @@ public class OutBuf extends Component implements Emulatable {
 		this.exit = exit;
 	}
 
+	@Override
 	public Collection<Exit> getExits() {
 		return Collections.emptyList();
 	}
 
+	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
@@ -97,6 +99,7 @@ public class OutBuf extends Component implements Emulatable {
 	 * Tests whether this component requires a connection to its <em>go</em>
 	 * {@link Port} in order to commence processing.
 	 */
+	@Override
 	public boolean consumesGo() {
 		return consumesGo;
 	}
@@ -114,15 +117,16 @@ public class OutBuf extends Component implements Emulatable {
 	 * depth on the inputs of a task to account for IOBs
 	 */
 	public void setGateDepth(int value) {
-		this.gateDepth = value;
+		gateDepth = value;
 	}
 
 	/**
 	 * Overrides method in Component to provide the OutBuf depth when it exists
 	 * at the boundry of a task to account for IOBs
 	 */
+	@Override
 	public int getGateDepth() {
-		return this.gateDepth;
+		return gateDepth;
 	}
 
 	/**
@@ -134,10 +138,11 @@ public class OutBuf extends Component implements Emulatable {
 	 *            a map of {@link Port} to {@link SizedInteger} input value
 	 * @return a map of owner {@link Bus} to {@link SizedInteger} result value
 	 */
+	@Override
 	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
 		final Map<Bus, SizedInteger> outputValues = new HashMap<Bus, SizedInteger>();
 		for (Port port : getDataPorts()) {
-			final SizedInteger portValue = (SizedInteger) portValues.get(port);
+			final SizedInteger portValue = portValues.get(port);
 			if (portValue != null) {
 				outputValues.put(port.getPeer(), portValue);
 			}
@@ -157,6 +162,7 @@ public class OutBuf extends Component implements Emulatable {
 	 * @return true if the Value pushed across the module boundry contained any
 	 *         new information.
 	 */
+	@Override
 	public boolean pushValuesForward() {
 		boolean isModified = false;
 		for (Port port : getPorts()) {
@@ -236,6 +242,7 @@ public class OutBuf extends Component implements Emulatable {
 	 * updates the Port's value with that information. Returns true if any new
 	 * information was pushed across the module boundry.
 	 */
+	@Override
 	public boolean pushValuesBackward() {
 		boolean mod = false;
 		for (Port port : getPorts()) {
@@ -262,6 +269,7 @@ public class OutBuf extends Component implements Emulatable {
 	 * @throws CloneNotSupportedException
 	 *             always
 	 */
+	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException("attempt to clone OutBuf");
 	}
