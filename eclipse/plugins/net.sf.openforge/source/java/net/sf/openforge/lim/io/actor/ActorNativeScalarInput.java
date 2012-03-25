@@ -30,7 +30,10 @@ package net.sf.openforge.lim.io.actor;
 
 import java.util.Collection;
 
+import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Latency;
 import net.sf.openforge.lim.io.FifoAccess;
 import net.sf.openforge.lim.io.FifoID;
 import net.sf.openforge.lim.io.FifoIF;
@@ -38,6 +41,7 @@ import net.sf.openforge.lim.io.FifoRead;
 import net.sf.openforge.lim.io.NativeInput;
 import net.sf.openforge.lim.io.SimpleFifoPin;
 import net.sf.openforge.lim.io.SimplePin;
+import net.sf.openforge.lim.io.SimplePinRead;
 
 /**
  * @author Endri Bezati
@@ -72,7 +76,11 @@ public class ActorNativeScalarInput extends NativeInput implements ActorPort {
 
 	@Override
 	public FifoAccess getAccess(boolean blocking) {
-		return new FifoRead(this);
+		if (blocking) {
+			return new FifoRead(this);
+		} else {
+			return new ActorNativeInputRead(this);
+		}
 	}
 
 	/**
@@ -142,6 +150,26 @@ public class ActorNativeScalarInput extends NativeInput implements ActorPort {
 	@Override
 	public Collection<SimplePin> getOutputPins() {
 		return null;
+	}
+
+	private class ActorNativeInputRead extends FifoRead {
+		private ActorNativeInputRead(ActorNativeScalarInput asi) {
+			super(asi, Latency.ZERO);
+
+			Bus done = getExit(Exit.DONE).getDoneBus();
+			Bus result = getExit(Exit.DONE).getDataBuses().get(0);
+
+			final SimplePinRead din = new SimplePinRead(asi.getDataPin());
+			addComponent(din);
+
+			result.getPeer().setBus(din.getResultBus());
+			done.getPeer().setBus(getGoPort().getPeer());
+		}
+
+		@Override
+		public boolean consumesClock() {
+			return false;
+		}
 	}
 
 }

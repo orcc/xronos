@@ -78,6 +78,21 @@ public class FifoRead extends FifoAccess implements Visitable {
 		exit.setLatency(operationalLatency);
 	}
 
+	protected FifoRead(NativeInput targetInterface, Latency operationalLatency) {
+		super(targetInterface);
+
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single result bus on this module, and a GO port
+		// and DONE bus.
+		Exit exit = makeExit(1);
+		Bus result = exit.getDataBuses().get(0);
+		Bus done = exit.getDoneBus();
+		done.setUsed(true);
+		result.setUsed(true);
+
+		exit.setLatency(operationalLatency);
+	}
+
 	/**
 	 * Constructs a new FifoRead targeting the given FifoIF.
 	 * 

@@ -255,8 +255,8 @@ public abstract class ActionIOHandler {
 
 		@Override
 		public Component getStallAccess() {
-			// TODO Auto-generated method stub
-			return null;
+			throw new UnsupportedOperationException(
+					"Cannot stall on a Native interface");
 		}
 
 		@Override
