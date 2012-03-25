@@ -6,13 +6,26 @@ Bundle-Version: 1.0.12
 Bundle-Activator: net.sf.openforge.Activator
 Require-Bundle: org.eclipse.core.runtime
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: net.sf.openforge.app,
- net.sf.openforge.frontend.xlim.builder,
+Export-Package: net.sf.openforge.app;
+  uses:="net.sf.openforge.util,
+   net.sf.openforge.verilog.mapping,
+   net.sf.openforge.backend,
+   net.sf.openforge.lim,
+   net.sf.openforge.app.project,
+   net.sf.openforge.app.logging,
+   net.sf.openforge.backend.hdl.ucf",
+ net.sf.openforge.frontend.xlim.builder;uses:="net.sf.openforge.lim,org.xml.sax.helpers,org.w3c.dom",
  net.sf.openforge.util.io,
- net.sf.openforge.util.xml
-Bundle-ClassPath: source/xslt/,
- .,
+ net.sf.openforge.util.xml;
+  uses:="javax.xml.parsers,
+   net.sf.openforge.util.io,
+   org.w3c.dom,
+   javax.xml.namespace,
+   org.w3c.dom.bootstrap,
+   org.xml.sax,
+   org.xml.sax.ext,
+   javax.xml.transform"
+Bundle-ClassPath: .,
  lib/saxon8-dom.jar,
  lib/saxon8.jar
-Bundle-ActivationPolicy: lazy
 Bundle-Vendor: EPFL

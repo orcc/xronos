@@ -90,7 +90,7 @@ import net.sf.orcc.df.transformations.Instantiator;
 import net.sf.orcc.df.transformations.NetworkFlattener;
 import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.ir.transformations.BlockCombine;
-import net.sf.orcc.ir.transformations.BuildCFG;
+import net.sf.orcc.ir.transformations.CfgBuilder;
 import net.sf.orcc.ir.transformations.DeadCodeElimination;
 import net.sf.orcc.ir.transformations.DeadGlobalElimination;
 import net.sf.orcc.ir.transformations.SSATransformation;
@@ -346,7 +346,7 @@ public class Orc2HDL extends AbstractBackend {
 				new Inliner(true, true), new UnaryListRemoval(),
 				new CustomPeekAdder(), new DeadGlobalElimination(),
 				new DeadCodeElimination(), new XlimDeadVariableRemoval(),
-				new ListFlattener(), new TacTransformation(), new BuildCFG(),
+				new ListFlattener(), new TacTransformation(), new CfgBuilder(),
 				new InstPhiTransformation(), new LiteralIntegersAdder(),
 				new CastAdder(true), new XlimVariableRenamer(),
 				new EmptyNodeRemover(), new BlockCombine() };
@@ -478,7 +478,7 @@ public class Orc2HDL extends AbstractBackend {
 					List<String> flags = new ArrayList<String>(forgeFlags);
 					flags.addAll(Arrays.asList("-d", srcPath, "-o", id, xlim));
 					long t0 = System.currentTimeMillis();
-					Boolean okForge = Forge.runForge((String[]) flags
+					Boolean okForge = Forge.runForge(flags
 							.toArray(new String[0]));
 					long t1 = System.currentTimeMillis();
 					if (okForge) {
