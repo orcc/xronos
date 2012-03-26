@@ -63,7 +63,7 @@
 <xsl:template match="operation[@kind='pinWrite']" mode="markOpSizes">
   <xsl:variable name="pinName" select="@portName"/>
   <xsl:variable name="actorPin" select="/design/actor-port[@name=$pinName]"/>
-  <xsl:variable name="actorPin" select="/design/actor-native-port[@name=$pinName]"/>
+  <xsl:variable name="actorNativePin" select="/design/actor-native-port[@name=$pinName]"/>
   <xsl:variable name="internalPin" select="/design/internal-port[@name=$pinName]"/>
   <!-- Preserve the existing element information -->
   <xsl:element name="{name()}">
@@ -75,6 +75,9 @@
     <xsl:choose>
       <xsl:when test="count($actorPin) > 0">
         <note kind="opSize" maxSize="{$actorPin/@size}" maxType="{$actorPin/@typeName}"/>
+      </xsl:when>
+      <xsl:when test="count($actorNativePin) > 0">
+        <note kind="opSize" maxSize="{$actorNativePin/@size}" maxType="{$actorNativePin/@typeName}"/>
       </xsl:when>
       <xsl:otherwise>
         <note kind="opSize" maxSize="{$internalPin/@size}" maxType="{$internalPin/@typeName}"/>
