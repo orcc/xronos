@@ -218,7 +218,7 @@ fSignals(type,port,dir) ::= <<
 queues(connection) ::= <<
 <if(connection.source.port)>
 <if(connection.target.instance)>
-<if(!connection.sourcePort.native)><queue("ai","nif",connection.source,connection.sourcePort,connection.target,connection.targetPort)><endif>
+<if(!connection.source.native)><queue("ai","nif",connection.source,connection.sourcePort,connection.target,connection.targetPort)><endif>
 <endif>
 <else>
 <if(connection.target.instance)>
@@ -272,6 +272,7 @@ networkPortInstatiation(network) ::= <<
 <network.outputs:{port | <networkOutputPortInstatiation(port=port)>}; separator="\n">
 
 -- Intput Port(s) Instantiation
+<network.connections : nativeInputNetworkPorts(); separator="\n">
 <network.inputs:{port | <networkInputPortInstatiation(port=port)>}; separator="\n">
 >>
 
@@ -279,6 +280,14 @@ nativeOutputNetworkPorts(connection) ::=<<
 <if(connection.source.instance)>
 <if(connection.target.port)>
 <if(connection.sourcePort.native)><connection.target.name>_DATA \<= ao_<connection.source.id>_<connection.sourcePort.name>_DATA;<endif>
+<endif>
+<endif>
+>> 
+
+nativeInputNetworkPorts(connection) ::=<<
+<if(connection.source.port)>
+<if(connection.target.instance)>
+<if(connection.targetPort.native)>ai_<connection.target.id>_<connection.targetPort.name>_DATA \<= <connection.source.name>_DATA;<endif>
 <endif>
 <endif>
 >> 
