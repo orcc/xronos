@@ -63,6 +63,7 @@
 <xsl:template match="operation[@kind='pinWrite']" mode="markOpSizes">
   <xsl:variable name="pinName" select="@portName"/>
   <xsl:variable name="actorPin" select="/design/actor-port[@name=$pinName]"/>
+  <xsl:variable name="actorPin" select="/design/actor-native-port[@name=$pinName]"/>
   <xsl:variable name="internalPin" select="/design/internal-port[@name=$pinName]"/>
   <!-- Preserve the existing element information -->
   <xsl:element name="{name()}">
