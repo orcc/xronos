@@ -13,9 +13,9 @@ import ch.epfl.stimm.yaceb.protobuffer.weight.ProtoExecutionWeight.ActionWeight;
 
 public class WeightWriter {
 
-	private Network network;
-	private Map<Instance, Map<Action, TimeGoDone>> execution;
-	private String filePath;
+	private final Network network;
+	private final Map<Instance, Map<Action, TimeGoDone>> execution;
+	private final String filePath;
 
 	public WeightWriter(Map<Instance, Map<Action, TimeGoDone>> execution,
 			Network network, String filePath) {
@@ -51,8 +51,7 @@ public class WeightWriter {
 						case 1:
 							stop = timeBy100;
 							actionWeight
-									.setInstanceName(
-											instance.getHierarchicalName())
+									.setInstanceName(instance.getSimpleName())
 									.setActionName(action.getName())
 									.setNumClock(stop - start);
 							actionWeight.build().writeDelimitedTo(out);

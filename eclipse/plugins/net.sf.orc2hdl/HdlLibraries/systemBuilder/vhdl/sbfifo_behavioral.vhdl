@@ -1170,16 +1170,3 @@ begin
   end generate;
   
 end architecture behavioral;
-
------------------------------------------------------------------------
--- Natives
-
-
-architecture behavioral of natout is
-begin
-
-    Out_DATA <= In_DATA;
-    In_ACK  <= In_SEND when reset='0' else '0';
-    In_RDY  <= not reset;
-    
-end architecture behavioral;
