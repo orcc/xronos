@@ -23,28 +23,27 @@ package net.sf.openforge.schedule.block;
 
 import java.util.Set;
 
+import net.sf.openforge.lim.Component;
+
 /**
  * ModuleStallSource is a lightweight interface that is used to supply
- * Scheduling the source of a stall signal.  This interface is used to
- * abstract away the details of obtaining the source of the stall
- * signal.
+ * Scheduling the source of a stall signal. This interface is used to abstract
+ * away the details of obtaining the source of the stall signal.
  * 
- *
- * <p>Created: Mon Nov 15 11:58:30 2004
- *
+ * 
+ * <p>
+ * Created: Mon Nov 15 11:58:30 2004
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: ModuleStallSource.java 2 2005-06-09 20:00:48Z imiller $
  */
-public interface ModuleStallSource 
-{
-    public static final String _RCS_ = "$Rev: 2 $";
+public interface ModuleStallSource {
 
-    /**
-     * Returns a Set of {@link Component} objects that need to stall a
-     * Module. 
-     *
-     * @return a non-null Set of {@link Component} objects.
-     */
-    public Set getStallingComponents ();
+	/**
+	 * Returns a Set of {@link Component} objects that need to stall a Module.
+	 * 
+	 * @return a non-null Set of {@link Component} objects.
+	 */
+	public Set<Component> getStallingComponents();
 
 }// ModuleStallSource

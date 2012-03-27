@@ -45,7 +45,7 @@ import net.sf.openforge.app.project.SearchLabel;
 public class Block extends Module {
 
 	/** Ordered sequence of Components to be executed */
-	protected List sequence = null;
+	protected List<Component> sequence = null;
 
 	/** The Procedure (if any) for which this is the body. */
 	private Procedure procedure;
@@ -55,7 +55,7 @@ public class Block extends Module {
 	 * 
 	 */
 	public Block(boolean isProcedureBody) {
-		sequence = new LinkedList();
+		sequence = new LinkedList<Component>();
 	}
 
 	/**
@@ -71,8 +71,8 @@ public class Block extends Module {
 	public Block(List<Component> sequence, boolean isProcedureBody) {
 		super();
 		this.sequence = new LinkedList<Component>(sequence);
-		for (Iterator iter = sequence.iterator(); iter.hasNext();) {
-			addComponent((Component) iter.next());
+		for (Component component : sequence) {
+			addComponent(component);
 		}
 		setControlDependencies(isProcedureBody);
 	}
@@ -83,7 +83,7 @@ public class Block extends Module {
 	 * @param sequence
 	 *            a list of Components in logical order of execution
 	 */
-	public Block(List sequence) {
+	public Block(List<Component> sequence) {
 		this(sequence, false);
 	}
 
@@ -97,7 +97,7 @@ public class Block extends Module {
 	 * 
 	 * @return the list of Components in order of execution
 	 */
-	public List getSequence() {
+	public List<Component> getSequence() {
 		return Collections.unmodifiableList(sequence);
 	}
 
@@ -165,9 +165,8 @@ public class Block extends Module {
 	 *            list of components to remove
 	 * @return true if all were removed, else false
 	 */
-	public boolean removeComponents(List components) {
-		for (Iterator iter = components.iterator(); iter.hasNext();) {
-			Component component = (Component) iter.next();
+	public boolean removeComponents(List<Component> components) {
+		for (Component component : components) {
 			if (!removeComponent(component)) {
 				return false;
 			}
@@ -185,11 +184,9 @@ public class Block extends Module {
 	@Override
 	public boolean removeComponent(Component component) {
 		// first clear the exits
-		for (Iterator iter = component.getExits().iterator(); iter.hasNext();) {
-			Exit exit = (Exit) iter.next();
-			for (Iterator entryIter = new ArrayList(exit.getDrivenEntries())
-					.iterator(); entryIter.hasNext();) {
-				((Entry) entryIter.next()).setDrivingExit(null);
+		for (Exit exit : component.getExits()) {
+			for (Entry entry : new ArrayList<Entry>(exit.getDrivenEntries())) {
+				entry.setDrivingExit(null);
 			}
 		}
 		component.disconnect();
@@ -211,10 +208,10 @@ public class Block extends Module {
 	 *            components
 	 * @return true if succesful, else false
 	 */
-	public boolean insertComponents(List components, int offset) {
-		for (ListIterator iter = components.listIterator(components.size()); iter
-				.hasPrevious();) {
-			Component c = (Component) iter.previous();
+	public boolean insertComponents(List<Component> components, int offset) {
+		for (ListIterator<Component> iter = components.listIterator(components
+				.size()); iter.hasPrevious();) {
+			Component c = iter.previous();
 			if (!insertComponent(c, offset)) {
 				return false;
 			}
@@ -252,7 +249,8 @@ public class Block extends Module {
 	 *            list of components to insert instead
 	 * @return true if successful, else false
 	 */
-	public boolean replaceComponents(List remove, List insert) {
+	public boolean replaceComponents(List<Component> remove,
+			List<Component> insert) {
 		int offset = sequence.indexOf(remove.get(0));
 		if (offset == -1 || !removeComponents(remove)
 				|| !insertComponents(insert, offset)) {
@@ -310,9 +308,8 @@ public class Block extends Module {
 		/*
 		 * Visit each Component in the sequence.
 		 */
-		List components = getSequence();
-		for (Iterator iter = components.iterator(); iter.hasNext();) {
-			final Component component = (Component) iter.next();
+		List<Component> components = getSequence();
+		for (Component component : components) {
 
 			/*
 			 * Make a single entry for the Component, connecting it to the
@@ -424,9 +421,9 @@ public class Block extends Module {
 	protected void cloneNotify(Module moduleClone, Map cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final Block clone = (Block) moduleClone;
-		clone.sequence = new LinkedList();
-		for (Iterator iter = sequence.iterator(); iter.hasNext();) {
-			clone.sequence.add(cloneMap.get(iter.next()));
+		clone.sequence = new LinkedList<Component>();
+		for (Component component : sequence) {
+			clone.sequence.add((Component) cloneMap.get(component));
 		}
 	}
 

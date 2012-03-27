@@ -41,7 +41,7 @@ import java.util.Map;
 public class Switch extends Block {
 
 	/** The contents of the switch */
-	private Block body;
+	private Component body;
 
 	/**
 	 * Constructs a new Switch.
@@ -49,7 +49,7 @@ public class Switch extends Block {
 	 * @param body
 	 *            the contents of the switch.
 	 */
-	public Switch(Block body) {
+	public Switch(Component body) {
 		super(Collections.singletonList(body));
 		this.body = body;
 	}
@@ -57,7 +57,7 @@ public class Switch extends Block {
 	/**
 	 * Gets the contents of this switch.
 	 */
-	public Block getBody() {
+	public Component getBody() {
 		return body;
 	}
 

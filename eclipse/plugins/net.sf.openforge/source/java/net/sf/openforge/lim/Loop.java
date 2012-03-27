@@ -82,7 +82,7 @@ public class Loop extends Module {
 	private Reg controlRegister = null;
 
 	/** set to false if the loop is completely unrolled */
-	private boolean isIterative = true;
+	private final boolean isIterative = true;
 
 	/** The number of iterations, if known */
 	private int iterations = ITERATIONS_UNKNOWN;
@@ -202,7 +202,7 @@ public class Loop extends Module {
 	 * 
 	 * @return a collection of enabled Reg objects
 	 */
-	public Collection getDataRegisters() {
+	public Collection<Reg> getDataRegisters() {
 		return dataRegisters;
 	}
 

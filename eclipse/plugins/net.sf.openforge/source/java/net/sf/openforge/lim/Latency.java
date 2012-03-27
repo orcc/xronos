@@ -78,10 +78,10 @@ public abstract class Latency implements Cloneable {
 	public static final Latency ONE;
 
 	/** The non-negative minimum number of clocks */
-	private int minClocks;
+	private final int minClocks;
 
 	/** The maximum number of clocks, or UNKNOWN */
-	private int maxClocks;
+	private final int maxClocks;
 
 	/** The uniquifying key, if needed. */
 	private LatencyKey key = LatencyKey.BASE;
@@ -121,9 +121,9 @@ public abstract class Latency implements Cloneable {
 	 * @param set
 	 *            a set of Latency objects
 	 */
-	public static Latency or(Set set, LatencyKey key) {
+	public static Latency or(Set<Latency> set, LatencyKey key) {
 		if (set.size() == 1) {
-			return (Latency) set.iterator().next();
+			return set.iterator().next();
 		} else {
 			return new OrLatency(set, key);
 		}
@@ -135,9 +135,9 @@ public abstract class Latency implements Cloneable {
 	 * @param set
 	 *            a Set of Latency objects
 	 */
-	public static Latency and(Set set, LatencyKey key) {
+	public static Latency and(Set<Latency> set, LatencyKey key) {
 		if (set.size() == 1) {
-			return (Latency) set.iterator().next();
+			return set.iterator().next();
 		} else {
 			return new AndLatency(set, key);
 		}

@@ -37,7 +37,6 @@ import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Module;
-import net.sf.openforge.lim.Operation;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Value;
@@ -153,25 +152,25 @@ public class ModuloOpRule {
 				Constant zero = new SimpleConstant(0, argValue.getSize(),
 						argValue.isSigned());
 				GreaterThanEqualToOp testComponent = new GreaterThanEqualToOp();
-				List<Operation> testList = new ArrayList<Operation>();
+				List<Component> testList = new ArrayList<Component>();
 				testList.add(zero);
 				testList.add(testComponent);
 				Block testBlock = new Block(testList);
 				Port tb_port = testBlock.makeDataPort();
 				// make dependency
-				Entry gte_entry = (Entry) testComponent.getEntries().get(0);
+				Entry gte_entry = testComponent.getEntries().get(0);
 				Dependency dep0 = new DataDependency(tb_port.getPeer());
-				gte_entry.addDependency((Port) testComponent.getDataPorts()
-						.get(0), dep0);
+				gte_entry.addDependency(testComponent.getDataPorts().get(0),
+						dep0);
 				Dependency dep1 = new DataDependency(zero.getValueBus());
-				gte_entry.addDependency((Port) testComponent.getDataPorts()
-						.get(1), dep1);
+				gte_entry.addDependency(testComponent.getDataPorts().get(1),
+						dep1);
 				Decision decision = new Decision(testBlock, testComponent);
 				Port dec_port = decision.makeDataPort();
-				Entry testb_entry = (Entry) testBlock.getEntries().get(0);
+				Entry testb_entry = testBlock.getEntries().get(0);
 				Dependency testb_dep0 = new DataDependency(dec_port.getPeer());
-				testb_entry.addDependency((Port) testBlock.getDataPorts()
-						.get(0), testb_dep0);
+				testb_entry.addDependency(testBlock.getDataPorts().get(0),
+						testb_dep0);
 				// sizing info
 				// assert false : "New constant prop: fix these lines. --SGE";
 				// ((Port)testComponent.getDataPorts().get(0)).setValue(argValue);
@@ -192,31 +191,27 @@ public class ModuloOpRule {
 				Constant true_power = new SimpleConstant((1 << power) - 1,
 						argValue.getSize(), argValue.isSigned());
 				AndOp trueShift = new AndOp();
-				List<Operation> trueList = new ArrayList<Operation>();
+				List<Component> trueList = new ArrayList<Component>();
 				trueList.add(true_power);
 				trueList.add(trueShift);
 				Block trueBranch = new Block(trueList);
 				Port trueB_port = trueBranch.makeDataPort();
-				Exit trueBranch_exit = (Exit) trueBranch.getExits().iterator()
-						.next();
+				Exit trueBranch_exit = trueBranch.getExits().iterator().next();
 				trueBranch_exit.makeDataBus();
 				// make dependency
-				Entry ts_entry = (Entry) trueShift.getEntries().get(0);
+				Entry ts_entry = trueShift.getEntries().get(0);
 				Dependency ts_dep0 = new DataDependency(trueB_port.getPeer());
-				ts_entry.addDependency((Port) trueShift.getDataPorts().get(0),
-						ts_dep0);
+				ts_entry.addDependency(trueShift.getDataPorts().get(0), ts_dep0);
 				Dependency ts_dep1 = new DataDependency(
 						true_power.getValueBus());
-				ts_entry.addDependency((Port) trueShift.getDataPorts().get(1),
-						ts_dep1);
-				OutBuf trueBranch_out = (OutBuf) trueBranch.getOutBufs()
-						.iterator().next();
-				Entry trueBranch_outEntry = (Entry) trueBranch_out.getEntries()
-						.get(0);
+				ts_entry.addDependency(trueShift.getDataPorts().get(1), ts_dep1);
+				OutBuf trueBranch_out = trueBranch.getOutBufs().iterator()
+						.next();
+				Entry trueBranch_outEntry = trueBranch_out.getEntries().get(0);
 				Dependency trueBranch_outDep = new DataDependency(
 						trueShift.getResultBus());
-				trueBranch_outEntry.addDependency((Port) trueBranch_out
-						.getDataPorts().get(0), trueBranch_outDep);
+				trueBranch_outEntry.addDependency(trueBranch_out.getDataPorts()
+						.get(0), trueBranch_outDep);
 				// sizing info
 				// assert false : "New constant prop: fix these lines. --SGE";
 				// ((Port)trueShift.getDataPorts().get(0)).setValue(argValue);
@@ -235,42 +230,42 @@ public class ModuloOpRule {
 						argValue.getSize(), argValue.isSigned());
 				AndOp falseShift = new AndOp();
 				MinusOp minusShift = new MinusOp();
-				List<Operation> falseList = new ArrayList<Operation>();
+				List<Component> falseList = new ArrayList<Component>();
 				falseList.add(minusA);
 				falseList.add(false_power);
 				falseList.add(falseShift);
 				falseList.add(minusShift);
 				Block falseBranch = new Block(falseList);
 				Port fb_port = falseBranch.makeDataPort();
-				Exit falseBranch_exit = (Exit) falseBranch.getExits()
-						.iterator().next();
+				Exit falseBranch_exit = falseBranch.getExits().iterator()
+						.next();
 				falseBranch_exit.makeDataBus();
 				// make minusA dependency
-				Entry ma_entry = (Entry) minusA.getEntries().get(0);
+				Entry ma_entry = minusA.getEntries().get(0);
 				Dependency ma_dep0 = new DataDependency(fb_port.getPeer());
 				ma_entry.addDependency(minusA.getDataPort(), ma_dep0);
 				// make falseShift dependency
-				Entry fs_entry = (Entry) falseShift.getEntries().get(0);
+				Entry fs_entry = falseShift.getEntries().get(0);
 				Dependency fs_dep0 = new DataDependency(minusA.getResultBus());
-				fs_entry.addDependency((Port) falseShift.getDataPorts().get(0),
+				fs_entry.addDependency(falseShift.getDataPorts().get(0),
 						fs_dep0);
 				Dependency fs_dep1 = new DataDependency(
 						false_power.getValueBus());
-				fs_entry.addDependency((Port) falseShift.getDataPorts().get(1),
+				fs_entry.addDependency(falseShift.getDataPorts().get(1),
 						fs_dep1);
 				// make minusShift dependency
-				Entry ms_entry = (Entry) minusShift.getEntries().get(0);
+				Entry ms_entry = minusShift.getEntries().get(0);
 				Dependency ms_dep0 = new DataDependency(
 						falseShift.getResultBus());
 				ms_entry.addDependency(minusShift.getDataPort(), ms_dep0);
 				// make OutBuf dependency
-				OutBuf falseBranch_out = (OutBuf) falseBranch.getOutBufs()
-						.iterator().next();
-				Entry falseBranch_outEntry = (Entry) falseBranch_out
-						.getEntries().get(0);
+				OutBuf falseBranch_out = falseBranch.getOutBufs().iterator()
+						.next();
+				Entry falseBranch_outEntry = falseBranch_out.getEntries()
+						.get(0);
 				Dependency falseBranch_outDep = new DataDependency(
 						minusShift.getResultBus());
-				falseBranch_outEntry.addDependency((Port) falseBranch_out
+				falseBranch_outEntry.addDependency(falseBranch_out
 						.getDataPorts().get(0), falseBranch_outDep);
 				// sizing info
 				// assert false : "New constant prop: fix these lines. --SGE";
@@ -294,35 +289,33 @@ public class ModuloOpRule {
 				Branch branch = new Branch(decision, trueBranch, falseBranch);
 				Port branch_port = branch.makeDataPort();
 
-				Exit exit = (Exit) op.getExits().iterator().next();
-				Exit branch_exit = (Exit) branch.getExits().iterator().next();
+				Exit exit = op.getExits().iterator().next();
+				Exit branch_exit = branch.getExits().iterator().next();
 				branch_exit.makeDataBus();
 				// branch_exit.makeDataBus();
 
-				Entry dec_entry = (Entry) decision.getEntries().get(0);
+				Entry dec_entry = decision.getEntries().get(0);
 				Dependency dec_dep0 = new DataDependency(branch_port.getPeer());
-				dec_entry.addDependency((Port) decision.getDataPorts().get(0),
+				dec_entry.addDependency(decision.getDataPorts().get(0),
 						dec_dep0);
-				Entry true_entry = (Entry) trueBranch.getEntries().get(0);
+				Entry true_entry = trueBranch.getEntries().get(0);
 				Dependency true_dataDep = new DataDependency(
 						branch_port.getPeer());
-				true_entry.addDependency((Port) trueBranch.getDataPorts()
-						.get(0), true_dataDep);
-				Entry false_entry = (Entry) falseBranch.getEntries().get(0);
+				true_entry.addDependency(trueBranch.getDataPorts().get(0),
+						true_dataDep);
+				Entry false_entry = falseBranch.getEntries().get(0);
 				Dependency false_dataDep = new DataDependency(
 						branch_port.getPeer());
-				false_entry.addDependency((Port) falseBranch.getDataPorts()
-						.get(0), false_dataDep);
+				false_entry.addDependency(falseBranch.getDataPorts().get(0),
+						false_dataDep);
 
-				OutBuf branch_out = (OutBuf) branch.getOutBufs().iterator()
-						.next();
-				Entry forTrueBus_entry = (Entry) branch_out.getEntries().get(0);
+				OutBuf branch_out = branch.getOutBufs().iterator().next();
+				Entry forTrueBus_entry = branch_out.getEntries().get(0);
 				Dependency outTrue_dep0 = new DataDependency(
 						Component.getDataBus(trueBranch));
 				forTrueBus_entry.addDependency((Port) forTrueBus_entry
 						.getDataPorts().get(0), outTrue_dep0);
-				Entry forFalseBus_entry = (Entry) branch_out.getEntries()
-						.get(1);
+				Entry forFalseBus_entry = branch_out.getEntries().get(1);
 				Dependency outFalse_dep0 = new DataDependency(
 						Component.getDataBus(falseBranch));
 				forFalseBus_entry.addDependency((Port) forFalseBus_entry
