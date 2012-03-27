@@ -66,7 +66,7 @@ public class WeightWriter {
 							stop = timeBy100;
 							actionWeight
 									.setInstanceName(
-											instance.getHierarchicalName())
+											instance.getSimpleName())
 									.setActionName(action.getName())
 									.setNumClock(stop - start);
 							actionWeight.build().writeDelimitedTo(out);
@@ -75,7 +75,7 @@ public class WeightWriter {
 							stop = timeBy100;
 							actionWeight
 									.setInstanceName(
-											instance.getHierarchicalName())
+											instance.getSimpleName())
 									.setActionName(action.getName())
 									.setNumClock(stop - start);
 							actionWeight.build().writeDelimitedTo(out);
@@ -84,7 +84,7 @@ public class WeightWriter {
 							stop = timeBy100;
 							actionWeight
 									.setInstanceName(
-											instance.getHierarchicalName())
+											instance.getSimpleName())
 									.setActionName(action.getName())
 									.setNumClock(stop - start);
 							actionWeight.build().writeDelimitedTo(out);
@@ -93,7 +93,7 @@ public class WeightWriter {
 							stop = timeBy100;
 							actionWeight
 									.setInstanceName(
-											instance.getHierarchicalName())
+											instance.getSimpleName())
 									.setActionName(action.getName())
 									.setNumClock(stop - start);
 							actionWeight.build().writeDelimitedTo(out);
@@ -103,7 +103,7 @@ public class WeightWriter {
 							stop = timeBy100;
 							actionWeight
 									.setInstanceName(
-											instance.getHierarchicalName())
+											instance.getSimpleName())
 									.setActionName(action.getName())
 									.setNumClock(stop - start);
 							actionWeight.build().writeDelimitedTo(out);
@@ -112,7 +112,7 @@ public class WeightWriter {
 							stop = timeBy100;
 							actionWeight
 									.setInstanceName(
-											instance.getHierarchicalName())
+											instance.getSimpleName())
 									.setActionName(action.getName())
 									.setNumClock(stop - start);
 							actionWeight.build().writeDelimitedTo(out);
@@ -122,7 +122,7 @@ public class WeightWriter {
 							stop = timeBy100;
 							actionWeight
 									.setInstanceName(
-											instance.getHierarchicalName())
+											instance.getSimpleName())
 									.setActionName(action.getName())
 									.setNumClock(stop - start);
 							actionWeight.build().writeDelimitedTo(out);
