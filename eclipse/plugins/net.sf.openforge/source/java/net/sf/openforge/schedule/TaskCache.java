@@ -50,10 +50,12 @@ public class TaskCache {
 	public void startTask(Task task) {
 		// This test will catch the case where the LIM is cyclic, with
 		// 2 tasks depending on one another.
-		if (this.scheduledTasks.contains(task)
-				|| this.pendingTasks.contains(task))
-			throw new IllegalArgumentException(
-					"Marking task as pending after it has been started or completed");
+
+		// if (this.scheduledTasks.contains(task)
+		// || this.pendingTasks.contains(task))
+		// throw new IllegalArgumentException(
+		// "Marking task as pending after it has been started or completed");
+
 		this.pendingTasks.add(task);
 	}
 

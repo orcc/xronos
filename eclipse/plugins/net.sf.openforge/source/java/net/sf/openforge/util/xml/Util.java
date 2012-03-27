@@ -198,8 +198,8 @@ public class Util {
 	public static Node applyTransforms(Node document, Transformer[] xfs)
 			throws Exception {
 		Node doc = document;
-		String tmp = Util.nodeToString(doc);
-		System.out.println(tmp);
+		// String tmp = Util.nodeToString(doc);
+		// System.out.println(tmp);
 		// Logging.user().info(tmp);
 
 		String[] transfo = { "XLIMLoopFix", "XLIMFixSelector", "XLIMTagify0",
@@ -211,14 +211,14 @@ public class Util {
 		int i = 0;
 
 		for (Transformer xf : xfs) {
-			System.out.println("call1");
+			// System.out.println("call1");
 			// Logging.user().info("call1");
 			doc = applyTransform(doc, xf);
 			printToXML(doc, Integer.toString(i) + "_" + transfo[i]);
 			i++;
 		}
 
-		tmp = Util.nodeToString(doc);
+		// tmp = Util.nodeToString(doc);
 
 		// System.out.println(tmp);
 		return doc;

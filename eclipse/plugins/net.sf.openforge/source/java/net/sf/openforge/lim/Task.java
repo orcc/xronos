@@ -49,13 +49,13 @@ public class Task extends ID implements Visitable, Cloneable {
 	 * An identifier used to associate this Task with the target object instance
 	 * that it is applied to, or null if the call is to a static method.
 	 */
-	private Allocation memoryKey;
+	private final Allocation memoryKey;
 
 	/** The max gate depth */
 	private int maxGateDepth = 0;
 
 	// Deprecated???
-	private boolean isAutomatic;
+	private final boolean isAutomatic;
 
 	/**
 	 * Set to true if a kicker is required to start this task off after reset.
@@ -223,4 +223,12 @@ public class Task extends ID implements Visitable, Cloneable {
 		return isAutomatic;
 	}
 
+	@Override
+	public String toString() {
+		return this.sourceName + "[call=" + call + ", thisConstant="
+				+ thisConstant + ", memoryKey=" + memoryKey + ", maxGateDepth="
+				+ maxGateDepth + ", isAutomatic=" + isAutomatic
+				+ ", kickerRequired=" + kickerRequired + ", isBalanced="
+				+ isBalanced + ", goSpacing=" + goSpacing + "]";
+	}
 }
