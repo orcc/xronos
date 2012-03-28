@@ -117,13 +117,33 @@ public abstract class ActionIOHandler {
 	 * node.
 	 */
 	public static class FifoIOHandler extends ActionIOHandler {
-		private final Element portNode;
+		// private final Element portNode;
 		private ActorPort resource;
+
+		private final String direction;
+		private final String portName;
+		private final String portSize;
 
 		public FifoIOHandler(Node portNode) {
 			super();
 			assert portNode.getNodeType() == Node.ELEMENT_NODE;
-			this.portNode = (Element) portNode;
+			// this.portNode = (Element) portNode;
+			this.direction = ((Element) portNode)
+					.getAttribute(SLIMConstants.PORT_DIRECTION);
+
+			this.portName = ((Element) portNode)
+					.getAttribute(SLIMConstants.PORT_NAME);
+
+			this.portSize = ((Element) portNode)
+					.getAttribute(SLIMConstants.PORT_SIZE);
+
+		}
+
+		public FifoIOHandler(String direction, String portName, String portSize) {
+			super();
+			this.direction = direction;
+			this.portName = portName;
+			this.portSize = portSize;
 		}
 
 		/**
@@ -134,12 +154,6 @@ public abstract class ActionIOHandler {
 		 */
 		@Override
 		public void build(Design design) {
-			final String direction = portNode
-					.getAttribute(SLIMConstants.PORT_DIRECTION);
-			final String portName = portNode
-					.getAttribute(SLIMConstants.PORT_NAME);
-			final String portSize = portNode
-					.getAttribute(SLIMConstants.PORT_SIZE);
 			if (portSize.length() == 0) {
 				EngineThread.getGenericJob().warn(
 						"Port " + portName + " has no size specified!");
@@ -214,23 +228,38 @@ public abstract class ActionIOHandler {
 	 * @author Endri Bezati
 	 */
 	public static class NativeIOHandler extends ActionIOHandler {
-		private final Element portNode;
 		private ActorPort resource;
+
+		private final String direction;
+		private final String portName;
+		private final String portSize;
 
 		public NativeIOHandler(Node portNode) {
 			super();
 			assert portNode.getNodeType() == Node.ELEMENT_NODE;
-			this.portNode = (Element) portNode;
+			this.direction = ((Element) portNode)
+					.getAttribute(SLIMConstants.PORT_DIRECTION);
+
+			this.portName = ((Element) portNode)
+					.getAttribute(SLIMConstants.PORT_NAME);
+
+			this.portSize = ((Element) portNode)
+					.getAttribute(SLIMConstants.PORT_SIZE);
+
+		}
+
+		public NativeIOHandler(String direction, String portName,
+				String portSize) {
+			super();
+			this.direction = direction;
+			this.portName = portName;
+			this.portSize = portSize;
+
 		}
 
 		@Override
 		public void build(Design design) {
-			final String direction = portNode
-					.getAttribute(SLIMConstants.PORT_DIRECTION);
-			final String portName = portNode
-					.getAttribute(SLIMConstants.PORT_NAME);
-			final String portSize = portNode
-					.getAttribute(SLIMConstants.PORT_SIZE);
+
 			if (portSize.length() == 0) {
 				EngineThread.getGenericJob().warn(
 						"Port " + portName + " has no size specified!");

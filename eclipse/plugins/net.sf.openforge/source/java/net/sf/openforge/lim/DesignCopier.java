@@ -92,7 +92,7 @@ public class DesignCopier {
 	}
 
 	private static class TaskCallRetarget extends DefaultVisitor {
-		private Map corr;
+		private final Map corr;
 
 		private TaskCallRetarget(Map corrMap) {
 			corr = corrMap;

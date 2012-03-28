@@ -96,12 +96,12 @@ public class InPinBuf extends PinBuf {
 	 * @see Module
 	 */
 	public class Physical extends PhysicalImplementationModule {
-		private Bus resultBus;
-		private int size;
-		private int pDepth;
+		private final Bus resultBus;
+		// private int size;
+		private final int pDepth;
 
 		Physical(int size, int piplinedDepth) {
-			this.size = size;
+			// this.size = size;
 			pDepth = piplinedDepth;
 
 			Exit exit = makeExit(0);

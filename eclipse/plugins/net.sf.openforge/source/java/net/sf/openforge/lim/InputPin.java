@@ -31,7 +31,7 @@ import java.util.Collections;
  */
 public class InputPin extends Pin {
 
-	private InPinBuf buf;
+	private final InPinBuf buf;
 	private Bus bus;
 
 	/** True iff this pin was derived implicitly from a Port */
@@ -92,7 +92,7 @@ public class InputPin extends Pin {
 	}
 
 	@Override
-	public Collection getPinBufs() {
+	public Collection<InPinBuf> getPinBufs() {
 		return Collections.singleton(getInPinBuf());
 	}
 

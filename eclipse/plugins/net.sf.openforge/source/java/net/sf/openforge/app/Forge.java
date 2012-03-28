@@ -456,7 +456,6 @@ public class Forge implements ForgeDebug {
 		Forge f = new Forge();
 		GenericJob forgeMainJob = new GenericJob();
 		boolean error = true;
-		System.out.println("OpenForge Synthesizer");
 		try {
 			forgeMainJob.setOptionValues(args);
 			f.preprocess(forgeMainJob);

@@ -49,12 +49,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.app.Engine;
 import net.sf.openforge.app.Forge;
+import net.sf.openforge.app.ForgeFatalException;
+import net.sf.openforge.app.GenericJob;
+import net.sf.openforge.app.NewJob;
+import net.sf.openforge.app.OptionRegistry;
 import net.sf.orc2hdl.Activator;
 import net.sf.orc2hdl.analysis.ExecutionChart;
 import net.sf.orc2hdl.analysis.SimParser;
 import net.sf.orc2hdl.analysis.TimeGoDone;
 import net.sf.orc2hdl.analysis.WeightWriter;
+import net.sf.orc2hdl.design.DesignEngine;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
@@ -117,6 +123,8 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 public class Orc2HDL extends AbstractBackend {
 
 	private boolean debugMode;
+
+	private boolean instanceToDesign;
 
 	private boolean goDoneSignal;
 
@@ -241,6 +249,7 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
+		instanceToDesign = getAttribute("net.sf.orc2hdl.instanceDesign", false);
 		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", false);
 		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis",
 				false);
@@ -477,9 +486,17 @@ public class Orc2HDL extends AbstractBackend {
 					}
 					List<String> flags = new ArrayList<String>(forgeFlags);
 					flags.addAll(Arrays.asList("-d", srcPath, "-o", id, xlim));
+
 					long t0 = System.currentTimeMillis();
-					Boolean okForge = Forge.runForge(flags
-							.toArray(new String[0]));
+					Boolean okForge = false;
+
+					if (instanceToDesign) {
+						// Experimental
+						okForge = runForge(flags.toArray(new String[0]),
+								instance);
+					} else {
+						okForge = Forge.runForge(flags.toArray(new String[0]));
+					}
 					long t1 = System.currentTimeMillis();
 					if (okForge) {
 						if (goDoneSignal) {
@@ -636,5 +653,29 @@ public class Orc2HDL extends AbstractBackend {
 				printTestbench(printer, subInstance);
 			}
 		}
+	}
+
+	private boolean runForge(String[] args, Instance instance) {
+		Forge f = new Forge();
+		GenericJob forgeMainJob = new GenericJob();
+		boolean error = true;
+		try {
+			// Experimental
+			forgeMainJob.setOptionValues(args);
+			f.preprocess(forgeMainJob);
+			Engine engine = new DesignEngine(forgeMainJob, instance);
+			engine.begin();
+		} catch (NewJob.ForgeOptionException foe) {
+			write("Command line option error: " + foe.getMessage());
+			write("");
+			write(OptionRegistry.usage(false));
+			error = true;
+		} catch (ForgeFatalException ffe) {
+			write("Forge compilation ended with fatal error:");
+			write(ffe.getMessage());
+			error = true;
+		}
+
+		return !error;
 	}
 }

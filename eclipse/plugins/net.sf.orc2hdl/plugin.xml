@@ -10,6 +10,9 @@
                id="net.sf.orcc.plugins.compileXDF">
          </option>
          <option
+               id="net.sf.orc2hdl.instanceDesign">
+         </option>
+         <option
                id="net.sf.orc2hdl.simOptions">
          </option>
          <option
@@ -19,6 +22,13 @@
    </extension>
    <extension
          point="net.sf.orcc.core.options">
+      <option
+            defaultValue="false"
+            description="Generate directly the verilog file without using the XLIM backend."
+            id="net.sf.orc2hdl.instanceDesign"
+            name="Do not use XLIM IR (Experimental)">
+         <checkBox></checkBox>
+      </option>
       <option
             defaultValue="false"
             description="Select or Deselect differents OpenForge options"
