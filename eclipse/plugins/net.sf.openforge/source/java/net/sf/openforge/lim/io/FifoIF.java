@@ -54,7 +54,7 @@ public abstract class FifoIF implements Referenceable, StateHolder {
 	 * hashset just as a convenience to the user so that the interface will
 	 * always be generated in the same order.
 	 */
-	private Set<SimplePin> pins = new LinkedHashSet<SimplePin>();
+	private final Set<SimplePin> pins = new LinkedHashSet<SimplePin>();
 
 	/**
 	 * Constructs a new FifoIF (fifo interface) with the specified byte width

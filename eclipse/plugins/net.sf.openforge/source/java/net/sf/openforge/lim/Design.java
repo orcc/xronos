@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -37,10 +36,13 @@ import java.util.Set;
 import net.sf.openforge.app.Engine;
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.app.project.SearchLabel;
+import net.sf.openforge.forge.api.entry.EntryMethod;
 import net.sf.openforge.forge.api.internal.EntryMethods;
+import net.sf.openforge.forge.api.pin.Buffer;
 import net.sf.openforge.forge.api.pin.ClockPin;
 import net.sf.openforge.forge.api.pin.ResetPin;
 import net.sf.openforge.forge.api.sim.pin.PinSimData;
+import net.sf.openforge.forge.api.sim.pin.SequentialPinData;
 import net.sf.openforge.lim.io.FSLFifoInput;
 import net.sf.openforge.lim.io.FSLFifoOutput;
 import net.sf.openforge.lim.io.FifoID;
@@ -62,10 +64,9 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: Design.java 538 2007-11-21 06:22:39Z imiller $
  */
 public class Design extends ID implements Visitable, Cloneable {
-	private static final String _RCS_ = "RCS_REVISION: $Rev: 538 $";
 
-	private List<Task> taskList = Collections.EMPTY_LIST;
-	private Collection<Register> registers = Collections.EMPTY_LIST;
+	private List<Task> taskList = Collections.emptyList();
+	private Collection<Register> registers = Collections.emptyList();
 
 	/**
 	 * Tracks the allocated memory ID's for this design. Note that memory ID 0
@@ -79,13 +80,13 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * hashmap as a convenience to the user so that the translated Verilog has
 	 * the same port ordering each time.
 	 */
-	private final Map<String, FifoIF> fifoInterfaces = new LinkedHashMap();
+	private final Map<String, FifoIF> fifoInterfaces = new LinkedHashMap<String, FifoIF>();
 
-	private Collection inputPins = Collections.EMPTY_LIST;
-	private Collection outputPins = Collections.EMPTY_LIST;
+	private Collection<Pin> inputPins = Collections.emptyList();
+	private Collection<Pin> outputPins = Collections.emptyList();
 	// private Collection bidirectionalPins=Collections.EMPTY_LIST;
 
-	private Collection<LogicalMemory> logicalMemories = Collections.EMPTY_LIST;
+	private Collection<LogicalMemory> logicalMemories = Collections.emptyList();
 
 	/**
 	 * Holds a reference to the {@link Tester} that is capable of testing this
@@ -94,13 +95,13 @@ public class Design extends ID implements Visitable, Cloneable {
 	private Tester tester = null;
 
 	/** Map of defined clock domains. */
-	private final Map<String, ClockDomain> clockDomains = new HashMap();
+	private final Map<String, ClockDomain> clockDomains = new HashMap<String, ClockDomain>();
 
 	/** map of api clock pin name to input pins (clocks) */
-	private final HashMap apiClockNameToLIMClockMap = new HashMap();
+	private final HashMap<String, InputPin> apiClockNameToLIMClockMap = new HashMap<String, InputPin>();
 
 	/** map of api reset pin name to input pins (reset) */
-	private final HashMap apiResetNameToLIMResetMap = new HashMap();
+	private final HashMap<String, GlobalReset> apiResetNameToLIMResetMap = new HashMap<String, GlobalReset>();
 
 	/**
 	 * A mapping between {@link Pin} and {@link Port} where the Port is the port
@@ -108,7 +109,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * that port. This map is used by the automatic test bench generator to
 	 * provide correlations.
 	 */
-	private final Map pinPortBusMap = new HashMap();
+	private final Map<ID, ID> pinPortBusMap = new HashMap<ID, ID>();
 
 	/** The max gate depth */
 	private int maxGateDepth = 0;
@@ -117,7 +118,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	private int unbreakableGateDepth = 0;
 
 	/** The include statements */
-	private List includeStatements = Collections.EMPTY_LIST;
+	private List<String> includeStatements = Collections.emptyList();
 
 	private final CodeLabel searchLabel;
 
@@ -170,7 +171,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 */
 	public void addMemory(LogicalMemory mem) {
 		if (logicalMemories == Collections.EMPTY_LIST) {
-			logicalMemories = new ArrayList(3);
+			logicalMemories = new ArrayList<LogicalMemory>(3);
 		}
 		logicalMemories.add(mem);
 		// TBD. When we have full flow we will need to come back
@@ -187,7 +188,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	public void removeMemory(LogicalMemory mem) {
 		logicalMemories.remove(mem);
 		if (logicalMemories.size() == 0) {
-			logicalMemories = Collections.EMPTY_LIST;
+			logicalMemories = Collections.emptyList();
 		}
 	}
 
@@ -223,7 +224,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 */
 	public void addInputPin(InputPin pin) {
 		if (inputPins == Collections.EMPTY_LIST) {
-			inputPins = new ArrayList(3);
+			inputPins = new ArrayList<Pin>(3);
 		}
 		inputPins.add(pin);
 	}
@@ -248,7 +249,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 */
 	public void addOutputPin(OutputPin pin) {
 		if (outputPins == Collections.EMPTY_LIST) {
-			outputPins = new ArrayList(3);
+			outputPins = new ArrayList<Pin>(3);
 		}
 		outputPins.add(pin);
 	}
@@ -271,13 +272,12 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @return true if this design contains any elements that require a clock
 	 */
 	public boolean consumesClock() {
-		for (Iterator iter = getDesignModule().getComponents().iterator(); iter
-				.hasNext();) {
-			if (((Component) iter.next()).consumesClock())
+		for (Component component : getDesignModule().getComponents()) {
+			if (component.consumesClock())
 				return true;
 		}
-		for (Iterator it = getPins().iterator(); it.hasNext();) {
-			if (((Pin) it.next()).consumesClock()) {
+		for (Pin pin : getPins()) {
+			if (pin.consumesClock()) {
 				return true;
 			}
 		}
@@ -291,15 +291,14 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @return true if this design contains any elements that require a reset
 	 */
 	public boolean consumesReset() {
-		for (Iterator iter = getDesignModule().getComponents().iterator(); iter
-				.hasNext();) {
-			if (((Component) iter.next()).consumesReset())
+		for (Component component : getDesignModule().getComponents()) {
+			if (component.consumesReset())
 				return true;
 		}
 
 		// this adds logic for pins FIXME for all the other things!
-		for (Iterator it = getPins().iterator(); it.hasNext();) {
-			if (((Pin) it.next()).consumesReset()) {
+		for (Pin pin : getPins()) {
+			if (pin.consumesReset()) {
 				return true;
 			}
 		}
@@ -325,7 +324,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @return a value of type 'Collection'
 	 * 
 	 */
-	public Collection getInputPins() {
+	public Collection<Pin> getInputPins() {
 		return inputPins;
 	}
 
@@ -336,7 +335,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @return a value of type 'Collection'
 	 * 
 	 */
-	public Collection getOutputPins() {
+	public Collection<Pin> getOutputPins() {
 		return outputPins;
 	}
 
@@ -347,9 +346,9 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @deprecated
 	 */
 	@Deprecated
-	public Collection getBidirectionalPins() {
+	public Collection<Pin> getBidirectionalPins() {
 		// return bidirectionalPins;
-		return Collections.EMPTY_LIST;
+		return Collections.emptyList();
 	}
 
 	/**
@@ -381,7 +380,7 @@ public class Design extends ID implements Visitable, Cloneable {
 							+ apiClockPin);
 		}
 
-		InputPin clockPin = (InputPin) apiClockNameToLIMClockMap.get(name);
+		InputPin clockPin = apiClockNameToLIMClockMap.get(name);
 		// if not defined, then define a clock pin & store it
 		if (clockPin == null) {
 			clockPin = new InputPin(1, false);
@@ -410,8 +409,7 @@ public class Design extends ID implements Visitable, Cloneable {
 							+ apiResetPin);
 		}
 
-		GlobalReset resetPin = (GlobalReset) apiResetNameToLIMResetMap
-				.get(name);
+		GlobalReset resetPin = apiResetNameToLIMResetMap.get(name);
 		// if not defined, then define a reset pin & store it
 		if (resetPin == null) {
 			resetPin = new GlobalReset();
@@ -431,19 +429,19 @@ public class Design extends ID implements Visitable, Cloneable {
 	/**
 	 * return the LIM Clock Pins
 	 */
-	public Collection getClockPins() {
+	public Collection<InputPin> getClockPins() {
 		return apiClockNameToLIMClockMap.values();
 	}
 
 	/**
 	 * return the LIM reset pins
 	 */
-	public Collection getResetPins() {
+	public Collection<GlobalReset> getResetPins() {
 		return apiResetNameToLIMResetMap.values();
 	}
 
-	public Collection getPins() {
-		Collection pins = new LinkedHashSet();
+	public Collection<Pin> getPins() {
+		Collection<Pin> pins = new LinkedHashSet<Pin>();
 		pins.addAll(getInputPins());
 		pins.addAll(getOutputPins());
 		// pins.addAll(getBidirectionalPins());
@@ -521,7 +519,7 @@ public class Design extends ID implements Visitable, Cloneable {
 								+ fifoID.getBitWidth());
 		}
 
-		addComponentToDesign(fifoIF.getPins());
+		addComponentToDesign(new LinkedHashSet<Component>(fifoIF.getPins()));
 
 		return fifoIF;
 	}
@@ -534,10 +532,9 @@ public class Design extends ID implements Visitable, Cloneable {
 	public Collection<FifoIF> getFifoInterfaces() {
 		// Jump through these hoops so that the fifo interfaces come
 		// back in the same order each time.
-		List<FifoIF> interfaces = new LinkedList();
-		for (Iterator iter = fifoInterfaces.entrySet().iterator(); iter
-				.hasNext();) {
-			interfaces.add((FifoIF) ((Map.Entry) iter.next()).getValue());
+		List<FifoIF> interfaces = new LinkedList<FifoIF>();
+		for (Map.Entry<String, FifoIF> entry : fifoInterfaces.entrySet()) {
+			interfaces.add(entry.getValue());
 		}
 
 		return interfaces;
@@ -882,7 +879,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 */
 	public void addIncludeStatement(String include) {
 		if (includeStatements.isEmpty()) {
-			includeStatements = new ArrayList(1);
+			includeStatements = new ArrayList<String>(1);
 		}
 
 		if (!includeStatements.contains(include)) {
@@ -893,7 +890,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	/**
 	 * @return a list of included source file paths
 	 */
-	public List getIncludeStatements() {
+	public List<String> getIncludeStatements() {
 		return includeStatements;
 	}
 
@@ -919,19 +916,19 @@ public class Design extends ID implements Visitable, Cloneable {
 		assert pinPortBusMap.isEmpty();
 
 		Module sourceMod = source.getDesignModule();
-		Set sourceComps = new HashSet(sourceMod.getComponents());
+		Set<Component> sourceComps = new HashSet<Component>(
+				sourceMod.getComponents());
 		// We want the top level infrastructure, but NOT the entry
 		// methods
-		for (Iterator iter = source.getTasks().iterator(); iter.hasNext();) {
-			Task task = (Task) iter.next();
+		for (Task task : source.getTasks()) {
 			sourceComps.remove(task.getCall());
 		}
 		// this.addComponentToDesign(source.getDesignModule().getComponents());
 		this.addComponentToDesign(sourceComps);
 
 		// registers
-		for (Iterator iter = source.getRegisters().iterator(); iter.hasNext();) {
-			addRegister((Register) iter.next());
+		for (Register reg : source.getRegisters()) {
+			addRegister(reg);
 		}
 		// // memories
 		// for (Iterator iter = source.getMemories().iterator();
@@ -940,17 +937,16 @@ public class Design extends ID implements Visitable, Cloneable {
 		// addMemory((Memory)iter.next());
 		// }
 		// logicalMemories
-		for (Iterator iter = source.getLogicalMemories().iterator(); iter
-				.hasNext();) {
-			addMemory((LogicalMemory) iter.next());
+		for (LogicalMemory logicalMemory : source.getLogicalMemories()) {
+			addMemory(logicalMemory);
 		}
 		// inputPins
-		for (Iterator iter = source.getInputPins().iterator(); iter.hasNext();) {
-			addInputPin((InputPin) iter.next());
+		for (Pin pin : source.getInputPins()) {
+			addInputPin((InputPin) pin);
 		}
 		// outputPins
-		for (Iterator iter = source.getOutputPins().iterator(); iter.hasNext();) {
-			addOutputPin((OutputPin) iter.next());
+		for (Pin pin : source.getOutputPins()) {
+			addOutputPin((OutputPin) pin);
 		}
 		// bidirectionalPins
 		// for (Iterator iter = source.getBidirectionalPins().iterator();
@@ -959,15 +955,14 @@ public class Design extends ID implements Visitable, Cloneable {
 		// addBidirectionalPin((BidirectionalPin)iter.next());
 		// }
 		// include statements
-		for (Iterator iter = source.getIncludeStatements().iterator(); iter
-				.hasNext();) {
-			addIncludeStatement((String) iter.next());
+		for (String string : source.getIncludeStatements()) {
+			addIncludeStatement(string);
 		}
 	}
 
-	private Set entryData;
-	private Map pinSimDriveMap;
-	private Map pinSimTestMap;
+	private Set<EntryMethod> entryData;
+	private Map<Buffer, SequentialPinData> pinSimDriveMap;
+	private Map<Buffer, SequentialPinData> pinSimTestMap;
 
 	/**
 	 * This will save off the static info in forge.api.ipcore.Core,
@@ -1049,7 +1044,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * @param comp
 	 *            a value of type 'Component'
 	 */
-	public void addComponentToDesign(Collection comps) {
+	public void addComponentToDesign(Collection<Component> comps) {
 		getDesignModule().addComponents(comps);
 	}
 
