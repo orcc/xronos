@@ -29,21 +29,32 @@
 
 package net.sf.orc2hdl.design;
 
+import java.lang.reflect.Array;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.app.GenericJob;
+import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler.FifoIOHandler;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler.NativeIOHandler;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.memory.AddressStridePolicy;
 import net.sf.openforge.lim.memory.AddressableUnit;
+import net.sf.openforge.lim.memory.LogicalMemory;
 import net.sf.openforge.lim.memory.LogicalValue;
+import net.sf.openforge.lim.memory.Record;
 import net.sf.openforge.lim.memory.Scalar;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.ir.ExprInt;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.ValueUtil;
 
 import org.eclipse.emf.common.util.EList;
 
@@ -68,9 +79,9 @@ public class InstanceToDesign {
 		// Get Instance name
 		String designName = instance.getName();
 		design.setIDLogical(designName);
-		// GenericJob job = EngineThread.getGenericJob();
-		// job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
-		// design.getSearchLabel(), designName);
+		GenericJob job = EngineThread.getGenericJob();
+		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
+				design.getSearchLabel(), designName);
 
 		// Get Instance Input Ports
 		getInstancePorts(instance.getActor().getInputs(), "in", resources);
@@ -82,6 +93,23 @@ public class InstanceToDesign {
 		Map<LogicalValue, Var> stateVars = new HashMap<LogicalValue, Var>();
 		getInstanceStateVars(stateVars);
 
+		// Allocate each LogicalValue (State Variable) in a memory
+		// with a matching address stride. This provides consistency
+		// in the memories and allows for state vars to be co-located
+		// if area is of concern.
+		Map<Integer, LogicalMemory> memories = new HashMap<Integer, LogicalMemory>();
+		for (LogicalValue lvalue : stateVars.keySet()) {
+			int stride = lvalue.getAddressStridePolicy().getStride();
+			LogicalMemory mem = memories.get(stride);
+			if (mem == null) {
+				// 32 should be more than enough for max address
+				// width
+				mem = new LogicalMemory(32);
+				mem.createLogicalMemoryPort();
+				design.addMemory(mem);
+			}
+
+		}
 		return design;
 	}
 
@@ -125,25 +153,75 @@ public class InstanceToDesign {
 		LogicalValue logicalValue = null;
 		if (var.getType().isList()) {
 
-		} else {
-			final int bitSize = var.getType().getSizeInBits();
-			String valueString = "0";
-			if (var.isInitialized()) {
-				valueString = Integer
-						.toString(((ExprInt) var.getInitialValue())
-								.getIntValue());
+			TypeList typeList = (TypeList) var.getType();
+			Type type = typeList.getInnermostType();
 
-			}
-			final BigInteger value;
-			if (valueString.trim().toUpperCase().startsWith("0X")) {
-				value = new BigInteger(valueString.trim().substring(2), 16);
+			List<Integer> listDimension = typeList.getDimensions();
+
+			Object varValue = var.getValue();
+			logicalValue = makeLogicalValueObject(varValue, listDimension, type);
+		} else {
+			Type type = var.getType();
+			if (var.isInitialized()) {
+				String valueString = Integer.toString(((ExprInt) var
+						.getInitialValue()).getIntValue());
+				logicalValue = makeLogicalValue(valueString, type);
 			} else {
-				value = new BigInteger(valueString);
+				logicalValue = makeLogicalValue("0", type);
 			}
-			AddressStridePolicy addrPolicy = new AddressStridePolicy(bitSize);
-			logicalValue = new Scalar(new AddressableUnit(value), addrPolicy);
 		}
 
 		return logicalValue;
 	}
+
+	private LogicalValue makeLogicalValueObject(Object obj,
+			List<Integer> dimension, Type type) {
+		LogicalValue logicalValue = null;
+
+		if (dimension.size() > 1) {
+			List<LogicalValue> subElements = new ArrayList<LogicalValue>(
+					dimension.get(0));
+			List<Integer> newListDimension = dimension;
+			newListDimension.remove(0);
+			for (int i = 0; i < dimension.get(0); i++) {
+				subElements.add(makeLogicalValueObject(Array.get(obj, i),
+						newListDimension, type));
+			}
+
+			logicalValue = new Record(subElements);
+		} else {
+			if (dimension.get(0).equals(1)) {
+				BigInteger value = (BigInteger) ValueUtil.get(type, obj, 0);
+				String valueString = value.toString();
+				logicalValue = makeLogicalValue(valueString, type);
+			} else {
+				List<LogicalValue> subElements = new ArrayList<LogicalValue>(
+						dimension.get(0));
+				for (int i = 0; i < dimension.get(0); i++) {
+					BigInteger value = (BigInteger) ValueUtil.get(type, obj, i);
+					String valueString = value.toString();
+					subElements.add(makeLogicalValue(valueString, type));
+				}
+				logicalValue = new Record(subElements);
+			}
+
+		}
+
+		return logicalValue;
+	}
+
+	private LogicalValue makeLogicalValue(String stringValue, Type type) {
+		LogicalValue logicalValue = null;
+		final BigInteger value;
+		Integer bitSize = type.getSizeInBits();
+		if (stringValue.trim().toUpperCase().startsWith("0X")) {
+			value = new BigInteger(stringValue.trim().substring(2), 16);
+		} else {
+			value = new BigInteger(stringValue);
+		}
+		AddressStridePolicy addrPolicy = new AddressStridePolicy(bitSize);
+		logicalValue = new Scalar(new AddressableUnit(value), addrPolicy);
+		return logicalValue;
+	}
+
 }
