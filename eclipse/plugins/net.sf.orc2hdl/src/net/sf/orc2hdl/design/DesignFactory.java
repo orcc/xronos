@@ -26,38 +26,33 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 package net.sf.orc2hdl.design;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
-import net.sf.openforge.lim.memory.Location;
-import net.sf.orcc.df.Port;
+import net.sf.openforge.util.naming.ID;
 import net.sf.orcc.ir.Var;
 
 /**
- * ResourceCache maintains mappings from the Orcc objects needed to all the
- * Design level resources in the implementation created for these Objects. This
- * includes input/output structures and memory allocated for state variables.
+ * DesignFactory is the common superclass of all factory classes used in
+ * converting an ORCC Instance to a Design LIM structure.
  * 
  * @author Endri Bezati
  * 
  */
-public class ResourceCache {
+public abstract class DesignFactory {
 
-	private final Map<Port, ActionIOHandler> ioHandlers = new HashMap<Port, ActionIOHandler>();
-	private final Map<Var, Location> memLocations = new HashMap<Var, Location>();
-
-	public ResourceCache() {
+	protected DesignFactory() {
 	}
 
-	public void addIOHandler(Port port, ActionIOHandler io) {
-		ioHandlers.put(port, io);
+	/**
+	 * Set the name of an LIM component by the name of an Orcc variable
+	 * 
+	 * @param var
+	 *            a Orcc IR variable element
+	 * @param comp
+	 *            a LIM ID component
+	 */
+	protected void setAttributes(Var var, ID comp) {
+		comp.setSourceName(var.getName());
 	}
 
-	public void addLocation(Var var, Location location) {
-		memLocations.put(var, location);
-	}
 }

@@ -42,13 +42,17 @@ import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler.FifoIOHandler;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler.NativeIOHandler;
+import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.memory.AddressStridePolicy;
 import net.sf.openforge.lim.memory.AddressableUnit;
+import net.sf.openforge.lim.memory.Allocation;
 import net.sf.openforge.lim.memory.LogicalMemory;
 import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.openforge.lim.memory.Record;
 import net.sf.openforge.lim.memory.Scalar;
+import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.Type;
@@ -64,7 +68,7 @@ import org.eclipse.emf.common.util.EList;
  * 
  * @author Endri Bezati
  */
-public class InstanceToDesign {
+public class InstanceToDesign extends DesignFactory {
 	Design design;
 	Instance instance;
 
@@ -108,7 +112,24 @@ public class InstanceToDesign {
 				mem.createLogicalMemoryPort();
 				design.addMemory(mem);
 			}
+			// Create a 'location' for the state var that is
+			// appropriate for its type/size.
+			Allocation location = mem.allocate(lvalue);
+			Var stateVar = stateVars.get(lvalue);
+			setAttributes(stateVar, location);
+			resources.addLocation(stateVar, location);
+		}
 
+		// Create Task from the instance Actions & Procedures
+		PortCache portCache = new PortCache();
+		final Map<String, Task> taskModules = new HashMap<String, Task>();
+
+		for (Action action : instance.getActor().getActions()) {
+			DesignCallFactory callFactory = new DesignCallFactory(resources,
+					instance.getSimpleName());
+			Call call = (Call) callFactory.buildComponent(action);
+			callFactory.publishPorts(portCache);
+			initTopLevel(call);
 		}
 		return design;
 	}
@@ -224,4 +245,9 @@ public class InstanceToDesign {
 		return logicalValue;
 	}
 
+	private static void initTopLevel(Call call) {
+		call.getClockPort().setSize(1, false);
+		call.getResetPort().setSize(1, false);
+		call.getGoPort().setSize(1, false);
+	}
 }
