@@ -64,7 +64,7 @@ import org.w3c.dom.Node;
 public class XModuleFactory extends XFactory {
 
 	/** The cache of design level resources. */
-	private ResourceCache resourceCache;
+	private final ResourceCache resourceCache;
 
 	/** The cache of node to Port created for that node */
 	final PortCache portCache = new PortCache();
@@ -74,7 +74,7 @@ public class XModuleFactory extends XFactory {
 
 	/** The module being constructed. */
 	private Module module;
-	private Exit.Type exitType;
+	private final Exit.Type exitType;
 
 	/**
 	 * Constructs an XModuleFactory which will use the specified resources and
@@ -120,12 +120,12 @@ public class XModuleFactory extends XFactory {
 		this(resources, new Block(false), exitType);
 	}
 
-	@SuppressWarnings("unused")
 	private XModuleFactory(ResourceCache resources, Module mod,
 			Exit.Type exitType) {
 		resourceCache = resources;
 		module = mod;
-		if (_parser.db && mod.isMutexModule()) {
+
+		if (mod.isMutexModule()) {
 			System.out.println("NOTE: Module " + mod + " is mutex");
 		}
 		this.exitType = exitType;

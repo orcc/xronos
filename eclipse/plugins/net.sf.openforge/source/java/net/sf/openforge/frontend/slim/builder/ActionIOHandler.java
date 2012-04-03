@@ -48,67 +48,6 @@ import org.w3c.dom.Node;
 
 public abstract class ActionIOHandler {
 
-	protected ActionIOHandler() {
-	}
-
-	/**
-	 * The build method causes the appropriate structures to implement the
-	 * Action input/output to be instantiated and added to the specified
-	 * {@link Design} object.
-	 * 
-	 * @param design
-	 *            a value of type 'Design'
-	 */
-	public abstract void build(Design design);
-
-	/**
-	 * A unique read access to the input/output resource for this IO handler is
-	 * created and returned. Behavior of this method is undefined if the 'build'
-	 * method has not been called.
-	 * 
-	 * @return a non-null Component
-	 */
-	public abstract Component getReadAccess(Element element);
-
-	/**
-	 * A unique stall access on the specified pin for this IO handler. Behavior
-	 * of this method is undefined if the 'build' method has not been called.
-	 */
-	public abstract Component getStallAccess();
-
-	/**
-	 * A unique write access to the input/output resource for this IO handler is
-	 * created and returned. Behavior of this method is undefined if the 'build'
-	 * method has not been called.
-	 * 
-	 * @return a non-null Component
-	 */
-	public abstract Component getWriteAccess(Element element);
-
-	/**
-	 * A unique access to the token count for the resource for this IO handler
-	 * is created and returned. Behavior of this method is undefined if the
-	 * 'build' method has not been called.
-	 * 
-	 * @return a non-null Component
-	 */
-	public abstract Component getTokenCountAccess();
-
-	/**
-	 * Returns a unique peek access to the resource backing this IO handler. The
-	 * peek access provides a token offset (and potentially a field offset) port
-	 * and returns the scalar value at that offset. The token peek functionality
-	 * does not affect the number of tokens in the queue. The token peek
-	 * functionality is valid for both input and output queues.
-	 */
-	public abstract Component getTokenPeekAccess();
-
-	/**
-	 * Returns a unique access to the status flag of the resource backing this
-	 * I/O handler.
-	 */
-	public abstract Component getStatusAccess();
-
 	/**
 	 * A specific implementation of the ActionIOHandler class which is
 	 * implemented by a {@link FifoIF} resource. All input/output using this
@@ -117,11 +56,18 @@ public abstract class ActionIOHandler {
 	 * node.
 	 */
 	public static class FifoIOHandler extends ActionIOHandler {
+		private static final boolean getBlockingState(Element element) {
+			String accType = element
+					.getAttribute(SLIMConstants.PORT_ACCESS_STYLE);
+			return accType
+					.equalsIgnoreCase(SLIMConstants.PORT_ACCESS_BLOCKING_STYLE);
+		}
+
 		// private final Element portNode;
 		private ActorPort resource;
-
 		private final String direction;
 		private final String portName;
+
 		private final String portSize;
 
 		public FifoIOHandler(Node portNode) {
@@ -168,6 +114,14 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
+		public Component getReadAccess() {
+			if (!resource.isInput())
+				throw new UnsupportedOperationException(
+						"Cannot read from an output interface");
+			return resource.getAccess(false);
+		}
+
+		@Override
 		public Component getReadAccess(Element accElement) {
 			if (!resource.isInput())
 				throw new UnsupportedOperationException(
@@ -185,11 +139,8 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getWriteAccess(Element accElement) {
-			if (resource.isInput())
-				throw new UnsupportedOperationException(
-						"Cannot write to an input interface");
-			return resource.getAccess(getBlockingState(accElement));
+		public Component getStatusAccess() {
+			return resource.getStatusAccess();
 		}
 
 		@Override
@@ -206,15 +157,83 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getStatusAccess() {
-			return resource.getStatusAccess();
+		public Component getWriteAccess() {
+			if (resource.isInput())
+				throw new UnsupportedOperationException(
+						"Cannot write to an input interface");
+			return resource.getAccess(false);
 		}
 
-		private static final boolean getBlockingState(Element element) {
-			String accType = element
-					.getAttribute(SLIMConstants.PORT_ACCESS_STYLE);
-			return accType
-					.equalsIgnoreCase(SLIMConstants.PORT_ACCESS_BLOCKING_STYLE);
+		@Override
+		public Component getWriteAccess(Element accElement) {
+			if (resource.isInput())
+				throw new UnsupportedOperationException(
+						"Cannot write to an input interface");
+			return resource.getAccess(getBlockingState(accElement));
+		}
+	}
+
+	public static class InternalPinHandler extends ActionIOHandler {
+		private final Element portNode;
+		private SimplePin pin = null;
+
+		public InternalPinHandler(Node internalPortNode) {
+			super();
+			portNode = (Element) internalPortNode;
+		}
+
+		@Override
+		public void build(Design design) {
+			final String portName = portNode.getAttribute("name");
+			final String portSize = portNode.getAttribute("size");
+
+			SimplePin pin = new SimpleInternalPin(Integer.parseInt(portSize),
+					portName);
+			design.addComponentToDesign(pin);
+			this.pin = pin;
+		}
+
+		@Override
+		public Component getReadAccess() {
+			return new SimplePinRead(pin);
+		}
+
+		@Override
+		public Component getReadAccess(Element element) {
+			return new SimplePinRead(pin);
+		}
+
+		@Override
+		public Component getStallAccess() {
+			return new SimplePinStall(pin);
+		}
+
+		@Override
+		public Component getStatusAccess() {
+			throw new UnsupportedOperationException(
+					"Cannot get the status from an internal pin");
+		}
+
+		@Override
+		public Component getTokenCountAccess() {
+			throw new UnsupportedOperationException(
+					"Cannot get the token count from an internal pin");
+		}
+
+		@Override
+		public Component getTokenPeekAccess() {
+			throw new UnsupportedOperationException(
+					"Cannot get the token count from an internal pin");
+		}
+
+		@Override
+		public Component getWriteAccess() {
+			return new SimplePinWrite(pin);
+		}
+
+		@Override
+		public Component getWriteAccess(Element element) {
+			return new SimplePinWrite(pin);
 		}
 	}
 
@@ -228,10 +247,17 @@ public abstract class ActionIOHandler {
 	 * @author Endri Bezati
 	 */
 	public static class NativeIOHandler extends ActionIOHandler {
-		private ActorPort resource;
+		private static final boolean getBlockingState(Element element) {
+			String accType = element
+					.getAttribute(SLIMConstants.PORT_ACCESS_STYLE);
+			return accType
+					.equalsIgnoreCase(SLIMConstants.PORT_ACCESS_BLOCKING_STYLE);
+		}
 
+		private ActorPort resource;
 		private final String direction;
 		private final String portName;
+
 		private final String portSize;
 
 		public NativeIOHandler(Node portNode) {
@@ -275,6 +301,14 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
+		public Component getReadAccess() {
+			if (!resource.isInput())
+				throw new UnsupportedOperationException(
+						"Cannot read from an output interface");
+			return resource.getAccess(false);
+		}
+
+		@Override
 		public Component getReadAccess(Element element) {
 			if (!resource.isInput())
 				throw new UnsupportedOperationException(
@@ -289,11 +323,8 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getWriteAccess(Element element) {
-			if (resource.isInput())
-				throw new UnsupportedOperationException(
-						"Cannot write to an input interface");
-			return resource.getAccess(getBlockingState(element));
+		public Component getStatusAccess() {
+			return resource.getStatusAccess();
 		}
 
 		@Override
@@ -308,71 +339,100 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getStatusAccess() {
-			return resource.getStatusAccess();
-		}
-
-		private static final boolean getBlockingState(Element element) {
-			String accType = element
-					.getAttribute(SLIMConstants.PORT_ACCESS_STYLE);
-			return accType
-					.equalsIgnoreCase(SLIMConstants.PORT_ACCESS_BLOCKING_STYLE);
-		}
-
-	}
-
-	public static class InternalPinHandler extends ActionIOHandler {
-		private final Element portNode;
-		private SimplePin pin = null;
-
-		public InternalPinHandler(Node internalPortNode) {
-			super();
-			portNode = (Element) internalPortNode;
-		}
-
-		@Override
-		public void build(Design design) {
-			final String portName = portNode.getAttribute("name");
-			final String portSize = portNode.getAttribute("size");
-
-			SimplePin pin = new SimpleInternalPin(Integer.parseInt(portSize),
-					portName);
-			design.addComponentToDesign(pin);
-			this.pin = pin;
-		}
-
-		@Override
-		public Component getReadAccess(Element element) {
-			return new SimplePinRead(pin);
-		}
-
-		@Override
-		public Component getStallAccess() {
-			return new SimplePinStall(pin);
+		public Component getWriteAccess() {
+			if (resource.isInput())
+				throw new UnsupportedOperationException(
+						"Cannot write to an input interface");
+			return resource.getAccess(false);
 		}
 
 		@Override
 		public Component getWriteAccess(Element element) {
-			return new SimplePinWrite(pin);
+			if (resource.isInput())
+				throw new UnsupportedOperationException(
+						"Cannot write to an input interface");
+			return resource.getAccess(getBlockingState(element));
 		}
 
-		@Override
-		public Component getTokenCountAccess() {
-			throw new UnsupportedOperationException(
-					"Cannot get the token count from an internal pin");
-		}
-
-		@Override
-		public Component getTokenPeekAccess() {
-			throw new UnsupportedOperationException(
-					"Cannot get the token count from an internal pin");
-		}
-
-		@Override
-		public Component getStatusAccess() {
-			throw new UnsupportedOperationException(
-					"Cannot get the status from an internal pin");
-		}
 	}
+
+	protected ActionIOHandler() {
+	}
+
+	/**
+	 * The build method causes the appropriate structures to implement the
+	 * Action input/output to be instantiated and added to the specified
+	 * {@link Design} object.
+	 * 
+	 * @param design
+	 *            a value of type 'Design'
+	 */
+	public abstract void build(Design design);
+
+	/**
+	 * A unique read access to the input/output resource for this IO handler is
+	 * created and returned. Behavior of this method is undefined if the 'build'
+	 * method has not been called.
+	 * 
+	 * @return a non-null Component
+	 */
+	public abstract Component getReadAccess();
+
+	/**
+	 * A unique read access to the input/output resource for this IO handler is
+	 * created and returned. Behavior of this method is undefined if the 'build'
+	 * method has not been called.
+	 * 
+	 * @return a non-null Component
+	 */
+	public abstract Component getReadAccess(Element element);
+
+	/**
+	 * A unique stall access on the specified pin for this IO handler. Behavior
+	 * of this method is undefined if the 'build' method has not been called.
+	 */
+	public abstract Component getStallAccess();
+
+	/**
+	 * Returns a unique access to the status flag of the resource backing this
+	 * I/O handler.
+	 */
+	public abstract Component getStatusAccess();
+
+	/**
+	 * A unique access to the token count for the resource for this IO handler
+	 * is created and returned. Behavior of this method is undefined if the
+	 * 'build' method has not been called.
+	 * 
+	 * @return a non-null Component
+	 */
+	public abstract Component getTokenCountAccess();
+
+	/**
+	 * Returns a unique peek access to the resource backing this IO handler. The
+	 * peek access provides a token offset (and potentially a field offset) port
+	 * and returns the scalar value at that offset. The token peek functionality
+	 * does not affect the number of tokens in the queue. The token peek
+	 * functionality is valid for both input and output queues.
+	 */
+	public abstract Component getTokenPeekAccess();
+
+	/**
+	 * A unique write access to the input/output resource for this IO handler is
+	 * created and returned. Behavior of this method is undefined if the 'build'
+	 * method has not been called.
+	 * 
+	 * @return a non-null Component
+	 */
+	public abstract Component getWriteAccess();
+
+	/**
+	 * A unique write access to the input/output resource for this IO handler is
+	 * created and returned. Behavior of this method is undefined if the 'build'
+	 * method has not been called.
+	 * 
+	 * @return a non-null Component
+	 */
+	public abstract Component getWriteAccess(Element element);
 
 }// ActionIOHandler
