@@ -31,8 +31,10 @@ package net.sf.orc2hdl.design;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import net.sf.openforge.lim.Block;
@@ -55,6 +57,8 @@ public class DesignModuleFactory extends DesignFactory {
 	/** The module being constructed. */
 	private Module module;
 	private final Exit.Type exitType;
+
+	private final Map<Object, Component> componentMap = new HashMap<Object, Component>();
 
 	/**
 	 * Constructs an DesignModuleFactory which will use the specified resources
@@ -188,11 +192,18 @@ public class DesignModuleFactory extends DesignFactory {
 	}
 
 	public Component buildComponent(Action action) {
-		List<Component> components = new ArrayList<Component>();
-		for (net.sf.orcc.df.Port port : action.getInputPattern().getPorts()) {
 
+		List<Component> components = new ArrayList<Component>();
+
+		final DesignOperationFactory opFactory = new DesignOperationFactory(
+				resourceCache);
+
+		// Build Pin Read Operations
+		for (net.sf.orcc.df.Port port : action.getInputPattern().getPorts()) {
+			Component comp = opFactory.makePinReadOperation(port, portCache);
+			componentMap.put(port, comp);
+			components.add(comp);
 		}
 		return getModule();
 	}
-
 }

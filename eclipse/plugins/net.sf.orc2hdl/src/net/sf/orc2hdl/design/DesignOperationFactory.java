@@ -28,42 +28,30 @@
  */
 package net.sf.orc2hdl.design;
 
+import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.app.GenericJob;
+import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.Component;
-import net.sf.openforge.util.naming.ID;
-import net.sf.orcc.ir.Var;
 
-/**
- * DesignFactory is the common superclass of all factory classes used in
- * converting an ORCC Instance to a Design LIM structure.
- * 
- * @author Endri Bezati
- * 
- */
-public abstract class DesignFactory {
+public class DesignOperationFactory extends DesignFactory {
+	private final ResourceCache resourceCache;
+	private final GenericJob gj;
+	private Integer compCounter = 0;
 
-	protected DesignFactory() {
+	public DesignOperationFactory(ResourceCache resourceCache) {
+		this.resourceCache = resourceCache;
+		gj = EngineThread.getEngine().getGenericJob();
 	}
 
-	/**
-	 * Set the name of an LIM component by the name of an Orcc variable
-	 * 
-	 * @param var
-	 *            a Orcc IR variable element
-	 * @param comp
-	 *            a LIM ID component
-	 */
-	protected void setAttributes(Var var, ID comp) {
-		comp.setSourceName(var.getName());
+	public Component makePinReadOperation(net.sf.orcc.df.Port port,
+			PortCache portCache) {
+		Component comp = null;
+		ActionIOHandler ioHandler = resourceCache.getIOHandler(port);
+		comp = ioHandler.getReadAccess();
+		setAttributes(
+				"pinRead_" + port.getName() + "_"
+						+ Integer.toString(compCounter), comp);
+		compCounter++;
+		return comp;
 	}
-
-	protected void setAttributes(String tag, Component comp) {
-		setAttributes(tag, comp, false);
-	}
-
-	protected void setAttributes(String tag, Component comp, Boolean Removable) {
-		comp.setSourceName(tag);
-		if (!Removable)
-			comp.setNonRemovable();
-	}
-
 }

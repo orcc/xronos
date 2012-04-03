@@ -349,8 +349,8 @@ public class Orc2HDL extends AbstractBackend {
 				new DivisionSubstitution(), new UnitImporter(),
 				new SSATransformation(),
 				/* new TypeResizer(false, true, true, true), */
-				new GlobalArrayInitializer(true), new InstTernaryAdder(),
-				new Inliner(true, true), new UnaryListRemoval(),
+				new GlobalArrayInitializer(true), new Inliner(true, true),
+				new InstTernaryAdder(), new UnaryListRemoval(),
 				new CustomPeekAdder(), new DeadGlobalElimination(),
 				new DeadCodeElimination(), new XlimDeadVariableRemoval(),
 				new ListFlattener(), new TacTransformation(), new CfgBuilder(),

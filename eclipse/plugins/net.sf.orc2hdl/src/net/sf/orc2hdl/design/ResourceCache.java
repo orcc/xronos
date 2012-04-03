@@ -60,4 +60,8 @@ public class ResourceCache {
 	public void addLocation(Var var, Location location) {
 		memLocations.put(var, location);
 	}
+
+	public ActionIOHandler getIOHandler(Port port) {
+		return ioHandlers.get(port);
+	}
 }
