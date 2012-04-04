@@ -120,6 +120,8 @@ public class InstanceToDesign extends DesignFactory {
 			resources.addLocation(stateVar, location);
 		}
 
+		DesignActorVisitor designVisitor = new DesignActorVisitor();
+		designVisitor.doSwitch(instance.getActor());
 		// Create Task from the instance Actions & Procedures
 		PortCache portCache = new PortCache();
 		final Map<String, Task> taskModules = new HashMap<String, Task>();

@@ -28,10 +28,22 @@
  */
 package net.sf.orc2hdl.design;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.app.GenericJob;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
+import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.Instruction;
+import net.sf.orcc.ir.Node;
+import net.sf.orcc.ir.NodeBlock;
+import net.sf.orcc.ir.NodeIf;
 
 public class DesignOperationFactory extends DesignFactory {
 	private final ResourceCache resourceCache;
@@ -51,7 +63,99 @@ public class DesignOperationFactory extends DesignFactory {
 		setAttributes(
 				"pinRead_" + port.getName() + "_"
 						+ Integer.toString(compCounter), comp);
+
+		mapIOPorts(port, comp, portCache, true);
 		compCounter++;
 		return comp;
+
+	}
+
+	public Component makePinWriteOperation(net.sf.orcc.df.Port port,
+			PortCache portCache) {
+		Component comp = null;
+		ActionIOHandler ioHandler = resourceCache.getIOHandler(port);
+		comp = ioHandler.getWriteAccess();
+		setAttributes(
+				"pinWrite_" + port.getName() + "_"
+						+ Integer.toString(compCounter), comp);
+
+		mapIOPorts(port, comp, portCache, false);
+		compCounter++;
+		return comp;
+
+	}
+
+	public List<Component> makeNodeOperations(Node node, PortCache portCache) {
+		List<Component> nodeComponets = new ArrayList<Component>();
+		if (node.isNodeIf()) {
+			// TODO: DesignBranchFactory
+			List<Component> thenNodeComponets = new ArrayList<Component>();
+			List<Component> elseNodeComponets = new ArrayList<Component>();
+			List<Component> joinNodeComponets = new ArrayList<Component>();
+
+			Node thenNode = (Node) ((NodeIf) node).getThenNodes();
+			thenNodeComponets = makeNodeOperations(thenNode, portCache);
+			nodeComponets.addAll(thenNodeComponets);
+
+			Node elseNode = (Node) ((NodeIf) node).getElseNodes();
+			elseNodeComponets = makeNodeOperations(elseNode, portCache);
+			nodeComponets.addAll(elseNodeComponets);
+
+			Node joinNode = ((NodeIf) node).getJoinNode();
+			joinNodeComponets = makeNodeOperations(joinNode, portCache);
+			nodeComponets.addAll(joinNodeComponets);
+
+			nodeComponets.addAll(joinNodeComponets);
+		} else if (node.isNodeWhile()) {
+			// TODO: DesignLoopFactory
+			List<Component> whileNodeComponets = new ArrayList<Component>();
+			nodeComponets.addAll(whileNodeComponets);
+		} else {
+			for (Instruction op : ((NodeBlock) node).getInstructions()) {
+				if (op instanceof InstAssign) {
+					Expression expr = ((InstAssign) op).getValue();
+					if (expr.isExprInt()) {
+
+					}
+				}
+			}
+		}
+		return nodeComponets;
+	}
+
+	private void mapIOPorts(net.sf.orcc.df.Port port, Component op,
+			PortCache portCache, boolean isInput) {
+
+		if (isInput) {
+			// pinRead Operation
+			for (Bus dataBus : op.getExit(Exit.DONE).getDataBuses()) {
+				Bus bus = null;
+				// Set the size and the type of the Bus
+				// A bus is signed only if the Orcc Type Port is an Integer or a
+				// Boolean
+				bus = dataBus;
+				if (bus.getValue() == null) {
+					Boolean isSigned = port.getType().isBool()
+							|| port.getType().isInt();
+					bus.setSize(port.getType().getSizeInBits(), isSigned);
+				}
+				portCache.putSource(port, bus);
+				// Put Done Bus
+				bus = op.getExit(Exit.DONE).getDoneBus();
+				portCache.putSource(port, bus);
+			}
+		} else {
+			// pinWrite Operation
+			for (Port dataPort : op.getDataPorts()) {
+				Port p = dataPort;
+				Boolean isSigned = port.getType().isBool()
+						|| port.getType().isInt();
+				p.setSize(port.getType().getSizeInBits(), isSigned);
+				portCache.putTarget(port, p);
+				// Put Done Bus
+				Bus bus = op.getExit(Exit.DONE).getDoneBus();
+				portCache.putSource(port, bus);
+			}
+		}
 	}
 }

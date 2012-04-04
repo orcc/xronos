@@ -46,6 +46,7 @@ import net.sf.openforge.lim.MutexBlock;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.util.naming.ID;
 import net.sf.orcc.df.Action;
+import net.sf.orcc.ir.Node;
 
 public class DesignModuleFactory extends DesignFactory {
 	/** The cache of design level resources. */
@@ -204,6 +205,22 @@ public class DesignModuleFactory extends DesignFactory {
 			componentMap.put(port, comp);
 			components.add(comp);
 		}
+
+		// Build Actions Node Operation
+		for (Node node : action.getBody().getNodes()) {
+			List<Component> nodeComponets = opFactory.makeNodeOperations(node,
+					portCache);
+			// TODO componentMap.put
+			components.addAll(nodeComponets);
+		}
+
+		// Build Pin Write Operations
+		for (net.sf.orcc.df.Port port : action.getOutputPattern().getPorts()) {
+			Component comp = opFactory.makePinWriteOperation(port, portCache);
+			componentMap.put(port, comp);
+			components.add(comp);
+		}
+
 		return getModule();
 	}
 }
