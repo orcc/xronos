@@ -656,7 +656,7 @@ public class Orc2HDL extends AbstractBackend {
 	private boolean runForge(String[] args, Instance instance) {
 		Forge f = new Forge();
 		GenericJob forgeMainJob = new GenericJob();
-		boolean error = true;
+		boolean error = false;
 		try {
 			// Experimental
 			forgeMainJob.setOptionValues(args);

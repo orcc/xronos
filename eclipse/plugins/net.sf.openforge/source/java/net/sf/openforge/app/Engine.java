@@ -175,7 +175,7 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 	 * gets the current JobHandler.
 	 * 
 	 */
-	protected JobHandler getCurrentHandler() {
+	public JobHandler getCurrentHandler() {
 		return jobHandler;
 	}
 

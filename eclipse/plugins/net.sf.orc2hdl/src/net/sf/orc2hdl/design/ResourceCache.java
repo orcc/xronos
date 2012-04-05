@@ -33,8 +33,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
+import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.orcc.df.Port;
+import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.Var;
 
 /**
@@ -50,6 +52,8 @@ public class ResourceCache {
 	private final Map<Port, ActionIOHandler> ioHandlers = new HashMap<Port, ActionIOHandler>();
 	private final Map<Var, Location> memLocations = new HashMap<Var, Location>();
 
+	private final Map<InstCall, TaskCall> taskCalls = new HashMap<InstCall, TaskCall>();
+
 	public ResourceCache() {
 	}
 
@@ -59,6 +63,10 @@ public class ResourceCache {
 
 	public void addLocation(Var var, Location location) {
 		memLocations.put(var, location);
+	}
+
+	public void addTaskCall(InstCall instCall, TaskCall taskCall) {
+		taskCalls.put(instCall, taskCall);
 	}
 
 	public ActionIOHandler getIOHandler(Port port) {

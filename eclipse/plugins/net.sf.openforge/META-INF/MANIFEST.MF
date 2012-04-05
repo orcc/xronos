@@ -19,6 +19,7 @@ Export-Package: net.sf.openforge.app;
  net.sf.openforge.frontend.xlim.builder;uses:="net.sf.openforge.lim,org.xml.sax.helpers,org.w3c.dom",
  net.sf.openforge.lim,
  net.sf.openforge.lim.memory,
+ net.sf.openforge.lim.op,
  net.sf.openforge.util,
  net.sf.openforge.util.io,
  net.sf.openforge.util.naming,

@@ -84,8 +84,8 @@ import org.w3c.dom.NodeList;
 public class XOperationFactory extends XFactory {
 
 	/** The cache of design level resources. */
-	private ResourceCache resourceCache;
-	private GenericJob gj;
+	private final ResourceCache resourceCache;
+	private final GenericJob gj;
 
 	XOperationFactory(ResourceCache resources) {
 		resourceCache = resources;

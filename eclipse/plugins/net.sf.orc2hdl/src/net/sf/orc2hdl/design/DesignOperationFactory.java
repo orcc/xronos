@@ -67,7 +67,6 @@ public class DesignOperationFactory extends DesignFactory {
 		mapIOPorts(port, comp, portCache, true);
 		compCounter++;
 		return comp;
-
 	}
 
 	public Component makePinWriteOperation(net.sf.orcc.df.Port port,
@@ -82,7 +81,6 @@ public class DesignOperationFactory extends DesignFactory {
 		mapIOPorts(port, comp, portCache, false);
 		compCounter++;
 		return comp;
-
 	}
 
 	public List<Component> makeNodeOperations(Node node, PortCache portCache) {
