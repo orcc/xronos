@@ -37,6 +37,7 @@ import java.util.Map.Entry;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.util.naming.ID;
+import net.sf.orcc.ir.Var;
 
 /**
  * PortCache maintains mappings from {@link net.sf.orcc.df.Port}s to the
@@ -47,9 +48,9 @@ import net.sf.openforge.util.naming.ID;
  */
 public class PortCache {
 
-	private final Map<net.sf.orcc.df.Port, Bus> sourceCache = new HashMap<net.sf.orcc.df.Port, Bus>();
+	private final Map<Var, Bus> sourceCache = new HashMap<Var, Bus>();
 
-	private final Map<net.sf.orcc.df.Port, Port> targetCache = new HashMap<net.sf.orcc.df.Port, Port>();
+	private final Map<Var, Port> targetCache = new HashMap<Var, Port>();
 
 	public PortCache() {
 	}
@@ -61,8 +62,8 @@ public class PortCache {
 	 * @param orccPort
 	 * @return
 	 */
-	public Bus getSource(net.sf.orcc.df.Port orccPort) {
-		return sourceCache.get(orccPort);
+	public Bus getSource(Var var) {
+		return sourceCache.get(var);
 	}
 
 	/**
@@ -72,8 +73,8 @@ public class PortCache {
 	 * @param orccPort
 	 * @return
 	 */
-	public Port getTarget(net.sf.orcc.df.Port orccPort) {
-		return targetCache.get(orccPort);
+	public Port getTarget(Var var) {
+		return targetCache.get(var);
 	}
 
 	/**
@@ -84,8 +85,8 @@ public class PortCache {
 	 * @param orccPort
 	 * @param bus
 	 */
-	public void putSource(net.sf.orcc.df.Port orccPort, Bus bus) {
-		sourceCache.put(orccPort, bus);
+	public void putSource(Var var, Bus bus) {
+		sourceCache.put(var, bus);
 	}
 
 	/**
@@ -96,8 +97,8 @@ public class PortCache {
 	 * @param orccPort
 	 * @param limPort
 	 */
-	public void putTarget(net.sf.orcc.df.Port orccPort, Port limPort) {
-		targetCache.put(orccPort, limPort);
+	public void putTarget(Var var, Port limPort) {
+		targetCache.put(var, limPort);
 	}
 
 	/**
@@ -110,8 +111,8 @@ public class PortCache {
 	 *            the new Bus to be associated
 	 */
 	public void replaceSource(Bus original, Bus replacement) {
-		net.sf.orcc.df.Port key = null;
-		for (Entry<net.sf.orcc.df.Port, Bus> entry : sourceCache.entrySet()) {
+		Var key = null;
+		for (Entry<Var, Bus> entry : sourceCache.entrySet()) {
 			if (entry.getValue() == original) {
 				key = entry.getKey();
 				break;
@@ -131,8 +132,8 @@ public class PortCache {
 	 *            the new Port to be associated
 	 */
 	public void replaceTarget(Port original, Port replacement) {
-		net.sf.orcc.df.Port key = null;
-		for (Entry<net.sf.orcc.df.Port, Port> entry : targetCache.entrySet()) {
+		Var key = null;
+		for (Entry<Var, Port> entry : targetCache.entrySet()) {
 			if (entry.getValue() == original) {
 				key = entry.getKey();
 				break;

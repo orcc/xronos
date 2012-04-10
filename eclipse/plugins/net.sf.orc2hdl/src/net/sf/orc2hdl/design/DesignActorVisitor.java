@@ -53,7 +53,6 @@ import net.sf.openforge.lim.InBuf;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.OutBuf;
-import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.ResetDependency;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.AddressStridePolicy;
@@ -377,46 +376,14 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		setAttributes(
 				"pinRead_" + port.getName() + "_"
 						+ Integer.toString(componentCounter), comp);
+		Var pinReadVar = currentAction.getInputPattern().getPortToVarMap()
+				.get(port);
+		for (Bus bus : comp.getDataBuses()) {
 
-		mapIOPorts(port, comp, portCache, true);
+		}
+
 		componentCounter++;
 		return comp;
-	}
-
-	// TODO: re-factor mapIOPorts for each operation
-	private void mapIOPorts(net.sf.orcc.df.Port port, Component op,
-			PortCache portCache, boolean isInput) {
-		if (isInput) {
-			// pinRead Operation
-			for (Bus dataBus : op.getExit(Exit.DONE).getDataBuses()) {
-				Bus bus = null;
-				// Set the size and the type of the Bus
-				// A bus is signed only if the Orcc Type Port is an Integer or a
-				// Boolean
-				bus = dataBus;
-				if (bus.getValue() == null) {
-					Boolean isSigned = port.getType().isBool()
-							|| port.getType().isInt();
-					bus.setSize(port.getType().getSizeInBits(), isSigned);
-				}
-				portCache.putSource(port, bus);
-				// Put Done Bus
-				bus = op.getExit(Exit.DONE).getDoneBus();
-				portCache.putSource(port, bus);
-			}
-		} else {
-			// pinWrite Operation
-			for (Port dataPort : op.getDataPorts()) {
-				Port p = dataPort;
-				Boolean isSigned = port.getType().isBool()
-						|| port.getType().isInt();
-				p.setSize(port.getType().getSizeInBits(), isSigned);
-				portCache.putTarget(port, p);
-				// Put Done Bus
-				Bus bus = op.getExit(Exit.DONE).getDoneBus();
-				portCache.putSource(port, bus);
-			}
-		}
 	}
 
 	public Component makePinWriteOperation(net.sf.orcc.df.Port port,
@@ -428,7 +395,6 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 				"pinWrite_" + port.getName() + "_"
 						+ Integer.toString(componentCounter), comp);
 
-		mapIOPorts(port, comp, portCache, false);
 		componentCounter++;
 		return comp;
 	}
@@ -567,8 +533,6 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 	private static void addEntry(Component comp, Exit drivingExit,
 			Bus clockBus, Bus resetBus, Bus goBus) {
-		assert comp.getEntries().size() == 0 : "Component " + comp + " of "
-				+ comp.showOwners() + " already has entry";
 
 		Entry entry = comp.makeEntry(drivingExit);
 		// Even though most components do not use the clock, reset and

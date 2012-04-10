@@ -41,7 +41,7 @@ import net.sf.orcc.df.Instance;
  * 
  * @author Endri Bezati
  */
-public class InstanceToDesign extends DesignFactory {
+public class InstanceToDesign {
 	Design design;
 	Instance instance;
 
