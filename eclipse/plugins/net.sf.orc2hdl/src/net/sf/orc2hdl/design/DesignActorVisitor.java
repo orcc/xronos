@@ -46,6 +46,8 @@ import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.ClockDependency;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.ControlDependency;
+import net.sf.openforge.lim.DataDependency;
+import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
@@ -53,7 +55,9 @@ import net.sf.openforge.lim.InBuf;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.OutBuf;
+import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.ResetDependency;
+import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.AddressStridePolicy;
 import net.sf.openforge.lim.memory.AddressableUnit;
@@ -85,6 +89,7 @@ import net.sf.openforge.lim.op.SubtractOp;
 import net.sf.openforge.lim.op.XorOp;
 import net.sf.openforge.util.MathStuff;
 import net.sf.openforge.util.naming.ID;
+import net.sf.openforge.util.naming.IDSourceInfo;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.ir.ExprBinary;
@@ -134,14 +139,17 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 	/** Design stateVars **/
 	Map<LogicalValue, Var> stateVars;
 
+	/** Dependency between Components and Vars **/
+	Map<Component, Var> componentDependency = new HashMap<Component, Var>();
+
 	/** Action component Counter **/
 	Integer componentCounter;
 
 	/** The current module which represents the Action **/
 	Module currentModule;
 
-	/** Current Exit Type **/
-	Exit.Type currentExitType;
+	/** Current Exit **/
+	Exit currentExit;
 
 	public DesignActorVisitor(Design design) {
 		super(true);
@@ -157,11 +165,11 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		currentModule = new Block(false);
 
 		// Make Action module exit
-		currentModule.makeExit(0, Exit.RETURN);
+		currentExit = currentModule.makeExit(0, Exit.RETURN);
 		// Get pinRead Operation(s)
 
 		for (net.sf.orcc.df.Port port : action.getInputPattern().getPorts()) {
-			currentComponent = makePinReadOperation(port, portCache);
+			makePinReadOperation(port, portCache);
 			currentListComponent.add(currentComponent);
 		}
 
@@ -170,7 +178,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 		// Get pinWrite Operation(s)
 		for (net.sf.orcc.df.Port port : action.getOutputPattern().getPorts()) {
-			currentComponent = makePinWriteOperation(port, portCache);
+			makePinWriteOperation(port, portCache);
 			currentListComponent.add(currentComponent);
 		}
 
@@ -178,11 +186,82 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		populateModule(currentModule, currentListComponent);
 
 		// Build Dependencies
-
+		operationDependencies();
 		// Build option scope
 		currentModule.specifySearchScope(action.getName());
+
+		// create Call
+		Call call = createCall();
+		topLevelInit(call);
+		// Create task
+		Task task = new Task(call);
+		task.setKickerRequired(false);
+		task.setSourceName(currentAction.getName());
+		design.addTask(task);
+		// TODO: To be deleted
 		actionComponents.put(currentAction, currentListComponent);
 		return null;
+	}
+
+	private Call createCall() {
+		Block procedureBlock = (Block) currentModule;
+		net.sf.openforge.lim.Procedure proc = new net.sf.openforge.lim.Procedure(
+				procedureBlock);
+		Call call = proc.makeCall();
+		proc.setIDSourceInfo(deriveIDSourceInfo());
+
+		for (Port blockPort : procedureBlock.getPorts()) {
+			Port callPort = call.getPortFromProcedurePort(blockPort);
+			portCache.replaceTarget(blockPort, callPort);
+		}
+
+		for (Exit exit : procedureBlock.getExits()) {
+			for (Bus blockBus : exit.getBuses()) {
+				Bus callBus = call.getBusFromProcedureBus(blockBus);
+				portCache.replaceSource(blockBus, callBus);
+			}
+		}
+		return call;
+	}
+
+	// TODO: set all the necessary information here
+	private IDSourceInfo deriveIDSourceInfo() {
+		String fileName = null;
+		String packageName = null;
+		String className = currentAction.getName();
+		String methodName = currentAction.getName();
+		String signature = null;
+		int line = 0;
+		int cpos = 0;
+		return new IDSourceInfo(fileName, packageName, className, methodName,
+				signature, line, cpos);
+	}
+
+	private void operationDependencies() {
+		// Build Data Dependencies
+		for (Component component : currentListComponent) {
+			Var depVar = componentDependency.get(component);
+			if (depVar != null) {
+				Bus sourceBus = portCache.getSource(depVar);
+				Port targetPort = portCache.getTarget(depVar);
+				List<Entry> entries = targetPort.getOwner().getEntries();
+				Entry entry = entries.get(0);
+				Dependency dep = new DataDependency(sourceBus);
+				entry.addDependency(targetPort, dep);
+			}
+		}
+		// Build control Dependencies
+		for (Component component : currentListComponent) {
+			Bus busDone = portCache.getDoneBus(component);
+			if (busDone != null) {
+				Port actionDonePort = currentExit.getDoneBus().getPeer();
+				List<Entry> entries = actionDonePort.getOwner().getEntries();
+				Entry entry = entries.get(0);
+				Dependency dep = new ControlDependency(busDone);
+				entry.addDependency(actionDonePort, dep);
+			}
+		}
+
 	}
 
 	@Override
@@ -318,10 +397,32 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 	@Override
 	public Object caseExprVar(ExprVar var) {
-		// TODO: See if NoOP can have more than one after all actors
+		// TODO: See if NoOP can have more than one inputs after all actors
 		// Transformations
 		currentComponent = new NoOp(1, Exit.DONE);
+		mapInPorts(var.getUse().getVariable());
 		return null;
+	}
+
+	private void mapInPorts(Var var) {
+		Port dataPort = currentComponent.getDataPorts().get(0);
+		dataPort.setSize(var.getType().getSizeInBits(), var.getType().isInt()
+				|| var.getType().isBool());
+		portCache.putTarget(var, dataPort);
+		// Put Input dependency
+		componentDependency.put(currentComponent, var);
+	}
+
+	private void mapOutPorts(Var var) {
+		Bus dataBus = currentComponent.getExit(Exit.DONE).getDataBuses().get(0);
+		if (dataBus.getValue() == null) {
+			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
+					.isInt() || var.getType().isBool());
+		}
+		portCache.putSource(var, dataBus);
+
+		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
+		portCache.putDoneBus(currentComponent, doneBus);
 	}
 
 	@Override
@@ -329,6 +430,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		super.caseInstAssign(assign);
 		if (currentComponent != null) {
 			currentListComponent.add(currentComponent);
+			mapOutPorts(assign.getTarget().getVariable());
 		}
 		return null;
 	}
@@ -346,6 +448,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 			// TODO: Load index of the List
 		} else {
 			currentComponent = new NoOp(1, Exit.DONE);
+
 		}
 		return null;
 	}
@@ -368,35 +471,42 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		return null;
 	}
 
-	public Component makePinReadOperation(net.sf.orcc.df.Port port,
+	private void makePinReadOperation(net.sf.orcc.df.Port port,
 			PortCache portCache) {
-		Component comp = null;
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
-		comp = ioHandler.getReadAccess();
+		currentComponent = ioHandler.getReadAccess();
 		setAttributes(
 				"pinRead_" + port.getName() + "_"
-						+ Integer.toString(componentCounter), comp);
+						+ Integer.toString(componentCounter), currentComponent);
 		Var pinReadVar = currentAction.getInputPattern().getPortToVarMap()
 				.get(port);
-		for (Bus bus : comp.getDataBuses()) {
 
+		for (Bus dataBus : currentComponent.getExit(Exit.DONE).getDataBuses()) {
+			if (dataBus.getValue() == null) {
+				dataBus.setSize(port.getType().getSizeInBits(), port.getType()
+						.isInt() || port.getType().isBool());
+			}
+			portCache.putSource(pinReadVar, dataBus);
 		}
-
+		mapOutPorts(pinReadVar);
 		componentCounter++;
-		return comp;
 	}
 
-	public Component makePinWriteOperation(net.sf.orcc.df.Port port,
+	private void makePinWriteOperation(net.sf.orcc.df.Port port,
 			PortCache portCache) {
-		Component comp = null;
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
-		comp = ioHandler.getWriteAccess();
+		currentComponent = ioHandler.getWriteAccess();
 		setAttributes(
 				"pinWrite_" + port.getName() + "_"
-						+ Integer.toString(componentCounter), comp);
+						+ Integer.toString(componentCounter), currentComponent);
+		Var pinWriteVar = currentAction.getOutputPattern().getPortToVarMap()
+				.get(port);
 
+		mapInPorts(pinWriteVar);
+		// Add done dependency for this operation to the current module exit
+		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
+		portCache.putDoneBus(currentComponent, doneBus);
 		componentCounter++;
-		return comp;
 	}
 
 	/**

@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.util.naming.ID;
 import net.sf.orcc.ir.Var;
@@ -52,7 +53,13 @@ public class PortCache {
 
 	private final Map<Var, Port> targetCache = new HashMap<Var, Port>();
 
+	private final Map<Component, Bus> doneBusComponents = new HashMap<Component, Bus>();
+
 	public PortCache() {
+	}
+
+	public Bus getDoneBus(Component component) {
+		return doneBusComponents.get(component);
 	}
 
 	/**
@@ -75,6 +82,10 @@ public class PortCache {
 	 */
 	public Port getTarget(Var var) {
 		return targetCache.get(var);
+	}
+
+	public void putDoneBus(Component component, Bus bus) {
+		doneBusComponents.put(component, bus);
 	}
 
 	/**
