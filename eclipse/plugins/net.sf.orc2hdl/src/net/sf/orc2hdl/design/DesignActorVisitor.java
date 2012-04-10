@@ -113,6 +113,12 @@ import net.sf.orcc.ir.util.ValueUtil;
 
 import org.eclipse.emf.common.util.EList;
 
+/**
+ * The DesignActorVisitor class transforms an Orcc Actor to an OpenForge Design
+ * 
+ * @author Endri Bezati
+ * 
+ */
 public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 	/** List which associates each action with its components **/
@@ -201,67 +207,6 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		// TODO: To be deleted
 		actionComponents.put(currentAction, currentListComponent);
 		return null;
-	}
-
-	private Call createCall() {
-		Block procedureBlock = (Block) currentModule;
-		net.sf.openforge.lim.Procedure proc = new net.sf.openforge.lim.Procedure(
-				procedureBlock);
-		Call call = proc.makeCall();
-		proc.setIDSourceInfo(deriveIDSourceInfo());
-
-		for (Port blockPort : procedureBlock.getPorts()) {
-			Port callPort = call.getPortFromProcedurePort(blockPort);
-			portCache.replaceTarget(blockPort, callPort);
-		}
-
-		for (Exit exit : procedureBlock.getExits()) {
-			for (Bus blockBus : exit.getBuses()) {
-				Bus callBus = call.getBusFromProcedureBus(blockBus);
-				portCache.replaceSource(blockBus, callBus);
-			}
-		}
-		return call;
-	}
-
-	// TODO: set all the necessary information here
-	private IDSourceInfo deriveIDSourceInfo() {
-		String fileName = null;
-		String packageName = null;
-		String className = currentAction.getName();
-		String methodName = currentAction.getName();
-		String signature = null;
-		int line = 0;
-		int cpos = 0;
-		return new IDSourceInfo(fileName, packageName, className, methodName,
-				signature, line, cpos);
-	}
-
-	private void operationDependencies() {
-		// Build Data Dependencies
-		for (Component component : currentListComponent) {
-			Var depVar = componentDependency.get(component);
-			if (depVar != null) {
-				Bus sourceBus = portCache.getSource(depVar);
-				Port targetPort = portCache.getTarget(depVar);
-				List<Entry> entries = targetPort.getOwner().getEntries();
-				Entry entry = entries.get(0);
-				Dependency dep = new DataDependency(sourceBus);
-				entry.addDependency(targetPort, dep);
-			}
-		}
-		// Build control Dependencies
-		for (Component component : currentListComponent) {
-			Bus busDone = portCache.getDoneBus(component);
-			if (busDone != null) {
-				Port actionDonePort = currentExit.getDoneBus().getPeer();
-				List<Entry> entries = actionDonePort.getOwner().getEntries();
-				Entry entry = entries.get(0);
-				Dependency dep = new ControlDependency(busDone);
-				entry.addDependency(actionDonePort, dep);
-			}
-		}
-
 	}
 
 	@Override
@@ -404,27 +349,6 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		return null;
 	}
 
-	private void mapInPorts(Var var) {
-		Port dataPort = currentComponent.getDataPorts().get(0);
-		dataPort.setSize(var.getType().getSizeInBits(), var.getType().isInt()
-				|| var.getType().isBool());
-		portCache.putTarget(var, dataPort);
-		// Put Input dependency
-		componentDependency.put(currentComponent, var);
-	}
-
-	private void mapOutPorts(Var var) {
-		Bus dataBus = currentComponent.getExit(Exit.DONE).getDataBuses().get(0);
-		if (dataBus.getValue() == null) {
-			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
-					.isInt() || var.getType().isBool());
-		}
-		portCache.putSource(var, dataBus);
-
-		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
-		portCache.putDoneBus(currentComponent, doneBus);
-	}
-
 	@Override
 	public Object caseInstAssign(InstAssign assign) {
 		super.caseInstAssign(assign);
@@ -471,42 +395,49 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		return null;
 	}
 
-	private void makePinReadOperation(net.sf.orcc.df.Port port,
-			PortCache portCache) {
-		ActionIOHandler ioHandler = resources.getIOHandler(port);
-		currentComponent = ioHandler.getReadAccess();
-		setAttributes(
-				"pinRead_" + port.getName() + "_"
-						+ Integer.toString(componentCounter), currentComponent);
-		Var pinReadVar = currentAction.getInputPattern().getPortToVarMap()
-				.get(port);
+	private void componentAddEntry(Component comp, Exit drivingExit,
+			Bus clockBus, Bus resetBus, Bus goBus) {
 
-		for (Bus dataBus : currentComponent.getExit(Exit.DONE).getDataBuses()) {
-			if (dataBus.getValue() == null) {
-				dataBus.setSize(port.getType().getSizeInBits(), port.getType()
-						.isInt() || port.getType().isBool());
-			}
-			portCache.putSource(pinReadVar, dataBus);
-		}
-		mapOutPorts(pinReadVar);
-		componentCounter++;
+		Entry entry = comp.makeEntry(drivingExit);
+		// Even though most components do not use the clock, reset and
+		// go ports we set up the dependencies for consistancy.
+		entry.addDependency(comp.getClockPort(), new ClockDependency(clockBus));
+		entry.addDependency(comp.getResetPort(), new ResetDependency(resetBus));
+		entry.addDependency(comp.getGoPort(), new ControlDependency(goBus));
 	}
 
-	private void makePinWriteOperation(net.sf.orcc.df.Port port,
-			PortCache portCache) {
-		ActionIOHandler ioHandler = resources.getIOHandler(port);
-		currentComponent = ioHandler.getWriteAccess();
-		setAttributes(
-				"pinWrite_" + port.getName() + "_"
-						+ Integer.toString(componentCounter), currentComponent);
-		Var pinWriteVar = currentAction.getOutputPattern().getPortToVarMap()
-				.get(port);
+	private Call createCall() {
+		Block procedureBlock = (Block) currentModule;
+		net.sf.openforge.lim.Procedure proc = new net.sf.openforge.lim.Procedure(
+				procedureBlock);
+		Call call = proc.makeCall();
+		proc.setIDSourceInfo(deriveIDSourceInfo());
 
-		mapInPorts(pinWriteVar);
-		// Add done dependency for this operation to the current module exit
-		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
-		portCache.putDoneBus(currentComponent, doneBus);
-		componentCounter++;
+		for (Port blockPort : procedureBlock.getPorts()) {
+			Port callPort = call.getPortFromProcedurePort(blockPort);
+			portCache.replaceTarget(blockPort, callPort);
+		}
+
+		for (Exit exit : procedureBlock.getExits()) {
+			for (Bus blockBus : exit.getBuses()) {
+				Bus callBus = call.getBusFromProcedureBus(blockBus);
+				portCache.replaceSource(blockBus, callBus);
+			}
+		}
+		return call;
+	}
+
+	// TODO: set all the necessary information here
+	private IDSourceInfo deriveIDSourceInfo() {
+		String fileName = null;
+		String packageName = null;
+		String className = currentAction.getName();
+		String methodName = currentAction.getName();
+		String signature = null;
+		int line = 0;
+		int cpos = 0;
+		return new IDSourceInfo(fileName, packageName, className, methodName,
+				signature, line, cpos);
 	}
 
 	/**
@@ -641,15 +572,90 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		return logicalValue;
 	}
 
-	private static void addEntry(Component comp, Exit drivingExit,
-			Bus clockBus, Bus resetBus, Bus goBus) {
+	private void makePinReadOperation(net.sf.orcc.df.Port port,
+			PortCache portCache) {
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+		currentComponent = ioHandler.getReadAccess();
+		setAttributes(
+				"pinRead_" + port.getName() + "_"
+						+ Integer.toString(componentCounter), currentComponent);
+		Var pinReadVar = currentAction.getInputPattern().getPortToVarMap()
+				.get(port);
 
-		Entry entry = comp.makeEntry(drivingExit);
-		// Even though most components do not use the clock, reset and
-		// go ports we set up the dependencies for consistancy.
-		entry.addDependency(comp.getClockPort(), new ClockDependency(clockBus));
-		entry.addDependency(comp.getResetPort(), new ResetDependency(resetBus));
-		entry.addDependency(comp.getGoPort(), new ControlDependency(goBus));
+		for (Bus dataBus : currentComponent.getExit(Exit.DONE).getDataBuses()) {
+			if (dataBus.getValue() == null) {
+				dataBus.setSize(port.getType().getSizeInBits(), port.getType()
+						.isInt() || port.getType().isBool());
+			}
+			portCache.putSource(pinReadVar, dataBus);
+		}
+		mapOutPorts(pinReadVar);
+		componentCounter++;
+	}
+
+	private void makePinWriteOperation(net.sf.orcc.df.Port port,
+			PortCache portCache) {
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+		currentComponent = ioHandler.getWriteAccess();
+		setAttributes(
+				"pinWrite_" + port.getName() + "_"
+						+ Integer.toString(componentCounter), currentComponent);
+		Var pinWriteVar = currentAction.getOutputPattern().getPortToVarMap()
+				.get(port);
+
+		mapInPorts(pinWriteVar);
+		// Add done dependency for this operation to the current module exit
+		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
+		portCache.putDoneBus(currentComponent, doneBus);
+		componentCounter++;
+	}
+
+	private void mapInPorts(Var var) {
+		Port dataPort = currentComponent.getDataPorts().get(0);
+		dataPort.setSize(var.getType().getSizeInBits(), var.getType().isInt()
+				|| var.getType().isBool());
+		portCache.putTarget(var, dataPort);
+		// Put Input dependency
+		componentDependency.put(currentComponent, var);
+	}
+
+	private void mapOutPorts(Var var) {
+		Bus dataBus = currentComponent.getExit(Exit.DONE).getDataBuses().get(0);
+		if (dataBus.getValue() == null) {
+			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
+					.isInt() || var.getType().isBool());
+		}
+		portCache.putSource(var, dataBus);
+
+		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
+		portCache.putDoneBus(currentComponent, doneBus);
+	}
+
+	private void operationDependencies() {
+		// Build Data Dependencies
+		for (Component component : currentListComponent) {
+			Var depVar = componentDependency.get(component);
+			if (depVar != null) {
+				Bus sourceBus = portCache.getSource(depVar);
+				Port targetPort = portCache.getTarget(depVar);
+				List<Entry> entries = targetPort.getOwner().getEntries();
+				Entry entry = entries.get(0);
+				Dependency dep = new DataDependency(sourceBus);
+				entry.addDependency(targetPort, dep);
+			}
+		}
+		// Build control Dependencies
+		for (Component component : currentListComponent) {
+			Bus busDone = portCache.getDoneBus(component);
+			if (busDone != null) {
+				Port actionDonePort = currentExit.getDoneBus().getPeer();
+				List<Entry> entries = actionDonePort.getOwner().getEntries();
+				Entry entry = entries.get(0);
+				Dependency dep = new ControlDependency(busDone);
+				entry.addDependency(actionDonePort, dep);
+			}
+		}
+
 	}
 
 	/**
@@ -676,15 +682,25 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 			else
 				module.addComponent(comp);
 
-			addEntry(comp, drivingExit, clockBus, resetBus, goBus);
+			componentAddEntry(comp, drivingExit, clockBus, resetBus, goBus);
 
 			drivingExit = comp.getExit(Exit.DONE);
 		}
 
 		// Ensure that the outbufs of the module have an entry
 		for (OutBuf outbuf : module.getOutBufs()) {
-			addEntry(outbuf, drivingExit, clockBus, resetBus, goBus);
+			componentAddEntry(outbuf, drivingExit, clockBus, resetBus, goBus);
 		}
+	}
+
+	private void setAttributes(String tag, Component comp) {
+		setAttributes(tag, comp, false);
+	}
+
+	private void setAttributes(String tag, Component comp, Boolean Removable) {
+		comp.setSourceName(tag);
+		if (!Removable)
+			comp.setNonRemovable();
 	}
 
 	/**
@@ -699,17 +715,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		comp.setSourceName(var.getName());
 	}
 
-	private void setAttributes(String tag, Component comp) {
-		setAttributes(tag, comp, false);
-	}
-
-	private void setAttributes(String tag, Component comp, Boolean Removable) {
-		comp.setSourceName(tag);
-		if (!Removable)
-			comp.setNonRemovable();
-	}
-
-	private static void topLevelInit(Call call) {
+	private void topLevelInit(Call call) {
 		call.getClockPort().setSize(1, false);
 		call.getResetPort().setSize(1, false);
 		call.getGoPort().setSize(1, false);
