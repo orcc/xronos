@@ -122,40 +122,40 @@ import org.eclipse.emf.common.util.EList;
 public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 	/** List which associates each action with its components **/
-	Map<Action, List<Component>> actionComponents = new HashMap<Action, List<Component>>();
-
-	/** Current visited action **/
-	Action currentAction = null;
-
-	/** Current Component **/
-	Component currentComponent = null;
-
-	/** Current List Component **/
-	List<Component> currentListComponent;
-
-	/** Design Resources **/
-	ResourceCache resources = new ResourceCache();
-
-	/** Port Cache **/
-	PortCache portCache = new PortCache();
-
-	/** Design to be build **/
-	Design design;
-
-	/** Design stateVars **/
-	Map<LogicalValue, Var> stateVars;
-
-	/** Dependency between Components and Vars **/
-	Map<Component, Var> componentDependency = new HashMap<Component, Var>();
+	private Map<Action, List<Component>> actionComponents = new HashMap<Action, List<Component>>();
 
 	/** Action component Counter **/
-	Integer componentCounter;
+	protected Integer componentCounter;
 
-	/** The current module which represents the Action **/
-	Module currentModule;
+	/** Dependency between Components and Vars **/
+	protected Map<Component, Var> componentDependency = new HashMap<Component, Var>();
+
+	/** Current visited action **/
+	private Action currentAction = null;
+
+	/** Current Component **/
+	protected Component currentComponent = null;
 
 	/** Current Exit **/
-	Exit currentExit;
+	protected Exit currentExit;
+
+	/** Current List Component **/
+	protected List<Component> currentListComponent;
+
+	/** The current module which represents the Action **/
+	protected Module currentModule;
+
+	/** Design to be build **/
+	protected Design design;
+
+	/** Port Cache **/
+	protected PortCache portCache = new PortCache();
+
+	/** Design Resources **/
+	protected ResourceCache resources = new ResourceCache();
+
+	/** Design stateVars **/
+	protected Map<LogicalValue, Var> stateVars;
 
 	public DesignActorVisitor(Design design) {
 		super(true);
@@ -187,23 +187,11 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 			makePinWriteOperation(port, portCache);
 			currentListComponent.add(currentComponent);
 		}
-
-		// Add the components to the module
-		populateModule(currentModule, currentListComponent);
-
-		// Build Dependencies
-		operationDependencies();
-		// Build option scope
-		currentModule.specifySearchScope(action.getName());
-
-		// create Call
-		Call call = createCall();
-		topLevelInit(call);
-		// Create task
-		Task task = new Task(call);
-		task.setKickerRequired(false);
-		task.setSourceName(currentAction.getName());
+		// Create the task
+		Task task = createTask(currentAction.getName());
+		// Add it to the design
 		design.addTask(task);
+
 		// TODO: To be deleted
 		actionComponents.put(currentAction, currentListComponent);
 		return null;
@@ -220,7 +208,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 			doSwitch(parameter);
 		}
 
-		this.stateVars = new HashMap<LogicalValue, Var>();
+		stateVars = new HashMap<LogicalValue, Var>();
 		// Visit stateVars
 		for (Var stateVar : actor.getStateVars()) {
 			doSwitch(stateVar);
@@ -261,8 +249,11 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 			doSwitch(initialize);
 		}
 
-		// TODO: Create the scheduler, to be implemented with a visitor which
-		// constructs a Task
+		// Create a task for the scheduler and add it directy to the design
+		DesignActorSchedulerVisitor schedulerVisitor = new DesignActorSchedulerVisitor(
+				design);
+		schedulerVisitor.doSwitch(actor);
+
 		// TODO: Connect the design
 		return null;
 	}
@@ -395,7 +386,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		return null;
 	}
 
-	private void componentAddEntry(Component comp, Exit drivingExit,
+	protected void componentAddEntry(Component comp, Exit drivingExit,
 			Bus clockBus, Bus resetBus, Bus goBus) {
 
 		Entry entry = comp.makeEntry(drivingExit);
@@ -406,12 +397,12 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		entry.addDependency(comp.getGoPort(), new ControlDependency(goBus));
 	}
 
-	private Call createCall() {
+	protected Call createCall(String name) {
 		Block procedureBlock = (Block) currentModule;
 		net.sf.openforge.lim.Procedure proc = new net.sf.openforge.lim.Procedure(
 				procedureBlock);
 		Call call = proc.makeCall();
-		proc.setIDSourceInfo(deriveIDSourceInfo());
+		proc.setIDSourceInfo(deriveIDSourceInfo(name));
 
 		for (Port blockPort : procedureBlock.getPorts()) {
 			Port callPort = call.getPortFromProcedurePort(blockPort);
@@ -427,12 +418,32 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		return call;
 	}
 
+	protected Task createTask(String name) {
+		Task task = null;
+		// Add the components to the module
+		populateModule(currentModule, currentListComponent);
+
+		// Build Dependencies
+		operationDependencies();
+		// Build option scope
+		currentModule.specifySearchScope(name);
+
+		// create Call
+		Call call = createCall(name);
+		topLevelInit(call);
+		// Create task
+		task = new Task(call);
+		task.setKickerRequired(false);
+		task.setSourceName(name);
+		return task;
+	}
+
 	// TODO: set all the necessary information here
-	private IDSourceInfo deriveIDSourceInfo() {
+	protected IDSourceInfo deriveIDSourceInfo(String name) {
 		String fileName = null;
 		String packageName = null;
-		String className = currentAction.getName();
-		String methodName = currentAction.getName();
+		String className = name;
+		String methodName = name;
 		String signature = null;
 		int line = 0;
 		int cpos = 0;
@@ -610,7 +621,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		componentCounter++;
 	}
 
-	private void mapInPorts(Var var) {
+	protected void mapInPorts(Var var) {
 		Port dataPort = currentComponent.getDataPorts().get(0);
 		dataPort.setSize(var.getType().getSizeInBits(), var.getType().isInt()
 				|| var.getType().isBool());
@@ -619,7 +630,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		componentDependency.put(currentComponent, var);
 	}
 
-	private void mapOutPorts(Var var) {
+	protected void mapOutPorts(Var var) {
 		Bus dataBus = currentComponent.getExit(Exit.DONE).getDataBuses().get(0);
 		if (dataBus.getValue() == null) {
 			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
@@ -631,7 +642,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		portCache.putDoneBus(currentComponent, doneBus);
 	}
 
-	private void operationDependencies() {
+	protected void operationDependencies() {
 		// Build Data Dependencies
 		for (Component component : currentListComponent) {
 			Var depVar = componentDependency.get(component);
@@ -666,7 +677,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 	 * @param components
 	 *            a List of {@link Component} objects
 	 */
-	public void populateModule(Module module, List<Component> components) {
+	protected void populateModule(Module module, List<Component> components) {
 		final InBuf inBuf = module.getInBuf();
 		final Bus clockBus = inBuf.getClockBus();
 		final Bus resetBus = inBuf.getResetBus();
@@ -693,11 +704,11 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		}
 	}
 
-	private void setAttributes(String tag, Component comp) {
+	protected void setAttributes(String tag, Component comp) {
 		setAttributes(tag, comp, false);
 	}
 
-	private void setAttributes(String tag, Component comp, Boolean Removable) {
+	protected void setAttributes(String tag, Component comp, Boolean Removable) {
 		comp.setSourceName(tag);
 		if (!Removable)
 			comp.setNonRemovable();
@@ -711,7 +722,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 	 * @param comp
 	 *            a LIM ID component
 	 */
-	private void setAttributes(Var var, ID comp) {
+	protected void setAttributes(Var var, ID comp) {
 		comp.setSourceName(var.getName());
 	}
 
