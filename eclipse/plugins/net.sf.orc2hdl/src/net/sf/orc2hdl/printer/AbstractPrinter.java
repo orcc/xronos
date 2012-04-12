@@ -41,7 +41,6 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.util.ExpressionPrinter;
 import net.sf.orcc.ir.util.TypePrinter;
-import net.sf.orcc.util.OrccUtil;
 
 import org.eclipse.emf.common.util.EMap;
 import org.stringtemplate.v4.AttributeRenderer;
@@ -49,6 +48,7 @@ import org.stringtemplate.v4.Interpreter;
 import org.stringtemplate.v4.ModelAdaptor;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.STGroupFile;
 import org.stringtemplate.v4.misc.ErrorManager;
 import org.stringtemplate.v4.misc.MapModelAdaptor;
 import org.stringtemplate.v4.misc.ObjectModelAdaptor;
@@ -149,8 +149,7 @@ public abstract class AbstractPrinter {
 	 *            the full path of the template
 	 */
 	public AbstractPrinter(String fullPath) {
-		group = OrccUtil.loadGroup(fullPath,
-				AbstractPrinter.class.getClassLoader());
+		group = loadGroup(fullPath, AbstractPrinter.class.getClassLoader());
 		group.registerRenderer(Expression.class, new ExpressionRenderer());
 		group.registerRenderer(Type.class, new TypeRenderer());
 
@@ -158,6 +157,40 @@ public abstract class AbstractPrinter {
 		group.registerModelAdaptor(Instance.class, new InstanceModelAdaptor());
 		group.registerModelAdaptor(Connection.class,
 				new ConnectionModelAdaptor());
+	}
+
+	/**
+	 * Loads the given group and recursively loads the groups it imports.
+	 * 
+	 * @param group
+	 *            a ST group
+	 */
+	private static void loadGroup(STGroup group) {
+		group.load();
+		for (STGroup importedGroup : group.getImportedGroups()) {
+			loadGroup(importedGroup);
+		}
+	}
+
+	/**
+	 * Loads a template group.
+	 * 
+	 * @param groupName
+	 *            the name of the group to load
+	 * @return a StringTemplate group
+	 */
+	public static STGroup loadGroup(String fullPath, ClassLoader cl) {
+		ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
+		try {
+			Thread.currentThread().setContextClassLoader(cl);
+
+			STGroup group = new STGroupFile(fullPath);
+			loadGroup(group);
+			return group;
+		} finally {
+			// restore class loader even if there is an unexpected exception
+			Thread.currentThread().setContextClassLoader(oldCl);
+		}
 	}
 
 	protected void printTemplate(ST template, String fileName) {
