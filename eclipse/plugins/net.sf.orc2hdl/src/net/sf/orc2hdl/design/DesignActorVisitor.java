@@ -92,6 +92,8 @@ import net.sf.openforge.util.naming.ID;
 import net.sf.openforge.util.naming.IDSourceInfo;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
@@ -100,8 +102,6 @@ import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
-import net.sf.orcc.ir.NodeIf;
-import net.sf.orcc.ir.NodeWhile;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.OpUnary;
 import net.sf.orcc.ir.Procedure;
@@ -369,12 +369,12 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 	}
 
 	@Override
-	public Object caseNodeIf(NodeIf nodeIf) {
+	public Object caseNodeIf(BlockIf blockIf) {
 		return null;
 	}
 
 	@Override
-	public Object caseNodeWhile(NodeWhile nodeWhile) {
+	public Object caseNodeWhile(BlockWhile blockWhile) {
 		return null;
 	}
 
