@@ -345,7 +345,7 @@ public class Orc2HDL extends AbstractBackend {
 		actor.setTemplateData(data);
 
 		DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
-				new LocalArrayRemoval(), new Multi2MonoToken(),
+				new LocalArrayRemoval(), //new Multi2MonoToken(),
 				new DivisionSubstitution(), new UnitImporter(),
 				new SSATransformation(),
 				/* new TypeResizer(false, true, true, true), */
