@@ -34,9 +34,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.DataDependency;
 import net.sf.openforge.lim.Decision;
 import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.Entry;
+import net.sf.openforge.lim.Port;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.ir.InstAssign;
@@ -67,7 +71,8 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	public Object caseActor(Actor actor) {
 		currentListComponent = new ArrayList<Component>();
 		// Build infinite loop decision
-		buildInfiniteLoopDecision();
+		Block testBlock = (Block) buildInfiniteLoopDecision();
+
 		// Visit only the actions
 		for (Action action : actor.getActions()) {
 			doSwitch(action);
@@ -100,12 +105,41 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		// Create the var_actor_loop variable and assign the var_actor_sched
 		// into it
 		Var varActorLoop = IrFactory.eINSTANCE.createVar(1, type,
-				"var_actor_sched", false, 0);
+				"var_actor_loop", false, 0);
+
 		InstAssign assignLoop = IrFactory.eINSTANCE.createInstAssign(
-				varActorLoop, assignSched.getValue());
+				varActorLoop, IrFactory.eINSTANCE.createExprVar(varActorSched));
 		doSwitch(assignLoop);
+
+		currentModule = new Block(false);
+		// Make an Exit with zero data buses at the output
+		currentExit = currentModule.makeExit(0);
+		// Add all components to the module
+		populateModule(currentModule, currentListComponent);
+		// Build Dependencies
+		operationDependencies();
+
+		// Create the decision
+		decision = new Decision((Block) currentModule, currentComponent);
+		// Any data inputs to the decision need to be propagated from
+		// the block to the decision. There should be no output ports
+		// to propagate. They are inferred true/false.
+		propagateInputs(decision, (Block) currentModule);
+
+		// Build option scope
+		currentModule.specifySearchScope("schedulerLoopDecision");
 		return decision;
 
+	}
+
+	private void propagateInputs(Decision decision, Block testBlock) {
+		for (Port port : testBlock.getDataPorts()) {
+			Port decisionPort = decision.makeDataPort();
+			Entry entry = port.getOwner().getEntries().get(0);
+			entry.addDependency(port,
+					new DataDependency(decisionPort.getPeer()));
+			portCache.replaceTarget(port, decisionPort);
+		}
 	}
 
 }

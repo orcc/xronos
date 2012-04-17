@@ -420,7 +420,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 	protected Task createTask(String name) {
 		Task task = null;
-		// Add the components to the module
+		// Add all components to the module
 		populateModule(currentModule, currentListComponent);
 
 		// Build Dependencies
