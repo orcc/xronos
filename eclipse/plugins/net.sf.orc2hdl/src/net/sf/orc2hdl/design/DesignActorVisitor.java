@@ -152,14 +152,15 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 	protected PortCache portCache = new PortCache();
 
 	/** Design Resources **/
-	protected ResourceCache resources = new ResourceCache();
+	protected ResourceCache resources;
 
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
 
-	public DesignActorVisitor(Design design) {
+	public DesignActorVisitor(Design design, ResourceCache resources) {
 		super(true);
 		this.design = design;
+		this.resources = resources;
 	}
 
 	@Override
@@ -180,7 +181,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		}
 
 		// Visit the rest of the action
-		super.doSwitch(action.getBody().getNodes());
+		super.doSwitch(action.getBody());
 
 		// Get pinWrite Operation(s)
 		for (net.sf.orcc.df.Port port : action.getOutputPattern().getPorts()) {
@@ -204,6 +205,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		// Get Actors Output(s) Port
 		getActorsPorts(actor.getOutputs(), "out", resources);
 
+		// TODO: Get the values of the parameters before visiting
 		for (Var parameter : actor.getParameters()) {
 			doSwitch(parameter);
 		}
@@ -249,12 +251,11 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 			doSwitch(initialize);
 		}
 
-		// Create a task for the scheduler and add it directy to the design
+		// Create a task for the scheduler and add it directly to the design
 		DesignActorSchedulerVisitor schedulerVisitor = new DesignActorSchedulerVisitor(
-				design);
+				design, resources);
 		schedulerVisitor.doSwitch(actor);
 
-		// TODO: Connect the design
 		return null;
 	}
 

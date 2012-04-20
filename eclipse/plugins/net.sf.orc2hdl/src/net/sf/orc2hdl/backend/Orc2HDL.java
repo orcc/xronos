@@ -66,14 +66,12 @@ import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.CustomPrinter;
 import net.sf.orcc.backends.StandardPrinter;
-import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.EmptyNodeRemover;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.InstPhiTransformation;
 import net.sf.orcc.backends.transformations.Multi2MonoToken;
 import net.sf.orcc.backends.transformations.StoreOnceTransformation;
-import net.sf.orcc.backends.transformations.TypeResizer;
 import net.sf.orcc.backends.transformations.UnitImporter;
 import net.sf.orcc.backends.xlim.XlimActorTemplateData;
 import net.sf.orcc.backends.xlim.XlimExprPrinter;
@@ -350,14 +348,14 @@ public class Orc2HDL extends AbstractBackend {
 				new LocalArrayRemoval(), new Multi2MonoToken(),
 				new DivisionSubstitution(), new UnitImporter(),
 				new SSATransformation(),
-				new TypeResizer(false, true, true, true),
+				/* new TypeResizer(false, true, true, true), */
 				new GlobalArrayInitializer(true), new Inliner(true, true),
 				new InstTernaryAdder(), new UnaryListRemoval(),
 				new CustomPeekAdder(), new DeadGlobalElimination(),
 				new DeadCodeElimination(), new XlimDeadVariableRemoval(),
 				new ListFlattener(), new TacTransformation(), new CfgBuilder(),
 				new InstPhiTransformation(), new LiteralIntegersAdder(),
-				new CastAdder(true), new XlimVariableRenamer(),
+				/* new CastAdder(true), */new XlimVariableRenamer(),
 				new EmptyNodeRemover(), new BlockCombine() };
 
 		for (DfSwitch<?> transformation : transformations) {

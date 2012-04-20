@@ -34,13 +34,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.Block;
+import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.DataDependency;
 import net.sf.openforge.lim.Decision;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Entry;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.WhileBody;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.ir.InstAssign;
@@ -63,25 +68,73 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	/** The loop body components **/
 	List<Component> bodyComponents = new ArrayList<Component>();
 
-	public DesignActorSchedulerVisitor(Design design) {
-		super(design);
+	public DesignActorSchedulerVisitor(Design design, ResourceCache resources) {
+		super(design, resources);
 	}
 
 	@Override
 	public Object caseActor(Actor actor) {
+		componentCounter = 0;
 		currentListComponent = new ArrayList<Component>();
 		// Build infinite loop decision
-		Block testBlock = (Block) buildInfiniteLoopDecision();
+		Decision loopDecision = buildInfiniteLoopDecision();
+		// Get the PinStatus
+		getActorPinStatus(actor);
 
 		// Visit only the actions
+		currentListComponent = new ArrayList<Component>();
 		for (Action action : actor.getActions()) {
 			doSwitch(action);
 		}
+
+		// Build loop body
+		Block bodyBlock = buildLoopBody();
+		LoopBody loopBody = new WhileBody(loopDecision, bodyBlock);
+
 		return null;
+	}
+
+	private void getActorPinStatus(Actor actor) {
+		// Input pinStatus
+		for (net.sf.orcc.df.Port port : actor.getInputs()) {
+			if (!port.isNative()) {
+				getPinStatus(port);
+			}
+		}
+		// Output pinStatus
+		for (net.sf.orcc.df.Port port : actor.getOutputs()) {
+			if (!port.isNative()) {
+				getPinStatus(port);
+			}
+		}
+	}
+
+	private void getPinStatus(net.sf.orcc.df.Port port) {
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+		currentComponent = ioHandler.getStatusAccess();
+		setAttributes(
+				"pinStatus_" + port.getName() + "_"
+						+ Integer.toString(componentCounter), currentComponent);
+		// Create a new variable for the pinStatus
+		Type type = IrFactory.eINSTANCE.createTypeBool();
+		Var pinStatusVar = IrFactory.eINSTANCE.createVar(0, type,
+				port.getName() + "_pinStatus", false, 0);
+		for (Bus dataBus : currentComponent.getExit(Exit.DONE).getDataBuses()) {
+			if (dataBus.getValue() == null) {
+				dataBus.setSize(port.getType().getSizeInBits(), port.getType()
+						.isInt() || port.getType().isBool());
+			}
+			portCache.putSource(pinStatusVar, dataBus);
+		}
+		mapOutPorts(pinStatusVar);
+		currentListComponent.add(currentComponent);
+		componentCounter++;
 	}
 
 	@Override
 	public Object caseAction(Action action) {
+		// Test if the action has a pinPeek
+
 		// Visit the scheduler
 		doSwitch(action.getScheduler());
 		return null;
@@ -92,7 +145,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	 * 
 	 * @return a decision component
 	 */
-	private Component buildInfiniteLoopDecision() {
+	private Decision buildInfiniteLoopDecision() {
 		Decision decision = null;
 		// Create an ExprInt of "1" and assign it to the varActorSched
 		Type type = IrFactory.eINSTANCE.createTypeInt(1);
@@ -130,6 +183,11 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		currentModule.specifySearchScope("schedulerLoopDecision");
 		return decision;
 
+	}
+
+	private Block buildLoopBody() {
+		Block bodyBlock = new Block(false);
+		return bodyBlock;
 	}
 
 	private void propagateInputs(Decision decision, Block testBlock) {

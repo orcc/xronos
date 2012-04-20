@@ -47,11 +47,10 @@ public class InstanceToDesign {
 
 	public InstanceToDesign(Instance instance) {
 		this.instance = instance;
-		this.design = new Design();
+		design = new Design();
 	}
 
 	public Design buildDesign() {
-
 		// Get Instance name
 		String designName = instance.getName();
 		design.setIDLogical(designName);
@@ -59,7 +58,9 @@ public class InstanceToDesign {
 		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
 				design.getSearchLabel(), designName);
 
-		DesignActorVisitor designVisitor = new DesignActorVisitor(design);
+		ResourceCache resources = new ResourceCache();
+		DesignActorVisitor designVisitor = new DesignActorVisitor(design,
+				resources);
 		designVisitor.doSwitch(instance.getActor());
 
 		return design;
