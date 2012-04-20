@@ -71,6 +71,7 @@ import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.EmptyNodeRemover;
 import net.sf.orcc.backends.transformations.Inliner;
 import net.sf.orcc.backends.transformations.InstPhiTransformation;
+import net.sf.orcc.backends.transformations.Multi2MonoToken;
 import net.sf.orcc.backends.transformations.StoreOnceTransformation;
 import net.sf.orcc.backends.transformations.TypeResizer;
 import net.sf.orcc.backends.transformations.UnitImporter;
@@ -345,9 +346,8 @@ public class Orc2HDL extends AbstractBackend {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
 
-		DfSwitch<?>[] transformations = {
-				new StoreOnceTransformation(),
-				new LocalArrayRemoval(), // new Multi2MonoToken(),
+		DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
+				new LocalArrayRemoval(), new Multi2MonoToken(),
 				new DivisionSubstitution(), new UnitImporter(),
 				new SSATransformation(),
 				new TypeResizer(false, true, true, true),
