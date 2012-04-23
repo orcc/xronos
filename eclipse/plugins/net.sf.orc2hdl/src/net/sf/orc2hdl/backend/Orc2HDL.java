@@ -93,6 +93,7 @@ import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transformations.Instantiator;
 import net.sf.orcc.df.transformations.NetworkFlattener;
 import net.sf.orcc.df.util.DfSwitch;
+import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.transformations.BlockCombine;
 import net.sf.orcc.ir.transformations.CfgBuilder;
 import net.sf.orcc.ir.transformations.DeadCodeElimination;
@@ -347,7 +348,7 @@ public class Orc2HDL extends AbstractBackend {
 		DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
 				new LocalArrayRemoval(), new Multi2MonoToken(),
 				new DivisionSubstitution(), new UnitImporter(),
-				new SSATransformation(),
+				new DfVisitor<Void>(new SSATransformation()),
 				/* new TypeResizer(false, true, true, true), */
 				new GlobalArrayInitializer(true), new Inliner(true, true),
 				new InstTernaryAdder(), new UnaryListRemoval(),
