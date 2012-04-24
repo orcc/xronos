@@ -94,6 +94,7 @@ import net.sf.orcc.df.transformations.Instantiator;
 import net.sf.orcc.df.transformations.NetworkFlattener;
 import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.transformations.BlockCombine;
 import net.sf.orcc.ir.transformations.CfgBuilder;
@@ -355,13 +356,16 @@ public class Orc2HDL extends AbstractBackend {
 				new GlobalArrayInitializer(true), new Inliner(true, true),
 				new InstTernaryAdder(), new UnaryListRemoval(),
 				new CustomPeekAdder(), new DeadGlobalElimination(),
-				new DeadCodeElimination(), new XlimDeadVariableRemoval(),
+				new DfVisitor<Object>(new DeadCodeElimination()),
+				new DfVisitor<Object>(new XlimDeadVariableRemoval()),
 				new DfVisitor<Void>(new ListFlattener()),
-				new TacTransformation(), new CfgBuilder(),
+				new DfVisitor<Expression>(new TacTransformation()),
+				new DfVisitor<CfgNode>(new CfgBuilder()),
 				new DfVisitor<Void>(new InstPhiTransformation()),
 				new DfVisitor<Expression>(new LiteralIntegersAdder()),
 				/* new CastAdder(true), */new XlimVariableRenamer(),
-				new DfVisitor<Void>(new EmptyBlockRemover()), new BlockCombine() };
+				new DfVisitor<Void>(new EmptyBlockRemover()),
+				new DfVisitor<Object>(new BlockCombine()) };
 
 		for (DfSwitch<?> transformation : transformations) {
 			transformation.doSwitch(actor);
