@@ -24,8 +24,7 @@ Export-Package: net.sf.openforge.app;
  net.sf.openforge.util.io,
  net.sf.openforge.util.naming,
  net.sf.openforge.util.xml
-Bundle-ClassPath: source/xslt/,
- .,
+Bundle-ClassPath: .,
  lib/saxon8-dom.jar,
  lib/saxon8.jar
 Bundle-Vendor: EPFL

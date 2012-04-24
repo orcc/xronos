@@ -77,28 +77,29 @@ public class XLIMBuilder extends org.xml.sax.helpers.DefaultHandler {
 		return Util.applyTransforms(n, xlimTransforms);
 	}
 
-	private SLIMBuilder slimBuilder;
+	private final SLIMBuilder slimBuilder;
 
-	private String[] xlimTransformPaths = {
-			"net/sf/openforge/transforms/xlim/XLIMLoopFix.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMFixSelector.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMTagify.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMMakePortNames.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMSizeAndType.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMAddVarReads.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMInsertCasts.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMAddVarReadScope.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMBuildControl.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMRoutePorts.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMFixNames.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMMakeDeps.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMProcessPHI.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMFixNames.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMCreateExits.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMTagify.xslt",
-			"net/sf/openforge/transforms/xlim/XLIMAddControlDeps.xslt" };
+	private final String[] xlimTransformPaths = {
+			"net/sf/openforge/frontend/xlim/transforms/XLIMLoopFix.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMFixSelector.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMTagify.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMMakePortNames.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMSizeAndType.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMAddVarReads.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMInsertCasts.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMAddVarReadScope.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMBuildControl.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMRoutePorts.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMFixNames.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMMakeDeps.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMProcessPHI.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMFixNames.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMCreateExits.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMTagify.xslt",
+			"net/sf/openforge/frontend/xlim/transforms/XLIMAddControlDeps.xslt" };
 
-	private Transformer[] xlimTransforms = Util.getTransformersAsResources(
-			xlimTransformPaths, Util.getSaxonImplementation(),
-			new ClassLoaderStreamLocator(XLIMBuilder.class.getClassLoader()));
+	private final Transformer[] xlimTransforms = Util
+			.getTransformersAsResources(xlimTransformPaths, Util
+					.getSaxonImplementation(), new ClassLoaderStreamLocator(
+					XLIMBuilder.class.getClassLoader()));
 }
