@@ -237,7 +237,7 @@ public class XOperationFactory extends XFactory {
 					CastOp castOp = new CastOp(getPortSize(outBus),
 							isSignedPort(outBus));
 					Block block = buildAddressedBlock(read, targetLocation,
-							Collections.singletonList(castOp));
+							Collections.singletonList((Component) castOp));
 					Bus result = block.getExit(Exit.DONE).makeDataBus();
 
 					// Add a dependency for the result
@@ -302,7 +302,7 @@ public class XOperationFactory extends XFactory {
 						addrPolicy); // addressing policy
 
 				Block block = buildAddressedBlock(heapWrite, targetLocation,
-						Collections.EMPTY_LIST);
+						Collections.<Component> emptyList());
 				Port data = block.makeDataPort();
 
 				// Add dependency for the data value
@@ -454,7 +454,7 @@ public class XOperationFactory extends XFactory {
 	}
 
 	private Block buildAddressedBlock(OffsetMemoryAccess memAccess,
-			Location targetLocation, List otherComps) {
+			Location targetLocation, List<Component> otherComps) {
 		final LocationConstant locationConst = new LocationConstant(
 				targetLocation, SLIMConstants.MAX_ADDR_WIDTH, targetLocation
 						.getAbsoluteBase().getLogicalMemory()
@@ -464,7 +464,7 @@ public class XOperationFactory extends XFactory {
 
 		final Block block = new Block(false);
 		final Exit done = block.makeExit(0, Exit.DONE);
-		final List comps = new ArrayList();
+		final List<Component> comps = new ArrayList<Component>();
 		comps.add(locationConst);
 		comps.add(cast);
 		comps.add(adder);
