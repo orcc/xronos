@@ -353,7 +353,8 @@ public class Orc2HDL extends AbstractBackend {
 				new UnitImporter(),
 				new DfVisitor<Void>(new SSATransformation()),
 				/* new TypeResizer(false, true, true, true), */
-				new GlobalArrayInitializer(true), new Inliner(true, true),
+				new GlobalArrayInitializer(true),
+				new DfVisitor<Void>(new Inliner(true, true)),
 				new DfVisitor<Void>(new InstTernaryAdder()),
 				new UnaryListRemoval(), new CustomPeekAdder(),
 				new DeadGlobalElimination(),
