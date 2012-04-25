@@ -32,7 +32,9 @@ package net.sf.orc2hdl.design;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -92,6 +94,7 @@ import net.sf.openforge.util.naming.ID;
 import net.sf.openforge.util.naming.IDSourceInfo;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.Instance;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.ExprBinary;
@@ -122,16 +125,16 @@ import org.eclipse.emf.common.util.EList;
 public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 	/** List which associates each action with its components **/
-	private Map<Action, List<Component>> actionComponents = new HashMap<Action, List<Component>>();
+	private final Map<Action, List<Component>> actionComponents = new HashMap<Action, List<Component>>();
 
 	/** Action component Counter **/
 	protected Integer componentCounter;
 
 	/** Dependency between Components and Vars **/
-	protected Map<Component, Var> componentDependency = new HashMap<Component, Var>();
+	protected Map<Component, List<Var>> componentDependency = new HashMap<Component, List<Var>>();
 
 	/** Current visited action **/
-	private Action currentAction = null;
+	protected Action currentAction = null;
 
 	/** Current Component **/
 	protected Component currentComponent = null;
@@ -157,8 +160,13 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
 
-	public DesignActorVisitor(Design design, ResourceCache resources) {
+	/** Instance **/
+	Instance instance;
+
+	public DesignActorVisitor(Instance instance, Design design,
+			ResourceCache resources) {
 		super(true);
+		this.instance = instance;
 		this.design = design;
 		this.resources = resources;
 	}
@@ -253,7 +261,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 		// Create a task for the scheduler and add it directly to the design
 		DesignActorSchedulerVisitor schedulerVisitor = new DesignActorSchedulerVisitor(
-				design, resources);
+				instance, design, resources);
 		schedulerVisitor.doSwitch(actor);
 
 		return null;
@@ -280,9 +288,9 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		} else if (expr.getOp() == OpBinary.LE) {
 			currentComponent = new LessThanEqualToOp();
 		} else if (expr.getOp() == OpBinary.LOGIC_AND) {
-			currentComponent = new And(expr.getType().getSizeInBits());
+			currentComponent = new And(2);
 		} else if (expr.getOp() == OpBinary.LOGIC_OR) {
-			currentComponent = new Or(expr.getType().getSizeInBits());
+			currentComponent = new Or(2);
 		} else if (expr.getOp() == OpBinary.LT) {
 			currentComponent = new LessThanOp();
 		} else if (expr.getOp() == OpBinary.MINUS) {
@@ -302,6 +310,13 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		} else if (expr.getOp() == OpBinary.TIMES) {
 			currentComponent = new MultiplyOp(expr.getType().getSizeInBits());
 		}
+		// Three address code obligated, a binary expression
+		// can not contain another binary expression
+		// Get variables for E1 and E2
+		Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
+		Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
+		mapInPorts(new ArrayList<Var>(Arrays.asList(e1, e2)));
+		currentListComponent.add(currentComponent);
 		return null;
 	}
 
@@ -337,7 +352,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		// TODO: See if NoOP can have more than one inputs after all actors
 		// Transformations
 		currentComponent = new NoOp(1, Exit.DONE);
-		mapInPorts(var.getUse().getVariable());
+		mapInPorts(new ArrayList<Var>(Arrays.asList(var.getUse().getVariable())));
 		return null;
 	}
 
@@ -615,20 +630,24 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		Var pinWriteVar = currentAction.getOutputPattern().getPortToVarMap()
 				.get(port);
 
-		mapInPorts(pinWriteVar);
+		mapInPorts(new ArrayList<Var>(Arrays.asList(pinWriteVar)));
 		// Add done dependency for this operation to the current module exit
 		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
 		portCache.putDoneBus(currentComponent, doneBus);
 		componentCounter++;
 	}
 
-	protected void mapInPorts(Var var) {
-		Port dataPort = currentComponent.getDataPorts().get(0);
-		dataPort.setSize(var.getType().getSizeInBits(), var.getType().isInt()
-				|| var.getType().isBool());
-		portCache.putTarget(var, dataPort);
+	protected void mapInPorts(List<Var> inVars) {
+		Iterator<Port> portIter = currentComponent.getDataPorts().iterator();
+		for (Var var : inVars) {
+			Port dataPort = portIter.next();
+			dataPort.setSize(var.getType().getSizeInBits(), var.getType()
+					.isInt() || var.getType().isBool());
+			portCache.putTarget(var, dataPort);
+		}
+
 		// Put Input dependency
-		componentDependency.put(currentComponent, var);
+		componentDependency.put(currentComponent, inVars);
 	}
 
 	protected void mapOutPorts(Var var) {
@@ -646,14 +665,18 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 	protected void operationDependencies() {
 		// Build Data Dependencies
 		for (Component component : currentListComponent) {
-			Var depVar = componentDependency.get(component);
-			if (depVar != null) {
-				Bus sourceBus = portCache.getSource(depVar);
-				Port targetPort = portCache.getTarget(depVar);
-				List<Entry> entries = targetPort.getOwner().getEntries();
-				Entry entry = entries.get(0);
-				Dependency dep = new DataDependency(sourceBus);
-				entry.addDependency(targetPort, dep);
+			if (componentDependency.get(component) != null) {
+				for (Var depVar : componentDependency.get(component)) {
+					if (depVar != null) {
+						Bus sourceBus = portCache.getSource(depVar);
+						Port targetPort = portCache.getTarget(depVar);
+						List<Entry> entries = targetPort.getOwner()
+								.getEntries();
+						Entry entry = entries.get(0);
+						Dependency dep = new DataDependency(sourceBus);
+						entry.addDependency(targetPort, dep);
+					}
+				}
 			}
 		}
 		// Build control Dependencies

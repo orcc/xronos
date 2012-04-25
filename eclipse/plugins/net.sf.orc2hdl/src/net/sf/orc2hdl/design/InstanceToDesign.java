@@ -59,8 +59,8 @@ public class InstanceToDesign {
 				design.getSearchLabel(), designName);
 
 		ResourceCache resources = new ResourceCache();
-		DesignActorVisitor designVisitor = new DesignActorVisitor(design,
-				resources);
+		DesignActorVisitor designVisitor = new DesignActorVisitor(instance,
+				design, resources);
 		designVisitor.doSwitch(instance.getActor());
 
 		return design;
