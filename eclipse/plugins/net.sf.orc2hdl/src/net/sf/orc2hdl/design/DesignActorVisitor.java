@@ -407,7 +407,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 		Entry entry = comp.makeEntry(drivingExit);
 		// Even though most components do not use the clock, reset and
-		// go ports we set up the dependencies for consistancy.
+		// go ports we set up the dependencies for consistency.
 		entry.addDependency(comp.getClockPort(), new ClockDependency(clockBus));
 		entry.addDependency(comp.getResetPort(), new ResetDependency(resetBus));
 		entry.addDependency(comp.getGoPort(), new ControlDependency(goBus));
