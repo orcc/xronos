@@ -49,6 +49,7 @@ import net.sf.openforge.lim.ClockDependency;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.ControlDependency;
 import net.sf.openforge.lim.DataDependency;
+import net.sf.openforge.lim.Decision;
 import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Entry;
@@ -105,6 +106,7 @@ import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.OpUnary;
 import net.sf.orcc.ir.Procedure;
@@ -126,6 +128,9 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 	/** List which associates each action with its components **/
 	private final Map<Action, List<Component>> actionComponents = new HashMap<Action, List<Component>>();
+
+	/** Map of action associated to its Task **/
+	private final Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
 
 	/** Action component Counter **/
 	protected Integer componentCounter;
@@ -171,6 +176,60 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		this.resources = resources;
 	}
 
+	protected Decision buildDecision(Var inputDecision, String resultName) {
+		Decision decision = null;
+		// Create an ExprInt of "1" and assign it to the varActorSched
+		Type type = IrFactory.eINSTANCE.createTypeBool();
+		Var decisionVar = IrFactory.eINSTANCE.createVar(0, type, resultName,
+				false, 0);
+		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(decisionVar,
+				IrFactory.eINSTANCE.createExprVar(inputDecision));
+		// Visit assignSched
+		doSwitch(assign);
+
+		currentModule = new Block(false);
+		// Make an Exit with zero data buses at the output
+		currentExit = currentModule.makeExit(0);
+		// Add all components to the module
+		populateModule(currentModule, currentListComponent);
+		// Build Dependencies
+		operationDependencies(currentListComponent, componentDependency,
+				currentExit);
+
+		// Create the decision
+		decision = new Decision((Block) currentModule, currentComponent);
+		// Any data inputs to the decision need to be propagated from
+		// the block to the decision. There should be no output ports
+		// to propagate. They are inferred true/false.
+		propagateInputs(decision, (Block) currentModule);
+
+		// Build option scope
+		currentModule.specifySearchScope("schedulerLoopDecision");
+		return decision;
+
+	}
+
+	protected Component buildModule(List<Component> components,
+			List<Var> inVars, List<Var> outVars, String searchScope) {
+		// Create an Empty Block
+		Module module = new Block(false);
+
+		// Add Input and Output Port for the Module
+		createModuleInterface(module, inVars, outVars);
+
+		// Put all the components to the Module
+		populateModule(module, components);
+
+		// Set all the dependencies
+		operationDependencies(currentListComponent, componentDependency,
+				module.getExit(Exit.DONE));
+
+		// Give the name of the searchScope
+		module.specifySearchScope(searchScope);
+
+		return module;
+	}
+
 	@Override
 	public Object caseAction(Action action) {
 		currentAction = action;
@@ -198,6 +257,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		}
 		// Create the task
 		Task task = createTask(currentAction.getName());
+		actorsTasks.put(action, task);
 		// Add it to the design
 		design.addTask(task);
 
@@ -261,7 +321,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 		// Create a task for the scheduler and add it directly to the design
 		DesignActorSchedulerVisitor schedulerVisitor = new DesignActorSchedulerVisitor(
-				instance, design, resources);
+				instance, design, actorsTasks, resources);
 		schedulerVisitor.doSwitch(actor);
 
 		return null;
@@ -434,13 +494,29 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		return call;
 	}
 
+	protected void createModuleInterface(Module module, List<Var> inVars,
+			List<Var> outVars) {
+		if (inVars != null) {
+			for (Var var : inVars) {
+				Port port = module.makeDataPort();
+				portCache.putTarget(var, port);
+				portCache.putSource(var, port.getPeer());
+			}
+		}
+		if (module.getExit(Exit.DONE) == null) {
+			module.getExit(Exit.DONE);
+		}
+		// TODO: outVars for PHI
+	}
+
 	protected Task createTask(String name) {
 		Task task = null;
 		// Add all components to the module
 		populateModule(currentModule, currentListComponent);
 
 		// Build Dependencies
-		operationDependencies();
+		operationDependencies(currentListComponent, componentDependency,
+				currentExit);
 		// Build option scope
 		currentModule.specifySearchScope(name);
 
@@ -662,11 +738,12 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		portCache.putDoneBus(currentComponent, doneBus);
 	}
 
-	protected void operationDependencies() {
+	protected void operationDependencies(List<Component> components,
+			Map<Component, List<Var>> dependecies, Exit exit) {
 		// Build Data Dependencies
-		for (Component component : currentListComponent) {
-			if (componentDependency.get(component) != null) {
-				for (Var depVar : componentDependency.get(component)) {
+		for (Component component : components) {
+			if (dependecies.get(component) != null) {
+				for (Var depVar : dependecies.get(component)) {
 					if (depVar != null) {
 						Bus sourceBus = portCache.getSource(depVar);
 						Port targetPort = portCache.getTarget(depVar);
@@ -680,14 +757,14 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 			}
 		}
 		// Build control Dependencies
-		for (Component component : currentListComponent) {
+		for (Component component : components) {
 			Bus busDone = portCache.getDoneBus(component);
 			if (busDone != null) {
-				Port actionDonePort = currentExit.getDoneBus().getPeer();
-				List<Entry> entries = actionDonePort.getOwner().getEntries();
+				Port donePort = exit.getDoneBus().getPeer();
+				List<Entry> entries = donePort.getOwner().getEntries();
 				Entry entry = entries.get(0);
 				Dependency dep = new ControlDependency(busDone);
-				entry.addDependency(actionDonePort, dep);
+				entry.addDependency(donePort, dep);
 			}
 		}
 
@@ -725,6 +802,16 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		// Ensure that the outbufs of the module have an entry
 		for (OutBuf outbuf : module.getOutBufs()) {
 			componentAddEntry(outbuf, drivingExit, clockBus, resetBus, goBus);
+		}
+	}
+
+	protected void propagateInputs(Decision decision, Block testBlock) {
+		for (Port port : testBlock.getDataPorts()) {
+			Port decisionPort = decision.makeDataPort();
+			Entry entry = port.getOwner().getEntries().get(0);
+			entry.addDependency(port,
+					new DataDependency(decisionPort.getPeer()));
+			portCache.replaceTarget(port, decisionPort);
 		}
 	}
 

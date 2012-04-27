@@ -31,6 +31,7 @@ package net.sf.orc2hdl.design;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -40,15 +41,15 @@ import net.sf.dftools.util.util.EcoreHelper;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Block;
+import net.sf.openforge.lim.Branch;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
-import net.sf.openforge.lim.DataDependency;
 import net.sf.openforge.lim.Decision;
 import net.sf.openforge.lim.Design;
-import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.LoopBody;
-import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Task;
+import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.WhileBody;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
@@ -101,9 +102,48 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	/** All components of the scheduler **/
 	private final List<Component> schedulerComponents = new ArrayList<Component>();
 
+	/** Map of action associated to its Task **/
+	private Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
+
 	public DesignActorSchedulerVisitor(Instance instance, Design design,
-			ResourceCache resources) {
+			Map<Action, Task> actorsTasks, ResourceCache resources) {
 		super(instance, design, resources);
+		this.actorsTasks = actorsTasks;
+	}
+
+	private Component createActionTest(List<Action> actions) {
+		List<Action> newActionList = actions;
+		Branch branch = null;
+		for (Iterator<Action> it = actions.iterator(); it.hasNext();) {
+			Action action = it.next();
+			if (actionSchedulerInDecisions.containsKey(action)) {
+				Var decisionVar = actionSchedulerInDecisions.get(action);
+				String varName = "decision_isSchedulable_" + action.getName();
+				Decision branchDecision = buildDecision(decisionVar, varName);
+
+				// Create the "then" body
+				Task actionToBeExecuted = actorsTasks.get(action);
+				Var outDecision = actionSchedulerOutDecisions.get(action);
+				Block thenBlock = (Block) buildTaskCall(actionToBeExecuted,
+						outDecision);
+
+				// Create the "else" body
+				Block elseBlock = new Block(false);
+				if (it.hasNext()) {
+					newActionList.remove(action);
+					createActionTest(newActionList);
+				}
+
+				// Create the branch
+				if (it.hasNext()) {
+					branch = new Branch(branchDecision, thenBlock, elseBlock);
+				} else {
+					branch = new Branch(branchDecision, thenBlock);
+				}
+
+			}
+		}
+		return branch;
 	}
 
 	/**
@@ -131,44 +171,16 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		doSwitch(assignLoop);
 
 		currentModule = new Block(false);
+
 		// Make an Exit with zero data buses at the output
 		currentExit = currentModule.makeExit(0);
+
 		// Add all components to the module
 		populateModule(currentModule, currentListComponent);
+
 		// Build Dependencies
-		operationDependencies();
-
-		// Create the decision
-		decision = new Decision((Block) currentModule, currentComponent);
-		// Any data inputs to the decision need to be propagated from
-		// the block to the decision. There should be no output ports
-		// to propagate. They are inferred true/false.
-		propagateInputs(decision, (Block) currentModule);
-
-		// Build option scope
-		currentModule.specifySearchScope("schedulerLoopDecision");
-		return decision;
-
-	}
-
-	private Decision buildDecision(Var inputDecision, String resultName) {
-		Decision decision = null;
-		// Create an ExprInt of "1" and assign it to the varActorSched
-		Type type = IrFactory.eINSTANCE.createTypeBool();
-		Var decisionVar = IrFactory.eINSTANCE.createVar(0, type, resultName,
-				false, 0);
-		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(decisionVar,
-				IrFactory.eINSTANCE.createExprVar(inputDecision));
-		// Visit assignSched
-		doSwitch(assign);
-
-		currentModule = new Block(false);
-		// Make an Exit with zero data buses at the output
-		currentExit = currentModule.makeExit(0);
-		// Add all components to the module
-		populateModule(currentModule, currentListComponent);
-		// Build Dependencies
-		operationDependencies();
+		operationDependencies(currentListComponent, componentDependency,
+				currentExit);
 
 		// Create the decision
 		decision = new Decision((Block) currentModule, currentComponent);
@@ -188,16 +200,25 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		return bodyBlock;
 	}
 
-	private void actionTest(List<Action> actions) {
-		List<Action> newActionList = new ArrayList<Action>();
-		for (Iterator<Action> it = actions.iterator(); it.hasNext();) {
-			Action action = (Action) it;
-			if (actionSchedulerInDecisions.containsKey(action)) {
-				Var decisionVar = actionSchedulerInDecisions.get(action);
-				String varName = "decision_isSchedulable_" + action.getName();
-				Decision ifDecision = buildDecision(decisionVar, varName);
-			}
-		}
+	private Component buildTaskCall(Task task, Var outDecision) {
+		Branch branch = null;
+		String varName = "decision_outputPattern_" + task.showIDLogical();
+		Decision branchDecision = buildDecision(outDecision, varName);
+
+		// Create the the TaskCall and add the Task
+		TaskCall taskCall = new TaskCall();
+		taskCall.setTarget(task);
+		// mapOut Done Port
+		Bus doneBus = taskCall.getExit(Exit.DONE).getDoneBus();
+		portCache.putDoneBus(taskCall, doneBus);
+
+		// Build then Block
+		Block thenBlock = (Block) buildModule(
+				Arrays.asList((Component) taskCall),
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				"block");
+		branch = new Branch(branchDecision, thenBlock);
+		return branch;
 	}
 
 	@Override
@@ -226,76 +247,6 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		patternTest(action.getOutputPattern(), "out");
 		outputPatternComponents.put(action, currentListComponent);
 
-		return null;
-	}
-
-	private void patternTest(Pattern pattern, String direction) {
-		if (pattern != null) {
-			List<Var> inputPattersVars = new ArrayList<Var>();
-			for (net.sf.orcc.df.Port port : pattern.getPorts()) {
-				if (pinStatusPort.containsKey(port)) {
-					Var pinStatus = pinStatusPort.get(port);
-					Type type = IrFactory.eINSTANCE.createTypeBool();
-					Var patternPort = IrFactory.eINSTANCE.createVar(
-							0,
-							type,
-							"direction" + "putPattern_"
-									+ currentAction.getName() + "_"
-									+ port.getName(), false, 0);
-					InstAssign noop = IrFactory.eINSTANCE.createInstAssign(
-							patternPort,
-							IrFactory.eINSTANCE.createExprVar(pinStatus));
-					doSwitch(noop);
-					inputPattersVars.add(patternPort);
-				}
-				// Create the Go Decision
-				// Put the return Var to the inputPattern if "in"
-				if (direction.equals("in")) {
-					inputPattersVars.add(actionSchedulerReturnVar
-							.get(currentAction));
-				}
-				currentComponent = new And(inputPattersVars.size());
-				mapInPorts(inputPattersVars);
-				// Create Decision Var
-				Type type = IrFactory.eINSTANCE.createTypeBool();
-				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
-						"isSchedulable_" + currentAction.getName() + "_"
-								+ direction + "_decision", false, 0);
-				mapOutPorts(decisionVar);
-				// Save the decision, used on transitions
-				if (direction.equals("in")) {
-					actionSchedulerInDecisions.put(currentAction, decisionVar);
-				} else {
-					actionSchedulerOutDecisions.put(currentAction, decisionVar);
-				}
-				currentListComponent.add(currentComponent);
-			}
-
-		} else {
-			// Give True to the Decision
-			Type type = IrFactory.eINSTANCE.createTypeBool();
-			Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
-					"isSchedulable_" + currentAction.getName() + "_decision",
-					false, 0);
-			InstAssign noop = IrFactory.eINSTANCE.createInstAssign(decisionVar,
-					IrFactory.eINSTANCE.createExprBool(true));
-			// Visit assignSched
-			doSwitch(noop);
-			if (direction.equals("in")) {
-				actionSchedulerInDecisions.put(currentAction, decisionVar);
-			} else {
-				actionSchedulerOutDecisions.put(currentAction, decisionVar);
-			}
-		}
-	}
-
-	@Override
-	public Object caseInstReturn(InstReturn returnInstr) {
-		if (returnInstr.getValue().isExprVar()) {
-			Var returnVar = ((ExprVar) returnInstr.getValue()).getUse()
-					.getVariable();
-			actionSchedulerReturnVar.put(currentAction, returnVar);
-		}
 		return null;
 	}
 
@@ -333,6 +284,20 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		// Add outputPatternTest components
 		for (Action action : actor.getActions()) {
 			schedulerComponents.addAll(outputPatternComponents.get(action));
+		}
+
+		// Create TestAction
+		createActionTest(actor.getActions());
+
+		return null;
+	}
+
+	@Override
+	public Object caseInstReturn(InstReturn returnInstr) {
+		if (returnInstr.getValue().isExprVar()) {
+			Var returnVar = ((ExprVar) returnInstr.getValue()).getUse()
+					.getVariable();
+			actionSchedulerReturnVar.put(currentAction, returnVar);
 		}
 		return null;
 	}
@@ -421,13 +386,63 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		componentCounter++;
 	}
 
-	private void propagateInputs(Decision decision, Block testBlock) {
-		for (Port port : testBlock.getDataPorts()) {
-			Port decisionPort = decision.makeDataPort();
-			Entry entry = port.getOwner().getEntries().get(0);
-			entry.addDependency(port,
-					new DataDependency(decisionPort.getPeer()));
-			portCache.replaceTarget(port, decisionPort);
+	private void patternTest(Pattern pattern, String direction) {
+		if (pattern != null) {
+			List<Var> inputPattersVars = new ArrayList<Var>();
+			for (net.sf.orcc.df.Port port : pattern.getPorts()) {
+				if (pinStatusPort.containsKey(port)) {
+					Var pinStatus = pinStatusPort.get(port);
+					Type type = IrFactory.eINSTANCE.createTypeBool();
+					Var patternPort = IrFactory.eINSTANCE.createVar(
+							0,
+							type,
+							"direction" + "putPattern_"
+									+ currentAction.getName() + "_"
+									+ port.getName(), false, 0);
+					InstAssign noop = IrFactory.eINSTANCE.createInstAssign(
+							patternPort,
+							IrFactory.eINSTANCE.createExprVar(pinStatus));
+					doSwitch(noop);
+					inputPattersVars.add(patternPort);
+				}
+				// Create the Go Decision
+				// Put the return Var to the inputPattern if "in"
+				if (direction.equals("in")) {
+					inputPattersVars.add(actionSchedulerReturnVar
+							.get(currentAction));
+				}
+				currentComponent = new And(inputPattersVars.size());
+				mapInPorts(inputPattersVars);
+				// Create Decision Var
+				Type type = IrFactory.eINSTANCE.createTypeBool();
+				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
+						"isSchedulable_" + currentAction.getName() + "_"
+								+ direction + "_decision", false, 0);
+				mapOutPorts(decisionVar);
+				// Save the decision, used on transitions
+				if (direction.equals("in")) {
+					actionSchedulerInDecisions.put(currentAction, decisionVar);
+				} else {
+					actionSchedulerOutDecisions.put(currentAction, decisionVar);
+				}
+				currentListComponent.add(currentComponent);
+			}
+
+		} else {
+			// Give True to the Decision
+			Type type = IrFactory.eINSTANCE.createTypeBool();
+			Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
+					"isSchedulable_" + currentAction.getName() + "_decision",
+					false, 0);
+			InstAssign noop = IrFactory.eINSTANCE.createInstAssign(decisionVar,
+					IrFactory.eINSTANCE.createExprBool(true));
+			// Visit assignSched
+			doSwitch(noop);
+			if (direction.equals("in")) {
+				actionSchedulerInDecisions.put(currentAction, decisionVar);
+			} else {
+				actionSchedulerOutDecisions.put(currentAction, decisionVar);
+			}
 		}
 	}
 
