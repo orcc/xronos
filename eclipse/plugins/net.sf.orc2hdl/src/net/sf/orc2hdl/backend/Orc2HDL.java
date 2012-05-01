@@ -346,35 +346,53 @@ public class Orc2HDL extends AbstractBackend {
 	protected void doTransformActor(Actor actor) throws OrccException {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
+		if (instanceToDesign) {
+			DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
+					new DfVisitor<Void>(new SSATransformation()),
+					new GlobalArrayInitializer(true), new UnaryListRemoval(),
+					new DfVisitor<Expression>(new TacTransformation()),
+					new DfVisitor<CfgNode>(new CfgBuilder()),
+					new DfVisitor<Expression>(new LiteralIntegersAdder()) };
 
-		DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
-				new DfVisitor<Void>(new LocalArrayRemoval()),
-				new Multi2MonoToken(), new DivisionSubstitution(),
-				new UnitImporter(),
-				new DfVisitor<Void>(new SSATransformation()),
-				/* new TypeResizer(false, true, true, true), */
-				new GlobalArrayInitializer(true),
-				new DfVisitor<Void>(new Inliner(true, true)),
-				new DfVisitor<Void>(new InstTernaryAdder()),
-				new UnaryListRemoval(), new CustomPeekAdder(),
-				new DeadGlobalElimination(),
-				new DfVisitor<Void>(new DeadCodeElimination()),
-				new DfVisitor<Void>(new XlimDeadVariableRemoval()),
-				new DfVisitor<Void>(new ListFlattener()),
-				new DfVisitor<Expression>(new TacTransformation()),
-				new DfVisitor<CfgNode>(new CfgBuilder()),
-				new DfVisitor<Void>(new InstPhiTransformation()),
-				new DfVisitor<Expression>(new LiteralIntegersAdder()),
-				/* new CastAdder(true), */new XlimVariableRenamer(),
-				new DfVisitor<Void>(new EmptyBlockRemover()),
-				new DfVisitor<Void>(new BlockCombine()) };
+			for (DfSwitch<?> transformation : transformations) {
+				transformation.doSwitch(actor);
+				ResourceSet set = new ResourceSetImpl();
+				if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
+					System.out.println("oops " + transformation + " "
+							+ actor.getName());
+				}
+			}
 
-		for (DfSwitch<?> transformation : transformations) {
-			transformation.doSwitch(actor);
-			ResourceSet set = new ResourceSetImpl();
-			if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
-				System.out.println("oops " + transformation + " "
-						+ actor.getName());
+		} else {
+			DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
+					new DfVisitor<Void>(new LocalArrayRemoval()),
+					new Multi2MonoToken(), new DivisionSubstitution(),
+					new UnitImporter(),
+					new DfVisitor<Void>(new SSATransformation()),
+					/* new TypeResizer(false, true, true, true), */
+					new GlobalArrayInitializer(true),
+					new DfVisitor<Void>(new Inliner(true, true)),
+					new DfVisitor<Void>(new InstTernaryAdder()),
+					new UnaryListRemoval(), new CustomPeekAdder(),
+					new DeadGlobalElimination(),
+					new DfVisitor<Void>(new DeadCodeElimination()),
+					new DfVisitor<Void>(new XlimDeadVariableRemoval()),
+					new DfVisitor<Void>(new ListFlattener()),
+					new DfVisitor<Expression>(new TacTransformation()),
+					new DfVisitor<CfgNode>(new CfgBuilder()),
+					new DfVisitor<Void>(new InstPhiTransformation()),
+					new DfVisitor<Expression>(new LiteralIntegersAdder()),
+					/* new CastAdder(true), */new XlimVariableRenamer(),
+					new DfVisitor<Void>(new EmptyBlockRemover()),
+					new DfVisitor<Void>(new BlockCombine()) };
+
+			for (DfSwitch<?> transformation : transformations) {
+				transformation.doSwitch(actor);
+				ResourceSet set = new ResourceSetImpl();
+				if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
+					System.out.println("oops " + transformation + " "
+							+ actor.getName());
+				}
 			}
 		}
 
@@ -468,7 +486,7 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected boolean printInstance(Instance instance) {
 		StandardPrinter printer = new StandardPrinter(
-				"net/sf/orcc/backends/xlim/hw/Actor.stg", !debugMode);
+				"net/sf/orcc/backends/xlim/hw/Actor.stg");
 
 		printer.getOptions().put("fpgaType", fpgaName);
 

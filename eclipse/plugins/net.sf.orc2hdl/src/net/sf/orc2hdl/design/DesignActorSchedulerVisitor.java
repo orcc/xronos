@@ -43,11 +43,13 @@ import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Branch;
 import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Decision;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.LoopBody;
+import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.WhileBody;
@@ -128,15 +130,14 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 						outDecision);
 
 				// Create the "else" body
-				Block elseBlock = new Block(false);
 				if (it.hasNext()) {
 					newActionList.remove(action);
-					createActionTest(newActionList);
-				}
-
-				// Create the branch
-				if (it.hasNext()) {
-					branch = new Branch(branchDecision, thenBlock, elseBlock);
+					Component elseBlock = createActionTest(newActionList);
+					Module elseModule = (Block) buildModule(
+							Arrays.asList(elseBlock),
+							Collections.<Var> emptyList(),
+							Collections.<Var> emptyList(), "block", null);
+					branch = new Branch(branchDecision, thenBlock, elseModule);
 				} else {
 					branch = new Branch(branchDecision, thenBlock);
 				}
@@ -216,9 +217,12 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		Block thenBlock = (Block) buildModule(
 				Arrays.asList((Component) taskCall),
 				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
-				"block");
+				"block", null);
 		branch = new Branch(branchDecision, thenBlock);
-		return branch;
+		Component module = buildModule(Arrays.asList((Component) branch),
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				"block", null);
+		return module;
 	}
 
 	@Override
@@ -267,10 +271,6 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 			doSwitch(action);
 		}
 
-		// Build loop body
-		Block bodyBlock = buildLoopBody();
-		LoopBody loopBody = new WhileBody(loopDecision, bodyBlock);
-
 		// Add isSchedulableTest components
 		for (Action action : actor.getActions()) {
 			schedulerComponents.addAll(isSchedulableComponents.get(action));
@@ -287,8 +287,28 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		}
 
 		// Create TestAction
-		createActionTest(actor.getActions());
+		Component bodyBlock = createActionTest(actor.getActions());
+		currentListComponent.add(bodyBlock);
+		// schedulerComponents.add(bodyBlock);
+		// Create the testAction Module
+		Module bodyModule = (Block) buildModule(schedulerComponents,
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				"schedulerBody", null);
+		// Create the scheduler Loop Body
+		LoopBody loopBody = new WhileBody(loopDecision, bodyModule);
 
+		Module scheduler = (Block) buildModule(
+				Arrays.asList((Component) loopBody),
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				"schedulerBody", null);
+		scheduler.makeExit(0, Exit.RETURN);
+		Call call = createCall("scheduler", scheduler);
+		topLevelInit(call);
+		Task task = new Task(call);
+		task.setKickerRequired(true);
+		task.setSourceName("scheduler");
+		// Add it to the design
+		design.addTask(task);
 		return null;
 	}
 
@@ -387,32 +407,29 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	}
 
 	private void patternTest(Pattern pattern, String direction) {
-		if (pattern != null) {
-			List<Var> inputPattersVars = new ArrayList<Var>();
+		if (!pattern.isEmpty()) {
+			List<Var> patternVars = new ArrayList<Var>();
 			for (net.sf.orcc.df.Port port : pattern.getPorts()) {
 				if (pinStatusPort.containsKey(port)) {
 					Var pinStatus = pinStatusPort.get(port);
 					Type type = IrFactory.eINSTANCE.createTypeBool();
-					Var patternPort = IrFactory.eINSTANCE.createVar(
-							0,
-							type,
-							"direction" + "putPattern_"
-									+ currentAction.getName() + "_"
-									+ port.getName(), false, 0);
+					Var patternPort = IrFactory.eINSTANCE.createVar(0, type,
+							direction + "putPattern_" + currentAction.getName()
+									+ "_" + port.getName(), false, 0);
 					InstAssign noop = IrFactory.eINSTANCE.createInstAssign(
 							patternPort,
 							IrFactory.eINSTANCE.createExprVar(pinStatus));
 					doSwitch(noop);
-					inputPattersVars.add(patternPort);
+					patternVars.add(patternPort);
 				}
 				// Create the Go Decision
 				// Put the return Var to the inputPattern if "in"
 				if (direction.equals("in")) {
-					inputPattersVars.add(actionSchedulerReturnVar
-							.get(currentAction));
+					patternVars
+							.add(actionSchedulerReturnVar.get(currentAction));
 				}
-				currentComponent = new And(inputPattersVars.size());
-				mapInPorts(inputPattersVars);
+				currentComponent = new And(patternVars.size());
+				mapInPorts(patternVars);
 				// Create Decision Var
 				Type type = IrFactory.eINSTANCE.createTypeBool();
 				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,

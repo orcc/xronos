@@ -210,12 +210,13 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 	}
 
 	protected Component buildModule(List<Component> components,
-			List<Var> inVars, List<Var> outVars, String searchScope) {
+			List<Var> inVars, List<Var> outVars, String searchScope,
+			Exit.Type exitType) {
 		// Create an Empty Block
 		Module module = new Block(false);
 
 		// Add Input and Output Port for the Module
-		createModuleInterface(module, inVars, outVars);
+		createModuleInterface(module, inVars, outVars, exitType);
 
 		// Put all the components to the Module
 		populateModule(module, components);
@@ -473,8 +474,8 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		entry.addDependency(comp.getGoPort(), new ControlDependency(goBus));
 	}
 
-	protected Call createCall(String name) {
-		Block procedureBlock = (Block) currentModule;
+	protected Call createCall(String name, Module module) {
+		Block procedureBlock = (Block) module;
 		net.sf.openforge.lim.Procedure proc = new net.sf.openforge.lim.Procedure(
 				procedureBlock);
 		Call call = proc.makeCall();
@@ -495,7 +496,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 	}
 
 	protected void createModuleInterface(Module module, List<Var> inVars,
-			List<Var> outVars) {
+			List<Var> outVars, Exit.Type exitType) {
 		if (inVars != null) {
 			for (Var var : inVars) {
 				Port port = module.makeDataPort();
@@ -507,6 +508,15 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 			module.getExit(Exit.DONE);
 		}
 		// TODO: outVars for PHI
+
+		// Create modules exit
+		if (module.getExit(Exit.DONE) == null) {
+			if ((exitType != null) && (exitType != Exit.DONE)) {
+				module.makeExit(0, exitType);
+			} else {
+				module.makeExit(0);
+			}
+		}
 	}
 
 	protected Task createTask(String name) {
@@ -521,7 +531,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		currentModule.specifySearchScope(name);
 
 		// create Call
-		Call call = createCall(name);
+		Call call = createCall(name, currentModule);
 		topLevelInit(call);
 		// Create task
 		task = new Task(call);
@@ -717,6 +727,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		Iterator<Port> portIter = currentComponent.getDataPorts().iterator();
 		for (Var var : inVars) {
 			Port dataPort = portIter.next();
+			dataPort.setIDLogical(var.getName());
 			dataPort.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 			portCache.putTarget(var, dataPort);
@@ -837,7 +848,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		comp.setSourceName(var.getName());
 	}
 
-	private void topLevelInit(Call call) {
+	protected void topLevelInit(Call call) {
 		call.getClockPort().setSize(1, false);
 		call.getResetPort().setSize(1, false);
 		call.getGoPort().setSize(1, false);
