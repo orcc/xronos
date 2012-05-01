@@ -63,7 +63,7 @@ public class Branch extends Module {
 		addComponent(this.decision = decision);
 		addComponent(this.trueBranch = trueBranch);
 		this.falseBranch = falseBranch == null ? new Block(
-				Collections.EMPTY_LIST) : falseBranch;
+				Collections.<Component> emptyList()) : falseBranch;
 		addComponent(this.falseBranch);
 		setControlDependencies();
 	}
@@ -77,7 +77,8 @@ public class Branch extends Module {
 	 *            the true path component
 	 */
 	public Branch(Decision decision, Module trueBranch) {
-		this(decision, trueBranch, new Block(Collections.EMPTY_LIST));
+		this(decision, trueBranch, new Block(
+				Collections.<Component> emptyList()));
 	}
 
 	@Override

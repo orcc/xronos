@@ -152,6 +152,7 @@ public class ID implements HasIDSourceInfo {
 	 * 
 	 * @return source info block
 	 */
+	@Override
 	public IDSourceInfo getIDSourceInfo() {
 		if (isSourceInfo == null)
 			isSourceInfo = new IDSourceInfo();
@@ -199,9 +200,9 @@ public class ID implements HasIDSourceInfo {
 		} else {
 			theId = showIDGlobal();
 		}
-
-		if (this.sourceName != null)
-			return theId + "_" + this.sourceName;
+		// Deleted this give really big names
+		// if (this.sourceName != null)
+		// return theId + "_" + this.sourceName;
 		return theId;
 	}
 

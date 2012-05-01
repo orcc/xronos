@@ -443,12 +443,6 @@ public class Forge implements ForgeDebug {
 			System.exit(-1);
 		}
 
-		// if (!runForge(args)) {
-		// System.exit(-1);
-		// } else {
-		// System.exit(0);
-		// }
-
 	} // main()
 
 	public static boolean runForge(String[] args) {

@@ -85,7 +85,7 @@ public class XLIMEngine extends Engine {
 		String rootName = fileName.substring(0, fileName.lastIndexOf("."));
 
 		// This should be set already by the XDesignFactory
-		design.setIDLogical(rootName + "_xlim");
+		design.setIDLogical(rootName);
 
 		return design;
 	}
