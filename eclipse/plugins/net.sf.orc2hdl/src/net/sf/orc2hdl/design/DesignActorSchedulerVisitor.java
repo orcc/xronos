@@ -81,28 +81,28 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 
 	/** The actors ports association with pinStatus Var **/
-	private final Map<net.sf.orcc.df.Port, Var> pinStatusPort = new HashMap<net.sf.orcc.df.Port, Var>();
+	private  Map<net.sf.orcc.df.Port, Var> pinStatusPort = new HashMap<net.sf.orcc.df.Port, Var>();
 
 	/** All Return Vars given by the action scheduler **/
-	private final Map<Action, Var> actionSchedulerReturnVar = new HashMap<Action, Var>();
+	private  Map<Action, Var> actionSchedulerReturnVar = new HashMap<Action, Var>();
 
 	/** All inputPattern Var desicions **/
-	private final Map<Action, Var> actionSchedulerInDecisions = new HashMap<Action, Var>();
+	private  Map<Action, Var> actionSchedulerInDecisions = new HashMap<Action, Var>();
 
 	/** All outputPattern Var desicions **/
-	private final Map<Action, Var> actionSchedulerOutDecisions = new HashMap<Action, Var>();
+	private  Map<Action, Var> actionSchedulerOutDecisions = new HashMap<Action, Var>();
 
 	/** The isSchedulable Test components **/
-	private final Map<Action, List<Component>> isSchedulableComponents = new HashMap<Action, List<Component>>();
+	private Map<Action, List<Component>> isSchedulableComponents = new HashMap<Action, List<Component>>();
 
 	/** The inputPattern Test components **/
-	private final Map<Action, List<Component>> inputPatternComponents = new HashMap<Action, List<Component>>();
+	private  Map<Action, List<Component>> inputPatternComponents = new HashMap<Action, List<Component>>();
 
 	/** The outputPattern Test components **/
-	private final Map<Action, List<Component>> outputPatternComponents = new HashMap<Action, List<Component>>();
+	private  Map<Action, List<Component>> outputPatternComponents = new HashMap<Action, List<Component>>();
 
 	/** All components of the scheduler **/
-	private final List<Component> schedulerComponents = new ArrayList<Component>();
+	private  List<Component> schedulerComponents = new ArrayList<Component>();
 
 	/** Map of action associated to its Task **/
 	private Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
@@ -121,6 +121,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 			if (actionSchedulerInDecisions.containsKey(action)) {
 				Var decisionVar = actionSchedulerInDecisions.get(action);
 				String varName = "decision_isSchedulable_" + action.getName();
+				currentListComponent = new ArrayList<Component>();
 				Decision branchDecision = buildDecision(decisionVar, varName);
 
 				// Create the "then" body
@@ -154,12 +155,12 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	 */
 	private Decision buildInfiniteLoopDecision() {
 		Decision decision = null;
-		// Create an ExprInt of "1" and assign it to the varActorSched
-		Type type = IrFactory.eINSTANCE.createTypeInt(1);
+		// Create an ExprBool of "1" and assign it to the varActorSched
+		Type type = IrFactory.eINSTANCE.createTypeBool();
 		Var varActorSched = IrFactory.eINSTANCE.createVar(0, type,
 				"var_actor_sched", false, 0);
 		InstAssign assignSched = IrFactory.eINSTANCE.createInstAssign(
-				varActorSched, IrFactory.eINSTANCE.createExprInt(1));
+				varActorSched, IrFactory.eINSTANCE.createExprBool(true));
 		// Visit assignSched
 		doSwitch(assignSched);
 		// Create the var_actor_loop variable and assign the var_actor_sched
@@ -204,6 +205,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	private Component buildTaskCall(Task task, Var outDecision) {
 		Branch branch = null;
 		String varName = "decision_outputPattern_" + task.showIDLogical();
+		currentListComponent = new ArrayList<Component>();
 		Decision branchDecision = buildDecision(outDecision, varName);
 
 		// Create the the TaskCall and add the Task
@@ -229,9 +231,12 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	public Object caseAction(Action action) {
 		currentAction = action;
 
-		// Clean the current components
+		// Clean used Arrays and Maps
 		currentListComponent = new ArrayList<Component>();
-
+		isSchedulableComponents = new HashMap<Action, List<Component>>();
+		inputPatternComponents = new HashMap<Action, List<Component>>();
+		outputPatternComponents = new HashMap<Action, List<Component>>();
+		
 		// Build pinPeek
 		doSwitch(action.getPeekPattern());
 
@@ -349,6 +354,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 					// Create the pinPeek Component
 					ActionIOHandler ioHandler = resources.getIOHandler(port);
 					currentComponent = ioHandler.getTokenPeekAccess();
+					
 					setAttributes(
 							"pinPeek" + port.getName() + "_"
 									+ Integer.toString(componentCounter),
@@ -356,6 +362,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 					// mapInPorts(varLitteralPeek);
 					mapInPorts(new ArrayList<Var>(Arrays.asList(litteralVar)));
 					mapOutPorts(peekVar);
+					currentListComponent.add(currentComponent);
 					componentCounter++;
 					IrUtil.delete(load);
 				}
@@ -427,7 +434,18 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				if (direction.equals("in")) {
 					patternVars
 							.add(actionSchedulerReturnVar.get(currentAction));
+				} else{
+					Type type = IrFactory.eINSTANCE.createTypeBool();
+					Var resVar = IrFactory.eINSTANCE.createVar(0, type,
+							"outputPattern_" + currentAction.getName() + "_res",
+							false, 0);
+					InstAssign noop = IrFactory.eINSTANCE.createInstAssign(resVar,
+							IrFactory.eINSTANCE.createExprBool(true));
+					// Visit assignSched
+					doSwitch(noop);
+					patternVars.add(resVar);
 				}
+					
 				currentComponent = new And(patternVars.size());
 				mapInPorts(patternVars);
 				// Create Decision Var
@@ -436,13 +454,14 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 						"isSchedulable_" + currentAction.getName() + "_"
 								+ direction + "_decision", false, 0);
 				mapOutPorts(decisionVar);
+				currentListComponent.add(currentComponent);
 				// Save the decision, used on transitions
 				if (direction.equals("in")) {
 					actionSchedulerInDecisions.put(currentAction, decisionVar);
 				} else {
 					actionSchedulerOutDecisions.put(currentAction, decisionVar);
 				}
-				currentListComponent.add(currentComponent);
+				
 			}
 
 		} else {

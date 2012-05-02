@@ -222,7 +222,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 		populateModule(module, components);
 
 		// Set all the dependencies
-		operationDependencies(currentListComponent, componentDependency,
+		operationDependencies(components, componentDependency,
 				module.getExit(Exit.DONE));
 
 		// Give the name of the searchScope
@@ -743,6 +743,7 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 		}
+		dataBus.setIDLogical(var.getName());
 		portCache.putSource(var, dataBus);
 
 		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
