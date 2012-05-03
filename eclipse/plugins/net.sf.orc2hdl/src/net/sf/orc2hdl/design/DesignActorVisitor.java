@@ -96,6 +96,7 @@ import net.sf.openforge.util.naming.IDSourceInfo;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
+import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.ExprBinary;
@@ -113,7 +114,7 @@ import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
-import net.sf.orcc.ir.util.AbstractActorVisitor;
+import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.ValueUtil;
 
 import org.eclipse.emf.common.util.EList;
@@ -124,7 +125,7 @@ import org.eclipse.emf.common.util.EList;
  * @author Endri Bezati
  * 
  */
-public class DesignActorVisitor extends AbstractActorVisitor<Object> {
+public class DesignActorVisitor extends DfVisitor<Object> {
 
 	/** List which associates each action with its components **/
 	private final Map<Action, List<Component>> actionComponents = new HashMap<Action, List<Component>>();
@@ -170,10 +171,153 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 
 	public DesignActorVisitor(Instance instance, Design design,
 			ResourceCache resources) {
-		super(true);
 		this.instance = instance;
 		this.design = design;
 		this.resources = resources;
+		this.irVisitor = new InnerIrVisitor();
+	}
+
+	protected class InnerIrVisitor extends AbstractIrVisitor<Object> {
+		public InnerIrVisitor() {
+			super(true);
+		}
+
+		@Override
+		public Object caseExprBinary(ExprBinary expr) {
+			if (expr.getOp() == OpBinary.BITAND) {
+				currentComponent = new AndOp();
+			} else if (expr.getOp() == OpBinary.BITOR) {
+				currentComponent = new OrOp();
+			} else if (expr.getOp() == OpBinary.BITXOR) {
+				currentComponent = new XorOp();
+			} else if (expr.getOp() == OpBinary.DIV) {
+				currentComponent = new DivideOp(expr.getType().getSizeInBits());
+			} else if (expr.getOp() == OpBinary.DIV_INT) {
+				currentComponent = new DivideOp(expr.getType().getSizeInBits());
+			} else if (expr.getOp() == OpBinary.EQ) {
+				currentComponent = new EqualsOp();
+			} else if (expr.getOp() == OpBinary.GE) {
+				currentComponent = new GreaterThanEqualToOp();
+			} else if (expr.getOp() == OpBinary.GT) {
+				currentComponent = new GreaterThanOp();
+			} else if (expr.getOp() == OpBinary.LE) {
+				currentComponent = new LessThanEqualToOp();
+			} else if (expr.getOp() == OpBinary.LOGIC_AND) {
+				currentComponent = new And(2);
+			} else if (expr.getOp() == OpBinary.LOGIC_OR) {
+				currentComponent = new Or(2);
+			} else if (expr.getOp() == OpBinary.LT) {
+				currentComponent = new LessThanOp();
+			} else if (expr.getOp() == OpBinary.MINUS) {
+				currentComponent = new SubtractOp();
+			} else if (expr.getOp() == OpBinary.MOD) {
+				currentComponent = new ModuloOp();
+			} else if (expr.getOp() == OpBinary.NE) {
+				currentComponent = new NotEqualsOp();
+			} else if (expr.getOp() == OpBinary.PLUS) {
+				currentComponent = new AddOp();
+			} else if (expr.getOp() == OpBinary.SHIFT_LEFT) {
+				int log2N = MathStuff.log2(expr.getType().getSizeInBits());
+				currentComponent = new LeftShiftOp(log2N);
+			} else if (expr.getOp() == OpBinary.SHIFT_RIGHT) {
+				int log2N = MathStuff.log2(expr.getType().getSizeInBits());
+				currentComponent = new RightShiftOp(log2N);
+			} else if (expr.getOp() == OpBinary.TIMES) {
+				currentComponent = new MultiplyOp(expr.getType()
+						.getSizeInBits());
+			}
+			// Three address code obligated, a binary expression
+			// can not contain another binary expression
+			// Get variables for E1 and E2
+			Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
+			Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
+			mapInPorts(new ArrayList<Var>(Arrays.asList(e1, e2)));
+			currentListComponent.add(currentComponent);
+			return null;
+		}
+
+		@Override
+		public Object caseExprBool(ExprBool expr) {
+			final long value = expr.isValue() ? 1 : 0;
+			currentComponent = new SimpleConstant(value, 1, true);
+			return null;
+		}
+
+		@Override
+		public Object caseExprInt(ExprInt expr) {
+			final long value = expr.getIntValue();
+			currentComponent = new SimpleConstant(value, expr.getType()
+					.getSizeInBits(), expr.getType().isInt());
+			return null;
+		}
+
+		@Override
+		public Object caseExprUnary(ExprUnary expr) {
+			if (expr.getOp() == OpUnary.BITNOT) {
+				currentComponent = new ComplementOp();
+			} else if (expr.getOp() == OpUnary.LOGIC_NOT) {
+				currentComponent = new NotOp();
+			} else if (expr.getOp() == OpUnary.MINUS) {
+				currentComponent = new MinusOp();
+			}
+			return null;
+		}
+
+		@Override
+		public Object caseExprVar(ExprVar var) {
+			// TODO: See if NoOP can have more than one inputs after all actors
+			// Transformations
+			currentComponent = new NoOp(1, Exit.DONE);
+			mapInPorts(new ArrayList<Var>(Arrays.asList(var.getUse()
+					.getVariable())));
+			return null;
+		}
+
+		@Override
+		public Object caseInstAssign(InstAssign assign) {
+			super.caseInstAssign(assign);
+			if (currentComponent != null) {
+				currentListComponent.add(currentComponent);
+				mapOutPorts(assign.getTarget().getVariable());
+			}
+			return null;
+		}
+
+		@Override
+		public Object caseInstCall(InstCall call) {
+			currentComponent = new TaskCall();
+			resources.addTaskCall(call, (TaskCall) currentComponent);
+			return null;
+		}
+
+		@Override
+		public Object caseInstLoad(InstLoad load) {
+			if (load.getSource().getVariable().getType().isList()) {
+				// TODO: Load index of the List
+			} else {
+				currentComponent = new NoOp(1, Exit.DONE);
+
+			}
+			return null;
+		}
+
+		@Override
+		public Object caseBlockIf(BlockIf blockIf) {
+			return null;
+		}
+
+		@Override
+		public Object caseBlockWhile(BlockWhile blockWhile) {
+			return null;
+		}
+
+		@Override
+		public Object caseVar(Var var) {
+			if (var.isGlobal()) {
+				stateVars.put(makeLogicalValue(var), var);
+			}
+			return null;
+		}
 	}
 
 	protected Decision buildDecision(Var inputDecision, String resultName) {
@@ -325,141 +469,6 @@ public class DesignActorVisitor extends AbstractActorVisitor<Object> {
 				instance, design, actorsTasks, resources);
 		schedulerVisitor.doSwitch(actor);
 
-		return null;
-	}
-
-	@Override
-	public Object caseExprBinary(ExprBinary expr) {
-		if (expr.getOp() == OpBinary.BITAND) {
-			currentComponent = new AndOp();
-		} else if (expr.getOp() == OpBinary.BITOR) {
-			currentComponent = new OrOp();
-		} else if (expr.getOp() == OpBinary.BITXOR) {
-			currentComponent = new XorOp();
-		} else if (expr.getOp() == OpBinary.DIV) {
-			currentComponent = new DivideOp(expr.getType().getSizeInBits());
-		} else if (expr.getOp() == OpBinary.DIV_INT) {
-			currentComponent = new DivideOp(expr.getType().getSizeInBits());
-		} else if (expr.getOp() == OpBinary.EQ) {
-			currentComponent = new EqualsOp();
-		} else if (expr.getOp() == OpBinary.GE) {
-			currentComponent = new GreaterThanEqualToOp();
-		} else if (expr.getOp() == OpBinary.GT) {
-			currentComponent = new GreaterThanOp();
-		} else if (expr.getOp() == OpBinary.LE) {
-			currentComponent = new LessThanEqualToOp();
-		} else if (expr.getOp() == OpBinary.LOGIC_AND) {
-			currentComponent = new And(2);
-		} else if (expr.getOp() == OpBinary.LOGIC_OR) {
-			currentComponent = new Or(2);
-		} else if (expr.getOp() == OpBinary.LT) {
-			currentComponent = new LessThanOp();
-		} else if (expr.getOp() == OpBinary.MINUS) {
-			currentComponent = new SubtractOp();
-		} else if (expr.getOp() == OpBinary.MOD) {
-			currentComponent = new ModuloOp();
-		} else if (expr.getOp() == OpBinary.NE) {
-			currentComponent = new NotEqualsOp();
-		} else if (expr.getOp() == OpBinary.PLUS) {
-			currentComponent = new AddOp();
-		} else if (expr.getOp() == OpBinary.SHIFT_LEFT) {
-			int log2N = MathStuff.log2(expr.getType().getSizeInBits());
-			currentComponent = new LeftShiftOp(log2N);
-		} else if (expr.getOp() == OpBinary.SHIFT_RIGHT) {
-			int log2N = MathStuff.log2(expr.getType().getSizeInBits());
-			currentComponent = new RightShiftOp(log2N);
-		} else if (expr.getOp() == OpBinary.TIMES) {
-			currentComponent = new MultiplyOp(expr.getType().getSizeInBits());
-		}
-		// Three address code obligated, a binary expression
-		// can not contain another binary expression
-		// Get variables for E1 and E2
-		Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
-		Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-		mapInPorts(new ArrayList<Var>(Arrays.asList(e1, e2)));
-		currentListComponent.add(currentComponent);
-		return null;
-	}
-
-	@Override
-	public Object caseExprBool(ExprBool expr) {
-		final long value = expr.isValue() ? 1 : 0;
-		currentComponent = new SimpleConstant(value, 1, true);
-		return null;
-	}
-
-	@Override
-	public Object caseExprInt(ExprInt expr) {
-		final long value = expr.getIntValue();
-		currentComponent = new SimpleConstant(value, expr.getType()
-				.getSizeInBits(), expr.getType().isInt());
-		return null;
-	}
-
-	@Override
-	public Object caseExprUnary(ExprUnary expr) {
-		if (expr.getOp() == OpUnary.BITNOT) {
-			currentComponent = new ComplementOp();
-		} else if (expr.getOp() == OpUnary.LOGIC_NOT) {
-			currentComponent = new NotOp();
-		} else if (expr.getOp() == OpUnary.MINUS) {
-			currentComponent = new MinusOp();
-		}
-		return null;
-	}
-
-	@Override
-	public Object caseExprVar(ExprVar var) {
-		// TODO: See if NoOP can have more than one inputs after all actors
-		// Transformations
-		currentComponent = new NoOp(1, Exit.DONE);
-		mapInPorts(new ArrayList<Var>(Arrays.asList(var.getUse().getVariable())));
-		return null;
-	}
-
-	@Override
-	public Object caseInstAssign(InstAssign assign) {
-		super.caseInstAssign(assign);
-		if (currentComponent != null) {
-			currentListComponent.add(currentComponent);
-			mapOutPorts(assign.getTarget().getVariable());
-		}
-		return null;
-	}
-
-	@Override
-	public Object caseInstCall(InstCall call) {
-		currentComponent = new TaskCall();
-		resources.addTaskCall(call, (TaskCall) currentComponent);
-		return null;
-	}
-
-	@Override
-	public Object caseInstLoad(InstLoad load) {
-		if (load.getSource().getVariable().getType().isList()) {
-			// TODO: Load index of the List
-		} else {
-			currentComponent = new NoOp(1, Exit.DONE);
-
-		}
-		return null;
-	}
-
-	@Override
-	public Object caseNodeIf(BlockIf blockIf) {
-		return null;
-	}
-
-	@Override
-	public Object caseNodeWhile(BlockWhile blockWhile) {
-		return null;
-	}
-
-	@Override
-	public Object caseVar(Var var) {
-		if (var.isGlobal()) {
-			stateVars.put(makeLogicalValue(var), var);
-		}
 		return null;
 	}
 

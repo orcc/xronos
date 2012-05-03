@@ -45,7 +45,6 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 
-
 /**
  * This class represents the preference page of Orc2HDL Plug-in
  * 
@@ -83,8 +82,8 @@ public class Orc2HDLPreferencePage extends FieldEditorPreferencePage implements
 		group.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 		group.setText("Modelsim");
 
-		addField(new FileFieldEditor(P_MODELSIM,
-				"ModelSim executable path:", group));
+		addField(new FileFieldEditor(P_MODELSIM, "ModelSim executable path:",
+				group));
 	}
 
 }

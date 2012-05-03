@@ -80,72 +80,49 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  */
 public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 
-	/** The actors ports association with pinStatus Var **/
-	private  Map<net.sf.orcc.df.Port, Var> pinStatusPort = new HashMap<net.sf.orcc.df.Port, Var>();
-
-	/** All Return Vars given by the action scheduler **/
-	private  Map<Action, Var> actionSchedulerReturnVar = new HashMap<Action, Var>();
+	protected class InheritedInnerIrVisitor extends InnerIrVisitor {
+		@Override
+		public Object caseInstReturn(InstReturn returnInstr) {
+			if (returnInstr.getValue().isExprVar()) {
+				Var returnVar = ((ExprVar) returnInstr.getValue()).getUse()
+						.getVariable();
+				actionSchedulerReturnVar.put(currentAction, returnVar);
+			}
+			return null;
+		}
+	}
 
 	/** All inputPattern Var desicions **/
-	private  Map<Action, Var> actionSchedulerInDecisions = new HashMap<Action, Var>();
+	private Map<Action, Var> actionSchedulerInDecisions = new HashMap<Action, Var>();
 
 	/** All outputPattern Var desicions **/
-	private  Map<Action, Var> actionSchedulerOutDecisions = new HashMap<Action, Var>();
+	private Map<Action, Var> actionSchedulerOutDecisions = new HashMap<Action, Var>();
+
+	/** All Return Vars given by the action scheduler **/
+	private Map<Action, Var> actionSchedulerReturnVar = new HashMap<Action, Var>();
+
+	/** Map of action associated to its Task **/
+	private Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
+
+	/** The inputPattern Test components **/
+	private Map<Action, List<Component>> inputPatternComponents = new HashMap<Action, List<Component>>();
 
 	/** The isSchedulable Test components **/
 	private Map<Action, List<Component>> isSchedulableComponents = new HashMap<Action, List<Component>>();
 
-	/** The inputPattern Test components **/
-	private  Map<Action, List<Component>> inputPatternComponents = new HashMap<Action, List<Component>>();
-
 	/** The outputPattern Test components **/
-	private  Map<Action, List<Component>> outputPatternComponents = new HashMap<Action, List<Component>>();
+	private Map<Action, List<Component>> outputPatternComponents = new HashMap<Action, List<Component>>();
+
+	/** The actors ports association with pinStatus Var **/
+	private Map<net.sf.orcc.df.Port, Var> pinStatusPort = new HashMap<net.sf.orcc.df.Port, Var>();
 
 	/** All components of the scheduler **/
-	private  List<Component> schedulerComponents = new ArrayList<Component>();
-
-	/** Map of action associated to its Task **/
-	private Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
+	private List<Component> schedulerComponents = new ArrayList<Component>();
 
 	public DesignActorSchedulerVisitor(Instance instance, Design design,
 			Map<Action, Task> actorsTasks, ResourceCache resources) {
 		super(instance, design, resources);
 		this.actorsTasks = actorsTasks;
-	}
-
-	private Component createActionTest(List<Action> actions) {
-		List<Action> newActionList = actions;
-		Branch branch = null;
-		for (Iterator<Action> it = actions.iterator(); it.hasNext();) {
-			Action action = it.next();
-			if (actionSchedulerInDecisions.containsKey(action)) {
-				Var decisionVar = actionSchedulerInDecisions.get(action);
-				String varName = "decision_isSchedulable_" + action.getName();
-				currentListComponent = new ArrayList<Component>();
-				Decision branchDecision = buildDecision(decisionVar, varName);
-
-				// Create the "then" body
-				Task actionToBeExecuted = actorsTasks.get(action);
-				Var outDecision = actionSchedulerOutDecisions.get(action);
-				Block thenBlock = (Block) buildTaskCall(actionToBeExecuted,
-						outDecision);
-
-				// Create the "else" body
-				if (it.hasNext()) {
-					newActionList.remove(action);
-					Component elseBlock = createActionTest(newActionList);
-					Module elseModule = (Block) buildModule(
-							Arrays.asList(elseBlock),
-							Collections.<Var> emptyList(),
-							Collections.<Var> emptyList(), "block", null);
-					branch = new Branch(branchDecision, thenBlock, elseModule);
-				} else {
-					branch = new Branch(branchDecision, thenBlock);
-				}
-
-			}
-		}
-		return branch;
 	}
 
 	/**
@@ -236,7 +213,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		isSchedulableComponents = new HashMap<Action, List<Component>>();
 		inputPatternComponents = new HashMap<Action, List<Component>>();
 		outputPatternComponents = new HashMap<Action, List<Component>>();
-		
+
 		// Build pinPeek
 		doSwitch(action.getPeekPattern());
 
@@ -318,16 +295,6 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	}
 
 	@Override
-	public Object caseInstReturn(InstReturn returnInstr) {
-		if (returnInstr.getValue().isExprVar()) {
-			Var returnVar = ((ExprVar) returnInstr.getValue()).getUse()
-					.getVariable();
-			actionSchedulerReturnVar.put(currentAction, returnVar);
-		}
-		return null;
-	}
-
-	@Override
 	public Object casePattern(Pattern pattern) {
 		for (net.sf.orcc.df.Port port : pattern.getPorts()) {
 			Var oldTarget = pattern.getVariable(port);
@@ -354,7 +321,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 					// Create the pinPeek Component
 					ActionIOHandler ioHandler = resources.getIOHandler(port);
 					currentComponent = ioHandler.getTokenPeekAccess();
-					
+
 					setAttributes(
 							"pinPeek" + port.getName() + "_"
 									+ Integer.toString(componentCounter),
@@ -371,6 +338,41 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		}
 
 		return null;
+	}
+
+	private Component createActionTest(List<Action> actions) {
+		List<Action> newActionList = actions;
+		Branch branch = null;
+		for (Iterator<Action> it = actions.iterator(); it.hasNext();) {
+			Action action = it.next();
+			if (actionSchedulerInDecisions.containsKey(action)) {
+				Var decisionVar = actionSchedulerInDecisions.get(action);
+				String varName = "decision_isSchedulable_" + action.getName();
+				currentListComponent = new ArrayList<Component>();
+				Decision branchDecision = buildDecision(decisionVar, varName);
+
+				// Create the "then" body
+				Task actionToBeExecuted = actorsTasks.get(action);
+				Var outDecision = actionSchedulerOutDecisions.get(action);
+				Block thenBlock = (Block) buildTaskCall(actionToBeExecuted,
+						outDecision);
+
+				// Create the "else" body
+				if (it.hasNext()) {
+					newActionList.remove(action);
+					Component elseBlock = createActionTest(newActionList);
+					Module elseModule = (Block) buildModule(
+							Arrays.asList(elseBlock),
+							Collections.<Var> emptyList(),
+							Collections.<Var> emptyList(), "block", null);
+					branch = new Branch(branchDecision, thenBlock, elseModule);
+				} else {
+					branch = new Branch(branchDecision, thenBlock);
+				}
+
+			}
+		}
+		return branch;
 	}
 
 	private void getActorPinStatus(Actor actor) {
@@ -434,18 +436,19 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				if (direction.equals("in")) {
 					patternVars
 							.add(actionSchedulerReturnVar.get(currentAction));
-				} else{
+				} else {
 					Type type = IrFactory.eINSTANCE.createTypeBool();
-					Var resVar = IrFactory.eINSTANCE.createVar(0, type,
-							"outputPattern_" + currentAction.getName() + "_res",
-							false, 0);
-					InstAssign noop = IrFactory.eINSTANCE.createInstAssign(resVar,
-							IrFactory.eINSTANCE.createExprBool(true));
+					Var resVar = IrFactory.eINSTANCE
+							.createVar(0, type, "outputPattern_"
+									+ currentAction.getName() + "_res", false,
+									0);
+					InstAssign noop = IrFactory.eINSTANCE.createInstAssign(
+							resVar, IrFactory.eINSTANCE.createExprBool(true));
 					// Visit assignSched
 					doSwitch(noop);
 					patternVars.add(resVar);
 				}
-					
+
 				currentComponent = new And(patternVars.size());
 				mapInPorts(patternVars);
 				// Create Decision Var
@@ -461,7 +464,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				} else {
 					actionSchedulerOutDecisions.put(currentAction, decisionVar);
 				}
-				
+
 			}
 
 		} else {
