@@ -116,6 +116,7 @@ import net.sf.openforge.verilog.model.Assign;
 import net.sf.openforge.verilog.model.Bitwise;
 import net.sf.openforge.verilog.model.Comment;
 import net.sf.openforge.verilog.model.Expression;
+import net.sf.openforge.verilog.model.Module;
 import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.NetFactory;
 import net.sf.openforge.verilog.model.Replication;
@@ -172,7 +173,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 * Also, this map provides a convenient look-up for existing defintions
 	 * related to a procedure (or really any LIM component related to a module).
 	 */
-	private Map lim_module_map = new LinkedHashMap();
+	private Map<ID, Module> lim_module_map = new LinkedHashMap<ID, Module>();
 
 	/**
 	 * The current Module being populated with calls.
@@ -194,7 +195,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 * procedure visit) the current module reverts back to whatever module was
 	 * at the top of the stack.
 	 */
-	private Stack module_stack = new Stack();
+	private Stack<Module> module_stack = new Stack<Module>();
 
 	/**
 	 * Whether an "application" module should be created for the Design.
@@ -202,14 +203,14 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	private boolean suppress_application = false;
 
 	/** This is a set of Modules whose outbufs are to be translated. */
-	private Set xlatOutBufs = new HashSet();
+	private Set<net.sf.openforge.lim.Module> xlatOutBufs = new HashSet<net.sf.openforge.lim.Module>();
 
-	private Set topLevelComponents = Collections.EMPTY_SET;
+	private Set<Net> topLevelComponents = Collections.emptySet();
 
 	/** Set of user verilog modules for IP Core that has been written already */
-	Set userVerilog_names = new HashSet();
+	Set<String> userVerilog_names = new HashSet<String>();
 
-	private ArrayList userSimIncludes = new ArrayList();
+	private ArrayList<String> userSimIncludes = new ArrayList<String>();
 
 	private Design design;
 
@@ -296,7 +297,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		// store off the design for IPCore usage during writing of the document
 		this.design = design;
 
-		this.xlatOutBufs = new HashSet();
+		this.xlatOutBufs = new HashSet<net.sf.openforge.lim.Module>();
 		this.topLevelComponents = new HashSet(design.getDesignModule()
 				.getComponents());
 

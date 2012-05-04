@@ -39,6 +39,7 @@ import net.sf.openforge.verilog.model.Expression;
 import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.NetFactory;
 import net.sf.openforge.verilog.model.SignedWire;
+import net.sf.openforge.verilog.model.Wire;
 
 /**
  * A MathAssignment is a Verilog math operation based on a LIM op which assigns
@@ -117,7 +118,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 	} // class Modulo
 
 	public static final class Multiply extends MathAssignment {
-		private Collection myNets = new ArrayList();
+		private Collection<Net> myNets = new ArrayList<Net>();
 
 		public Multiply(MultiplyOp mul) {
 			super();
@@ -138,10 +139,29 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 			result_wire = NetFactory.makeNet(mul.getResultBus());
 			String baseName = ID.toVerilogIdentifier(ID.showLogical(mul
 					.getResultBus()));
-			Net aWire = new SignedWire(baseName + "_a_signed",
-					this.left_operand.getWidth());
-			Net bWire = new SignedWire(baseName + "_b_signed",
-					this.right_operand.getWidth());
+			
+			int size = 0;
+
+			if (left_operand.getWidth() > right_operand.getWidth()) {
+				size = left_operand.getWidth();
+			} else {
+				size = right_operand.getWidth();
+			}
+			
+			
+			Net aWire = null;
+			if (l_port.getValue().isSigned()) {
+				aWire = new SignedWire(baseName + "_a_signed", size);
+			} else {
+				aWire = new Wire(baseName + "_a_unsigned", size);
+			}
+
+			Net bWire = null;
+			if (r_port.getValue().isSigned()) {
+				bWire = new SignedWire(baseName + "_b_signed", size);
+			} else {
+				bWire = new Wire(baseName + "_b_unsigned", size);
+			}
 
 			add(new Assign.Continuous(aWire, left_operand));
 			add(new Assign.Continuous(bWire, right_operand));
@@ -165,7 +185,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 		 * 
 		 * @return a value of type 'Collection'
 		 */
-		public Collection getProducedNets() {
+		public Collection<Net> getProducedNets() {
 			return myNets;
 		}
 
