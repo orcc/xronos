@@ -84,9 +84,18 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		@Override
 		public Object caseInstReturn(InstReturn returnInstr) {
 			if (returnInstr.getValue().isExprVar()) {
+				// Get Return Var of the procedure
 				Var returnVar = ((ExprVar) returnInstr.getValue()).getUse()
 						.getVariable();
-				actionSchedulerReturnVar.put(currentAction, returnVar);
+				Type type = IrFactory.eINSTANCE.createTypeBool();
+				Var schedulerReturn = IrFactory.eINSTANCE.createVar(0, type,
+						"isSchedulable_" + currentAction.getName() + "_go",
+						false, 0);
+				InstAssign noop = IrFactory.eINSTANCE.createInstAssign(
+						schedulerReturn,
+						IrFactory.eINSTANCE.createExprVar(returnVar));
+				doSwitch(noop);
+				actionSchedulerReturnVar.put(currentAction, schedulerReturn);
 			}
 			return null;
 		}
@@ -123,6 +132,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 			Map<Action, Task> actorsTasks, ResourceCache resources) {
 		super(instance, design, resources);
 		this.actorsTasks = actorsTasks;
+		this.irVisitor = new InheritedInnerIrVisitor();
 	}
 
 	/**
@@ -154,6 +164,9 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		// Make an Exit with zero data buses at the output
 		currentExit = currentModule.makeExit(0);
 
+		// Add done dependency
+		mapOutControlPort(currentModule);
+
 		// Add all components to the module
 		populateModule(currentModule, currentListComponent);
 
@@ -172,11 +185,6 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		currentModule.specifySearchScope("schedulerLoopDecision");
 		return decision;
 
-	}
-
-	private Block buildLoopBody() {
-		Block bodyBlock = new Block(false);
-		return bodyBlock;
 	}
 
 	private Component buildTaskCall(Task task, Var outDecision) {
@@ -199,7 +207,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				"block", null);
 		branch = new Branch(branchDecision, thenBlock);
 		Component module = buildModule(Arrays.asList((Component) branch),
-				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				Arrays.asList(outDecision), Collections.<Var> emptyList(),
 				"block", null);
 		return module;
 	}
@@ -270,12 +278,14 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 
 		// Create TestAction
 		Component bodyBlock = createActionTest(actor.getActions());
-		currentListComponent.add(bodyBlock);
-		// schedulerComponents.add(bodyBlock);
+		schedulerComponents.add(bodyBlock);
+
 		// Create the testAction Module
 		Module bodyModule = (Block) buildModule(schedulerComponents,
 				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
 				"schedulerBody", null);
+		bodyModule.setIDLogical("schedulerBody");
+
 		// Create the scheduler Loop Body
 		LoopBody loopBody = new WhileBody(loopDecision, bodyModule);
 
@@ -343,14 +353,25 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	private Component createActionTest(List<Action> actions) {
 		List<Action> newActionList = actions;
 		Branch branch = null;
+		List<Var> branchInputPorts = new ArrayList<Var>();
+
+		// Fill Up the branch Input Ports with its associated Vars
+		for (Action action : newActionList) {
+			if (actionSchedulerInDecisions.containsKey(action)) {
+				branchInputPorts.add(actionSchedulerInDecisions.get(action));
+			}
+			if (actionSchedulerOutDecisions.containsKey(action)) {
+				branchInputPorts.add(actionSchedulerOutDecisions.get(action));
+			}
+		}
+
 		for (Iterator<Action> it = actions.iterator(); it.hasNext();) {
 			Action action = it.next();
 			if (actionSchedulerInDecisions.containsKey(action)) {
 				Var decisionVar = actionSchedulerInDecisions.get(action);
 				String varName = "decision_isSchedulable_" + action.getName();
 				currentListComponent = new ArrayList<Component>();
-				Decision branchDecision = buildDecision(decisionVar, varName);
-
+				Decision decision = buildDecision(decisionVar, varName);
 				// Create the "then" body
 				Task actionToBeExecuted = actorsTasks.get(action);
 				Var outDecision = actionSchedulerOutDecisions.get(action);
@@ -365,9 +386,14 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 							Arrays.asList(elseBlock),
 							Collections.<Var> emptyList(),
 							Collections.<Var> emptyList(), "block", null);
-					branch = new Branch(branchDecision, thenBlock, elseModule);
+					elseModule.setIDLogical("branchElse_" + action.getName());
+					branch = (Branch) buildBranch(decision, thenBlock,
+							(Block) elseModule, branchInputPorts, null,
+							"ifThenElseBlock", null);
 				} else {
-					branch = new Branch(branchDecision, thenBlock);
+					branch = (Branch) buildBranch(decision, thenBlock, null,
+							branchInputPorts, null, "ifThenBlock", null);
+					branch.setIDLogical("branchIf_" + action.getName());
 				}
 
 			}
@@ -403,13 +429,6 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		// Add the pinStatusVar to pinStatusPort
 		pinStatusPort.put(port, pinStatusVar);
 
-		for (Bus dataBus : currentComponent.getExit(Exit.DONE).getDataBuses()) {
-			if (dataBus.getValue() == null) {
-				dataBus.setSize(port.getType().getSizeInBits(), port.getType()
-						.isInt() || port.getType().isBool());
-			}
-			portCache.putSource(pinStatusVar, dataBus);
-		}
 		mapOutPorts(pinStatusVar);
 		currentListComponent.add(currentComponent);
 		componentCounter++;
@@ -471,8 +490,8 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 			// Give True to the Decision
 			Type type = IrFactory.eINSTANCE.createTypeBool();
 			Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
-					"isSchedulable_" + currentAction.getName() + "_decision",
-					false, 0);
+					"isSchedulable_" + currentAction.getName() + "_"
+							+ direction + "_decision", false, 0);
 			InstAssign noop = IrFactory.eINSTANCE.createInstAssign(decisionVar,
 					IrFactory.eINSTANCE.createExprBool(true));
 			// Visit assignSched

@@ -43,6 +43,7 @@ import net.sf.openforge.frontend.slim.builder.ActionIOHandler.FifoIOHandler;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler.NativeIOHandler;
 import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Block;
+import net.sf.openforge.lim.Branch;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.ClockDependency;
@@ -334,6 +335,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		currentModule = new Block(false);
 		// Make an Exit with zero data buses at the output
 		currentExit = currentModule.makeExit(0);
+
+		// Add done dependency
+		mapOutControlPort(currentModule);
 		// Add all components to the module
 		populateModule(currentModule, currentListComponent);
 		// Build Dependencies
@@ -350,7 +354,26 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		// Build option scope
 		currentModule.specifySearchScope("schedulerLoopDecision");
 		return decision;
+	}
 
+	protected Component buildBranch(Decision decision, Block thenBlock,
+			Block elseBlock, List<Var> inVars, List<Var> outVars,
+			String searchScope, Exit.Type exitType) {
+		Branch branch = null;
+
+		if (elseBlock == null) {
+			branch = new Branch(decision, thenBlock);
+		} else {
+			branch = new Branch(decision, thenBlock, elseBlock);
+		}
+		mapOutControlPort(branch);
+		createModuleInterface(branch, inVars, outVars, exitType);
+		operationDependencies(Arrays.asList((Component) branch),
+				componentDependency, branch.getExit(Exit.DONE));
+
+		// Give the name of the searchScope
+		branch.specifySearchScope(searchScope);
+		return branch;
 	}
 
 	protected Component buildModule(List<Component> components,
@@ -736,7 +759,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		Iterator<Port> portIter = currentComponent.getDataPorts().iterator();
 		for (Var var : inVars) {
 			Port dataPort = portIter.next();
-			dataPort.setIDLogical(var.getName());
+			dataPort.setIDLogical(var.getIndexedName());
 			dataPort.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 			portCache.putTarget(var, dataPort);
@@ -752,11 +775,15 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 		}
-		dataBus.setIDLogical(var.getName());
+		dataBus.setIDLogical(var.getIndexedName());
 		portCache.putSource(var, dataBus);
 
-		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
-		portCache.putDoneBus(currentComponent, doneBus);
+		mapOutControlPort(currentComponent);
+	}
+
+	protected void mapOutControlPort(Component component) {
+		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
+		portCache.putDoneBus(component, doneBus);
 	}
 
 	protected void operationDependencies(List<Component> components,
