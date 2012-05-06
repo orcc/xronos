@@ -55,6 +55,7 @@ public class NoConnection implements VerilogElement {
 	 * 
 	 * @return <description>
 	 */
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -66,6 +67,7 @@ public class NoConnection implements VerilogElement {
 		return lex;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

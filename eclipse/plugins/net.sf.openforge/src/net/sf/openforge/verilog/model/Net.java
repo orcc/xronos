@@ -52,8 +52,8 @@ public abstract class Net implements NetLValue, SimpleExpression {
 
 		if (width > 0) {
 			this.width = width;
-			this.lsb = 0;
-			this.msb = width - 1;
+			lsb = 0;
+			msb = width - 1;
 		} else {
 			throw new IllegalNetWidth(width, id.toString());
 		}
@@ -66,7 +66,7 @@ public abstract class Net implements NetLValue, SimpleExpression {
 		if ((msb >= lsb) && (lsb >= 0)) {
 			this.lsb = lsb;
 			this.msb = msb;
-			this.width = (msb - lsb) + 1;
+			width = (msb - lsb) + 1;
 		} else {
 			throw new IllegalBitRange(msb, lsb);
 		}
@@ -84,6 +84,7 @@ public abstract class Net implements NetLValue, SimpleExpression {
 		this.id = id;
 	}
 
+	@Override
 	public int getWidth() {
 		return width;
 	}
@@ -96,12 +97,14 @@ public abstract class Net implements NetLValue, SimpleExpression {
 		return lsb;
 	}
 
-	public Collection getNets() {
-		Collection c = new HashSet(1);
+	@Override
+	public Collection<Net> getNets() {
+		Collection<Net> c = new HashSet<Net>(1);
 		c.add(this);
 		return c;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		return id.lexicalify();
 	}
@@ -118,6 +121,7 @@ public abstract class Net implements NetLValue, SimpleExpression {
 		return new NetRange();
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -144,8 +148,6 @@ public abstract class Net implements NetLValue, SimpleExpression {
 	 */
 	public class NetRange implements NetLValue {
 
-		private static final String _RCS_ = "RCS_REVISION: $Rev: 2 $";
-
 		Range range;
 
 		public NetRange() {
@@ -160,14 +162,17 @@ public abstract class Net implements NetLValue, SimpleExpression {
 			range = new Range(msb, lsb);
 		} // NetRange()
 
+		@Override
 		public int getWidth() {
 			return range.getWidth();
 		}
 
-		public Collection getNets() {
+		@Override
+		public Collection<Net> getNets() {
 			return Collections.singletonList(Net.this);
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = new Lexicality();
 
@@ -183,6 +188,7 @@ public abstract class Net implements NetLValue, SimpleExpression {
 			return lex;
 		} // lexicalify()
 
+		@Override
 		public String toString() {
 			return lexicalify().toString();
 		}
@@ -193,6 +199,7 @@ public abstract class Net implements NetLValue, SimpleExpression {
 	// Nested exceptions
 	//
 
+	@SuppressWarnings("serial")
 	public class IllegalNetWidth extends VerilogSyntaxException {
 
 		public IllegalNetWidth(int width, String id) {
@@ -201,6 +208,7 @@ public abstract class Net implements NetLValue, SimpleExpression {
 
 	} // end of nested class IllegalNetWidth
 
+	@SuppressWarnings("serial")
 	public class IllegalBitRange extends VerilogSyntaxException {
 
 		public IllegalBitRange(int msb, int lsb) {

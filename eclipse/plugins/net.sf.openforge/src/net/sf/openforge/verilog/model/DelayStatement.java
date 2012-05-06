@@ -51,10 +51,11 @@ public class DelayStatement implements Statement {
 	 *            a value of type 'int'
 	 */
 	public DelayStatement(Statement toDelay, int ticksToDelay) {
-		this.ticks = ticksToDelay;
-		this.statement = toDelay;
+		ticks = ticksToDelay;
+		statement = toDelay;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -65,10 +66,12 @@ public class DelayStatement implements Statement {
 		return lex;
 	}
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return statement.getNets();
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

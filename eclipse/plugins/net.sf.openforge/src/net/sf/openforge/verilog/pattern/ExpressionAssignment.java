@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Port;
@@ -52,15 +51,14 @@ import net.sf.openforge.verilog.model.Wire;
 public abstract class ExpressionAssignment extends StatementBlock implements
 		ForgePattern {
 
-	List operands = new ArrayList();
+	List<Expression> operands = new ArrayList<Expression>();
 	Wire resultWire;
 
 	public ExpressionAssignment(Component component) {
-		List ports = component.getDataPorts();
+		List<Port> ports = component.getDataPorts();
 		assert ports.size() >= 1 : "Expression assignmnet must have at least 1 operand";
 
-		for (Iterator it = ports.iterator(); it.hasNext();) {
-			Port r_port = (Port) it.next();
+		for (Port r_port : ports) {
 			assert (r_port.isUsed()) : "operand port in math operation is set to unused.";
 			// Bus r_bus = r_port.getBus();
 			// assert (r_bus != null) : "operand port " + r_port +
@@ -83,27 +81,28 @@ public abstract class ExpressionAssignment extends StatementBlock implements
 		 * the identifier and width of the Bus, but use a raw Wire as the actual
 		 * left hand side.
 		 */
-		Net busWire = NetFactory.makeNet((Bus) ex.getDataBuses().iterator()
-				.next());
-		this.resultWire = new Wire(busWire.getIdentifier(), busWire.getWidth());
+		Net busWire = NetFactory.makeNet(ex.getDataBuses().iterator().next());
+		resultWire = new Wire(busWire.getIdentifier(), busWire.getWidth());
 
 		if (_pattern.db)
 			_pattern.d.ln("Expression Assignment: " + busWire.getIdentifier());
 		add(new Assign.Continuous(resultWire, makeExpression(operands)));
 	}
 
-	protected abstract Expression makeExpression(List operands);
+	protected abstract Expression makeExpression(List<Expression> operands);
 
-	public Collection getConsumedNets() {
-		Set consumed = new HashSet();
-		for (Iterator it = operands.iterator(); it.hasNext();) {
-			consumed.addAll(((Expression) it.next()).getNets());
+	@Override
+	public Collection<Net> getConsumedNets() {
+		Set<Net> consumed = new HashSet<Net>();
+		for (Iterator<Expression> it = operands.iterator(); it.hasNext();) {
+			consumed.addAll(it.next().getNets());
 		}
 		return consumed;
 	}
 
-	public Collection getProducedNets() {
-		return Collections.singleton(resultWire);
+	@Override
+	public Collection<Net> getProducedNets() {
+		return Collections.singleton((Net) resultWire);
 	}
 
 } // class ExpressionAssignment

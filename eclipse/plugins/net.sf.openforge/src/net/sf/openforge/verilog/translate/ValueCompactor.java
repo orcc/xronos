@@ -22,7 +22,6 @@
 package net.sf.openforge.verilog.translate;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import net.sf.openforge.lim.BidirectionalPin;
@@ -34,6 +33,7 @@ import net.sf.openforge.lim.FilteredVisitor;
 import net.sf.openforge.lim.InputPin;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.OutputPin;
+import net.sf.openforge.lim.Pin;
 import net.sf.openforge.lim.PinRead;
 import net.sf.openforge.lim.PinStateChange;
 import net.sf.openforge.lim.PinWrite;
@@ -61,7 +61,6 @@ import net.sf.openforge.lim.op.Constant;
  * @version $Id: ValueCompactor.java 23 2005-09-09 18:45:32Z imiller $
  */
 class ValueCompactor {
-	static final String _RCS_ = "$Rev: 23 $";
 
 	/**
 	 * Compacts the {@link Value Values} of a given {@link Design}.
@@ -89,22 +88,23 @@ class ValueCompactor {
 			super(true);
 		}
 
+		@SuppressWarnings("deprecation")
+		@Override
 		public void visit(Design design) {
 			// visit(design.getTasks());
-			for (Iterator iter = design.getTasks().iterator(); iter.hasNext();) {
+			for (Task task : design.getTasks()) {
 				// The design module causes us to miss the
 				// tasks... handle that here.
-				Task task = (Task) iter.next();
 				final Constant thisConstant = task.getThisConstant();
 				if (thisConstant != null) {
 					thisConstant.accept(this);
 				}
 			}
 
-			LinkedList comps = new LinkedList(design.getDesignModule()
-					.getComponents());
+			LinkedList<Component> comps = new LinkedList<Component>(design
+					.getDesignModule().getComponents());
 			while (!comps.isEmpty()) {
-				Visitable vis = (Visitable) comps.remove(0);
+				Visitable vis = comps.remove(0);
 				try {
 					vis.accept(this);
 				} catch (UnexpectedVisitationException uve) {
@@ -117,14 +117,12 @@ class ValueCompactor {
 				}
 			}
 
-			for (Iterator iter = design.getRegisters().iterator(); iter
-					.hasNext();) {
-				visit((Register) iter.next());
+			for (Register reg : design.getRegisters()) {
+				visit(reg);
 			}
 
-			for (Iterator iter = design.getLogicalMemories().iterator(); iter
-					.hasNext();) {
-				visit((LogicalMemory) iter.next());
+			for (LogicalMemory logicalMemory : design.getLogicalMemories()) {
+				visit(logicalMemory);
 			}
 
 			// for (Iterator iter = design.getPinReferees().iterator();
@@ -133,19 +131,16 @@ class ValueCompactor {
 			// ((PinReferee)iter.next()).accept(this);
 			// }
 
-			for (Iterator iter = design.getInputPins().iterator(); iter
-					.hasNext();) {
-				visit((InputPin) iter.next());
+			for (Pin pin : design.getInputPins()) {
+				visit((InputPin) pin);
 			}
 
-			for (Iterator iter = design.getOutputPins().iterator(); iter
-					.hasNext();) {
-				visit((OutputPin) iter.next());
+			for (Pin pin : design.getOutputPins()) {
+				visit((OutputPin) pin);
 			}
 
-			for (Iterator iter = design.getBidirectionalPins().iterator(); iter
-					.hasNext();) {
-				visit((BidirectionalPin) iter.next());
+			for (Pin pin : design.getBidirectionalPins()) {
+				visit((BidirectionalPin) pin);
 			}
 
 			// visit(design.getKickers());
@@ -161,6 +156,7 @@ class ValueCompactor {
 		 * @param mb
 		 *            the MemoryBank to be visited
 		 */
+		@Override
 		public void visit(MemoryBank mb) {
 			// left blank to skip compacting
 
@@ -182,10 +178,12 @@ class ValueCompactor {
 		 * @param component
 		 *            the next component visited
 		 */
+		@Override
 		public void preFilterAny(Component component) {
 			truncateValues(component);
 		}
 
+		@Override
 		protected void traverse(PinRead pinRead) {
 			if (pinRead.getPhysicalComponent() != null) {
 				truncateValues(pinRead.getPhysicalComponent());
@@ -193,6 +191,7 @@ class ValueCompactor {
 			super.traverse(pinRead);
 		}
 
+		@Override
 		protected void traverse(PinWrite pinWrite) {
 			if (pinWrite.getPhysicalComponent() != null) {
 				truncateValues(pinWrite.getPhysicalComponent());
@@ -200,6 +199,7 @@ class ValueCompactor {
 			super.traverse(pinWrite);
 		}
 
+		@Override
 		protected void traverse(PinStateChange pinStateChange) {
 			if (pinStateChange.getPhysicalComponent() != null) {
 				truncateValues(pinStateChange.getPhysicalComponent());
@@ -224,10 +224,7 @@ class ValueCompactor {
 		}
 
 		private void visit(LogicalMemory memory) {
-			for (Iterator iter = memory.getLogicalMemoryPorts().iterator(); iter
-					.hasNext();) {
-				final LogicalMemoryPort memoryPort = (LogicalMemoryPort) iter
-						.next();
+			for (LogicalMemoryPort memoryPort : memory.getLogicalMemoryPorts()) {
 				memoryPort.getReferee().accept(this);
 			}
 			visit(memory.getStructuralMemory());
@@ -281,9 +278,9 @@ class ValueCompactor {
 		 * @param collection
 		 *            a collection of {@link Visitable} objects
 		 */
-		private void visit(Collection collection) {
-			for (Iterator iter = collection.iterator(); iter.hasNext();) {
-				((Visitable) iter.next()).accept(this);
+		private void visit(Collection<Component> collection) {
+			for (Component component : collection) {
+				((Visitable) component).accept(this);
 			}
 		}
 
@@ -311,19 +308,14 @@ class ValueCompactor {
 		 *            the next component to be visited
 		 */
 		private static void truncateValues(Component component) {
-			for (Iterator iter = component.getPorts().iterator(); iter
-					.hasNext();) {
-				final Port port = (Port) iter.next();
+			for (Port port : component.getPorts()) {
 				final Value value = port.getValue();
 				if (value != null) {
-					boolean isSigned = value.isSigned();
 					port.forceValue(getTruncatedValue(value));
 				}
 			}
 
-			for (Iterator iter = component.getBuses().iterator(); iter
-					.hasNext();) {
-				final Bus bus = (Bus) iter.next();
+			for (Bus bus : component.getBuses()) {
 				final Value value = bus.getValue();
 				if (value != null) {
 					bus.forceValue(getTruncatedValue(value));

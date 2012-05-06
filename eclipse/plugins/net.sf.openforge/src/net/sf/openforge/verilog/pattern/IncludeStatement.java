@@ -29,6 +29,7 @@ import java.util.Collections;
 import net.sf.openforge.util.VarFilename;
 import net.sf.openforge.verilog.model.ArbitraryString;
 import net.sf.openforge.verilog.model.Directive;
+import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.Token;
 
 /**
@@ -80,10 +81,12 @@ public class IncludeStatement extends Directive.Include {
 		this(new File(VarFilename.parse(fileToInclude)));
 	}
 
-	public Collection getNets() {
-		return Collections.EMPTY_SET;
+	@Override
+	public Collection<Net> getNets() {
+		return Collections.emptySet();
 	}
 
+	@Override
 	protected Token getFilename() {
 		if (file == null) {
 			Token t = new ArbitraryString(stringFile);
@@ -106,6 +109,7 @@ public class IncludeStatement extends Directive.Include {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

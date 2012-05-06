@@ -197,10 +197,12 @@ public class Symbol extends Token {
 	// ////////////////////////////
 	// VerilogElement interface
 
+	@Override
 	public String getToken() {
 		return token;
 	}
 
+	@Override
 	public int getType() {
 		return TYPE;
 	}

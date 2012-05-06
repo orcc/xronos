@@ -23,7 +23,6 @@ package net.sf.openforge.verilog.pattern;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,6 +32,7 @@ import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.util.naming.ID;
+import net.sf.openforge.verilog.mapping.MappedModule;
 import net.sf.openforge.verilog.model.Identifier;
 import net.sf.openforge.verilog.model.InlineComment;
 import net.sf.openforge.verilog.model.Input;
@@ -57,7 +57,7 @@ import net.sf.openforge.verilog.model.Statement;
 public class GenericModule extends net.sf.openforge.verilog.model.Module
 		implements MappedModuleSpecifier {
 
-	private Set<MappedModuleSpecifier> mappedModules = new HashSet<MappedModuleSpecifier>();
+	private Set<MappedModule> mappedModules = new HashSet<MappedModule>();
 
 	private Map<Object, Identifier> interfaceMap = new HashMap<Object, Identifier>();
 	private Module mod;
@@ -86,7 +86,7 @@ public class GenericModule extends net.sf.openforge.verilog.model.Module
 	public GenericModule(net.sf.openforge.lim.Module module, String name) {
 		super(ID.toVerilogIdentifier(name));
 
-		this.mod = module;
+		mod = module;
 		defineInterface(module);
 	}
 
@@ -101,9 +101,8 @@ public class GenericModule extends net.sf.openforge.verilog.model.Module
 		}
 
 		// define output ports (based on the body's buses)
-		for (Iterator mod_buses = module.getBuses().iterator(); mod_buses
-				.hasNext();) {
-			addOutput((Bus) mod_buses.next());
+		for (Bus bus : module.getBuses()) {
+			addOutput(bus);
 		}
 	} // defineInterface
 
@@ -148,13 +147,12 @@ public class GenericModule extends net.sf.openforge.verilog.model.Module
 		for (Port p : mod.getPorts()) {
 			if (!p.isUsed())
 				continue;
-			Identifier id = (Identifier) interfaceMap.get(p);
+			Identifier id = interfaceMap.get(p);
 			Input in = new Input(id, p.getValue().getSize());
 			inst.connect(in, new PortWire(p));
 		}
-		for (Iterator iter = this.mod.getBuses().iterator(); iter.hasNext();) {
-			Bus b = (Bus) iter.next();
-			Identifier id = (Identifier) interfaceMap.get(b);
+		for (Bus b : mod.getBuses()) {
+			Identifier id = interfaceMap.get(b);
 			if (id == null)
 				continue;
 			Output out = new Output(id, b.getValue().getSize());
@@ -167,19 +165,18 @@ public class GenericModule extends net.sf.openforge.verilog.model.Module
 	 * Adds a statement to the statement block of the module, and a declaration
 	 * for each undeclared Net produced by the statement.
 	 */
+	@Override
 	public void state(Statement statement) {
 		assert ((statement instanceof ForgePattern) || (statement instanceof InlineComment)) : "DesignModule only supports stating ForgePatterns.";
 
 		if (statement instanceof ForgePattern) {
-			for (Iterator it = ((ForgePattern) statement).getProducedNets()
-					.iterator(); it.hasNext();) {
-				Net net = (Net) it.next();
+			for (Net net : ((ForgePattern) statement).getProducedNets()) {
 				if (!isDeclared(net)) {
 					declare(net);
 				}
 			}
 		}
-		this.statements.add(statement);
+		statements.add(statement);
 
 		if (statement instanceof MappedModuleSpecifier) {
 			mappedModules.addAll(((MappedModuleSpecifier) statement)
@@ -191,7 +188,8 @@ public class GenericModule extends net.sf.openforge.verilog.model.Module
 	/**
 	 * Provides the Set of mapped Modules
 	 */
-	public Set getMappedModules() {
+	@Override
+	public Set<MappedModule> getMappedModules() {
 		return mappedModules;
 	}
 

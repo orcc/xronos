@@ -45,6 +45,7 @@ public class EventControl implements Expression {
 		this.ee = ee;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -56,14 +57,17 @@ public class EventControl implements Expression {
 		return lex;
 	} // EventControl()
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return ee.getNets();
 	}
 
+	@Override
 	public int getWidth() {
 		return ee.getWidth();
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

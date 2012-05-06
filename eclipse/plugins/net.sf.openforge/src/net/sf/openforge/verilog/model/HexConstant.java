@@ -55,10 +55,12 @@ public class HexConstant extends Constant {
 		super(l, size);
 	}
 
+	@Override
 	public int getRadix() {
 		return HEX;
 	}
 
+	@Override
 	public String getToken() {
 		return HexString.valueToHex(getValue(), getSize());
 	}

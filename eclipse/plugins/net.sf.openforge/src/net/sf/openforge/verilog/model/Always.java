@@ -41,7 +41,8 @@ public class Always implements Statement {
 
 	Statement body;
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return body.getNets();
 	}
 
@@ -49,6 +50,7 @@ public class Always implements Statement {
 		this.body = body;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -58,6 +60,7 @@ public class Always implements Statement {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

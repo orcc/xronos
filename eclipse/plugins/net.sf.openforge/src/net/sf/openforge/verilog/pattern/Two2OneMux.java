@@ -94,7 +94,8 @@ public class Two2OneMux implements Statement {
 	 * 
 	 * @return The nets value
 	 */
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return two2one_statement.getNets();
 	} // getNets()
 
@@ -103,10 +104,12 @@ public class Two2OneMux implements Statement {
 	 * 
 	 * @return Description of the Return Value
 	 */
+	@Override
 	public Lexicality lexicalify() {
 		return two2one_statement.lexicalify();
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

@@ -40,13 +40,15 @@ public class StringStatement implements Statement {
 
 	public StringStatement(String value) {
 		super();
-		this.state = new StringToken(value);
+		state = new StringToken(value);
 	}
 
-	public Collection getNets() {
-		return Collections.EMPTY_SET;
+	@Override
+	public Collection<Net> getNets() {
+		return Collections.emptySet();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 		lex.append(Symbol.QUOTE);
@@ -55,6 +57,7 @@ public class StringStatement implements Statement {
 		return lex;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -66,13 +69,15 @@ public class StringStatement implements Statement {
 
 		public StringToken(String value) {
 			super();
-			this.token = value;
+			token = value;
 		}
 
+		@Override
 		public String getToken() {
-			return this.token;
+			return token;
 		}
 
+		@Override
 		public int getType() {
 			return TYPE;
 		}

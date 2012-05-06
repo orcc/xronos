@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import net.sf.openforge.verilog.pattern.BusRegister;
 
@@ -45,8 +46,8 @@ import net.sf.openforge.verilog.pattern.BusRegister;
  */
 public class NetDeclaration implements Statement {
 
-	List nets;
-	HashSet names;
+	List<Net> nets;
+	Set<String> names;
 
 	Keyword type;
 	int width;
@@ -54,8 +55,8 @@ public class NetDeclaration implements Statement {
 	int lsb;
 
 	public NetDeclaration() {
-		this.nets = new ArrayList();
-		this.names = new HashSet();
+		nets = new ArrayList<Net>();
+		names = new HashSet<String>();
 	}
 
 	public NetDeclaration(Net net) {
@@ -64,10 +65,10 @@ public class NetDeclaration implements Statement {
 		nets.add(net);
 		names.add(net.getIdentifier().toString());
 
-		this.width = net.getWidth();
-		this.lsb = net.getLSB();
-		this.msb = net.getMSB();
-		this.type = net.getType();
+		width = net.getWidth();
+		lsb = net.getLSB();
+		msb = net.getMSB();
+		type = net.getType();
 
 	} // NetDeclaration()
 
@@ -99,7 +100,8 @@ public class NetDeclaration implements Statement {
 		names.remove(net.getIdentifier().toString());
 	}
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return nets;
 	}
 
@@ -107,6 +109,7 @@ public class NetDeclaration implements Statement {
 		return type;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		if (nets.size() == 0) {
 			throw new VerilogSyntaxException(
@@ -125,8 +128,8 @@ public class NetDeclaration implements Statement {
 			lex.append(getRange());
 		}
 
-		for (Iterator it = nets.iterator(); it.hasNext();) {
-			Net net = (Net) it.next();
+		for (Iterator<Net> it = nets.iterator(); it.hasNext();) {
+			Net net = it.next();
 			lex.append(net.getIdentifier());
 			if (net instanceof BusRegister) {
 				Expression declarationInitial = ((BusRegister) net)
@@ -155,6 +158,7 @@ public class NetDeclaration implements Statement {
 		return new Range(msb, lsb);
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

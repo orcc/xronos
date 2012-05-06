@@ -24,7 +24,6 @@ package net.sf.openforge.verilog.model;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -48,11 +47,11 @@ import java.util.List;
  */
 public class InitializedMemory extends Register implements Statement {
 
-	private List initialValues;
+	private List<Expression> initialValues;
 
 	public InitializedMemory(String name, int width) {
 		super(name, width);
-		this.initialValues = new ArrayList();
+		initialValues = new ArrayList<Expression>();
 	}
 
 	/**
@@ -60,11 +59,12 @@ public class InitializedMemory extends Register implements Statement {
 	 * value via the given Expression.
 	 */
 	public void addInitValue(Expression init) {
-		this.initialValues.add(init);
+		initialValues.add(init);
 	}
 
-	public Collection getNets() {
-		return Collections.singleton(this);
+	@Override
+	public Collection<Net> getNets() {
+		return Collections.singleton((Net) this);
 	}
 
 	/**
@@ -74,11 +74,11 @@ public class InitializedMemory extends Register implements Statement {
 		return initialValues.size();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 		int i = 0;
-		for (Iterator iter = initialValues.iterator(); iter.hasNext();) {
-			Expression right = (Expression) iter.next();
+		for (Expression right : initialValues) {
 			lex.append(new Assign.NonBlocking(new MemoryElement(this, i++),
 					right));
 		}

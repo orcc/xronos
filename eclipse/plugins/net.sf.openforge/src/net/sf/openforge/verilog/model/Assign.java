@@ -63,6 +63,7 @@ public abstract class Assign implements Statement {
 		this(assign, net, expression, true);
 	} // Assign()
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -74,8 +75,9 @@ public abstract class Assign implements Statement {
 		return lex;
 	} // lexicalify()
 
-	public Collection getNets() {
-		Set nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
 		// Hack to work around MemoryElements which are NetLValues but
 		// are not nets.... This is an awful hack, we should re-work
@@ -85,13 +87,14 @@ public abstract class Assign implements Statement {
 		// need to re-assert this.
 		// if (net instanceof Net)
 		{
-			nets.add(net);
+			nets.add((Net) net);
 		}
 		nets.addAll(expression.getNets());
 
 		return nets;
 	} // getNets();
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -125,6 +128,7 @@ public abstract class Assign implements Statement {
 			super(Symbol.CONTINUOUS_ASSIGN, net, expression);
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = new Lexicality();
 
@@ -139,6 +143,7 @@ public abstract class Assign implements Statement {
 
 	} // end of inner class Continuous
 
+	@SuppressWarnings("serial")
 	public static class UnbalancedAssignmentException extends
 			VerilogSyntaxException {
 

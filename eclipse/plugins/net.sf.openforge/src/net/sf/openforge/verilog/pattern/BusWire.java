@@ -68,6 +68,7 @@ public class BusWire extends Wire implements BusNet {
 		this(bus, ID.toVerilogIdentifier(ID.showLogical(bus)));
 	}
 
+	@Override
 	public Bus getBus() {
 		return bus;
 	}

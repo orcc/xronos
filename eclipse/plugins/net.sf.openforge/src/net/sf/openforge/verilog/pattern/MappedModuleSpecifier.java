@@ -22,6 +22,8 @@ package net.sf.openforge.verilog.pattern;
 
 import java.util.Set;
 
+import net.sf.openforge.verilog.mapping.MappedModule;
+
 /**
  * An IncludeSpecifier specifies external Verilog which must be included for
  * synthesis or simulation.
@@ -31,6 +33,6 @@ public interface MappedModuleSpecifier {
 	/**
 	 * Provides the Set of MappedModule objects need.
 	 */
-	public Set getMappedModules();
+	public Set<MappedModule> getMappedModules();
 
 } // interface MappedSpecifier

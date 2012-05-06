@@ -54,6 +54,7 @@ public abstract class BitwiseAssignment extends BinaryOpAssignment {
 			super(and);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			return (new net.sf.openforge.verilog.model.Bitwise.And(left, right));
 		}
@@ -64,6 +65,7 @@ public abstract class BitwiseAssignment extends BinaryOpAssignment {
 			super(or);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			return (new net.sf.openforge.verilog.model.Bitwise.Or(left, right));
 		}
@@ -74,6 +76,7 @@ public abstract class BitwiseAssignment extends BinaryOpAssignment {
 			super(xor);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			return (new net.sf.openforge.verilog.model.Bitwise.Xor(left, right));
 		}

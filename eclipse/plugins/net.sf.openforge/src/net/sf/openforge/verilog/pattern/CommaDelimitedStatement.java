@@ -50,8 +50,8 @@ public class CommaDelimitedStatement implements Statement {
 
 	private List<VerilogElement> elements = new ArrayList<VerilogElement>();
 
-	public CommaDelimitedStatement(Collection elements) {
-		this.elements = new ArrayList(elements);
+	public CommaDelimitedStatement(Collection<VerilogElement> elements) {
+		this.elements = new ArrayList<VerilogElement>(elements);
 	}
 
 	public CommaDelimitedStatement() {
@@ -61,38 +61,42 @@ public class CommaDelimitedStatement implements Statement {
 	 * Adds another element the sequence of comma delimited elements.
 	 */
 	public void append(VerilogElement element) {
-		this.elements.add(element);
+		elements.add(element);
 	}
 
 	public void prepend(VerilogElement element) {
-		this.elements.add(0, element);
+		elements.add(0, element);
 	}
 
-	public Collection getNets() {
-		Set nets = new HashSet();
-		for (Iterator<VerilogElement> iter = elements.iterator(); iter.hasNext();) {
-			VerilogElement ve = (VerilogElement) iter.next();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
+		for (Iterator<VerilogElement> iter = elements.iterator(); iter
+				.hasNext();) {
+			VerilogElement ve = iter.next();
 			if (ve instanceof Statement)
 				nets.addAll(((Statement) ve).getNets());
 			else if (ve instanceof Expression)
 				nets.addAll(((Expression) ve).getNets());
 			else if (ve instanceof Net)
-				nets.add(ve);
+				nets.add((Net) ve);
 		}
 		return nets;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 		for (Iterator<VerilogElement> iter = elements.iterator(); iter
 				.hasNext();) {
-			lex.append((VerilogElement) iter.next());
+			lex.append(iter.next());
 			if (iter.hasNext())
 				lex.append(Symbol.COMMA);
 		}
 		return lex;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

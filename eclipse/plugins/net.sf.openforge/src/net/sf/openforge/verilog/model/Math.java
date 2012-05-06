@@ -47,10 +47,12 @@ public abstract class Math extends Operation {
 			super(Symbol.PLUS, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return BINARY_PLUS_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return false;
 		}
@@ -62,10 +64,12 @@ public abstract class Math extends Operation {
 			super(Symbol.MINUS, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return BINARY_MINUS_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -76,14 +80,17 @@ public abstract class Math extends Operation {
 			super(Symbol.MULTIPLY, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return MULTIPLY_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return false;
 		}
 
+		@Override
 		public boolean allowUnbalanced() {
 			return true;
 		}
@@ -94,10 +101,12 @@ public abstract class Math extends Operation {
 			super(Symbol.DIVIDE, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return DIVIDE_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -108,10 +117,12 @@ public abstract class Math extends Operation {
 			super(Symbol.MODULUS, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return MODULUS_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}

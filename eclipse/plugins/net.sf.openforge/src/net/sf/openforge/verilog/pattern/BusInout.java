@@ -54,6 +54,7 @@ public class BusInout extends Inout implements BusNet {
 	 * 
 	 * @return The LIM Bus upon which the Net is based
 	 */
+	@Override
 	public Bus getBus() {
 		return bus;
 	}

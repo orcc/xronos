@@ -69,6 +69,7 @@ public class Range implements VerilogElement {
 		return lsb;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -83,9 +84,8 @@ public class Range implements VerilogElement {
 		return lex;
 	} // lexicalify()
 
+	@SuppressWarnings("serial")
 	public class IllegalBitRange extends VerilogSyntaxException {
-
-		private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 		public IllegalBitRange(int msb, int lsb) {
 			super(new String("Illegal bit range -- msb:lsb " + msb + ":" + lsb));

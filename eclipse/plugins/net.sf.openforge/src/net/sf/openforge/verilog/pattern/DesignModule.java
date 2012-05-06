@@ -22,20 +22,22 @@ package net.sf.openforge.verilog.pattern;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.forge.api.internal.Core;
 import net.sf.openforge.lim.BidirectionalPin;
+import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.InputPin;
 import net.sf.openforge.lim.OutputPin;
+import net.sf.openforge.lim.Pin;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Procedure;
 import net.sf.openforge.lim.Visitable;
 import net.sf.openforge.lim.io.SimplePin;
 import net.sf.openforge.util.naming.ID;
+import net.sf.openforge.verilog.mapping.MappedModule;
 import net.sf.openforge.verilog.model.Assign;
 import net.sf.openforge.verilog.model.Expression;
 import net.sf.openforge.verilog.model.InlineComment;
@@ -59,11 +61,12 @@ import net.sf.openforge.verilog.model.Statement;
 public class DesignModule extends net.sf.openforge.verilog.model.Module
 		implements MappedModuleSpecifier {
 
+	@SuppressWarnings("unused")
 	private static int call_instanceCount = 0;
 
 	private Design design;
 
-	private Set<MappedModuleSpecifier> mappedModules = new HashSet<MappedModuleSpecifier>();
+	private Set<MappedModule> mappedModules = new HashSet<MappedModule>();
 
 	/**
 	 * When set to true the Ports of this module will be reversed in their Range
@@ -81,7 +84,7 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 		super(modifyNameForEDK(ID.toVerilogIdentifier(ID.showLogical(design)),
 				design));
 
-		this.REVERSE_PORTS = design
+		REVERSE_PORTS = design
 				.getEngine()
 				.getGenericJob()
 				.getUnscopedBooleanOptionValue(
@@ -123,9 +126,8 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 	 */
 	private void defineSimplePins(Design des) {
 		// for (Iterator iter = des.getSimplePins().iterator(); iter.hasNext();)
-		for (Iterator iter = des.getDesignModule().getComponents().iterator(); iter
-				.hasNext();) {
-			Visitable vis = (Visitable) iter.next();
+		for (Component component : des.getDesignModule().getComponents()) {
+			Visitable vis = component;
 			if (vis instanceof SimplePin) {
 				// SimplePin pin = (SimplePin)iter.next();
 				SimplePin pin = (SimplePin) vis;
@@ -164,13 +166,13 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 	 */
 	private void defineInterface() {
 		// define input ports (based on the InputPins)
-		for (Iterator pins = design.getInputPins().iterator(); pins.hasNext();) {
-			InputPin pin = (InputPin) pins.next();
+		for (Pin p : design.getInputPins()) {
+			InputPin pin = (InputPin) p;
 
 			if (!Core.hasThisPin(pin.getApiPin())
 					|| Core.hasPublished(pin.getApiPin())) {
 				// XXX: FIXME - for some reason - designs that do not
-				// neet a clock have the clock show up in the input
+				// need a clock have the clock show up in the input
 				// pins list anyway.
 				if (!design.consumesClock()) {
 					// check if this pin is a clock, and if so skip it
@@ -187,8 +189,8 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 		}
 
 		// define output ports (based on OutputPins)
-		for (Iterator pins = design.getOutputPins().iterator(); pins.hasNext();) {
-			OutputPin pin = (OutputPin) pins.next();
+		for (Pin p : design.getOutputPins()) {
+			OutputPin pin = (OutputPin) p;
 
 			if (!Core.hasThisPin(pin.getApiPin())
 					|| Core.hasPublished(pin.getApiPin())) {
@@ -199,9 +201,8 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 		}
 
 		// define in-out ports (based on BidirectionalPins)
-		for (Iterator pins = design.getBidirectionalPins().iterator(); pins
-				.hasNext();) {
-			BidirectionalPin biPin = (BidirectionalPin) pins.next();
+		for (Pin p : design.getBidirectionalPins()) {
+			BidirectionalPin biPin = (BidirectionalPin) p;
 
 			if (!Core.hasThisPin(biPin.getApiPin())
 					|| Core.hasPublished(biPin.getApiPin())) {
@@ -224,8 +225,8 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 			portWire = pinPortWire.getRange(pinPort.getWidth() - 1, 0);
 		}
 
-		state(new ForgeStatement(Collections.EMPTY_SET, new Assign.Continuous(
-				pinPort, portWire)));
+		state(new ForgeStatement(Collections.<Net> emptySet(),
+				new Assign.Continuous(pinPort, portWire)));
 	}
 
 	/**
@@ -237,6 +238,7 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 	 * @param net
 	 *            a value of type 'Net'
 	 */
+	@Override
 	protected void declarePort(Net net) {
 		if (REVERSE_PORTS) {
 			declare(new NetDeclarationReversed(net));
@@ -249,13 +251,12 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 	 * Adds a statement to the statement block of the module, and a declaration
 	 * for each undeclared Net produced by the statement.
 	 */
+	@Override
 	public void state(Statement statement) {
 		assert ((statement instanceof ForgePattern) || (statement instanceof InlineComment)) : "DesignModule only supports stating ForgePatterns.";
 
 		if (statement instanceof ForgePattern) {
-			for (Iterator it = ((ForgePattern) statement).getProducedNets()
-					.iterator(); it.hasNext();) {
-				Net net = (Net) it.next();
+			for (Net net : ((ForgePattern) statement).getProducedNets()) {
 				if (!isDeclared(net)) {
 					declare(net);
 				}
@@ -274,7 +275,8 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 	/**
 	 * Provides the Set of MappedModules
 	 */
-	public Set getMappedModules() {
+	@Override
+	public Set<MappedModule> getMappedModules() {
 		return mappedModules;
 	}
 } // class DesignModule

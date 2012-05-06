@@ -53,8 +53,8 @@ public class InvertedBitWire implements Expression {
 	}
 
 	public InvertedBitWire(List<Bit> bits) {
-		Bit lsb = ((Bit) bits.get(0)).getInvertedBit();
-		Bit msb = ((Bit) bits.get(bits.size() - 1)).getInvertedBit();
+		Bit lsb = bits.get(0).getInvertedBit();
+		Bit msb = bits.get(bits.size() - 1).getInvertedBit();
 		// Bus source = lsb.getParent().getSource();
 		assert lsb.getOwner() != null : "Getting owner of floating bit " + lsb;
 		Bus source = lsb.getOwner();
@@ -62,14 +62,17 @@ public class InvertedBitWire implements Expression {
 		bitselect = full_wire.getRange(msb.getPosition(), lsb.getPosition());
 	}
 
+	@Override
 	public int getWidth() {
 		return bitselect.getWidth();
 	}
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return bitselect.getNets();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		if (bitselect.getWidth() > 1) {
 			return new Group(new Unary.Negate(bitselect)).lexicalify();

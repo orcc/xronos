@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Comment represents a verilog comment.
@@ -118,13 +119,13 @@ public class Comment extends PrintWriter {
 	 *            Value to assign to width.
 	 */
 	public void setWidth(int v) {
-		this.width = v;
+		width = v;
 	}
 
 	public String toShortComment() {
 		StringBuffer comment = new StringBuffer();
 
-		for (Iterator it = iterator(); it.hasNext();) {
+		for (Iterator<Object> it = iterator(); it.hasNext();) {
 			String line = (String) it.next();
 			comment.append(Symbol.SHORT_COMMENT);
 			comment.append(" ");
@@ -141,7 +142,7 @@ public class Comment extends PrintWriter {
 		comment.append(Symbol.OPEN_COMMENT);
 		comment.append(Control.NEWLINE.toString());
 
-		for (Iterator it = iterator(); it.hasNext();) {
+		for (Iterator<Object> it = iterator(); it.hasNext();) {
 			String line = (String) it.next();
 			comment.append(" ");
 			comment.append(Symbol.CONTINUE_COMMENT);
@@ -163,6 +164,7 @@ public class Comment extends PrintWriter {
 		return comment.toString();
 	} // toLongComment()
 
+	@Override
 	public String toString() {
 		switch (type) {
 		case SHORT:
@@ -174,20 +176,20 @@ public class Comment extends PrintWriter {
 		}
 	} // toString()
 
-	public Iterator iterator() {
+	public Iterator<Object> iterator() {
 		return new LineIterator();
 	}
 
-	public class LineIterator implements Iterator {
+	public class LineIterator implements Iterator<Object> {
 		String buffer;
-		ArrayList lines;
+		List<Object> lines;
 		int offset = 0;
 
 		int iterator_count = 0;
 
 		public LineIterator() {
 			buffer = ((StringWriter) out).toString();
-			lines = new ArrayList();
+			lines = new ArrayList<Object>();
 
 			breakBuffer();
 		}
@@ -250,14 +252,17 @@ public class Comment extends PrintWriter {
 
 		}
 
+		@Override
 		public boolean hasNext() {
 			return (iterator_count < lines.size());
 		}
 
+		@Override
 		public Object next() {
 			return lines.get(iterator_count++);
 		}
 
+		@Override
 		public void remove() {
 
 		}

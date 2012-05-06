@@ -40,7 +40,7 @@ public class Replication extends Concatenation {
 
 	public Replication(Constant repetition_number, Expression e) {
 		this.repetition_number = repetition_number;
-		this.repeated_expression = new Concatenation(e);
+		repeated_expression = new Concatenation(e);
 
 		super.add(repetition_number);
 		super.add(repeated_expression);
@@ -50,6 +50,7 @@ public class Replication extends Concatenation {
 		this(new Constant(repetition_number), e);
 	} // Replication()
 
+	@Override
 	public int getWidth() {
 		return (int) (repeated_expression.getWidth() * repetition_number
 				.longValue());
@@ -62,10 +63,12 @@ public class Replication extends Concatenation {
 	 * @param e
 	 *            the Expression to add
 	 */
+	@Override
 	public void add(Expression e) {
 		repeated_expression.add(e);
 	} // add()
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 

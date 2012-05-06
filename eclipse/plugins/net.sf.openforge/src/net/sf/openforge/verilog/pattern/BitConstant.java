@@ -27,6 +27,7 @@ import net.sf.openforge.lim.Bit;
 import net.sf.openforge.verilog.model.BinaryNumber;
 import net.sf.openforge.verilog.model.Expression;
 import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
 
 /**
  * A verilog expression which is based on a contiguous set of LIM {@link Bit
@@ -55,14 +56,17 @@ public class BitConstant implements Expression {
 		constant = new BinaryNumber(constant_value, constant_size);
 	}
 
+	@Override
 	public int getWidth() {
 		return constant.getWidth();
 	}
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return constant.getNets();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		return constant.lexicalify();
 	}

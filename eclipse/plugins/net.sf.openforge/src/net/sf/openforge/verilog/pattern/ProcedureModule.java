@@ -21,7 +21,6 @@
 package net.sf.openforge.verilog.pattern;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import net.sf.openforge.lim.Bus;
@@ -72,15 +71,14 @@ public class ProcedureModule extends net.sf.openforge.verilog.model.Module
 		net.sf.openforge.lim.Module body = proc.getBody();
 
 		// define input ports (based on the body's Ports)
-		
-		for( Port port : body.getPorts()){
+
+		for (Port port : body.getPorts()) {
 			addInput(port);
 		}
 
 		// define output ports (based on the body's buses)
-		for (Iterator mod_buses = body.getBuses().iterator(); mod_buses
-				.hasNext();) {
-			addOutput((Bus) mod_buses.next());
+		for (Bus bus : body.getBuses()) {
+			addOutput(bus);
 		}
 	} // defineInterface
 
@@ -113,13 +111,12 @@ public class ProcedureModule extends net.sf.openforge.verilog.model.Module
 	 * Adds a statement to the statement block of the module, and a declaration
 	 * for each undeclared Net produced by the statement.
 	 */
+	@Override
 	public void state(Statement statement) {
 		assert ((statement instanceof ForgePattern) || (statement instanceof InlineComment)) : "DesignModule only supports stating ForgePatterns.";
 
 		if (statement instanceof ForgePattern) {
-			for (Iterator it = ((ForgePattern) statement).getProducedNets()
-					.iterator(); it.hasNext();) {
-				Net net = (Net) it.next();
+			for (Net net : ((ForgePattern) statement).getProducedNets()) {
 				if (!isDeclared(net)) {
 					declare(net);
 				}
@@ -137,6 +134,7 @@ public class ProcedureModule extends net.sf.openforge.verilog.model.Module
 	/**
 	 * Provides the Set of mapped Modules
 	 */
+	@Override
 	public Set<MappedModule> getMappedModules() {
 		return mappedModules;
 	}

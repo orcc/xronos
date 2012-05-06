@@ -27,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import net.sf.openforge.lim.Reg;
+import net.sf.openforge.verilog.mapping.MappedModule;
 import net.sf.openforge.verilog.model.Always;
 import net.sf.openforge.verilog.model.Assign;
 import net.sf.openforge.verilog.model.ConditionalStatement;
@@ -72,13 +73,13 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 	 * A Collection of Wire objects that are consumed (used/referred to) by the
 	 * Verilog code block generated in this instance.
 	 */
-	private Collection<Object> consumedNets;
+	private Collection<Net> consumedNets;
 
 	/**
 	 * A Collection of Wire objects that are produced by the Verilog code block
 	 * generated in this instance.
 	 */
-	private Collection<Object> producedNets;
+	private Collection<Net> producedNets;
 
 	/**
 	 * Fully populates this InferredRegVariant {@link StatementBlock} with the
@@ -112,23 +113,22 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 		dataWire = new PortWire(reg.getDataPort(), true);
 		clockWire = new PortWire(reg.getClockPort());
 
-		producedNets = new LinkedHashSet<Object>();
-		producedNets.add(this.resultWire);
+		producedNets = new LinkedHashSet<Net>();
+		producedNets.add(resultWire);
 
-		consumedNets = new LinkedHashSet<Object>();
-		consumedNets.add(this.clockWire);
-		consumedNets.add(this.dataWire);
+		consumedNets = new LinkedHashSet<Net>();
+		consumedNets.add(clockWire);
+		consumedNets.add(dataWire);
 
-		final int resultWireWidth = this.resultWire.getWidth();
+		final int resultWireWidth = resultWire.getWidth();
 		final EventExpression clock_event = new EventExpression.PosEdge(
 				clockWire);
 		EventExpression[] eventExpressions = new EventExpression[] { clock_event };
 		SequentialBlock blockBody = new SequentialBlock();
-		Statement statements = new Assign.NonBlocking(this.resultWire,
-				this.dataWire);
+		Statement statements = new Assign.NonBlocking(resultWire, dataWire);
 
-		//final HexNumber allZero = new HexNumber(0, resultWireWidth);
-		//final HexNumber allOne = new HexNumber(-1, resultWireWidth);
+		// final HexNumber allZero = new HexNumber(0, resultWireWidth);
+		// final HexNumber allOne = new HexNumber(-1, resultWireWidth);
 		// HexNumber resetValue = allZero;
 
 		final HexNumber resetValue;
@@ -163,7 +163,7 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			 * din; end
 			 */
 			setWire = new PortWire(reg.getSetPort());
-			setStatement = new Assign.NonBlocking(this.resultWire, setValue);
+			setStatement = new Assign.NonBlocking(resultWire, setValue);
 			statements = new ConditionalStatement(setWire, setStatement,
 					statements);
 			consumedNets.add(setWire);
@@ -174,7 +174,7 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			 * din; end
 			 */
 			resetWire = new PortWire(reg.getInternalResetPort());
-			resetStatement = new Assign.NonBlocking(this.resultWire, resetValue);
+			resetStatement = new Assign.NonBlocking(resultWire, resetValue);
 			statements = new ConditionalStatement(resetWire, resetStatement,
 					statements);
 			consumedNets.add(resetWire);
@@ -185,11 +185,11 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			 * (SET) dout <= 8'hff; else dout <= din; end
 			 */
 			setWire = new PortWire(reg.getSetPort());
-			setStatement = new Assign.NonBlocking(this.resultWire, setValue);
+			setStatement = new Assign.NonBlocking(resultWire, setValue);
 			statements = new ConditionalStatement(setWire, setStatement,
 					statements);
 			resetWire = new PortWire(reg.getInternalResetPort());
-			resetStatement = new Assign.NonBlocking(this.resultWire, resetValue);
+			resetStatement = new Assign.NonBlocking(resultWire, resetValue);
 			statements = new ConditionalStatement(resetWire, resetStatement,
 					statements);
 			consumedNets.add(setWire);
@@ -211,7 +211,7 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			enableWire = new PortWire(reg.getEnablePort());
 			statements = new ConditionalStatement(enableWire, statements);
 			setWire = new PortWire(reg.getSetPort());
-			setStatement = new Assign.NonBlocking(this.resultWire, setValue);
+			setStatement = new Assign.NonBlocking(resultWire, setValue);
 			statements = new ConditionalStatement(setWire, setStatement,
 					statements);
 			consumedNets.add(enableWire);
@@ -225,7 +225,7 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			enableWire = new PortWire(reg.getEnablePort());
 			statements = new ConditionalStatement(enableWire, statements);
 			resetWire = new PortWire(reg.getInternalResetPort());
-			resetStatement = new Assign.NonBlocking(this.resultWire, resetValue);
+			resetStatement = new Assign.NonBlocking(resultWire, resetValue);
 			statements = new ConditionalStatement(resetWire, resetStatement,
 					statements);
 			consumedNets.add(enableWire);
@@ -239,11 +239,11 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			enableWire = new PortWire(reg.getEnablePort());
 			statements = new ConditionalStatement(enableWire, statements);
 			setWire = new PortWire(reg.getSetPort());
-			setStatement = new Assign.NonBlocking(this.resultWire, setValue);
+			setStatement = new Assign.NonBlocking(resultWire, setValue);
 			statements = new ConditionalStatement(setWire, setStatement,
 					statements);
 			resetWire = new PortWire(reg.getInternalResetPort());
-			resetStatement = new Assign.NonBlocking(this.resultWire, resetValue);
+			resetStatement = new Assign.NonBlocking(resultWire, resetValue);
 			statements = new ConditionalStatement(resetWire, resetStatement,
 					statements);
 			consumedNets.add(enableWire);
@@ -256,7 +256,7 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			 * 8'hff; else dout <= din; end
 			 */
 			presetWire = new PortWire(reg.getSetPort());
-			presetStatement = new Assign.NonBlocking(this.resultWire, setValue);
+			presetStatement = new Assign.NonBlocking(resultWire, setValue);
 			statements = new ConditionalStatement(presetWire, presetStatement,
 					statements);
 			eventExpressions = new EventExpression[] { clock_event,
@@ -269,7 +269,7 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			 * 8'h0; else dout <= din; end
 			 */
 			clearWire = new PortWire(reg.getInternalResetPort());
-			clearStatement = new Assign.NonBlocking(this.resultWire, resetValue);
+			clearStatement = new Assign.NonBlocking(resultWire, resetValue);
 			statements = new ConditionalStatement(clearWire, clearStatement,
 					statements);
 			eventExpressions = new EventExpression[] { clock_event,
@@ -284,7 +284,7 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			enableWire = new PortWire(reg.getEnablePort());
 			statements = new ConditionalStatement(enableWire, statements);
 			presetWire = new PortWire(reg.getSetPort());
-			presetStatement = new Assign.NonBlocking(this.resultWire, setValue);
+			presetStatement = new Assign.NonBlocking(resultWire, setValue);
 			statements = new ConditionalStatement(presetWire, presetStatement,
 					statements);
 			eventExpressions = new EventExpression[] { clock_event,
@@ -300,7 +300,7 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			enableWire = new PortWire(reg.getEnablePort());
 			statements = new ConditionalStatement(enableWire, statements);
 			clearWire = new PortWire(reg.getInternalResetPort());
-			clearStatement = new Assign.NonBlocking(this.resultWire, resetValue);
+			clearStatement = new Assign.NonBlocking(resultWire, resetValue);
 			statements = new ConditionalStatement(clearWire, clearStatement,
 					statements);
 			eventExpressions = new EventExpression[] { clock_event,
@@ -315,11 +315,11 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			 * <= din; end
 			 */
 			presetWire = new PortWire(reg.getSetPort());
-			presetStatement = new Assign.NonBlocking(this.resultWire, setValue);
+			presetStatement = new Assign.NonBlocking(resultWire, setValue);
 			statements = new ConditionalStatement(presetWire, presetStatement,
 					statements);
 			clearWire = new PortWire(reg.getInternalResetPort());
-			clearStatement = new Assign.NonBlocking(this.resultWire, resetValue);
+			clearStatement = new Assign.NonBlocking(resultWire, resetValue);
 			statements = new ConditionalStatement(clearWire, clearStatement,
 					statements);
 			eventExpressions = new EventExpression[] { clock_event,
@@ -337,11 +337,11 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 			enableWire = new PortWire(reg.getEnablePort());
 			statements = new ConditionalStatement(enableWire, statements);
 			presetWire = new PortWire(reg.getSetPort());
-			presetStatement = new Assign.NonBlocking(this.resultWire, setValue);
+			presetStatement = new Assign.NonBlocking(resultWire, setValue);
 			statements = new ConditionalStatement(presetWire, presetStatement,
 					statements);
 			clearWire = new PortWire(reg.getInternalResetPort());
-			clearStatement = new Assign.NonBlocking(this.resultWire, resetValue);
+			clearStatement = new Assign.NonBlocking(resultWire, resetValue);
 			statements = new ConditionalStatement(clearWire, clearStatement,
 					statements);
 			eventExpressions = new EventExpression[] { clock_event,
@@ -365,7 +365,8 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 	 * Provides the collection of Nets which this statement of verilog uses as
 	 * input signals.
 	 */
-	public Collection getConsumedNets() {
+	@Override
+	public Collection<Net> getConsumedNets() {
 		return consumedNets;
 	}
 
@@ -373,16 +374,18 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 	 * Provides the collection of Nets which this statement of verilog produces
 	 * as output signals.
 	 */
-	public Collection getProducedNets() {
-		return Collections.singleton(this.resultWire);
+	@Override
+	public Collection<Net> getProducedNets() {
+		return Collections.singleton(resultWire);
 	}
 
 	/**
 	 * Returns the empty set because the Reg is inferred and does not depend on
 	 * any external Verilog for its definition.
 	 */
-	public Set getMappedModules() {
-		return Collections.EMPTY_SET;
+	@Override
+	public Set<MappedModule> getMappedModules() {
+		return Collections.emptySet();
 	}
 
 	/**

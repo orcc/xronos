@@ -54,6 +54,7 @@ public class BusInput extends Input implements BusNet {
 	 * 
 	 * @return The LIM Bus upon which the Net is based
 	 */
+	@Override
 	public Bus getBus() {
 		return bus;
 	}

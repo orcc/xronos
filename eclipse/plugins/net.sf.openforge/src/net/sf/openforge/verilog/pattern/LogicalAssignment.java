@@ -52,6 +52,7 @@ public abstract class LogicalAssignment extends BinaryOpAssignment {
 			super(and);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			return (new net.sf.openforge.verilog.model.Logical.And(left, right));
 		}
@@ -62,6 +63,7 @@ public abstract class LogicalAssignment extends BinaryOpAssignment {
 			super(or);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			return (new net.sf.openforge.verilog.model.Logical.Or(left, right));
 		}

@@ -86,10 +86,12 @@ public class Identifier extends Token {
 	// ////////////////////////////
 	// VerilogElement interface
 
+	@Override
 	public String getToken() {
 		return id;
 	}
 
+	@Override
 	public int getType() {
 		return TYPE;
 	}

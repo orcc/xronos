@@ -57,6 +57,7 @@ public class MemoryModule extends Module implements MappedModuleSpecifier {
 	 * 
 	 * @return A String of memory module name
 	 */
+	@Override
 	public Set<MappedModule> getMappedModules() {
 		return mappedModules;
 	}

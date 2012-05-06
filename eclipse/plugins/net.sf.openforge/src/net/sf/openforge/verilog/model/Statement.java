@@ -38,6 +38,6 @@ public interface Statement extends VerilogElement {
 	/**
 	 * Returns all Nets used in this statement.
 	 */
-	public Collection getNets();
+	public Collection<Net> getNets();
 
 } // end of interface Statement

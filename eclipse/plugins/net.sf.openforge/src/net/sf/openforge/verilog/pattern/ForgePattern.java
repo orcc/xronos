@@ -38,13 +38,13 @@ public interface ForgePattern extends Statement {
 	 * Provides the collection of Nets which this statement of verilog uses as
 	 * input signals.
 	 */
-	public Collection getConsumedNets();
+	public Collection<Net> getConsumedNets();
 
 	/**
 	 * Provides the collection of Nets which this statement of verilog produces
 	 * as output signals. These are any signals which need to be declared, even
 	 * if the statement itself also consumes them.
 	 */
-	public Collection getProducedNets();
+	public Collection<Net> getProducedNets();
 
 } // interface ForgePattern

@@ -65,8 +65,8 @@ public class VEncodedMux implements ForgePattern {
 	private EventControl eventControl;
 	private CaseBlock caseBlock;
 
-	private Set<Object> produced_nets = new LinkedHashSet<Object>();
-	private Set<Object> consumed_nets = new LinkedHashSet<Object>();
+	private Set<Net> produced_nets = new LinkedHashSet<Net>();
+	private Set<Net> consumed_nets = new LinkedHashSet<Net>();
 
 	/**
 	 * Constructs a VEncodedMux in the form of case block based on a LIM
@@ -94,7 +94,7 @@ public class VEncodedMux implements ForgePattern {
 		int caseCount = enMux.getSize() - 1;
 		for (int i = 0; i < caseCount; i++) {
 			Net selected = new PortWire(enMux.getDataPort(i));
-			BinaryNumber caseNumber = new BinaryNumber((long) i,
+			BinaryNumber caseNumber = new BinaryNumber(i,
 					caseController.getWidth());
 			caseBlock.add(caseNumber.toString(), new Assign.Blocking(result,
 					selected));
@@ -110,6 +110,7 @@ public class VEncodedMux implements ForgePattern {
 		return caseBlock;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -132,8 +133,9 @@ public class VEncodedMux implements ForgePattern {
 		return lex;
 	} // lexicalify()
 
-	public Collection getNets() {
-		HashSet nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
 		nets.addAll(eventControl.getNets());
 		nets.addAll(caseBlock.getNets());
@@ -145,7 +147,8 @@ public class VEncodedMux implements ForgePattern {
 	 * Provides the collection of Nets which this statement of verilog uses as
 	 * input signals.
 	 */
-	public Collection getConsumedNets() {
+	@Override
+	public Collection<Net> getConsumedNets() {
 		return consumed_nets;
 	}
 
@@ -153,10 +156,12 @@ public class VEncodedMux implements ForgePattern {
 	 * Provides the collection of Nets which this statement of verilog produces
 	 * as output signals.
 	 */
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return produced_nets;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * EventExpression is a part of Forge
@@ -58,26 +59,28 @@ public class EventExpression implements Expression {
 		events.add(event);
 	}
 
+	@Override
 	public int getWidth() {
 		return 1;
 	}
 
-	public Collection getNets() {
-		HashSet nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
-		for (Iterator it = events.iterator(); it.hasNext();) {
-			Expression e = (Expression) it.next();
-			nets.addAll(e.getNets());
+		for (Expression expression : events) {
+			nets.addAll(expression.getNets());
 		}
 
 		return nets;
 	} // getNets()
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
-		for (Iterator it = events.iterator(); it.hasNext();) {
-			Expression e = (Expression) it.next();
+		for (Iterator<Expression> it = events.iterator(); it.hasNext();) {
+			Expression e = it.next();
 
 			lex.append(e);
 
@@ -89,6 +92,7 @@ public class EventExpression implements Expression {
 		return lex;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -103,6 +107,7 @@ public class EventExpression implements Expression {
 			super(e);
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 
@@ -119,6 +124,7 @@ public class EventExpression implements Expression {
 			super(e);
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 

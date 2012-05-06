@@ -32,6 +32,7 @@ package net.sf.openforge.verilog.pattern;
  * @version $Id: NonConstantInitialValueException.java 2 2005-06-09 20:00:48Z
  *          imiller $
  */
+@SuppressWarnings("serial")
 public class NonConstantInitialValueException extends RuntimeException {
 
 	public NonConstantInitialValueException() {

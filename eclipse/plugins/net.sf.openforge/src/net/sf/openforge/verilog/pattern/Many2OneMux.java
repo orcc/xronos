@@ -82,7 +82,8 @@ public class Many2OneMux implements Statement {
 	 * 
 	 * @return The nets value
 	 */
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return many2one_statement.getNets();
 	} // getNets()
 
@@ -91,10 +92,12 @@ public class Many2OneMux implements Statement {
 	 * 
 	 * @return Description of the Return Value
 	 */
+	@Override
 	public Lexicality lexicalify() {
 		return many2one_statement.lexicalify();
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

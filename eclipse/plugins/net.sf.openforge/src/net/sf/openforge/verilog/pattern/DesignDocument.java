@@ -21,7 +21,6 @@
 package net.sf.openforge.verilog.pattern;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import net.sf.openforge.app.EngineThread;
@@ -29,6 +28,7 @@ import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.app.Version;
 import net.sf.openforge.lim.CodeLabel;
 import net.sf.openforge.lim.Design;
+import net.sf.openforge.verilog.mapping.MappedModule;
 import net.sf.openforge.verilog.model.Comment;
 import net.sf.openforge.verilog.model.Module;
 import net.sf.openforge.verilog.model.VerilogDocument;
@@ -46,7 +46,7 @@ import net.sf.openforge.verilog.model.VerilogDocument;
 public class DesignDocument extends VerilogDocument implements
 		MappedModuleSpecifier {
 
-	private Set<MappedModuleSpecifier> mappedModules = new HashSet<MappedModuleSpecifier>();
+	private Set<MappedModule> mappedModules = new HashSet<MappedModule>();
 
 	public DesignDocument(Design design) {
 		//
@@ -65,9 +65,8 @@ public class DesignDocument extends VerilogDocument implements
 		append(header);
 
 		// Put 'include statement on the file
-		for (Iterator iter = design.getIncludeStatements().iterator(); iter
-				.hasNext();) {
-			append(new IncludeStatement((String) iter.next()));
+		for (String string : design.getIncludeStatements()) {
+			append(new IncludeStatement(string));
 		}
 	} // DesignDocument
 
@@ -75,6 +74,7 @@ public class DesignDocument extends VerilogDocument implements
 	 * Appends a verilog module to the end of the document, and gathers any
 	 * needed include directives.
 	 */
+	@Override
 	public void append(Module module) {
 		super.append(module);
 
@@ -87,7 +87,8 @@ public class DesignDocument extends VerilogDocument implements
 	/**
 	 * Provides the Set of MappedModules
 	 */
-	public Set getMappedModules() {
+	@Override
+	public Set<MappedModule> getMappedModules() {
 		return mappedModules;
 	}
 

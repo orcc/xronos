@@ -45,17 +45,19 @@ public class InitialBlock implements Statement {
 	}
 
 	public InitialBlock(Statement statement) {
-		this.add(statement);
+		add(statement);
 	}
 
 	public void add(Statement statement) {
 		block.add(statement);
 	}
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return block.getNets();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -65,6 +67,7 @@ public class InitialBlock implements Statement {
 
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

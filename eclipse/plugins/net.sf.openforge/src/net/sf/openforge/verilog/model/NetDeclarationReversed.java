@@ -46,6 +46,7 @@ public class NetDeclarationReversed extends NetDeclaration {
 		super(nets);
 	}
 
+	@Override
 	protected Range getRange() {
 		return new RangeReversed(msb, lsb);
 	}

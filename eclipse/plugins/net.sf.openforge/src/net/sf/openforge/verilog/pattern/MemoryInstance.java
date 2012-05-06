@@ -59,8 +59,9 @@ public class MemoryInstance extends ModuleInstance implements ForgePattern {
 	 * Provides the collection of Nets which this statement of verilog uses as
 	 * input signals.
 	 */
-	public Collection getConsumedNets() {
-		return Collections.EMPTY_LIST;
+	@Override
+	public Collection<Net> getConsumedNets() {
+		return Collections.emptyList();
 	};
 
 	/**
@@ -68,13 +69,14 @@ public class MemoryInstance extends ModuleInstance implements ForgePattern {
 	 * as output signals. These are any signals which need to be declared, even
 	 * if the statement itself also consumes them.
 	 */
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		// return Collections.EMPTY_LIST;
-		return this.producedNets;
+		return producedNets;
 	}
 
 	public void addProducedNet(Net net) {
-		this.producedNets.add(net);
+		producedNets.add(net);
 	}
 
 } // class MemoryInstance

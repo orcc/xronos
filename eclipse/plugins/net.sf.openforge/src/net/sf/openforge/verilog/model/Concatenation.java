@@ -68,13 +68,14 @@ public class Concatenation implements Expression {
 		elements.add(e);
 	} // add()
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
 		lex.append(Symbol.OPEN_CURLY);
 
-		for (Iterator it = elements.iterator(); it.hasNext();) {
-			lex.append((Expression) it.next());
+		for (Iterator<Expression> it = elements.iterator(); it.hasNext();) {
+			lex.append(it.next());
 
 			if (it.hasNext()) {
 				lex.append(Symbol.COMMA);
@@ -87,19 +88,22 @@ public class Concatenation implements Expression {
 
 	} // lexicalify()
 
-	public Collection getNets() {
-		HashSet nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		HashSet<Net> nets = new HashSet<Net>();
 
-		for (Iterator it = elements.iterator(); it.hasNext();) {
-			nets.addAll(((Expression) it.next()).getNets());
+		for (Expression expression : elements) {
+			nets.addAll(expression.getNets());
 		}
 		return nets;
 	} // getNets()
 
+	@Override
 	public int getWidth() {
 		return total_width;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

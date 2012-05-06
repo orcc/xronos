@@ -68,6 +68,7 @@ public class PassThroughComponentRemover extends FilteredVisitor {
 			_translate.ln("Identifying pass through components...");
 	}
 
+	@Override
 	public void visit(Design design) {
 		// _translate.d.modGraph(design, "./dotDir");
 
@@ -135,35 +136,42 @@ public class PassThroughComponentRemover extends FilteredVisitor {
 		 */
 	}
 
+	@Override
 	public void visit(Procedure procedure) {
 		if (_translate.db)
 			_translate.ln("Checking... " + procedure.toString());
 		traverse(procedure);
 	}
 
+	@Override
 	public void visit(InBuf inBuf) {
 		preFilterAny(inBuf);
 	}
 
+	@Override
 	public void visit(OutBuf outBuf) {
 		preFilterAny(outBuf);
 	}
 
+	@Override
 	public void visit(MemoryRead mr) {
 		preFilterAny(mr);
 		traverse(mr);
 	}
 
+	@Override
 	public void visit(MemoryWrite mw) {
 		preFilterAny(mw);
 		traverse(mw);
 	}
 
+	@Override
 	public void visit(ArrayRead ar) {
 		preFilterAny(ar);
 		traverse(ar);
 	}
 
+	@Override
 	public void visit(ArrayWrite aw) {
 		preFilterAny(aw);
 		traverse(aw);
@@ -173,50 +181,60 @@ public class PassThroughComponentRemover extends FilteredVisitor {
 	 * A SimplePinRead, by definition, is always just a passthrough. This method
 	 * adds the pin read to the collection of components to be removed.
 	 */
+	@Override
 	public void visit(SimplePinRead pinRead) {
 		preFilterAny(pinRead);
 		removableComponents.add(pinRead);
 	}
 
+	@Override
 	public void visit(PinRead pinRead) {
 		preFilter(pinRead);
 	}
 
+	@Override
 	public void visit(PinWrite pinWrite) {
 		preFilter(pinWrite);
 		traverse(pinWrite);
 	}
 
+	@Override
 	public void visit(Scoreboard scoreboard) {
 		preFilter(scoreboard);
 		traverse(scoreboard);
 	}
 
+	@Override
 	public void visit(PinStateChange pinChange) {
 		preFilter(pinChange);
 		traverse(pinChange);
 	}
 
+	@Override
 	public void visit(PinReferee pinReferee) {
 		preFilter(pinReferee);
 		traverse(pinReferee);
 	}
 
+	@Override
 	public void visit(Latch latch) {
 		preFilter(latch);
 		traverse(latch);
 	}
 
+	@Override
 	public void visit(Kicker kicker) {
 		preFilter(kicker);
 		traverse(kicker);
 	}
 
+	@Override
 	public void preFilterAny(Component c) {
 		if (_translate.db)
 			_translate.ln("Checking... " + c.toString());
 	}
 
+	@Override
 	public void filter(Operation op) {
 		if (op.isPassThrough()) {
 			if (_translate.db)
@@ -225,6 +243,7 @@ public class PassThroughComponentRemover extends FilteredVisitor {
 		}
 	}
 
+	@Override
 	public void filter(Primitive p) {
 		if (p.isPassThrough()) {
 			if (_translate.db)

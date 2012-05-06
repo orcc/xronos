@@ -78,6 +78,7 @@ public class MemoryDeclaration extends NetDeclaration implements Statement {
 		super.add(memory);
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -91,8 +92,8 @@ public class MemoryDeclaration extends NetDeclaration implements Statement {
 			lex.append(new Range(msb, lsb));
 		}
 
-		for (Iterator it = nets.iterator(); it.hasNext();) {
-			lex.append(((Net) it.next()).getIdentifier());
+		for (Iterator<Net> it = nets.iterator(); it.hasNext();) {
+			lex.append(it.next().getIdentifier());
 			lex.append(new Range(upper, lower));
 			if (it.hasNext())
 				lex.append(Symbol.COMMA);
@@ -104,6 +105,7 @@ public class MemoryDeclaration extends NetDeclaration implements Statement {
 
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

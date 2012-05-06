@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -52,16 +51,15 @@ import net.sf.openforge.verilog.model.NetFactory;
 public abstract class MultiPortOpAssignment extends StatementBlock implements
 		ForgePattern {
 
-	List expressions;
+	List<Expression> expressions;
 	Net result_wire;
 
 	public MultiPortOpAssignment(net.sf.openforge.lim.Operation op) {
-		expressions = new ArrayList();
-		for (Iterator iter = op.getDataPorts().iterator(); iter.hasNext();) {
-			Port port = (Port) iter.next();
+		expressions = new ArrayList<Expression>();
+		for (Port port : op.getDataPorts()) {
 			assert port.isUsed() : (op.getDataPorts().indexOf(port))
 					+ " operand port in math operation is set to unused.";
-			Bus bus = port.getBus();
+			// Bus bus = port.getBus();
 			// if (bus == null)
 			// continue;
 			// assert (bus != null) : (op.getDataPorts().indexOf(port)) +
@@ -75,17 +73,19 @@ public abstract class MultiPortOpAssignment extends StatementBlock implements
 		add(new Assign.Continuous(result_wire, makeOpExpression(expressions)));
 	}
 
-	protected abstract Expression makeOpExpression(List expressions);
+	protected abstract Expression makeOpExpression(List<Expression> expressions);
 
-	public Collection getConsumedNets() {
-		Set consumed = new HashSet();
-		for (Iterator iter = expressions.iterator(); iter.hasNext();) {
-			consumed.addAll(((Expression) iter.next()).getNets());
+	@Override
+	public Collection<Net> getConsumedNets() {
+		Set<Net> consumed = new HashSet<Net>();
+		for (Expression expresion : expressions) {
+			consumed.addAll(expresion.getNets());
 		}
 		return consumed;
 	}
 
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return Collections.singleton(result_wire);
 	}
 

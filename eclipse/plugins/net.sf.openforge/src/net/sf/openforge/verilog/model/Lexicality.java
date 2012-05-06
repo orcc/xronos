@@ -39,7 +39,7 @@ import java.util.LinkedList;
 
 public class Lexicality {
 
-	LinkedList tokens = new LinkedList();
+	LinkedList<VerilogElement> tokens = new LinkedList<VerilogElement>();
 
 	public Lexicality() {
 	} // Lexicality
@@ -68,7 +68,7 @@ public class Lexicality {
 		return tokens.size();
 	}
 
-	public Iterator iterator() {
+	public Iterator<Object> iterator() {
 		return new LexicalIterator();
 	} // Iterator()
 
@@ -88,12 +88,13 @@ public class Lexicality {
 	 * returned by the LexicalIterator.
 	 * 
 	 */
+	@Override
 	public String toString() {
 		StringBuffer text = new StringBuffer();
 
 		// int prev_type = Token.TYPE;
 
-		for (Iterator it = iterator(); it.hasNext();) {
+		for (Iterator<Object> it = iterator(); it.hasNext();) {
 			Token t = (Token) it.next();
 			// int current_type = t.getType();
 
@@ -158,9 +159,9 @@ public class Lexicality {
 
 	} // toString()
 
-	public class LexicalIterator implements Iterator {
+	public class LexicalIterator implements Iterator<Object> {
 		int index = 0;
-		Iterator sub_it = null;
+		Iterator<Object> sub_it = null;
 
 		public LexicalIterator() {
 			assert (!tokens.isEmpty()) : "Created iterator for empty lexicality.";
@@ -170,11 +171,12 @@ public class Lexicality {
 		 * 
 		 * @return <description>
 		 */
+		@Override
 		public Object next() {
 			VerilogElement next;
 
 			if (sub_it == null) {
-				next = (VerilogElement) tokens.get(index++);
+				next = tokens.get(index++);
 
 				if (!(next instanceof Token)) {
 					sub_it = next.lexicalify().iterator();
@@ -205,6 +207,7 @@ public class Lexicality {
 		 * 
 		 * @return <description>
 		 */
+		@Override
 		public boolean hasNext() {
 			boolean has_next = false;
 
@@ -222,6 +225,7 @@ public class Lexicality {
 		/**
          *
          */
+		@Override
 		public void remove() {
 			// TODO: implement this java.util.Iterator method
 		}

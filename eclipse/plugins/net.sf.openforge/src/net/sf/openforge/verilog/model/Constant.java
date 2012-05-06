@@ -127,12 +127,14 @@ public class Constant extends Token implements Expression {
 	// ////////////////////////////
 	// VerilogElement interface
 
+	@Override
 	public String getToken() {
 		String reply = getValue().toString();
 
 		return reply;
 	}
 
+	@Override
 	public int getType() {
 		return TYPE;
 	}
@@ -141,14 +143,16 @@ public class Constant extends Token implements Expression {
 	 * 
 	 * @return <description>
 	 */
-	public Collection getNets() {
-		return new HashSet(1);
+	@Override
+	public Collection<Net> getNets() {
+		return new HashSet<Net>(1);
 	}
 
 	/**
 	 * 
 	 * @return <description>
 	 */
+	@Override
 	public int getWidth() {
 		return getSize();
 	}

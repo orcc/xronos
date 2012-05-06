@@ -30,6 +30,7 @@ import java.util.Set;
 
 import net.sf.openforge.verilog.model.Expression;
 import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.Symbol;
 
 /**
@@ -47,42 +48,44 @@ import net.sf.openforge.verilog.model.Symbol;
  */
 public class OrMany implements Expression {
 
-	private List exprs;
+	private List<Expression> exprs;
 
 	public OrMany() {
-		this.exprs = new ArrayList();
+		exprs = new ArrayList<Expression>();
 	}
 
-	public OrMany(Collection many) {
+	public OrMany(Collection<Expression> many) {
 		this();
-		this.exprs.addAll(many);
+		exprs.addAll(many);
 	}
 
 	public void add(Expression expr) {
-		this.exprs.add(expr);
+		exprs.add(expr);
 	}
 
-	public Collection getNets() {
-		Set nets = new LinkedHashSet();
-		for (Iterator iter = exprs.iterator(); iter.hasNext();) {
-			nets.addAll(((Expression) iter.next()).getNets());
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new LinkedHashSet<Net>();
+		for (Expression expression : exprs) {
+			nets.addAll(expression.getNets());
 		}
 		return nets;
 	}
 
+	@Override
 	public int getWidth() {
 		int max = 0;
-		for (Iterator iter = exprs.iterator(); iter.hasNext();) {
-			max = java.lang.Math
-					.max(max, ((Expression) iter.next()).getWidth());
+		for (Expression expression : exprs) {
+			max = java.lang.Math.max(max, (expression.getWidth()));
 		}
 		return max;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
-		for (Iterator iter = exprs.iterator(); iter.hasNext();) {
-			lex.append((Expression) iter.next());
+		for (Iterator<Expression> iter = exprs.iterator(); iter.hasNext();) {
+			lex.append(iter.next());
 			if (iter.hasNext()) {
 				/*
 				 * Changed to bitwise OR because doutConcatOr in StructualMemory

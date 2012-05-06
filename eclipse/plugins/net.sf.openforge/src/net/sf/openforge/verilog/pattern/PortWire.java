@@ -22,7 +22,6 @@ package net.sf.openforge.verilog.pattern;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import net.sf.openforge.lim.Bit;
@@ -67,7 +66,7 @@ public class PortWire extends Wire implements Expression {
 	public PortWire(Port port, boolean compactPort) {
 		super("portwire", 1);
 		this.port = port;
-		this.value = port.getValue();
+		value = port.getValue();
 
 		assert (value != null) : "Port (" + port + ") is missing a value.";
 		if (compactPort) {
@@ -178,10 +177,12 @@ public class PortWire extends Wire implements Expression {
 		return port;
 	}
 
+	@Override
 	public int getWidth() {
 		return expression.getWidth();
 	}
 
+	@Override
 	public Expression getBitSelect(int bit) {
 		if (value.getBit(bit).isConstant()) {
 			long val = value.getBit(bit).isOn() ? 1L : 0L;
@@ -195,6 +196,7 @@ public class PortWire extends Wire implements Expression {
 		}
 	}
 
+	@Override
 	public Expression getRange(int msb, int lsb) {
 		Expression expression;
 
@@ -215,11 +217,11 @@ public class PortWire extends Wire implements Expression {
 		// else if (value.isMixed())
 		else {
 			// build a concatentation
-			List<Object> cat_parts = new ArrayList<Object>();
+			List<Expression> cat_parts = new ArrayList<Expression>();
 			int i = lsb;
 			while (i <= msb) {
 				List<Bit> bitgroup = getBitGroup(value, i, msb);
-				Bit first_bit = (Bit) bitgroup.get(0);
+				Bit first_bit = bitgroup.get(0);
 				if (first_bit.isCare()) {
 					if (first_bit.isConstant()) {
 						cat_parts.add(0, new BitConstant(bitgroup));
@@ -239,12 +241,12 @@ public class PortWire extends Wire implements Expression {
 					+ value.debug();
 			if (cat_parts.size() > 1) {
 				Concatenation cat = new Concatenation();
-				for (Iterator it = cat_parts.iterator(); it.hasNext();) {
-					cat.add((Expression) it.next());
+				for (Expression expr : cat_parts) {
+					cat.add(expr);
 				}
 				expression = cat;
 			} else {
-				expression = (Expression) cat_parts.get(0);
+				expression = cat_parts.get(0);
 			}
 		}
 
@@ -302,6 +304,7 @@ public class PortWire extends Wire implements Expression {
 		return expression;
 	}
 
+	@Override
 	public Expression getFullRange() {
 		return getRange(value.getSize() - 1, 0);
 	}
@@ -313,18 +316,22 @@ public class PortWire extends Wire implements Expression {
 		return getRange(value.getCompactedSize() - 1, 0);
 	}
 
+	@Override
 	public int getLSB() {
 		return 0;
 	}
 
+	@Override
 	public int getMSB() {
 		return getWidth() - 1;
 	}
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return expression.getNets();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		// _pattern.d.ln(expression.getClass()+"-->"+expression.lexicalify());
 		return expression.lexicalify();

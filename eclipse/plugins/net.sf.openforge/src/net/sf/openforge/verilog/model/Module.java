@@ -21,10 +21,10 @@
 package net.sf.openforge.verilog.model;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Module is a VerilogElement which defines a verilog module. It is a container
@@ -58,7 +58,7 @@ public class Module implements VerilogElement {
 	List<NetDeclaration> declarations;
 
 	/** Collection of Identifiers for each declared Net */
-	HashMap declared_nets;
+	Map<Identifier, NetDeclaration> declared_nets;
 
 	/** Statements which manipulate the nets, may be simple or compound. */
 	protected List<Statement> statements;
@@ -86,8 +86,8 @@ public class Module implements VerilogElement {
 	public Module(Identifier identifier, Net[] ports) {
 		this.identifier = identifier;
 		declarations = new ArrayList<NetDeclaration>();
-		declared_nets = new LinkedHashMap();
-		statements = new ArrayList();
+		declared_nets = new LinkedHashMap<Identifier, NetDeclaration>();
+		statements = new ArrayList<Statement>();
 
 		if (ports != null) {
 			module_declaration = new ModuleDeclaration(identifier, ports);
@@ -178,8 +178,7 @@ public class Module implements VerilogElement {
 				declaration = new NetDeclaration(net);
 			declare(declaration);
 		} else {
-			NetDeclaration declaration = (NetDeclaration) declared_nets.get(net
-					.getIdentifier());
+			NetDeclaration declaration = declared_nets.get(net.getIdentifier());
 			Keyword declared_type = declaration.getType();
 			Keyword proposed_type = net.getType();
 
@@ -201,8 +200,7 @@ public class Module implements VerilogElement {
 	 */
 	public void declare(NetDeclaration declaration) {
 		declarations.add(declaration);
-		for (Iterator it = declaration.getNets().iterator(); it.hasNext();) {
-			Net net = (Net) it.next();
+		for (Net net : declaration.getNets()) {
 			declared_nets.put(net.getIdentifier(), declaration);
 		}
 	}
@@ -212,8 +210,7 @@ public class Module implements VerilogElement {
 	 * removes that declaration if it contains no other Nets.
 	 */
 	public void undeclare(Net net) {
-		NetDeclaration declaration = (NetDeclaration) declared_nets.get(net
-				.getIdentifier());
+		NetDeclaration declaration = declared_nets.get(net.getIdentifier());
 		declared_nets.remove(net.getIdentifier());
 		declaration.remove(net);
 		if (declaration.getNets().size() == 0) {
@@ -230,8 +227,7 @@ public class Module implements VerilogElement {
 	 * for each undeclared Net used in the statement.
 	 */
 	public void state(Statement statement) {
-		for (Iterator it = statement.getNets().iterator(); it.hasNext();) {
-			Net net = (Net) it.next();
+		for (Net net : statement.getNets()) {
 			if (net instanceof MemoryElement) {
 				// System.out.println("Assuming that someone else has declared it");
 				continue;
@@ -244,29 +240,28 @@ public class Module implements VerilogElement {
 				// Stick in a patch to prevent declaring a dummy empty
 				// named wire which was created during forge memory
 				// module creation.
-				if (!isDeclared((Net) net)
-						&& !((Net) net).getIdentifier().toString().equals("")) {
-					declare((Net) net);
+				if (!isDeclared(net)
+						&& !net.getIdentifier().toString().equals("")) {
+					declare(net);
 				}
 			}
 		}
 		statements.add(statement);
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
 		lex.append(module_declaration);
 
 		// append declarations
-		for (Iterator it = declarations.iterator(); it.hasNext();) {
-			Statement s = (Statement) it.next();
+		for (Statement s : declarations) {
 			lex.append(s);
 		}
 
 		// append statements
-		for (Iterator it = statements.iterator(); it.hasNext();) {
-			Statement s = (Statement) it.next();
+		for (Statement s : statements) {
 			lex.append(s);
 		}
 
@@ -276,14 +271,16 @@ public class Module implements VerilogElement {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		StringBuffer reply = new StringBuffer();
 
 		reply.append(module_declaration.toString() + "\n");
 
 		// append declarations
-		for (Iterator it = declarations.iterator(); it.hasNext();) {
-			Statement s = (Statement) it.next();
+		for (Iterator<NetDeclaration> it = declarations.iterator(); it
+				.hasNext();) {
+			Statement s = it.next();
 			reply.append(s.toString());
 			if (it.hasNext()) {
 				reply.append(Control.NEWLINE.toString());
@@ -295,8 +292,8 @@ public class Module implements VerilogElement {
 			reply.append(Control.NEWLINE.toString());
 
 		// append statements
-		for (Iterator it = statements.iterator(); it.hasNext();) {
-			Statement s = (Statement) it.next();
+		for (Iterator<Statement> it = statements.iterator(); it.hasNext();) {
+			Statement s = it.next();
 			reply.append(s.toString());
 			if (it.hasNext()) {
 				reply.append(Control.NEWLINE.toString());

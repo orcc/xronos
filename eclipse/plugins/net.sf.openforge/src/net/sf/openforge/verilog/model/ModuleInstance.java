@@ -43,9 +43,9 @@ public class ModuleInstance implements Statement {
 
 	private Identifier name_of_module;
 	private Identifier name_of_instance;
-	private List port_connections = new ArrayList();
-	private HashSet port_names = new LinkedHashSet();
-	private Set paramValues = new LinkedHashSet();
+	private List<VerilogElement> port_connections = new ArrayList<VerilogElement>();
+	private Set<Identifier> port_names = new LinkedHashSet<Identifier>();
+	private Set<ParameterSetting> paramValues = new LinkedHashSet<ParameterSetting>();
 	private Module module;
 
 	public ModuleInstance(Identifier name_of_module, Identifier name_of_instance) {
@@ -154,15 +154,18 @@ public class ModuleInstance implements Statement {
 		paramValues.add(psetting);
 	}
 
-	public Collection getNets() {
-		HashSet nets = new HashSet();
-		for (Iterator it = port_connections.iterator(); it.hasNext();) {
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
+		for (Iterator<VerilogElement> it = port_connections.iterator(); it
+				.hasNext();) {
 			PortConnection portConnection = (PortConnection) it.next();
 			nets.addAll(portConnection.getNets());
 		}
 		return nets;
 	} // getNets()
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 		final int MAX_WIDTH = 72;
@@ -170,11 +173,12 @@ public class ModuleInstance implements Statement {
 
 		lex.append(name_of_module);
 		widthCount += name_of_module.toString().length();
-		if (!this.paramValues.isEmpty()) {
+		if (!paramValues.isEmpty()) {
 			lex.append(Symbol.PARAM_HASH);
 			lex.append(Symbol.OPEN_PARENTHESIS);
-			for (Iterator iter = paramValues.iterator(); iter.hasNext();) {
-				VerilogElement element = (VerilogElement) iter.next();
+			for (Iterator<ParameterSetting> iter = paramValues.iterator(); iter
+					.hasNext();) {
+				VerilogElement element = iter.next();
 				lex.append(element);
 				if (iter.hasNext()) {
 					lex.append(Symbol.COMMA);
@@ -195,8 +199,9 @@ public class ModuleInstance implements Statement {
 
 		lex.append(Symbol.OPEN_PARENTHESIS);
 
-		for (Iterator it = port_connections.iterator(); it.hasNext();) {
-			VerilogElement element = (VerilogElement) it.next();
+		for (Iterator<VerilogElement> it = port_connections.iterator(); it
+				.hasNext();) {
+			VerilogElement element = it.next();
 			lex.append(element);
 
 			widthCount += element.toString().length();
@@ -219,6 +224,7 @@ public class ModuleInstance implements Statement {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

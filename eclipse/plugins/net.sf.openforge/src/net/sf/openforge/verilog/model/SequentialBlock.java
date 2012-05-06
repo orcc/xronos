@@ -57,8 +57,9 @@ public class SequentialBlock implements Statement {
 		body.add(s);
 	}
 
-	public Collection getNets() {
-		Set nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
 		for (Statement statement : body) {
 			nets.addAll(statement.getNets());
@@ -67,6 +68,7 @@ public class SequentialBlock implements Statement {
 		return nets;
 	} // getNets()
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -82,6 +84,7 @@ public class SequentialBlock implements Statement {
 
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

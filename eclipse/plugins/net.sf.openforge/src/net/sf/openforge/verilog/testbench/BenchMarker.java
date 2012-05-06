@@ -24,7 +24,6 @@ package net.sf.openforge.verilog.testbench;
 import java.io.File;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
@@ -162,78 +161,77 @@ class BenchMarker {
 	 * Intialize the values for the various benchmark related variables...
 	 */
 	public void stateInits(InitialBlock ib) {
-		ib.add(new Assign.Blocking(this.benchClockCount, new Constant(0,
-				this.benchClockCount.getWidth())));
-		ib.add(new Assign.Blocking(this.benchNumReads, new Constant(0,
-				this.benchNumReads.getWidth())));
-		ib.add(new Assign.Blocking(this.benchConsumedBytes, new Constant(0,
-				this.benchConsumedBytes.getWidth())));
-		ib.add(new Assign.Blocking(this.benchNumWrites, new Constant(0,
-				this.benchNumWrites.getWidth())));
-		ib.add(new Assign.Blocking(this.benchProducedBytes, new Constant(0,
-				this.benchProducedBytes.getWidth())));
-		ib.add(new Assign.Blocking(this.benchFirstReadCycle, new Constant(0,
-				this.benchFirstReadCycle.getWidth())));
-		ib.add(new Assign.Blocking(this.benchLastWriteCycle, new Constant(0,
-				this.benchLastWriteCycle.getWidth())));
-		ib.add(new Assign.Blocking(this.benchWorkInProgress, new Constant(0,
-				this.benchWorkInProgress.getWidth())));
-		ib.add(new Assign.Blocking(this.benchTotalCycles, new Constant(0,
-				this.benchTotalCycles.getWidth())));
-		ib.add(new Assign.Blocking(this.benchCoreCyclesCounter, new Constant(0,
-				this.benchCoreCyclesCounter.getWidth())));
-		ib.add(new Assign.Blocking(this.benchCoreCycles, new Constant(0,
-				this.benchCoreCycles.getWidth())));
-		ib.add(new Assign.Blocking(this.benchIdleCyclesCounter, new Constant(0,
-				this.benchIdleCyclesCounter.getWidth())));
-		ib.add(new Assign.Blocking(this.benchIdleCycles, new Constant(0,
-				this.benchIdleCycles.getWidth())));
-		ib.add(new Assign.Blocking(this.benchIdleFlag, new Constant(0,
-				this.benchIdleFlag.getWidth())));
-		ib.add(new Assign.Blocking(this.benchInReadZone, new Constant(0,
-				this.benchInReadZone.getWidth())));
-		ib.add(new Assign.Blocking(this.benchInWriteZone, new Constant(0,
-				this.benchInWriteZone.getWidth())));
-		ib.add(new Assign.Blocking(this.benchInCoreZone, new Constant(0,
-				this.benchInCoreZone.getWidth())));
-		ib.add(new Assign.Blocking(this.benchReadZoneCycles, new Constant(0,
-				this.benchReadZoneCycles.getWidth())));
-		ib.add(new Assign.Blocking(this.benchReadZoneCyclesCounter,
-				new Constant(0, this.benchReadZoneCyclesCounter.getWidth())));
-		ib.add(new Assign.Blocking(this.benchReadZoneCyclesCounterSave,
-				new Constant(0, this.benchReadZoneCyclesCounterSave.getWidth())));
-		ib.add(new Assign.Blocking(this.benchWriteZoneCycles, new Constant(0,
-				this.benchWriteZoneCycles.getWidth())));
-		ib.add(new Assign.Blocking(this.benchWriteZoneCyclesCounter,
-				new Constant(0, this.benchWriteZoneCyclesCounter.getWidth())));
-		ib.add(new Assign.Blocking(
-				this.benchWriteZoneCyclesCounterSave,
-				new Constant(0, this.benchWriteZoneCyclesCounterSave.getWidth())));
-		ib.add(new Assign.Blocking(this.benchCoreZoneCycles, new Constant(0,
-				this.benchCoreZoneCycles.getWidth())));
-		ib.add(new Assign.Blocking(this.benchCoreZoneCyclesCounter,
-				new Constant(0, this.benchCoreZoneCyclesCounter.getWidth())));
+		ib.add(new Assign.Blocking(benchClockCount, new Constant(0,
+				benchClockCount.getWidth())));
+		ib.add(new Assign.Blocking(benchNumReads, new Constant(0, benchNumReads
+				.getWidth())));
+		ib.add(new Assign.Blocking(benchConsumedBytes, new Constant(0,
+				benchConsumedBytes.getWidth())));
+		ib.add(new Assign.Blocking(benchNumWrites, new Constant(0,
+				benchNumWrites.getWidth())));
+		ib.add(new Assign.Blocking(benchProducedBytes, new Constant(0,
+				benchProducedBytes.getWidth())));
+		ib.add(new Assign.Blocking(benchFirstReadCycle, new Constant(0,
+				benchFirstReadCycle.getWidth())));
+		ib.add(new Assign.Blocking(benchLastWriteCycle, new Constant(0,
+				benchLastWriteCycle.getWidth())));
+		ib.add(new Assign.Blocking(benchWorkInProgress, new Constant(0,
+				benchWorkInProgress.getWidth())));
+		ib.add(new Assign.Blocking(benchTotalCycles, new Constant(0,
+				benchTotalCycles.getWidth())));
+		ib.add(new Assign.Blocking(benchCoreCyclesCounter, new Constant(0,
+				benchCoreCyclesCounter.getWidth())));
+		ib.add(new Assign.Blocking(benchCoreCycles, new Constant(0,
+				benchCoreCycles.getWidth())));
+		ib.add(new Assign.Blocking(benchIdleCyclesCounter, new Constant(0,
+				benchIdleCyclesCounter.getWidth())));
+		ib.add(new Assign.Blocking(benchIdleCycles, new Constant(0,
+				benchIdleCycles.getWidth())));
+		ib.add(new Assign.Blocking(benchIdleFlag, new Constant(0, benchIdleFlag
+				.getWidth())));
+		ib.add(new Assign.Blocking(benchInReadZone, new Constant(0,
+				benchInReadZone.getWidth())));
+		ib.add(new Assign.Blocking(benchInWriteZone, new Constant(0,
+				benchInWriteZone.getWidth())));
+		ib.add(new Assign.Blocking(benchInCoreZone, new Constant(0,
+				benchInCoreZone.getWidth())));
+		ib.add(new Assign.Blocking(benchReadZoneCycles, new Constant(0,
+				benchReadZoneCycles.getWidth())));
+		ib.add(new Assign.Blocking(benchReadZoneCyclesCounter, new Constant(0,
+				benchReadZoneCyclesCounter.getWidth())));
+		ib.add(new Assign.Blocking(benchReadZoneCyclesCounterSave,
+				new Constant(0, benchReadZoneCyclesCounterSave.getWidth())));
+		ib.add(new Assign.Blocking(benchWriteZoneCycles, new Constant(0,
+				benchWriteZoneCycles.getWidth())));
+		ib.add(new Assign.Blocking(benchWriteZoneCyclesCounter, new Constant(0,
+				benchWriteZoneCyclesCounter.getWidth())));
+		ib.add(new Assign.Blocking(benchWriteZoneCyclesCounterSave,
+				new Constant(0, benchWriteZoneCyclesCounterSave.getWidth())));
+		ib.add(new Assign.Blocking(benchCoreZoneCycles, new Constant(0,
+				benchCoreZoneCycles.getWidth())));
+		ib.add(new Assign.Blocking(benchCoreZoneCyclesCounter, new Constant(0,
+				benchCoreZoneCyclesCounter.getWidth())));
 		// ib.add(new Assign.Blocking(this.benchArgSizeBits, new Constant(1,
 		// this.benchArgSizeBits.getWidth())));
 		// ib.add(new Assign.Blocking(this.benchResSizeBits, new Constant(1,
 		// this.benchResSizeBits.getWidth())));
 
-		ib.add(new Assign.Blocking(this.benchThroughput, new Constant(0,
-				this.benchThroughput.getWidth())));
-		ib.add(new Assign.Blocking(this.benchIdlePercentage, new Constant(0,
-				this.benchIdlePercentage.getWidth())));
-		ib.add(new Assign.Blocking(this.benchOverallInputUtil, new Constant(0,
-				this.benchOverallInputUtil.getWidth())));
-		ib.add(new Assign.Blocking(this.benchOverallOutputUtil, new Constant(0,
-				this.benchOverallOutputUtil.getWidth())));
-		ib.add(new Assign.Blocking(this.benchOverallCoreUtil, new Constant(0,
-				this.benchOverallCoreUtil.getWidth())));
-		ib.add(new Assign.Blocking(this.benchZoneInputUtil, new Constant(0,
-				this.benchZoneInputUtil.getWidth())));
-		ib.add(new Assign.Blocking(this.benchZoneOutputUtil, new Constant(0,
-				this.benchZoneOutputUtil.getWidth())));
-		ib.add(new Assign.Blocking(this.benchZoneCoreUtil, new Constant(0,
-				this.benchZoneCoreUtil.getWidth())));
+		ib.add(new Assign.Blocking(benchThroughput, new Constant(0,
+				benchThroughput.getWidth())));
+		ib.add(new Assign.Blocking(benchIdlePercentage, new Constant(0,
+				benchIdlePercentage.getWidth())));
+		ib.add(new Assign.Blocking(benchOverallInputUtil, new Constant(0,
+				benchOverallInputUtil.getWidth())));
+		ib.add(new Assign.Blocking(benchOverallOutputUtil, new Constant(0,
+				benchOverallOutputUtil.getWidth())));
+		ib.add(new Assign.Blocking(benchOverallCoreUtil, new Constant(0,
+				benchOverallCoreUtil.getWidth())));
+		ib.add(new Assign.Blocking(benchZoneInputUtil, new Constant(0,
+				benchZoneInputUtil.getWidth())));
+		ib.add(new Assign.Blocking(benchZoneOutputUtil, new Constant(0,
+				benchZoneOutputUtil.getWidth())));
+		ib.add(new Assign.Blocking(benchZoneCoreUtil, new Constant(0,
+				benchZoneCoreUtil.getWidth())));
 
 		reportFile.stateInits(ib);
 	}
@@ -248,7 +246,7 @@ class BenchMarker {
 
 		// benchNumReads = benchNumReads + 1; //
 		AllGos.add(new Assign.Blocking(benchNumReads,
-				new net.sf.openforge.verilog.model.Math.Add(this.benchNumReads,
+				new net.sf.openforge.verilog.model.Math.Add(benchNumReads,
 						new Constant(1, benchNumReads.getWidth()))));
 		// benchInReadZone = 1; //
 		AllGos.add(new Assign.Blocking(benchInReadZone, new Constant(1,
@@ -386,28 +384,24 @@ class BenchMarker {
 				benchLastWriteCycle, benchFirstReadCycle)));
 
 		// Find the number of input bytes and number of outputbytes //
-		Collection tasks = design.getTasks();
+		Collection<Task> tasks = design.getTasks();
 		// System.out.println("Number of tasks = " + tasks.size());
 		int inputsize = 0, outputsize = 0;
-		Iterator iter = tasks.iterator();
+		Iterator<Task> iter = tasks.iterator();
 		while (iter.hasNext()) {
-			Task task = (Task) iter.next();
+			Task task = iter.next();
 			Call call = task.getCall();
-			List ports = call.getDataPorts();
-			Iterator pi = ports.iterator();
-			while (pi.hasNext()) {
-				Port p = (Port) pi.next();
-				inputsize += p.getSize();
+
+			for (Port port : call.getDataPorts()) {
+				inputsize += port.getSize();
 			}
+
 			// System.out.println("Input Size Bits = " + inputsize);
 
-			ports = call.getExit(Exit.DONE).getDataBuses();
-			// call.getExit(Exit.DONE).getDataBuses()
-			Iterator opi = ports.iterator();
-			while (opi.hasNext()) {
-				Bus bus = (Bus) opi.next();
+			for (Bus bus : call.getExit(Exit.DONE).getDataBuses()) {
 				outputsize += bus.getSize();
 			}
+
 			// System.out.println("Output Size Bits = " + outputsize);
 		}
 		Constant benchArgSizeBytes = new Constant(inputsize / 8, 32);

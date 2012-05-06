@@ -71,6 +71,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 			super(add);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			return (new net.sf.openforge.verilog.model.Math.Add(left, right));
 		}
@@ -81,16 +82,17 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 			super(add);
 		}
 
-		protected Expression makeOpExpression(List expressions) {
-			List exprs = new LinkedList(expressions);
+		@Override
+		protected Expression makeOpExpression(List<Expression> expressions) {
+			List<Expression> exprs = new LinkedList<Expression>(expressions);
 			assert exprs.size() >= 2;
 
 			Expression result = new net.sf.openforge.verilog.model.Math.Add(
-					(Expression) exprs.remove(0), (Expression) exprs.remove(0));
+					exprs.remove(0), exprs.remove(0));
 
 			while (exprs.size() > 0) {
 				result = new net.sf.openforge.verilog.model.Math.Add(result,
-						(Expression) exprs.remove(0));
+						exprs.remove(0));
 			}
 
 			return result;
@@ -102,6 +104,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 			super(div);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			return (new net.sf.openforge.verilog.model.Math.Divide(left, right));
 		}
@@ -112,6 +115,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 			super(mod);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			return (new net.sf.openforge.verilog.model.Math.Modulus(left, right));
 		}
@@ -139,7 +143,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 			result_wire = NetFactory.makeNet(mul.getResultBus());
 			String baseName = ID.toVerilogIdentifier(ID.showLogical(mul
 					.getResultBus()));
-			
+
 			int size = 0;
 
 			if (left_operand.getWidth() > right_operand.getWidth()) {
@@ -147,8 +151,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 			} else {
 				size = right_operand.getWidth();
 			}
-			
-			
+
 			Net aWire = null;
 			if (l_port.getValue().isSigned()) {
 				aWire = new SignedWire(baseName + "_a_signed", size);
@@ -173,6 +176,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 			myNets.add(result_wire);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			// In actual usage, this method should not be called as it
 			// does not support
@@ -185,6 +189,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 		 * 
 		 * @return a value of type 'Collection'
 		 */
+		@Override
 		public Collection<Net> getProducedNets() {
 			return myNets;
 		}
@@ -196,6 +201,7 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 			super(sub);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression left, Expression right) {
 			return (new net.sf.openforge.verilog.model.Math.Subtract(left,
 					right));

@@ -45,30 +45,33 @@ import net.sf.openforge.verilog.model.Output;
  */
 public class GenericInstance extends ModuleInstance implements ForgePattern {
 
-	private Set<Expression> produced = new HashSet<Expression>();
-	private Set<Expression> consumed = new HashSet<Expression>();
+	private Set<Net> produced = new HashSet<Net>();
+	private Set<Net> consumed = new HashSet<Net>();
 
 	public GenericInstance(Module module, String id) {
 		super(module, id);
 	}
 
+	@Override
 	public void connect(Net port, Expression e) {
 		super.connect(port, e);
 		if (port instanceof Input && e instanceof Net)
-			consumed.add(e);
+			consumed.add((Net) e);
 		if (port instanceof Output && e instanceof Net)
-			produced.add(e);
+			produced.add((Net) e);
 	}
 
 	/**
 	 * Provides the collection of Nets which this statement of verilog uses as
 	 * input signals.
 	 */
-	public Collection<Expression> getConsumedNets() {
+	@Override
+	public Collection<Net> getConsumedNets() {
 		return Collections.unmodifiableSet(consumed);
 	}
 
-	public Collection<Expression> getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return Collections.unmodifiableSet(produced);
 	}
 

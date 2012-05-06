@@ -41,7 +41,6 @@ import net.sf.openforge.verilog.model.HexConstant;
 import net.sf.openforge.verilog.model.HexNumber;
 import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.NetFactory;
-import net.sf.openforge.verilog.model.NetLValue;
 import net.sf.openforge.verilog.model.Replication;
 import net.sf.openforge.verilog.model.Wire;
 
@@ -58,8 +57,8 @@ import net.sf.openforge.verilog.model.Wire;
 
 public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 
-	Set<Object> produced_nets = new HashSet<Object>();
-	Set<Object> consumed_nets = new HashSet<Object>();
+	Set<Net> produced_nets = new HashSet<Net>();
+	Set<Net> consumed_nets = new HashSet<Net>();
 
 	Wire left_operand;
 	Value l_value;
@@ -72,7 +71,7 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 		produced_nets.add(result_wire);
 
 		Iterator<Port> ports = bo.getDataPorts().iterator();
-		Port l_port = (Port) ports.next();
+		Port l_port = ports.next();
 		assert (l_port.isUsed()) : "Left operand port in math operation is set to unused.";
 		// Bus l_bus = l_port.getBus();
 		// assert (l_bus != null) :
@@ -81,7 +80,7 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 		l_value = l_port.getValue();
 		left_operand = new PortWire(l_port);
 
-		Port r_port = (Port) ports.next();
+		Port r_port = ports.next();
 		assert (r_port.isUsed()) : "Right operand port in math operation is set to unused.";
 		// Bus r_bus = r_port.getBus();
 		// assert (r_bus != null) :
@@ -91,7 +90,8 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 		right_operand = new PortWire(r_port);
 	}
 
-	public Collection getConsumedNets() {
+	@Override
+	public Collection<Net> getConsumedNets() {
 		return consumed_nets;
 	}
 
@@ -99,7 +99,8 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 	 * Provides the collection of Nets which this statement of verilog produces
 	 * as output signals.
 	 */
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return produced_nets;
 	}
 
@@ -126,8 +127,8 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 					+ totalShiftStage + ":" + op.getMaxStages();
 
 			/* Get this operation's result bus and its width. */
-			Wire prevStageWire = (Wire) left_operand;
-			Wire currentStageWire = (Wire) left_operand;
+			Wire prevStageWire = left_operand;
+			Wire currentStageWire = left_operand;
 
 			if (!r_value.isConstant()) {
 				/* Compose the Verilog expression for each shifting stage */
@@ -166,11 +167,9 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 
 						produced_nets.add(currentStageWire);
 						prevStageWire = currentStageWire;
-						add(new Assign.Continuous((NetLValue) currentStageWire,
-								stageExp));
+						add(new Assign.Continuous(currentStageWire, stageExp));
 					} else {
-						add(new Assign.Continuous((NetLValue) result_wire,
-								stageExp));
+						add(new Assign.Continuous(result_wire, stageExp));
 					}
 				}
 			} else {
@@ -183,10 +182,10 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 					rewire.add(prevStageWire
 							.getRange(maxShift - shiftAmount, 0));
 					rewire.add(new HexNumber(new HexConstant(0, shiftAmount)));
-					add(new Assign.Continuous((NetLValue) result_wire, rewire));
+					add(new Assign.Continuous(result_wire, rewire));
 				} else {
-					add(new Assign.Continuous((NetLValue) result_wire,
-							new HexNumber(0, result_wire.getWidth())));
+					add(new Assign.Continuous(result_wire, new HexNumber(0,
+							result_wire.getWidth())));
 				}
 			}
 
@@ -213,8 +212,8 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 			assert (totalShiftStage <= op.getMaxStages()) : "too many shift stages: "
 					+ totalShiftStage + ":" + op.getMaxStages();
 
-			Wire prevStageWire = (Wire) left_operand;
-			Wire currentStageWire = (Wire) left_operand;
+			Wire prevStageWire = left_operand;
+			Wire currentStageWire = left_operand;
 			int leftOperandSize = left_operand.getWidth();
 			int resultSize = op.getResultBus().getValue().getSize();
 
@@ -276,8 +275,7 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 								+ stageCount), size);
 						produced_nets.add(currentStageWire);
 						prevStageWire = currentStageWire;
-						add(new Assign.Continuous((NetLValue) currentStageWire,
-								stageExp));
+						add(new Assign.Continuous(currentStageWire, stageExp));
 						// set maxShift to work with current size of
 						// prevStageWire
 						maxShift = prevStageWire.getWidth() - 1;
@@ -289,14 +287,13 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 											+ "_stage_"
 											+ stageCount), stageExp.getWidth());
 							produced_nets.add(currentStageWire);
-							add(new Assign.Continuous(
-									(NetLValue) currentStageWire, stageExp));
-							add(new Assign.Continuous((NetLValue) result_wire,
+							add(new Assign.Continuous(currentStageWire,
+									stageExp));
+							add(new Assign.Continuous(result_wire,
 									currentStageWire.getRange(
 											result_wire.getWidth() - 1, 0)));
 						} else {
-							add(new Assign.Continuous((NetLValue) result_wire,
-									stageExp));
+							add(new Assign.Continuous(result_wire, stageExp));
 						}
 					}
 				}
@@ -318,10 +315,10 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 									prevStageWire.getBitSelect(maxShift)));
 						}
 					rewire.add(prevStageWire.getRange(top_bit, shiftAmount));
-					add(new Assign.Continuous((NetLValue) result_wire, rewire));
+					add(new Assign.Continuous(result_wire, rewire));
 				} else {
 					assert result_wire.getWidth() == 1;
-					add(new Assign.Continuous((NetLValue) result_wire,
+					add(new Assign.Continuous(result_wire,
 							prevStageWire.getBitSelect(maxShift)));
 				}
 			}
@@ -349,8 +346,8 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 			assert (totalShiftStage <= op.getMaxStages()) : "too many shift stages: "
 					+ totalShiftStage + ":" + op.getMaxStages();
 
-			Wire prevStageWire = (Wire) left_operand;
-			Wire currentStageWire = (Wire) left_operand;
+			Wire prevStageWire = left_operand;
+			Wire currentStageWire = left_operand;
 			int leftOperandSize = left_operand.getWidth();
 			int resultSize = op.getResultBus().getValue().getSize();
 
@@ -409,8 +406,7 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 								+ stageCount), size);
 						produced_nets.add(currentStageWire);
 						prevStageWire = currentStageWire;
-						add(new Assign.Continuous((NetLValue) currentStageWire,
-								stageExp));
+						add(new Assign.Continuous(currentStageWire, stageExp));
 						// set maxShift to work with current size of
 						// prevStageWire
 						maxShift = currentStageWire.getWidth() - 1;
@@ -422,14 +418,13 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 											+ "_stage_"
 											+ stageCount), stageExp.getWidth());
 							produced_nets.add(currentStageWire);
-							add(new Assign.Continuous(
-									(NetLValue) currentStageWire, stageExp));
-							add(new Assign.Continuous((NetLValue) result_wire,
+							add(new Assign.Continuous(currentStageWire,
+									stageExp));
+							add(new Assign.Continuous(result_wire,
 									currentStageWire.getRange(
 											result_wire.getWidth() - 1, 0)));
 						} else {
-							add(new Assign.Continuous((NetLValue) result_wire,
-									stageExp));
+							add(new Assign.Continuous(result_wire, stageExp));
 						}
 					}
 				}
@@ -451,10 +446,10 @@ public abstract class ShiftOp extends StatementBlock implements ForgePattern {
 									extra_bits)));
 						}
 					rewire.add(prevStageWire.getRange(top_bit, shiftAmount));
-					add(new Assign.Continuous((NetLValue) result_wire, rewire));
+					add(new Assign.Continuous(result_wire, rewire));
 				} else {
-					add(new Assign.Continuous((NetLValue) result_wire,
-							new HexNumber(0, result_wire.getWidth())));
+					add(new Assign.Continuous(result_wire, new HexNumber(0,
+							result_wire.getWidth())));
 				}
 			}
 		}

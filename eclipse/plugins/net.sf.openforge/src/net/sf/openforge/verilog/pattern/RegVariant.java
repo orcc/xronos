@@ -23,7 +23,6 @@ package net.sf.openforge.verilog.pattern;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import net.sf.openforge.app.EngineThread;
@@ -38,6 +37,7 @@ import net.sf.openforge.verilog.model.Comment;
 import net.sf.openforge.verilog.model.Constant;
 import net.sf.openforge.verilog.model.InlineComment;
 import net.sf.openforge.verilog.model.ModuleInstance;
+import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.ParameterSetting;
 import net.sf.openforge.verilog.model.Wire;
 
@@ -52,7 +52,7 @@ import net.sf.openforge.verilog.model.Wire;
 public class RegVariant extends StatementBlock implements ForgePattern,
 		MappedModuleSpecifier {
 
-	private Set<Object> consumedNets = new HashSet<Object>();
+	private Set<Net> consumedNets = new HashSet<Net>();
 
 	private BusWire resultWire;
 
@@ -250,7 +250,8 @@ public class RegVariant extends StatementBlock implements ForgePattern,
 	 * Provides the collection of Nets which this statement of verilog uses as
 	 * input signals.
 	 */
-	public Collection getConsumedNets() {
+	@Override
+	public Collection<Net> getConsumedNets() {
 		return consumedNets;
 	}
 
@@ -258,10 +259,12 @@ public class RegVariant extends StatementBlock implements ForgePattern,
 	 * Provides the collection of Nets which this statement of verilog produces
 	 * as output signals.
 	 */
-	public Collection getProducedNets() {
-		return Collections.singleton(resultWire);
+	@Override
+	public Collection<Net> getProducedNets() {
+		return Collections.singleton((Net) resultWire);
 	}
 
+	@Override
 	public Set<MappedModule> getMappedModules() {
 		return mappedModules;
 	}

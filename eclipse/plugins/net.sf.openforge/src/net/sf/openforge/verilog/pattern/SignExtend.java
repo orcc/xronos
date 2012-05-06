@@ -101,6 +101,7 @@ public class SignExtend implements Expression {
 	 * 
 	 * @return <description>
 	 */
+	@Override
 	public Lexicality lexicalify() {
 		return extended.lexicalify();
 	}
@@ -109,7 +110,8 @@ public class SignExtend implements Expression {
 	 * 
 	 * @return <description>
 	 */
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		// TODO: implement this net.sf.openforge.verilog.model.Expression method
 		return extended.getNets();
 	}
@@ -118,10 +120,12 @@ public class SignExtend implements Expression {
 	 * 
 	 * @return <description>
 	 */
+	@Override
 	public int getWidth() {
 		return extended.getWidth();
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

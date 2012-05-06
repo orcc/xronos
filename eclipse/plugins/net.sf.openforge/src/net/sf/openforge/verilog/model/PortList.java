@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * PortList is a comma-separated list of Identifiers.
@@ -39,8 +40,8 @@ import java.util.List;
  */
 public class PortList implements VerilogElement {
 
-	List ports = new ArrayList();
-	HashSet nets = new HashSet();
+	List<Identifier> ports = new ArrayList<Identifier>();
+	Set<Net> nets = new HashSet<Net>();
 
 	/**
 	 * Constructs an empty PortList.
@@ -80,7 +81,7 @@ public class PortList implements VerilogElement {
 		return ports.contains(id);
 	}
 
-	public Collection getNets() {
+	public Collection<Net> getNets() {
 		return nets;
 	}
 
@@ -88,16 +89,18 @@ public class PortList implements VerilogElement {
 		return ports.size();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
-		for (Iterator it = ports.iterator(); it.hasNext();) {
-			lex.append((Identifier) it.next());
+		for (Iterator<Identifier> it = ports.iterator(); it.hasNext();) {
+			lex.append(it.next());
 			if (it.hasNext())
 				lex.append(Symbol.COMMA);
 		}
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

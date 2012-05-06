@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
@@ -60,10 +61,11 @@ public class VerilogNaming extends FilteredVisitor {
 
 	private Stack scope_stack = new Stack();
 
-	private Set current_scope = null;
+	private Set<String> current_scope = null;
 
-	private Set recorded = new HashSet();
+	private Set<ID> recorded = new HashSet<ID>();
 
+	@SuppressWarnings("unused")
 	private Design current_design = null;
 
 	private boolean doLongNames = false;
@@ -72,10 +74,10 @@ public class VerilogNaming extends FilteredVisitor {
 	 * stores unique Procedure names, uses all UPERCASE to catch same spelling
 	 * but different capitlization which drives XST nuts and causes it to fail!
 	 **/
-	private Set uniquified = new HashSet();
+	private Set<String> uniquified = new HashSet<String>();
 
 	public VerilogNaming() {
-		this.doLongNames = EngineThread.getGenericJob()
+		doLongNames = EngineThread.getGenericJob()
 				.getUnscopedBooleanOptionValue(
 						OptionRegistry.LONG_VERILOG_NAMES);
 	}
@@ -85,7 +87,7 @@ public class VerilogNaming extends FilteredVisitor {
 	 */
 	private void startScope() {
 		scope_stack.push(current_scope);
-		current_scope = new HashSet();
+		current_scope = new HashSet<String>();
 	}
 
 	/**
@@ -164,16 +166,17 @@ public class VerilogNaming extends FilteredVisitor {
 	 * @param design
 	 *            current design
 	 */
-	private void recordName(HashMap name_map, Design design) {
-		Set key_set = name_map.keySet();
+	private void recordName(HashMap<String, List<Pin>> name_map, Design design) {
+		Set<String> key_set = name_map.keySet();
 
 		for (Iterator keyIter = key_set.iterator(); keyIter.hasNext();) {
 			Object name = keyIter.next();
-			List pin_list = (List) name_map.get(name);
+			List<Pin> pin_list = name_map.get(name);
 			// if((pin_list.size() > 1) || (design.getTasks().size() > 1))
 			if (pin_list.size() > 1) {
-				for (Iterator pinIter = pin_list.iterator(); pinIter.hasNext();) {
-					Pin pin = (Pin) pinIter.next();
+				for (Iterator<Pin> pinIter = pin_list.iterator(); pinIter
+						.hasNext();) {
+					Pin pin = pinIter.next();
 
 					if (!recorded.contains(pin)) {
 						String verilog_name = toVerilogName(pin);
@@ -193,7 +196,7 @@ public class VerilogNaming extends FilteredVisitor {
 					// ID.showLogical(pin));
 				}
 			} else {
-				Pin pin = (Pin) pin_list.get(0);
+				Pin pin = pin_list.get(0);
 				IDSourceInfo prefix = pin.getIDSourceInfo();
 				recordName(pin,
 						(prefix != null) ? prefix.getFullyQualifiedName() : "");
@@ -217,7 +220,7 @@ public class VerilogNaming extends FilteredVisitor {
 	private void rename(ID id) {
 		String previous_name = toVerilogName(id);
 		id.setIDLogical(previous_name + "_u" + ID.getNextID(previous_name));
-		String new_name = toVerilogName(id);
+		// String new_name = toVerilogName(id);
 		// EngineThread.getGenericJob().verbose("Renamed \"" + previous_name +
 		// "\" to \"" + new_name + "\"");
 	}
@@ -237,24 +240,25 @@ public class VerilogNaming extends FilteredVisitor {
 	 * @return a hash map with mapping of "Pin Name" =>
 	 *         "A List of Pins That Share The Same Pin Name"
 	 */
-	private HashMap iteratePins(Design design) {
-		HashMap name_map = new HashMap();
+	private HashMap<String, List<Pin>> iteratePins(Design design) {
+		Map<String, List<Pin>> name_map = new HashMap<String, List<Pin>>();
 
-		for (Iterator iter = design.getPins().iterator(); iter.hasNext();) {
-			Pin pin = (Pin) iter.next();
+		for (Pin pin : design.getPins()) {
 			String name = toVerilogName(pin);
 			if (name_map.containsKey(name)) {
-				((ArrayList) name_map.get(name)).add(pin);
+				((ArrayList<Pin>) name_map.get(name)).add(pin);
 			} else {
-				List list = new ArrayList();
+				List<Pin> list = new ArrayList<Pin>();
 				list.add(pin);
 				name_map.put(name, list);
 			}
 		}
 
-		return name_map;
+		return (HashMap<String, List<Pin>>) name_map;
 	}
 
+	@SuppressWarnings("deprecation")
+	@Override
 	public void visit(Design design) {
 		startScope();
 		current_design = design;
@@ -280,17 +284,16 @@ public class VerilogNaming extends FilteredVisitor {
 		// OutputPin pin = (OutputPin)it.next();
 		// recordName(pin);
 		// }
-		for (Iterator it = design.getBidirectionalPins().iterator(); it
-				.hasNext();) {
-			BidirectionalPin pin = (BidirectionalPin) it.next();
+		for (Pin p : design.getBidirectionalPins()) {
+			BidirectionalPin pin = (BidirectionalPin) p;
 			recordName(pin);
 		}
 
 		// visit the global components' physical implementations
-		LinkedList comps = new LinkedList(design.getDesignModule()
-				.getComponents());
+		LinkedList<Component> comps = new LinkedList<Component>(design
+				.getDesignModule().getComponents());
 		while (!comps.isEmpty()) {
-			Visitable vis = (Visitable) comps.remove(0);
+			Visitable vis = comps.remove(0);
 			try {
 				vis.accept(this);
 			} catch (UnexpectedVisitationException uve) {
@@ -311,6 +314,7 @@ public class VerilogNaming extends FilteredVisitor {
 		endScope();
 	}
 
+	@Override
 	public void visit(Procedure proc) {
 		startScope();
 		recordModuleName(proc);
@@ -318,6 +322,7 @@ public class VerilogNaming extends FilteredVisitor {
 		endScope();
 	}
 
+	@Override
 	public void preFilter(Call call) {
 		recordName(call);
 	}
@@ -326,20 +331,19 @@ public class VerilogNaming extends FilteredVisitor {
 	 * Handle any kind of {@link Primitive}. All visit(Primitive subclass)
 	 * methods should call this as part of the visit.
 	 */
+	@Override
 	public void filter(Primitive p) {
 		// first make sure the Primitive itself has a name that you like,
 		// and that it is unique in this scope
-		if (this.doLongNames) {
+		if (doLongNames) {
 			p.setIDLogical(ID.showLogical(p) + "_"
 					+ Integer.toHexString(System.identityHashCode(p)));
 		}
 
 		recordName(p);
 
-		for (Iterator exits = p.getExits().iterator(); exits.hasNext();) {
-			Exit exit = (Exit) exits.next();
-			for (Iterator buses = exit.getBuses().iterator(); buses.hasNext();) {
-				Bus bus = (Bus) buses.next();
+		for (Exit exit : p.getExits()) {
+			for (Bus bus : exit.getBuses()) {
 				if (bus.isUsed()) {
 					bus.setIDLogical(ID.showLogical(p));
 					recordName(bus);
@@ -348,13 +352,12 @@ public class VerilogNaming extends FilteredVisitor {
 		}
 	}
 
+	@Override
 	public void filterAny(Component c) {
 		String base = ID.showLogical(c) + "_"
 				+ Integer.toHexString(System.identityHashCode(c));
-		for (Iterator exits = c.getExits().iterator(); exits.hasNext();) {
-			Exit exit = (Exit) exits.next();
-			for (Iterator buses = exit.getBuses().iterator(); buses.hasNext();) {
-				Bus bus = (Bus) buses.next();
+		for (Exit exit : c.getExits()) {
+			for (Bus bus : exit.getBuses()) {
 				if (bus.isUsed()) {
 					// recordName(bus.getSource());
 					// Changed to name EVERY bus due to a problem with
@@ -367,7 +370,7 @@ public class VerilogNaming extends FilteredVisitor {
 					// in RegisterBuilder by uniquifying register
 					// names) but could creep up in other cases as
 					// well. Now we name all buses.
-					if (this.doLongNames) {
+					if (doLongNames) {
 						bus.setIDLogical(ID.showLogical(bus) + "_" + base);
 					}
 					recordName(bus);

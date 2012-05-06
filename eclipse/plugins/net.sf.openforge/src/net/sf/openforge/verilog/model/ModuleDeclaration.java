@@ -97,13 +97,15 @@ public class ModuleDeclaration implements Statement {
 		return ports;
 	}
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return ports.getNets();
 	}
 
 	// ////////////////////////////
 	// VerilogElement interface
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -119,6 +121,7 @@ public class ModuleDeclaration implements Statement {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

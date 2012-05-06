@@ -69,27 +69,33 @@ public class ProxyNet extends Net {
 		setIdentifier(client.getIdentifier());
 	}
 
+	@Override
 	public Keyword getType() {
 		return (client == null) ? super.getType() : client.getType();
 	}
 
+	@Override
 	public Identifier getIdentifier() {
 		return (client == null) ? super.getIdentifier() : client
 				.getIdentifier();
 	}
 
+	@Override
 	public int getWidth() {
 		return (client == null) ? super.getWidth() : client.getWidth();
 	}
 
+	@Override
 	public int getMSB() {
 		return (client == null) ? super.getMSB() : client.getMSB();
 	}
 
+	@Override
 	public int getLSB() {
 		return (client == null) ? super.getLSB() : client.getLSB();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		return (client == null) ? super.lexicalify() : client.lexicalify();
 	}

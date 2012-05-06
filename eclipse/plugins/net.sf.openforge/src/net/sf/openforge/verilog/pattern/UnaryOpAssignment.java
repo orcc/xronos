@@ -62,7 +62,7 @@ public abstract class UnaryOpAssignment extends StatementBlock implements
 
 	public UnaryOpAssignment(UnaryOp uo, boolean checkBalance) {
 		Iterator<Port> ports = uo.getDataPorts().iterator();
-		Port d_port = (Port) ports.next();
+		Port d_port = ports.next();
 		assert (d_port.isUsed()) : "Operand port in unary operation is set to unused.";
 		// Bus d_bus = d_port.getBus();
 		// assert (d_bus != null) :
@@ -82,11 +82,13 @@ public abstract class UnaryOpAssignment extends StatementBlock implements
 
 	protected abstract Expression makeOpExpression(Expression operand);
 
-	public Collection getConsumedNets() {
-		return Collections.singleton(operand);
+	@Override
+	public Collection<Net> getConsumedNets() {
+		return Collections.singleton((Net) operand);
 	}
 
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return Collections.singleton(result_wire);
 	}
 
@@ -100,6 +102,7 @@ public abstract class UnaryOpAssignment extends StatementBlock implements
 			super(negate);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression operand) {
 			return (new net.sf.openforge.verilog.model.Unary.Negate(operand));
 		}
@@ -114,7 +117,7 @@ public abstract class UnaryOpAssignment extends StatementBlock implements
 
 		public SignExtend(UnaryOp cast) {
 			Iterator<Port> ports = cast.getDataPorts().iterator();
-			Port d_port = (Port) ports.next();
+			Port d_port = ports.next();
 			assert (d_port.isUsed()) : "Operand port in unary operation is set to unused.";
 			Bus d_bus = d_port.getBus();
 			assert (d_bus != null) : "Operand port in unary operation not attached to a bus.";
@@ -143,11 +146,13 @@ public abstract class UnaryOpAssignment extends StatementBlock implements
 			}
 		}
 
-		public Collection getConsumedNets() {
-			return Collections.singleton(operand);
+		@Override
+		public Collection<Net> getConsumedNets() {
+			return Collections.singleton((Net) operand);
 		}
 
-		public Collection getProducedNets() {
+		@Override
+		public Collection<Net> getProducedNets() {
 			return produced_nets;
 		}
 	}
@@ -157,6 +162,7 @@ public abstract class UnaryOpAssignment extends StatementBlock implements
 			super(minus);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression operand) {
 			Expression subLeftExp = new net.sf.openforge.verilog.model.Unary.Negate(
 					operand);
@@ -172,6 +178,7 @@ public abstract class UnaryOpAssignment extends StatementBlock implements
 			super(not);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression operand) {
 			return (new net.sf.openforge.verilog.model.Unary.Not(operand));
 		}
@@ -182,6 +189,7 @@ public abstract class UnaryOpAssignment extends StatementBlock implements
 			super(reductionOr, false);
 		}
 
+		@Override
 		protected Expression makeOpExpression(Expression operand) {
 			return (new net.sf.openforge.verilog.model.Unary.Or(operand));
 		}

@@ -22,6 +22,7 @@ package net.sf.openforge.verilog.model;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Conditional selects an expression basd on the value of a condition
@@ -59,13 +60,15 @@ public class Conditional implements Expression {
 		}
 	} // Conditional()
 
+	@Override
 	public int getWidth() {
 		return left.getWidth(); // left and right are guaranteed to be the same
 								// size
 	} // getWidth()
 
-	public Collection getNets() {
-		HashSet nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
 		nets.addAll(condition.getNets());
 		nets.addAll(left.getNets());
@@ -74,14 +77,16 @@ public class Conditional implements Expression {
 		return nets;
 	} // getNets()
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
-		lex.append(this.condition);
+		lex.append(condition);
 		lex.append(Symbol.CONDITION);
 		lex.append(new Else(left, right));
 		return lex;
 	} // Conditional()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -96,10 +101,12 @@ public class Conditional implements Expression {
 			super(Symbol.CONDITION_ELSE, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return CONDITIONAL_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}

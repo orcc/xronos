@@ -49,6 +49,7 @@ public class InlineComment extends Token implements Statement {
 		this.comment = new Comment(comment, type);
 	}
 
+	@Override
 	public String getToken() {
 		if (comment.getType() == Comment.LONG) {
 			return comment.toLongComment();
@@ -61,14 +62,17 @@ public class InlineComment extends Token implements Statement {
 		comment.setWidth(width);
 	}
 
+	@Override
 	public int getType() {
 		return TYPE;
 	}
 
-	public Collection getNets() {
-		return Collections.EMPTY_LIST;
+	@Override
+	public Collection<Net> getNets() {
+		return Collections.emptyList();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 		lex.append(this);

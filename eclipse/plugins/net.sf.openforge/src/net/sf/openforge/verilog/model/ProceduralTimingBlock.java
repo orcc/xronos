@@ -22,6 +22,7 @@ package net.sf.openforge.verilog.model;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A ProceduralTimingBlock is a procedural timing control statement, containing
@@ -50,8 +51,9 @@ public class ProceduralTimingBlock implements Statement {
 
 	} // ProceduralTimingBlock()
 
-	public Collection getNets() {
-		HashSet nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
 		nets.addAll(ec.getNets());
 		nets.addAll(body.getNets());
@@ -59,6 +61,7 @@ public class ProceduralTimingBlock implements Statement {
 		return nets;
 	} // getNets()
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -68,6 +71,7 @@ public class ProceduralTimingBlock implements Statement {
 		return lex;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

@@ -52,11 +52,12 @@ public abstract class PrimitiveAssignment extends ExpressionAssignment {
 			super(and);
 		}
 
-		protected Expression makeExpression(List operands) {
-			Expression e = (Expression) operands.get(0);
+		@Override
+		protected Expression makeExpression(List<Expression> operands) {
+			Expression e = operands.get(0);
 			for (int i = 1; i < operands.size(); i++) {
 				e = new net.sf.openforge.verilog.model.Bitwise.And(e,
-						(Expression) operands.get(i));
+						operands.get(i));
 			}
 			return e;
 		}
@@ -67,11 +68,12 @@ public abstract class PrimitiveAssignment extends ExpressionAssignment {
 			super(or);
 		}
 
-		protected Expression makeExpression(List operands) {
-			Expression e = (Expression) operands.get(0);
+		@Override
+		protected Expression makeExpression(List<Expression> operands) {
+			Expression e = operands.get(0);
 			for (int i = 1; i < operands.size(); i++) {
 				e = new net.sf.openforge.verilog.model.Bitwise.Or(e,
-						(Expression) operands.get(i));
+						operands.get(i));
 			}
 			return e;
 		}
@@ -82,9 +84,10 @@ public abstract class PrimitiveAssignment extends ExpressionAssignment {
 			super(not);
 		}
 
-		protected Expression makeExpression(List operands) {
+		@Override
+		protected Expression makeExpression(List<Expression> operands) {
 			assert operands.size() == 1 : "Logical NOT must have only 1 operand";
-			Expression e = (Expression) operands.get(0);
+			Expression e = operands.get(0);
 			return (new net.sf.openforge.verilog.model.Unary.Negate(e));
 		}
 	} // class Not

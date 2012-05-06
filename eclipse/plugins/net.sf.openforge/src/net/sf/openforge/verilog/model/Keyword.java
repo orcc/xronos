@@ -204,15 +204,15 @@ public class Keyword extends Token {
 	/** Composite 'keywords'. Needed to declare a signed wire */
 	public static Keyword SIGNED_WIRE = new CompositeKeyword(WIRE, SIGNED);
 
-	public static Set all_words;
-	public static Set wire_words;
-	public static Set directive_words;
-	public static Set unit_words;
-	public static Set f_words;
-	public static Set v2001_words;
+	public static Set<Keyword> all_words;
+	public static Set<Keyword> wire_words;
+	public static Set<Keyword> directive_words;
+	public static Set<Keyword> unit_words;
+	public static Set<Keyword> f_words;
+	public static Set<Keyword> v2001_words;
 
 	static {
-		all_words = new HashSet();
+		all_words = new HashSet<Keyword>();
 
 		all_words.add(ALWAYS);
 		all_words.add(AND);
@@ -311,7 +311,7 @@ public class Keyword extends Token {
 		all_words.add(XNOR);
 		all_words.add(XOR);
 
-		wire_words = new HashSet();
+		wire_words = new HashSet<Keyword>();
 		wire_words.add(INOUT);
 		wire_words.add(INPUT);
 		wire_words.add(OUTPUT);
@@ -320,7 +320,7 @@ public class Keyword extends Token {
 		wire_words.add(SIGNED_WIRE);
 		all_words.addAll(wire_words);
 
-		directive_words = new HashSet();
+		directive_words = new HashSet<Keyword>();
 		directive_words.add(DEFINE);
 		directive_words.add(UNDEF);
 		directive_words.add(IFDEF);
@@ -336,7 +336,7 @@ public class Keyword extends Token {
 		directive_words.add(ENDCELLDEFINE);
 		all_words.addAll(directive_words);
 
-		unit_words = new HashSet();
+		unit_words = new HashSet<Keyword>();
 		unit_words.add(SECONDS);
 		unit_words.add(MILLISECONDS);
 		unit_words.add(MICROSECONDS);
@@ -345,14 +345,14 @@ public class Keyword extends Token {
 		unit_words.add(FEMTOSECONDS);
 		all_words.addAll(unit_words);
 
-		f_words = new HashSet();
+		f_words = new HashSet<Keyword>();
 		f_words.add(FWRITE);
 		f_words.add(FOPEN);
 		f_words.add(FINISH);
 		f_words.add(DISPLAY);
 		all_words.addAll(f_words);
 
-		v2001_words = new HashSet();
+		v2001_words = new HashSet<Keyword>();
 		v2001_words.add(AUTOMATIC);
 		v2001_words.add(CELL);
 		v2001_words.add(CONFIG);
@@ -382,10 +382,12 @@ public class Keyword extends Token {
 		this.token = token;
 	}
 
+	@Override
 	public String getToken() {
 		return token;
 	}
 
+	@Override
 	public int getType() {
 		return TYPE;
 	}

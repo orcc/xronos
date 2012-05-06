@@ -26,10 +26,10 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.Statement;
 import net.sf.openforge.verilog.model.Token;
 
@@ -63,6 +63,7 @@ public class SynopsysBlock extends Token implements ForgePattern {
 		body.add(s.toString());
 	}
 
+	@Override
 	public String getToken() {
 		StringWriter sw = new StringWriter();
 		PrintWriter printer = new PrintWriter(sw);
@@ -81,22 +82,27 @@ public class SynopsysBlock extends Token implements ForgePattern {
 		return sw.toString();
 	}
 
+	@Override
 	public int getType() {
 		return TYPE;
 	}
 
-	public Collection getNets() {
-		return Collections.EMPTY_LIST;
+	@Override
+	public Collection<Net> getNets() {
+		return Collections.emptyList();
 	}
 
-	public Collection getConsumedNets() {
-		return Collections.EMPTY_LIST;
+	@Override
+	public Collection<Net> getConsumedNets() {
+		return Collections.emptyList();
 	}
 
-	public Collection getProducedNets() {
-		return Collections.EMPTY_LIST;
+	@Override
+	public Collection<Net> getProducedNets() {
+		return Collections.emptyList();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 		lex.append(this);

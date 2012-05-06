@@ -23,7 +23,6 @@ package net.sf.openforge.verilog.model;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -61,11 +60,12 @@ public class CaseBlock implements Statement {
 		body.add(new CaseStatement(new CaseValue(caseString), action));
 	}
 
-	public Collection getNets() {
-		HashSet nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		HashSet<Net> nets = new HashSet<Net>();
 
-		for (Iterator it = body.iterator(); it.hasNext();) {
-			nets.addAll(((CaseStatement) it.next()).getNets());
+		for (CaseStatement caseStatement : body) {
+			nets.addAll(caseStatement.getNets());
 		}
 
 		return nets;
@@ -79,10 +79,11 @@ public class CaseBlock implements Statement {
 		return controlGroup;
 	}
 
-	public Collection getCaseBody() {
+	public Collection<CaseStatement> getCaseBody() {
 		return body;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -98,6 +99,7 @@ public class CaseBlock implements Statement {
 
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -115,7 +117,8 @@ public class CaseBlock implements Statement {
 			this.actionStatement = actionStatement;
 		}
 
-		public Collection getNets() {
+		@Override
+		public Collection<Net> getNets() {
 			return actionStatement.getNets();
 		}
 
@@ -127,6 +130,7 @@ public class CaseBlock implements Statement {
 			return caseValue.getToken();
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = new Lexicality();
 
@@ -137,6 +141,7 @@ public class CaseBlock implements Statement {
 			return lex;
 		} // lexicalify ()
 
+		@Override
 		public String toString() {
 			return lexicalify().toString();
 		}
@@ -147,11 +152,12 @@ public class CaseBlock implements Statement {
 		private String id;
 
 		public CaseValue(String caseID) {
-			this.id = caseID.trim();
+			id = caseID.trim();
 		}
 
 		// ////////////////////////////
 		// VerilogElement interface
+		@Override
 		public String getToken() {
 			return id;
 		}

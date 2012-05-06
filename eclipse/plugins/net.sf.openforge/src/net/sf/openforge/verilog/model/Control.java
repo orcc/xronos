@@ -63,18 +63,18 @@ public class Control extends Token {
 	/** Insert whitespace. */
 	public static Control WHITESPACE = new Control(" ");
 
-	private static Set whitespace_words;
+	private static Set<Control> whitespace_words;
 
-	private static Set all_words;
+	private static Set<Control> all_words;
 
 	static {
-		whitespace_words = new HashSet();
+		whitespace_words = new HashSet<Control>();
 
 		whitespace_words.add(NEWLINE);
 		whitespace_words.add(TAB);
 		whitespace_words.add(WHITESPACE);
 
-		all_words = new HashSet();
+		all_words = new HashSet<Control>();
 		all_words.addAll(whitespace_words);
 		all_words.add(INDENT);
 		all_words.add(OUTDENT);
@@ -92,10 +92,12 @@ public class Control extends Token {
 	// ////////////////////////////
 	// VerilogElement interface
 
+	@Override
 	public String getToken() {
 		return token;
 	}
 
+	@Override
 	public int getType() {
 		return TYPE;
 	}
@@ -105,6 +107,7 @@ public class Control extends Token {
 			super("\n");
 		}
 
+		@Override
 		public String getToken() {
 			String token = super.getToken();
 			try {

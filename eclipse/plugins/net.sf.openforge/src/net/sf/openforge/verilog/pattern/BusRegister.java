@@ -71,6 +71,7 @@ public class BusRegister extends Register implements BusNet {
 	 * 
 	 * @return The LIM Bus upon which the Net is based
 	 */
+	@Override
 	public Bus getBus() {
 		return bus;
 	}
@@ -88,13 +89,12 @@ public class BusRegister extends Register implements BusNet {
 		int size = getWidth(); // ensures the width matches the net width
 		Expression init = null;
 
-		if (this.initialValue == null) {
+		if (initialValue == null) {
 			init = new HexNumber(0, size);
-		} else if (!this.initialValue.isConstant()) {
+		} else if (!initialValue.isConstant()) {
 			throw new NonConstantInitialValueException();
 		} else {
-			long initNum = this.initialValue.toNumber().numberValue()
-					.longValue();
+			long initNum = initialValue.toNumber().numberValue().longValue();
 			init = new HexNumber(initNum, size);
 		}
 

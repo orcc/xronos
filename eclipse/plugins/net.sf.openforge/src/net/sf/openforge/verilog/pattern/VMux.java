@@ -102,9 +102,9 @@ public class VMux extends StatementBlock implements ForgePattern {
 	 */
 	public VMux(ShortcutIfElseOp sifOp) {
 		result = NetFactory.makeNet(sifOp.getResultBus());
-		PortWire sel = new PortWire((Port) sifOp.getDataPorts().get(0));
-		PortWire dataA = new PortWire((Port) sifOp.getDataPorts().get(1));
-		PortWire dataB = new PortWire((Port) sifOp.getDataPorts().get(2));
+		PortWire sel = new PortWire(sifOp.getDataPorts().get(0));
+		PortWire dataA = new PortWire(sifOp.getDataPorts().get(1));
+		PortWire dataB = new PortWire(sifOp.getDataPorts().get(2));
 		consumed_nets.add(sel);
 		consumed_nets.add(dataA);
 		consumed_nets.add(dataB);
@@ -121,8 +121,8 @@ public class VMux extends StatementBlock implements ForgePattern {
 		assert emux.getDataPorts().size() == 2;
 		result = NetFactory.makeNet(emux.getResultBus());
 		PortWire sel = new PortWire(emux.getSelectPort());
-		PortWire lsb = new PortWire((Port) emux.getDataPorts().get(0));
-		PortWire msb = new PortWire((Port) emux.getDataPorts().get(1));
+		PortWire lsb = new PortWire(emux.getDataPorts().get(0));
+		PortWire msb = new PortWire(emux.getDataPorts().get(1));
 		consumed_nets.add(sel);
 		consumed_nets.add(lsb);
 		consumed_nets.add(msb);
@@ -133,6 +133,7 @@ public class VMux extends StatementBlock implements ForgePattern {
 	 * Provides the collection of Nets which this statement of verilog uses as
 	 * input signals.
 	 */
+	@Override
 	public Collection getConsumedNets() {
 		return consumed_nets;
 	}
@@ -141,6 +142,7 @@ public class VMux extends StatementBlock implements ForgePattern {
 	 * Provides the collection of Nets which this statement of verilog produces
 	 * as output signals.
 	 */
+	@Override
 	public Collection getProducedNets() {
 		return Collections.singleton(result);
 	}

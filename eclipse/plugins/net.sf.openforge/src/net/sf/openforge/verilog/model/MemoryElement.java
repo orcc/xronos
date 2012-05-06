@@ -64,6 +64,7 @@ public class MemoryElement extends Net {
 		this(memory, new Constant(address));
 	}
 
+	@Override
 	public Identifier getIdentifier() {
 		// return memory.getIdentifier();
 		return new Identifier(lexicalify().toString());
@@ -73,27 +74,33 @@ public class MemoryElement extends Net {
 		return address;
 	}
 
+	@Override
 	public int getWidth() {
 		return memory.getWidth();
 	}
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		// return Collections.singleton(memory);
-		return Collections.EMPTY_LIST;
+		return Collections.emptyList();
 	}
 
+	@Override
 	public Expression getBitSelect(int position) {
 		return new MemoryElementRange(position, position);
 	}
 
+	@Override
 	public Expression getRange(int msb, int lsb) {
 		return new MemoryElementRange(msb, lsb);
 	}
 
+	@Override
 	public Expression getFullRange() {
 		return getRange(getMSB(), getLSB());
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -105,6 +112,7 @@ public class MemoryElement extends Net {
 		return lex;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -136,13 +144,13 @@ public class MemoryElement extends Net {
 				throw new IllegalBitRange(msb, lsb);
 			}
 
-			if (msb == MemoryElement.this.getMSB()
-					&& lsb == MemoryElement.this.getLSB())
+			if (msb == getMSB() && lsb == getLSB())
 				range = null;
 			else
 				range = new Range(msb, lsb);
 		} // MemoryElementRange()
 
+		@Override
 		public int getWidth() {
 			if (range == null)
 				return 0;
@@ -150,13 +158,15 @@ public class MemoryElement extends Net {
 			return range.getWidth();
 		}
 
-		public Collection getNets() {
-			return Collections.EMPTY_LIST;
+		@Override
+		public Collection<Net> getNets() {
+			return Collections.emptyList();
 			/*
 			 * Collection c = new HashSet(1); c.add(this); return c;
 			 */
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = MemoryElement.this.lexicalify();
 
@@ -166,6 +176,7 @@ public class MemoryElement extends Net {
 			return lex;
 		} // lexicalify()
 
+		@Override
 		public String toString() {
 			return lexicalify().toString();
 		}
@@ -176,6 +187,7 @@ public class MemoryElement extends Net {
 	// Nested exceptions
 	//
 
+	@SuppressWarnings("serial")
 	public class IllegalBitRange extends VerilogSyntaxException {
 
 		public IllegalBitRange(int msb, int lsb) {

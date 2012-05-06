@@ -22,6 +22,7 @@ package net.sf.openforge.verilog.model;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A ConditionalStatement is the traditional if-else branching construct. As
@@ -65,8 +66,9 @@ public class ConditionalStatement implements Statement {
 		this.falseBranch = falseBranch;
 	}
 
-	public Collection getNets() {
-		HashSet nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
 		nets.addAll(condition.getNets());
 		nets.addAll(trueBranch.getNets());
@@ -77,6 +79,7 @@ public class ConditionalStatement implements Statement {
 		return nets;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -93,6 +96,7 @@ public class ConditionalStatement implements Statement {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

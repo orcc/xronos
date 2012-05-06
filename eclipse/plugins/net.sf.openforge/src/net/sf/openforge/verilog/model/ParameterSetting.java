@@ -58,6 +58,7 @@ public class ParameterSetting implements VerilogElement {
 	 * 
 	 * @return <description>
 	 */
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -70,6 +71,7 @@ public class ParameterSetting implements VerilogElement {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

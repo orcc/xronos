@@ -41,14 +41,17 @@ public class Group implements Expression {
 		this.base = base;
 	}
 
+	@Override
 	public int getWidth() {
 		return base.getWidth();
 	}
 
-	public Collection<Object> getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return base.getNets();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -59,6 +62,7 @@ public class Group implements Expression {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

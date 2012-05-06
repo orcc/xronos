@@ -62,10 +62,10 @@ public abstract class CompareOp extends StatementBlock implements ForgePattern {
 	Wire right_operand;
 	BinaryOp binaryOp;
 
-	Set produced_nets = new HashSet();
+	Set<Net> produced_nets = new HashSet<Net>();
 
 	public CompareOp(BinaryOp bo) {
-		this.binaryOp = bo;
+		binaryOp = bo;
 
 		/**
 		 * Here we create two singed wires and plugin the compareop
@@ -129,6 +129,7 @@ public abstract class CompareOp extends StatementBlock implements ForgePattern {
 			super(op);
 		}
 
+		@Override
 		protected Expression makeExpression(Expression left, Expression right) {
 			/* Compose the Verilog expression for this operation. */
 			return new Compare.NEQ(left, right);
@@ -141,6 +142,7 @@ public abstract class CompareOp extends StatementBlock implements ForgePattern {
 			super(op);
 		}
 
+		@Override
 		protected Expression makeExpression(Expression left, Expression right) {
 			/* Compose the Verilog expression for this operation. */
 			return new Compare.EQ(left, right);
@@ -153,6 +155,7 @@ public abstract class CompareOp extends StatementBlock implements ForgePattern {
 			super(op);
 		}
 
+		@Override
 		protected Expression makeExpression(Expression left, Expression right) {
 			return new Compare.LT(left, right);
 		}
@@ -164,6 +167,7 @@ public abstract class CompareOp extends StatementBlock implements ForgePattern {
 			super(op);
 		}
 
+		@Override
 		protected Expression makeExpression(Expression left, Expression right) {
 			/*
 			 * due to an icarus bug involving <= and >= we change these
@@ -236,6 +240,7 @@ public abstract class CompareOp extends StatementBlock implements ForgePattern {
 			super(op);
 		}
 
+		@Override
 		protected Expression makeExpression(Expression left, Expression right) {
 
 			return new Compare.GT(left, right);
@@ -248,6 +253,7 @@ public abstract class CompareOp extends StatementBlock implements ForgePattern {
 			super(op);
 		}
 
+		@Override
 		protected Expression makeExpression(Expression left, Expression right) {
 			/*
 			 * due to an icarus bug involving <= and >= we change these
@@ -314,14 +320,16 @@ public abstract class CompareOp extends StatementBlock implements ForgePattern {
 		// }
 	}
 
-	public Collection getConsumedNets() {
-		Set consumed = new HashSet();
+	@Override
+	public Collection<Net> getConsumedNets() {
+		Set<Net> consumed = new HashSet<Net>();
 		consumed.add(left_operand);
 		consumed.add(right_operand);
 		return consumed;
 	}
 
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return produced_nets;
 	}
 

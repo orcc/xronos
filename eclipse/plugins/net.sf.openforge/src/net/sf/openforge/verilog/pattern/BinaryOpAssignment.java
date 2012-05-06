@@ -52,8 +52,8 @@ public abstract class BinaryOpAssignment extends StatementBlock implements
 	Net result_wire;
 
 	public BinaryOpAssignment(BinaryOp bo) {
-		Iterator ports = bo.getDataPorts().iterator();
-		Port l_port = (Port) ports.next();
+		Iterator<Port> ports = bo.getDataPorts().iterator();
+		Port l_port = ports.next();
 		assert (l_port.isUsed()) : "Left operand port in math operation is set to unused.";
 		// Bus l_bus = l_port.getBus();
 		// assert (l_bus != null) :
@@ -61,7 +61,7 @@ public abstract class BinaryOpAssignment extends StatementBlock implements
 		assert (l_port.getValue() != null) : "Left operand port in math operation does not have a value.";
 		left_operand = new PortWire(l_port);
 
-		Port r_port = (Port) ports.next();
+		Port r_port = ports.next();
 		assert (r_port.isUsed()) : "Right operand port in math operation is set to unused.";
 		// Bus r_bus = r_port.getBus();
 		// assert (r_bus != null) :
@@ -81,14 +81,16 @@ public abstract class BinaryOpAssignment extends StatementBlock implements
 	protected abstract Expression makeOpExpression(Expression left,
 			Expression right);
 
-	public Collection getConsumedNets() {
-		Set consumed = new HashSet();
+	@Override
+	public Collection<Net> getConsumedNets() {
+		Set<Net> consumed = new HashSet<Net>();
 		consumed.addAll(left_operand.getNets());
 		consumed.addAll(right_operand.getNets());
 		return consumed;
 	}
 
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return Collections.singleton(result_wire);
 	}
 

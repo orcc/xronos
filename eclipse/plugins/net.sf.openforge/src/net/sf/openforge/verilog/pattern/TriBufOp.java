@@ -39,8 +39,8 @@ import net.sf.openforge.verilog.model.NetFactory;
  */
 public class TriBufOp extends StatementBlock implements ForgePattern {
 
-	Set<Expression> produced_nets = new HashSet<Expression>();
-	Set<Expression> consumed_nets = new HashSet<Expression>();
+	Set<Net> produced_nets = new HashSet<Net>();
+	Set<Net> consumed_nets = new HashSet<Net>();
 
 	/**
 	 * Constructs a TriBuf based on either of two selection Nets, which specify
@@ -60,8 +60,8 @@ public class TriBufOp extends StatementBlock implements ForgePattern {
 		Expression input_operand = new PortWire(tbuf.getInputPort());
 		Expression enable_operand = new PortWire(tbuf.getEnablePort());
 
-		consumed_nets.add(input_operand);
-		consumed_nets.add(enable_operand);
+		consumed_nets.add((Net) input_operand);
+		consumed_nets.add((Net) enable_operand);
 
 		Net result_wire = NetFactory.makeNet(tbuf.getResultBus());
 		/*
@@ -77,7 +77,8 @@ public class TriBufOp extends StatementBlock implements ForgePattern {
 		add(new Assign.Continuous(result_wire, conditional));
 	}
 
-	public Collection getConsumedNets() {
+	@Override
+	public Collection<Net> getConsumedNets() {
 		return consumed_nets;
 	}
 
@@ -85,7 +86,8 @@ public class TriBufOp extends StatementBlock implements ForgePattern {
 	 * Provides the collection of Nets which this statement of verilog produces
 	 * as output signals.
 	 */
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return produced_nets;
 	}
 

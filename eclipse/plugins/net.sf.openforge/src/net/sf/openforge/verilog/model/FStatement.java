@@ -51,16 +51,17 @@ public abstract class FStatement implements Statement {
 	}
 
 	protected void setStatement(Statement state) {
-		this.expr = state;
+		expr = state;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
 		lex.append(Symbol.DOLLAR);
-		lex.append(this.type);
+		lex.append(type);
 
-		if (this.expr != null) {
+		if (expr != null) {
 			lex.append(Symbol.OPEN_PARENTHESIS);
 			lex.append(expr);
 			lex.append(Symbol.CLOSE_PARENTHESIS);
@@ -71,8 +72,9 @@ public abstract class FStatement implements Statement {
 		return lex;
 	} // lexicalify()
 
-	public Collection getNets() {
-		Set nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
 		if (expr != null)
 			nets.addAll(expr.getNets());
@@ -80,6 +82,7 @@ public abstract class FStatement implements Statement {
 		return nets;
 	} // getNets();
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -126,21 +129,23 @@ public abstract class FStatement implements Statement {
 		/**
 		 * Not using an assign since assigns need sized expressions...
 		 */
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = new Lexicality();
 			lex.append(file);
 			lex.append(Symbol.NONBLOCKING_ASSIGN);
 			lex.append(Symbol.DOLLAR);
-			lex.append(this.type);
+			lex.append(type);
 			lex.append(Symbol.OPEN_PARENTHESIS);
-			lex.append(this.expr);
+			lex.append(expr);
 			lex.append(Symbol.CLOSE_PARENTHESIS);
 			lex.append(Symbol.SEMICOLON);
 			return lex;
 		}
 
-		public Collection getNets() {
-			Collection nets = super.getNets();
+		@Override
+		public Collection<Net> getNets() {
+			Collection<Net> nets = super.getNets();
 			nets.add(file);
 			return nets;
 		}

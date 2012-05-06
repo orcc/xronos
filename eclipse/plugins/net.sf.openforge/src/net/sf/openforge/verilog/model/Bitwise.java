@@ -47,10 +47,12 @@ public abstract class Bitwise extends Operation {
 			super(Symbol.AND, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return BITWISE_AND_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return false;
 		}
@@ -61,10 +63,12 @@ public abstract class Bitwise extends Operation {
 			super(Symbol.OR, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return BITWISE_OR_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return false;
 		}
@@ -75,10 +79,12 @@ public abstract class Bitwise extends Operation {
 			super(Symbol.NAND, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return REDUCTION_NAND_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return false;
 		}
@@ -89,10 +95,12 @@ public abstract class Bitwise extends Operation {
 			super(Symbol.NOR, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return REDUCTION_NOR_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return false;
 		}
@@ -103,10 +111,12 @@ public abstract class Bitwise extends Operation {
 			super(Symbol.XOR, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return REDUCTION_XOR_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return false;
 		}
@@ -117,10 +127,12 @@ public abstract class Bitwise extends Operation {
 			super(Symbol.XNOR, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return REDUCTION_XNOR_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return false;
 		}

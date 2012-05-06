@@ -51,22 +51,25 @@ public class BitWire implements Expression {
 	}
 
 	public BitWire(List<Bit> bits) {
-		Bit lsb = (Bit) bits.get(0);
-		Bit msb = (Bit) bits.get(bits.size() - 1);
+		Bit lsb = bits.get(0);
+		Bit msb = bits.get(bits.size() - 1);
 		assert lsb.getOwner() != null : "Getting owner of floating bit " + lsb;
 		Bus source = lsb.getOwner();
 		Net full_wire = NetFactory.makeNet(source);
 		bitselect = full_wire.getRange(msb.getPosition(), lsb.getPosition());
 	}
 
+	@Override
 	public int getWidth() {
 		return bitselect.getWidth();
 	}
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return bitselect.getNets();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		return bitselect.lexicalify();
 	}

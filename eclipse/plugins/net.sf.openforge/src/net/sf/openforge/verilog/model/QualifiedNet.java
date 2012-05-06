@@ -41,7 +41,7 @@ import java.util.List;
  */
 public class QualifiedNet extends Net {
 
-	List qualified_identifiers = new ArrayList();
+	List<Identifier> qualified_identifiers = new ArrayList<Identifier>();
 
 	/**
 	 * Constructs a QualifiedNet.
@@ -63,10 +63,12 @@ public class QualifiedNet extends Net {
 		this(module, new ModuleInstance[0], net);
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
-		for (Iterator it = qualified_identifiers.iterator(); it.hasNext();) {
-			lex.append((Identifier) it.next());
+		for (Iterator<Identifier> it = qualified_identifiers.iterator(); it
+				.hasNext();) {
+			lex.append(it.next());
 			if (it.hasNext())
 				lex.append(Symbol.DOT);
 		}

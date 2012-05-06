@@ -42,10 +42,12 @@ public class Unary implements Expression {
 		this.exp = exp;
 	} // Unary()
 
-	public Collection getNets() {
+	@Override
+	public Collection<Net> getNets() {
 		return exp.getNets();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -55,10 +57,12 @@ public class Unary implements Expression {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public int getWidth() {
 		return exp.getWidth();
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

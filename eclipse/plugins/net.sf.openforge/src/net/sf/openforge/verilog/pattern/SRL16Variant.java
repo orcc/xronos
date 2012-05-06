@@ -50,7 +50,7 @@ import net.sf.openforge.verilog.model.Wire;
 public class SRL16Variant extends StatementBlock implements ForgePattern,
 		MappedModuleSpecifier {
 
-	private Set<Object> consumed_nets = new HashSet<Object>();
+	private Set<Net> consumed_nets = new HashSet<Net>();
 
 	private Net result_wire;
 
@@ -187,7 +187,8 @@ public class SRL16Variant extends StatementBlock implements ForgePattern,
 	 * Provides the collection of Nets which this statement of verilog uses as
 	 * input signals.
 	 */
-	public Collection getConsumedNets() {
+	@Override
+	public Collection<Net> getConsumedNets() {
 		return consumed_nets;
 	}
 
@@ -195,10 +196,12 @@ public class SRL16Variant extends StatementBlock implements ForgePattern,
 	 * Provides the collection of Nets which this statement of verilog produces
 	 * as output signals.
 	 */
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return Collections.singleton(result_wire);
 	}
 
+	@Override
 	public Set<MappedModule> getMappedModules() {
 		return mappedModules;
 	}

@@ -40,16 +40,17 @@ public class Display implements Statement {
 	protected Statement expr;
 
 	public Display(Statement stat) {
-		this.expr = stat;
+		expr = stat;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
 		lex.append(Symbol.DOLLAR);
 		lex.append(Keyword.DISPLAY);
 
-		if (this.expr != null) {
+		if (expr != null) {
 			lex.append(Symbol.OPEN_PARENTHESIS);
 			lex.append(expr);
 			lex.append(Symbol.CLOSE_PARENTHESIS);
@@ -60,8 +61,9 @@ public class Display implements Statement {
 		return lex;
 	} // lexicalify()
 
-	public Collection getNets() {
-		Set nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
 		if (expr != null)
 			nets.addAll(expr.getNets());
@@ -69,6 +71,7 @@ public class Display implements Statement {
 		return nets;
 	} // getNets();
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

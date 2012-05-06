@@ -51,7 +51,7 @@ public class PrettyPrinter {
 
 	IndentWriter writer;
 
-	Iterator tokens = null;
+	Iterator<Object> tokens = null;
 
 	/**
 	 * Constructs a new PrettyPrinter.
@@ -80,7 +80,7 @@ public class PrettyPrinter {
 	 *            the VerilogDocument to be printed
 	 */
 	public void print(VerilogDocument doc) {
-		for (Iterator it = doc.elements().iterator(); it.hasNext();) {
+		for (Iterator<Object> it = doc.elements().iterator(); it.hasNext();) {
 			Object element = it.next();
 
 			if (element instanceof VerilogElement) {
@@ -261,6 +261,7 @@ public class PrettyPrinter {
 		print(identifier);
 	}
 
+	@SuppressWarnings("unused")
 	private void pretty(StringStatement.StringToken string) {
 		delimit();
 		print(string);

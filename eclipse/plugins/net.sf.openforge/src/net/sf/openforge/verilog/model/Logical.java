@@ -36,10 +36,12 @@ public abstract class Logical extends Operation {
 		super(op, left, right);
 	} // Logical()
 
+	@Override
 	public int getWidth() {
 		return 1;
 	}
 
+	@Override
 	public boolean isOrdered() {
 		return false;
 	}
@@ -54,6 +56,7 @@ public abstract class Logical extends Operation {
 			super(Symbol.LOGICAL_AND, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return LOGICAL_AND_PRECEDENCE;
 		}
@@ -64,6 +67,7 @@ public abstract class Logical extends Operation {
 			super(Symbol.LOGICAL_OR, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return LOGICAL_OR_PRECEDENCE;
 		}

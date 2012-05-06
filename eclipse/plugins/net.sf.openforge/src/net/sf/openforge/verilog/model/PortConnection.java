@@ -69,7 +69,7 @@ public class PortConnection implements VerilogElement {
 		return e;
 	}
 
-	public Collection getNets() {
+	public Collection<Net> getNets() {
 		return getExpression().getNets();
 	}
 
@@ -77,6 +77,7 @@ public class PortConnection implements VerilogElement {
 	 * 
 	 * @return <description>
 	 */
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -89,6 +90,7 @@ public class PortConnection implements VerilogElement {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

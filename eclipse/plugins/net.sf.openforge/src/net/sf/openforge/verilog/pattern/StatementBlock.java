@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 import net.sf.openforge.verilog.model.Lexicality;
+import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.Statement;
 import net.sf.openforge.verilog.model.VerilogElement;
 
@@ -62,6 +63,7 @@ public class StatementBlock implements Statement, VerilogElement {
 	 * 
 	 * @return <description>
 	 */
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 		for (Statement stt : statements) {
@@ -75,15 +77,17 @@ public class StatementBlock implements Statement, VerilogElement {
 	 * 
 	 * @return <description>
 	 */
-	public Collection getNets() {
-		Set nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
-		for (Iterator it = statements.iterator(); it.hasNext();) {
-			nets.addAll(((Statement) it.next()).getNets());
+		for (Iterator<Statement> it = statements.iterator(); it.hasNext();) {
+			nets.addAll(it.next().getNets());
 		}
 		return nets;
 	} // getNets()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

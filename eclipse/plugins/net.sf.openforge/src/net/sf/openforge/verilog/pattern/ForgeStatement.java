@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.Statement;
 
 /**
@@ -39,11 +40,11 @@ import net.sf.openforge.verilog.model.Statement;
 
 public class ForgeStatement extends StatementBlock implements ForgePattern {
 
-	Set produced_nets;
+	Set<Net> produced_nets;
 
 	public ForgeStatement() {
 		super();
-		this.produced_nets = new HashSet();
+		produced_nets = new HashSet<Net>();
 	}
 
 	/**
@@ -55,19 +56,21 @@ public class ForgeStatement extends StatementBlock implements ForgePattern {
 	 * @param s
 	 *            the generic statement
 	 */
-	public ForgeStatement(Set produced_nets, Statement s) {
+	public ForgeStatement(Set<Net> produced_nets, Statement s) {
 		this.produced_nets = produced_nets;
 
 		add(s);
 	}
 
-	public Collection getConsumedNets() {
-		Collection consumed_nets = getNets();
+	@Override
+	public Collection<Net> getConsumedNets() {
+		Collection<Net> consumed_nets = getNets();
 		consumed_nets.removeAll(getProducedNets());
 		return consumed_nets;
 	}
 
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return produced_nets;
 	}
 

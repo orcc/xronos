@@ -50,18 +50,21 @@ public class BaseNumber implements VerilogElement, Expression {
 		this(new Constant(l, size));
 	} // BaseNumber()
 
+	@Override
 	public int getWidth() {
 		return number.getSize();
 	}
 
-	public Collection getNets() {
-		return new HashSet(1);
+	@Override
+	public Collection<Net> getNets() {
+		return new HashSet<Net>(1);
 	}
 
 	/**
 	 * 
 	 * @return the tokens comprising this base number
 	 */
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -88,6 +91,7 @@ public class BaseNumber implements VerilogElement, Expression {
 
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

@@ -47,14 +47,17 @@ public abstract class Token implements VerilogElement {
 	 */
 	public abstract String getToken();
 
+	@Override
 	public String toString() {
 		return getToken();
 	}
 
+	@Override
 	public int hashCode() {
 		return getToken().hashCode();
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (super.equals(o))
 			return true;
@@ -66,6 +69,7 @@ public abstract class Token implements VerilogElement {
 		return false;
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 

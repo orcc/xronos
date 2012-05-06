@@ -121,10 +121,9 @@ public abstract class Operation implements Expression {
 
 	} // Operation()
 
+	@SuppressWarnings("serial")
 	public static class UnbalancedOperationException extends
 			VerilogSyntaxException {
-
-		private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 		public UnbalancedOperationException(Expression left, Expression right) {
 			super(new String("Operation on unbalanced expressions: "
@@ -152,12 +151,14 @@ public abstract class Operation implements Expression {
 		return false;
 	}
 
+	@Override
 	public int getWidth() {
 		return left.getWidth();
 	}
 
-	public Collection getNets() {
-		Collection c = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Collection<Net> c = new HashSet<Net>();
 
 		c.addAll(left.getNets());
 		c.addAll(right.getNets());
@@ -165,6 +166,7 @@ public abstract class Operation implements Expression {
 		return c;
 	} // getNets()
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
@@ -175,6 +177,7 @@ public abstract class Operation implements Expression {
 		return lex;
 	} // lexicalify()
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -189,10 +192,12 @@ public abstract class Operation implements Expression {
 			super(Symbol.LEFT_SHIFT, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return LEFT_SHIFT_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -203,10 +208,12 @@ public abstract class Operation implements Expression {
 			super(Symbol.LEFT_SHIFT, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return LEFT_SHIFT_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -217,10 +224,12 @@ public abstract class Operation implements Expression {
 			super(Symbol.RIGHT_SHIFT, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return RIGHT_SHIFT_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -231,10 +240,12 @@ public abstract class Operation implements Expression {
 			super(Symbol.RIGHT_SHIFT, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return RIGHT_SHIFT_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}

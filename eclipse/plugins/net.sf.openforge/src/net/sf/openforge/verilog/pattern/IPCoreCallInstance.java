@@ -20,8 +20,6 @@
  */
 package net.sf.openforge.verilog.pattern;
 
-import java.util.Iterator;
-
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.IPCoreCall;
@@ -63,7 +61,7 @@ public class IPCoreCallInstance extends ForgeStatement implements ForgePattern {
 		ModuleInstance mi = new ModuleInstance(ID.toVerilogIdentifier(ID
 				.showLogical(call.getProcedure())), ID.toVerilogIdentifier(ID
 				.showLogical(call)));
-		this.add(mi);
+		add(mi);
 
 		// Connect call control ports and data ports
 		// Iterate through call ports
@@ -101,8 +99,7 @@ public class IPCoreCallInstance extends ForgeStatement implements ForgePattern {
 		}
 
 		// Connecting call buses
-		for (Iterator busIter = call.getBuses().iterator(); busIter.hasNext();) {
-			Bus bus = (Bus) busIter.next();
+		for (Bus bus : call.getBuses()) {
 			if (bus.isUsed()) {
 				Net output_wire = NetFactory.makeNet(bus);
 

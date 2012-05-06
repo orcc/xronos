@@ -68,14 +68,16 @@ import net.sf.openforge.verilog.model.SequentialBlock;
 public class SyncBlock implements ForgePattern {
 
 	private Always always;
+	@SuppressWarnings("unused")
 	private Net clock;
+	@SuppressWarnings("unused")
 	private Net reset;
 	private EventControl control;
 	private SequentialBlock reset_block;
 	private SequentialBlock clock_block;
 
-	private Set<Object> produced_nets = new LinkedHashSet<Object>();
-	private Set<Object> consumed_nets = new LinkedHashSet<Object>();
+	private Set<Net> produced_nets = new LinkedHashSet<Net>();
+	private Set<Net> consumed_nets = new LinkedHashSet<Net>();
 
 	public SyncBlock(Net clock, Net reset) {
 		this.clock = clock;
@@ -133,7 +135,7 @@ public class SyncBlock implements ForgePattern {
 	 *            the statement which occurs during clock edges
 	 */
 	public void add(Register reg, ForgePattern on_clock) {
-		add(new ForgeStatement(Collections.singleton(reg),
+		add(new ForgeStatement(Collections.singleton((Net) reg),
 				new Assign.NonBlocking(reg, makeZero(reg))), on_clock);
 	} // add()
 
@@ -145,6 +147,7 @@ public class SyncBlock implements ForgePattern {
 	 * 
 	 * @return <description>
 	 */
+	@Override
 	public Lexicality lexicalify() {
 		return always.lexicalify();
 	} // lexicalify()
@@ -153,8 +156,9 @@ public class SyncBlock implements ForgePattern {
 	 * 
 	 * @return <description>
 	 */
-	public Collection getNets() {
-		HashSet nets = new HashSet();
+	@Override
+	public Collection<Net> getNets() {
+		Set<Net> nets = new HashSet<Net>();
 
 		nets.addAll(control.getNets());
 		nets.addAll(reset_block.getNets());
@@ -167,7 +171,8 @@ public class SyncBlock implements ForgePattern {
 	 * Provides the collection of Nets which this statement of verilog uses as
 	 * input signals.
 	 */
-	public Collection getConsumedNets() {
+	@Override
+	public Collection<Net> getConsumedNets() {
 		return consumed_nets;
 	}
 
@@ -175,10 +180,12 @@ public class SyncBlock implements ForgePattern {
 	 * Provides the collection of Nets which this statement of verilog produces
 	 * as output signals.
 	 */
-	public Collection getProducedNets() {
+	@Override
+	public Collection<Net> getProducedNets() {
 		return produced_nets;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}

@@ -54,6 +54,7 @@ public class BusOutput extends Output implements BusNet {
 	 * 
 	 * @return The LIM Bus upon which the Net is based
 	 */
+	@Override
 	public Bus getBus() {
 		return bus;
 	}

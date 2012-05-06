@@ -43,7 +43,6 @@ import net.sf.openforge.forge.api.ipcore.HDLWriter;
 import net.sf.openforge.forge.api.ipcore.IPCore;
 import net.sf.openforge.forge.api.pin.Buffer;
 import net.sf.openforge.lim.And;
-import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.DefaultVisitor;
@@ -205,7 +204,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	/** This is a set of Modules whose outbufs are to be translated. */
 	private Set<net.sf.openforge.lim.Module> xlatOutBufs = new HashSet<net.sf.openforge.lim.Module>();
 
-	private Set<Net> topLevelComponents = Collections.emptySet();
+	private Set<Component> topLevelComponents = Collections.emptySet();
 
 	/** Set of user verilog modules for IP Core that has been written already */
 	Set<String> userVerilog_names = new HashSet<String>();
@@ -291,14 +290,15 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		vt.writeDocument(writer);
 	}
 
+	@Override
 	public void visit(Design design) {
 		// _translate.d.launchXGraph(design, false);
 
 		// store off the design for IPCore usage during writing of the document
 		this.design = design;
 
-		this.xlatOutBufs = new HashSet<net.sf.openforge.lim.Module>();
-		this.topLevelComponents = new HashSet(design.getDesignModule()
+		xlatOutBufs = new HashSet<net.sf.openforge.lim.Module>();
+		topLevelComponents = new HashSet<Component>(design.getDesignModule()
 				.getComponents());
 
 		/*
@@ -306,7 +306,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		 */
 		ValueCompactor.compact(design);
 
-		this.vDoc = new DesignDocument(design);
+		vDoc = new DesignDocument(design);
 		current_vmodule = null;
 		module_stack.clear();
 		lim_module_map.clear();
@@ -314,7 +314,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 
 		if (!suppress_application) {
 			net.sf.openforge.verilog.model.Module design_module = defineDesignModule(design);
-			this.vDoc.append(design_module);
+			vDoc.append(design_module);
 		} else {
 			current_vmodule = new DesignModule(design);
 
@@ -330,7 +330,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 			Map.Entry me = (Map.Entry) mods.next();
 			net.sf.openforge.verilog.model.Module m = (net.sf.openforge.verilog.model.Module) me
 					.getValue();
-			this.vDoc.append(m);
+			vDoc.append(m);
 		}
 	}
 
@@ -343,7 +343,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		current_vmodule = new DesignModule(design);
 
 		for (Component comp : design.getDesignModule().getComponents()) {
-			Visitable vis = (Visitable) comp;
+			Visitable vis = comp;
 
 			if (vis instanceof net.sf.openforge.lim.Module) {
 				instantiateModule((net.sf.openforge.lim.Module) vis);
@@ -353,12 +353,11 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		}
 
 		// how about pins?
-		for (Iterator pins = design.getPins().iterator(); pins.hasNext();) {
-			Pin p = (Pin) pins.next();
-			if ((p.getInPinBuf() != null))
-				visit(p.getInPinBuf());
-			if ((p.getOutPinBuf() != null))
-				visit(p.getOutPinBuf());
+		for (Pin pin : design.getPins()) {
+			if ((pin.getInPinBuf() != null))
+				visit(pin.getInPinBuf());
+			if ((pin.getOutPinBuf() != null))
+				visit(pin.getOutPinBuf());
 		}
 
 		return current_vmodule;
@@ -395,13 +394,12 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		module_stack.push(current_vmodule);
 		current_vmodule = new GenericModule(module, name);
 		xlatOutBufs.add(module);
-		for (Iterator iter = module.getComponents().iterator(); iter.hasNext();) {
-			((Visitable) iter.next()).accept(this);
+		for (Component component : module.getComponents()) {
+			((Visitable) component).accept(this);
 		}
 		lim_module_map.put(module, current_vmodule);
 		GenericModule generic = (GenericModule) current_vmodule;
-		current_vmodule = (net.sf.openforge.verilog.model.Module) module_stack
-				.pop();
+		current_vmodule = module_stack.pop();
 		current_vmodule.state(generic.makeInstance());
 		return generic;
 	}
@@ -410,16 +408,18 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 * Visits the {@link net.sf.openforge.lim.Module Modules} components as if
 	 * they were instantiated in the current scope, by ignoring its in/out bufs.
 	 */
+	@SuppressWarnings("unused")
 	private void popModuleComponents(net.sf.openforge.lim.Module mod) {
 		Collection<Component> components = mod.getComponents();
 		components.remove(mod.getInBuf());
 		components.removeAll(mod.getOutBufs());
-		for (Iterator it = components.iterator(); it.hasNext();) {
-			Visitable vis = (Visitable) it.next();
+		for (Component component : components) {
+			Visitable vis = component;
 			vis.accept(this);
 		}
 	}
 
+	@Override
 	public void visit(Task task) {
 		if (task.getCall() != null) {
 			task.getCall().accept(this);
@@ -433,6 +433,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 * @param call
 	 *            a value of type 'IPCoreCall'
 	 */
+	@Override
 	public void visit(IPCoreCall call) {
 		IPCoreCallInstance ci = new IPCoreCallInstance(call);
 		current_vmodule.state(ci);
@@ -446,22 +447,22 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 * @param call
 	 *            a value of type 'Call'
 	 */
+	@Override
 	public void visit(Call call) {
 		// first, visit the Procedure to create a Module which can be called
 		assert (call.getProcedure() != null) : "Call to non-existant procedure";
 
-		if (this.topLevelComponents.contains(call) || !isEmptyModuleCall(call)) {
+		if (topLevelComponents.contains(call) || !isEmptyModuleCall(call)) {
 			call.getProcedure().accept(this);
 			assert (lim_module_map.get(call.getProcedure()) != null) : "Module not created for call's procedure";
 		}
 
-		if ((this.topLevelComponents.contains(call)) && suppress_application) {
+		if ((topLevelComponents.contains(call)) && suppress_application) {
 			// presumed to be a call to a top-level entry method
-			this.vDoc.append(new Comment("Entry Method Call: "
+			vDoc.append(new Comment("Entry Method Call: "
 					+ Integer.toHexString(call.hashCode())));
 		} else {
-			if (this.topLevelComponents.contains(call)
-					|| !isEmptyModuleCall(call)) {
+			if (topLevelComponents.contains(call) || !isEmptyModuleCall(call)) {
 				//
 				// Add the instantiation to this module.
 				//
@@ -485,6 +486,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 
 	} // visit(Call)
 
+	@Override
 	public void visit(Procedure procedure) {
 		if (!lim_module_map.containsKey(procedure)) {
 			module_stack.push(current_vmodule);
@@ -492,11 +494,11 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 			lim_module_map.put(procedure, current_vmodule);
 			xlatOutBufs.add(procedure.getBody());
 			procedure.getBody().accept(this);
-			current_vmodule = (net.sf.openforge.verilog.model.Module) module_stack
-					.pop();
+			current_vmodule = module_stack.pop();
 		}
 	} // visit(Procedure)
 
+	@Override
 	public void visit(Reg reg) {
 		reg.updateResetType();
 		if (reg.hardInstantiate())
@@ -505,20 +507,22 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 			current_vmodule.state(new InferredRegVariant(reg));
 	}
 
+	@Override
 	public void visit(SRL16 srl_16) {
 		current_vmodule.state(new SRL16Variant(srl_16));
 	}
 
+	@Override
 	public void visit(Latch latch) {
-		for (Iterator it = latch.getComponents().iterator(); it.hasNext();) {
-			((Component) it.next()).accept(this);
+		for (Component component : latch.getComponents()) {
+			component.accept(this);
 		}
 	}
 
+	@Override
 	public void visit(PinReferee pref) {
-		for (Iterator it = pref.getComponents().iterator(); it.hasNext();) {
-			Component c = (Component) it.next();
-			c.accept(this);
+		for (Component component : pref.getComponents()) {
+			component.accept(this);
 		}
 	}
 
@@ -535,12 +539,14 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	// }
 	// }
 
+	@Override
 	public void visit(Scoreboard scoreboard) {
-		for (Iterator it = scoreboard.getComponents().iterator(); it.hasNext();) {
-			((Component) it.next()).accept(this);
+		for (Component component : scoreboard.getComponents()) {
+			component.accept(this);
 		}
 	}
 
+	@Override
 	public void visit(EndianSwapper endianSwapper) {
 		instantiateModule(endianSwapper);
 		/*
@@ -550,6 +556,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		 */
 	}
 
+	@Override
 	public void visit(AddOp add) {
 		if (add.hasMulti())
 			current_vmodule
@@ -558,45 +565,55 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 			current_vmodule.state(new MathAssignment.Add(add));
 	}
 
+	@Override
 	public void visit(AndOp and) {
 		current_vmodule.state(new BitwiseAssignment.And(and));
 	}
 
+	@Override
 	public void visit(NumericPromotionOp numericPromotion) {
 		// current_vmodule.state(new
 		// UnaryOpAssignment.SignExtend(numericPromotion));
 	}
 
+	@Override
 	public void visit(CastOp cast) {
 		// current_vmodule.state(new UnaryOpAssignment.SignExtend(cast));
 	}
 
+	@Override
 	public void visit(ComplementOp complement) {
 		current_vmodule.state(new UnaryOpAssignment.Negate(complement));
 	}
 
+	@Override
 	public void visit(ConditionalAndOp conditionalAnd) {
 		current_vmodule.state(new LogicalAssignment.And(conditionalAnd));
 	}
 
+	@Override
 	public void visit(ConditionalOrOp conditionalOr) {
 		current_vmodule.state(new LogicalAssignment.Or(conditionalOr));
 	}
 
+	@Override
 	public void visit(net.sf.openforge.lim.op.Constant constant) {
 		// Constant is a no-op. The bus attached to the constant
 		// should have a constant value which will end up being
 		// used by a BusWire to represent the bus instead of a name
 	}
 
+	@Override
 	public void visit(DivideOp divide) {
 		current_vmodule.state(new MathAssignment.Divide(divide));
 	}
 
+	@Override
 	public void visit(EqualsOp equals) {
 		current_vmodule.state(new CompareOp.Equals(equals));
 	}
 
+	@Override
 	public void visit(EncodedMux mux) {
 		if (mux.getDataPorts().size() == 2) {
 			current_vmodule.state(new VMux(mux));
@@ -605,56 +622,69 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(GreaterThanEqualToOp greaterThanEqualTo) {
 		current_vmodule.state(new CompareOp.GreaterThanEqualTo(
 				greaterThanEqualTo));
 	}
 
+	@Override
 	public void visit(GreaterThanOp greaterThan) {
 		current_vmodule.state(new CompareOp.GreaterThan(greaterThan));
 	}
 
+	@Override
 	public void visit(LeftShiftOp leftShift) {
 		current_vmodule
 				.state(new net.sf.openforge.verilog.pattern.ShiftOp.Left(
 						leftShift));
 	}
 
+	@Override
 	public void visit(LessThanEqualToOp lessThanEqualTo) {
 		current_vmodule.state(new CompareOp.LessThanEqualTo(lessThanEqualTo));
 	}
 
+	@Override
 	public void visit(LessThanOp lessThan) {
 		current_vmodule.state(new CompareOp.LessThan(lessThan));
 	}
 
+	@Override
 	public void visit(MinusOp minus) {
 		current_vmodule.state(new UnaryOpAssignment.Minus(minus));
 	}
 
+	@Override
 	public void visit(ModuloOp modulo) {
 		current_vmodule.state(new MathAssignment.Modulo(modulo));
 	}
 
+	@Override
 	public void visit(MultiplyOp multiply) {
 		current_vmodule.state(new MathAssignment.Multiply(multiply));
 	}
 
+	@Override
 	public void visit(NoOp nop) {
 	}
 
+	@Override
 	public void visit(NotEqualsOp notEquals) {
 		current_vmodule.state(new CompareOp.NotEquals(notEquals));
 	}
 
+	@Override
 	public void visit(NotOp not) {
 		current_vmodule.state(new UnaryOpAssignment.Not(not));
 	}
 
+	@Override
 	public void visit(TriBuf tbuf) {
 		current_vmodule.state(new TriBufOp(tbuf));
 	}
 
+	@Override
 	public void visit(OrOp or) {
 		if (or instanceof OrOpMulti) {
 			current_vmodule.state(new OrManyAssignment((OrOpMulti) or));
@@ -663,35 +693,40 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		}
 	}
 
+	@Override
 	public void visit(PlusOp plus) {
 		current_vmodule.state(new UnaryOpAssignment.SignExtend(plus));
 	}
 
+	@Override
 	public void visit(ReductionOrOp reductionOrOp) {
 		current_vmodule.state(new UnaryOpAssignment.Or(reductionOrOp));
 	}
 
+	@Override
 	public void visit(RightShiftOp rightShift) {
 		current_vmodule
 				.state(new net.sf.openforge.verilog.pattern.ShiftOp.Right(
 						rightShift));
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp rightShiftUnsigned) {
 		current_vmodule
 				.state(new net.sf.openforge.verilog.pattern.ShiftOp.RightUnsigned(
 						rightShiftUnsigned));
 	}
 
+	@Override
 	public void visit(SimplePinRead comp) {
 		// We translate the simple pin read as a simple assignment of
 		// its result bus from its sideband pin. This should never be
 		// necessary however because there is never any logic
 		// associated with this, constant prop should pass the bits
 		// straight through.
-		current_vmodule.state(new ForgeStatement(Collections.EMPTY_SET,
+		current_vmodule.state(new ForgeStatement(Collections.<Net> emptySet(),
 				new Assign.Continuous(NetFactory.makeNet(comp.getResultBus()),
-						new PortWire((Port) comp.getDataPorts().get(0)))));
+						new PortWire(comp.getDataPorts().get(0)))));
 
 		super.visit(comp);
 	}
@@ -704,6 +739,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 * @param comp
 	 *            a value of type 'SimplePinWrite'
 	 */
+	@Override
 	public void visit(SimplePinWrite comp) {
 		// According to the JavaDoc for SimplePinWrite the behavior is:
 		// assign bus = {width{compGO}} & compData;
@@ -712,7 +748,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 
 		// current_vmodule.state(new
 		// InlineComment("SIMPLEPINWRITE",Comment.SHORT));
-		final Net busWire = NetFactory.makeNet((Bus) comp.getExit(Exit.DONE)
+		final Net busWire = NetFactory.makeNet(comp.getExit(Exit.DONE)
 				.getDataBuses().get(0));
 		final PortWire portWire = new PortWire(comp.getDataPort());
 		final Expression rightHandSide;
@@ -730,30 +766,37 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		super.visit(comp);
 	}
 
+	@Override
 	public void visit(ShortcutIfElseOp shortcutIfElse) {
 		current_vmodule.state(new VMux(shortcutIfElse));
 	}
 
+	@Override
 	public void visit(SubtractOp subtract) {
 		current_vmodule.state(new MathAssignment.Subtract(subtract));
 	}
 
+	@Override
 	public void visit(XorOp xor) {
 		current_vmodule.state(new BitwiseAssignment.Xor(xor));
 	}
 
+	@Override
 	public void visit(Mux mux) {
 		current_vmodule.state(new VMux(mux));
 	}
 
+	@Override
 	public void visit(Or or) {
 		current_vmodule.state(new PrimitiveAssignment.Or(or));
 	}
 
+	@Override
 	public void visit(And and) {
 		current_vmodule.state(new PrimitiveAssignment.And(and));
 	}
 
+	@Override
 	public void visit(Not not) {
 
 		current_vmodule.state(new PrimitiveAssignment.Not(not));
@@ -762,11 +805,11 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	public void visit(InPinBuf inPinBuf) {
 		InPinBuf.Physical physical = inPinBuf.getPhysicalComponent();
 		if (physical != null) {
-			Collection components = physical.getComponents();
+			Collection<Component> components = physical.getComponents();
 			components.remove(physical.getInBuf());
 			components.removeAll(physical.getOutBufs());
-			for (Iterator it = components.iterator(); it.hasNext();) {
-				((Visitable) it.next()).accept(this);
+			for (Component component : components) {
+				((Visitable) component).accept(this);
 			}
 		}
 	}
@@ -774,18 +817,19 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	public void visit(OutPinBuf outPinBuf) {
 		OutPinBuf.Physical physical = outPinBuf.getPhysicalComponent();
 		if (physical != null) {
-			Collection components = physical.getComponents();
+			Collection<Component> components = physical.getComponents();
 			components.remove(physical.getInBuf());
 			components.removeAll(physical.getOutBufs());
-			for (Iterator it = components.iterator(); it.hasNext();) {
-				Visitable v = (Visitable) it.next();
+			for (Component component : components) {
+				Visitable v = component;
 				v.accept(this);
 			}
 		}
 	}
 
+	@Override
 	public void visit(MemoryBank memBank) {
-		Object sig = memBank.getSignature();
+		// Object sig = memBank.getSignature();
 		VerilogMemory vm = (VerilogMemory) memoryMap
 				.get(memBank.getSignature());
 		if (vm == null) {
@@ -799,28 +843,31 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		current_vmodule.state(vm.instantiate(memBank));
 	}
 
+	@Override
 	public void visit(MemoryRead memoryRead) {
 		MemoryRead.Physical physical = (MemoryRead.Physical) memoryRead
 				.getPhysicalComponent();
-		Collection components = physical.getComponents();
+		Collection<Component> components = physical.getComponents();
 		components.remove(physical.getInBuf());
 		components.removeAll(physical.getOutBufs());
-		for (Iterator it = components.iterator(); it.hasNext();) {
-			((Visitable) it.next()).accept(this);
+		for (Component component : components) {
+			((Visitable) component).accept(this);
 		}
 	}
 
+	@Override
 	public void visit(MemoryWrite memoryWrite) {
 		MemoryWrite.Physical physical = (MemoryWrite.Physical) memoryWrite
 				.getPhysicalComponent();
-		Collection components = physical.getComponents();
+		Collection<Component> components = physical.getComponents();
 		components.remove(physical.getInBuf());
 		components.removeAll(physical.getOutBufs());
-		for (Iterator it = components.iterator(); it.hasNext();) {
-			((Visitable) it.next()).accept(this);
+		for (Component component : components) {
+			((Visitable) component).accept(this);
 		}
 	}
 
+	@Override
 	public void visit(OutBuf ob) {
 		// ABK FIXME - This is ugly, but checking for instanceof is needed
 		// here because some ownerless modules are in the graph which are
@@ -832,13 +879,12 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		net.sf.openforge.lim.Module owner = ob.getOwner();
 		// if ((owner instanceof Block) && (((Block)owner).isProcedureBody()))
 		if (xlatOutBufs.contains(owner)) {
-			for (Iterator ports = ob.getPorts().iterator(); ports.hasNext();) {
-				Port ob_port = (Port) ports.next();
+			for (Port ob_port : ob.getPorts()) {
 				if (ob_port.isUsed()) {
-					current_vmodule.state(new ForgeStatement(
-							Collections.EMPTY_SET, new Assign.Continuous(
-									new BusOutput(ob_port.getPeer()),
-									new PortWire(ob_port))));
+					current_vmodule.state(new ForgeStatement(Collections
+							.<Net> emptySet(), new Assign.Continuous(
+							new BusOutput(ob_port.getPeer()), new PortWire(
+									ob_port))));
 				}
 			}
 		}
@@ -852,11 +898,11 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 */
 	public VerilogDocument getDocument() {
 		if (vDoc == null) {
-			this.vDoc = new VerilogDocument();
+			vDoc = new VerilogDocument();
 			vDoc.append(new Comment(
 					"Verilog Document NOT generated from a Design"));
 		}
-		return this.vDoc;
+		return vDoc;
 	}
 
 	/**
@@ -908,16 +954,16 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		}
 		includeDoc.append(new Comment(Comment.BLANK));
 
-		Map incls = getIncludes(sim);
+		Map<String, ArrayList<MappedModule>> incls = getIncludes(sim);
 
 		// generate the include statements
-		for (Iterator it = incls.keySet().iterator(); it.hasNext();) {
-			ArrayList mmList = (ArrayList) incls.get(it.next());
+		for (Iterator<String> it = incls.keySet().iterator(); it.hasNext();) {
+			ArrayList<MappedModule> mmList = incls.get(it.next());
 			if (mmList.size() > 0) {
 				String comment = "primitive mapping for ";
 				MappedModule mm = null;
-				for (Iterator itInner = mmList.iterator(); itInner.hasNext();) {
-					mm = (MappedModule) itInner.next();
+				for (MappedModule mappedModule : mmList) {
+					mm = mappedModule;
 					includeDoc.append(new Comment(comment + mm.getModuleName(),
 							Comment.SHORT));
 					comment = " and ";
@@ -952,28 +998,26 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		}
 	}
 
-	private Map getIncludes(boolean sim) {
-		HashMap incls = new HashMap();
+	private Map<String, ArrayList<MappedModule>> getIncludes(boolean sim) {
+		Map<String, ArrayList<MappedModule>> incls = new HashMap<String, ArrayList<MappedModule>>();
 
 		MappedModuleSpecifier mms = (MappedModuleSpecifier) getDocument();
 
 		// this gets a set of sim and synth includes, uniquyfying them
-		for (Iterator it = mms.getMappedModules().iterator(); it.hasNext();) {
-			MappedModule mm = (MappedModule) it.next();
+		for (MappedModule mm : mms.getMappedModules()) {
 
 			// keep a list of everyone who used this
-			Object key = sim ? mm.getSimInclude() : mm.getSynthInclude();
-			ArrayList mmList = (ArrayList) incls.get(key);
+			String key = sim ? mm.getSimInclude() : mm.getSynthInclude();
+			ArrayList<MappedModule> mmList = incls.get(key);
 			if (mmList == null) {
-				mmList = new ArrayList(2);
+				mmList = new ArrayList<MappedModule>(2);
 			}
 			mmList.add(mm);
 			incls.put(key, mmList);
 		}
 
 		// Deprecated???
-		for (Iterator it = userSimIncludes.iterator(); it.hasNext();) {
-			String usersim = (String) it.next();
+		for (String usersim : userSimIncludes) {
 
 			String sim_include_file = MemoryMapper.SIM_INCLUDE_PATH + usersim
 					+ ".v";
@@ -1008,10 +1052,10 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 					synth_include_file);
 
 			// add our new mapped module to the list
-			Object key = sim ? mm.getSimInclude() : mm.getSynthInclude();
-			ArrayList mmList = (ArrayList) incls.get(key);
+			String key = sim ? mm.getSimInclude() : mm.getSynthInclude();
+			ArrayList<MappedModule> mmList = incls.get(key);
 			if (mmList == null) {
-				mmList = new ArrayList(2);
+				mmList = new ArrayList<MappedModule>(2);
 			}
 			mmList.add(mm);
 			incls.put(key, mmList);
@@ -1026,12 +1070,11 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		// have instantiated many IPCores, but only reference a few,
 		// so we need to only call the writers for the cores that they
 		// did reference.
-		final ArrayList userVerilog_list = new ArrayList();
+		final ArrayList<IPCore> userVerilog_list = new ArrayList<IPCore>();
 
 		// all the IPCoreStorage that we created with user's IPCores
-		for (Iterator it = design.getPins().iterator(); it.hasNext();) {
-			Pin p = (Pin) it.next();
-			Buffer buf = p.getApiPin();
+		for (Pin pin : design.getPins()) {
+			Buffer buf = pin.getApiPin();
 
 			if (Core.hasThisPin(buf)) {
 				IPCoreStorage ipcs = Core.getIPCoreStorage(buf);
@@ -1056,15 +1099,14 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 		}
 
 		// Iterate thru each IPCore that has registered HDLWriter
-		for (Iterator iter = userVerilog_list.iterator(); iter.hasNext();) {
-			IPCore ipcore = (IPCore) iter.next();
+		for (IPCore ipcore : userVerilog_list) {
 
 			// Get the IPCoreStorage that is associated with this IPCore
 			IPCoreStorage ipcs = Core.getIPCoreStorage(ipcore);
 
 			// Now yank out the HDLWriter
 			// HDLWriter hdlWriter = (HDLWriter)Core.getFromHDLWriterMap(ipcs);
-			HDLWriter hdlWriter = (HDLWriter) ipcs.getHDLWriter();
+			HDLWriter hdlWriter = ipcs.getHDLWriter();
 
 			// If there's a HDLWriter registered, write it
 			if (hdlWriter != null) {
@@ -1077,7 +1119,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 					// add the unisims if proper Strings to the includes
 					// of the simulation Verilog file.
 
-					for (Iterator unisims = unisimlist.iterator(); unisims
+					for (Iterator<String> unisims = unisimlist.iterator(); unisims
 							.hasNext();) {
 						Object o = null;
 

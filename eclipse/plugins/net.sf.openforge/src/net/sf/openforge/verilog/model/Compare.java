@@ -37,6 +37,7 @@ public abstract class Compare extends Operation {
 		super(op, left, right);
 	} // Compare()
 
+	@Override
 	public int getWidth() {
 		return 1;
 	}
@@ -51,10 +52,12 @@ public abstract class Compare extends Operation {
 			super(Symbol.GREATER_THAN, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return GT_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -65,10 +68,12 @@ public abstract class Compare extends Operation {
 			super(Symbol.LESS_THAN, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return LT_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -79,10 +84,12 @@ public abstract class Compare extends Operation {
 			super(Symbol.GTEQ, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return GTEQ_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -93,10 +100,12 @@ public abstract class Compare extends Operation {
 			super(Symbol.LTEQ, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return LTEQ_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -107,10 +116,12 @@ public abstract class Compare extends Operation {
 			super(Symbol.EQ, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return LOGICAL_EQUALITY_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -121,10 +132,12 @@ public abstract class Compare extends Operation {
 			super(Symbol.EQ, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return LOGICAL_EQUALITY_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -135,10 +148,12 @@ public abstract class Compare extends Operation {
 			super(Symbol.NEQ, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return LOGICAL_INEQUALITY_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -149,10 +164,12 @@ public abstract class Compare extends Operation {
 			super(Symbol.CASE_EQUALITY, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return CASE_EQUALITY_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}
@@ -163,10 +180,12 @@ public abstract class Compare extends Operation {
 			super(Symbol.CASE_INEQUALITY, left, right);
 		}
 
+		@Override
 		public int precedence() {
 			return CASE_INEQUALITY_PRECEDENCE;
 		}
 
+		@Override
 		public boolean isOrdered() {
 			return true;
 		}

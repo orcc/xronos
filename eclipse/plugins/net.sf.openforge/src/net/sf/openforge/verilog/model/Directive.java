@@ -48,16 +48,19 @@ public abstract class Directive implements Statement {
 		return directive;
 	}
 
-	public Collection getNets() {
-		return Collections.EMPTY_SET;
+	@Override
+	public Collection<Net> getNets() {
+		return Collections.emptySet();
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 		lex.append(getDirectiveToken());
 		return lex;
 	}
 
+	@Override
 	public String toString() {
 		return lexicalify().toString();
 	}
@@ -80,6 +83,7 @@ public abstract class Directive implements Statement {
 			this.substitution = new ArbitraryString(substitution);
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 			lex.append(macro);
@@ -102,6 +106,7 @@ public abstract class Directive implements Statement {
 			this.macro = new ArbitraryString(macro);
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 			lex.append(macro);
@@ -124,6 +129,7 @@ public abstract class Directive implements Statement {
 			this.macro = new ArbitraryString(macro);
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 			lex.append(macro);
@@ -170,6 +176,7 @@ public abstract class Directive implements Statement {
 			this.nettype = nettype;
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 			lex.append(nettype);
@@ -199,6 +206,7 @@ public abstract class Directive implements Statement {
 			return filename;
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 			lex.append(Symbol.QUOTE);
@@ -265,23 +273,24 @@ public abstract class Directive implements Statement {
 			long value = unitValue.longValue();
 			assert ((value == 1) || (value == 10) || (value == 100)) : "Value of timescale spec must by 1, 10, or 100, not "
 					+ unitValue.toString();
-			this.timeUnitValue = unitValue;
+			timeUnitValue = unitValue;
 
 			assert (Keyword.isUnitword(unitUnits)) : "Units must be one of s, ms, us, ns, ps or fs for timescale directive, not"
 					+ unitUnits.toString();
-			this.timeUnitUnits = unitUnits;
+			timeUnitUnits = unitUnits;
 
 			value = precisionValue.longValue();
 			assert ((value == 1) || (value == 10) || (value == 100)) : "Value of timescale spec must by 1, 10, or 100, not "
 					+ precisionValue.toString();
 
-			this.timePrecisionValue = precisionValue;
+			timePrecisionValue = precisionValue;
 
 			assert (Keyword.isUnitword(precisionUnits)) : "Units must be one of s, ms, us, ns, ps or fs for timescale directive, not "
 					+ precisionValue.toString();
-			this.timePrecisionUnits = precisionUnits;
+			timePrecisionUnits = precisionUnits;
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 			lex.append(timeUnitValue);
@@ -304,6 +313,7 @@ public abstract class Directive implements Statement {
 			super(Keyword.UNCONNECTED_DRIVE);
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 			lex.append(pull);
@@ -322,6 +332,7 @@ public abstract class Directive implements Statement {
 			super(Keyword.UNCONNECTED_DRIVE);
 		}
 
+		@Override
 		public Lexicality lexicalify() {
 			Lexicality lex = super.lexicalify();
 			lex.append(pull);

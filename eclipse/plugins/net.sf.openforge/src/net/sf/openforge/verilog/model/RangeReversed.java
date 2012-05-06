@@ -53,6 +53,7 @@ public class RangeReversed extends Range {
 		super(msb, lsb);
 	}
 
+	@Override
 	public Lexicality lexicalify() {
 		Lexicality lex = new Lexicality();
 
