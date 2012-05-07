@@ -33,6 +33,7 @@ import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -175,7 +176,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		this.instance = instance;
 		this.design = design;
 		this.resources = resources;
-		this.irVisitor = new InnerIrVisitor();
+		irVisitor = new InnerIrVisitor();
 	}
 
 	protected class InnerIrVisitor extends AbstractIrVisitor<Object> {
@@ -323,7 +324,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 	protected Decision buildDecision(Var inputDecision, String resultName) {
 		Decision decision = null;
-		// Create an ExprInt of "1" and assign it to the varActorSched
+		// Create the decision variable and assign the inputDecision to it
 		Type type = IrFactory.eINSTANCE.createTypeBool();
 		Var decisionVar = IrFactory.eINSTANCE.createVar(0, type, resultName,
 				false, 0);
@@ -332,17 +333,12 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		// Visit assignSched
 		doSwitch(assign);
 
-		currentModule = new Block(false);
-		// Make an Exit with zero data buses at the output
-		currentExit = currentModule.makeExit(0);
+		currentModule = (Module) buildModule(Arrays.asList(currentComponent),
+				Arrays.asList(inputDecision), Collections.<Var> emptyList(),
+				"decisionBlock", null);
 
 		// Add done dependency
 		mapOutControlPort(currentModule);
-		// Add all components to the module
-		populateModule(currentModule, currentListComponent);
-		// Build Dependencies
-		operationDependencies(currentListComponent, componentDependency,
-				currentExit);
 
 		// Create the decision
 		decision = new Decision((Block) currentModule, currentComponent);
@@ -352,7 +348,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		propagateInputs(decision, (Block) currentModule);
 
 		// Build option scope
-		currentModule.specifySearchScope("schedulerLoopDecision");
+		currentModule.specifySearchScope("moduleDecision");
 		return decision;
 	}
 
@@ -360,14 +356,17 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			Block elseBlock, List<Var> inVars, List<Var> outVars,
 			String searchScope, Exit.Type exitType) {
 		Branch branch = null;
-
+		portCache.publish(decision);
+		portCache.publish(thenBlock);
 		if (elseBlock == null) {
 			branch = new Branch(decision, thenBlock);
 		} else {
 			branch = new Branch(decision, thenBlock, elseBlock);
+			portCache.publish(elseBlock);
 		}
 		mapOutControlPort(branch);
 		createModuleInterface(branch, inVars, outVars, exitType);
+		// FIXME: bug in the dependencies
 		operationDependencies(Arrays.asList((Component) branch),
 				componentDependency, branch.getExit(Exit.DONE));
 
@@ -506,6 +505,21 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		entry.addDependency(comp.getGoPort(), new ControlDependency(goBus));
 	}
 
+	protected Var createComponentDependency(Var dependency) {
+		Var copyDepVar = null;
+		for (Component component : componentDependency.keySet()) {
+			List<Var> depVars = componentDependency.get(component);
+			if (depVars.contains(dependency)) {
+				Var newVarDep = IrFactory.eINSTANCE.createVar(0,
+						dependency.getType(), dependency.getIndexedName()
+								+ "_dep", false, 0);
+				depVars.add(newVarDep);
+				copyDepVar = newVarDep;
+			}
+		}
+		return copyDepVar;
+	}
+
 	protected Call createCall(String name, Module module) {
 		Block procedureBlock = (Block) module;
 		net.sf.openforge.lim.Procedure proc = new net.sf.openforge.lim.Procedure(
@@ -532,13 +546,24 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		if (inVars != null) {
 			for (Var var : inVars) {
 				Port port = module.makeDataPort();
-				portCache.putTarget(var, port);
-				portCache.putSource(var, port.getPeer());
+				if (!portCache.varExists(var)) {
+					port.setIDLogical(var.getIndexedName());
+					portCache.putTarget(var, port);
+					portCache.putSource(var, port.getPeer());
+				} else {
+					Var varCopyDep = IrFactory.eINSTANCE.createVar(0,
+							var.getType(), var.getIndexedName() + "_dep",
+							false, 0);
+					port.setIDLogical(varCopyDep.getIndexedName());
+					portCache.putTarget(varCopyDep, port);
+					portCache.putSource(varCopyDep, port.getPeer());
+					componentDependency.put(module, Arrays.asList(varCopyDep));
+				}
 			}
 		}
-		if (module.getExit(Exit.DONE) == null) {
-			module.getExit(Exit.DONE);
-		}
+		// if (module.getExit(Exit.DONE) == null) {
+		// module.getExit(Exit.DONE);
+		// }
 		// TODO: outVars for PHI
 
 		// Create modules exit
@@ -837,10 +862,11 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		int index = 0;
 		for (Component comp : components) {
-			if (module instanceof Block)
+			if (module instanceof Block) {
 				((Block) module).insertComponent(comp, index++);
-			else
+			} else {
 				module.addComponent(comp);
+			}
 
 			componentAddEntry(comp, drivingExit, clockBus, resetBus, goBus);
 
@@ -869,8 +895,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 	protected void setAttributes(String tag, Component comp, Boolean Removable) {
 		comp.setSourceName(tag);
-		if (!Removable)
+		if (!Removable) {
 			comp.setNonRemovable();
+		}
 	}
 
 	/**

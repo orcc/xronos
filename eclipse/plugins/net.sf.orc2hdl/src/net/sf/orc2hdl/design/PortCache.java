@@ -29,13 +29,15 @@
 
 package net.sf.orc2hdl.design;
 
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.util.naming.ID;
 import net.sf.orcc.ir.Var;
@@ -56,6 +58,16 @@ public class PortCache {
 	private final Map<Component, Bus> doneBusComponents = new HashMap<Component, Bus>();
 
 	public PortCache() {
+	}
+
+	/**
+	 * Checks if a Var has been declared in the target and source Cache
+	 * 
+	 * @param var
+	 * @return
+	 */
+	public Boolean varExists(Var var) {
+		return targetCache.containsKey(var) && sourceCache.containsKey(var);
 	}
 
 	public Bus getDoneBus(Component component) {
@@ -155,8 +167,19 @@ public class PortCache {
 		}
 	}
 
-	public void publish(PortCache cache, Collection<ID> externallyVisiblePorts) {
-		// TODO Auto-generated method stub
+	public void publish(Module module) {
+		Set<ID> modulePorts = new HashSet<ID>(module.getPorts());
+		modulePorts.addAll(module.getBuses());
+		for (Entry<Var, Bus> entry : sourceCache.entrySet()) {
+			if (modulePorts.contains(entry.getValue())) {
+				putSource(entry.getKey(), entry.getValue());
+			}
+		}
+		for (Entry<Var, Port> entry : targetCache.entrySet()) {
+			if (modulePorts.contains(entry.getValue())) {
+				putTarget(entry.getKey(), entry.getValue());
+			}
+		}
 
 	}
 }

@@ -42,7 +42,6 @@ import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Branch;
-import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Decision;
@@ -102,13 +101,13 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	}
 
 	/** All inputPattern Var desicions **/
-	private Map<Action, Var> actionSchedulerInDecisions = new HashMap<Action, Var>();
+	private final Map<Action, Var> actionSchedulerInDecisions = new HashMap<Action, Var>();
 
 	/** All outputPattern Var desicions **/
-	private Map<Action, Var> actionSchedulerOutDecisions = new HashMap<Action, Var>();
+	private final Map<Action, Var> actionSchedulerOutDecisions = new HashMap<Action, Var>();
 
 	/** All Return Vars given by the action scheduler **/
-	private Map<Action, Var> actionSchedulerReturnVar = new HashMap<Action, Var>();
+	private final Map<Action, Var> actionSchedulerReturnVar = new HashMap<Action, Var>();
 
 	/** Map of action associated to its Task **/
 	private Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
@@ -123,16 +122,16 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	private Map<Action, List<Component>> outputPatternComponents = new HashMap<Action, List<Component>>();
 
 	/** The actors ports association with pinStatus Var **/
-	private Map<net.sf.orcc.df.Port, Var> pinStatusPort = new HashMap<net.sf.orcc.df.Port, Var>();
+	private final Map<net.sf.orcc.df.Port, Var> pinStatusPort = new HashMap<net.sf.orcc.df.Port, Var>();
 
 	/** All components of the scheduler **/
-	private List<Component> schedulerComponents = new ArrayList<Component>();
+	private final List<Component> schedulerComponents = new ArrayList<Component>();
 
 	public DesignActorSchedulerVisitor(Instance instance, Design design,
 			Map<Action, Task> actorsTasks, ResourceCache resources) {
 		super(instance, design, resources);
 		this.actorsTasks = actorsTasks;
-		this.irVisitor = new InheritedInnerIrVisitor();
+		irVisitor = new InheritedInnerIrVisitor();
 	}
 
 	/**
@@ -188,28 +187,25 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	}
 
 	private Component buildTaskCall(Task task, Var outDecision) {
-		Branch branch = null;
-		String varName = "decision_outputPattern_" + task.showIDLogical();
+		String varName = "decision_outputPattern_" + task.getSourceName();
 		currentListComponent = new ArrayList<Component>();
 		Decision branchDecision = buildDecision(outDecision, varName);
 
-		// Create the the TaskCall and add the Task
+		// Create the the TaskCall component and add the Task
 		TaskCall taskCall = new TaskCall();
 		taskCall.setTarget(task);
 		// mapOut Done Port
-		Bus doneBus = taskCall.getExit(Exit.DONE).getDoneBus();
-		portCache.putDoneBus(taskCall, doneBus);
+		mapOutControlPort(taskCall);
 
 		// Build then Block
 		Block thenBlock = (Block) buildModule(
 				Arrays.asList((Component) taskCall),
 				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
 				"block", null);
-		branch = new Branch(branchDecision, thenBlock);
-		Component module = buildModule(Arrays.asList((Component) branch),
+		Component branch = buildBranch(branchDecision, thenBlock, null,
 				Arrays.asList(outDecision), Collections.<Var> emptyList(),
-				"block", null);
-		return module;
+				"callTask_" + task.getIDGlobalType(), null);
+		return branch;
 	}
 
 	@Override
