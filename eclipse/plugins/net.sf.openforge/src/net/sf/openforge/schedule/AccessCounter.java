@@ -21,84 +21,87 @@
 
 package net.sf.openforge.schedule;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.Access;
+import net.sf.openforge.lim.DefaultVisitor;
+import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.Referent;
+import net.sf.openforge.lim.Resource;
+import net.sf.openforge.lim.Task;
+import net.sf.openforge.lim.memory.LogicalMemory;
+import net.sf.openforge.lim.memory.LogicalMemoryPort;
+import net.sf.openforge.lim.memory.MemoryRead;
+import net.sf.openforge.lim.memory.MemoryWrite;
 
 /**
- * A small visitor used to traverse a design and count the types and
- * numbers of accesses in each task, then use that information to
- * annotate global resources with information used during scheduling.
- *
- * <p>Created: Fri Jul 26 12:19:04 2002
- *
+ * A small visitor used to traverse a design and count the types and numbers of
+ * accesses in each task, then use that information to annotate global resources
+ * with information used during scheduling.
+ * 
+ * <p>
+ * Created: Fri Jul 26 12:19:04 2002
+ * 
  * @author imiller
  * @version $Id: AccessCounter.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class AccessCounter extends DefaultVisitor 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class AccessCounter extends DefaultVisitor {
 
-    /** A map of Resource -> Task's that access that resource. */
-    private Map resourceToTasks = new HashMap();
+	/** A map of Resource -> Task's that access that resource. */
+	private Map<Resource, Set<Task>> resourceToTasks = new HashMap<Resource, Set<Task>>();
 
-    /** The current task being traversed. */
-    private Task currentTask = null;
+	/** The current task being traversed. */
+	private Task currentTask = null;
 
+	/**
+	 * Traverses the design to characterize which {@link Referent}s are accessed
+	 * from each task and updates the Referent's according to that information.
+	 * 
+	 * @param design
+	 *            a value of type 'Design'
+	 */
+	@Override
+	public void visit(Design design) {
+		super.visit(design);
 
-    /**
-     * Traverses the design to characterize which {@link Referent}s
-     * are accessed from each task and updates the Referent's
-     * according to that information.
-     *
-     * @param design a value of type 'Design'
-     */
-    public void visit (Design design)
-    {
-        super.visit(design);
+		for (LogicalMemory memory : design.getLogicalMemories()) {
+			for (LogicalMemoryPort resource : memory.getLogicalMemoryPorts()) {
+				Set<Task> accessingTasks = resourceToTasks.get(resource);
+				resource.setArbitrated(accessingTasks == null ? false
+						: (accessingTasks.size() > 1));
+			}
+		}
+	}
 
-        for (Iterator iter = design.getLogicalMemories().iterator(); iter.hasNext();)
-        {
-            LogicalMemory memory = (LogicalMemory)iter.next();
-            for (Iterator portIter = memory.getLogicalMemoryPorts().iterator(); portIter.hasNext();)
-            {
-                LogicalMemoryPort resource = (LogicalMemoryPort)portIter.next();
-                Set accessingTasks = (Set)resourceToTasks.get(resource);
-                resource.setArbitrated(accessingTasks == null ? false : (accessingTasks.size() > 1));
-            }
-        }
-    }
+	@Override
+	public void visit(Task task) {
+		currentTask = task;
+		super.visit(task);
+	}
 
-    public void visit (Task task)
-    {
-        this.currentTask = task;
-        super.visit(task);
-    }
+	@Override
+	public void visit(MemoryRead memRead) {
+		super.visit(memRead);
+		addAccess(memRead);
+	}
 
-    public void visit (MemoryRead memRead)
-    {
-        super.visit(memRead);
-        addAccess(memRead);
-    }
-    
-    public void visit (MemoryWrite memWrite)
-    {
-        super.visit(memWrite);
-        addAccess(memWrite);
-    }
+	@Override
+	public void visit(MemoryWrite memWrite) {
+		super.visit(memWrite);
+		addAccess(memWrite);
+	}
 
-    private void addAccess (Access access)
-    {
-        Resource resource = access.getResource();
-        Set tasks = (Set)resourceToTasks.get(resource);
-        if (tasks == null)
-        {
-            tasks = new HashSet();
-            resourceToTasks.put(resource, tasks);
-        }
-        tasks.add(this.currentTask);
-    }
-    
+	private void addAccess(Access access) {
+		Resource resource = access.getResource();
+		Set<Task> tasks = resourceToTasks.get(resource);
+		if (tasks == null) {
+			tasks = new HashSet<Task>();
+			resourceToTasks.put(resource, tasks);
+		}
+		tasks.add(currentTask);
+	}
+
 }// AccessCounter

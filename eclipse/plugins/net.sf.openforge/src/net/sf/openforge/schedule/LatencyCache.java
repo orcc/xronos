@@ -21,36 +21,32 @@
 
 package net.sf.openforge.schedule;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Latency;
 
 /**
- * LatencyCache is a simple interface that provides methods that can
- * be used to obtain information about the latency of buses and
- * components in a graph.
- *
+ * LatencyCache is a simple interface that provides methods that can be used to
+ * obtain information about the latency of buses and components in a graph.
+ * 
  * @version $Id: LatencyCache.java 88 2006-01-11 22:39:52Z imiller $
  */
-public interface LatencyCache
-{
-    /**
-     * Gets the latency of a Bus, which is the latency of its associated
-     * control Bus.
-     */
-    public Latency getLatency (Bus bus);
-    
-    /**
-     * Gets the latency at the entry point of a Component, which is the the
-     * latency of the control Bus for the entry point.
-     */
-    public Latency getLatency (Component component);
+public interface LatencyCache {
+	/**
+	 * Gets the latency of a Bus, which is the latency of its associated control
+	 * Bus.
+	 */
+	public Latency getLatency(Bus bus);
 
-    /**
-     * Gets the control Bus for the entry point of a Component.
-     */
-    public Bus getControlBus (Component component);
-    
+	/**
+	 * Gets the latency at the entry point of a Component, which is the the
+	 * latency of the control Bus for the entry point.
+	 */
+	public Latency getLatency(Component component);
+
+	/**
+	 * Gets the control Bus for the entry point of a Component.
+	 */
+	public Bus getControlBus(Component component);
+
 }
-

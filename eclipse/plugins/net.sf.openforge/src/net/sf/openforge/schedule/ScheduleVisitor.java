@@ -143,20 +143,20 @@ public class ScheduleVisitor extends DefaultVisitor {
 		super();
 		this.isBalancing = isBalancing;
 		this.isForcingDone = isForcingDone;
-		this.processCache = procCache;
+		processCache = procCache;
 	}
 
 	public LatencyCache getLatencyCache() {
-		return this.tracker;
+		return tracker;
 	}
 
 	@Override
 	public void visit(Task task) {
 		taskCache.startTask(task);
 
-		final boolean oldBalanceable = this.isBalanceable;
+		final boolean oldBalanceable = isBalanceable;
 
-		this.isBalanceable = task.getCall().isBalanceable();
+		isBalanceable = task.getCall().isBalanceable();
 		super.visit(task);
 
 		final Call call = task.getCall();
@@ -167,11 +167,11 @@ public class ScheduleVisitor extends DefaultVisitor {
 			exit.getDoneBus().setUsed(call.producesDone());
 		}
 
-		task.setBalanced(this.isBalancing && this.isBalanceable);
+		task.setBalanced(isBalancing && isBalanceable);
 
 		taskCache.completeTask(task);
 
-		this.isBalanceable = oldBalanceable;
+		isBalanceable = oldBalanceable;
 	}
 
 	@Override
@@ -206,7 +206,7 @@ public class ScheduleVisitor extends DefaultVisitor {
 		// If the target task has not been scheduled then jump out
 		// here and schedule it so that the scheduling attributes of
 		// the task call can be correctly set.
-		if (!this.taskCache.isScheduled(mod.getTarget())) {
+		if (!taskCache.isScheduled(mod.getTarget())) {
 			mod.getTarget().accept(this);
 		}
 
@@ -534,7 +534,7 @@ public class ScheduleVisitor extends DefaultVisitor {
 		scheduleOutBufs(whileBody);
 
 		closeModule(whileBody);
-		LoopFlopAnalysis.setLoopFlopStatus(whileBody, this.tracker);
+		LoopFlopAnalysis.setLoopFlopStatus(whileBody, tracker);
 	}
 
 	@Override
@@ -561,7 +561,7 @@ public class ScheduleVisitor extends DefaultVisitor {
 
 		closeModule(untilBody);
 
-		LoopFlopAnalysis.setLoopFlopStatus(untilBody, this.tracker);
+		LoopFlopAnalysis.setLoopFlopStatus(untilBody, tracker);
 	}
 
 	@Override
@@ -581,7 +581,7 @@ public class ScheduleVisitor extends DefaultVisitor {
 		scheduleOutBufs(forBody);
 		closeModule(forBody);
 
-		LoopFlopAnalysis.setLoopFlopStatus(forBody, this.tracker);
+		LoopFlopAnalysis.setLoopFlopStatus(forBody, tracker);
 	}
 
 	/**
@@ -690,7 +690,7 @@ public class ScheduleVisitor extends DefaultVisitor {
 		/*
 		 * Schedule the Entries.
 		 */
-		final List<UnbalancedEntrySchedule> entrySchedules = new ArrayList<UnbalancedEntrySchedule>(
+		final List<EntrySchedule> entrySchedules = new ArrayList<EntrySchedule>(
 				component.getEntries().size());
 		for (Entry entry : component.getEntries()) {
 			entrySchedules.add(new UnbalancedEntrySchedule(entry, tracker,
@@ -702,7 +702,8 @@ public class ScheduleVisitor extends DefaultVisitor {
 
 		if (stall) {
 			assert entrySchedules.size() < 2 : "Cannot stall at component with multiple entries";
-			final Stallboard stallboard = entrySchedules.get(0).getStallboard();
+			final Stallboard stallboard = ((UnbalancedEntrySchedule) entrySchedules
+					.get(0)).getStallboard();
 			processCache.registerStartPoint(component, stallboard);
 		}
 
@@ -717,7 +718,7 @@ public class ScheduleVisitor extends DefaultVisitor {
 			processCache.getTracker(component.getOwner()).register(component);
 		}
 
-		component.postScheduleCallback(this.tracker);
+		component.postScheduleCallback(tracker);
 	}
 
 	/**
@@ -785,7 +786,7 @@ public class ScheduleVisitor extends DefaultVisitor {
 				final Set<Bus> stallSignals = new HashSet<Bus>();
 				for (Component stallComp : stallSource.getStallingComponents()) {
 					final Bus stallBus = BlockControlSignalIdentifier
-							.getControlSignal(stallComp, this.tracker);
+							.getControlSignal(stallComp, tracker);
 					// Use a pass through node so that it is used as
 					// the feedback point so that constant prop does
 					// not get confused about the order to run things
@@ -802,7 +803,7 @@ public class ScheduleVisitor extends DefaultVisitor {
 				}
 			}
 		}
-		this.processCache.deleteTracker(module);
+		processCache.deleteTracker(module);
 
 		updateExits(module);
 		updateConnectorAttributes(module);
@@ -827,9 +828,8 @@ public class ScheduleVisitor extends DefaultVisitor {
 						// This MUST be guaranteed!
 						assert stallComp.getOwner() == stbd.getOwner();
 						final Bus stallBus = BlockControlSignalIdentifier
-								.getControlSignal(stallComp, this.tracker);
-						stallBuses.put(stallBus,
-								this.tracker.getLatency(stallBus));
+								.getControlSignal(stallComp, tracker);
+						stallBuses.put(stallBus, tracker.getLatency(stallBus));
 					}
 
 					// Only connect the 'latest' stall. Because we

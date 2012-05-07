@@ -55,10 +55,10 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	private boolean isVolatile = false;
 
 	/** Collection of RegisterRead */
-	private Collection reads = new HashSet(11);
+	private Collection<RegisterRead> reads = new HashSet<RegisterRead>(11);
 
 	/** Collection of RegisterWrite */
-	private Collection writes = new HashSet(11);
+	private Collection<RegisterWrite> writes = new HashSet<RegisterWrite>(11);
 
 	/**
 	 * This Component (either a plain Register.Physical or a RegisterReferee)
@@ -458,15 +458,17 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 						// by an Or.
 						Mux mux = new Mux(writers.size());
 						Or or = new Or(writers.size());
-						Iterator dataMuxPorts = mux.getGoPorts().iterator();
-						Iterator writeOrPorts = or.getDataPorts().iterator();
-						Iterator physicalPorts = getDataPorts().iterator();
+						Iterator<Port> dataMuxPorts = mux.getGoPorts()
+								.iterator();
+						Iterator<Port> writeOrPorts = or.getDataPorts()
+								.iterator();
+						Iterator<Port> physicalPorts = getDataPorts()
+								.iterator();
 						for (int i = 0; i < writers.size(); i++) {
-							Bus enable = ((Port) physicalPorts.next())
-									.getPeer();
-							Bus data = ((Port) physicalPorts.next()).getPeer();
+							Bus enable = physicalPorts.next().getPeer();
+							Bus data = physicalPorts.next().getPeer();
 
-							Port dataMuxGoPort = (Port) dataMuxPorts.next();
+							Port dataMuxGoPort = dataMuxPorts.next();
 							dataMuxGoPort.setBus(enable);
 
 							Port dataMuxDataPort = mux
@@ -474,7 +476,7 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 							// dataMuxDataPort.setBus(castOp.getResultBus());
 							dataMuxDataPort.setBus(data);
 
-							((Port) writeOrPorts.next()).setBus(enable);
+							writeOrPorts.next().setBus(enable);
 						}
 						addComponent(mux);
 						addComponent(or);

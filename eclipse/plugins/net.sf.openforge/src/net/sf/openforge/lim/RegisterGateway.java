@@ -57,8 +57,8 @@ public class RegisterGateway extends Gateway {
 	private Mux mux;
 	/** or the go signals together */
 	private Or or;
-	private List localEnablePorts;
-	private List localDataPorts;
+	private List<Port> localEnablePorts;
+	private List<Port> localDataPorts;
 
 	/**
 	 * creates a RegisterGateway with size entries (one per RegisterWrite)
@@ -73,7 +73,7 @@ public class RegisterGateway extends Gateway {
 
 		mux = new Mux(size);
 		Bus mux_result = mux.getResultBus();
-		mux_result.setSize(resource.getInitWidth(), resource.isSigned());
+		mux_result.setSize(resource.getInitWidth(), false);
 		mux_result.setIDLogical(resource.showIDLogical() + "_mux_out");
 
 		or = new Or(size);
@@ -85,8 +85,8 @@ public class RegisterGateway extends Gateway {
 		Exit exit = makeExit(1); // one for the local->global data (ABK: reduced
 									// to 1)
 		exit.setLatency(Latency.ZERO);
-		localEnablePorts = new ArrayList(size);
-		localDataPorts = new ArrayList(size);
+		localEnablePorts = new ArrayList<Port>(size);
+		localDataPorts = new ArrayList<Port>(size);
 
 		for (int i = 0; i < size; i++) {
 			// create the ports
@@ -103,7 +103,7 @@ public class RegisterGateway extends Gateway {
 			inbufEnable.setIDLogical(resource.showIDLogical() + "_enable_" + i);
 
 			Bus inbufData = localDataPort.getPeer();
-			inbufData.setSize(resource.getInitWidth(), resource.isSigned());
+			inbufData.setSize(resource.getInitWidth(), false);
 			inbufData.setIDLogical(resource.showIDLogical() + "_write_" + i);
 
 			// and wire them into the mux
@@ -122,8 +122,7 @@ public class RegisterGateway extends Gateway {
 
 		Port dataPort = outbuf.getDataPorts().get(0);
 		dataPort.setBus(mux.getResultBus());
-		dataPort.getPeer()
-				.setSize(resource.getInitWidth(), resource.isSigned());
+		dataPort.getPeer().setSize(resource.getInitWidth(), false);
 	}
 
 	/**
@@ -157,11 +156,11 @@ public class RegisterGateway extends Gateway {
 	/**
 	 * return a list of enable ports on the local side of the gateway
 	 */
-	public List getLocalEnablePorts() {
+	public List<Port> getLocalEnablePorts() {
 		return localEnablePorts;
 	}
 
-	public List getLocalDataPorts() {
+	public List<Port> getLocalDataPorts() {
 		return localDataPorts;
 	}
 
