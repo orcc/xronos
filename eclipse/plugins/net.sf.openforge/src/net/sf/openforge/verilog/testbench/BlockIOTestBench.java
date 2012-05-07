@@ -25,8 +25,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import net.sf.openforge.app.EngineThread;
@@ -148,22 +146,16 @@ public class BlockIOTestBench {
 	private void generateBlocks() {
 		GenericJob gj = EngineThread.getGenericJob();
 
-		Set functionNames = BlockIOInterface.getFunctionNames();
+		Set<String> functionNames = BlockIOInterface.getFunctionNames();
 		// handle each function, currently there is just one...
-		for (Iterator functionIterator = functionNames.iterator(); functionIterator
-				.hasNext();) {
-			String functionName = (String) functionIterator.next();
+		for (String functionName : functionNames) {
 
 			// currently we expect an input and an output block descriptor
 			BlockDescriptor inputBlock = null;
 			BlockDescriptor outputBlock = null;
 
-			List functionDescriptors = BlockIOInterface
-					.getDescriptors(functionName);
-			for (Iterator descriptorsIterator = functionDescriptors.iterator(); descriptorsIterator
-					.hasNext();) {
-				BlockDescriptor bd = (BlockDescriptor) descriptorsIterator
-						.next();
+			for (BlockDescriptor bd : BlockIOInterface
+					.getDescriptors(functionName)) {
 				if (bd.isSlave()) {
 					inputBlock = bd;
 				} else {
@@ -225,7 +217,7 @@ public class BlockIOTestBench {
 		// number of blocks including the pad block
 		final int numBlocksPad = numBlocks + 1;
 		// size of array to map pad data to pad mask
-		final int outputPadSize = 1 << obd.getByteWidth();
+		// final int outputPadSize = 1 << obd.getByteWidth();
 		// size in bits of an input word (0 base)
 		final int inFifoBits = ibd.getByteWidth() * 8 - 1;
 		// size in bits of an output word (0 base)
@@ -235,11 +227,11 @@ public class BlockIOTestBench {
 		// number of words in input vector, including pad data
 		final int inBlocksWordsPad = inBlockSize * numBlocksPad;
 		// number of words in output vector, excluding pad data
-		final int outBlocksWords = outBlockSize * numBlocks;
+		// final int outBlocksWords = outBlockSize * numBlocks;
 		// number of words in output vector, excluding pad data and valid words
 		final int outBlocksWordsValid = outBlockSizeValid * numBlocks;
 		// number of words in output vector, including pad data
-		final int outBlocksWordsPad = outBlockSize * numBlocksPad;
+		// final int outBlocksWordsPad = outBlockSize * numBlocksPad;
 		// number of words in output vector, including pad data and valid words
 		final int outBlocksWordsPadValid = outBlockSizeValid * numBlocksPad;
 		// true if there is input to the dut
@@ -965,6 +957,7 @@ public class BlockIOTestBench {
 	 * produce a string of 00 or ff depending on which bits are set in the mask
 	 * parameter. string is width*2 chars long
 	 */
+	@SuppressWarnings("unused")
 	private String padMask(int mask, int width) {
 		String result = "";
 

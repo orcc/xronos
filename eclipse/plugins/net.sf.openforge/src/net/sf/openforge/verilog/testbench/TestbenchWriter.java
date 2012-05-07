@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -110,22 +109,21 @@ public class TestbenchWriter {
 		final File source = fileHandler.getFile(VerilogTranslateEngine.SIMINCL);
 
 		// A List of TestVector objects.
-		List vectors = getVectors(design);
+		List<TestVector> vectors = getVectors(design);
 
 		if (vectors.size() == 0) {
-			this.document = getDefaultDocument(design, resFile);
+			document = getDefaultDocument(design, resFile);
 			return;
 		}
 
 		// Create the document and give it a header, timescale, etc.
-		this.document = getInitializedDocument(source);
+		document = getInitializedDocument(source);
 
 		Module testModule = new Module("fixture_" + uniqueID++);
 
 		// Generate a TaskHandle for each task
-		LinkedHashMap taskHandles = new LinkedHashMap();
-		for (Iterator iter = vectors.iterator(); iter.hasNext();) {
-			TestVector tv = (TestVector) iter.next();
+		LinkedHashMap<Task, TaskHandle> taskHandles = new LinkedHashMap<Task, TaskHandle>();
+		for (TestVector tv : vectors) {
 			if (!taskHandles.containsKey(tv.getTask())) {
 				TaskHandle th = new TaskHandle(design, tv.getTask());
 				taskHandles.put(tv.getTask(), th);
@@ -133,14 +131,14 @@ public class TestbenchWriter {
 		}
 
 		// Create the instantiation
-		TestInstantiation instance = new TestInstantiation(design, new HashSet(
-				taskHandles.values()));
+		TestInstantiation instance = new TestInstantiation(design,
+				new HashSet<TaskHandle>(taskHandles.values()));
 
 		// Create all the memories
 		Memories mems = new Memories(vectors, taskHandles);
 
 		// Create the state machine (main controller of test)
-		StateMachine machine = new StateMachine(new ArrayList(
+		StateMachine machine = new StateMachine(new ArrayList<TaskHandle>(
 				taskHandles.values()), vectors.size(), mems);
 
 		// Create the hang timer
@@ -169,8 +167,8 @@ public class TestbenchWriter {
 		InitialBlock ib = new InitialBlock();
 		resFileHandle.stateInits(ib);
 		timer.stateInits(ib);
-		for (Iterator iter = taskHandles.values().iterator(); iter.hasNext();) {
-			((TaskHandle) iter.next()).stateInits(ib);
+		for (TaskHandle taskHandle : taskHandles.values()) {
+			taskHandle.stateInits(ib);
 		}
 		clockChecker.stateInits(ib);
 		if (atbGenerateBMReport) {
@@ -196,8 +194,7 @@ public class TestbenchWriter {
 		machine.stateLogic(testModule, mems, resFileHandle);
 		timer.stateLogic(testModule, resFileHandle, machine);
 		// Make connections for each argument and result of each task
-		for (Iterator iter = taskHandles.values().iterator(); iter.hasNext();) {
-			TaskHandle th = (TaskHandle) iter.next();
+		for (TaskHandle th : taskHandles.values()) {
 			th.stateLogic(testModule, machine, mems, resFileHandle);
 		}
 		mems.stateLogic(); // does nothing.
@@ -218,7 +215,7 @@ public class TestbenchWriter {
 		//
 		// Write all this stuff to the document.
 		//
-		this.document.append(testModule);
+		document.append(testModule);
 	}
 
 	/**
@@ -226,7 +223,7 @@ public class TestbenchWriter {
 	 */
 	public void write(FileOutputStream testbenchFOS) {
 		PrettyPrinter pp = new PrettyPrinter(testbenchFOS);
-		pp.print(this.document);
+		pp.print(document);
 	}
 
 	/**
@@ -238,11 +235,11 @@ public class TestbenchWriter {
 	 *            a value of type 'Design'
 	 * @return a List of {@link TestVector} objects.
 	 */
-	private List getVectors(Design design) {
+	private List<TestVector> getVectors(Design design) {
 		Tester bbt = design.getTester();
-		List vectors = new ArrayList();
+		List<TestVector> vectors = new ArrayList<TestVector>();
 		for (int i = 0; i < bbt.getVectorCount(); i++) {
-			List argValues = Arrays.asList(bbt.getArgsVector(i));
+			List<Object> argValues = Arrays.asList(bbt.getArgsVector(i));
 			TestVector tv = new TestVector(bbt.getTaskVector(i), argValues,
 					bbt.getResultVector(i), bbt.getResultValidVector(i));
 			vectors.add(tv);
@@ -302,16 +299,16 @@ public class TestbenchWriter {
 	private VerilogDocument getDefaultDocument(Design design, File resFile) {
 		boolean hasExternal = false;
 
-		for (Iterator it = design.getTasks().iterator(); it.hasNext();) {
-			Task t = (Task) it.next();
+		for (Task t : design.getTasks()) {
 			hasExternal |= (!t.isAutomatic());
 		}
 
 		String message;
-		if (!hasExternal)
+		if (!hasExternal) {
 			message = "FAIL: NO FORGEABLE METHODS\\n";
-		else
+		} else {
 			message = "Test Bench Generator created no vectors for design with 1 or more entry methods";
+		}
 
 		return new DefaultSimDocument(message,
 				Collections.singletonList(resFile));

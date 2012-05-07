@@ -56,17 +56,17 @@ import net.sf.openforge.verilog.model.StringStatement;
  */
 public class HangTimer {
 
-	private Register hangTimer;
+	private final Register hangTimer;
 
 	public HangTimer() {
-		this.hangTimer = new Register("hangTimer", 32);
+		hangTimer = new Register("hangTimer", 32);
 	}
 
 	/**
 	 * Returns the hang timer register.
 	 */
 	private Register getHangTimer() {
-		return this.hangTimer;
+		return hangTimer;
 	}
 
 	/**

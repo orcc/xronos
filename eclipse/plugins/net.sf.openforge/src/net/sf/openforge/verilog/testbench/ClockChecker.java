@@ -168,7 +168,7 @@ public class ClockChecker {
 
 		module.state(new Always(ptb));
 	}
-
+ 
 	/**
 	 * Creates the actual cycle count FIFO.
 	 * 

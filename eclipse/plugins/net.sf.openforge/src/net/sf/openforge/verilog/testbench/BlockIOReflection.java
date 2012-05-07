@@ -26,8 +26,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
 import net.sf.openforge.app.EngineThread;
@@ -603,10 +601,10 @@ public class BlockIOReflection {
 		// primitives)
 		int space = 0;
 
-		boolean allPrimitive = true;
-		HashMap types = new HashMap();
+		//boolean allPrimitive = true;
+		//HashMap types = new HashMap();
 		numVectors = 1;
-		int[] argVectors = new int[ielements.length];
+		//int[] argVectors = new int[ielements.length];
 		Number[][] vectors = new Number[ielements.length][];
 
 		for (int i = 0; i < ielements.length; i++) {
@@ -635,7 +633,7 @@ public class BlockIOReflection {
 		}
 
 		// define the vectors - code taken from non block io case
-		boolean linearVectors = false;
+		// boolean linearVectors = false;
 		numVectors = 1;
 
 		for (int i = 0; i < ielements.length; i++) {
@@ -794,6 +792,7 @@ public class BlockIOReflection {
 		int index = 0;
 
 		for (int i = 0; i < blockSize; i++) {
+			@SuppressWarnings("unused")
 			int padBits = 0;
 			int padIndex = 0;
 			StringBuffer blockPadInfo = new StringBuffer();
@@ -917,7 +916,7 @@ public class BlockIOReflection {
 
 	private void gcc(File outputFile, File[] srcfiles) {
 		GenericJob gj = EngineThread.getGenericJob();
-		List incList = gj.getIncludeDirList();
+		List<String> incList = gj.getIncludeDirList();
 
 		String[] args = new String[6 + srcfiles.length + (2 * incList.size())];
 		int index = 0;
@@ -928,9 +927,9 @@ public class BlockIOReflection {
 		args[index++] = "-o";
 		args[index++] = outputFile.getAbsolutePath();
 
-		for (Iterator iter = incList.iterator(); iter.hasNext();) {
+		for (String string: incList) {
 			args[index++] = "-I";
-			args[index++] = iter.next().toString();
+			args[index++] = string;
 		}
 
 		for (int i = 0; i < srcfiles.length; i++) {

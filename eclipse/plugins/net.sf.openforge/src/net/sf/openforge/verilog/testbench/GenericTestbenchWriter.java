@@ -43,11 +43,13 @@ import net.sf.openforge.backend.hdl.VerilogTranslateEngine;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.CodeLabel;
+import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Kicker;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Register;
+import net.sf.openforge.lim.io.FifoIF;
 import net.sf.openforge.lim.io.FifoInput;
 import net.sf.openforge.lim.io.FifoOutput;
 import net.sf.openforge.lim.io.SimplePin;
@@ -67,21 +69,21 @@ import net.sf.openforge.verilog.pattern.PortWire;
  * @version $Id: GenericTestbenchWriter.java 284 2006-08-15 15:43:34Z imiller $
  */
 public class GenericTestbenchWriter {
-	private String actorName;
-	private Design design;
+	private final String actorName;
+	private final Design design;
 
 	public GenericTestbenchWriter(Design design) {
 		final GenericJob gj = EngineThread.getGenericJob();
-		this.actorName = gj.getOutputBaseName();
+		actorName = gj.getOutputBaseName();
 		this.design = design;
 	}
 
 	private String getActorName() {
-		return this.actorName;
+		return actorName;
 	}
 
 	private Design getDesign() {
-		return this.design;
+		return design;
 	}
 
 	/*
@@ -124,17 +126,16 @@ public class GenericTestbenchWriter {
 			return;
 		}
 
-		List<TBIOHandler> handlers = new ArrayList();
-		for (Iterator iter = getDesign().getFifoInterfaces().iterator(); iter
-				.hasNext();) {
-			Object o = iter.next();
-			if (o instanceof FifoInput)
-				handlers.add(new InputHandler((FifoInput) o));
-			else if (o instanceof FifoOutput)
-				handlers.add(new OutputHandler((FifoOutput) o));
-			else
+		List<TBIOHandler> handlers = new ArrayList<TBIOHandler>();
+		for (FifoIF fifoIF : getDesign().getFifoInterfaces()) {
+			if (fifoIF instanceof FifoInput) {
+				handlers.add(new InputHandler((FifoInput) fifoIF));
+			} else if (fifoIF instanceof FifoOutput) {
+				handlers.add(new OutputHandler((FifoOutput) fifoIF));
+			} else {
 				throw new IllegalArgumentException(
 						"Unknown type of fifo interface");
+			}
 		}
 
 		StateHandler stateh = new StateHandler(getDesign());
@@ -179,15 +180,17 @@ public class GenericTestbenchWriter {
 		for (TBIOHandler ioh : handlers) {
 			ioh.writeInstantiation(pw);
 		}
-		for (Iterator domainIter = design.getAllocatedClockDomains().iterator(); domainIter
-				.hasNext();) {
-			Design.ClockDomain domain = (Design.ClockDomain) domainIter.next();
+		for (Iterator<Design.ClockDomain> domainIter = design
+				.getAllocatedClockDomains().iterator(); domainIter.hasNext();) {
+			Design.ClockDomain domain = domainIter.next();
 			pw.print("." + domain.getClockPin().getName() + "(clk)");
-			if (domain.getResetPin() != null)
+			if (domain.getResetPin() != null) {
 				pw.print(", ." + domain.getResetPin().getName() + "(1'b0)");
-			if (domainIter.hasNext())
+			}
+			if (domainIter.hasNext()) {
 				pw.print(",");
-			// pw.print(".CLK(clk)");
+				// pw.print(".CLK(clk)");
+			}
 		}
 		pw.dec();
 		pw.dec();
@@ -231,8 +234,9 @@ public class GenericTestbenchWriter {
 		pw.inc();
 		pw.println("if (fireDone) begin");
 		pw.inc();
-		for (String capture : stateh.getCaptureStrings())
+		for (String capture : stateh.getCaptureStrings()) {
 			pw.println(capture);
+		}
 		pw.println("$fwrite(stateDumpFile, \"MARK\\n\");");
 		pw.dec();
 		pw.println("end");
@@ -293,11 +297,12 @@ public class GenericTestbenchWriter {
 		pw.inc();
 		pw.println("clockCount <= clockCount + 1;");
 		pw.print("if (");
-		for (Iterator iter = handlers.iterator(); iter.hasNext();) {
-			TBIOHandler ioh = (TBIOHandler) iter.next();
+		for (Iterator<TBIOHandler> iter = handlers.iterator(); iter.hasNext();) {
+			TBIOHandler ioh = iter.next();
 			pw.print(ioh.getActivityName());
-			if (iter.hasNext())
+			if (iter.hasNext()) {
 				pw.print(" || ");
+			}
 		}
 		pw.println(") hangTimer <= 0;");
 		pw.println("else begin");
@@ -330,17 +335,16 @@ public class GenericTestbenchWriter {
 	 * fired task.
 	 */
 	private String getActionFiringString() {
-		final List terms = new ArrayList();
-		for (Iterator iter = design.getDesignModule().getComponents()
-				.iterator(); iter.hasNext();) {
-			Object o = iter.next();
-			if (o instanceof Call) {
-				Bus goBus = ((Call) o).getGoPort().getBus();
+		final List<String> terms = new ArrayList<String>();
+		for (Component component : design.getDesignModule().getComponents()) {
+			if (component instanceof Call) {
+				Bus goBus = ((Call) component).getGoPort().getBus();
 				if (goBus == null
 						|| !(goBus.getOwner().getOwner() instanceof Kicker)) {
-					Port goPort = ((Call) o).getGoPort();
-					if (goPort.getValue().isConstant())
+					Port goPort = ((Call) component).getGoPort();
+					if (goPort.getValue().isConstant()) {
 						continue;
+					}
 					PortWire cport = new PortWire(goPort);
 					terms.add(cport.lexicalify().toString());
 				}
@@ -348,24 +352,24 @@ public class GenericTestbenchWriter {
 		}
 
 		String result = "";
-		for (Iterator iter = terms.iterator(); iter.hasNext();) {
+		for (Iterator<String> iter = terms.iterator(); iter.hasNext();) {
 			// Prepend 'dut' which is the name of the instance we are
 			// testing, of which all these terms will be signals.
 			result += getInstanceName() + "." + iter.next();
-			if (iter.hasNext())
+			if (iter.hasNext()) {
 				result += " || ";
+			}
 		}
 		return result;
 	}
 
 	private String getActionFiringDoneString() {
-		final List terms = new ArrayList();
-		for (Iterator iter = design.getDesignModule().getComponents()
-				.iterator(); iter.hasNext();) {
-			Object o = iter.next();
-			if (o instanceof Call) {
+		final List<String> terms = new ArrayList<String>();
+		for (Component component : design.getDesignModule().getComponents()) {
+			if (component instanceof Call) {
 				// Bus goBus = ((Call)o).getGoPort().getBus();
-				Bus doneBus = ((Call) o).getExit(Exit.DONE).getDoneBus();
+				Bus doneBus = ((Call) component).getExit(Exit.DONE)
+						.getDoneBus();
 				if (doneBus != null) {
 					BusWire bwire = new BusWire(doneBus);
 					terms.add(bwire.lexicalify().toString());
@@ -374,12 +378,13 @@ public class GenericTestbenchWriter {
 		}
 
 		String result = "";
-		for (Iterator iter = terms.iterator(); iter.hasNext();) {
+		for (Iterator<String> iter = terms.iterator(); iter.hasNext();) {
 			// Prepend 'dut' which is the name of the instance we are
 			// testing, of which all these terms will be signals.
 			result += getInstanceName() + "." + iter.next();
-			if (iter.hasNext())
+			if (iter.hasNext()) {
 				result += " || ";
+			}
 		}
 		return result;
 	}
@@ -389,20 +394,21 @@ public class GenericTestbenchWriter {
 
 		protected TBIOHandler(String name) {
 			this.name = name;
-			if (this.name.indexOf("_") > 0)
+			if (this.name.indexOf("_") > 0) {
 				this.name = this.name.substring(0, this.name.lastIndexOf("_"));
+			}
 		}
 
 		protected String getName() {
-			return this.name;
+			return name;
 		}
 
 		public String getDataName() {
-			return this.name + "_din";
+			return name + "_din";
 		}
 
 		public String getExistsName() {
-			return this.name + "_exists";
+			return name + "_exists";
 		}
 
 		public String getCountName() {
@@ -410,7 +416,7 @@ public class GenericTestbenchWriter {
 		}
 
 		public String getHandleName() {
-			return this.name + "_id";
+			return name + "_id";
 		}
 
 		public String getVecFileName() {
@@ -430,6 +436,7 @@ public class GenericTestbenchWriter {
 
 		public abstract void writeTest(IndentWriter pw);
 
+		@SuppressWarnings("unused")
 		public void writeTermCondition(IndentWriter pw) {
 			/* $isQueueEmpty(A_id) */
 			// pw.print("$isQueueEmpty("+getHandleName()+")");
@@ -437,17 +444,18 @@ public class GenericTestbenchWriter {
 	}
 
 	private class OutputHandler extends TBIOHandler {
-		private FifoOutput output;
+		private final FifoOutput output;
 
 		public OutputHandler(FifoOutput out) {
 			super(out.getDataPin().getName());
-			this.output = out;
+			output = out;
 		}
 
 		public int getDataWidth() {
-			return this.output.getDataPin().getWidth();
+			return output.getDataPin().getWidth();
 		}
 
+		@Override
 		public String getDataName() {
 			return getName() + "_dout";
 		} // override super
@@ -464,10 +472,12 @@ public class GenericTestbenchWriter {
 			return getName() + "_send";
 		}
 
+		@Override
 		public String getActivityName() {
 			return getSendName();
 		}
 
+		@Override
 		public void writeDeclarations(IndentWriter pw) {
 			/*
 			 * wire [31:0] O_dout; wire O_send; reg O_ack; reg O_exists; reg
@@ -484,34 +494,38 @@ public class GenericTestbenchWriter {
 			pw.println("integer     " + getHandleName() + ";");
 		}
 
+		@Override
 		public void writeInstantiation(IndentWriter pw) {
-			Set<SimplePin> pins = new HashSet(this.output.getPins());
-			pins.remove(this.output.getDataPin());
-			pins.remove(this.output.getSendPin());
-			pins.remove(this.output.getAckPin());
-			pw.print("." + this.output.getDataPin().getName() + "("
-					+ getDataName() + "), ");
-			pw.print("." + this.output.getSendPin().getName() + "("
-					+ getSendName() + "), ");
-			pw.print("." + this.output.getAckPin().getName() + "("
-					+ getAckName() + "), ");
-			if (this.output.getReadyPin() != null) {
-				pw.print("." + this.output.getReadyPin().getName() + "(1'b1), ");
-				pins.remove(this.output.getReadyPin());
+			Set<SimplePin> pins = new HashSet<SimplePin>(output.getPins());
+			pins.remove(output.getDataPin());
+			pins.remove(output.getSendPin());
+			pins.remove(output.getAckPin());
+			pw.print("." + output.getDataPin().getName() + "(" + getDataName()
+					+ "), ");
+			pw.print("." + output.getSendPin().getName() + "(" + getSendName()
+					+ "), ");
+			pw.print("." + output.getAckPin().getName() + "(" + getAckName()
+					+ "), ");
+			if (output.getReadyPin() != null) {
+				pw.print("." + output.getReadyPin().getName() + "(1'b1), ");
+				pins.remove(output.getReadyPin());
 			}
 
 			for (SimplePin pin : pins) {
-				if (pin.getName().toUpperCase().contains("CLK"))
+				if (pin.getName().toUpperCase().contains("CLK")) {
 					pw.print("." + pin.getName() + "(clk), ");
-				if (pin.getName().toUpperCase().contains("RESET"))
+				}
+				if (pin.getName().toUpperCase().contains("RESET")) {
 					pw.print("." + pin.getName() + "(1'b0), ");
-				else if (pin.getName().toUpperCase().contains("CONTROL"))
+				} else if (pin.getName().toUpperCase().contains("CONTROL")) {
 					pw.print("." + pin.getName() + "(), ");
-				else
+				} else {
 					pw.print("/* ." + pin.getName() + "(),*/ ");
+				}
 			}
 		}
 
+		@Override
 		public void writeInitial(IndentWriter pw) {
 			/*
 			 * O_dout_count <= 0; O_id <= $registerVectorFile("MY_X.vec", X_din,
@@ -528,10 +542,12 @@ public class GenericTestbenchWriter {
 					+ " <= 1; // For now say we are always acking");
 		}
 
+		@Override
 		public void writeStartSim(IndentWriter pw) {
 			// $vectorPop(O_id);
 		}
 
+		@Override
 		public void writeTest(IndentWriter pw) {
 			/*
 			 * if (O_write) begin if (!O_exists) begin $fwrite(resultFile,
@@ -580,25 +596,27 @@ public class GenericTestbenchWriter {
 	}
 
 	private class InputHandler extends TBIOHandler {
-		private FifoInput input;
+		private final FifoInput input;
 
 		public InputHandler(FifoInput in) {
 			super(in.getDataPin().getName());
-			this.input = in;
+			input = in;
 		}
 
 		public int getDataWidth() {
-			return this.input.getDataPin().getWidth();
+			return input.getDataPin().getWidth();
 		}
 
 		public String getAckName() {
 			return getName() + "_read";
 		}
 
+		@Override
 		public String getActivityName() {
 			return getAckName();
 		}
 
+		@Override
 		public void writeDeclarations(IndentWriter pw) {
 			/*
 			 * reg [N:0] din; wire read; reg exists; reg [31:0] count;
@@ -611,30 +629,34 @@ public class GenericTestbenchWriter {
 			pw.println("integer\t\t " + getHandleName() + ";");
 		}
 
+		@Override
 		public void writeInstantiation(IndentWriter pw) {
-			Set<SimplePin> pins = new HashSet(this.input.getPins());
-			pins.remove(this.input.getDataPin());
-			pins.remove(this.input.getAckPin());
-			pins.remove(this.input.getSendPin());
+			Set<SimplePin> pins = new HashSet<SimplePin>(input.getPins());
+			pins.remove(input.getDataPin());
+			pins.remove(input.getAckPin());
+			pins.remove(input.getSendPin());
 
-			pw.print("." + this.input.getDataPin().getName() + "("
-					+ getDataName() + "), ");
-			pw.print("." + this.input.getAckPin().getName() + "("
-					+ getAckName() + "), ");
-			pw.print("." + this.input.getSendPin().getName() + "("
-					+ getExistsName() + "), ");
+			pw.print("." + input.getDataPin().getName() + "(" + getDataName()
+					+ "), ");
+			pw.print("." + input.getAckPin().getName() + "(" + getAckName()
+					+ "), ");
+			pw.print("." + input.getSendPin().getName() + "(" + getExistsName()
+					+ "), ");
 			for (SimplePin pin : pins) {
-				if (pin.getName().toUpperCase().contains("CLK"))
+				if (pin.getName().toUpperCase().contains("CLK")) {
 					pw.print("." + pin.getName() + "(clk), ");
-				if (pin.getName().toUpperCase().contains("RESET"))
+				}
+				if (pin.getName().toUpperCase().contains("RESET")) {
 					pw.print("." + pin.getName() + "(1'b0), ");
-				else if (pin.getName().toUpperCase().contains("CONTROL"))
+				} else if (pin.getName().toUpperCase().contains("CONTROL")) {
 					pw.print("." + pin.getName() + "(1'b0), ");
-				else
+				} else {
 					pw.print("/* ." + pin.getName() + "(),*/");
+				}
 			}
 		}
 
+		@Override
 		public void writeInitial(IndentWriter pw) {
 			/*
 			 * A_din_count <= 0; A_id <= $registerVectorFile("MY_A.vec");
@@ -648,10 +670,12 @@ public class GenericTestbenchWriter {
 			pw.println(getDataName() + " <= 0;");
 		}
 
+		@Override
 		public void writeStartSim(IndentWriter pw) {
 			// $vectorPop(A_id);
 		}
 
+		@Override
 		public void writeTest(IndentWriter pw) {
 			/*
 			 * if (A_read) begin if (!A_exists) begin $fwrite(resultFile,
@@ -681,7 +705,7 @@ public class GenericTestbenchWriter {
 	}
 
 	private class StateHandler {
-		Map names = new HashMap();
+		Map<String, String> names = new HashMap<String, String>();
 
 		private StateHandler(Design design) {
 			for (Register reg : design.getRegisters()) {
@@ -697,39 +721,43 @@ public class GenericTestbenchWriter {
 
 				// Trim the 'register_xxxx_' off the front and the
 				// '_1' off the tail
-				if (instance.startsWith("register_"))
+				if (instance.startsWith("register_")) {
 					instance = instance.substring(instance.indexOf("_", 9) + 1);
-				if (instance.endsWith("_1"))
+				}
+				if (instance.endsWith("_1")) {
 					instance = instance.substring(0, instance.length() - 2);
+				}
 
 				names.put(instance, netName);
 			}
 		}
 
 		public List<String> getCaptureStrings() {
-			List<String> keys = new ArrayList(names.keySet());
-			if (keys.isEmpty())
-				return Collections.EMPTY_LIST;
-			List<String> alpha = new LinkedList();
+			List<String> keys = new ArrayList<String>(names.keySet());
+			if (keys.isEmpty()) {
+				return Collections.emptyList();
+			}
+			List<String> alpha = new LinkedList<String>();
 			alpha.add(keys.remove(0));
 			// Sort the list alphabetically
 			for (String str : keys) {
 				boolean inserted = false;
 				for (int i = 0; i < alpha.size(); i++) {
-					if (str.compareTo((String) alpha.get(i)) < 0) {
+					if (str.compareTo(alpha.get(i)) < 0) {
 						alpha.add(i, str);
 						inserted = true;
 						break;
 					}
 				}
-				if (!inserted)
+				if (!inserted) {
 					alpha.add(str);
+				}
 			}
 
 			// Use the sorted alpha keys to assemble the strings
-			List<String> netDisplay = new ArrayList();
+			List<String> netDisplay = new ArrayList<String>();
 			for (String key : alpha) {
-				String netName = (String) this.names.get(key);
+				String netName = names.get(key);
 				netDisplay.add("$fwrite(stateDumpFile, \"" + key
 						+ " : %d\\n\", " + netName + ");");
 			}

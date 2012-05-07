@@ -72,6 +72,7 @@ import net.sf.openforge.lim.io.SimplePinRead;
 import net.sf.openforge.lim.io.SimplePinWrite;
 import net.sf.openforge.lim.memory.EndianSwapper;
 import net.sf.openforge.lim.memory.MemoryBank;
+import net.sf.openforge.lim.memory.MemoryBank.Signature;
 import net.sf.openforge.lim.memory.MemoryRead;
 import net.sf.openforge.lim.memory.MemoryWrite;
 import net.sf.openforge.lim.op.AddMultiOp;
@@ -172,7 +173,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 * Also, this map provides a convenient look-up for existing defintions
 	 * related to a procedure (or really any LIM component related to a module).
 	 */
-	private Map<ID, Module> lim_module_map = new LinkedHashMap<ID, Module>();
+	private final Map<ID, Module> lim_module_map = new LinkedHashMap<ID, Module>();
 
 	/**
 	 * The current Module being populated with calls.
@@ -183,7 +184,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 * A Map of MemoryBank.getSignature() to VerilogMemory used to instantiate
 	 * that memory. This eliminates duplicated memory definitions.
 	 */
-	private Map memoryMap = new HashMap();
+	private final Map<Signature, VerilogMemory> memoryMap = new HashMap<Signature, VerilogMemory>();
 
 	/**
 	 * The stack of Modules being visited. This is used to keep a history of
@@ -194,7 +195,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	 * procedure visit) the current module reverts back to whatever module was
 	 * at the top of the stack.
 	 */
-	private Stack<Module> module_stack = new Stack<Module>();
+	private final Stack<Module> module_stack = new Stack<Module>();
 
 	/**
 	 * Whether an "application" module should be created for the Design.
@@ -209,7 +210,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	/** Set of user verilog modules for IP Core that has been written already */
 	Set<String> userVerilog_names = new HashSet<String>();
 
-	private ArrayList<String> userSimIncludes = new ArrayList<String>();
+	private final ArrayList<String> userSimIncludes = new ArrayList<String>();
 
 	private Design design;
 
@@ -325,11 +326,8 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 
 		// the modules list should have been populated with Module definitions,
 		// so now add them to the document
-		for (Iterator mods = lim_module_map.entrySet().iterator(); mods
-				.hasNext();) {
-			Map.Entry me = (Map.Entry) mods.next();
-			net.sf.openforge.verilog.model.Module m = (net.sf.openforge.verilog.model.Module) me
-					.getValue();
+		for (Map.Entry<ID, Module> me : lim_module_map.entrySet()) {
+			net.sf.openforge.verilog.model.Module m = me.getValue();
 			vDoc.append(m);
 		}
 	}
@@ -354,10 +352,12 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 
 		// how about pins?
 		for (Pin pin : design.getPins()) {
-			if ((pin.getInPinBuf() != null))
+			if ((pin.getInPinBuf() != null)) {
 				visit(pin.getInPinBuf());
-			if ((pin.getOutPinBuf() != null))
+			}
+			if ((pin.getOutPinBuf() != null)) {
 				visit(pin.getOutPinBuf());
+			}
 		}
 
 		return current_vmodule;
@@ -501,10 +501,11 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	@Override
 	public void visit(Reg reg) {
 		reg.updateResetType();
-		if (reg.hardInstantiate())
+		if (reg.hardInstantiate()) {
 			current_vmodule.state(new RegVariant(reg));
-		else
+		} else {
 			current_vmodule.state(new InferredRegVariant(reg));
+		}
 	}
 
 	@Override
@@ -558,11 +559,12 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(AddOp add) {
-		if (add.hasMulti())
+		if (add.hasMulti()) {
 			current_vmodule
 					.state(new MathAssignment.AddMulti((AddMultiOp) add));
-		else
+		} else {
 			current_vmodule.state(new MathAssignment.Add(add));
+		}
 	}
 
 	@Override
@@ -830,8 +832,7 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 	@Override
 	public void visit(MemoryBank memBank) {
 		// Object sig = memBank.getSignature();
-		VerilogMemory vm = (VerilogMemory) memoryMap
-				.get(memBank.getSignature());
+		VerilogMemory vm = memoryMap.get(memBank.getSignature());
 		if (vm == null) {
 			vm = MemoryMapper.getMemoryType(memBank);
 			net.sf.openforge.verilog.model.Module memoryModule = vm
@@ -968,11 +969,12 @@ public class VerilogTranslator extends DefaultVisitor implements Visitor {
 							Comment.SHORT));
 					comment = " and ";
 				}
-				if (sim)
+				if (sim) {
 					includeDoc.append(new IncludeStatement(mm.getSimInclude()));
-				else
+				} else {
 					includeDoc
 							.append(new IncludeStatement(mm.getSynthInclude()));
+				}
 
 				includeDoc.append(new Comment(Comment.BLANK));
 			}

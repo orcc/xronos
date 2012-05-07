@@ -46,15 +46,16 @@ import net.sf.openforge.lim.Task;
  */
 public class TestVector {
 
-	private Task task;
-	private List argValues;
-	private Object resultValue;
-	private boolean resultValid;
+	private final Task task;
+	private final List<Object> argValues;
+	private final Object resultValue;
+	private final boolean resultValid;
 
-	public TestVector(Task task, List args, Object result, boolean resultValid) {
+	public TestVector(Task task, List<Object> args, Object result,
+			boolean resultValid) {
 		this.task = task;
-		this.argValues = new ArrayList(args);
-		this.resultValue = result;
+		argValues = new ArrayList<Object>(args);
+		resultValue = result;
 		this.resultValid = resultValid;
 	}
 
@@ -62,7 +63,7 @@ public class TestVector {
 	 * Retrieves the Task to be tested with the values contained in this vector.
 	 */
 	public Task getTask() {
-		return this.task;
+		return task;
 	}
 
 	/**
@@ -72,8 +73,8 @@ public class TestVector {
 	 * @return a List of java.lang wrappers (Boolean, Byte, Character, Short,
 	 *         Integer, Long, Float, or Double).
 	 */
-	public List getArgValues() {
-		return this.argValues;
+	public List<Object> getArgValues() {
+		return argValues;
 	}
 
 	/**
@@ -83,7 +84,7 @@ public class TestVector {
 	 *         Character, Short, Integer, Long, Float, or Double).
 	 */
 	public Object getResultValue() {
-		return this.resultValue;
+		return resultValue;
 	}
 
 	/**
@@ -92,7 +93,7 @@ public class TestVector {
 	 * divide by 0 exception)
 	 */
 	public boolean resultValid() {
-		return this.resultValid;
+		return resultValid;
 	}
 
 }// TestVector

@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,7 +51,6 @@ import net.sf.openforge.lim.InputPin;
 import net.sf.openforge.lim.OutputPin;
 import net.sf.openforge.lim.Pin;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Procedure;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.util.naming.ID;
 import net.sf.openforge.verilog.model.Always;
@@ -138,7 +136,7 @@ public class CycleSimTestBench {
 		ResultFile resultFile = new ResultFile(resFile);
 		ResultFile clkCntFile = new ResultFile(clkFile);
 
-		Map pinToClockPinMap = getPinToClockPinMap(design);
+		Map<Pin, ClockPin> pinToClockPinMap = getPinToClockPinMap(design);
 
 		// get the cycle count lenght and clock pin this sim should run for
 		CycleCount cc = findCycleCount(design, pinToClockPinMap);
@@ -149,7 +147,7 @@ public class CycleSimTestBench {
 		// bench (pin sim), they might not actually be used by the
 		// design, and if that is the case, then we need to create pin
 		// logic for them.
-		Set clocksUsed = cc.getClocksUsed();
+		Set<ClockPin> clocksUsed = cc.getClocksUsed();
 
 		if (cycleCount < 0) {
 			design.getEngine()
@@ -162,7 +160,7 @@ public class CycleSimTestBench {
 		}
 
 		int indexSize = (int) java.lang.Math.ceil(java.lang.Math
-				.log(this.cycleCount + 1) / java.lang.Math.log(2));
+				.log(cycleCount + 1) / java.lang.Math.log(2));
 		Net index = new Register("testbench_index", indexSize);
 
 		simulationDocument = new VerilogDocument();
@@ -185,7 +183,8 @@ public class CycleSimTestBench {
 		Module testModule = new Module("fixture_" + uniqueID++);
 
 		// Generate a PinLogic instance for each pin.
-		Map pinToLogic = buildPinLogic(design, resultFile, clocksUsed);
+		Map<Pin, PinLogic> pinToLogic = buildPinLogic(design, resultFile,
+				clocksUsed);
 
 		// Instantiate the design. Hook up each input to a register
 		// and each output to a wire. Pass the clock logic explicitly
@@ -198,17 +197,17 @@ public class CycleSimTestBench {
 
 		// Remove the clocks so we don't create logic for it. Need to
 		// copy the map to prevent concurrent modification errors.
-		Map cpPinToLogic = new HashMap(pinToLogic);
-		Map clkPinToLogic = new HashMap();
+		Map<Pin, PinLogic> cpPinToLogic = new HashMap<Pin, PinLogic>(pinToLogic);
+		Map<Object, PinLogic> clkPinToLogic = new HashMap<Object, PinLogic>();
 
 		// while looping, create clock specific indexes and store in
 		// map
-		Map clkPinLogicToIndex = new HashMap();
+		Map<PinLogic, Net> clkPinLogicToIndex = new HashMap<PinLogic, Net>();
 
-		for (Iterator it = cpPinToLogic.keySet().iterator(); it.hasNext();) {
-			Object o = it.next();
+		for (Pin pin : cpPinToLogic.keySet()) {
+			Object o = pin;
 
-			PinLogic pl = (PinLogic) pinToLogic.get(o);
+			PinLogic pl = pinToLogic.get(o);
 
 			if (pl instanceof ClkPinLogic) {
 				pinToLogic.remove(o);
@@ -220,8 +219,8 @@ public class CycleSimTestBench {
 			}
 		}
 
-		for (Iterator it = clkPinToLogic.keySet().iterator(); it.hasNext();) {
-			Pin clock = (Pin) it.next();
+		for (Object o : clkPinToLogic.keySet()) {
+			Pin clock = (Pin) o;
 			ClkPinLogic cpl = (ClkPinLogic) clkPinToLogic.get(clock);
 
 			// Create an always @(posedge clock) block for all the 'stuff'
@@ -236,20 +235,19 @@ public class CycleSimTestBench {
 
 				// Create the ending condition for the 'simulation'
 				block.add(getIndexTerminalStatement(resultFile, index,
-						this.cycleCount, clkCntFile));
+						cycleCount, clkCntFile));
 			}
 
 			// add clock specific index increment
-			Net tmpindex = (Net) clkPinLogicToIndex.get(cpl);
+			Net tmpindex = clkPinLogicToIndex.get(cpl);
 			block.add(new Assign.NonBlocking(tmpindex,
 					new net.sf.openforge.verilog.model.Math.Add(tmpindex,
 							new Constant(1, tmpindex.getWidth()))));
 
 			// Instantiate the logic for asserting inputs/io's and testing
 			// outputs/io's
-			for (Iterator iter = pinToLogic.keySet().iterator(); iter.hasNext();) {
-				Pin p = (Pin) iter.next();
-				PinLogic logic = (PinLogic) pinToLogic.get(p);
+			for (Pin p : pinToLogic.keySet()) {
+				PinLogic logic = pinToLogic.get(p);
 
 				_testbench.d.ln("Cons: pin: " + p.getApiPin() + " is " + logic);
 				// only add if in this clock
@@ -261,7 +259,7 @@ public class CycleSimTestBench {
 				} else if (pinToClockPinMap.get(p).equals(clock.getApiPin())) {
 					_testbench.d.ln("\t==ok");
 					block.add(logic.stateSequential(index,
-							(Net) clkPinLogicToIndex.get(cpl)));
+							clkPinLogicToIndex.get(cpl)));
 
 					// for continuous we need an index that correlates
 					// to the current clock, not the master index used
@@ -270,10 +268,8 @@ public class CycleSimTestBench {
 					// the outputs or not if the simulation
 					// verification is finished and the simulation is
 					// coasting to completion ($finish).
-					testModule
-							.state(logic
-									.stateContinuous((Net) clkPinLogicToIndex
-											.get(cpl)));
+					testModule.state(logic.stateContinuous(clkPinLogicToIndex
+							.get(cpl)));
 				} else {
 					_testbench.d.ln("plogmap: " + pinToClockPinMap.get(p)
 							+ " and apipin: " + clock.getApiPin());
@@ -326,15 +322,15 @@ public class CycleSimTestBench {
 
 		ib = new InitialBlock();
 
-		for (Iterator it = clkPinToLogic.keySet().iterator(); it.hasNext();) {
-			Pin clock = (Pin) it.next();
+		for (Object o : clkPinToLogic.keySet()) {
+			Pin clock = (Pin) o;
 			ClkPinLogic cpl = (ClkPinLogic) clkPinToLogic.get(clock);
 
 			ib.add(new Assign.NonBlocking(cpl.getNet(), new HexNumber(
 					new HexConstant(0, cpl.getNet().getWidth()))));
 
 			// zero out clock specific indexes
-			Net tmpindex = (Net) clkPinLogicToIndex.get(cpl);
+			Net tmpindex = clkPinLogicToIndex.get(cpl);
 			ib.add(new Assign.NonBlocking(tmpindex, new HexNumber(
 					new HexConstant(0, tmpindex.getWidth()))));
 
@@ -346,13 +342,12 @@ public class CycleSimTestBench {
 		ib.add(resultFile.init());
 		ib.add(clkCntFile.init());
 
-		for (Iterator iter = pinToLogic.values().iterator(); iter.hasNext();) {
-			PinLogic logic = (PinLogic) iter.next();
+		for (PinLogic logic : pinToLogic.values()) {
 			logic.initMemory(ib);
 		}
 		testModule.state(ib);
 
-		this.simulationDocument.append(testModule);
+		simulationDocument.append(testModule);
 	}
 
 	private void addHeader(VerilogDocument doc) {
@@ -375,37 +370,34 @@ public class CycleSimTestBench {
 
 	public void write(FileOutputStream fos) {
 		PrettyPrinter pp = new PrettyPrinter(fos);
-		pp.print(this.simulationDocument);
+		pp.print(simulationDocument);
 	}
 
-	private Map buildPinLogic(Design design, ResultFile resultFile,
-			Set clocksUsed) {
-		Map pinToLogic = new HashMap();
-		Set unInitedClocks = new HashSet(clocksUsed);
+	@SuppressWarnings("deprecation")
+	private Map<Pin, PinLogic> buildPinLogic(Design design,
+			ResultFile resultFile, Set<ClockPin> clocksUsed) {
+		Map<Pin, PinLogic> pinToLogic = new HashMap<Pin, PinLogic>();
+		Set<ClockPin> unInitedClocks = new HashSet<ClockPin>(clocksUsed);
 
-		for (Iterator iter = design.getClockPins().iterator(); iter.hasNext();) {
-			InputPin pin = (InputPin) iter.next();
-
+		for (InputPin pin : design.getClockPins()) {
 			unInitedClocks.remove(pin.getApiPin());
-
 			pinToLogic.put(pin, new ClkPinLogic(pin));
 		}
 
-		for (Iterator iter = design.getInputPins().iterator(); iter.hasNext();) {
-			InputPin pin = (InputPin) iter.next();
+		for (Pin pin : design.getInputPins()) {
 
 			if (pinToLogic.get(pin) != null) {
 				// skip it, it must be a clock and is already in the map
 			} else {
 				if ((!Core.hasThisPin(pin.getApiPin()))
 						|| (Core.hasPublished(pin.getApiPin()))) {
-					pinToLogic.put(pin, new InPinLogic(pin));
+					pinToLogic.put(pin, new InPinLogic((InputPin) pin));
 				}
 			}
 		}
 
-		for (Iterator iter = design.getOutputPins().iterator(); iter.hasNext();) {
-			OutputPin pin = (OutputPin) iter.next();
+		for (Pin p : design.getOutputPins()) {
+			OutputPin pin = (OutputPin) p;
 
 			if ((!Core.hasThisPin(pin.getApiPin()))
 					|| (Core.hasPublished(pin.getApiPin()))) {
@@ -413,9 +405,8 @@ public class CycleSimTestBench {
 			}
 		}
 
-		for (Iterator iter = design.getBidirectionalPins().iterator(); iter
-				.hasNext();) {
-			BidirectionalPin pin = (BidirectionalPin) iter.next();
+		for (Pin p : design.getBidirectionalPins()) {
+			BidirectionalPin pin = (BidirectionalPin) p;
 
 			if ((!Core.hasThisPin(pin.getApiPin()))
 					|| (Core.hasPublished(pin.getApiPin()))) {
@@ -424,8 +415,7 @@ public class CycleSimTestBench {
 		}
 
 		// finish all uninited clocks
-		for (Iterator iter = unInitedClocks.iterator(); iter.hasNext();) {
-			ClockPin cp = (ClockPin) iter.next();
+		for (ClockPin cp : unInitedClocks) {
 
 			InputPin ip = new InputPin(1, false);
 			ip.setApiPin(cp);
@@ -437,15 +427,15 @@ public class CycleSimTestBench {
 		return pinToLogic;
 	}
 
-	private CycleCount findCycleCount(Design design, Map pinToClockPinMap) {
+	private CycleCount findCycleCount(Design design,
+			Map<Pin, ClockPin> pinToClockPinMap) {
 		double minTime = Double.MAX_VALUE;
 		boolean bounded = false;
 		int whichCount = 0;
 		ClockPin whichClk = null;
-		HashSet uniqueClocks = new HashSet();
+		HashSet<ClockPin> uniqueClocks = new HashSet<ClockPin>();
 
-		for (Iterator iter = design.getPins().iterator(); iter.hasNext();) {
-			Pin pin = (Pin) iter.next();
+		for (Pin pin : design.getPins()) {
 
 			Buffer apiPin = pin.getApiPin();
 
@@ -477,7 +467,7 @@ public class CycleSimTestBench {
 				if (length > 0) {
 					// use clock to calculate the actual time required
 
-					ClockPin cp = (ClockPin) pinToClockPinMap.get(pin);
+					ClockPin cp = pinToClockPinMap.get(pin);
 					double period;
 
 					if (cp == null) {
@@ -491,10 +481,10 @@ public class CycleSimTestBench {
 						// assume 10 Mhz by default
 						period = 1.0 / 10000000.0;
 					} else {
-						period = 1.0 / ((double) cp.getFrequency());
+						period = 1.0 / cp.getFrequency();
 					}
 
-					double time = period * (double) length;
+					double time = period * length;
 
 					if (time < minTime) {
 						// we found a smaller one
@@ -531,20 +521,22 @@ public class CycleSimTestBench {
 		return cs;
 	}
 
-	private Map instantiate(Design design, Module module, Map pinToLogic) {
-		Map pinToExpr = new HashMap();
+	@SuppressWarnings("deprecation")
+	private Map<Pin, PinLogic> instantiate(Design design, Module module,
+			Map<Pin, PinLogic> pinToLogic) {
+		Map<Pin, PinLogic> pinToExpr = new HashMap<Pin, PinLogic>();
 		ModuleInstance instance = new ModuleInstance(getVerilogName(design),
 				"test");
 
-		List inPins = new ArrayList(design.getInputPins());
+		List<Pin> inPins = new ArrayList<Pin>(design.getInputPins());
 
-		Set configuredClockPins = new HashSet();
+		Set<Pin> configuredClockPins = new HashSet<Pin>();
 
 		// special handling for clock pins prior to the other input pins
-		for (Iterator iter = inPins.iterator(); iter.hasNext();) {
-			InputPin pin = (InputPin) iter.next();
+		for (Pin p : inPins) {
+			InputPin pin = (InputPin) p;
 
-			PinLogic logic = (PinLogic) pinToLogic.get(pin);
+			PinLogic logic = pinToLogic.get(pin);
 
 			if ((logic != null) && (logic instanceof ClkPinLogic)) {
 				ClkPinLogic cpl = (ClkPinLogic) logic;
@@ -563,10 +555,9 @@ public class CycleSimTestBench {
 
 		// finish all pins in logic to clock map that were not
 		// connected to the design
-		for (Iterator iter = pinToLogic.keySet().iterator(); iter.hasNext();) {
-			Pin pin = (Pin) iter.next();
+		for (Pin pin : pinToLogic.keySet()) {
 
-			PinLogic logic = (PinLogic) pinToLogic.get(pin);
+			PinLogic logic = pinToLogic.get(pin);
 
 			if (logic instanceof ClkPinLogic) {
 				if (!configuredClockPins.contains(pin)) {
@@ -576,13 +567,13 @@ public class CycleSimTestBench {
 			}
 		}
 
-		for (Iterator iter = inPins.iterator(); iter.hasNext();) {
-			InputPin pin = (InputPin) iter.next();
+		for (Pin p : inPins) {
+			InputPin pin = (InputPin) p;
 			_testbench.d.ln("Instantiate: Input Pin: " + pin + " Api: "
 					+ pin.getApiPin());
 			if ((!Core.hasThisPin(pin.getApiPin()))
 					|| (Core.hasPublished(pin.getApiPin()))) {
-				PinLogic logic = (PinLogic) pinToLogic.get(pin);
+				PinLogic logic = pinToLogic.get(pin);
 
 				_testbench.d.ln("Instantiate: Logic Input Pin: " + logic);
 				if (logic instanceof ClkPinLogic) {
@@ -596,14 +587,14 @@ public class CycleSimTestBench {
 			}
 		}
 
-		for (Iterator iter = design.getOutputPins().iterator(); iter.hasNext();) {
-			OutputPin pin = (OutputPin) iter.next();
+		for (Pin p : design.getOutputPins()) {
+			OutputPin pin = (OutputPin) p;
 			_testbench.d.ln("Instantiate: Output Pin: " + pin + " Api: "
 					+ pin.getApiPin());
 
 			if ((!Core.hasThisPin(pin.getApiPin()))
 					|| (Core.hasPublished(pin.getApiPin()))) {
-				PinLogic logic = (PinLogic) pinToLogic.get(pin);
+				PinLogic logic = pinToLogic.get(pin);
 				_testbench.d.ln("Instantiate: Logic Output Pin: " + logic);
 				String name = getVerilogName(pin);
 				instance.add(new PortConnection(
@@ -611,15 +602,14 @@ public class CycleSimTestBench {
 			}
 		}
 
-		for (Iterator iter = design.getBidirectionalPins().iterator(); iter
-				.hasNext();) {
-			BidirectionalPin pin = (BidirectionalPin) iter.next();
+		for (Pin p : design.getBidirectionalPins()) {
+			BidirectionalPin pin = (BidirectionalPin) p;
 
 			_testbench.d.ln("Instantiate: Bidir Pin: " + pin + " Api: "
 					+ pin.getApiPin());
 			if ((!Core.hasThisPin(pin.getApiPin()))
 					|| (Core.hasPublished(pin.getApiPin()))) {
-				PinLogic logic = (PinLogic) pinToLogic.get(pin);
+				PinLogic logic = pinToLogic.get(pin);
 				_testbench.d.ln("Instantiate: Logic Bidir Pin: " + logic);
 				String name = getVerilogName(pin);
 				instance.add(new PortConnection(
@@ -636,20 +626,20 @@ public class CycleSimTestBench {
 		return ID.toVerilogIdentifier(ID.showLogical(obj));
 	}
 
-	private Map getPinToClockPinMap(Design design) {
+	@SuppressWarnings("deprecation")
+	private Map<Pin, ClockPin> getPinToClockPinMap(Design design) {
 		// the goal of this method is to build a map of lim.Pin
 		// objects to api.pin.ClockPin objects so the logic in this
 		// class can know what clock domain to put the test logic in
 
-		Map pinToClockPinMap = new HashMap();
+		Map<Pin, ClockPin> pinToClockPinMap = new HashMap<Pin, ClockPin>();
 
 		// step 1, go through each task in the design, fetch all the
 		// ports and busses and map them back to their lim.Pin at the
 		// top level, then add an association from lim.Pin to the
 		// clock for the task.
 
-		for (Iterator iter = design.getTasks().iterator(); iter.hasNext();) {
-			Task task = (Task) iter.next();
+		for (Task task : design.getTasks()) {
 
 			if (!task.isAutomatic()) {
 				Call call = task.getCall();
@@ -660,10 +650,9 @@ public class CycleSimTestBench {
 					goPort = call.getGoPort();
 				}
 
-				ArrayList argumentPorts = new ArrayList();
+				ArrayList<Port> argumentPorts = new ArrayList<Port>();
 
-				for (Iterator it = call.getDataPorts().iterator(); it.hasNext();) {
-					Port p = (Port) it.next();
+				for (Port p : call.getDataPorts()) {
 
 					if (p.getTag() == Component.NORMAL) {
 						// this is an argument
@@ -674,15 +663,14 @@ public class CycleSimTestBench {
 				Bus doneBus = null;
 				Bus resultBus = null;
 
-				for (Iterator it = call.getExits().iterator(); it.hasNext();) {
-					Exit exit = (Exit) it.next();
+				for (Exit exit : call.getExits()) {
 
 					if (exit.getTag().getType() == Exit.DONE) {
 						// this is the result and done bus exit
 
-						List l = exit.getDataBuses();
+						List<Bus> l = exit.getDataBuses();
 						if (l.size() > 0) {
-							resultBus = (Bus) l.get(0);
+							resultBus = l.get(0);
 						}
 
 						if (call.producesDone()) {
@@ -694,7 +682,7 @@ public class CycleSimTestBench {
 				// Now determine the pins representing the ports and buses we
 				// identified
 
-				Procedure procedure = call.getProcedure();
+				// Procedure procedure = call.getProcedure();
 				// ClockPin cp = procedure.getClockPin();
 				ClockPin cp = null;
 
@@ -713,8 +701,8 @@ public class CycleSimTestBench {
 					pinToClockPinMap.put(resultPin, cp);
 				}
 
-				for (Iterator it = argumentPorts.iterator(); it.hasNext();) {
-					Object obj = it.next();
+				for (Port port : argumentPorts) {
+					Object obj = port;
 
 					// make sure there is a pin for the given argument
 					if (design.getPin(obj) != null) {
@@ -727,10 +715,10 @@ public class CycleSimTestBench {
 		// Now go through all the design pins and if there is
 		// nothing registered in the pinToClockPinMap, then ask
 		// the api pin for its clock domain
-		Collection clkpins = design.getClockPins();
+		Collection<InputPin> clkpins = design.getClockPins();
 
-		for (Iterator iter = design.getInputPins().iterator(); iter.hasNext();) {
-			InputPin pin = (InputPin) iter.next();
+		for (Pin p : design.getInputPins()) {
+			InputPin pin = (InputPin) p;
 
 			// _testbench.d.ln("Map: Input: "+pin.getApiPin()+" Has: "+pin.getClockPin()+" domain: "+pin.getApiPin().getDomain());
 			if (clkpins.contains(pin)) {
@@ -761,8 +749,8 @@ public class CycleSimTestBench {
 			}
 		}
 
-		for (Iterator iter = design.getOutputPins().iterator(); iter.hasNext();) {
-			OutputPin pin = (OutputPin) iter.next();
+		for (Pin p : design.getOutputPins()) {
+			OutputPin pin = (OutputPin) p;
 			// _testbench.d.ln("Map: Output: "+pin.getApiPin()+" Has: "+pin.getClockPin()+" domain: "+pin.getApiPin().getDomain());
 
 			if ((!Core.hasThisPin(pin.getApiPin()))
@@ -787,9 +775,8 @@ public class CycleSimTestBench {
 			}
 		}
 
-		for (Iterator iter = design.getBidirectionalPins().iterator(); iter
-				.hasNext();) {
-			BidirectionalPin pin = (BidirectionalPin) iter.next();
+		for (Pin p : design.getBidirectionalPins()) {
+			BidirectionalPin pin = (BidirectionalPin) p;
 			// _testbench.d.ln("Map: Bidir: "+pin.getApiPin()+" Has: "+pin.getClockPin()+" domain: "+pin.getApiPin().getDomain());
 
 			if ((!Core.hasThisPin(pin.getApiPin()))
@@ -818,20 +805,19 @@ public class CycleSimTestBench {
 	}
 
 	public abstract class PinLogic {
-		private InitializedMemory mem;
-		private String name;
+		private final InitializedMemory mem;
+		private final String name;
 		int width;
 
-		public PinLogic(String prefix, Pin pin, List data) {
-			this.name = ID.toVerilogIdentifier(ID.showLogical(pin));
+		public PinLogic(String prefix, Pin pin, List<SignalValue> data) {
+			name = ID.toVerilogIdentifier(ID.showLogical(pin));
 
 			width = pin.getWidth();
-			this.mem = initMem(prefix + "_" + this.name + "_values", pin, data,
-					width);
+			mem = initMem(prefix + "_" + name + "_values", pin, data, width);
 		}
 
-		protected InitializedMemory initMem(String name, Pin pin, List data,
-				int width) {
+		protected InitializedMemory initMem(String name, Pin pin,
+				List<SignalValue> data, int width) {
 			InitializedMemory im = new InitializedMemory(name, width);
 			// for (int i=0; i < CycleSimTestBench.this.cycleCount; i++)
 			for (int i = 0; i < (data.size() + 2); i++) {
@@ -856,7 +842,7 @@ public class CycleSimTestBench {
 		}
 
 		protected InitializedMemory getMemory() {
-			return this.mem;
+			return mem;
 		}
 
 		public void initMemory(InitialBlock ib) {
@@ -864,7 +850,7 @@ public class CycleSimTestBench {
 		}
 
 		public String getName() {
-			return this.name;
+			return name;
 		}
 
 		public abstract Net getNet();
@@ -880,8 +866,9 @@ public class CycleSimTestBench {
 		double period = 0.0;
 
 		public ClkPinLogic(InputPin pin) {
-			super("arg", pin, pin.getApiPin() == null ? Collections.EMPTY_LIST
-					: PinSimData.getDriveData(pin.getApiPin()).asList());
+			super("arg", pin, pin.getApiPin() == null ? Collections
+					.<SignalValue> emptyList() : PinSimData.getDriveData(
+					pin.getApiPin()).asList());
 			reg = new Register(getVerilogName(pin.getBus()), pin.getWidth());
 
 			ClockPin cp = (ClockPin) pin.getApiPin();
@@ -890,7 +877,7 @@ public class CycleSimTestBench {
 				// assume 10 Mhz by default
 				period = 1.0 / 10000000.0;
 			} else {
-				period = 1.0 / ((double) cp.getFrequency());
+				period = 1.0 / cp.getFrequency();
 			}
 
 			// convert to nanoseconds, * 1x10^9
@@ -899,10 +886,12 @@ public class CycleSimTestBench {
 			periodNs = (int) period;
 		}
 
+		@Override
 		public Net getNet() {
-			return this.reg;
+			return reg;
 		}
 
+		@Override
 		public Statement stateSequential(Net index, Net clkIndex) {
 			Assign assign = new Assign.NonBlocking(getNet(), new Unary.Negate(
 					getNet()));
@@ -910,10 +899,12 @@ public class CycleSimTestBench {
 			return new DelayStatement(assign, (periodNs / 2));
 		}
 
+		@Override
 		public Statement stateContinuous(Net index) {
 			return new InlineComment("");
 		}
 
+		@Override
 		public InitializedMemory getMemory() {
 			assert false : "Should not use memory for clock";
 			return super.getMemory();
@@ -924,19 +915,23 @@ public class CycleSimTestBench {
 		Wire reg;
 
 		public InPinLogic(InputPin pin) {
-			super("arg", pin, pin.getApiPin() == null ? Collections.EMPTY_LIST
-					: PinSimData.getDriveData(pin.getApiPin()).asList());
+			super("arg", pin, pin.getApiPin() == null ? Collections
+					.<SignalValue> emptyList() : PinSimData.getDriveData(
+					pin.getApiPin()).asList());
 			reg = new Wire(getVerilogName(pin.getBus()), pin.getWidth());
 		}
 
+		@Override
 		public Net getNet() {
-			return this.reg;
+			return reg;
 		}
 
+		@Override
 		public Statement stateSequential(Net index, Net clkIndex) {
 			return new InlineComment("");
 		}
 
+		@Override
 		public Statement stateContinuous(Net index) {
 			return new Assign.Continuous(reg, new MemoryElement(getMemory(),
 					index));
@@ -951,16 +946,17 @@ public class CycleSimTestBench {
 		InitializedMemory driveMem;
 
 		public OutPinLogic(OutputPin pin, ResultFile file) {
-			super("res", pin, pin.getApiPin() == null ? Collections.EMPTY_LIST
-					: PinSimData.getTestData(pin.getApiPin()).asList());
+			super("res", pin, pin.getApiPin() == null ? Collections
+					.<SignalValue> emptyList() : PinSimData.getTestData(
+					pin.getApiPin()).asList());
 
 			wire = new Wire(getVerilogName(pin), pin.getWidth());
 			reswire = new Wire(getVerilogName(pin) + "_expected",
 					pin.getWidth());
 			this.file = file;
 
-			List driveValues = PinSimData.getDriveData(pin.getApiPin())
-					.asList();
+			List<SignalValue> driveValues = PinSimData.getDriveData(
+					pin.getApiPin()).asList();
 
 			if (!driveValues.isEmpty()) {
 				driveMem = initMem("drive_" + getName() + "_values", pin,
@@ -970,24 +966,29 @@ public class CycleSimTestBench {
 			}
 		}
 
+		@Override
 		public Net getNet() {
-			return this.wire;
+			return wire;
 		}
 
+		@Override
 		public void initMemory(InitialBlock ib) {
 			super.initMemory(ib);
 
-			if (driveMem != null)
+			if (driveMem != null) {
 				ib.add(driveMem);
+			}
 		}
 
+		@Override
 		public Statement stateContinuous(Net index) {
 			StatementBlock sb = new StatementBlock();
 
 			// drive any drive data if it exists
-			if (driveMem != null)
+			if (driveMem != null) {
 				sb.add(new Assign.Continuous(getNet(), new MemoryElement(
 						driveMem, index)));
+			}
 
 			sb.add(new Assign.Continuous(reswire, new MemoryElement(
 					getMemory(), index)));
@@ -995,6 +996,7 @@ public class CycleSimTestBench {
 			return sb;
 		}
 
+		@Override
 		public Statement stateSequential(Net index, Net clkIndex) {
 			SequentialBlock trueBlock = new SequentialBlock();
 			CommaDelimitedStatement cds = new CommaDelimitedStatement();
@@ -1004,7 +1006,7 @@ public class CycleSimTestBench {
 			cds.append(clkIndex);
 			cds.append(reswire);
 			cds.append(getNet());
-			trueBlock.add(this.file.write(cds));
+			trueBlock.add(file.write(cds));
 			trueBlock.add(new DelayStatement(new FStatement.Finish(), 500));
 			ConditionalStatement cs = new ConditionalStatement(
 					new Compare.CASE_NEQ(reswire, getNet()), trueBlock);
@@ -1013,10 +1015,8 @@ public class CycleSimTestBench {
 							new BinaryConstant("x", width))),
 					new SequentialBlock(cs));
 			ConditionalStatement cs3 = new ConditionalStatement(new Compare.LT(
-					index, new Decimal(
-							new Constant(CycleSimTestBench.this.cycleCount,
-									index.getWidth()))), new SequentialBlock(
-					cs2));
+					index, new Decimal(new Constant(cycleCount,
+							index.getWidth()))), new SequentialBlock(cs2));
 
 			return cs3;
 		}
@@ -1030,16 +1030,17 @@ public class CycleSimTestBench {
 		InitializedMemory driveMem;
 
 		public InOutPinLogic(BidirectionalPin pin, ResultFile file) {
-			super("arg", pin, pin.getApiPin() == null ? Collections.EMPTY_LIST
-					: PinSimData.getTestData(pin.getApiPin()).asList());
-			this.net = new Wire(getVerilogName(pin), pin.getWidth());
+			super("arg", pin, pin.getApiPin() == null ? Collections
+					.<SignalValue> emptyList() : PinSimData.getTestData(
+					pin.getApiPin()).asList());
+			net = new Wire(getVerilogName(pin), pin.getWidth());
 			this.file = file;
 
 			reswire = new Wire(getVerilogName(pin) + "_expected",
 					pin.getWidth());
 
-			List driveValues = PinSimData.getDriveData(pin.getApiPin())
-					.asList();
+			List<SignalValue> driveValues = PinSimData.getDriveData(
+					pin.getApiPin()).asList();
 
 			if (!driveValues.isEmpty()) {
 				driveMem = initMem("drive_" + getName() + "_values", pin,
@@ -1049,17 +1050,21 @@ public class CycleSimTestBench {
 			}
 		}
 
+		@Override
 		public void initMemory(InitialBlock ib) {
 			super.initMemory(ib);
 
-			if (driveMem != null)
+			if (driveMem != null) {
 				ib.add(driveMem);
+			}
 		}
 
+		@Override
 		public Net getNet() {
-			return this.net;
+			return net;
 		}
 
+		@Override
 		public Statement stateSequential(Net index, Net clkIndex) {
 			SequentialBlock trueBlock = new SequentialBlock();
 			CommaDelimitedStatement cds = new CommaDelimitedStatement();
@@ -1069,7 +1074,7 @@ public class CycleSimTestBench {
 			cds.append(clkIndex);
 			cds.append(reswire);
 			cds.append(getNet());
-			trueBlock.add(this.file.write(cds));
+			trueBlock.add(file.write(cds));
 			trueBlock.add(new DelayStatement(new FStatement.Finish(), 500));
 			ConditionalStatement cs = new ConditionalStatement(
 					new Compare.CASE_NEQ(reswire, getNet()), trueBlock);
@@ -1078,21 +1083,21 @@ public class CycleSimTestBench {
 							new BinaryConstant("x", width))),
 					new SequentialBlock(cs));
 			ConditionalStatement cs3 = new ConditionalStatement(new Compare.LT(
-					index, new Decimal(
-							new Constant(CycleSimTestBench.this.cycleCount,
-									index.getWidth()))), new SequentialBlock(
-					cs2));
+					index, new Decimal(new Constant(cycleCount,
+							index.getWidth()))), new SequentialBlock(cs2));
 
 			return cs3;
 		}
 
+		@Override
 		public Statement stateContinuous(Net index) {
 			StatementBlock sb = new StatementBlock();
 
 			// drive any drive data if it exists
-			if (driveMem != null)
+			if (driveMem != null) {
 				sb.add(new Assign.Continuous(getNet(), new MemoryElement(
 						driveMem, index)));
+			}
 
 			sb.add(new Assign.Continuous(reswire, new MemoryElement(
 					getMemory(), index)));
@@ -1102,25 +1107,25 @@ public class CycleSimTestBench {
 	}
 
 	class CycleCount {
-		private int cycleCount;
-		private ClockPin clk;
-		private Set clocksUsed;
+		private final int cycleCount;
+		private final ClockPin clk;
+		private final Set<ClockPin> clocksUsed;
 
-		CycleCount(int count, ClockPin clk, Set clocks) {
-			this.cycleCount = count;
+		CycleCount(int count, ClockPin clk, Set<ClockPin> clocks) {
+			cycleCount = count;
 			this.clk = clk;
-			this.clocksUsed = clocks;
+			clocksUsed = clocks;
 		}
 
 		public int getCycleCount() {
-			return (this.cycleCount);
+			return (cycleCount);
 		}
 
 		public ClockPin getClockPin() {
-			return (this.clk);
+			return (clk);
 		}
 
-		public Set getClocksUsed() {
+		public Set<ClockPin> getClocksUsed() {
 			return clocksUsed;
 		}
 

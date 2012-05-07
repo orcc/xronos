@@ -54,13 +54,13 @@ import net.sf.openforge.verilog.pattern.CommaDelimitedStatement;
 public class ExpectedChecker {
 
 	// The TaskHandle which is to be validated with this checker.
-	private TaskHandle taskHandle;
+	private final TaskHandle taskHandle;
 	// A signal indicating that this task has failed a validation.
-	private Register fail;
+	private final Register fail;
 
 	public ExpectedChecker(TaskHandle handle) {
-		this.taskHandle = handle;
-		this.fail = new Register(this.taskHandle.getBaseName() + "_fail", 1);
+		taskHandle = handle;
+		fail = new Register(taskHandle.getBaseName() + "_fail", 1);
 	}
 
 	/**
@@ -82,9 +82,10 @@ public class ExpectedChecker {
 	private void stateCheck(Module module, StateMachine mach, Memories mems,
 			SimFileHandle resultFile) {
 		SequentialBlock block = new SequentialBlock();
-		Logical.And condition = new Logical.And(new Compare.CASE_NEQ(
-				this.taskHandle.getExpectedResultWire(),
-				this.taskHandle.getResultWire()), mach.getExpectedValidWire());
+		Logical.And condition = new Logical.And(
+				new Compare.CASE_NEQ(taskHandle.getExpectedResultWire(),
+						taskHandle.getResultWire()),
+				mach.getExpectedValidWire());
 
 		CommaDelimitedStatement cds = new CommaDelimitedStatement();
 		String fail = "FAIL: Incorrect result.  Iteration %d expected %x found %x\\n";
@@ -99,7 +100,7 @@ public class ExpectedChecker {
 		ConditionalStatement test = new ConditionalStatement(condition, block);
 
 		ConditionalStatement cs = new ConditionalStatement(
-				this.taskHandle.getDoneWire(), test);
+				taskHandle.getDoneWire(), test);
 
 		ProceduralTimingBlock ptb = new ProceduralTimingBlock(new EventControl(
 				new EventExpression.PosEdge(mach.getClock())), cs);
@@ -111,7 +112,7 @@ public class ExpectedChecker {
 	 * Returns the Register indicating a failure of this check
 	 */
 	public Register getFailWire() {
-		return this.fail;
+		return fail;
 	}
 
 }// ExpectedChecker

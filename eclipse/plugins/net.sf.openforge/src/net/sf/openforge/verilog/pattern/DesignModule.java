@@ -164,6 +164,7 @@ public class DesignModule extends net.sf.openforge.verilog.model.Module
 	 * Defines the Module ports based on the Design's InputPins, OutputPins, and
 	 * BidirectionalPins.
 	 */
+	@SuppressWarnings("deprecation")
 	private void defineInterface() {
 		// define input ports (based on the InputPins)
 		for (Pin p : design.getInputPins()) {

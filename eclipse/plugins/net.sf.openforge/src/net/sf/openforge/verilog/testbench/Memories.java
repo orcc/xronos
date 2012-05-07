@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.lim.Task;
 import net.sf.openforge.util.naming.ID;
 import net.sf.openforge.verilog.model.Expression;
 import net.sf.openforge.verilog.model.HexConstant;
@@ -51,10 +52,10 @@ import net.sf.openforge.verilog.model.InitializedMemory;
 public class Memories {
 
 	// The InitializedMemories
-	private List argMemories;
-	private InitializedMemory resultMem;
-	private InitializedMemory resultValidMem;
-	private InitializedMemory nextGo;
+	private final List<InitializedMemory> argMemories;
+	private final InitializedMemory resultMem;
+	private final InitializedMemory resultValidMem;
+	private final InitializedMemory nextGo;
 
 	/**
 	 * Creates the necessary memories and generates their initial values from
@@ -65,32 +66,29 @@ public class Memories {
 	 * @param taskHandles
 	 *            a Map of Task to TaskHandle
 	 */
-	public Memories(List vectors, Map taskHandles) {
+	public Memories(List<TestVector> vectors, Map<Task, TaskHandle> taskHandles) {
 		int maxNumberOfArgs = 0;
-		for (Iterator iter = vectors.iterator(); iter.hasNext();) {
-			TestVector tv = (TestVector) iter.next();
+		for (TestVector tv : vectors) {
 			maxNumberOfArgs = java.lang.Math.max(tv.getArgValues().size(),
 					maxNumberOfArgs);
 		}
 
 		// Create the argument memories
-		this.argMemories = new ArrayList(maxNumberOfArgs);
+		argMemories = new ArrayList<InitializedMemory>(maxNumberOfArgs);
 		for (int i = 0; i < maxNumberOfArgs; i++) {
 			int width = 0;
-			for (Iterator iter = taskHandles.values().iterator(); iter
-					.hasNext();) {
+			for (TaskHandle taskHandle : taskHandles.values()) {
 				width = java.lang.Math.max(width,
-						((TaskHandle) iter.next()).getWidthOfPort(i));
+						(taskHandle).getWidthOfPort(i));
 			}
 			argMemories.add(new InitializedMemory("arg" + i + "_data", width));
 		}
 
 		// Initialize each argument memory
-		for (Iterator iter = vectors.iterator(); iter.hasNext();) {
-			TestVector tv = (TestVector) iter.next();
-			List argValues = tv.getArgValues();
+		for (TestVector tv : vectors) {
+			List<Object> argValues = tv.getArgValues();
 			for (int i = 0; i < maxNumberOfArgs; i++) {
-				InitializedMemory im = (InitializedMemory) argMemories.get(i);
+				InitializedMemory im = argMemories.get(i);
 				if (i < argValues.size()) {
 					im.addInitValue(getConstantFor(argValues.get(i),
 							im.getWidth()));
@@ -102,22 +100,19 @@ public class Memories {
 
 		// Create the result memory
 		int maxResultWidth = 1;
-		for (Iterator iter = taskHandles.values().iterator(); iter.hasNext();) {
-			TaskHandle th = (TaskHandle) iter.next();
+		for (TaskHandle th : taskHandles.values()) {
 			maxResultWidth = java.lang.Math.max(maxResultWidth,
 					th.getMaxResultWidth());
 		}
-		this.resultMem = new InitializedMemory("expected_result",
-				maxResultWidth);
-		this.resultValidMem = new InitializedMemory("expected_result_valid", 1);
+		resultMem = new InitializedMemory("expected_result", maxResultWidth);
+		resultValidMem = new InitializedMemory("expected_result_valid", 1);
 
 		// Initialize the result memory
-		Set warnedTasks = new HashSet();
-		for (Iterator iter = vectors.iterator(); iter.hasNext();) {
-			TestVector tv = (TestVector) iter.next();
+		Set<Task> warnedTasks = new HashSet<Task>();
+		for (TestVector tv : vectors) {
 			// Use expected wire's width (which same as result width)
 			// to test against the constants significant bits width.
-			int expectedWidth = ((TaskHandle) taskHandles.get(tv.getTask()))
+			int expectedWidth = taskHandles.get(tv.getTask())
 					.getMaxResultWidth();
 			if (expectedWidth > 0) {
 				resultMem.addInitValue(getConstantFor(tv.getResultValue(),
@@ -141,12 +136,10 @@ public class Memories {
 
 		// Create the next Go memory
 		assert taskHandles.keySet().size() <= 64 : "Only supporting up to 64 entry methods";
-		this.nextGo = new InitializedMemory("nextGo", taskHandles.keySet()
-				.size());
+		nextGo = new InitializedMemory("nextGo", taskHandles.keySet().size());
 		long nextMask = 1;
-		for (Iterator iter = vectors.iterator(); iter.hasNext();) {
-			TestVector tv = (TestVector) iter.next();
-			TaskHandle th = (TaskHandle) taskHandles.get(tv.getTask());
+		for (TestVector tv : vectors) {
+			TaskHandle th = taskHandles.get(tv.getTask());
 			long mask = th.getGoMask();
 			if (mask == -1) {
 				mask = nextMask;
@@ -154,7 +147,7 @@ public class Memories {
 				nextMask <<= 1;
 			}
 
-			this.nextGo.addInitValue(getConstantFor(new Long(mask),
+			nextGo.addInitValue(getConstantFor(new Long(mask),
 					nextGo.getWidth()));
 		}
 
@@ -163,13 +156,15 @@ public class Memories {
 		padMemories();
 
 		// Check that all the memories have the same number of vectors
-		Set allMems = new HashSet(this.argMemories);
+		Set<InitializedMemory> allMems = new HashSet<InitializedMemory>(
+				argMemories);
 		allMems.add(getResultMemory());
 		allMems.add(getResultValidMemory());
 		allMems.add(getNextGoMemory());
 		int count = getNextGoMemory().depth();
-		for (Iterator iter = allMems.iterator(); iter.hasNext();) {
-			assert count == ((InitializedMemory) iter.next()).depth();
+		for (Iterator<InitializedMemory> iter = allMems.iterator(); iter
+				.hasNext();) {
+			assert count == iter.next().depth();
 		}
 	}
 
@@ -177,8 +172,9 @@ public class Memories {
 	 * States the initial values for each memory.
 	 */
 	public void stateInits(InitialBlock ib) {
-		for (Iterator iter = this.argMemories.iterator(); iter.hasNext();) {
-			ib.add((InitializedMemory) iter.next());
+		for (Iterator<InitializedMemory> iter = argMemories.iterator(); iter
+				.hasNext();) {
+			ib.add(iter.next());
 		}
 		ib.add(getResultMemory());
 		ib.add(getResultValidMemory());
@@ -196,28 +192,28 @@ public class Memories {
 	 * Returns the {@link InitializedMemory} for the numbered argument position.
 	 */
 	public InitializedMemory getArgMemory(int index) {
-		return (InitializedMemory) this.argMemories.get(index);
+		return argMemories.get(index);
 	}
 
 	/**
 	 * Returns the {@link InitializedMemory} for the results values.
 	 */
 	public InitializedMemory getResultMemory() {
-		return this.resultMem;
+		return resultMem;
 	}
 
 	/**
 	 * Returns the {@link InitializedMemory} for the results valid values.
 	 */
 	public InitializedMemory getResultValidMemory() {
-		return this.resultValidMem;
+		return resultValidMem;
 	}
 
 	/**
 	 * Returns the {@link InitializedMemory} for the next GO values.
 	 */
 	public InitializedMemory getNextGoMemory() {
-		return this.nextGo;
+		return nextGo;
 	}
 
 	/**
@@ -236,8 +232,8 @@ public class Memories {
 	 */
 	private void padMemories() {
 		InitializedMemory mem;
-		for (Iterator iter = argMemories.iterator(); iter.hasNext();) {
-			mem = (InitializedMemory) iter.next();
+		for (InitializedMemory initializedMemory : argMemories) {
+			mem = initializedMemory;
 			mem.addInitValue(getConstantFor(new Long(0), mem.getWidth()));
 		}
 		mem = getResultMemory();
@@ -262,22 +258,23 @@ public class Memories {
 	private static Expression getConstantFor(Object o, int width, boolean test,
 			int testWidth) {
 		long longValue = 0;
-		if (o instanceof Double)
+		if (o instanceof Double) {
 			longValue = Double.doubleToRawLongBits(((Number) o).doubleValue());
-		else if (o instanceof Float)
+		} else if (o instanceof Float) {
 			longValue = Float.floatToRawIntBits(((Number) o).floatValue());
-		else if (o instanceof Number)
+		} else if (o instanceof Number) {
 			longValue = ((Number) o).longValue();
-		else if (o instanceof Boolean)
+		} else if (o instanceof Boolean) {
 			longValue = ((Boolean) o).booleanValue() ? 1 : 0;
-		else if (o instanceof Character)
+		} else if (o instanceof Character) {
 			longValue = ((Character) o).charValue();
-		else if (o == null)
+		} else if (o == null) {
 			longValue = 0;
-		else
+		} else {
 			throw new RuntimeException(
 					"Unknown type of number for test vector: " + o + " "
 							+ o.getClass());
+		}
 
 		if (test && !isEnoughBits(o, testWidth)) {
 			throw new RuntimeException(
@@ -304,12 +301,13 @@ public class Memories {
 	 */
 	static boolean isEnoughBits(Object o, int width) {
 		long longValue = 0;
-		if (o instanceof Number)
+		if (o instanceof Number) {
 			longValue = ((Number) o).longValue();
-		else if (o instanceof Boolean)
+		} else if (o instanceof Boolean) {
 			longValue = ((Boolean) o).booleanValue() ? 1 : 0;
-		else if (o instanceof Character)
+		} else if (o instanceof Character) {
 			longValue = ((Character) o).charValue();
+		}
 
 		int neededWidth = 1;
 
@@ -339,21 +337,23 @@ public class Memories {
 		// calculate the max width
 		int maxWidth = 64;
 
-		if (o instanceof Boolean)
+		if (o instanceof Boolean) {
 			maxWidth = 1;
-		else if (o instanceof Byte)
+		} else if (o instanceof Byte) {
 			maxWidth = 8;
-		else if (o instanceof Character)
+		} else if (o instanceof Character) {
 			maxWidth = 16;
-		else if (o instanceof Short)
+		} else if (o instanceof Short) {
 			maxWidth = 16;
-		else if (o instanceof Integer || o instanceof Float)
+		} else if (o instanceof Integer || o instanceof Float) {
 			maxWidth = 32;
-		else if (o instanceof Long || o instanceof Double)
+		} else if (o instanceof Long || o instanceof Double) {
 			maxWidth = 64;
+		}
 
-		if (neededWidth > maxWidth)
+		if (neededWidth > maxWidth) {
 			neededWidth = maxWidth;
+		}
 
 		// // XXX: Temporary fix for C tests to allow boolean values that
 		// // are contained in an integer to not flag the constant prop

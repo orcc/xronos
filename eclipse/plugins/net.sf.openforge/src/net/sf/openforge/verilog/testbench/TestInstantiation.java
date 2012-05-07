@@ -21,7 +21,6 @@
 
 package net.sf.openforge.verilog.testbench;
 
-import java.util.Iterator;
 import java.util.Set;
 
 import net.sf.openforge.lim.Bus;
@@ -51,10 +50,10 @@ import net.sf.openforge.verilog.model.Wire;
  */
 public class TestInstantiation {
 
-	private Design design;
-	private Set taskHandles;
+	private final Design design;
+	private final Set<TaskHandle> taskHandles;
 
-	public TestInstantiation(Design design, Set taskHandles) {
+	public TestInstantiation(Design design, Set<TaskHandle> taskHandles) {
 		this.design = design;
 		this.taskHandles = taskHandles;
 	}
@@ -63,13 +62,13 @@ public class TestInstantiation {
 	 * Creates the instantiation and connects up all the ports/buses.
 	 */
 	public void stateLogic(Module module, StateMachine mach) {
-		ModuleInstance instance = new ModuleInstance(
-				getVerilogName(this.design), "test");
+		ModuleInstance instance = new ModuleInstance(getVerilogName(design),
+				"test");
 
 		/*
 		 * Connect clock and reset if needed.
 		 */
-		for (Design.ClockDomain domain : this.design.getAllocatedClockDomains()) {
+		for (Design.ClockDomain domain : design.getAllocatedClockDomains()) {
 			instance.add(new PortConnection(new Input(getVerilogName(domain
 					.getClockPin()), 1), mach.getClock()));
 			if (domain.getResetPin() != null) {
@@ -78,13 +77,10 @@ public class TestInstantiation {
 			}
 		}
 
-		for (Iterator iter = this.taskHandles.iterator(); iter.hasNext();) {
-			TaskHandle th = (TaskHandle) iter.next();
+		for (TaskHandle th : taskHandles) {
 			Task task = th.getTask();
-			for (Iterator portIter = task.getCall().getPorts().iterator(); portIter
-					.hasNext();) {
-				Port port = (Port) portIter.next();
-				InputPin pin = (InputPin) this.design.getPin(port);
+			for (Port port : task.getCall().getPorts()) {
+				InputPin pin = (InputPin) design.getPin(port);
 				Wire portWire = th.getWireForConnection(port);
 				if (portWire == null) {
 					continue;
@@ -97,28 +93,26 @@ public class TestInstantiation {
 				instance.add(pc);
 			}
 
-			for (Iterator busIter = task.getCall().getExit(Exit.DONE)
-					.getBuses().iterator(); busIter.hasNext();) {
-				Bus bus = (Bus) busIter.next();
+			for (Bus bus : task.getCall().getExit(Exit.DONE).getBuses()) {
 				Wire busWire = th.getWireForConnection(bus);
 				if (busWire == null) {
 					continue;
 				}
 
-				Pin pin = this.design.getPin(bus);
+				Pin pin = design.getPin(bus);
 				PortConnection pc = new PortConnection(new Output(
 						getVerilogName(pin), pin.getWidth()), busWire);
 				instance.add(pc);
 			}
 
-			Pin goPin = this.design.getPin(task.getCall().getGoPort());
+			Pin goPin = design.getPin(task.getCall().getGoPort());
 			if (goPin != null) {
 				instance.add(new PortConnection(new Input(
 						getVerilogName(((InputPin) goPin).getBus()), 1), th
 						.getGoWire()));
 			}
 
-			Pin donePin = this.design.getPin(task.getCall().getExit(Exit.DONE)
+			Pin donePin = design.getPin(task.getCall().getExit(Exit.DONE)
 					.getDoneBus());
 			if (donePin != null) {
 				instance.add(new PortConnection(new Output(

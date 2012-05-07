@@ -59,11 +59,11 @@ import net.sf.openforge.verilog.model.Keyword;
  */
 public class VerilogNaming extends FilteredVisitor {
 
-	private Stack scope_stack = new Stack();
+	private final Stack scope_stack = new Stack();
 
 	private Set<String> current_scope = null;
 
-	private Set<ID> recorded = new HashSet<ID>();
+	private final Set<ID> recorded = new HashSet<ID>();
 
 	@SuppressWarnings("unused")
 	private Design current_design = null;
@@ -74,7 +74,7 @@ public class VerilogNaming extends FilteredVisitor {
 	 * stores unique Procedure names, uses all UPERCASE to catch same spelling
 	 * but different capitlization which drives XST nuts and causes it to fail!
 	 **/
-	private Set<String> uniquified = new HashSet<String>();
+	private final Set<String> uniquified = new HashSet<String>();
 
 	public VerilogNaming() {
 		doLongNames = EngineThread.getGenericJob()
@@ -112,8 +112,9 @@ public class VerilogNaming extends FilteredVisitor {
 	 *            a possible prefix for more explicitly naming the ID
 	 */
 	private void recordName(ID id, String prefix) {
-		if (prefix != null && prefix.length() > 0)
+		if (prefix != null && prefix.length() > 0) {
 			prefix = ID.toVerilogIdentifier(prefix);
+		}
 
 		if (!recorded.contains(id)) {
 			String name = toVerilogName(id);
@@ -169,8 +170,7 @@ public class VerilogNaming extends FilteredVisitor {
 	private void recordName(HashMap<String, List<Pin>> name_map, Design design) {
 		Set<String> key_set = name_map.keySet();
 
-		for (Iterator keyIter = key_set.iterator(); keyIter.hasNext();) {
-			Object name = keyIter.next();
+		for (String name : key_set) {
 			List<Pin> pin_list = name_map.get(name);
 			// if((pin_list.size() > 1) || (design.getTasks().size() > 1))
 			if (pin_list.size() > 1) {
@@ -182,8 +182,9 @@ public class VerilogNaming extends FilteredVisitor {
 						String verilog_name = toVerilogName(pin);
 
 						if (verilog_name.equals("CLK")
-								|| verilog_name.equals("RESET"))
+								|| verilog_name.equals("RESET")) {
 							break;
+						}
 
 						IDSourceInfo info = pin.getIDSourceInfo();
 						String namePrefix = (info != null) ? info

@@ -22,7 +22,6 @@
 package net.sf.openforge.verilog.testbench;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import net.sf.openforge.verilog.model.Always;
@@ -34,6 +33,7 @@ import net.sf.openforge.verilog.model.Constant;
 import net.sf.openforge.verilog.model.DelayStatement;
 import net.sf.openforge.verilog.model.EventControl;
 import net.sf.openforge.verilog.model.EventExpression;
+import net.sf.openforge.verilog.model.Expression;
 import net.sf.openforge.verilog.model.FStatement;
 import net.sf.openforge.verilog.model.Group;
 import net.sf.openforge.verilog.model.InitialBlock;
@@ -67,75 +67,76 @@ import net.sf.openforge.verilog.pattern.OrMany;
 public class StateMachine {
 
 	// The global signals
-	private Register clock;
-	private Register reset;
+	private final Register clock;
+	private final Register reset;
 
-	private List taskHandles;
+	private final List<TaskHandle> taskHandles;
 
-	private Register argIndex;
-	private Register resIndex;
-	private Wire expectedValid;
+	private final Register argIndex;
+	private final Register resIndex;
+	private final Wire expectedValid;
 
 	// For driving the lgsr signal.
-	private Register lgsr;
+	private final Register lgsr;
 	// For starting the simulation
-	private Register start;
+	private final Register start;
 	// Indicates that the simulation is complete
-	private Register done;
+	private final Register done;
 	// Indicates that one or more tasks has failed.
-	private Wire fail;
+	private final Wire fail;
 
 	// The number of GOs that have been applied to the current task,
 	// but have not yet received a done for.
-	private Register pendingCount;
+	private final Register pendingCount;
 	// Pauses the assertion of the next GO (only used when we are
 	// asserting GOs based on go spacing and not necessarily waiting
 	// for dones)
-	private Wire pause;
+	private final Wire pause;
 	// The previous goMask
-	private Register prevGo;
+	private final Register prevGo;
 	// A wire which is all task GOs ored together
-	private Wire allGoWire;
+	private final Wire allGoWire;
 	// A wire which is all task DONEs ored together
-	private Wire allDoneWire;
+	private final Wire allDoneWire;
 
 	// A wire which is ARGIndex != maxArgCount. Used to mask task
 	// next go's at endof simulation
-	private Wire notMaxArg;
+	private final Wire notMaxArg;
 
-	private Wire advanceResults;
+	private final Wire advanceResults;
 
-	private int vectorCount;
+	private final int vectorCount;
 
-	public StateMachine(List taskHandles, int vectorCount, Memories mems) {
+	public StateMachine(List<TaskHandle> taskHandles, int vectorCount,
+			Memories mems) {
 		this.vectorCount = vectorCount;
 
-		this.clock = new Register("clk", 1);
-		this.reset = new Register("reset", 1);
+		clock = new Register("clk", 1);
+		reset = new Register("reset", 1);
 
-		this.lgsr = new Register("LGSR", 1);
-		this.start = new Register("start", 1);
-		this.done = new Register("done", 1);
-		this.fail = new Wire("fail", 1);
+		lgsr = new Register("LGSR", 1);
+		start = new Register("start", 1);
+		done = new Register("done", 1);
+		fail = new Wire("fail", 1);
 
-		this.pendingCount = new Register("pendingCount", 32);
-		this.pause = new Wire("pause", 1);
-		this.prevGo = new Register("previousGoState", mems.getNextGoMemory()
+		pendingCount = new Register("pendingCount", 32);
+		pause = new Wire("pause", 1);
+		prevGo = new Register("previousGoState", mems.getNextGoMemory()
 				.getWidth());
-		this.allGoWire = new Wire("allGos", 1);
-		this.allDoneWire = new Wire("allDones", 1);
-		this.notMaxArg = new Wire("notMaxArg", 1);
+		allGoWire = new Wire("allGos", 1);
+		allDoneWire = new Wire("allDones", 1);
+		notMaxArg = new Wire("notMaxArg", 1);
 
-		this.advanceResults = new Wire("advanceResults", 1);
+		advanceResults = new Wire("advanceResults", 1);
 
 		this.taskHandles = taskHandles;
 
 		int indexSize = (int) java.lang.Math.ceil(java.lang.Math.log(mems
 				.elementCount()) / java.lang.Math.log(2));
-		this.argIndex = new Register("ARG_index", indexSize);
-		this.resIndex = new Register("RES_index", indexSize);
+		argIndex = new Register("ARG_index", indexSize);
+		resIndex = new Register("RES_index", indexSize);
 
-		this.expectedValid = new Wire("expected_valid", 1);
+		expectedValid = new Wire("expected_valid", 1);
 	}
 
 	/**
@@ -218,17 +219,16 @@ public class StateMachine {
 				getClock()));
 		module.state(new Always(new DelayStatement(assign, 25)));
 
-		List dones = new ArrayList();
-		List taskFails = new ArrayList();
-		for (Iterator iter = this.taskHandles.iterator(); iter.hasNext();) {
-			TaskHandle th = (TaskHandle) iter.next();
+		List<Expression> dones = new ArrayList<Expression>();
+		List<Expression> taskFails = new ArrayList<Expression>();
+		for (TaskHandle th : taskHandles) {
 			dones.add(th.getDoneWire());
 			taskFails.add(th.getExpectedChecker().getFailWire());
 		}
-		dones.add(this.start);
+		dones.add(start);
 
 		// Define fail
-		module.state(new Assign.Continuous(this.fail, new OrMany(taskFails)));
+		module.state(new Assign.Continuous(fail, new OrMany(taskFails)));
 
 		// signal to advance the results index
 		module.state(new Assign.Continuous(advanceResults, new OrMany(dones)));
@@ -238,27 +238,27 @@ public class StateMachine {
 		// element. Has the side effect of advancing the arg index to
 		// vectorCount+1, but that's ok since we pad the memories.
 		Compare.NEQ neq = new Compare.NEQ(getArgIndex(), new Constant(
-				this.vectorCount, getArgIndex().getWidth()));
-		module.state(new Assign.Continuous(this.notMaxArg, neq));
+				vectorCount, getArgIndex().getWidth()));
+		module.state(new Assign.Continuous(notMaxArg, neq));
 
 		// Now for advancing the indices and generating flags
 		SequentialBlock block = new SequentialBlock();
 
 		// Generate the done flag
 		Compare.EQ eq = new Compare.EQ(getResIndex(), new Constant(
-				this.vectorCount - 1, getResIndex().getWidth()));
+				vectorCount - 1, getResIndex().getWidth()));
 		block.add(new Assign.NonBlocking(getDone(), new Logical.And(
 				advanceResults, eq)));
 
 		// Arg index increment.
-		ConditionalStatement cond1 = new ConditionalStatement(this.allGoWire,
+		ConditionalStatement cond1 = new ConditionalStatement(allGoWire,
 				new Assign.NonBlocking(argIndex,
 						new net.sf.openforge.verilog.model.Math.Add(argIndex,
 								new Constant(1, argIndex.getWidth()))));
 		block.add(cond1);
 
 		// Result index increment.
-		ConditionalStatement cond2 = new ConditionalStatement(this.allDoneWire,
+		ConditionalStatement cond2 = new ConditionalStatement(allDoneWire,
 				new Assign.NonBlocking(resIndex,
 						new net.sf.openforge.verilog.model.Math.Add(resIndex,
 								new Constant(1, resIndex.getWidth()))));
@@ -301,10 +301,9 @@ public class StateMachine {
 	 */
 	private void statePause(Module module, Memories mems) {
 		// Generate an allGo's and allDones signal for inc/dec of pendingCount
-		List allGos = new ArrayList();
-		List allDones = new ArrayList();
-		for (Iterator iter = this.taskHandles.iterator(); iter.hasNext();) {
-			TaskHandle th = (TaskHandle) iter.next();
+		List<Expression> allGos = new ArrayList<Expression>();
+		List<Expression> allDones = new ArrayList<Expression>();
+		for (TaskHandle th : taskHandles) {
 			allGos.add(th.getGoWire());
 			allDones.add(th.getDoneWire());
 		}
@@ -313,24 +312,23 @@ public class StateMachine {
 
 		final Wire nextGoWire = new Wire("nextGoWire", mems.getNextGoMemory()
 				.getWidth());
-		module.state(new Assign.Continuous(this.allGoWire, new OrMany(allGos)));
-		module.state(new Assign.Continuous(this.allDoneWire, new OrMany(
-				allDones)));
+		module.state(new Assign.Continuous(allGoWire, new OrMany(allGos)));
+		module.state(new Assign.Continuous(allDoneWire, new OrMany(allDones)));
 		module.state(new Assign.Continuous(nextGoWire, new MemoryElement(
 				nextGo, getArgIndex())));
 
 		// pause <= (nextGo != prevGo) || (pause & pending != 0);
-		final Compare.NEQ neq = new Compare.NEQ(nextGoWire, this.prevGo);
-		final Compare.NEQ pendNEQ = new Compare.NEQ(this.pendingCount,
-				new Constant(0, this.pendingCount.getWidth()));
+		final Compare.NEQ neq = new Compare.NEQ(nextGoWire, prevGo);
+		final Compare.NEQ pendNEQ = new Compare.NEQ(pendingCount, new Constant(
+				0, pendingCount.getWidth()));
 		final Logical.Or or = new Logical.Or(neq, getPause());
-		module.state(new Assign.Continuous(this.pause, new Logical.And(
+		module.state(new Assign.Continuous(pause, new Logical.And(
 				new Group(or), pendNEQ)));
 
 		SequentialBlock block = new SequentialBlock();
 
 		// Capture the 'previous' go.
-		block.add(new Assign.NonBlocking(this.prevGo, nextGoWire));
+		block.add(new Assign.NonBlocking(prevGo, nextGoWire));
 
 		// Increment/decrement pendingCount
 		SequentialBlock incBlock = new SequentialBlock();
@@ -343,12 +341,11 @@ public class StateMachine {
 		Assign decrement = new Assign.NonBlocking(pendingCount,
 				new net.sf.openforge.verilog.model.Math.Subtract(pendingCount,
 						new Constant(1, pendingCount.getWidth())));
-		elseBlock.add(new ConditionalStatement(new Logical.And(
-				this.allDoneWire, new Unary.Not(this.allGoWire)), decrement));
+		elseBlock.add(new ConditionalStatement(new Logical.And(allDoneWire,
+				new Unary.Not(allGoWire)), decrement));
 
 		ConditionalStatement cs = new ConditionalStatement(new Logical.And(
-				this.allGoWire, new Unary.Not(this.allDoneWire)), incBlock,
-				elseBlock);
+				allGoWire, new Unary.Not(allDoneWire)), incBlock, elseBlock);
 
 		block.add(cs);
 
@@ -362,28 +359,28 @@ public class StateMachine {
 	 * Returns the simulation master clock
 	 */
 	public Register getClock() {
-		return this.clock;
+		return clock;
 	}
 
 	/**
 	 * Returns the simulation master reset signal
 	 */
 	public Register getReset() {
-		return this.reset;
+		return reset;
 	}
 
 	/**
 	 * Returns the Register that indicates the simulation is complete.
 	 */
 	public Register getDone() {
-		return this.done;
+		return done;
 	}
 
 	/**
 	 * Returns the Wire that indicates a simulation failure
 	 */
 	public Wire getFail() {
-		return this.fail;
+		return fail;
 	}
 
 	/**
@@ -391,49 +388,49 @@ public class StateMachine {
 	 * incrementing of the arg/results indices.
 	 */
 	public Wire getPause() {
-		return this.pause;
+		return pause;
 	}
 
 	/**
 	 * Returns the argument index
 	 */
 	public Register getArgIndex() {
-		return this.argIndex;
+		return argIndex;
 	}
 
 	/**
 	 * Returns the result index
 	 */
 	public Register getResIndex() {
-		return this.resIndex;
+		return resIndex;
 	}
 
 	/**
 	 * Returns the start signal
 	 */
 	public Register getStart() {
-		return this.start;
+		return start;
 	}
 
 	/**
 	 * Returns the Wire that indicates that the expected results wire is valid.
 	 */
 	public Wire getExpectedValidWire() {
-		return this.expectedValid;
+		return expectedValid;
 	}
 
 	/**
 	 * Returns the signal indicating that any go is being asserted.
 	 */
 	public Wire getAllGoWire() {
-		return this.allGoWire;
+		return allGoWire;
 	}
 
 	/**
 	 * Returns the signal indicating that any done is being asserted.
 	 */
 	public Wire getAllDoneWire() {
-		return this.allDoneWire;
+		return allDoneWire;
 	}
 
 	/**
@@ -441,7 +438,7 @@ public class StateMachine {
 	 * argument (vector count + 1).
 	 */
 	public Wire getNotMaxArg() {
-		return this.notMaxArg;
+		return notMaxArg;
 	}
 
 }// StateMachine
