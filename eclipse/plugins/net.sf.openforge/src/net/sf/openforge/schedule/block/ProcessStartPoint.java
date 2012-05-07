@@ -89,12 +89,12 @@ public class ProcessStartPoint extends ProcessPoint {
 		if (stbd == null)
 			throw new IllegalArgumentException(
 					"Cannot define stall point as null");
-		if (this.stallPoint != null)
+		if (stallPoint != null)
 			throw new IllegalStateException(
 					"Only one stall point can be defined per process");
 		if (_block.db)
 			_block.ln("Set " + stbd + " on " + this);
-		this.stallPoint = stbd;
+		stallPoint = stbd;
 	}
 
 	/**
@@ -105,7 +105,7 @@ public class ProcessStartPoint extends ProcessPoint {
 	 * @return a Stallboard, may be null
 	 */
 	public Stallboard getStallPoint() {
-		return this.stallPoint;
+		return stallPoint;
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class ProcessStartPoint extends ProcessPoint {
 	 *            a non-null Component
 	 */
 	public void addStallSignal(Component comp) {
-		this.stallComponents.add(comp);
+		stallComponents.add(comp);
 	}
 
 	/**
@@ -126,7 +126,7 @@ public class ProcessStartPoint extends ProcessPoint {
 	 * @return a Set of {@link Component} objects
 	 */
 	public Set<Component> getStallSignals() {
-		return Collections.unmodifiableSet(this.stallComponents);
+		return Collections.unmodifiableSet(stallComponents);
 	}
 
 }// ProcessStartPoint

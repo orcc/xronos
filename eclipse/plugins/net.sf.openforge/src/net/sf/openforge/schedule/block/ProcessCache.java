@@ -24,7 +24,6 @@ package net.sf.openforge.schedule.block;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,15 +53,15 @@ public class ProcessCache {
 	 * A Map of component owner (Module) to ProcessTracker object for that
 	 * module.
 	 */
-	private final Map trackers = new HashMap();
+	private final Map<Module, ProcessTracker> trackers = new HashMap<Module, ProcessTracker>();
 
 	public ProcessCache(Visitable vis, GenericJob job) {
 		// If we are not doing a block IO based design, then generate
 		// no processes and (consequently) dont do any new scheduling
 		if (job.getUnscopedBooleanOptionValue(OptionRegistry.SCHEDULE_NO_BLOCK_SCHEDULING)) {
-			this.processes = Collections.EMPTY_SET;
+			processes = Collections.emptySet();
 		} else {
-			this.processes = Collections.unmodifiableSet(new HashSet(
+			processes = Collections.unmodifiableSet(new HashSet<MemProcess>(
 					ProcessIdentifier.generateProcesses(vis).values()));
 		}
 	}
@@ -73,7 +72,7 @@ public class ProcessCache {
 	 * @return a Set of MemProcess objects.
 	 */
 	public Set<MemProcess> getProcesses() {
-		return this.processes;
+		return processes;
 	}
 
 	/**
@@ -89,8 +88,7 @@ public class ProcessCache {
 			throw new IllegalArgumentException(
 					"Cannot determine if null is critical start point");
 
-		for (Iterator iter = processes.iterator(); iter.hasNext();) {
-			MemProcess memProc = (MemProcess) iter.next();
+		for (MemProcess memProc : processes) {
 			if (memProc.isStartPoint(comp)) {
 				return true;
 			}
@@ -109,8 +107,7 @@ public class ProcessCache {
 	 *            a value of type 'Stallboard'
 	 */
 	public void registerStartPoint(Component comp, Stallboard stbd) {
-		for (Iterator iter = processes.iterator(); iter.hasNext();) {
-			MemProcess memProc = (MemProcess) iter.next();
+		for (MemProcess memProc : processes) {
 			if (memProc.isStartPoint(comp)) {
 				memProc.setStallPoint(comp, stbd);
 			}
@@ -135,18 +132,18 @@ public class ProcessCache {
 			throw new IllegalArgumentException(
 					"Cannot request tracker for null module");
 		}
-		if (this.deleted.contains(module)) {
+		if (deleted.contains(module)) {
 			throw new IllegalArgumentException(
 					"Cannot request tracker after deleting module tracker");
 		}
 
 		// If it already has been requested, then return the cached version
-		if (this.trackers.containsKey(module)) {
-			return (ProcessTracker) this.trackers.get(module);
+		if (trackers.containsKey(module)) {
+			return trackers.get(module);
 		}
 
-		final ProcessTracker tracker = new ProcessTracker(this.processes);
-		this.trackers.put(module, tracker);
+		final ProcessTracker tracker = new ProcessTracker(processes);
+		trackers.put(module, tracker);
 		return tracker;
 	}
 
@@ -154,7 +151,7 @@ public class ProcessCache {
 	 * A Set of modules which have had a tracker allocated and which is now
 	 * deleted
 	 */
-	private final Set deleted = new HashSet();
+	private final Set<Module> deleted = new HashSet<Module>();
 
 	/**
 	 * Deletes the ProcessTracker which was created for the given module. It is
@@ -166,8 +163,8 @@ public class ProcessCache {
 	 *            a value of type 'Module'
 	 */
 	public void deleteTracker(Module module) {
-		assert this.trackers.containsKey(module);
-		this.trackers.remove(module);
+		assert trackers.containsKey(module);
+		trackers.remove(module);
 	}
 
 }// ProcessCache

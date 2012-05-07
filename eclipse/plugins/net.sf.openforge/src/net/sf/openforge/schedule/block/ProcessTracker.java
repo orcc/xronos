@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,22 +57,21 @@ import net.sf.openforge.lim.Port;
  * @version $Id: ProcessTracker.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class ProcessTracker extends DataFlowVisitor {
-	private static final String _RCS_ = "$Rev: 88 $";
 
 	/**
 	 * A Map of Component to Set of MemProcess objects to which that component
 	 * is subject. Protected for testing.
 	 */
-	protected Map portToProcs = new HashMap();
+	protected Map<Port, Set<MemProcess>> portToProcs = new HashMap<Port, Set<MemProcess>>();
 
 	/** The Set of MemProcess objects which are tracked. */
-	private final Set processes;
+	private final Set<MemProcess> processes;
 
 	/**
 	 * A Map of Module to Set of ModuleStallSource objects which identify
 	 * stallers of the GO for the Module
 	 */
-	private final Map stalledModules = new HashMap();
+	private final Map<Module, Set<ModuleStallSource>> stalledModules = new HashMap<Module, Set<ModuleStallSource>>();
 
 	/**
 	 * Create a new ProcessTracker for the given set of MemProcess objects.
@@ -81,8 +79,8 @@ public class ProcessTracker extends DataFlowVisitor {
 	 * @param processes
 	 *            a Collection of MemProcess objects.
 	 */
-	public ProcessTracker(Collection processes) {
-		this.processes = new HashSet(processes);
+	public ProcessTracker(Collection<MemProcess> processes) {
+		this.processes = new HashSet<MemProcess>(processes);
 	}
 
 	/**
@@ -117,8 +115,8 @@ public class ProcessTracker extends DataFlowVisitor {
 		// (via the ComponentProcessDeriver) the processes for this
 		// component, we can eliminate from the map the annotations
 		// for this components ports.
-		for (Iterator iter = comp.getPorts().iterator(); iter.hasNext();) {
-			this.portToProcs.remove(iter.next());
+		for (Port port : comp.getPorts()) {
+			portToProcs.remove(port);
 		}
 
 		if (_block.db)
@@ -126,9 +124,7 @@ public class ProcessTracker extends DataFlowVisitor {
 
 		// If the component is an endpoint of the process, then use it
 		// as the stall (release) signal to the process.
-		for (Iterator iter = compProcs.getClosedProcesses().iterator(); iter
-				.hasNext();) {
-			final MemProcess closedProc = (MemProcess) iter.next();
+		for (MemProcess closedProc : compProcs.getClosedProcesses()) {
 			if (_block.db)
 				_block.ln("Stalling(close) " + closedProc + " by " + comp);
 			closedProc.addStallSignal(comp);
@@ -145,9 +141,7 @@ public class ProcessTracker extends DataFlowVisitor {
 
 		// Stall anything that produces data consumed in this process
 		boolean dataStalled = false;
-		for (Iterator iter = compProcs.getDataProcsToStall().iterator(); iter
-				.hasNext();) {
-			final MemProcess dataProc = (MemProcess) iter.next();
+		for (MemProcess dataProc : compProcs.getDataProcsToStall()) {
 			dataStalled = true;
 			if (_block.db)
 				_block.ln("Stalling(data): " + dataProc + " by " + comp);
@@ -161,7 +155,7 @@ public class ProcessTracker extends DataFlowVisitor {
 		// So, if there was a data process, assume it (they) were
 		// stalled. Otherwise default back to simply stalling the
 		// containing module.
-		final Set uncontrolledOpenedProcs = compProcs
+		final Set<MemProcess> uncontrolledOpenedProcs = compProcs
 				.getUncontrolledOpenProcs();
 		if (!uncontrolledOpenedProcs.isEmpty() && !dataStalled) {
 			if (_block.db)
@@ -180,7 +174,7 @@ public class ProcessTracker extends DataFlowVisitor {
 		// 'getting ahead' of the current correct state. In order to
 		// stall these uncontrolled data generators we need to stall
 		// the containing module by this component.
-		final Set uncontrolledData = compProcs.getUncontrolledDataPorts();
+		final Set<Port> uncontrolledData = compProcs.getUncontrolledDataPorts();
 		if (!compProcs.getInProcesses().isEmpty()
 				&& !uncontrolledData.isEmpty()) {
 			if (_block.db)
@@ -202,18 +196,15 @@ public class ProcessTracker extends DataFlowVisitor {
 	 * @param procs
 	 *            a Collection of MemProcess objects.
 	 */
-	protected void markPorts(Component comp, Collection procs) {
+	protected void markPorts(Component comp, Collection<MemProcess> procs) {
 		// Push the collection of processes onto the dependent ports
-		for (Iterator iter = comp.getExits().iterator(); iter.hasNext();) {
-			for (Iterator busIter = ((Exit) iter.next()).getBuses().iterator(); busIter
-					.hasNext();) {
-				for (Iterator depIter = ((Bus) busIter.next())
-						.getLogicalDependents().iterator(); depIter.hasNext();) {
-					Dependency dep = (Dependency) depIter.next();
-					Set procSet = (Set) this.portToProcs.get(dep.getPort());
+		for (Exit exit : comp.getExits()) {
+			for (Bus bus : exit.getBuses()) {
+				for (Dependency dep : bus.getLogicalDependents()) {
+					Set<MemProcess> procSet = portToProcs.get(dep.getPort());
 					if (procSet == null) {
-						procSet = new HashSet();
-						this.portToProcs.put(dep.getPort(), procSet);
+						procSet = new HashSet<MemProcess>();
+						portToProcs.put(dep.getPort(), procSet);
 					}
 					procSet.addAll(procs);
 				}
@@ -231,25 +222,24 @@ public class ProcessTracker extends DataFlowVisitor {
 	 * access to it to capture its bus. This can happen when there are multiple
 	 * parallel register reads prior to a register write.
 	 */
-	private void stallModuleByProcs(Collection stalls, Module context) {
-		Set stallProcs = new HashSet();
+	private void stallModuleByProcs(Collection<MemProcess> stalls,
+			Module context) {
+		Set<ModuleStallSource> stallProcs = new HashSet<ModuleStallSource>();
 
-		for (Iterator iter = stalls.iterator(); iter.hasNext();) {
-			final MemProcess memProc = (MemProcess) iter.next();
+		for (MemProcess memProc : stalls) {
 			class MemProcModuleStall implements ModuleStallSource {
 				private final MemProcess process;
 
 				MemProcModuleStall(MemProcess proc) {
-					this.process = proc;
+					process = proc;
 				}
 
 				@Override
-				public Set getStallingComponents() {
-					Set comps = new HashSet();
-					for (Iterator iter = this.process.getStartPoints()
-							.iterator(); iter.hasNext();) {
-						comps.add(((ProcessStartPoint) iter.next())
-								.getStallPoint());
+				public Set<Component> getStallingComponents() {
+					Set<Component> comps = new HashSet<Component>();
+					for (ProcessStartPoint processStartPoint : process
+							.getStartPoints()) {
+						comps.add(processStartPoint.getStallPoint());
 					}
 					return comps;
 				}
@@ -279,17 +269,18 @@ public class ProcessTracker extends DataFlowVisitor {
 			private final Component component;
 
 			ComponentModuleStall(Component comp) {
-				this.component = comp;
+				component = comp;
 			}
 
 			@Override
-			public Set getStallingComponents() {
-				return Collections.singleton(this.component);
+			public Set<Component> getStallingComponents() {
+				return Collections.singleton(component);
 			}
 		}
 
-		stallModule(Collections.singleton(new ComponentModuleStall(stallComp)),
-				context);
+		stallModule(
+				Collections.<ModuleStallSource> singleton(new ComponentModuleStall(
+						stallComp)), context);
 	}
 
 	/**
@@ -303,15 +294,16 @@ public class ProcessTracker extends DataFlowVisitor {
 	 * @param context
 	 *            a non-null Module
 	 */
-	private void stallModule(Collection modStallSources, Module context) {
+	private void stallModule(Collection<ModuleStallSource> modStallSources,
+			Module context) {
 		if (context == null) {
 			throw new IllegalArgumentException("Cannot annotated null context");
 		}
 
-		Set stallProcs = (Set) this.stalledModules.get(context);
+		Set<ModuleStallSource> stallProcs = stalledModules.get(context);
 		if (stallProcs == null) {
-			stallProcs = new HashSet();
-			this.stalledModules.put(context, stallProcs);
+			stallProcs = new HashSet<ModuleStallSource>();
+			stalledModules.put(context, stallProcs);
 		}
 		stallProcs.addAll(modStallSources);
 	}
@@ -334,18 +326,17 @@ public class ProcessTracker extends DataFlowVisitor {
 	 * @return a Set of {@link ModuleStallSource} objects
 	 */
 	public Set<ModuleStallSource> getModuleStallProcs(Module module) {
-		if (!this.stalledModules.containsKey(module)) {
-			return Collections.EMPTY_SET;
+		if (!stalledModules.containsKey(module)) {
+			return Collections.emptySet();
 		}
-		return Collections.unmodifiableSet((Set) this.stalledModules
-				.get(module));
+		return Collections.unmodifiableSet(stalledModules.get(module));
 	}
 
 	/**
 	 * Returns the Set of MemProcess objects tracked here.
 	 */
-	Set getProcesses() {
-		return Collections.unmodifiableSet(this.processes);
+	Set<MemProcess> getProcesses() {
+		return Collections.unmodifiableSet(processes);
 	}
 
 	/**
@@ -370,24 +361,21 @@ public class ProcessTracker extends DataFlowVisitor {
 	 *            end point of another process as 'generated' by that process.
 	 * @return a Set of MemProcess objects.
 	 */
-	Set getProcs(Collection ports, boolean isDataSearch) {
-		final HashSet portProcs = new HashSet();
-		for (Iterator portIter = ports.iterator(); portIter.hasNext();) {
-			final HashSet procsForPort = new HashSet();
-			final Port port = (Port) portIter.next();
+	Set<MemProcess> getProcs(Collection<Port> ports, boolean isDataSearch) {
+		final Set<MemProcess> portProcs = new HashSet<MemProcess>();
+		for (Port port : ports) {
+			final Set<MemProcess> procsForPort = new HashSet<MemProcess>();
 			// Skip ports which have no dependencies, otherwise they
 			// will trigger the assert.
 			if (validPort(port)) {
-				assert this.portToProcs.containsKey(port) : "Missing port "
-						+ port + " " + port.getOwner().show();
-				procsForPort.addAll((Set) this.portToProcs.get(port));
+				assert portToProcs.containsKey(port) : "Missing port " + port
+						+ " " + port.getOwner().show();
+				procsForPort.addAll(portToProcs.get(port));
 			}
 
 			final Component comp = port.getOwner();
-			for (Iterator iter = comp.getEntries().iterator(); iter.hasNext();) {
-				for (Iterator depIter = ((Entry) iter.next()).getDependencies(
-						port).iterator(); depIter.hasNext();) {
-					final Dependency dep = (Dependency) depIter.next();
+			for (Entry entry : comp.getEntries()) {
+				for (Dependency dep : entry.getDependencies(port)) {
 					final Bus bus = dep.getLogicalBus();
 					final Component source = bus.getOwner().getOwner();
 					if (isDataSearch) {
@@ -395,9 +383,7 @@ public class ProcessTracker extends DataFlowVisitor {
 						// end point of a process, if so, then the
 						// tested component needs to mark that as a
 						// consumed process
-						for (Iterator procIter = getProcesses().iterator(); procIter
-								.hasNext();) {
-							MemProcess testProc = (MemProcess) procIter.next();
+						for (MemProcess testProc : getProcesses()) {
 							if (testProc.isEndPoint(source)) {
 								procsForPort.add(testProc);
 							}
@@ -423,9 +409,8 @@ public class ProcessTracker extends DataFlowVisitor {
 	 *             if port is null
 	 */
 	private boolean validPort(Port port) {
-		for (Iterator iter = port.getOwner().getEntries().iterator(); iter
-				.hasNext();) {
-			if (((Entry) iter.next()).getDependencies(port).size() > 0) {
+		for (Entry entry : port.getOwner().getEntries()) {
+			if (entry.getDependencies(port).size() > 0) {
 				return true;
 			}
 		}

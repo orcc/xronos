@@ -21,79 +21,73 @@
 
 package net.sf.openforge.schedule.loop;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-import net.sf.openforge.schedule.*;
+import net.sf.openforge.lim.Component;
 
 /**
- * LoopFlopConflict is a lightweight class that associates the
- * relevant elements that define a resource conflict which would keep
- * a loop flop from being removed.  
- *
+ * LoopFlopConflict is a lightweight class that associates the relevant elements
+ * that define a resource conflict which would keep a loop flop from being
+ * removed.
+ * 
  * @author imiller
  * @version $Id: LoopFlopConflict.java 88 2006-01-11 22:39:52Z imiller $
  */
-public class LoopFlopConflict
-{
-    private static final String _RCS_ = "$Rev: 88 $";
+public class LoopFlopConflict {
 
-    private Component conflictHead;
-    private List conflictHeadPath;
-    private Component conflictTail;
-    private List conflictTailPath;
+	private Component conflictHead;
+	private List<Component> conflictHeadPath;
+	private Component conflictTail;
+	private List<Component> conflictTailPath;
 
-    public LoopFlopConflict (Component head, List headPath, Component tail, List tailPath)
-    {
-        this.conflictHead = head;
-        this.conflictHeadPath = Collections.unmodifiableList(new ArrayList(headPath));
-        this.conflictTail = tail;
-        this.conflictTailPath = Collections.unmodifiableList(new ArrayList(tailPath));
-    }
+	public LoopFlopConflict(Component head, List<Component> headPath,
+			Component tail, List<Component> tailPath) {
+		conflictHead = head;
+		conflictHeadPath = Collections
+				.unmodifiableList(new ArrayList<Component>(headPath));
+		conflictTail = tail;
+		conflictTailPath = Collections
+				.unmodifiableList(new ArrayList<Component>(tailPath));
+	}
 
-    /**
-     * Returns the access which occurs in the first cycle of the
-     * containing loop body and is conflicted with the tail access of
-     * this conflict object.
-     */
-    public Component getHeadAccess ()
-    {
-        return this.conflictHead;
-    }
+	/**
+	 * Returns the access which occurs in the first cycle of the containing loop
+	 * body and is conflicted with the tail access of this conflict object.
+	 */
+	public Component getHeadAccess() {
+		return conflictHead;
+	}
 
-    /**
-     * Returns the 'relevant' components in the hierarchical path from
-     * the loop body to the head access, including blocks, branches,
-     * loops, loop bodies, and taskCalls.  {@see LoopFlopAnalysis}
-     * which builds the 'pathToComponent' variable through the
-     * moduleDive method.  This method returns a copy of that stack.
-     */
-    public List getHeadPath ()
-    {
-        return this.conflictHeadPath;
-    }
-    
-    /**
-     * Returns the access which occurs in the last cycle of the
-     * containing loop body and is conflicted with the head access of 
-     * this conflict object.
-     */
-    public Component getTailAccess ()
-    {
-        return this.conflictTail;
-    }
-    
-    /**
-     * Returns the 'relevant' components in the hierarchical path from
-     * the loop body to the tail access, including blocks, branches,
-     * loops, loop bodies, and taskCalls.  {@see LoopFlopAnalysis}
-     * which builds the 'pathToComponent' variable through the
-     * moduleDive method.  This method returns a copy of that stack.
-     */
-    public List getTailPath ()
-    {
-        return this.conflictTailPath;
-    }
-    
+	/**
+	 * Returns the 'relevant' components in the hierarchical path from the loop
+	 * body to the head access, including blocks, branches, loops, loop bodies,
+	 * and taskCalls. {@see LoopFlopAnalysis} which builds the 'pathToComponent'
+	 * variable through the moduleDive method. This method returns a copy of
+	 * that stack.
+	 */
+	public List<Component> getHeadPath() {
+		return conflictHeadPath;
+	}
+
+	/**
+	 * Returns the access which occurs in the last cycle of the containing loop
+	 * body and is conflicted with the head access of this conflict object.
+	 */
+	public Component getTailAccess() {
+		return conflictTail;
+	}
+
+	/**
+	 * Returns the 'relevant' components in the hierarchical path from the loop
+	 * body to the tail access, including blocks, branches, loops, loop bodies,
+	 * and taskCalls. {@see LoopFlopAnalysis} which builds the 'pathToComponent'
+	 * variable through the moduleDive method. This method returns a copy of
+	 * that stack.
+	 */
+	public List<Component> getTailPath() {
+		return conflictTailPath;
+	}
+
 }

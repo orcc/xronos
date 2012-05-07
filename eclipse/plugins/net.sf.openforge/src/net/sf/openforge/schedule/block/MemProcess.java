@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -89,23 +88,21 @@ public class MemProcess {
 	 *            a Collection of Components representing all potential 'last
 	 *            accesses' to the common resource.
 	 */
-	public MemProcess(Collection start, Collection end) {
+	public MemProcess(Collection<Component> start, Collection<Component> end) {
 		// Find the containing context
-		final Set hierarchy = new LinkedHashSet();
+		final Set<Stack<Component>> hierarchy = new LinkedHashSet<Stack<Component>>();
 		hierarchy.addAll(buildHierarchy(start));
 		hierarchy.addAll(buildHierarchy(end));
 
 		// Keep popping off the context (top down) so long as all the
 		// critical points have the same context.
 		boolean matched = true;
-		this.processContext = null;
+		processContext = null;
 		while (matched) {
 			matched = true;
 			// Stack firstStack = (Stack)hierarchy.iterator().next();
-			final Component testContext = (Component) ((Stack) hierarchy
-					.iterator().next()).peek();
-			for (Iterator iter = hierarchy.iterator(); iter.hasNext();) {
-				Stack stack = (Stack) iter.next();
+			final Component testContext = hierarchy.iterator().next().peek();
+			for (Stack<Component> stack : hierarchy) {
 				if (stack.peek() != testContext) {
 					matched = false;
 				}
@@ -118,22 +115,22 @@ public class MemProcess {
 				// containing block of the branch (example)
 				// *** FIXME: I hate instanceof....
 				if (testContext instanceof Block) {
-					this.processContext = testContext;
+					processContext = testContext;
 				}
-				for (Iterator iter = hierarchy.iterator(); iter.hasNext();) {
-					((Stack) iter.next()).pop();
+				for (Stack<Component> stack : hierarchy) {
+					stack.pop();
 				}
 			}
 		}
-		assert this.processContext != null : "No context for process";
-		this.startPoints = buildStartPoints(start, this.processContext);
-		this.endPoint = new ProcessPoint(end, this.processContext);
+		assert processContext != null : "No context for process";
+		startPoints = buildStartPoints(start, processContext);
+		endPoint = new ProcessPoint(end, processContext);
 		// One of the things we depend on in scheduling is that the
 		// start and end point exist in the same Block. This ensures
 		// that we do not have to 'tunnel' through hierarchy to get
 		// the stall signal back to the stall point. It also ensures
 		// that we will always recieve the stall signal.
-		assert this.endPoint.getCriticalContext().getOwner() == this.processContext;
+		assert endPoint.getCriticalContext().getOwner() == processContext;
 	}
 
 	/**
@@ -145,11 +142,11 @@ public class MemProcess {
 	 * @return a List of Stack objects, where those Stack objects contain
 	 *         Components.
 	 */
-	private static List buildHierarchy(Collection points) {
-		List hier = new ArrayList();
-		for (Iterator iter = points.iterator(); iter.hasNext();) {
-			Component comp = (Component) iter.next();
-			Stack owners = new Stack();
+	private static List<Stack<Component>> buildHierarchy(
+			Collection<Component> points) {
+		List<Stack<Component>> hier = new ArrayList<Stack<Component>>();
+		for (Component comp : points) {
+			Stack<Component> owners = new Stack<Component>();
 			do {
 				owners.push(comp);
 				comp = comp.getOwner();
@@ -175,19 +172,18 @@ public class MemProcess {
 	 *            a value of type 'Component'
 	 * @return a value of type 'Set'
 	 */
-	private static Set buildStartPoints(Collection start,
-			Component processContext) {
-		final Map contextToPoints = new HashMap();
-		for (Iterator iter = start.iterator(); iter.hasNext();) {
-			final Component comp = (Component) iter.next();
+	private static Set<ProcessStartPoint> buildStartPoints(
+			Collection<Component> start, Component processContext) {
+		final Map<Component, Set<Component>> contextToPoints = new HashMap<Component, Set<Component>>();
+		for (Component comp : start) {
 			// Supports case where component is directly in the
 			// process context
 			Component owner = comp;
 			do {
 				if (owner.getOwner() == processContext) {
-					Set points = (Set) contextToPoints.get(owner);
+					Set<Component> points = contextToPoints.get(owner);
 					if (points == null) {
-						points = new HashSet();
+						points = new HashSet<Component>();
 						contextToPoints.put(owner, points);
 					}
 					points.add(comp);
@@ -198,13 +194,12 @@ public class MemProcess {
 			} while (owner != null);
 		}
 
-		final Set startPoints = new LinkedHashSet(contextToPoints.keySet()
-				.size());
-		for (Iterator pointIter = contextToPoints.entrySet().iterator(); pointIter
-				.hasNext();) {
-			Map.Entry entry = (Map.Entry) pointIter.next();
+		final Set<ProcessStartPoint> startPoints = new LinkedHashSet<ProcessStartPoint>(
+				contextToPoints.keySet().size());
+		for (Map.Entry<Component, Set<Component>> entry : contextToPoints
+				.entrySet()) {
 			ProcessStartPoint startPoint = new ProcessStartPoint(
-					(Set) entry.getValue(), processContext);
+					entry.getValue(), processContext);
 			assert startPoint.getCriticalContext() == entry.getKey();
 			assert startPoint.getCriticalContext().getOwner() == processContext;
 			startPoints.add(startPoint);
@@ -219,7 +214,7 @@ public class MemProcess {
 	 * @return a Collection of ProcessStartPoint objects
 	 */
 	public Collection<ProcessStartPoint> getStartPoints() {
-		return Collections.unmodifiableSet(this.startPoints);
+		return Collections.unmodifiableSet(startPoints);
 	}
 
 	/**
@@ -239,8 +234,7 @@ public class MemProcess {
 					"Cannot test null component for start point");
 		}
 
-		for (Iterator iter = this.startPoints.iterator(); iter.hasNext();) {
-			ProcessPoint point = (ProcessPoint) iter.next();
+		for (ProcessPoint point : startPoints) {
 			if (point.getCriticalContext() == test) {
 				return true;
 			}
@@ -254,7 +248,7 @@ public class MemProcess {
 	 * @return a value of type 'ProcessPoint'
 	 */
 	public ProcessPoint getEndPoint() {
-		return this.endPoint;
+		return endPoint;
 	}
 
 	/**
@@ -285,7 +279,7 @@ public class MemProcess {
 	 * @return true if the given Component is the process context
 	 */
 	public boolean isProcessContext(Component test) {
-		return (test == this.processContext);
+		return (test == processContext);
 	}
 
 	/**
@@ -302,8 +296,7 @@ public class MemProcess {
 	 *            a non-null Stallboard
 	 */
 	public void setStallPoint(Component comp, Stallboard stbd) {
-		for (Iterator iter = this.startPoints.iterator(); iter.hasNext();) {
-			ProcessStartPoint point = (ProcessStartPoint) iter.next();
+		for (ProcessStartPoint point : startPoints) {
 			if (point.getCriticalContext() == comp) {
 				point.setStallPoint(stbd);
 				return;
@@ -314,15 +307,14 @@ public class MemProcess {
 	}
 
 	public void addStallSignal(Component comp) {
-		for (Iterator iter = getStartPoints().iterator(); iter.hasNext();) {
-			ProcessStartPoint startPoint = (ProcessStartPoint) iter.next();
+		for (ProcessStartPoint startPoint : getStartPoints()) {
 			startPoint.addStallSignal(comp);
 		}
 	}
 
-	public void addStallSignals(Collection comps) {
-		for (Iterator iter = comps.iterator(); iter.hasNext();) {
-			addStallSignal((Component) iter.next());
+	public void addStallSignals(Collection<Component> comps) {
+		for (Component component : comps) {
+			addStallSignal(component);
 		}
 	}
 
@@ -335,12 +327,12 @@ public class MemProcess {
 
 	public String debug() {
 		String ret = "\n" + toString();
-		for (Iterator iter = getStartPoints().iterator(); iter.hasNext();) {
+		for (ProcessStartPoint processStartPoint : getStartPoints()) {
 			ret += "\n";
-			ret += "\tstart point: " + iter.next().toString();
+			ret += "\tstart point: " + processStartPoint.toString();
 		}
 		ret += "\n";
-		ret += "\tend point " + this.endPoint.toString();
+		ret += "\tend point " + endPoint.toString();
 		ret += "\n";
 		return ret;
 	}
