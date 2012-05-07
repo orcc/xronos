@@ -281,10 +281,12 @@ public abstract class Ram implements Cloneable {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return (getName());
 	}
 
+	@Override
 	public Object clone() {
 		try {
 			return super.clone();

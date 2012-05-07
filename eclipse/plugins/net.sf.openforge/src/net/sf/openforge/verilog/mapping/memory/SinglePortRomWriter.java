@@ -54,10 +54,11 @@ public class SinglePortRomWriter extends SinglePortRamWriter {
 
 	public SinglePortRomWriter(MemoryBank memory) {
 		super(memory);
-		this.wenPort = null;
-		this.dinPort = null;
+		wenPort = null;
+		dinPort = null;
 	}
 
+	@Override
 	public Module defineModule() {
 		// OK, we are going to map to a memory configuration and hard
 		// instantiate the primitives necessary along with
@@ -68,7 +69,7 @@ public class SinglePortRomWriter extends SinglePortRamWriter {
 
 		// We assume speed mapping, but if the synth_opt flow is
 		// verilog_area.opt then put area as the highest priority
-		//boolean opt_for_speed = true;
+		// boolean opt_for_speed = true;
 
 		Ram match = getLowestCost(Ram.getMappers(xd, isLUT()));
 
@@ -175,7 +176,7 @@ public class SinglePortRomWriter extends SinglePortRamWriter {
 		memoryModule.addPort(donePort);
 
 		// Declare internal wires
-		//Net[] we = new Wire[result_depth];
+		// Net[] we = new Wire[result_depth];
 		Net[] pre_dout = new Wire[result_depth];
 
 		for (int d = 0; d < result_depth; d++) {
@@ -226,7 +227,7 @@ public class SinglePortRomWriter extends SinglePortRamWriter {
 				.getImplementation().isLUT());
 
 		mergeResults(extra_address_bits, result_depth, getAddrWidth(),
-				getDataWidth(), pre_dout, mux_out, memoryModule, this.adrPort,
+				getDataWidth(), pre_dout, mux_out, memoryModule, adrPort,
 				clkPort, getReadLatency(), registerLutRead, "");
 
 		// Expression doneExpr = new Bitwise.Or(renPort, wenPort);

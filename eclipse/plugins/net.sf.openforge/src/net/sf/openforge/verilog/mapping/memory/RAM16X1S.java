@@ -26,18 +26,22 @@ class RAM16X1S extends LutRam {
 	protected RAM16X1S() {
 	}
 
+	@Override
 	public String getName() {
 		return ("RAM16X1S");
 	}
 
+	@Override
 	public int getWidth() {
 		return (1);
 	}
 
+	@Override
 	public int getDepth() {
 		return (16);
 	}
 
+	@Override
 	public int getCost() {
 		return (1);
 	}

@@ -26,22 +26,27 @@ class RAMB16_S36_S36 extends DualPortBlockRam {
 	protected RAMB16_S36_S36() {
 	}
 
+	@Override
 	public String getName() {
 		return ("RAMB16_S36_S36");
 	}
 
+	@Override
 	public int getWidth() {
 		return (36);
 	}
 
+	@Override
 	public int getDepth() {
 		return (512);
 	}
 
+	@Override
 	public int getCost() {
 		return (1);
 	}
 
+	@Override
 	public boolean isBlockRam16() {
 		return (true);
 	}

@@ -71,29 +71,29 @@ public abstract class VerilogMemory {
 	 */
 	public VerilogMemory(MemoryBank memBank) {
 		this.memBank = memBank;
-		this.depth = memBank.getDepth();
-		this.width = memBank.getWidth();
-		this.addrWidth = memBank.getAddrWidth();
+		depth = memBank.getDepth();
+		width = memBank.getWidth();
+		addrWidth = memBank.getAddrWidth();
 	}
 
 	public int getDepth() {
-		return this.depth;
+		return depth;
 	}
 
 	public int getAddrWidth() {
-		return this.addrWidth;
+		return addrWidth;
 	}
 
 	public int getDataWidth() {
-		return this.width;
+		return width;
 	}
 
 	protected MemoryBank getMemBank() {
-		return this.memBank;
+		return memBank;
 	}
 
 	protected boolean isLUT() {
-		return this.memBank.getImplementation().isLUT();
+		return memBank.getImplementation().isLUT();
 	}
 
 	public abstract Module defineModule();
@@ -148,8 +148,8 @@ public abstract class VerilogMemory {
 				elements_width++;
 			}
 
-			int elements_depth = this.depth / targetRam.getDepth();
-			if ((this.depth % targetRam.getDepth()) != 0) {
+			int elements_depth = depth / targetRam.getDepth();
+			if ((depth % targetRam.getDepth()) != 0) {
 				elements_depth++;
 			}
 
@@ -160,7 +160,7 @@ public abstract class VerilogMemory {
 			int elements_cost = elements_count * targetRam.getCost();
 
 			int array_waste = (array_width * array_depth)
-					- (getDataWidth() * this.depth);
+					- (getDataWidth() * depth);
 
 			boolean new_match = false;
 
@@ -260,7 +260,7 @@ public abstract class VerilogMemory {
 	protected List<BigInteger> getInitValuesByLine() {
 		assert getDepth() == getMemBank().getInitValues().length;
 		AddressableUnit[][] initValues = getMemBank().getInitValues();
-		//final int stride = getMemBank().getAddressStridePolicy().getStride();
+		// final int stride = getMemBank().getAddressStridePolicy().getStride();
 
 		final List<BigInteger> ret = new ArrayList<BigInteger>();
 		assert initValues.length == getDepth();
@@ -290,7 +290,7 @@ public abstract class VerilogMemory {
 			for (int i = 0; i < initVals.size(); i++) {
 				memoryModule.state(new InlineComment(i + ": "
 						+ initVals.get(i).toString() + "("
-						+ ((BigInteger) initVals.get(i)).toString(16) + ")",
+						+ initVals.get(i).toString(16) + ")",
 				// Long.toHexString(((Long)initVals.get(i)).longValue()) + ")",
 						Comment.SHORT));
 			}

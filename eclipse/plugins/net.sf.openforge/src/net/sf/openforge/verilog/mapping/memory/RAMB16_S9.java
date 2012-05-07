@@ -26,22 +26,27 @@ class RAMB16_S9 extends BlockRam {
 	protected RAMB16_S9() {
 	}
 
+	@Override
 	public String getName() {
 		return ("RAMB16_S9");
 	}
 
+	@Override
 	public int getWidth() {
 		return (9);
 	}
 
+	@Override
 	public int getDepth() {
 		return (2048);
 	}
 
+	@Override
 	public int getCost() {
 		return (1);
 	}
 
+	@Override
 	public boolean isBlockRam16() {
 		return (true);
 	}

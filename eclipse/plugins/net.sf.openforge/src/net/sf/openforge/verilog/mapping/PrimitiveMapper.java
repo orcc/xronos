@@ -143,7 +143,7 @@ public class PrimitiveMapper {
 	public final PrimitiveMappedModule getMappedModule(String primitiveName) {
 		PrimitiveMappedModule pmm;
 		if (mappingStore.containsKey(primitiveName)) {
-			return (PrimitiveMappedModule) mappingStore.get(primitiveName);
+			return mappingStore.get(primitiveName);
 		}
 		XilinxDevice xd = EngineThread.getGenericJob().getPart(
 				CodeLabel.UNSCOPED);
@@ -179,7 +179,7 @@ public class PrimitiveMapper {
 		if (exists(id)) {
 			EngineThread.getGenericJob().verbose(
 					"Primitive mapping found: " + id);
-			return (PrimitiveMappedModule) mappingStore.get(id);
+			return mappingStore.get(id);
 		}
 		return null;
 	}

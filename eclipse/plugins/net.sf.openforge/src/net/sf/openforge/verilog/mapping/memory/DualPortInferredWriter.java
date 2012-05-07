@@ -67,6 +67,7 @@ public class DualPortInferredWriter extends DualPortWriter {
 		super(memory);
 	}
 
+	@Override
 	public Module defineModule() {
 		MemoryModule memoryModule = new MemoryModule(getName(),
 				Collections.<MappedModule> emptySet());
@@ -224,7 +225,7 @@ public class DualPortInferredWriter extends DualPortWriter {
 			// Number initValue = (Number)initValueIter.next();
 			// String hexString = HexString.valueToHex(initValue,
 			// getDataWidth());
-			BigInteger initValue = (BigInteger) initValueIter.next();
+			BigInteger initValue = initValueIter.next();
 			String hexString = initValue.toString(16);
 			HexNumber hexInitValue = new HexNumber(new HexConstant(hexString,
 					getDataWidth()));

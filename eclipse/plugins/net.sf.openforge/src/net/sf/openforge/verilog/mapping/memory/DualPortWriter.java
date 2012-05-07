@@ -76,15 +76,13 @@ public abstract class DualPortWriter extends VerilogMemory {
 		// getDataWidth() + "_"+ memory_module_id++;
 		// this.moduleName = memBank.showIDLogical() + "_"+
 		// memory_instance_id++;
-		this.moduleName = memBank.showIDLogical() + "_" + memory_module_id++;
+		moduleName = memBank.showIDLogical() + "_" + memory_module_id++;
 	}
 
 	private MemoryBank.BankPort getPortA(MemoryBank bank) {
 		assert bank.getBankPorts().size() == 2;
-		MemoryBank.BankPort pA = (MemoryBank.BankPort) bank.getBankPorts().get(
-				0);
-		MemoryBank.BankPort pB = (MemoryBank.BankPort) bank.getBankPorts().get(
-				1);
+		MemoryBank.BankPort pA = bank.getBankPorts().get(0);
+		MemoryBank.BankPort pB = bank.getBankPorts().get(1);
 		// If the A port is read only and this is going into a LUT
 		// then swap the ports if the B port isn't read only, so the
 		// read/write port always ends up on the A port.
@@ -99,11 +97,12 @@ public abstract class DualPortWriter extends VerilogMemory {
 		Set<BankPort> ports = new HashSet<BankPort>(bank.getBankPorts());
 		ports.remove(getPortA(bank));
 		assert ports.size() == 1;
-		return (MemoryBank.BankPort) ports.iterator().next();
+		return ports.iterator().next();
 	}
 
+	@Override
 	public String getName() {
-		return this.moduleName;
+		return moduleName;
 	}
 
 	/**
@@ -111,6 +110,7 @@ public abstract class DualPortWriter extends VerilogMemory {
 	 * 
 	 * @return a value of type 'ModuleInstance'
 	 */
+	@Override
 	public ModuleInstance instantiate(MemoryBank bank) {
 		MemoryInstance memoryInstance = new MemoryInstance(getName(), getName()
 				+ "_instance" + memory_instance_id++);
@@ -321,21 +321,21 @@ public abstract class DualPortWriter extends VerilogMemory {
 		Net[] spareB;
 
 		public RamImplementation(DualPortRam[][] ramArray, Net[] spA, Net[] spB) {
-			this.rams = ramArray;
-			this.spareA = spA;
-			this.spareB = spB;
+			rams = ramArray;
+			spareA = spA;
+			spareB = spB;
 		}
 
 		public DualPortRam[][] getRamArray() {
-			return this.rams;
+			return rams;
 		}
 
 		public Net[] getSpareA() {
-			return this.spareA;
+			return spareA;
 		}
 
 		public Net[] getSpareB() {
-			return this.spareB;
+			return spareB;
 		}
 	}
 
@@ -356,29 +356,26 @@ public abstract class DualPortWriter extends VerilogMemory {
 
 			ren = new Input(VerilogMemory.ren + id, 1);
 			wen = new Input(VerilogMemory.wen + id, 1);
-			adr = new Input(VerilogMemory.adr + id,
-					DualPortWriter.this.getAddrWidth());
-			din = new Input(VerilogMemory.din + id,
-					DualPortWriter.this.getDataWidth());
-			dout = new Output(VerilogMemory.dout + id,
-					DualPortWriter.this.getDataWidth());
+			adr = new Input(VerilogMemory.adr + id, getAddrWidth());
+			din = new Input(VerilogMemory.din + id, getDataWidth());
+			dout = new Output(VerilogMemory.dout + id, getDataWidth());
 			done = new Output(VerilogMemory.done + id, 1);
 		}
 
 		public boolean reads() {
-			return this.mp.isRead();
+			return mp.isRead();
 		}
 
 		public boolean writes() {
-			return this.mp.isWrite();
+			return mp.isWrite();
 		}
 
 		public int whichPort() {
-			return this.which;
+			return which;
 		}
 
 		public MemoryBank.BankPort getBankPort() {
-			return this.mp;
+			return mp;
 		}
 
 		public String getRENName() {
@@ -406,7 +403,7 @@ public abstract class DualPortWriter extends VerilogMemory {
 		}
 
 		public String getWriteMode() {
-			return this.mp.getWriteMode();
+			return mp.getWriteMode();
 		}
 
 	}

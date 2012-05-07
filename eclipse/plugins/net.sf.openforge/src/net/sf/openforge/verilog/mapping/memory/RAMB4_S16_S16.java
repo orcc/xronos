@@ -26,22 +26,27 @@ class RAMB4_S16_S16 extends DualPortBlockRam {
 	protected RAMB4_S16_S16() {
 	}
 
+	@Override
 	public String getName() {
 		return ("RAMB4_S16_S16");
 	}
 
+	@Override
 	public int getWidth() {
 		return (16);
 	}
 
+	@Override
 	public int getDepth() {
 		return (256);
 	}
 
+	@Override
 	public int getCost() {
 		return (1);
 	}
 
+	@Override
 	public boolean isBlockRam16() {
 		return (false);
 	}

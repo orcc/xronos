@@ -59,6 +59,7 @@ public class MappingName {
 		return name;
 	}
 
+	@Override
 	public String toString() {
 		return name;
 	}

@@ -26,18 +26,22 @@ class RAM16X1D extends DualPortLutRam {
 	protected RAM16X1D() {
 	}
 
+	@Override
 	public String getName() {
 		return ("RAM16X1D");
 	}
 
+	@Override
 	public int getWidth() {
 		return (1);
 	}
 
+	@Override
 	public int getDepth() {
 		return (16);
 	}
 
+	@Override
 	public int getCost() {
 		return (2);
 	}

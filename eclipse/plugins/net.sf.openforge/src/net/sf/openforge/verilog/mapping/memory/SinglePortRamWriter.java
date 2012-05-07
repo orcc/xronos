@@ -86,11 +86,12 @@ public class SinglePortRamWriter extends VerilogMemory {
 		doutPort = new Output(dout, getDataWidth());
 		// this.moduleName = "forge_memory_" + getDepth() + "x" + getDataWidth()
 		// + "_"+ memory_module_id++;
-		this.moduleName = memory.showIDLogical() + "_" + memory_module_id++;
+		moduleName = memory.showIDLogical() + "_" + memory_module_id++;
 	}
 
+	@Override
 	public String getName() {
-		return this.moduleName;
+		return moduleName;
 	}
 
 	/**
@@ -107,6 +108,7 @@ public class SinglePortRamWriter extends VerilogMemory {
 		return getMemBank().getImplementation().getWriteLatency();
 	}
 
+	@Override
 	public Module defineModule() {
 		// OK, we are going to map to a memory configuration and hard
 		// instantiate the primitives necessary along with
@@ -117,7 +119,7 @@ public class SinglePortRamWriter extends VerilogMemory {
 
 		// We assume speed mapping, but if the synth_opt flow is
 		// verilog_area.opt then put area as the highest priority
-		//boolean opt_for_speed = true;
+		// boolean opt_for_speed = true;
 
 		Ram match = getLowestCost(Ram.getMappers(xd, isLUT()));
 
@@ -261,7 +263,7 @@ public class SinglePortRamWriter extends VerilogMemory {
 				.getReadLatency().getMinClocks() > 0) && getMemBank()
 				.getImplementation().isLUT());
 		mergeResults(extra_address_bits, result_depth, getAddrWidth(),
-				getDataWidth(), pre_dout, mux_out, memoryModule, this.adrPort,
+				getDataWidth(), pre_dout, mux_out, memoryModule, adrPort,
 				clkPort, getReadLatency(), registerLutRead, "");
 
 		// Delay the read and/or write by 1 cycle depending on
@@ -454,6 +456,7 @@ public class SinglePortRamWriter extends VerilogMemory {
 	 * 
 	 * @return a value of type 'ModuleInstance'
 	 */
+	@Override
 	public ModuleInstance instantiate(MemoryBank bank) {
 		assert getMemBank().getBankPorts().size() == 1;
 		assert bank.getBankPorts().size() == getMemBank().getBankPorts().size();
@@ -463,8 +466,7 @@ public class SinglePortRamWriter extends VerilogMemory {
 
 		// MemoryBank.BankPort bankPort =
 		// (MemoryBank.BankPort)getMemBank().getBankPorts().get(0);
-		MemoryBank.BankPort bankPort = (MemoryBank.BankPort) bank
-				.getBankPorts().get(0);
+		MemoryBank.BankPort bankPort = bank.getBankPorts().get(0);
 
 		// Net clkWire = new BusWire(getMemBank().getClockPort().getBus());
 		Net clkWire = NetFactory.makeNet(bank.getClockPort().getBus());

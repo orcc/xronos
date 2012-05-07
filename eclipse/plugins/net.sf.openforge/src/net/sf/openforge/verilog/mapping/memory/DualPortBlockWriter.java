@@ -74,6 +74,7 @@ public class DualPortBlockWriter extends DualPortWriter {
 	 * 
 	 * @return a value of type 'Module'
 	 */
+	@Override
 	public Module defineModule() {
 		// OK, we are going to map to a memory configuration and hard
 		// instantiate the primitives necessary along with

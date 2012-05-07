@@ -50,6 +50,7 @@ public class MappedModule {
 		return moduleName;
 	}
 
+	@Override
 	public int hashCode() {
 		return moduleName.hashCode();
 	}

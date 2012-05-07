@@ -56,10 +56,12 @@ public class BinaryConstant extends Constant {
 		super(l, size);
 	}
 
+	@Override
 	public int getRadix() {
 		return BINARY;
 	}
 
+	@Override
 	public String getToken() {
 		if (bitstring == null) {
 			bitstring = Long.toBinaryString(getValue().longValue());

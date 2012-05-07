@@ -143,6 +143,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 
 	public abstract boolean isBlockRam16();
 
+	@Override
 	public void setClkName(String name) {
 		setClkName(name, PORTA);
 	}
@@ -151,6 +152,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		clkName[port] = name;
 	}
 
+	@Override
 	public void setWeName(String name) {
 		setWeName(name, PORTA);
 	}
@@ -159,6 +161,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		weName[port] = name;
 	}
 
+	@Override
 	public void setOeName(String name) {
 		setOeName(name, PORTA);
 	}
@@ -175,6 +178,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		setAddrScalar(scalar, which);
 	}
 
+	@Override
 	public void setAddrName(String name) {
 		setAddrName(name, PORTA);
 	}
@@ -183,6 +187,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		addrName[port] = name;
 	}
 
+	@Override
 	public void setAddrWidth(int width) {
 		if (width > getLibAddressWidth())
 			addrWidth = getLibAddressWidth();
@@ -190,6 +195,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 			addrWidth = width;
 	}
 
+	@Override
 	public void setAddrStartBit(int startBit) {
 		setAddrStartBit(startBit, PORTA);
 	}
@@ -198,6 +204,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		addrStartBit[port] = startBit;
 	}
 
+	@Override
 	public void setAddrScalar(boolean scalar) {
 		setAddrScalar(scalar, PORTA);
 	}
@@ -206,6 +213,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		addrScalar[port] = scalar;
 	}
 
+	@Override
 	public void setDataInName(String name) {
 		setDataInName(name, PORTA);
 	}
@@ -214,6 +222,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		dataInName[port] = name;
 	}
 
+	@Override
 	public void setDataAttachWidth(int width) {
 		setDataAttachWidth(width, PORTA);
 	}
@@ -225,6 +234,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 			dataAttachWidth[port] = width;
 	}
 
+	@Override
 	public void setDataScalar(boolean scalar) {
 		setDataScalar(scalar, PORTA);
 	}
@@ -233,6 +243,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		datScalar[port] = scalar;
 	}
 
+	@Override
 	public void setDataInStartBit(int startBit) {
 		setDataInStartBit(startBit, PORTA);
 	}
@@ -241,6 +252,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		dataInStartBit[port] = startBit;
 	}
 
+	@Override
 	public void setDataOutName(String name) {
 		setDataOutName(name, PORTA);
 	}
@@ -249,6 +261,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		dataOutName[port] = name;
 	}
 
+	@Override
 	public void setDataOutExtraName(String name) {
 		setDataOutExtraName(name, PORTA);
 	}
@@ -257,6 +270,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		dataOutExtraName[port] = name;
 	}
 
+	@Override
 	public void setDataOutStartBit(int startBit) {
 		setDataOutStartBit(startBit, PORTA);
 	}
@@ -265,6 +279,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		dataOutStartBit[port] = startBit;
 	}
 
+	@Override
 	public int getLibAddressWidth() {
 		int indexSize = 0;
 
@@ -285,6 +300,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		return indexSize;
 	}
 
+	@Override
 	public void setNextInitBit(int bit) {
 		if (initValues == null) {
 			// allocate enough storage for all the bits of the memory.
@@ -310,6 +326,7 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 
 	}
 
+	@Override
 	public int getInitBit(int addr) {
 		if (initValues == null)
 			return 0;
@@ -325,15 +342,17 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return (getName());
 	}
 
+	@Override
 	public Object clone() {
 		DualPortRam dpr = null;
 
 		try {
-			dpr = (DualPortRam) (this.getClass().newInstance());
+			dpr = (this.getClass().newInstance());
 		} catch (IllegalAccessException iae) {
 			return null;
 		} catch (InstantiationException ie) {
@@ -342,23 +361,23 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 			return null;
 		}
 
-		dpr.clkName = (String[]) clkName.clone();
-		dpr.weName = (String[]) weName.clone();
-		dpr.oeName = (String[]) oeName.clone();
-		dpr.addrName = (String[]) addrName.clone();
+		dpr.clkName = clkName.clone();
+		dpr.weName = weName.clone();
+		dpr.oeName = oeName.clone();
+		dpr.addrName = addrName.clone();
 		dpr.addrWidth = addrWidth;
-		dpr.addrStartBit = (int[]) addrStartBit.clone();
-		dpr.addrScalar = (boolean[]) addrScalar.clone();
-		dpr.dataInName = (String[]) dataInName.clone();
-		dpr.dataInStartBit = (int[]) dataInStartBit.clone();
-		dpr.dataOutName = (String[]) dataOutName.clone();
-		dpr.dataOutStartBit = (int[]) dataOutStartBit.clone();
-		dpr.dataOutExtraName = (String[]) dataOutExtraName.clone();
-		dpr.dataAttachWidth = (int[]) dataAttachWidth.clone();
-		dpr.datScalar = (boolean[]) datScalar.clone();
+		dpr.addrStartBit = addrStartBit.clone();
+		dpr.addrScalar = addrScalar.clone();
+		dpr.dataInName = dataInName.clone();
+		dpr.dataInStartBit = dataInStartBit.clone();
+		dpr.dataOutName = dataOutName.clone();
+		dpr.dataOutStartBit = dataOutStartBit.clone();
+		dpr.dataOutExtraName = dataOutExtraName.clone();
+		dpr.dataAttachWidth = dataAttachWidth.clone();
+		dpr.datScalar = datScalar.clone();
 
 		if (initValues != null)
-			dpr.initValues = (int[]) initValues.clone();
+			dpr.initValues = initValues.clone();
 		else
 			dpr.initValues = null;
 

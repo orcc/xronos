@@ -26,18 +26,22 @@ class RAM32X8S extends LutRam {
 	protected RAM32X8S() {
 	}
 
+	@Override
 	public String getName() {
 		return ("RAM32X8S");
 	}
 
+	@Override
 	public int getWidth() {
 		return (8);
 	}
 
+	@Override
 	public int getDepth() {
 		return (32);
 	}
 
+	@Override
 	public int getCost() {
 		return (16);
 	}

@@ -45,18 +45,24 @@ public abstract class LutRam extends Ram {
 
 	private static int instancecnt = 0;
 
+	@Override
 	public abstract String getName();
 
+	@Override
 	public abstract int getWidth();
 
+	@Override
 	public abstract int getDepth();
 
+	@Override
 	public abstract int getCost();
 
+	@Override
 	public boolean isDataOutputRegistered() {
 		return (false);
 	}
 
+	@Override
 	public StatementBlock initialize() {
 		StatementBlock initial_block = new StatementBlock();
 		initial_block
@@ -105,6 +111,7 @@ public abstract class LutRam extends Ram {
 		}
 	}
 
+	@Override
 	public ModuleInstance instantiate() {
 		String instance_name = getName() + "_instance_" + instancecnt++;
 

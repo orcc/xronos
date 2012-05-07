@@ -62,13 +62,15 @@ public class SinglePortInferredRomWriter extends SinglePortRamWriter {
 
 		// Set these ports to null so that they don't get written out
 		// in the instantiation of the memory module.
-		this.wenPort = null;
-		this.dinPort = null;
-		this.clkPort = null;
+		wenPort = null;
+		dinPort = null;
+		clkPort = null;
 	}
 
+	@Override
 	public Module defineModule() {
-		Module memoryModule = new MemoryModule(getName(), Collections.<MappedModule> emptySet());
+		Module memoryModule = new MemoryModule(getName(),
+				Collections.<MappedModule> emptySet());
 
 		memoryModule.addPort(renPort);
 		memoryModule.addPort(adrPort);
@@ -90,7 +92,7 @@ public class SinglePortInferredRomWriter extends SinglePortRamWriter {
 		for (int i = 0; i < getDepth() && initValueIter.hasNext(); i++) {
 			// Object initValue = initValueIter.next();
 			// String hex = HexString.valueToHex(initValue, getDataWidth());
-			BigInteger initValue = (BigInteger) initValueIter.next();
+			BigInteger initValue = initValueIter.next();
 			String hexString = initValue.toString(16);
 			Decimal caseValue = new Decimal(i, getAddrWidth());
 			HexConstant hexInitValue = new HexConstant(hexString,

@@ -26,22 +26,27 @@ class RAMB4_S8 extends BlockRam {
 	protected RAMB4_S8() {
 	}
 
+	@Override
 	public String getName() {
 		return ("RAMB4_S8");
 	}
 
+	@Override
 	public int getWidth() {
 		return (8);
 	}
 
+	@Override
 	public int getDepth() {
 		return (512);
 	}
 
+	@Override
 	public int getCost() {
 		return (1);
 	}
 
+	@Override
 	public boolean isBlockRam16() {
 		return (false);
 	}

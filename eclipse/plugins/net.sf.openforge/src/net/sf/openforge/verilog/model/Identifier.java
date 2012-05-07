@@ -102,7 +102,7 @@ public class Identifier extends Token {
 	public class InvalidVerilogIdentifierException extends
 			VerilogSyntaxException {
 
-		/**
+		/** 
 		 * 
 		 */
 		private static final long serialVersionUID = 5205338149120554139L;

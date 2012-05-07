@@ -47,10 +47,12 @@ public class ArbitraryString extends Token {
 	 * 
 	 * 
 	 */
+	@Override
 	public String getToken() {
 		return s;
 	}
 
+	@Override
 	public int getType() {
 		return TYPE;
 	}

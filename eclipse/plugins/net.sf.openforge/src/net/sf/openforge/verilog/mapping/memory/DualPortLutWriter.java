@@ -79,6 +79,7 @@ public class DualPortLutWriter extends DualPortWriter {
 	 * 
 	 * @return a value of type 'Module'
 	 */
+	@Override
 	public Module defineModule() {
 		// OK, we are going to map to a memory configuration and hard
 		// instantiate the primitives necessary along with
@@ -170,7 +171,7 @@ public class DualPortLutWriter extends DualPortWriter {
 		stateWriteEnables(mpA, wea, memoryModule, elementAddrWidth);
 		stateWriteEnables(mpB, web, memoryModule, elementAddrWidth);
 
-		final boolean regRead = this.isLUT()
+		final boolean regRead = isLUT()
 				&& (getMemBank().getImplementation().getReadLatency()
 						.getMinClocks() > 0);
 		stateDones(mpA, memoryModule, regRead, "a");
@@ -313,7 +314,7 @@ public class DualPortLutWriter extends DualPortWriter {
 		}
 
 		EventControl event_control = new EventControl(event_list);
-		//SequentialBlock sequential_block = new SequentialBlock(block);
+		// SequentialBlock sequential_block = new SequentialBlock(block);
 		Always always = new Always(new ProceduralTimingBlock(event_control,
 				block));
 		return always;
@@ -351,7 +352,7 @@ public class DualPortLutWriter extends DualPortWriter {
 		}
 
 		EventControl clkEvent = new EventControl(new EventExpression.PosEdge(
-				this.clkPort));
+				clkPort));
 		memoryModule.state(new Always(new ProceduralTimingBlock(clkEvent,
 				delayBlock)));
 
@@ -402,7 +403,7 @@ public class DualPortLutWriter extends DualPortWriter {
 			delayBlock.add(new Assign.NonBlocking(delayed, mux_out));
 
 			EventControl clkEvent = new EventControl(
-					new EventExpression.PosEdge(this.clkPort));
+					new EventExpression.PosEdge(clkPort));
 			memoryModule.state(new Always(new ProceduralTimingBlock(clkEvent,
 					delayBlock)));
 

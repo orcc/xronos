@@ -66,8 +66,10 @@ public class SinglePortInferredRamWriter extends SinglePortRamWriter {
 		super(memory);
 	}
 
+	@Override
 	public Module defineModule() {
-		Module memoryModule = new MemoryModule(getName(), Collections.<MappedModule> emptySet());
+		Module memoryModule = new MemoryModule(getName(),
+				Collections.<MappedModule> emptySet());
 
 		memoryModule.addPort(clkPort);
 		memoryModule.addPort(renPort);
@@ -134,7 +136,7 @@ public class SinglePortInferredRamWriter extends SinglePortRamWriter {
 			// Number initValue = (Number)initValueIter.next();
 			// String hexString = HexString.valueToHex(initValue,
 			// getDataWidth());
-			BigInteger initValue = (BigInteger) initValueIter.next();
+			BigInteger initValue = initValueIter.next();
 			String hexString = initValue.toString(16);
 			HexNumber hexInitValue = new HexNumber(new HexConstant(hexString,
 					getDataWidth()));

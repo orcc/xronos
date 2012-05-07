@@ -68,7 +68,7 @@ public class MemoryMapper {
 	 */
 	// public static VerilogMemory getMemoryType (Memory memory)
 	public static VerilogMemory getMemoryType(MemoryBank memory) {
-		VerilogMemory allocated = (VerilogMemory) mapMemoryType.get(memory);
+		VerilogMemory allocated = mapMemoryType.get(memory);
 		if (allocated == null) {
 			MemoryImplementation impl = memory.getImplementation();
 
