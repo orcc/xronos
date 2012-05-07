@@ -49,10 +49,9 @@ public class GnuOptionDictionary {
 	 * 
 	 * @param definitions
 	 */
-	public GnuOptionDictionary(Set definitions) {
+	public GnuOptionDictionary(Set<GnuOptionDefinition> definitions) {
 		this();
-		for (Iterator it = definitions.iterator(); it.hasNext();) {
-			GnuOptionDefinition definition = (GnuOptionDefinition) it.next();
+		for (GnuOptionDefinition definition : definitions) {
 			add(definition);
 		}
 	}
@@ -79,7 +78,7 @@ public class GnuOptionDictionary {
 	 *         definition
 	 */
 	public GnuOptionDefinition getDefinition(String longKey) {
-		return (GnuOptionDefinition) longMap.get(longKey);
+		return longMap.get(longKey);
 	}
 
 	/**
@@ -91,7 +90,7 @@ public class GnuOptionDictionary {
 	 *         definition
 	 */
 	public GnuOptionDefinition getDefinition(char shortKey) {
-		return (GnuOptionDefinition) shortMap.get(new Character(shortKey));
+		return shortMap.get(new Character(shortKey));
 	}
 
 	/**
@@ -173,7 +172,7 @@ public class GnuOptionDictionary {
 	 * 
 	 * @see java.util.Map#values()
 	 */
-	public Collection values() {
+	public Collection<GnuOptionDefinition> values() {
 		return shortMap.values();
 	}
 

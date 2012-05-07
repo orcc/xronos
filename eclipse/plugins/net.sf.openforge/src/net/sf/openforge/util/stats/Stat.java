@@ -21,79 +21,75 @@
 
 package net.sf.openforge.util.stats;
 
+import java.util.Collection;
 
-import java.util.*;
-
-import net.sf.openforge.util.*;
-
+import net.sf.openforge.util.SoftCollection;
 
 /**
  * Root class for stats
  */
-public abstract class Stat
-{
+public abstract class Stat {
 
-    /** DOCUMENT ME! */
-    private String name;
-    private String typeName;
-    private SoftCollection.LL tokens = new SoftCollection.LL();
+	/** DOCUMENT ME! */
+	private String name;
+	private String typeName;
+	private SoftCollection.LL tokens = new SoftCollection.LL();
 
-    /**
-     * Creates a new Stat object. DOCUMENT ME!
-     *
-     * @param name DOCUMENT ME!
-     * @param typeName DOCUMENT ME!
-     */
-    public Stat (String name, String typeName)
-    {
-        this.name = name;
-        this.typeName = typeName;
-    }
+	/**
+	 * Creates a new Stat object. DOCUMENT ME!
+	 * 
+	 * @param name
+	 *            DOCUMENT ME!
+	 * @param typeName
+	 *            DOCUMENT ME!
+	 */
+	public Stat(String name, String typeName) {
+		this.name = name;
+		this.typeName = typeName;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public abstract String toString ();
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	@Override
+	public abstract String toString();
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public String getName ()
-    {
-        return name;
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public String getName() {
+		return name;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public String getTypeName ()
-    {
-        return typeName;
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public String getTypeName() {
+		return typeName;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public Collection getTokens ()
-    {
-        return tokens.getCollection();
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public Collection<String> getTokens() {
+		return tokens.getCollection();
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @param o DOCUMENT ME!
-     */
-    public void addToken (Object o)
-    {
-        tokens.getLinkedList().addLast(o);
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param o
+	 *            DOCUMENT ME!
+	 */
+	public void addToken(Object o) {
+		tokens.getLinkedList().addLast(o);
+	}
 }

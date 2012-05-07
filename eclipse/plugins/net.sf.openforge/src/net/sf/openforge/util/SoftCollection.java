@@ -34,7 +34,7 @@ import java.util.LinkedList;
  */
 public class SoftCollection {
 	private SoftReference softHeader = new SoftReference(new LinkedList());
-	private Class refClass;
+	private Class<?> refClass;
 
 	/**
 	 * Constructs an empty list.

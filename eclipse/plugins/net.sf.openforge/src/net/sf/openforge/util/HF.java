@@ -34,7 +34,7 @@ import java.io.PrintWriter;
 public class HF {
 
 	private static String zzzs = "0000000000";
-	private static String sps = "                                  ";
+	// private static String sps = "                                  ";
 	private static String hextbl[] = { "00 ", "01 ", "02 ", "03 ", "04 ",
 			"05 ", "06 ", "07 ", "08 ", "09 ", "0a ", "0b ", "0c ", "0d ",
 			"0e ", "0f ", "10 ", "11 ", "12 ", "13 ", "14 ", "15 ", "16 ",
@@ -123,7 +123,7 @@ public class HF {
 	 *            short
 	 */
 	public final static String hex(short i) {
-		return Integer.toHexString((int) i);
+		return Integer.toHexString(i);
 	}
 
 	/**
@@ -135,7 +135,7 @@ public class HF {
 	 *            byte
 	 */
 	public final static String hex(byte i) {
-		return Integer.toHexString(((int) i) & 0xff);
+		return Integer.toHexString(i & 0xff);
 	}
 
 	/**
@@ -253,7 +253,7 @@ public class HF {
 					break;
 				}
 
-				pw.print(hextbl[((int) buf[off + i + j]) & 0xff]);
+				pw.print(hextbl[buf[off + i + j] & 0xff]);
 			}
 
 			pw.println();

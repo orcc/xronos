@@ -33,7 +33,6 @@ import java.util.Set;
  * @author Stephen Edwards
  */
 public interface Empty {
-	static final String _RCS_ = "$Rev: 2 $";
 
 	/**
 	 * Empty Set object. Throws UnsupportedOperationException if an attempt is
@@ -86,5 +85,4 @@ public interface Empty {
 	/** Empty array of Objects. */
 	public static final Object[] OBJECT_ARRAY = new Object[0];
 
-	public static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 }

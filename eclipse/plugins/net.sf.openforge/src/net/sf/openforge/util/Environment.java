@@ -245,7 +245,7 @@ public class Environment {
 	 * 
 	 */
 	public static void main(String args[]) {
-		for (Enumeration e = Environment.getProperties().keys(); e
+		for (Enumeration<Object> e = Environment.getProperties().keys(); e
 				.hasMoreElements();) {
 			String name = (String) e.nextElement();
 			String val = getEnv(name);

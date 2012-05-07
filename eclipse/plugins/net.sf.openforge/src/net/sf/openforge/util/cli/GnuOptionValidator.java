@@ -34,20 +34,20 @@ public class GnuOptionValidator {
 	GnuOptionDictionary goodOptions;
 
 	/** Invalid (unknown or badly formed) options. */
-	List badOptions;
+	List<String> badOptions;
 
 	/** Arguments to the command (instead of option commands). */
-	List cmdArguments;
+	List<String> cmdArguments;
 
 	/** Maps definitions to their associated value. */
-	Map argMap;
+	Map<GnuOptionDefinition, List<String>> argMap;
 
 	public GnuOptionValidator(GnuOptionDictionary dictionary) {
-		this.dict = dictionary;
+		dict = dictionary;
 		goodOptions = new GnuOptionDictionary();
-		badOptions = new ArrayList();
-		cmdArguments = new ArrayList();
-		argMap = new HashMap();
+		badOptions = new ArrayList<String>();
+		cmdArguments = new ArrayList<String>();
+		argMap = new HashMap<GnuOptionDefinition, List<String>>();
 	}
 
 	public GnuOptionDictionary getDictionary() {
@@ -163,7 +163,7 @@ public class GnuOptionValidator {
 		return (goodOptions.containsKey(longKey));
 	}
 
-	public List getArguments(char shortKey) {
+	public List<String> getArguments(char shortKey) {
 		return get(goodOptions.getDefinition(shortKey));
 	}
 
@@ -171,15 +171,15 @@ public class GnuOptionValidator {
 	 * @param longKey
 	 * @return
 	 */
-	public List getArguments(String longKey) {
+	public List<String> getArguments(String longKey) {
 		return get(goodOptions.getDefinition(longKey));
 	}
 
 	public String getArgument(char shortKey) {
-		List l = get(goodOptions.getDefinition(shortKey));
+		List<String> l = get(goodOptions.getDefinition(shortKey));
 		if (l == null)
 			return null;
-		return (String) (l.get(l.size() - 1));
+		return (l.get(l.size() - 1));
 	}
 
 	/**
@@ -187,16 +187,16 @@ public class GnuOptionValidator {
 	 * @return
 	 */
 	public String getArgument(String longKey) {
-		List l = get(goodOptions.getDefinition(longKey));
+		List<String> l = get(goodOptions.getDefinition(longKey));
 		if (l == null)
 			return null;
-		return (String) (l.get(l.size() - 1));
+		return (l.get(l.size() - 1));
 	}
 
-	private List get(GnuOptionDefinition def) {
-		List argument = null;
+	private List<String> get(GnuOptionDefinition def) {
+		List<String> argument = null;
 		if (def != null) {
-			argument = (List) argMap.get(def);
+			argument = argMap.get(def);
 		}
 		return argument;
 	}
@@ -205,9 +205,9 @@ public class GnuOptionValidator {
 	 * Sets the value associated with a definition.
 	 */
 	private void putArg(GnuOptionDefinition definition, String arg) {
-		List argument = get(definition);
+		List<String> argument = get(definition);
 		if (argument == null)
-			argument = new ArrayList();
+			argument = new ArrayList<String>();
 		argument.add(arg);
 		argMap.put(definition, argument);
 	}
@@ -222,7 +222,7 @@ public class GnuOptionValidator {
 	/**
 	 * @return
 	 */
-	public List getBadOptions() {
+	public List<String> getBadOptions() {
 		return badOptions;
 	}
 
@@ -236,7 +236,7 @@ public class GnuOptionValidator {
 	 * 
 	 * @return a non-null list of command arguments (which may be empty)
 	 */
-	public List getCmdArguments() {
+	public List<String> getCmdArguments() {
 		return cmdArguments;
 	}
 
@@ -245,6 +245,7 @@ public class GnuOptionValidator {
 	 * 
 	 * @see java.lang.Object#toString()
 	 */
+	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 		buf.append("GnuOptionValidator: {");
@@ -261,14 +262,14 @@ public class GnuOptionValidator {
 		}
 		buf.append("; ");
 		buf.append("bad: ");
-		for (Iterator it = getBadOptions().iterator(); it.hasNext();) {
+		for (Iterator<String> it = getBadOptions().iterator(); it.hasNext();) {
 			buf.append(it.next());
 			if (it.hasNext())
 				buf.append(", ");
 		}
 		buf.append("; ");
 		buf.append("args: ");
-		for (Iterator it = getCmdArguments().iterator(); it.hasNext();) {
+		for (Iterator<String> it = getCmdArguments().iterator(); it.hasNext();) {
 			buf.append(it.next());
 			if (it.hasNext())
 				buf.append(", ");

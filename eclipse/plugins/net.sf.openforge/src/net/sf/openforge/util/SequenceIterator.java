@@ -35,13 +35,13 @@ import java.util.NoSuchElementException;
  * 
  * @version $Id: SequenceIterator.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class SequenceIterator implements Iterator {
+public class SequenceIterator implements Iterator<Object> {
 
 	/** Sequence of Iterators used to construct this iterator */
-	private LinkedList iterators = new LinkedList();
+	private LinkedList<Iterator<?>> iterators = new LinkedList<Iterator<?>>();
 
 	/** The current iterator being traversed */
-	private Iterator currentIterator = Collections.EMPTY_LIST.iterator();
+	private Iterator<?> currentIterator = Collections.EMPTY_LIST.iterator();
 
 	/**
 	 * Constructs a new <code>SequenceIterator</code> with two {@link Iterator
@@ -54,13 +54,13 @@ public class SequenceIterator implements Iterator {
 	 * @throws NullPointerException
 	 *             if <code>iter1</code> or <code>iter2</code> is null
 	 */
-	public SequenceIterator(Iterator iter1, Iterator iter2) {
+	public SequenceIterator(Iterator<?> iter1, Iterator<?> iter2) {
 		if (iter1 == null || iter2 == null) {
 			throw new NullPointerException("null argument");
 		}
 
-		this.iterators.add(iter1);
-		this.iterators.add(iter2);
+		iterators.add(iter1);
+		iterators.add(iter2);
 		advanceToNext();
 	}
 
@@ -76,9 +76,9 @@ public class SequenceIterator implements Iterator {
 	 *             if any element of <code>iterators</code> is not an instance
 	 *             of {@link Iterator}
 	 */
-	public SequenceIterator(List iterators) {
-		for (Iterator iter = iterators.iterator(); iter.hasNext();) {
-			final Iterator nextIterator = (Iterator) iter.next();
+	public SequenceIterator(List<?> iterators) {
+		for (Iterator<?> iter = iterators.iterator(); iter.hasNext();) {
+			final Iterator<?> nextIterator = (Iterator<?>) iter.next();
 			if (nextIterator == null) {
 				throw new NullPointerException("null iterator");
 			}
@@ -94,6 +94,7 @@ public class SequenceIterator implements Iterator {
 	 * 
 	 * @return <code>true</code> if the iterator has more elements
 	 */
+	@Override
 	public boolean hasNext() {
 		return currentIterator.hasNext();
 	}
@@ -105,6 +106,7 @@ public class SequenceIterator implements Iterator {
 	 * @throws NoSuchElementException
 	 *             if the iteration has no more elements
 	 */
+	@Override
 	public Object next() {
 		final Object nextObject = currentIterator.next();
 		advanceToNext();
@@ -117,6 +119,7 @@ public class SequenceIterator implements Iterator {
 	 * @throws UnsupportedOperationException
 	 *             always
 	 */
+	@Override
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
@@ -126,7 +129,7 @@ public class SequenceIterator implements Iterator {
 	 */
 	private void advanceToNext() {
 		while (!currentIterator.hasNext() && !iterators.isEmpty()) {
-			currentIterator = (Iterator) iterators.removeFirst();
+			currentIterator = iterators.removeFirst();
 			if (currentIterator.hasNext()) {
 				break;
 			}

@@ -20,8 +20,8 @@ public class XmlImplementation {
 	}
 
 	public XmlImplementation(DocumentBuilderFactory dbf, TransformerFactory tf) {
-		this.documentBuilderFactory = dbf;
-		this.transformerFactory = tf;
+		documentBuilderFactory = dbf;
+		transformerFactory = tf;
 	}
 
 	private DocumentBuilderFactory documentBuilderFactory;

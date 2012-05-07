@@ -13,6 +13,7 @@ import javax.xml.transform.stream.StreamSource;
 
 class ClasspathURIResolver implements URIResolver {
 
+	@Override
 	public Source resolve(String href, String base) throws TransformerException {
 		InputStream s = loader.getResourceAsStream(href);
 

@@ -101,6 +101,7 @@ public class ArrayInspector {
 		return Array.get(myArray, eIndex);
 	}
 
+	@Override
 	public String toString() {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		PrintWriter pw = new PrintWriter(bos);

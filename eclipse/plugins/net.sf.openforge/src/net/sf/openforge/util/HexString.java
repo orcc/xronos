@@ -175,7 +175,7 @@ public class HexString {
 	 * @return the converted byte value
 	 */
 	public static byte toByte(String data) throws NumberFormatException {
-		int current_digit = 0;
+		// int current_digit = 0;
 		int int_value = Integer.parseInt(data, 16);
 
 		byte byte_value = (byte) (int_value);
@@ -373,15 +373,15 @@ public class HexString {
 		long reply = -1;
 
 		if (value instanceof Long) {
-			reply = (long) ((Long) value).longValue();
+			reply = ((Long) value).longValue();
 		} else if (value instanceof Integer) {
-			reply = (long) ((Integer) value).intValue();
+			reply = ((Integer) value).intValue();
 		} else if (value instanceof Short) {
-			reply = (long) ((Short) value).shortValue();
+			reply = ((Short) value).shortValue();
 		} else if (value instanceof Byte) {
-			reply = (long) ((Byte) value).byteValue();
+			reply = ((Byte) value).byteValue();
 		} else if (value instanceof Character) {
-			reply = ((long) ((Character) value).charValue());
+			reply = ((Character) value).charValue();
 		} else if (value instanceof Boolean) {
 			if (((Boolean) value).booleanValue()) {
 				reply = 1;
@@ -480,9 +480,9 @@ public class HexString {
 		}
 
 		if (size < 16) {
-			reply = new String(Integer.toHexString((int) (value & size_mask)));
+			reply = new String(Integer.toHexString((value & size_mask)));
 		} else {
-			reply = longToHex((long) value, size);
+			reply = longToHex(value, size);
 		}
 
 		return reply;
@@ -507,7 +507,7 @@ public class HexString {
 		}
 
 		if (size < 16) {
-			reply = new String(Integer.toHexString((int) (value & size_mask)));
+			reply = new String(Integer.toHexString((value & size_mask)));
 		} else {
 			reply = longToHex((long) value & 0xFFFF, size);
 		}
@@ -534,9 +534,9 @@ public class HexString {
 		}
 
 		if (size < 8) {
-			reply = new String(Integer.toHexString((int) (value & size_mask)));
+			reply = new String(Integer.toHexString((value & size_mask)));
 		} else {
-			reply = longToHex((long) value, size);
+			reply = longToHex(value, size);
 		}
 
 		return reply;

@@ -32,7 +32,7 @@ import java.util.Iterator;
  */
 public class LADomain {
 	private final Object tag;
-	private ArrayList listeners = new ArrayList();
+	private ArrayList<LAHandleable> listeners = new ArrayList<LAHandleable>();
 	private static final String nullTag = "";
 
 	/**
@@ -83,7 +83,7 @@ public class LADomain {
 
 	}
 
-	public final Iterator getListenerIterator() {
+	public final Iterator<LAHandleable> getListenerIterator() {
 		return listeners.iterator();
 	}
 
@@ -96,9 +96,9 @@ public class LADomain {
 
 	public synchronized void fire(Object passthru) {
 		// for all listeners
-		for (Iterator it = listeners.iterator(); it.hasNext();) {
+		for (Iterator<LAHandleable> it = listeners.iterator(); it.hasNext();) {
 			// get the handler
-			LAHandleable lah = (LAHandleable) it.next();
+			LAHandleable lah = it.next();
 			// call default
 			lah.laListen(tag, passthru);
 		}

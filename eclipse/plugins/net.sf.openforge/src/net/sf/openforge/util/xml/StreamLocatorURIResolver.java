@@ -14,6 +14,7 @@ import net.sf.openforge.util.io.StreamLocator;
 
 class StreamLocatorURIResolver implements URIResolver {
 
+	@Override
 	public Source resolve(String href, String base) throws TransformerException {
 		InputStream s = locator.getAsStream(href);
 

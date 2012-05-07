@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public class NamedValueManager {
 
-	private HashMap values = new HashMap();
+	private HashMap<String, Object> values = new HashMap<String, Object>();
 
 	public NamedValueManager() {
 	}
@@ -58,7 +58,7 @@ public class NamedValueManager {
 		values.clear();
 	}
 
-	public Map getNamedValueMap() {
+	public Map<String, Object> getNamedValueMap() {
 		return values;
 	}
 }

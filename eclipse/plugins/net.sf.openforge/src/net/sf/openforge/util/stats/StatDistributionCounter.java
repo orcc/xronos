@@ -16,103 +16,89 @@
 
 package net.sf.openforge.util.stats;
 
-
 /**
  * Simple Distibution counter (min/max/avg)
  */
-public class StatDistributionCounter
-    extends Stat
-{
+public class StatDistributionCounter extends Stat {
 
-    /** DOCUMENT ME! */
-    private long count;
-    private float avg;
-    private long min = Long.MAX_VALUE;
-    private long max = Long.MIN_VALUE;
+	/** DOCUMENT ME! */
+	private long count;
+	private float avg;
+	private long min = Long.MAX_VALUE;
+	private long max = Long.MIN_VALUE;
 
-    private StatDistributionCounter ()
-    {
-        this("");
-    }
+	/**
+	 * Creates a new StatDistributionCounter object. DOCUMENT ME!
+	 * 
+	 * @param name
+	 *            DOCUMENT ME!
+	 */
+	public StatDistributionCounter(String name) {
+		super(name, "Distribution");
+	}
 
-    /**
-     * Creates a new StatDistributionCounter object. DOCUMENT ME!
-     *
-     * @param name DOCUMENT ME!
-     */
-    public StatDistributionCounter (String name)
-    {
-        super(name, "Distribution");
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param l
+	 *            DOCUMENT ME!
+	 */
+	public void update(long l) {
+		avg = (avg * count) + l;
+		avg = (avg / (++count));
+		if (l < min) {
+			min = l;
+		}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @param l DOCUMENT ME!
-     */
-    public void update (long l)
-    {
-        avg = (avg * ((float)count)) + (float)l;
-        avg = (avg / (float)(++count));
-        if (l < min)
-        {
-            min = l;
-        }
+		if (l > max) {
+			max = l;
+		}
+	}
 
-        if (l > max)
-        {
-            max = l;
-        }
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public long getCount() {
+		return count;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public long getCount ()
-    {
-        return count;
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public long getAvg() {
+		return (long) avg;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public long getAvg ()
-    {
-        return (long)avg;
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public long getMin() {
+		return min;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public long getMin ()
-    {
-        return min;
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public long getMax() {
+		return max;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public long getMax ()
-    {
-        return max;
-    }
-
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public String toString ()
-    {
-        return getName() + ": Count " + getCount() + "/Avg " + getAvg() + "/Min " + getMin() +
-        "/Max" + getMax();
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	@Override
+	public String toString() {
+		return getName() + ": Count " + getCount() + "/Avg " + getAvg()
+				+ "/Min " + getMin() + "/Max" + getMax();
+	}
 }

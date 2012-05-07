@@ -50,6 +50,7 @@ public interface ElementPredicate {
 	boolean test(Element e);
 
 	public static final ElementPredicate TRUE = new ElementPredicate() {
+		@Override
 		public boolean test(Element e) {
 			return true;
 		}

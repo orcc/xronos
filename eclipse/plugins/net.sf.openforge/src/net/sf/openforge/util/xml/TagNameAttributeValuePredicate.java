@@ -42,6 +42,7 @@ import org.w3c.dom.Element;
 
 public class TagNameAttributeValuePredicate implements ElementPredicate {
 
+	@Override
 	public boolean test(Element e) {
 		if (!tag.equals(e.getNodeName()))
 			return false;

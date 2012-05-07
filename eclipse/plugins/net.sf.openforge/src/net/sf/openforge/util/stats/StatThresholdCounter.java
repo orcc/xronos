@@ -21,77 +21,67 @@
 
 package net.sf.openforge.util.stats;
 
-
 /**
  * Simple Counter
  */
-public class StatThresholdCounter
-    extends Stat
-{
+public class StatThresholdCounter extends Stat {
 
-    /** DOCUMENT ME! */
-    static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
-    private long count = 0L;
-    private long threshold = 1L;
-    private long threshCount = 0L;
+	/** DOCUMENT ME! */
+	static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
+	private long count = 0L;
+	private long threshold = 1L;
+	private long threshCount = 0L;
 
-    private StatThresholdCounter ()
-    {
-        this("", 1L);
-    }
+	/**
+	 * Creates a new StatThresholdCounter object. DOCUMENT ME!
+	 * 
+	 * @param name
+	 *            DOCUMENT ME!
+	 * @param threshold
+	 *            DOCUMENT ME!
+	 */
+	public StatThresholdCounter(String name, long threshold) {
+		super(name, "Threshold[" + threshold + "]");
+		this.threshold = threshold;
+	}
 
-    /**
-     * Creates a new StatThresholdCounter object. DOCUMENT ME!
-     *
-     * @param name DOCUMENT ME!
-     * @param threshold DOCUMENT ME!
-     */
-    public StatThresholdCounter (String name, long threshold)
-    {
-        super(name, "Threshold[" + threshold + "]");
-        this.threshold = threshold;
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param l
+	 *            DOCUMENT ME!
+	 */
+	public void inc(long l) {
+		threshCount = threshCount + l;
+		while (threshCount >= threshold) {
+			count++;
+			threshCount = threshCount - threshold;
+		}
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @param l DOCUMENT ME!
-     */
-    public void inc (long l)
-    {
-        threshCount = threshCount + l;
-        while (threshCount >= threshold)
-        {
-            count++;
-            threshCount = threshCount - threshold;
-        }
-    }
+	/**
+	 * DOCUMENT ME!
+	 */
+	public void inc() {
+		inc(1L);
+	}
 
-    /**
-     * DOCUMENT ME!
-     */
-    public void inc ()
-    {
-        inc(1L);
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public long getCount() {
+		return count;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public long getCount ()
-    {
-        return count;
-    }
-
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public String toString ()
-    {
-        return getName() + ": " + count + "(+" + threshCount + ")";
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	@Override
+	public String toString() {
+		return getName() + ": " + count + "(+" + threshCount + ")";
+	}
 }

@@ -44,7 +44,7 @@ public class Graph extends GVObject {
 
 	protected static final boolean DO_GRAPH_LABEL = false;
 
-	/**
+	/** 
 	 * Constructs a new Graph of type "digraph" with a given identifier.
 	 * 
 	 * @param id

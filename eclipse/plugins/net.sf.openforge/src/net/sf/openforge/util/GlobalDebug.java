@@ -137,6 +137,7 @@ public class GlobalDebug {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return ("** Tag: [" + tag + "] is: " + (visible ? "ON" : "OFF")
 				+ " Levels: 0x" + Long.toHexString(levels) + " **");
@@ -174,7 +175,7 @@ public class GlobalDebug {
 
 	public final static class Writer extends FilterWriter {
 		private boolean needsPreface = true;
-		private LinkedList prefaces = new LinkedList();
+		private LinkedList<String> prefaces = new LinkedList<String>();
 		private String tag;
 
 		public Writer(String tag, OutputStream os) {
@@ -189,12 +190,13 @@ public class GlobalDebug {
 		 * @exception IOException
 		 *                If an I/O error occurs
 		 */
+		@Override
 		public void write(int c) throws IOException {
 			if (needsPreface) {
 				needsPreface = false;
 				preface();
 			}
-			if (c != (int) '\n') {
+			if (c != '\n') {
 				// System.out.print("{"+b+"}");
 				super.write(c);
 			}
@@ -214,6 +216,7 @@ public class GlobalDebug {
 		 * @exception IOException
 		 *                If an I/O error occurs
 		 */
+		@Override
 		public void write(char cbuf[], int off, int len) throws IOException {
 			for (int i = 0; i < len; i++)
 				write(cbuf[off + i]);
@@ -232,6 +235,7 @@ public class GlobalDebug {
 		 * @exception IOException
 		 *                If an I/O error occurs
 		 */
+		@Override
 		public void write(String str, int off, int len) throws IOException {
 			for (int i = 0; i < len; i++)
 				write(str.charAt(off + i));
@@ -243,7 +247,7 @@ public class GlobalDebug {
 		}
 
 		private void eolCheck(int c) {
-			if (c == (int) '\n')
+			if (c == '\n')
 				needsPreface = true;
 		}
 

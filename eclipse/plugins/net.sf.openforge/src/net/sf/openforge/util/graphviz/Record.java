@@ -101,16 +101,19 @@ public class Record extends Node {
 		 *            the identifier of the new port
 		 * @return the new port
 		 */
+		@Override
 		public Port getPort(String id) {
 			Record.Port port = Record.this.new Port(id);
 			ports.add(port);
 			return port;
 		}
 
+		@Override
 		public String getEdgeSourceId() {
 			return getEdgeTargetId();
 		}
 
+		@Override
 		public String getEdgeTargetId() {
 			/*
 			 * Gets the "name:port" form of the id, for use in connections.
@@ -118,6 +121,7 @@ public class Record extends Node {
 			return Record.this.getEdgeTargetId() + ":" + getId();
 		}
 
+		@Override
 		public Graph getGraph() {
 			return Record.this.getGraph();
 		}
@@ -165,11 +169,13 @@ public class Record extends Node {
 
 	}
 
+	@Override
 	protected String getAttribute(String attr) {
 		return (attr.equals("label") ? getRecordLabel() : super
 				.getAttribute(attr));
 	}
 
+	@Override
 	protected void setAttribute(String attr, String value) {
 		if (attr.equals("label")) {
 			nodeLabel = value;
@@ -207,7 +213,7 @@ public class Record extends Node {
 				buf.append("{{");
 			}
 			for (Iterator<Port> iter = ports.iterator(); iter.hasNext();) {
-				Port port = (Port) iter.next();
+				Port port = iter.next();
 				buf.append(port.getEmbeddedLabel());
 				if (iter.hasNext()) {
 					buf.append("|");

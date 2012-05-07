@@ -58,6 +58,7 @@ class FieldTableComponent extends JScrollPane {
 
 		table.addMouseListener(new MouseAdapter() {
 			// double click opens it, right click opens new window
+			@Override
 			public void mouseClicked(MouseEvent me) {
 				if (((me.getModifiers() & MouseEvent.BUTTON1_MASK) != 0)
 						&& (me.getClickCount() == 2)) {
@@ -142,18 +143,22 @@ class FieldTableComponent extends JScrollPane {
 			this.oi = oi;
 		}
 
+		@Override
 		public int getColumnCount() {
 			return 4;
 		} // modifier, name, type, value
 
+		@Override
 		public int getRowCount() {
 			return oi.getCount();
 		}
 
+		@Override
 		public String getColumnName(int col) {
 			return columnNames[col];
 		}
 
+		@Override
 		public Object getValueAt(int row, int col) {
 			switch (col) {
 			case 0:

@@ -53,13 +53,14 @@ class ShineTableFrame extends JFrame {
 	private InfoComponent infoComponent;
 	private ObjectInspector oi;
 	private String tag;
-	private Stack history;
+	private Stack<Object> history;
 	private boolean wait;
 	private boolean cloned;
-	private boolean tree;
+	// private boolean tree;
 	private ShineTracker tracker;
 	private JButton clearWaitButton;
-	private JButton cloneButton;
+
+	// private JButton cloneButton;
 
 	/**
 	 * Constructor for the ShineTableFrame object
@@ -74,7 +75,7 @@ class ShineTableFrame extends JFrame {
 	 *            Description of the Parameter
 	 */
 	ShineTableFrame(ShineTracker tracker, String tag, Object o, boolean wait) {
-		this(tracker, null, tag, new Stack(), o, wait, false);
+		this(tracker, null, tag, new Stack<Object>(), o, wait, false);
 	}
 
 	/**
@@ -96,7 +97,7 @@ class ShineTableFrame extends JFrame {
 	 *            Description of the Parameter
 	 */
 	ShineTableFrame(ShineTracker tracker, Point lastLocation, String tag,
-			Stack history, Object o, boolean wait, boolean cloned) {
+			Stack<Object> history, Object o, boolean wait, boolean cloned) {
 		super(tag + " <" + tracker.getNextID() + ">");
 
 		tracker.inc();
@@ -109,7 +110,7 @@ class ShineTableFrame extends JFrame {
 		this.tracker = tracker;
 		this.tag = tag;
 		this.history = history;
-		this.oi = new ObjectInspector(o);
+		oi = new ObjectInspector(o);
 
 		// add toolbar
 		getContentPane().setLayout(new BorderLayout());
@@ -130,15 +131,16 @@ class ShineTableFrame extends JFrame {
 		getContentPane().add(sub1, BorderLayout.CENTER);
 
 		// Finish setting up the frame, and show it.
-		this.addWindowListener(new WindowAdapter() {
+		addWindowListener(new WindowAdapter() {
+			@Override
 			public void windowClosing(WindowEvent e) {
 				ShineTableFrame.this.tracker.dec();
 			}
 		});
 
-		this.pack();
+		pack();
 		updateData();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	/**
@@ -153,6 +155,7 @@ class ShineTableFrame extends JFrame {
 		JButton b;
 		b = new JButton("1st");
 		b.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				goFirstObject();
 			}
@@ -161,6 +164,7 @@ class ShineTableFrame extends JFrame {
 
 		b = new JButton("Prev");
 		b.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				goPreviousObject();
 			}
@@ -169,6 +173,7 @@ class ShineTableFrame extends JFrame {
 
 		b = new JButton("Goto");
 		b.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				goSelectedObject();
 			}
@@ -177,6 +182,7 @@ class ShineTableFrame extends JFrame {
 
 		b = new JButton("New Table");
 		b.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				newCurrentObject(true);
 			}
@@ -185,6 +191,7 @@ class ShineTableFrame extends JFrame {
 
 		b = new JButton("New Tree");
 		b.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				newCurrentObject(false);
 			}
@@ -201,6 +208,7 @@ class ShineTableFrame extends JFrame {
 
 		clearWaitButton = new JButton("Clear Wait");
 		clearWaitButton.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				clearTracker();
 			}
@@ -209,6 +217,8 @@ class ShineTableFrame extends JFrame {
 
 		b = new JButton("Close");
 		b.addActionListener(new ActionListener() {
+			@SuppressWarnings("deprecation")
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				clearTracker();
 				hide();
@@ -284,7 +294,7 @@ class ShineTableFrame extends JFrame {
 	 */
 	void newCurrentObject(boolean makeTable) {
 		if (makeTable) {
-			Stack newStack = (Stack) history.clone();
+			Stack<Object> newStack = (Stack<Object>) history.clone();
 			new ShineTableFrame(tracker, getLocationOnScreen(), tag, newStack,
 					oi.getMyObject(), wait, cloned);
 		} else {
@@ -299,7 +309,7 @@ class ShineTableFrame extends JFrame {
 		int next = fTableComponent.getSelectedIndex();
 		if ((next >= 0) && (next < oi.getCount())) {
 			if ((oi.isRef(next)) && (oi.getValue(next) != null)) {
-				Stack newStack = (Stack) history.clone();
+				Stack<Object> newStack = (Stack<Object>) history.clone();
 				newStack.push(oi.getMyObject());
 				new ShineTableFrame(tracker, getLocationOnScreen(), tag,
 						newStack, oi.getValue(next), wait, cloned);
@@ -371,11 +381,13 @@ class ShineTableFrame extends JFrame {
 			this.etchIn = etchIn;
 		}
 
+		@Override
 		public Dimension getPreferredSize() {
 			return new Dimension(thickness + topleftGap + botrightGap,
 					topleftGap + botrightGap + thickness);
 		}
 
+		@Override
 		public void paint(Graphics g) {
 			Dimension d = getSize();
 			Color from = etchIn ? SystemColor.controlDkShadow

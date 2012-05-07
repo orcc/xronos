@@ -83,7 +83,7 @@ public class NewDebug {
 	private String preface = "";
 	private String controlClassName;
 	private int indentCount = 0;
-	private HashSet levelSet = null;
+	private HashSet<String> levelSet = null;
 	private boolean levelInverted = false;
 	private final static String DEFAULT_LEVEL = "! OLD";
 
@@ -100,12 +100,12 @@ public class NewDebug {
 	 * @param os
 	 *            OutputStream to output debug to
 	 */
-	public NewDebug(Class controlClass, String tag, OutputStream os,
+	public NewDebug(Class<TestClass> controlClass, String tag, OutputStream os,
 			String levels, boolean compiledIn) {
 		if (controlClass != null) {
-			this.controlClassName = controlClass.getName();
+			controlClassName = controlClass.getName();
 		} else {
-			this.controlClassName = "Unknown Class!";
+			controlClassName = "Unknown Class!";
 		}
 
 		if (tag == null)
@@ -287,14 +287,14 @@ public class NewDebug {
 		// tokenize
 		StringTokenizer st = new StringTokenizer(s);
 		while (st.hasMoreTokens()) {
-			String tok = (String) st.nextToken();
+			String tok = st.nextToken();
 			// inverted?
 			if (tok.equals("!")) {
 				levelInverted = true;
 			} else {
 				// if we have no set allocated, allocate it
 				if (levelSet == null) {
-					levelSet = new HashSet();
+					levelSet = new HashSet<String>();
 				}
 				// add it...
 				levelSet.add(tok);
@@ -314,7 +314,7 @@ public class NewDebug {
 				StringTokenizer st = new StringTokenizer(l);
 				ret = levelInverted; // by default ....
 				while (st.hasMoreTokens()) {
-					String tok = (String) st.nextToken();
+					String tok = st.nextToken();
 					ret = levelSet.contains(tok.trim().toUpperCase());
 					// clever, yes?
 					if (ret != levelInverted) {
@@ -357,7 +357,7 @@ public class NewDebug {
 			if (levelSet == null) {
 				ps.print(" ALL");
 			} else {
-				for (Iterator it = levelSet.iterator(); it.hasNext();) {
+				for (Iterator<String> it = levelSet.iterator(); it.hasNext();) {
 					ps.print(" " + it.next());
 				}
 			}

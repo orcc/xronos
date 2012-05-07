@@ -16,9 +16,11 @@
 
 package net.sf.openforge.util.stats;
 
-import java.io.*;
-
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Class for keeping stats. Knows about: - simple counters - threshold counters
@@ -28,7 +30,7 @@ public class Stats {
 
 	/** DOCUMENT ME! */
 	private String groupName;
-	private List<Object> stats = new ArrayList<Object>(5);
+	private List<Stat> stats = new ArrayList<Stat>(5);
 
 	/**
 	 * Creates a new Stats object. DOCUMENT ME!
@@ -89,7 +91,7 @@ public class Stats {
 	 * 
 	 * @return DOCUMENT ME!
 	 */
-	public List getStats() {
+	public List<Stat> getStats() {
 		return stats;
 	}
 
@@ -98,13 +100,13 @@ public class Stats {
 	 * 
 	 * @return DOCUMENT ME!
 	 */
+	@Override
 	public String toString() {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		PrintWriter pw = new PrintWriter(bos);
 
 		pw.println("Stats for: " + groupName);
-		for (Iterator it = getStats().iterator(); it.hasNext();) {
-			Stat stat = (Stat) it.next();
+		for (Stat stat : getStats()) {
 			pw.println("\t" + stat);
 			for (Iterator it2 = stat.getTokens().iterator(); it2.hasNext();) {
 				pw.println("\t\t- " + it2.next());

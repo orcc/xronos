@@ -55,14 +55,17 @@ public interface Stoppable {
 	class Adapter implements Stoppable {
 		private boolean die = false;
 
+		@Override
 		public void requestStop() {
 			die = true;
 		}
 
+		@Override
 		public void requestStart() {
 			die = false;
 		}
 
+		@Override
 		public void takeBreath() {
 			if (die) {
 				throw new Stoppable.InterruptException("Requested Stop!");
@@ -75,6 +78,7 @@ public interface Stoppable {
 	 * This is the exception that the Stoppable task should catch to indicate
 	 * execution has stopped.
 	 */
+	@SuppressWarnings("serial")
 	class InterruptException extends RuntimeException {
 		public InterruptException(String msg) {
 			super(msg);

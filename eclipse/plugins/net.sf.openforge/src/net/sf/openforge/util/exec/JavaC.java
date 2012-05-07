@@ -340,7 +340,7 @@ public class JavaC {
 		boolean done = false;
 		while (!done) {
 			try {
-				this.exitValue = process.waitFor();
+				exitValue = process.waitFor();
 				d1.waitFor();
 				d2.waitFor();
 				done = true;

@@ -21,6 +21,7 @@
 
 package net.sf.openforge.util;
 
+import java.io.Closeable;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -42,8 +43,9 @@ public class Tee extends PrintWriter {
 	private PrintWriter[] writers = new PrintWriter[0];
 	private boolean error = false;
 	private boolean verbose = true;
-	private HashSet nonVerboseWriters = new HashSet(11);
-	private HashMap inputWritersToPrintWriters = new HashMap(11);
+	private HashSet<Object> nonVerboseWriters = new HashSet<Object>(11);
+	private HashMap<Closeable, PrintWriter> inputWritersToPrintWriters = new HashMap<Closeable, PrintWriter>(
+			11);
 
 	public Tee(OutputStream os) {
 		super(os);
@@ -139,6 +141,7 @@ public class Tee extends PrintWriter {
 		return (nonVerboseWriters.contains(obj));
 	}
 
+	@Override
 	public boolean checkError() {
 		boolean result = error;
 
@@ -148,160 +151,187 @@ public class Tee extends PrintWriter {
 		return result;
 	}
 
+	@Override
 	public void close() {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].close();
 	}
 
+	@Override
 	public void flush() {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].flush();
 	}
 
+	@Override
 	public void print(boolean b) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].print(b);
 	}
 
+	@Override
 	public void print(char c) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].print(c);
 	}
 
+	@Override
 	public void print(char[] s) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].print(s);
 	}
 
+	@Override
 	public void print(double d) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].print(d);
 	}
 
+	@Override
 	public void print(float f) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].print(f);
 	}
 
+	@Override
 	public void print(int in) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].print(in);
 	}
 
+	@Override
 	public void print(long l) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].print(l);
 	}
 
+	@Override
 	public void print(Object obj) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].print(obj);
 	}
 
+	@Override
 	public void print(String s) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].print(s);
 	}
 
+	@Override
 	public void println() {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println();
 	}
 
+	@Override
 	public void println(boolean x) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println(x);
 	}
 
+	@Override
 	public void println(char x) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println(x);
 	}
 
+	@Override
 	public void println(char[] x) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println(x);
 	}
 
+	@Override
 	public void println(double x) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println(x);
 	}
 
+	@Override
 	public void println(float x) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println(x);
 	}
 
+	@Override
 	public void println(int x) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println(x);
 	}
 
+	@Override
 	public void println(long x) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println(x);
 	}
 
+	@Override
 	public void println(Object x) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println(x);
 	}
 
+	@Override
 	public void println(String x) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].println(x);
 	}
 
+	@Override
 	protected void setError() {
 		error = true;
 	}
 
+	@Override
 	public void write(char[] buf) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].write(buf);
 	}
 
+	@Override
 	public void write(char[] buf, int off, int len) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].write(buf, off, len);
 	}
 
+	@Override
 	public void write(int c) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].write(c);
 	}
 
+	@Override
 	public void write(String s) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))
 				writers[i].write(s);
 	}
 
+	@Override
 	public void write(String s, int off, int len) {
 		for (int i = 0; i < writers.length; i++)
 			if (verbose || isWriteOnNotVerbose(writers[i]))

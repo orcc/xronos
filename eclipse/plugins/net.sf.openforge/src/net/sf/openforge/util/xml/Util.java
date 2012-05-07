@@ -38,12 +38,12 @@ ENDCOPYRIGHT
 
 package net.sf.openforge.util.xml;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.StringBufferInputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -133,9 +133,9 @@ public class Util {
 
 	private final static XPath xpath = XPathFactory.newInstance().newXPath();
 
-	public static List listElements(Element parent, ElementPredicate p) {
+	public static List<Node> listElements(Element parent, ElementPredicate p) {
 		NodeList nl = parent.getChildNodes();
-		List l = new ArrayList();
+		List<Node> l = new ArrayList<Node>();
 		for (int i = 0; i < nl.getLength(); i++) {
 			Node n = nl.item(i);
 			if (n instanceof Element && p.test((Element) n)) {
@@ -146,7 +146,7 @@ public class Util {
 	}
 
 	public static Element optionalElement(Element parent, ElementPredicate p) {
-		List nl = listElements(parent, p);
+		List<Node> nl = listElements(parent, p);
 
 		assert nl.size() <= 1;
 
@@ -154,7 +154,7 @@ public class Util {
 	}
 
 	public static Element uniqueElement(Element parent, ElementPredicate p) {
-		List nl = listElements(parent, p);
+		List<Node> nl = listElements(parent, p);
 
 		assert nl.size() <= 1;
 
@@ -277,7 +277,7 @@ public class Util {
 			throws Exception {
 		Node doc = document;
 		for (int i = 0; i < fileNames.length; i++) {
-			File file = new File(fileNames[i]);
+			// File file = new File(fileNames[i]);
 			Transformer xf = createTransformer(fileNames[i], xmlImpl);
 			DOMResult res = new DOMResult();
 			if (baseInputURI != null) {
@@ -513,7 +513,8 @@ public class Util {
 	public static Node saxonify(Node n) {
 		try {
 			String xml = createXML(n);
-			InputStream sis = new StringBufferInputStream(xml);
+			// InputStream sis = new StringBufferInputStream(xml);
+			InputStream sis = new ByteArrayInputStream(xml.getBytes("UTF-8"));
 			return getSaxonImplementation().getDocumentBuilder().parse(sis);
 		} catch (Exception exc) {
 			throw new RuntimeException("Could not saxonify node.", exc);
@@ -523,7 +524,8 @@ public class Util {
 	public static Node xercify(Node n) {
 		try {
 			String xml = createXML(n);
-			InputStream sis = new StringBufferInputStream(xml);
+			// InputStream sis = new StringBufferInputStream(xml);
+			InputStream sis = new ByteArrayInputStream(xml.getBytes("UTF-8"));
 			return getDefaultImplementation().getDocumentBuilder().parse(sis);
 		} catch (Exception exc) {
 			throw new RuntimeException("Could not xercify node.", exc);
@@ -591,6 +593,7 @@ public class Util {
 			javax.xml.parsers.DocumentBuilderFactory.newInstance(),
 			javax.xml.transform.TransformerFactory.newInstance());
 
+	@SuppressWarnings("unused")
 	private static String defaultDBFI = javax.xml.parsers.DocumentBuilderFactory
 			.newInstance().getClass().getName();
 

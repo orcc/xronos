@@ -130,15 +130,17 @@ import java.util.Set;
  * {@link #endOutput()} to finalize the output and release resources.
  */
 public class ObjectInspector {
-	private List filters; // list of filters
-	private Map excludedFields; // list of fields to exclude
+	private List<Filter> filters; // list of filters
+	private Map<String, Set<String>> excludedFields; // list of fields to
+														// exclude
 
-	private Map IDMap; // map object references to their IDs
-	private List objList; // list of objects to print
+	private Map<ObjectReference, Integer> IDMap; // map object references to
+													// their IDs
+	private List<Object> objList; // list of objects to print
 	private int nextID; // next ID to use
 	private PrintWriter out; // output character stream
 	private boolean printRule; // controls outputs delimiters
-	private Map fieldsCache; // cache for declared fields
+	private Map<String, List<Field>> fieldsCache; // cache for declared fields
 
 	// ---------------------------- inner classes ------------------------------
 	/**
@@ -193,7 +195,7 @@ public class ObjectInspector {
 		 * @return <code>true</code> if the pattern matches the class,
 		 *         <code>false</code> otherwise
 		 */
-		public boolean match(Class clazz) {
+		public boolean match(Class<?> clazz) {
 			String className = clazz.getName();
 			if (prefix)
 				return className.startsWith(pattern);
@@ -232,6 +234,7 @@ public class ObjectInspector {
 		 * @return <code>true</code> if both refer to the same object,
 		 *         <code>false</code> otherwise
 		 */
+		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof ObjectReference)
 				return (this.obj == ((ObjectReference) obj).obj);
@@ -243,6 +246,7 @@ public class ObjectInspector {
 		 * 
 		 * @return a hash code for this object
 		 */
+		@Override
 		public int hashCode() {
 			return obj.hashCode();
 		}
@@ -273,7 +277,7 @@ public class ObjectInspector {
 	 */
 	private Integer enqueue(Object obj) {
 		ObjectReference objRef = new ObjectReference(obj);
-		Integer ID = (Integer) IDMap.get(objRef);
+		Integer ID = IDMap.get(objRef);
 		if ((ID == null) && (shouldInspect(obj))) {
 			ID = new Integer(nextID++);
 			IDMap.put(objRef, ID);
@@ -293,18 +297,18 @@ public class ObjectInspector {
 	 * 
 	 * @return the declared fields of the class
 	 */
-	private List getDeclaredFields(Class clazz) {
+	private List<Field> getDeclaredFields(Class<?> clazz) {
 		String className = clazz.getName();
-		List filteredFields = (List) fieldsCache.get(className);
+		List<Field> filteredFields = fieldsCache.get(className);
 		if (filteredFields != null)
 			return filteredFields;
 		Field[] fields = clazz.getDeclaredFields();
 		Field.setAccessible(fields, true);
-		Set fieldsSet = (Set) excludedFields.get(className);
+		Set<String> fieldsSet = excludedFields.get(className);
 		if (fieldsSet == null)
 			filteredFields = Arrays.asList(fields);
 		else {
-			filteredFields = new ArrayList();
+			filteredFields = new ArrayList<Field>();
 			for (int i = 0; i < fields.length; i++)
 				if (!fieldsSet.contains(fields[i].getName()))
 					filteredFields.add(fields[i]);
@@ -324,7 +328,7 @@ public class ObjectInspector {
 	 * 
 	 * @return the user friendly name of the class
 	 */
-	public String getFriendlyName(Class clazz) {
+	public String getFriendlyName(Class<?> clazz) {
 		StringBuffer buffer = new StringBuffer();
 		while (clazz.isArray()) {
 			buffer.insert(0, "[]");
@@ -404,12 +408,12 @@ public class ObjectInspector {
 	 * @return <code>true</code> if the class is filtered, <code>false</code>
 	 *         otherwise
 	 */
-	private boolean isFiltered(Class clazz) {
+	private boolean isFiltered(Class<?> clazz) {
 		if (filters.isEmpty())
 			return false;
 		Filter filter = null;
 		for (int i = filters.size() - 1; i >= 0; i--) {
-			filter = (Filter) filters.get(i);
+			filter = filters.get(i);
 			if (filter.match(clazz))
 				return !filter.isInclusion();
 		}
@@ -493,9 +497,9 @@ public class ObjectInspector {
 	 * @throws IOException
 	 *             if an exception occurs while outputing the collection
 	 */
-	private void outputCollection(Collection obj) throws IOException {
+	private void outputCollection(Collection<Object> obj) throws IOException {
 		openTable(obj, 1);
-		Iterator iterator = obj.iterator();
+		Iterator<Object> iterator = obj.iterator();
 		while (iterator.hasNext()) {
 			out.println("<TR>");
 			outputValue(iterator.next(), false);
@@ -514,7 +518,7 @@ public class ObjectInspector {
 	 * @throws IOException
 	 *             if an exception occurs while outputing the list
 	 */
-	private void outputList(List obj) throws IOException {
+	private void outputList(List<Object> obj) throws IOException {
 		openTable(obj, 2);
 		for (int i = 0; i < obj.size(); i++) {
 			out.println("<TR>");
@@ -563,9 +567,9 @@ public class ObjectInspector {
 	private void outputObject(Object obj) throws IOException {
 		openTable(obj, 3);
 		boolean printHeader = false;
-		Class clazz = obj.getClass();
+		Class<?> clazz = obj.getClass();
 		while (true) {
-			List fields = getDeclaredFields(clazz);
+			List<Field> fields = getDeclaredFields(clazz);
 			if ((fields.size() > 0) && (printHeader)) {
 				out.println("<TR BGCOLOR=\"#C0C0C0\">");
 				out.println("<TD COLSPAN=\"3\"><FONT SIZE=\"+1\"><B>fields inherited from "
@@ -574,8 +578,8 @@ public class ObjectInspector {
 			}
 			printHeader = true;
 			for (int i = 0; i < fields.size(); i++) {
-				Field field = (Field) fields.get(i);
-				Class type = field.getType();
+				Field field = fields.get(i);
+				Class<?> type = field.getType();
 				Object value = getFieldValue(obj, field);
 				out.println("<TR>");
 				out.println("<TD>" + field.getName() + "</TD>");
@@ -632,7 +636,7 @@ public class ObjectInspector {
 	 *         <code>false</code> otherwise
 	 */
 	private boolean shouldInspect(Object obj) {
-		Class clazz = obj.getClass();
+		Class<?> clazz = obj.getClass();
 		if ((clazz.isArray()) || (!isFiltered(clazz))
 				|| (obj instanceof Collection) || (obj instanceof Map))
 			return true;
@@ -646,11 +650,11 @@ public class ObjectInspector {
 	 * <code>javax.*</code>.
 	 */
 	public ObjectInspector() {
-		filters = new ArrayList();
-		excludedFields = new HashMap();
-		IDMap = new HashMap();
-		objList = new LinkedList();
-		fieldsCache = new HashMap();
+		filters = new ArrayList<Filter>();
+		excludedFields = new HashMap<String, Set<String>>();
+		IDMap = new HashMap<ObjectReference, Integer>();
+		objList = new LinkedList<Object>();
+		fieldsCache = new HashMap<String, List<Field>>();
 		addExclusionFilter("java.*");
 		addExclusionFilter("javax.*");
 	}
@@ -713,9 +717,9 @@ public class ObjectInspector {
 		int index = field.lastIndexOf('.');
 		String clazz = field.substring(0, index);
 		field = field.substring(index + 1);
-		Set fields = (Set) excludedFields.get(clazz);
+		Set<String> fields = excludedFields.get(clazz);
 		if (fields == null)
-			fields = new HashSet();
+			fields = new HashSet<String>();
 		fields.add(field);
 		excludedFields.put(clazz, fields);
 	}
@@ -742,7 +746,7 @@ public class ObjectInspector {
 		printRule = true;
 		while (!objList.isEmpty()) {
 			Object obj = objList.remove(0);
-			Class clazz = obj.getClass();
+			Class<?> clazz = obj.getClass();
 			if (clazz.isArray())
 				outputArray(obj);
 			else if (!isFiltered(clazz))

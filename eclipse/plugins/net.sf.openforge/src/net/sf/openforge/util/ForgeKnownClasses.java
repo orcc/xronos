@@ -61,7 +61,7 @@ public class ForgeKnownClasses {
 	 *            a value of type 'Class'
 	 * @return a value of type 'boolean'
 	 */
-	public static boolean isSystemClass(Class clazz) {
+	public static boolean isSystemClass(Class<?> clazz) {
 		return isSystemClass(clazz.getName());
 	}
 

@@ -150,6 +150,7 @@ public class SizedInteger {
 	 * @return true if the given object is a <code>SizedInteger</code> with the
 	 *         same attributes as this object
 	 */
+	@Override
 	public boolean equals(Object object) {
 		if (object instanceof SizedInteger) {
 			final SizedInteger s = (SizedInteger) object;
@@ -159,6 +160,7 @@ public class SizedInteger {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return bits.hashCode();
 	}
@@ -420,6 +422,7 @@ public class SizedInteger {
 		return numberValue().toString(radix);
 	}
 
+	@Override
 	public String toString() {
 		return toString(10);
 	}

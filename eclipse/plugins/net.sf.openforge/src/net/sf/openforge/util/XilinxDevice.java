@@ -387,7 +387,7 @@ public class XilinxDevice {
 		knownParts = new XilinxDevice[al.size()];
 
 		for (int i = 0; i < al.size(); i++)
-			knownParts[i] = (XilinxDevice) al.get(i);
+			knownParts[i] = al.get(i);
 	}
 
 	public XilinxDevice(String parseString) {
@@ -620,6 +620,7 @@ public class XilinxDevice {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return getFullDeviceName();
 	}

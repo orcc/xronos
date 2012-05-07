@@ -21,90 +21,81 @@
 
 package net.sf.openforge.util.stats;
 
-
 /**
  * Simple Counter
  */
-public class StatSimpleCounter
-    extends Stat
-{
+public class StatSimpleCounter extends Stat {
 
-    /** DOCUMENT ME! */
-    private long count = 0L;
+	/** DOCUMENT ME! */
+	private long count = 0L;
 
-    private StatSimpleCounter ()
-    {
-        this("");
-    }
+	/**
+	 * Creates a new StatSimpleCounter object. DOCUMENT ME!
+	 * 
+	 * @param name
+	 *            DOCUMENT ME!
+	 */
+	public StatSimpleCounter(String name) {
+		super(name, "Counter");
+	}
 
-    /**
-     * Creates a new StatSimpleCounter object. DOCUMENT ME!
-     *
-     * @param name DOCUMENT ME!
-     */
-    public StatSimpleCounter (String name)
-    {
-        super(name, "Counter");
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param l
+	 *            DOCUMENT ME!
+	 */
+	public final void inc(long l) {
+		count = count + l;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @param l DOCUMENT ME!
-     */
-    public final void inc (long l)
-    {
-        count = count + l;
-    }
+	/**
+	 * DOCUMENT ME!
+	 */
+	public final void inc() {
+		count++;
+	}
 
-    /**
-     * DOCUMENT ME!
-     */
-    public final void inc ()
-    {
-        count++;
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param token
+	 *            DOCUMENT ME!
+	 * @param l
+	 *            DOCUMENT ME!
+	 */
+	public final void inc(Object token, long l) {
+		count = count + l;
+		addToken(token);
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @param token DOCUMENT ME!
-     * @param l DOCUMENT ME!
-     */
-    public final void inc (Object token, long l)
-    {
-        count = count + l;
-        addToken(token);
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param token
+	 *            DOCUMENT ME!
+	 */
+	public final void inc(Object token) {
+		count++;
+		addToken(token);
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @param token DOCUMENT ME!
-     */
-    public final void inc (Object token)
-    {
-        count++;
-        addToken(token);
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	public long getCount() {
+		return count;
+	}
 
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public long getCount ()
-    {
-        return count;
-    }
-
-    /**
-     * DOCUMENT ME!
-     *
-     * @return DOCUMENT ME!
-     */
-    public String toString ()
-    {
-        return getName() + ": " + count;
-    }
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @return DOCUMENT ME!
+	 */
+	@Override
+	public String toString() {
+		return getName() + ": " + count;
+	}
 }

@@ -70,7 +70,7 @@ class ShineTreeFrame extends JFrame {
 		this.wait = wait;
 		this.tracker = tracker;
 		this.tag = tag;
-		this.oi = new ObjectInspector(o);
+		oi = new ObjectInspector(o);
 
 		// add toolbar
 		getContentPane().setLayout(new BorderLayout());
@@ -87,15 +87,16 @@ class ShineTreeFrame extends JFrame {
 		getContentPane().add(sub1, BorderLayout.CENTER);
 
 		// Finish setting up the frame, and show it.
-		this.addWindowListener(new WindowAdapter() {
+		addWindowListener(new WindowAdapter() {
+			@Override
 			public void windowClosing(WindowEvent e) {
 				ShineTreeFrame.this.tracker.dec();
 			}
 		});
 
-		this.pack();
+		pack();
 		updateData();
-		this.setVisible(true);
+		setVisible(true);
 	}
 
 	Component createToolBar() {
@@ -106,6 +107,7 @@ class ShineTreeFrame extends JFrame {
 
 		b = new JButton("New Tree");
 		b.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				newCurrentObject(true);
 			}
@@ -114,6 +116,7 @@ class ShineTreeFrame extends JFrame {
 
 		b = new JButton("New Table");
 		b.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				newCurrentObject(false);
 			}
@@ -130,6 +133,7 @@ class ShineTreeFrame extends JFrame {
 
 		clearWaitButton = new JButton("Clear Wait");
 		clearWaitButton.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				clearTracker();
 			}
@@ -138,6 +142,7 @@ class ShineTreeFrame extends JFrame {
 
 		b = new JButton("Close");
 		b.addActionListener(new ActionListener() {
+			@Override
 			@SuppressWarnings("deprecation")
 			public void actionPerformed(ActionEvent e) {
 				clearTracker();
@@ -169,7 +174,6 @@ class ShineTreeFrame extends JFrame {
 		}
 	}
 
-	@SuppressWarnings("rawtypes")
 	void newCurrentObject(boolean makeTree) {
 		Object o = fTreeComponent.getSelectedObject();
 		if (o != null) {
@@ -180,11 +184,10 @@ class ShineTreeFrame extends JFrame {
 						wait, cloned);
 			} else {
 				new ShineTableFrame(tracker, getLocationOnScreen(), tag,
-						new Stack(), o, wait, cloned);
+						new Stack<Object>(), o, wait, cloned);
 			}
 		}
 	}
-
 
 	class Sep extends JComponent {
 		private int topleftGap;
@@ -208,11 +211,13 @@ class ShineTreeFrame extends JFrame {
 			this.etchIn = etchIn;
 		}
 
+		@Override
 		public Dimension getPreferredSize() {
 			return new Dimension(thickness + topleftGap + botrightGap,
 					topleftGap + botrightGap + thickness);
 		}
 
+		@Override
 		public void paint(Graphics g) {
 			Dimension d = getSize();
 			Color from = etchIn ? SystemColor.controlDkShadow

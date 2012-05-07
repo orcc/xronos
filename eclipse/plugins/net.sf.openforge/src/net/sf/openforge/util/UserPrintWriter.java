@@ -35,6 +35,7 @@ public class UserPrintWriter extends IndentWriter {
 		super(pw);
 	}
 
+	@Override
 	public void close() {
 		// Do nothing, user shouldn't close file.
 		// Forge will close it when done writing.

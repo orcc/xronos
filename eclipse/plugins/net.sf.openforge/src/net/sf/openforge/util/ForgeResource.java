@@ -57,6 +57,7 @@ public class ForgeResource extends ListResourceBundle {
 	 * 
 	 * @return the two dimensional array of resource items
 	 */
+	@Override
 	public Object[][] getContents() {
 		return contents;
 	}

@@ -67,9 +67,9 @@ public class GCC {
 	 */
 	public int exec(String[] args, OutputStream out, OutputStream err)
 			throws java.io.IOException, ExecutionException {
-		this.commandArgs = new String[args.length + 1];
-		this.commandArgs[0] = gccExe;
-		System.arraycopy(args, 0, this.commandArgs, 1, args.length);
+		commandArgs = new String[args.length + 1];
+		commandArgs[0] = gccExe;
+		System.arraycopy(args, 0, commandArgs, 1, args.length);
 
 		run(out, err);
 		return exitValue();
@@ -162,10 +162,10 @@ public class GCC {
 	 * @return an array of Strings, the formatted command line args
 	 */
 	private String[] getFormattedCommandArgs() {
-		String[] formatted = new String[this.commandArgs.length];
+		String[] formatted = new String[commandArgs.length];
 		boolean doFix = isWindows();
-		for (int i = 0; i < this.commandArgs.length; i++) {
-			String nextArg = this.commandArgs[i];
+		for (int i = 0; i < commandArgs.length; i++) {
+			String nextArg = commandArgs[i];
 			if (doFix && nextArg.matches("\\s")) {
 				nextArg = "\"" + nextArg + "\"";
 			}
@@ -244,6 +244,7 @@ public class GCC {
 			final File gccFile = new File(gccHome);
 			if (gccFile.exists()) {
 				final FilenameFilter gccFilter = new FilenameFilter() {
+					@Override
 					public boolean accept(File dir, String name) {
 						return name.toLowerCase().equals(defaultGcc);
 					}

@@ -87,6 +87,7 @@ public abstract class Node extends GVObject {
 	/**
 	 * Gets the displayed label of this node.
 	 */
+	@Override
 	public String getLabel() {
 		/*
 		 * A node's label attribute defaults to its id.

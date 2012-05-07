@@ -92,7 +92,7 @@ class FieldTreeComponent extends JScrollPane {
 			this.parent = parent;
 			this.isInspector = isInspector;
 			if (isInspector)
-				this.oi = (ObjectInspector) me;
+				oi = (ObjectInspector) me;
 		}
 
 		public String getName() {
@@ -138,6 +138,7 @@ class FieldTreeComponent extends JScrollPane {
 			return sb.toString();
 		}
 
+		@Override
 		public String toString() {
 			return getName() + " :: " + getData();
 		}
@@ -150,6 +151,7 @@ class FieldTreeComponent extends JScrollPane {
 			return me;
 		}
 
+		@Override
 		public TreeNode getChildAt(int childIndex) {
 			if (isInspector) {
 				Object child = oi.getValue(childIndex);
@@ -167,6 +169,7 @@ class FieldTreeComponent extends JScrollPane {
 			return null;
 		}
 
+		@Override
 		public int getChildCount() {
 			if (isInspector)
 				return oi.getCount();
@@ -174,10 +177,12 @@ class FieldTreeComponent extends JScrollPane {
 				return 0;
 		}
 
+		@Override
 		public TreeNode getParent() {
 			return parent;
 		}
 
+		@Override
 		public int getIndex(TreeNode node) {
 			if (isInspector) {
 				MyTreeNode child = (MyTreeNode) node;
@@ -192,10 +197,12 @@ class FieldTreeComponent extends JScrollPane {
 			return -1;
 		}
 
+		@Override
 		public boolean getAllowsChildren() {
 			return true;
 		}
 
+		@Override
 		public boolean isLeaf() {
 			if (isInspector) {
 				if (oi.getCount() > 0)
@@ -204,22 +211,25 @@ class FieldTreeComponent extends JScrollPane {
 			return true;
 		}
 
-		public Enumeration children() {
+		@Override
+		public Enumeration<?> children() {
 			if (isInspector)
 				return new myEnumeration();
 			else
 				return null;
 		}
 
-		class myEnumeration implements Enumeration {
+		class myEnumeration implements Enumeration<Object> {
 			int current = (-1);
 
+			@Override
 			public Object nextElement() {
 				if (++current >= getChildCount())
 					throw new NoSuchElementException("Index: " + current);
 				return getChildAt(current);
 			}
 
+			@Override
 			public boolean hasMoreElements() {
 				return ((current + 1) < getChildCount());
 			}
@@ -251,6 +261,7 @@ class FieldTreeComponent extends JScrollPane {
 			add(data);
 		}
 
+		@Override
 		public Component getTreeCellRendererComponent(JTree tree, Object value,
 				boolean selected, boolean expanded, boolean leaf, int row,
 				boolean hasFocus) {

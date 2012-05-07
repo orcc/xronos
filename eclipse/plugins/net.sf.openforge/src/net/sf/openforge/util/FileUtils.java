@@ -86,6 +86,7 @@ public class FileUtils {
 		return outDir;
 	}
 
+	@SuppressWarnings("serial")
 	public static class FileUtilException extends Exception {
 		public FileUtilException(String msg) {
 			super(msg);

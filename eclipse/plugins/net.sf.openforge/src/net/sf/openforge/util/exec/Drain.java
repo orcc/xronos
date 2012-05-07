@@ -129,7 +129,8 @@ public class Drain {
 	 *            discarded
 	 */
 	private void drain(final InputStream stream, final PrintWriter pw) {
-		this.thread = new Thread() {
+		thread = new Thread() {
+			@Override
 			public void run() {
 				InputStreamReader reader = new InputStreamReader(stream);
 				BufferedReader buffer = new BufferedReader(reader);
@@ -154,7 +155,7 @@ public class Drain {
 			}
 		};
 
-		this.thread.start();
+		thread.start();
 	}
 
 }

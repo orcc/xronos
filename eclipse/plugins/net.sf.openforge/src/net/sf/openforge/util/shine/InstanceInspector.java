@@ -33,10 +33,10 @@ import java.util.HashMap;
 /**
  * Goal here is to return a DB of all data elements
  */
-public class InstanceInspector implements Comparator {
-	private ArrayList _flist = new ArrayList(10);
+public class InstanceInspector implements Comparator<Object> {
+	private ArrayList<Field> _flist = new ArrayList<Field>(10);
 	private Field[] myFields;
-	private String modString[];
+	// private String modString[];
 	private Object myObject;
 
 	// abstract, final, interface, native, private, protected,
@@ -87,7 +87,7 @@ public class InstanceInspector implements Comparator {
 		return myFields.length;
 	}
 
-	public Class getFieldType(int fIndex) {
+	public Class<?> getFieldType(int fIndex) {
 		return myFields[fIndex].getType();
 	}
 
@@ -118,6 +118,7 @@ public class InstanceInspector implements Comparator {
 		return pat;
 	}
 
+	@Override
 	public String toString() {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		PrintWriter pw = new PrintWriter(bos);
@@ -140,7 +141,7 @@ public class InstanceInspector implements Comparator {
 				throw new IllegalArgumentException("Illegal Sort option: "
 						+ order.charAt(i));
 		}
-		this.sortOrder = order;
+		sortOrder = order;
 		Arrays.sort(myFields, this);
 	}
 
@@ -152,10 +153,10 @@ public class InstanceInspector implements Comparator {
 	 * 
 	 * @see
 	 */
-	private void createFieldList(Class topClass) {
+	private void createFieldList(Class<?> topClass) {
 		_flist.clear();
 
-		for (Class c = topClass; c != null;) {
+		for (Class<?> c = topClass; c != null;) {
 			Field[] f = c.getDeclaredFields();
 			for (int i = 0; i < f.length; i++) {
 				if ((f[i].getModifiers() & Modifier.ABSTRACT) == 0)
@@ -242,6 +243,7 @@ public class InstanceInspector implements Comparator {
 	 *            a value of type 'Object'
 	 * @return a value of type 'int'
 	 */
+	@Override
 	public int compare(Object o1, Object o2) {
 		Field f1 = (Field) o1;
 		Field f2 = (Field) o2;
@@ -260,7 +262,7 @@ public class InstanceInspector implements Comparator {
 	}
 
 	public static void main(String args[]) {
-		HashMap hm = new HashMap(11);
+		HashMap<String, String> hm = new HashMap<String, String>(11);
 		hm.put("Hello!", "Goodbye");
 
 		InstanceInspector ii1 = new InstanceInspector(hm);

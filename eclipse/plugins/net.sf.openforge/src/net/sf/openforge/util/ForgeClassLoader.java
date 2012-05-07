@@ -38,7 +38,7 @@ import java.util.HashMap;
 public class ForgeClassLoader extends ClassLoader {
 
 	/** Cache of loaded classes. */
-	private HashMap classes = new HashMap();
+	private HashMap<String, Class<?>> classes = new HashMap<String, Class<?>>();
 
 	/** Reusable buffer for converting class file bytes to Class objects. */
 	private byte[] classBytes = new byte[4 * 1024];
@@ -56,7 +56,7 @@ public class ForgeClassLoader extends ClassLoader {
 	 */
 	public ForgeClassLoader(String[] classpath) {
 		super();
-		this.searchPath = classpath;
+		searchPath = classpath;
 	}
 
 	/**
@@ -70,12 +70,13 @@ public class ForgeClassLoader extends ClassLoader {
 	 * @throws ClassNotFoundException
 	 *             if the class is not found
 	 */
-	public synchronized Class loadClass(String name, boolean resolve)
+	@Override
+	public synchronized Class<?> loadClass(String name, boolean resolve)
 			throws ClassNotFoundException {
 		//
 		// If the class has not already been loaded, attempt to find it.
 		//
-		Class cl = (Class) classes.get(name);
+		Class<?> cl = classes.get(name);
 		if (cl == null) {
 
 			// System.out.println("\nForgeClassLoader.loadClass(" + name +
@@ -162,6 +163,7 @@ public class ForgeClassLoader extends ClassLoader {
 	 *            the file name
 	 * @return the URL of the file, or null if not found
 	 */
+	@Override
 	protected URL findResource(String name) {
 		if (ForgeKnownClasses.isSystemClass(name)) {
 			try {
@@ -177,7 +179,7 @@ public class ForgeClassLoader extends ClassLoader {
 				File file = findClassFile(className);
 
 				if (file.exists()) {
-					return file.toURL();
+					return file.toURI().toURL();
 				}
 			} catch (IOException e) {
 			}

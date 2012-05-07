@@ -213,9 +213,9 @@ public class Debug {
 	public Debug(Class<?> controlClass, String tag, boolean compiledIn,
 			boolean visible, int levels, OutputStream os) {
 		if (controlClass != null) {
-			this.controlClassName = controlClass.getName();
+			controlClassName = controlClass.getName();
 		} else {
-			this.controlClassName = "Unknown Class!";
+			controlClassName = "Unknown Class!";
 		}
 
 		if (tag == null)
