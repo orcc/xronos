@@ -21,107 +21,114 @@
 
 package net.sf.openforge.optimize.memory;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
-import java.util.*;
-
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.Access;
+import net.sf.openforge.lim.DefaultVisitor;
+import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.Visitable;
+import net.sf.openforge.lim.memory.LogicalMemory;
+import net.sf.openforge.lim.memory.MemoryAccess;
+import net.sf.openforge.lim.memory.MemoryRead;
+import net.sf.openforge.lim.memory.MemoryWrite;
 import net.sf.openforge.optimize.Optimization;
 
+import org.eclipse.core.runtime.jobs.Job;
+
 /**
- * AccessEliminator deletes from all memories, in any visited Design,
- * any {@link Access} which is not found in the LIM contained within
- * that {@link Design}.  This is used to clean up after merging a
- * library design with the main design which may leave accesses to the
- * memory which exist only in library methods that were not brought
- * over to the design.
- *
- * <p>Created: Wed Apr  9 17:01:47 2003
- *
+ * AccessEliminator deletes from all memories, in any visited Design, any
+ * {@link Access} which is not found in the LIM contained within that
+ * {@link Design}. This is used to clean up after merging a library design with
+ * the main design which may leave accesses to the memory which exist only in
+ * library methods that were not brought over to the design.
+ * 
+ * <p>
+ * Created: Wed Apr 9 17:01:47 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: AccessEliminator.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class AccessEliminator extends DefaultVisitor implements Optimization
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class AccessEliminator extends DefaultVisitor implements Optimization {
 
-    /** A Set of Access objects that were found when traversing the
-     * LIM */
-    private Set accessesInLIM = new HashSet();
-    
-    public AccessEliminator ()
-    {}
+	/**
+	 * A Set of Access objects that were found when traversing the LIM
+	 */
+	private Set<MemoryAccess> accessesInLIM = new HashSet<MemoryAccess>();
 
-    /**
-     * Applies this optimization to a given target.
-     *
-     * @param target the target on which to run this optimization
-     */
-    public void run (Visitable target)
-    {
-        target.accept(this);
-    }
+	public AccessEliminator() {
+	}
 
-    /**
-     * Traverses the LIM recording any memory access, then remove any
-     * accesses that the memory knows about that was not found in the
-     * LIM.
-     */
-    public void visit (Design design)
-    {
-        for (Iterator iter = design.getLogicalMemories().iterator(); iter.hasNext();)
-        {
-            // TBD
-            iter.next();
-        }
-    }
+	/**
+	 * Applies this optimization to a given target.
+	 * 
+	 * @param target
+	 *            the target on which to run this optimization
+	 */
+	@Override
+	public void run(Visitable target) {
+		target.accept(this);
+	}
 
-    public void visit (MemoryRead acc)
-    {
-        super.visit(acc);
-        accessesInLIM.add(acc);
-    }
-    
-    public void visit (MemoryWrite acc)
-    {
-        super.visit(acc);
-        accessesInLIM.add(acc);
-    }
-    
-    /**
-     * Returns false, the didModify is used to determine if this
-     * optimization caused a change which necessitates other
-     * optimizations to re-run.
-     */
-    public boolean didModify ()
-    {
-        return false;
-    }
+	/**
+	 * Traverses the LIM recording any memory access, then remove any accesses
+	 * that the memory knows about that was not found in the LIM.
+	 */
+	@Override
+	public void visit(Design design) {
+		for (Iterator<LogicalMemory> iter = design.getLogicalMemories()
+				.iterator(); iter.hasNext();) {
+			// TBD
+			iter.next();
+		}
+	}
 
-    /**
-     * Clears out the set of Access objects found in the LIM.
-     */
-    public void clear ()
-    {
-        this.accessesInLIM.clear();
-    }
-    
-    /**
-     * Reports, via {@link Job#info}, what optimization is being
-     * performed, in this case, nothing is reported to the user.
-     */
-    public void preStatus ()
-    {
-        //Job.info("reducing expressions with constants...");
-    }
-    
-    /**
-     * Reports, via {@link Job#verbose}, the results of <b>this</b>
-     * pass of the optimization.
-     */
-    public void postStatus ()
-    {
-        //Job.verbose("reduced " + getReplacedNodeCount() + " expressions");
-    }
-    
+	@Override
+	public void visit(MemoryRead acc) {
+		super.visit(acc);
+		accessesInLIM.add(acc);
+	}
+
+	@Override
+	public void visit(MemoryWrite acc) {
+		super.visit(acc);
+		accessesInLIM.add(acc);
+	}
+
+	/**
+	 * Returns false, the didModify is used to determine if this optimization
+	 * caused a change which necessitates other optimizations to re-run.
+	 */
+	@Override
+	public boolean didModify() {
+		return false;
+	}
+
+	/**
+	 * Clears out the set of Access objects found in the LIM.
+	 */
+	@Override
+	public void clear() {
+		accessesInLIM.clear();
+	}
+
+	/**
+	 * Reports, via {@link Job#info}, what optimization is being performed, in
+	 * this case, nothing is reported to the user.
+	 */
+	@Override
+	public void preStatus() {
+		// Job.info("reducing expressions with constants...");
+	}
+
+	/**
+	 * Reports, via {@link Job#verbose}, the results of <b>this</b> pass of the
+	 * optimization.
+	 */
+	@Override
+	public void postStatus() {
+		// Job.verbose("reduced " + getReplacedNodeCount() + " expressions");
+	}
+
 }// AccessEliminator

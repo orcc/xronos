@@ -103,7 +103,7 @@ public class RegisterAccessBlock extends Block {
 			super(acc);
 
 			Register reg = (Register) acc.getResource();
-			CastOp convert = new CastOp(reg.getInitWidth(), reg.isSigned());
+			CastOp convert = new CastOp(reg.getInitWidth(), Register.isSigned());
 			insertComponent(convert, 0);
 			insertComponent(acc, 1);
 

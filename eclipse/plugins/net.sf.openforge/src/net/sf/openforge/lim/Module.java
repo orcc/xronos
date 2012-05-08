@@ -339,8 +339,8 @@ public abstract class Module extends Component implements Cloneable {
 	 * @return a collection of {@link Resource}
 	 */
 	@Override
-	public Collection getAccessedResources() {
-		final Set set = new HashSet();
+	public Collection<Resource> getAccessedResources() {
+		final Set<Resource> set = new HashSet<Resource>();
 		for (Component component : getComponents()) {
 			set.addAll(component.getAccessedResources());
 		}
@@ -603,7 +603,7 @@ public abstract class Module extends Component implements Cloneable {
 
 		assert !clone.isConstructed();
 
-		clone.components = new HashSet();
+		clone.components = new HashSet<Component>();
 		if (odbLabel != null) {
 			clone.odbLabel = new BlockSearchLabel(odbLabel.localLabel);
 		}

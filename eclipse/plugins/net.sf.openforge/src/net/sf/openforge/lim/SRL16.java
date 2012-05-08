@@ -21,7 +21,6 @@
 
 package net.sf.openforge.lim;
 
-import java.util.Iterator;
 import java.util.List;
 
 import net.sf.openforge.report.FPGAResource;
@@ -49,14 +48,14 @@ public class SRL16 extends Primitive {
 	private int type;
 
 	/** A list of regs being compacted and replaced by SRL16/SRL16E */
-	private List regs;
+	private List<Reg> regs;
 
 	/**
 	 * Constructs a SRL16 with stages equals size of registers chain and given
 	 * id
 	 * 
 	 */
-	private SRL16(List regs_chain, String id) {
+	private SRL16(List<Reg> regs_chain, String id) {
 		// always create 1 data port, 4 stage ports, and 1 optional
 		// enable port.
 		// Create just the data port and the optional enable port.
@@ -66,8 +65,8 @@ public class SRL16 extends Primitive {
 		regs = regs_chain;
 
 		// ports are always used.
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
-			((Port) iter.next()).setUsed(true);
+		for (Port port : getDataPorts()) {
+			port.setUsed(true);
 		}
 
 		// the clock is always used, and must be connected by the user
@@ -77,7 +76,7 @@ public class SRL16 extends Primitive {
 		getResultBus().setIDLogical(ID.showLogical(this) + "_result");
 	}
 
-	public static SRL16 createSRL16(List chain) {
+	public static SRL16 createSRL16(List<Reg> chain) {
 		SRL16 srl_16 = new SRL16(chain, "SRL16");
 
 		srl_16.type = SRL16;
@@ -88,7 +87,7 @@ public class SRL16 extends Primitive {
 		return srl_16;
 	}
 
-	public static SRL16 createSRL16E(List chain) {
+	public static SRL16 createSRL16E(List<Reg> chain) {
 		SRL16 srl_16e = new SRL16(chain, "SRL16E");
 
 		srl_16e.type = SRL16E;
@@ -96,7 +95,7 @@ public class SRL16 extends Primitive {
 		return srl_16e;
 	}
 
-	public static SRL16 createSRL16_1(List chain) {
+	public static SRL16 createSRL16_1(List<Reg> chain) {
 		SRL16 srl_16_1 = new SRL16(chain, "SRL16_1");
 
 		srl_16_1.type = SRL16_1;
@@ -111,7 +110,7 @@ public class SRL16 extends Primitive {
 		return regs.size();
 	}
 
-	public List getCompactedRegs() {
+	public List<Reg> getCompactedRegs() {
 		return regs;
 	}
 

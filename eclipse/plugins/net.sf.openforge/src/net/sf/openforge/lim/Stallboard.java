@@ -22,7 +22,6 @@
 package net.sf.openforge.lim;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 /**
  * Stallboard is a Scoreboard with additional 'stall' inputs. These inputs
@@ -41,7 +40,7 @@ import java.util.Iterator;
  */
 public class Stallboard extends Scoreboard {
 
-	public Stallboard(Collection buses) {
+	public Stallboard(Collection<Bus> buses) {
 		super(buses);
 	}
 
@@ -74,9 +73,8 @@ public class Stallboard extends Scoreboard {
 	 * @param stallBuses
 	 *            a Collection of Bus objects.
 	 */
-	public void addStallSignals(Collection stallBuses) {
-		for (Iterator iter = stallBuses.iterator(); iter.hasNext();) {
-			Bus bus = (Bus) iter.next();
+	public void addStallSignals(Collection<Bus> stallBuses) {
+		for (Bus bus : stallBuses) {
 			addStallPort().setBus(bus);
 		}
 	}

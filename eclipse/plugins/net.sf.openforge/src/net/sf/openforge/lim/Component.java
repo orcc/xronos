@@ -969,8 +969,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * 
 	 * @return a collection of {@link Resource}
 	 */
-	public Collection getAccessedResources() {
-		return Collections.EMPTY_LIST;
+	public Collection<Resource> getAccessedResources() {
+		return Collections.emptyList();
 	}
 
 	/**

@@ -25,6 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import net.sf.openforge.lim.Exit.Tag;
+
 /**
  * A "while" style {@link LoopBody}. That is, the test is performed before each
  * iteration. WhileBody is composed of a {@link Decision}, which performs the
@@ -65,7 +67,8 @@ public class WhileBody extends LoopBody implements Cloneable {
 		final Bus goBus = getInBuf().getGoBus();
 		final Exit inbufExit = getInBuf().getExit(Exit.DONE);
 
-		final Map exitMap = new LinkedHashMap(11);
+		final Map<Exit.Tag, Collection<Exit>> exitMap = new LinkedHashMap<Tag, Collection<Exit>>(
+				11);
 
 		/*
 		 * InBuf to Decision.
@@ -90,12 +93,11 @@ public class WhileBody extends LoopBody implements Cloneable {
 		 * Feedback Exit is comprised of body Component done and CONTINUE Exit,
 		 * if any. There may be no feedback exits if the body ends with a break.
 		 */
-		Collection feedbackExits = (Collection) exitMap.remove(Exit
-				.getTag(Exit.DONE));
+		Collection<Exit> feedbackExits = exitMap.remove(Exit.getTag(Exit.DONE));
 		if (feedbackExits == null) {
-			feedbackExits = new LinkedList();
+			feedbackExits = new LinkedList<Exit>();
 		}
-		final Collection continueExits = (Collection) exitMap.remove(Exit
+		final Collection<Exit> continueExits = exitMap.remove(Exit
 				.getTag(Exit.CONTINUE));
 		if (continueExits != null) {
 			feedbackExits.addAll(continueExits);
@@ -108,12 +110,12 @@ public class WhileBody extends LoopBody implements Cloneable {
 		 * Completion Exit is comprised of Decision false and body's BREAK Exit,
 		 * if any.
 		 */
-		Collection completeExits = (Collection) exitMap.remove(getDecision()
+		Collection<Exit> completeExits = exitMap.remove(getDecision()
 				.getFalseExit().getTag());
 		if (completeExits == null) {
-			completeExits = new LinkedList();
+			completeExits = new LinkedList<Exit>();
 		}
-		final Collection breakExits = (Collection) exitMap.remove(Exit
+		final Collection<Exit> breakExits = exitMap.remove(Exit
 				.getTag(Exit.BREAK));
 		if (breakExits != null) {
 			completeExits.addAll(breakExits);
@@ -173,9 +175,10 @@ public class WhileBody extends LoopBody implements Cloneable {
 			decision = (Decision) inserted;
 		} else if (removed == getBody()) {
 			body = (Module) inserted;
-		} else
+		} else {
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
+		}
 
 		boolean mod = removeComponent(removed);
 		addComponent(inserted);

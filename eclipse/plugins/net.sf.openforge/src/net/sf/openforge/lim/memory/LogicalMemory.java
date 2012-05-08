@@ -360,8 +360,8 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 		}
 
 		final Accessor_ accessor = accessors.getForLValue(lvalue);
-		return (accessor == null) ? Collections.emptyList() : accessor
-				.getTargets();
+		return (accessor == null) ? Collections.<Location> emptyList()
+				: accessor.getTargets();
 	}
 
 	/**
@@ -451,7 +451,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 	 * 
 	 * @return a Collection of Pointer objects
 	 */
-	public Collection getAccessingPointers() {
+	public Collection<Pointer> getAccessingPointers() {
 		return Collections.unmodifiableCollection(accessors.getPointers());
 	}
 
@@ -466,8 +466,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 	public int getAddressableSize() {
 		int totalAddresses = 0;
 
-		for (Iterator allocIter = allocations.iterator(); allocIter.hasNext();) {
-			final Allocation alloc = (Allocation) allocIter.next();
+		for (Allocation alloc : allocations) {
 			totalAddresses += alloc.getAddressableSize();
 		}
 		return totalAddresses;
@@ -481,8 +480,9 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 		int addresses = getAddressableSize();
 		// Catch the case of an empty memory, in which case the
 		// getAddressStridePolicy method fails.
-		if (addresses == 0)
+		if (addresses == 0) {
 			return 0;
+		}
 
 		AddressStridePolicy policy = getAddressStridePolicy();
 		return (int) Math.ceil(addresses * policy.getStride() / 8.0);
@@ -496,14 +496,14 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 	 *             if the address stride is inconsistent for this memory.
 	 */
 	public AddressStridePolicy getAddressStridePolicy() {
-		if (allocations.isEmpty())
+		if (allocations.isEmpty()) {
 			throw new IllegalAddressingStateException(
 					"Cannot determine address stride policy for empty memory");
+		}
 
 		final AddressStridePolicy policy = allocations.iterator().next()
 				.getInitialValue().getAddressStridePolicy();
-		for (Iterator iter = allocations.iterator(); iter.hasNext();) {
-			final Allocation alloc = (Allocation) iter.next();
+		for (Allocation alloc : allocations) {
 			if (!alloc.getInitialValue().getAddressStridePolicy()
 					.equals(policy)) {
 				throw new IllegalAddressingStateException(
@@ -627,8 +627,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 		}
 
 		final List<LValue> lvalues = new LinkedList<LValue>();
-		for (Iterator iter = accessors.getLValues().iterator(); iter.hasNext();) {
-			final LValue lvalue = (LValue) iter.next();
+		for (LValue lvalue : accessors.getLValues()) {
 			final Accessor_ accessor = accessors.getForLValue(lvalue);
 			if (accessor.getLogicalMemoryPort() == logicalMemoryPort) {
 				if (lvalue.isWrite() == isWrite) {
@@ -711,12 +710,14 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 	 */
 	@Override
 	public int getSpacing(Referencer from, Referencer to) {
-		if (!(from instanceof MemoryAccess))
+		if (!(from instanceof MemoryAccess)) {
 			throw new IllegalArgumentException(
 					"Wrong context for determining spacing.");
-		if (!(to instanceof MemoryAccess))
+		}
+		if (!(to instanceof MemoryAccess)) {
 			throw new IllegalArgumentException(
 					"Wrong context for determining spacing.");
+		}
 
 		// boolean isReadFirst = getImplementation().isDPReadFirst();
 		boolean fromIsWrite = from instanceof MemoryWrite;
@@ -744,22 +745,25 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 		assert portTo.getLogicalMemory() == this;
 		if (portFrom == portTo) // single port or same port of dual port
 		{
-			if (isCombinational)
+			if (isCombinational) {
 				return 1;
+			}
 			return 0;
 		}
 
 		// dual port case
 		if (fromIsWrite) {
-			if (isCombinational) // likely never true
+			if (isCombinational) {
 				return 1;
-			else
+			} else {
 				return 0; // done to go spacing. Cycle offset handled by latency
 							// of from
+			}
 		}
 
-		if (!fromIsWrite && !toIsWrite)
+		if (!fromIsWrite && !toIsWrite) {
 			return 0;
+		}
 
 		return 0; // done to go spacing.
 
@@ -797,17 +801,21 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 		}
 
 		// dual port case
-		if (fromIsWrite && toIsWrite)
+		if (fromIsWrite && toIsWrite) {
 			return -1;
-		if (!fromIsWrite && !toIsWrite)
+		}
+		if (!fromIsWrite && !toIsWrite) {
 			return 0;
+		}
 		if (isReadFirst) {
-			if (!fromIsWrite && toIsWrite)
+			if (!fromIsWrite && toIsWrite) {
 				return 0;
+			}
 			return -1;
 		} else {
-			if (fromIsWrite && !toIsWrite)
+			if (fromIsWrite && !toIsWrite) {
 				return 0;
+			}
 			return -1;
 		}
 	}
@@ -822,8 +830,9 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 		}
 
 		void setLogicalMemoryPort(LogicalMemoryPort lmp) {
-			if (memPort == null)
+			if (memPort == null) {
 				memPort = lmp;
+			}
 			if (memPort != lmp) {
 				throw new IllegalArgumentException(
 						"conflicting LogicalMemoryPort");
@@ -851,7 +860,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 			}
 		}
 
-		Collection getTargets() {
+		Collection<Location> getTargets() {
 			return Collections.unmodifiableCollection(locations);
 		}
 
@@ -869,7 +878,8 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 			System.out.println("Accessor@" + Integer.toHexString(hashCode()));
 			System.out.println("\t" + getAccessor() + " "
 					+ getLogicalMemoryPort());
-			for (Iterator iter = getTargets().iterator(); iter.hasNext();) {
+			for (Iterator<Location> iter = getTargets().iterator(); iter
+					.hasNext();) {
 				System.out.println("\t\t" + iter.next());
 			}
 		}
@@ -892,9 +902,9 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 	}
 
 	private class AccessMap {
-		private HashMap lvalueAccesses = new HashMap();
-		private HashMap pointerAccesses = new HashMap();
-		private HashMap constantAccesses = new HashMap();
+		private Map<LValue, Accessor_> lvalueAccesses = new HashMap<LValue, Accessor_>();
+		private Map<Pointer, Accessor_> pointerAccesses = new HashMap<Pointer, Accessor_>();
+		private Map<LocationConstant, Accessor_> constantAccesses = new HashMap<LocationConstant, Accessor_>();
 
 		public void clear() {
 			lvalueAccesses.clear();
@@ -903,7 +913,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 		}
 
 		public Accessor_ getForLValue(LValue lvalue) {
-			Accessor_ acc = (Accessor_) lvalueAccesses.get(lvalue);
+			Accessor_ acc = lvalueAccesses.get(lvalue);
 			if (acc == null) {
 				acc = new Accessor_(lvalue);
 				lvalueAccesses.put(lvalue, acc);
@@ -912,7 +922,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 		}
 
 		public Accessor_ getForReference(Pointer ptr) {
-			Accessor_ acc = (Accessor_) pointerAccesses.get(ptr);
+			Accessor_ acc = pointerAccesses.get(ptr);
 			if (acc == null) {
 				acc = new SingleAccessor(ptr);
 				pointerAccesses.put(ptr, acc);
@@ -921,7 +931,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 		}
 
 		public Accessor_ getForReference(LocationConstant ptr) {
-			Accessor_ acc = (Accessor_) constantAccesses.get(ptr);
+			Accessor_ acc = constantAccesses.get(ptr);
 			if (acc == null) {
 				acc = new SingleAccessor(ptr);
 				constantAccesses.put(ptr, acc);
@@ -934,7 +944,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 				throw new NullPointerException("null lvalue arg");
 			}
 
-			final Accessor_ accessor = (Accessor_) lvalueAccesses.get(lvalue);
+			final Accessor_ accessor = lvalueAccesses.get(lvalue);
 			if (accessor == null) {
 				throw new IllegalArgumentException("unknown lvalue " + lvalue);
 			}
@@ -946,7 +956,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 				throw new NullPointerException("null pointer arg");
 			}
 
-			final Accessor_ accessor = (Accessor_) pointerAccesses.get(pointer);
+			final Accessor_ accessor = pointerAccesses.get(pointer);
 			if (accessor == null) {
 				throw new IllegalArgumentException("unknown pointer " + pointer);
 			}
@@ -958,8 +968,7 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 				throw new NullPointerException("null constant arg");
 			}
 
-			final Accessor_ accessor = (Accessor_) constantAccesses
-					.get(constant);
+			final Accessor_ accessor = constantAccesses.get(constant);
 			if (accessor == null) {
 				throw new IllegalArgumentException("unknown constant "
 						+ constant);
@@ -976,31 +985,26 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 					.unmodifiableCollection(constantAccesses.keySet());
 		}
 
-		public Collection getPointers() {
+		public Collection<Pointer> getPointers() {
 			return Collections.unmodifiableCollection(pointerAccesses.keySet());
 		}
 
 		public void debug() {
-			for (Iterator iter = lvalueAccesses.values().iterator(); iter
-					.hasNext();) {
-				((Accessor_) iter.next()).debug();
+			for (Accessor_ accessor_ : lvalueAccesses.values()) {
+				(accessor_).debug();
 			}
-			for (Iterator iter = pointerAccesses.values().iterator(); iter
-					.hasNext();) {
-				((Accessor_) iter.next()).debug();
+			for (Accessor_ accessor_ : pointerAccesses.values()) {
+				(accessor_).debug();
 			}
-			for (Iterator iter = constantAccesses.values().iterator(); iter
-					.hasNext();) {
-				((Accessor_) iter.next()).debug();
+			for (Accessor_ accessor_ : constantAccesses.values()) {
+				(accessor_).debug();
 			}
 		}
-
 	}
 
 	public void showContents() {
 		System.out.println(toString());
-		for (Iterator iter = getAllocations().iterator(); iter.hasNext();) {
-			Location loc = (Location) iter.next();
+		for (Location loc : getAllocations()) {
 			System.out.println("\t" + loc.debug());
 		}
 	}
@@ -1016,6 +1020,8 @@ public class LogicalMemory extends net.sf.openforge.util.naming.ID implements
 	}
 
 	class IllegalAddressingStateException extends RuntimeException {
+		private static final long serialVersionUID = 611363894193040576L;
+
 		public IllegalAddressingStateException(String msg) {
 			super(msg);
 		}

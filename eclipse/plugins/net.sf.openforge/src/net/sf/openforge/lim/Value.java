@@ -572,7 +572,7 @@ public class Value {
 	}
 
 	/** Gets the bits which comprise this Value as a list */
-	public List getBitsList() {
+	public List<Bit> getBitsList() {
 		return Arrays.asList(getBits());
 	}
 
@@ -854,7 +854,7 @@ public class Value {
 		boolean endOfArray = false;
 
 		for (int i = 0; i < size; i++) {
-			List group = new ArrayList();
+			List<String> group = new ArrayList<String>();
 			Bus owner = null;
 			int start = -1;
 			int stop = -1;
@@ -865,14 +865,15 @@ public class Value {
 
 				while (isCare(i) == care && getConstant(i) == constant
 						&& i < size && isGlobal(i)) {
-					if (!care)
+					if (!care) {
 						group.add("x");
-					else if (constant == 0)
+					} else if (constant == 0) {
 						group.add("0");
-					else if (constant == 1)
+					} else if (constant == 1) {
 						group.add("1");
-					else if (care)
+					} else if (care) {
 						group.add("C");
+					}
 
 					if (i == size - 1) {
 						endOfArray = true;
@@ -962,8 +963,8 @@ public class Value {
 		}
 
 		// default to care
-		Bit localBit = Bit.CARE;
-		Bit testBit = Bit.CARE;
+		// Bit localBit = Bit.CARE;
+		// Bit testBit = Bit.CARE;
 		for (int i = 0; i < size; i++) {
 			boolean localIsCare = isCare(i);
 			boolean testIsCare = test.isCare(i);
@@ -1113,6 +1114,7 @@ public class Value {
 		return (compactedSize == 0) ? 1 : compactedSize;
 	}
 
+	@SuppressWarnings("unused")
 	private void debugBit(int i) {
 		System.err.println("bit " + i + " isGlobal " + isGlobal(i) + " isCare "
 				+ isCare(i) + " getConstant " + getConstant(i)

@@ -238,9 +238,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 
 		design.setIDLogical(designName);
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(design) + " given logical name \""
 					+ ID.showLogical(design) + "\"");
+		}
 		namePins(design.getInputPins(), "IN");
 		namePins(design.getOutputPins(), "OUT");
 		namePins(design.getBidirectionalPins(), "INOUT");
@@ -304,13 +305,15 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		IDSourceInfo info = procedure.getIDSourceInfo();
 		String taskName = "task_" + info.getMethodName() + info.getSignature();
 		long nextID = taskDb.getNextID(taskName);
-		if (nextID > 0)
+		if (nextID > 0) {
 			taskName += nextID;
+		}
 		task.setIDLogical(taskName);
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(task) + " given logical name \""
 					+ ID.showLogical(task) + "\"");
+		}
 
 		super.visit(task);
 	}
@@ -338,8 +341,9 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		}
 
 		String signature = info.getSignature();
-		if (signature == null)
+		if (signature == null) {
 			signature = "";
+		}
 
 		op = procedure.getGenericJob().getOption(
 				OptionRegistry.SIGNATURE_IN_NAMES);
@@ -356,11 +360,13 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 			StringBuffer fullName = new StringBuffer();
 			String packageName = info.getSourcePackageName();
 			String className = info.getSourceClassName();
-			if (packageName != null)
+			if (packageName != null) {
 				fullName.append(packageName);
+			}
 			if (className != null) {
-				if (fullName.length() > 0)
+				if (fullName.length() > 0) {
 					fullName.append(".");
+				}
 				fullName.append(className);
 			}
 			fullName.append(methodName + signature);
@@ -384,15 +390,16 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 
 		String callName = ID.showLogical(procedure) + "_instance";
 		long nextID = callDb.getNextID(callName);
-		if (nextID > 0)
+		if (nextID > 0) {
 			callName += nextID;
+		}
 		call.setIDLogical(callName);
 
 		/** set unique id logical for all call DONE exit databus */
 		int nameCounter = 0;
 		Exit exit = call.getExit(Exit.DONE);
 		Bus done = exit.getDoneBus();
-		done.setIDLogical(ID.showLogical(call) + "_" + procedure.getDoneName());
+		done.setIDLogical(ID.showLogical(call) + "_DONE");
 
 		for (Bus exitBus : exit.getDataBuses()) {
 			exitBus.setIDLogical(ID.showLogical(call) + "_"
@@ -410,9 +417,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 
 		procedure.setIDLogical(makeMethodName(procedure));
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(procedure) + " given logical name \""
 					+ ID.showLogical(procedure) + "\"");
+		}
 
 		Block block = procedure.getBody();
 		block.accept(this);
@@ -428,10 +436,11 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 		clockPort.getPeer().setIDLogical(clkrst[0]);
 		Port resetPort = block.getResetPort();
 		// resetPort.getPeer().setIDLogical(procedure.getResetName());
-		if (clkrst.length > 1 && clkrst[1].length() > 0)
+		if (clkrst.length > 1 && clkrst[1].length() > 0) {
 			resetPort.getPeer().setIDLogical(clkrst[1]);
-		else
+		} else {
 			resetPort.getPeer().setIDLogical("RESET");
+		}
 		Port goPort = block.getGoPort();
 		// goPort.getIDSourceInfo().setFieldName(procedure.getGoName());
 		goPort.getIDSourceInfo().setFieldName("GO");
@@ -440,10 +449,11 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 
 		// Naming the parameter ports
 		for (Port dataPort : block.getDataPorts()) {
-			if (DEBUG)
+			if (DEBUG) {
 				debugln("\tport[" + ID.showDebug(dataPort) + "] "
 						+ "deriving logical name from "
 						+ dataPort.getIDSourceInfo());
+			}
 			dataPort.setIDLogical(dataPort.getIDSourceInfo().getFieldName());
 
 			/** set the InBuf data bus id logical */
@@ -472,9 +482,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Kicker kicker) {
 		kicker.setIDLogical("kicker");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(kicker) + " given logical name \""
 					+ ID.showLogical(kicker) + "\"");
+		}
 
 		super.visit(kicker);
 	}
@@ -483,9 +494,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(MemoryBank memBank) {
 		memBank.setIDLogical("memBank");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(memBank) + " given logical name \""
 					+ ID.showLogical(memBank) + "\"");
+		}
 
 		super.visit(memBank);
 	}
@@ -497,9 +509,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Block block) {
 		block.setIDLogical("block");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(block) + " given logical name \""
 					+ ID.showLogical(block) + "\"");
+		}
 
 		/*
 		 * Name the inBuf's buses of a 'not-procedure' block.
@@ -536,9 +549,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Loop loop) {
 		loop.setIDLogical("loop");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(loop) + " given logical name \""
 					+ ID.showLogical(loop) + "\"");
+		}
 
 		super.visit(loop);
 	}
@@ -550,9 +564,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(WhileBody whileBody) {
 		whileBody.setIDLogical("whileBody");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(whileBody) + " given logical name \""
 					+ ID.showLogical(whileBody) + "\"");
+		}
 
 		super.visit(whileBody);
 	}
@@ -564,9 +579,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(UntilBody untilBody) {
 		untilBody.setIDLogical("untilBody");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(untilBody) + " given logical name \""
 					+ ID.showLogical(untilBody) + "\"");
+		}
 
 		super.visit(untilBody);
 	}
@@ -578,9 +594,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(ForBody forBody) {
 		forBody.setIDLogical("forBody");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(forBody) + " given logical name \""
 					+ ID.showLogical(forBody) + "\"");
+		}
 
 		super.visit(forBody);
 	}
@@ -592,9 +609,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(AddOp add) {
 		add.setIDLogical("add");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(add) + " given logical name \""
 					+ ID.showLogical(add) + "\"");
+		}
 
 		super.visit(add);
 	}
@@ -606,9 +624,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(AndOp andOp) {
 		andOp.setIDLogical("andOp");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(andOp) + " given logical name \""
 					+ ID.showLogical(andOp) + "\"");
+		}
 
 		super.visit(andOp);
 	}
@@ -620,9 +639,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(CastOp cast) {
 		cast.setIDLogical("cast");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(cast) + " given logical name \""
 					+ ID.showLogical(cast) + "\"");
+		}
 
 		super.visit(cast);
 	}
@@ -634,9 +654,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(ComplementOp complement) {
 		complement.setIDLogical("complement");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(complement) + " given logical name \""
 					+ ID.showLogical(complement) + "\"");
+		}
 
 		super.visit(complement);
 	}
@@ -648,9 +669,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(ConditionalAndOp conditionalAnd) {
 		conditionalAnd.setIDLogical("conditionalAnd");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(conditionalAnd) + " given logical name \""
 					+ ID.showLogical(conditionalAnd) + "\"");
+		}
 
 		super.visit(conditionalAnd);
 	}
@@ -662,9 +684,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(ConditionalOrOp conditionalOr) {
 		conditionalOr.setIDLogical("conditionalOr");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(conditionalOr) + " given logical name \""
 					+ ID.showLogical(conditionalOr) + "\"");
+		}
 
 		super.visit(conditionalOr);
 	}
@@ -676,9 +699,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Constant constant) {
 		constant.setIDLogical("constant");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(constant) + " given logical name \""
 					+ ID.showLogical(constant) + "\"");
+		}
 
 		super.visit(constant);
 	}
@@ -698,9 +722,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(DivideOp divide) {
 		divide.setIDLogical("divide");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(divide) + " given logical name \""
 					+ ID.showLogical(divide) + "\"");
+		}
 
 		super.visit(divide);
 	}
@@ -712,9 +737,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(EqualsOp equals) {
 		equals.setIDLogical("equals");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(equals) + " given logical name \""
 					+ ID.showLogical(equals) + "\"");
+		}
 
 		super.visit(equals);
 	}
@@ -726,9 +752,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(GreaterThanEqualToOp greaterThanEqualTo) {
 		greaterThanEqualTo.setIDLogical("greaterThanEqualTo");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(greaterThanEqualTo) + " given logical name \""
 					+ ID.showLogical(greaterThanEqualTo) + "\"");
+		}
 
 		super.visit(greaterThanEqualTo);
 	}
@@ -740,9 +767,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(GreaterThanOp greaterThan) {
 		greaterThan.setIDLogical("greaterThan");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(greaterThan) + " given logical name \""
 					+ ID.showLogical(greaterThan) + "\"");
+		}
 
 		super.visit(greaterThan);
 	}
@@ -754,9 +782,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(LeftShiftOp leftShift) {
 		leftShift.setIDLogical("leftShift");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(leftShift) + " given logical name \""
 					+ ID.showLogical(leftShift) + "\"");
+		}
 
 		super.visit(leftShift);
 	}
@@ -768,9 +797,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(LessThanEqualToOp lessThanEqualTo) {
 		lessThanEqualTo.setIDLogical("lessThanEqualTo");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(lessThanEqualTo) + " given logical name \""
 					+ ID.showLogical(lessThanEqualTo) + "\"");
+		}
 
 		super.visit(lessThanEqualTo);
 	}
@@ -782,9 +812,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(LessThanOp lessThan) {
 		lessThan.setIDLogical("lessThan");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(lessThan) + " given logical name \""
 					+ ID.showLogical(lessThan) + "\"");
+		}
 
 		super.visit(lessThan);
 	}
@@ -796,9 +827,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(MinusOp minus) {
 		minus.setIDLogical("minus");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(minus) + " given logical name \""
 					+ ID.showLogical(minus) + "\"");
+		}
 
 		super.visit(minus);
 	}
@@ -810,9 +842,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(ModuloOp modulo) {
 		modulo.setIDLogical("modulo");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(modulo) + " given logical name \""
 					+ ID.showLogical(modulo) + "\"");
+		}
 
 		super.visit(modulo);
 	}
@@ -824,9 +857,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(MultiplyOp multiply) {
 		multiply.setIDLogical("multiply");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(multiply) + " given logical name \""
 					+ ID.showLogical(multiply) + "\"");
+		}
 
 		super.visit(multiply);
 	}
@@ -838,9 +872,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(NotEqualsOp notEquals) {
 		notEquals.setIDLogical("notEquals");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(notEquals) + " given logical name \""
 					+ ID.showLogical(notEquals) + "\"");
+		}
 
 		super.visit(notEquals);
 	}
@@ -852,9 +887,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(NotOp not) {
 		not.setIDLogical("not");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(not) + " given logical name \""
 					+ ID.showLogical(not) + "\"");
+		}
 
 		super.visit(not);
 	}
@@ -870,9 +906,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 			or.setIDLogical("or");
 		}
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(or) + " given logical name \""
 					+ ID.showLogical(or) + "\"");
+		}
 
 		super.visit(or);
 	}
@@ -884,9 +921,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(PlusOp plus) {
 		plus.setIDLogical("plus");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(plus) + " given logical name \""
 					+ ID.showLogical(plus) + "\"");
+		}
 
 		super.visit(plus);
 	}
@@ -899,9 +937,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(ReductionOrOp reductionOr) {
 		reductionOr.setIDLogical("reductionOr");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(reductionOr) + " given logical name \""
 					+ ID.showLogical(reductionOr) + "\"");
+		}
 
 		super.visit(reductionOr);
 	}
@@ -913,9 +952,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(RightShiftOp rightShift) {
 		rightShift.setIDLogical("rightShift");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(rightShift) + " given logical name \""
 					+ ID.showLogical(rightShift) + "\"");
+		}
 
 		super.visit(rightShift);
 	}
@@ -927,9 +967,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(RightShiftUnsignedOp rightShiftUnsigned) {
 		rightShiftUnsigned.setIDLogical("rightShiftUnsigned");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(rightShiftUnsigned) + " given logical name \""
 					+ ID.showLogical(rightShiftUnsigned) + "\"");
+		}
 
 		super.visit(rightShiftUnsigned);
 	}
@@ -941,9 +982,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(ShortcutIfElseOp shortcutIfElse) {
 		shortcutIfElse.setIDLogical("shortcutIfElse");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(shortcutIfElse) + " given logical name \""
 					+ ID.showLogical(shortcutIfElse) + "\"");
+		}
 
 		super.visit(shortcutIfElse);
 	}
@@ -952,9 +994,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(TaskCall comp) {
 		comp.setIDLogical("taskCall");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(comp) + " given logical name \""
 					+ ID.showLogical(comp) + "\"");
+		}
 
 		super.visit(comp);
 	}
@@ -969,9 +1012,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(SimplePinAccess comp) {
 		comp.setIDLogical("simplePinAccess");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(comp) + " given logical name \""
 					+ ID.showLogical(comp) + "\"");
+		}
 
 		super.visit(comp);
 	}
@@ -980,9 +1024,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(SimplePinRead comp) {
 		comp.setIDLogical("simplePinRead");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(comp) + " given logical name \""
 					+ ID.showLogical(comp) + "\"");
+		}
 
 		super.visit(comp);
 	}
@@ -991,9 +1036,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(SimplePinWrite comp) {
 		comp.setIDLogical("simplePinWrite");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(comp) + " given logical name \""
 					+ ID.showLogical(comp) + "\"");
+		}
 
 		super.visit(comp);
 	}
@@ -1005,9 +1051,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(SubtractOp subtract) {
 		subtract.setIDLogical("subtract");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(subtract) + " given logical name \""
 					+ ID.showLogical(subtract) + "\"");
+		}
 
 		super.visit(subtract);
 	}
@@ -1019,9 +1066,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(NumericPromotionOp numericPromotion) {
 		numericPromotion.setIDLogical("numericPromotion");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(numericPromotion) + " given logical name \""
 					+ ID.showLogical(numericPromotion) + "\"");
+		}
 
 		super.visit(numericPromotion);
 	}
@@ -1033,9 +1081,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(XorOp xor) {
 		xor.setIDLogical("xor");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(xor) + " given logical name \""
 					+ ID.showLogical(xor) + "\"");
+		}
 
 		super.visit(xor);
 	}
@@ -1047,9 +1096,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Branch branch) {
 		branch.setIDLogical("branch");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(branch) + " given logical name \""
 					+ ID.showLogical(branch) + "\"");
+		}
 
 		super.visit(branch);
 	}
@@ -1061,9 +1111,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Decision decision) {
 		decision.setIDLogical("decision");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(decision) + " given logical name \""
 					+ ID.showLogical(decision) + "\"");
+		}
 
 		super.visit(decision);
 	}
@@ -1075,9 +1126,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Switch sw) {
 		sw.setIDLogical("switch");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(sw) + " given logical name \""
 					+ ID.showLogical(sw) + "\"");
+		}
 
 		super.visit(sw);
 	}
@@ -1089,9 +1141,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(InBuf ib) {
 		ib.setIDLogical("ib");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(ib) + " given logical name \""
 					+ ID.showLogical(ib) + "\"");
+		}
 
 	}
 
@@ -1102,9 +1155,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(OutBuf ob) {
 		ob.setIDLogical("ob");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(ob) + " given logical name \""
 					+ ID.showLogical(ob) + "\"");
+		}
 
 	}
 
@@ -1127,9 +1181,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 
 		reg.getResultBus().setIDLogical(ID.showLogical(reg) + "_result");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(reg) + " given logical name \""
 					+ ID.showLogical(reg) + "\"");
+		}
 
 	}
 
@@ -1140,9 +1195,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Mux m) {
 		m.setIDLogical("mux");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(m) + " given logical name \""
 					+ ID.showLogical(m) + "\"");
+		}
 
 		super.visit(m);
 	}
@@ -1154,9 +1210,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(EncodedMux m) {
 		m.setIDLogical("emux");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(m) + " given logical name \""
 					+ ID.showLogical(m) + "\"");
+		}
 
 		super.visit(m);
 	}
@@ -1168,9 +1225,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(PriorityMux pmux) {
 		pmux.setIDLogical("pmux");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(pmux) + " given logical name \""
 					+ ID.showLogical(pmux) + "\"");
+		}
 
 		super.visit(pmux);
 	}
@@ -1182,9 +1240,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(And a) {
 		a.setIDLogical("and");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(a) + " given logical name \""
 					+ ID.showLogical(a) + "\"");
+		}
 
 		super.visit(a);
 	}
@@ -1196,9 +1255,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Not n) {
 		n.setIDLogical("not");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(n) + " given logical name \""
 					+ ID.showLogical(n) + "\"");
+		}
 
 		super.visit(n);
 	}
@@ -1210,9 +1270,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Or o) {
 		o.setIDLogical("or");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(o) + " given logical name \""
 					+ ID.showLogical(o) + "\"");
+		}
 
 		super.visit(o);
 	}
@@ -1224,9 +1285,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Scoreboard scoreboard) {
 		scoreboard.setIDLogical("scoreboard");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(scoreboard) + " given logical name \""
 					+ ID.showLogical(scoreboard) + "\"");
+		}
 
 		super.visit(scoreboard);
 	}
@@ -1238,9 +1300,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(Latch latch) {
 		latch.setIDLogical("latch");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(latch) + " given logical name \""
 					+ ID.showLogical(latch) + "\"");
+		}
 
 		super.visit(latch);
 	}
@@ -1252,9 +1315,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(NoOp nop) {
 		nop.setIDLogical("nop");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(nop) + " given logical name \""
 					+ ID.showLogical(nop) + "\"");
+		}
 
 		super.visit(nop);
 	}
@@ -1266,9 +1330,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(TimingOp nop) {
 		nop.setIDLogical("tnop");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(nop) + " given logical name \""
 					+ ID.showLogical(nop) + "\"");
+		}
 
 		super.visit(nop);
 	}
@@ -1280,9 +1345,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(RegisterRead regRead) {
 		regRead.setIDLogical("regRead");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(regRead) + " given logical name \""
 					+ ID.showLogical(regRead) + "\"");
+		}
 
 		super.visit(regRead);
 	}
@@ -1294,9 +1360,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(RegisterWrite regWrite) {
 		regWrite.setIDLogical("regWrite");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(regWrite) + " given logical name \""
 					+ ID.showLogical(regWrite) + "\"");
+		}
 
 		super.visit(regWrite);
 	}
@@ -1308,9 +1375,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(RegisterGateway regGateway) {
 		regGateway.setIDLogical("regGateway");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(regGateway) + " given logical name \""
 					+ ID.showLogical(regGateway) + "\"");
+		}
 
 		super.visit(regGateway);
 	}
@@ -1322,9 +1390,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(RegisterReferee regReferee) {
 		regReferee.setIDLogical("regReferee");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(regReferee) + " given logical name \""
 					+ ID.showLogical(regReferee) + "\"");
+		}
 
 		super.visit(regReferee);
 	}
@@ -1336,9 +1405,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(MemoryRead memRead) {
 		memRead.setIDLogical("memRead");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(memRead) + " given logical name \""
 					+ ID.showLogical(memRead) + "\"");
+		}
 
 		super.visit(memRead);
 	}
@@ -1350,9 +1420,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(MemoryWrite memWrite) {
 		memWrite.setIDLogical("memWrite");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(memWrite) + " given logical name \""
 					+ ID.showLogical(memWrite) + "\"");
+		}
 
 		super.visit(memWrite);
 	}
@@ -1364,9 +1435,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(MemoryReferee memReferee) {
 		memReferee.setIDLogical("memReferee");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(memReferee) + " given logical name \""
 					+ ID.showLogical(memReferee) + "\"");
+		}
 
 		super.visit(memReferee);
 	}
@@ -1378,9 +1450,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(MemoryGateway memGateway) {
 		memGateway.setIDLogical("memGateway");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(memGateway) + " given logical name \""
 					+ ID.showLogical(memGateway) + "\"");
+		}
 
 		super.visit(memGateway);
 	}
@@ -1392,9 +1465,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(HeapRead heapRead) {
 		heapRead.setIDLogical("heapRead");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(heapRead) + " given logical name \""
 					+ ID.showLogical(heapRead) + "\"");
+		}
 
 		super.visit(heapRead);
 	}
@@ -1406,9 +1480,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(ArrayRead arrayRead) {
 		arrayRead.setIDLogical("arrayRead");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(arrayRead) + " given logical name \""
 					+ ID.showLogical(arrayRead) + "\"");
+		}
 
 		super.visit(arrayRead);
 	}
@@ -1420,9 +1495,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(AbsoluteMemoryRead read) {
 		read.setIDLogical("absoluteRead");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(read) + " given logical name \""
 					+ ID.showLogical(read) + "\"");
+		}
 
 		super.visit(read);
 	}
@@ -1434,9 +1510,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(HeapWrite heapWrite) {
 		heapWrite.setIDLogical("heapWrite");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(heapWrite) + " given logical name \""
 					+ ID.showLogical(heapWrite) + "\"");
+		}
 
 		super.visit(heapWrite);
 	}
@@ -1448,9 +1525,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(ArrayWrite arrayWrite) {
 		arrayWrite.setIDLogical("arrayWrite");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(arrayWrite) + " given logical name \""
 					+ ID.showLogical(arrayWrite) + "\"");
+		}
 
 		super.visit(arrayWrite);
 	}
@@ -1462,9 +1540,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(AbsoluteMemoryWrite write) {
 		write.setIDLogical("absoluteWrite");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(write) + " given logical name \""
 					+ ID.showLogical(write) + "\"");
+		}
 
 		super.visit(write);
 	}
@@ -1476,9 +1555,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(PinRead pinRead) {
 		pinRead.setIDLogical("pinRead");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(pinRead) + " given logical name \""
 					+ ID.showLogical(pinRead) + "\"");
+		}
 
 		super.visit(pinRead);
 	}
@@ -1490,9 +1570,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(PinWrite pinWrite) {
 		pinWrite.setIDLogical("pinWrite");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(pinWrite) + " given logical name \""
 					+ ID.showLogical(pinWrite) + "\"");
+		}
 
 		super.visit(pinWrite);
 	}
@@ -1504,9 +1585,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(PinStateChange pinChange) {
 		pinChange.setIDLogical("pinChange");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(pinChange) + " given logical name \""
 					+ ID.showLogical(pinChange) + "\"");
+		}
 
 		super.visit(pinChange);
 	}
@@ -1518,9 +1600,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(SRL16 srl16) {
 		srl16.setIDLogical("srl16");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(srl16) + " given logical name \""
 					+ ID.showLogical(srl16) + "\"");
+		}
 
 		super.visit(srl16);
 	}
@@ -1532,9 +1615,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(PinReferee pinReferee) {
 		pinReferee.setIDLogical("pinReferee");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(pinReferee) + " given logical name \""
 					+ ID.showLogical(pinReferee) + "\"");
+		}
 
 		super.visit(pinReferee);
 	}
@@ -1546,9 +1630,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(TriBuf tbuf) {
 		tbuf.setIDLogical("tbuf");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(tbuf) + " given logical name \""
 					+ ID.showLogical(tbuf) + "\"");
+		}
 
 		super.visit(tbuf);
 	}
@@ -1557,9 +1642,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(FifoAccess comp) {
 		comp.setIDLogical("fifoAccess");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(comp) + " given logical name \""
 					+ ID.showLogical(comp) + "\"");
+		}
 
 		super.visit(comp);
 	}
@@ -1568,9 +1654,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(FifoRead comp) {
 		comp.setIDLogical("fifoRead");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(comp) + " given logical name \""
 					+ ID.showLogical(comp) + "\"");
+		}
 
 		super.visit(comp);
 	}
@@ -1579,9 +1666,10 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	public void visit(FifoWrite comp) {
 		comp.setIDLogical("fifoWrite");
 
-		if (DEBUG)
+		if (DEBUG) {
 			debugln(ID.showDebug(comp) + " given logical name \""
 					+ ID.showLogical(comp) + "\"");
+		}
 
 		super.visit(comp);
 	}

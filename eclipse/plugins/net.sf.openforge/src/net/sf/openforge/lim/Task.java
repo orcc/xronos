@@ -166,7 +166,7 @@ public class Task extends ID implements Visitable, Cloneable {
 	 * 
 	 * @return a collection of {@link Resource}
 	 */
-	public Collection getAccessedResources() {
+	public Collection<Resource> getAccessedResources() {
 		return getCall().getAccessedResources();
 	}
 
@@ -207,10 +207,11 @@ public class Task extends ID implements Visitable, Cloneable {
 	private static void connectConstant(Call call, Constant constant) {
 		assert call.getThisPort() != null : "Cannot set hidden constant on non virtual entry methods";
 		Entry entry;
-		if (call.getEntries().size() == 0)
+		if (call.getEntries().size() == 0) {
 			entry = call.makeEntry(null);
-		else
+		} else {
 			entry = call.getEntries().get(0);
+		}
 
 		Dependency dep = new DataDependency(constant.getValueBus());
 		entry.addDependency(call.getThisPort(), dep);
@@ -225,10 +226,10 @@ public class Task extends ID implements Visitable, Cloneable {
 
 	@Override
 	public String toString() {
-		return this.sourceName + "[call=" + call + ", thisConstant="
-				+ thisConstant + ", memoryKey=" + memoryKey + ", maxGateDepth="
-				+ maxGateDepth + ", isAutomatic=" + isAutomatic
-				+ ", kickerRequired=" + kickerRequired + ", isBalanced="
-				+ isBalanced + ", goSpacing=" + goSpacing + "]";
+		return sourceName + "[call=" + call + ", thisConstant=" + thisConstant
+				+ ", memoryKey=" + memoryKey + ", maxGateDepth=" + maxGateDepth
+				+ ", isAutomatic=" + isAutomatic + ", kickerRequired="
+				+ kickerRequired + ", isBalanced=" + isBalanced
+				+ ", goSpacing=" + goSpacing + "]";
 	}
 }

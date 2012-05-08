@@ -22,7 +22,6 @@
 package net.sf.openforge.lim;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -109,9 +108,7 @@ public class Switch extends Block {
 		OutBuf doneOutBuf = doneExit.getPeer();
 		Port donePort = doneOutBuf.getGoPort();
 
-		for (Iterator iter = breakOutBuf.getEntries().iterator(); iter
-				.hasNext();) {
-			Entry breakEntry = (Entry) iter.next();
+		for (Entry breakEntry : breakOutBuf.getEntries()) {
 			Exit drivingExit = breakEntry.getDrivingExit();
 			Entry doneEntry = doneOutBuf.makeEntry(drivingExit);
 			doneEntry.addDependency(donePort,

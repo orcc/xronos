@@ -98,7 +98,7 @@ public class LocationConstant extends MemoryConstant implements
 	 * @return a List containing only this constant
 	 */
 	@Override
-	public List getConstituents() {
+	public List<LocationConstant> getConstituents() {
 		return Collections.unmodifiableList(Collections.singletonList(this));
 	}
 
@@ -108,7 +108,7 @@ public class LocationConstant extends MemoryConstant implements
 	 * @return a singleton Set containing this object.
 	 */
 	@Override
-	public Set getContents() {
+	public Set<LocationConstant> getContents() {
 		return Collections.unmodifiableSet(Collections.singleton(this));
 	}
 
@@ -145,12 +145,14 @@ public class LocationConstant extends MemoryConstant implements
 	 */
 	@Override
 	public void setTarget(Location newLoc) {
-		if (newLoc == null)
+		if (newLoc == null) {
 			throw new IllegalArgumentException(
 					"Cannot change target location to null");
-		if (isLocked())
+		}
+		if (isLocked()) {
 			throw new UnsupportedOperationException(
 					"Cannot change target location of a locked constant");
+		}
 
 		removeFromMemory();
 		location = newLoc;
@@ -172,8 +174,9 @@ public class LocationConstant extends MemoryConstant implements
 		AddressableUnit[] fixedRep = new AddressableUnit[rep.getLength()];
 		int bitsPerUnit = rep.getBitsPerUnit();
 		long mask = 0;
-		for (int i = 0; i < bitsPerUnit; i++)
+		for (int i = 0; i < bitsPerUnit; i++) {
 			mask = (mask << 1) | 1L;
+		}
 		// first, populate in little endian order
 		for (int i = 0; i < fixedRep.length; i++) {
 			// fixedRep[i] = new AURep((byte)((addr >>> (8 * i)) & 0xFF));

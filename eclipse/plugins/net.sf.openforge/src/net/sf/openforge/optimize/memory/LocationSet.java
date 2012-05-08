@@ -21,91 +21,90 @@
 
 package net.sf.openforge.optimize.memory;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
-import java.util.*;
-
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.memory.Location;
 
 /**
- * LocationSet is a special Set implementation which is capable of
- * comparing Locations to determine what regions of bytes are
- * addressed, and considers any 2 Locations which access exactly the
- * same byte range as the same and will only store one of them in the
- * Set.  Locations are compared for equality based on thier absolute
- * base location, absolute min/max delta, and size.  Thus the type of
- * Location is not relevent, simply the range of accessed bytes and
- * size of access.
- *
- * <p>Created: Wed Oct 22 10:42:54 2003
- *
+ * LocationSet is a special Set implementation which is capable of comparing
+ * Locations to determine what regions of bytes are addressed, and considers any
+ * 2 Locations which access exactly the same byte range as the same and will
+ * only store one of them in the Set. Locations are compared for equality based
+ * on thier absolute base location, absolute min/max delta, and size. Thus the
+ * type of Location is not relevent, simply the range of accessed bytes and size
+ * of access.
+ * 
+ * <p>
+ * Created: Wed Oct 22 10:42:54 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: LocationSet.java 70 2005-12-01 17:43:11Z imiller $
  */
-public class LocationSet 
-{
-    private static final String _RCS_ = "$Rev: 70 $";
+public class LocationSet {
 
-    /** The actual Set used to store the Locations added to this
-     * class. */
-    private Set backingSet = new HashSet();
-    
-    public LocationSet ()
-    {}
+	/**
+	 * The actual Set used to store the Locations added to this class.
+	 */
+	private Set<Location> backingSet = new HashSet<Location>();
 
-    /**
-     * Adds the specified {@link Location} to this set iff the
-     * location does not exactly match the byte range specified by any
-     * Location already contained within this Set.
-     *
-     * @param loc a non-null {@link Location}
-     * @return <code>true</code> if this set did not already contain
-     * the specified Location.
-     * @throws IllegalArgumentException if loc is null.
-     */
-    public boolean add (Location loc)
-    {
-        // If the location is an exact match for any already contained
-        // Location, then return without adding the new location.
-        for (Iterator iter = this.iterator(); iter.hasNext();)
-        {
-            Location testLoc = (Location)iter.next();
-            if ((testLoc.getAbsoluteBase() == loc.getAbsoluteBase()) &&
-                (testLoc.getAbsoluteMaxDelta() == loc.getAbsoluteMaxDelta()) &&
-                (testLoc.getAbsoluteMinDelta() == loc.getAbsoluteMinDelta()) &&
-                (testLoc.getAddressableSize() == loc.getAddressableSize())
-                )
-            {
-                return false;
-            }
-        }
-        return this.backingSet.add(loc);
-    }
+	public LocationSet() {
+	}
 
-    /**
-     * Returns the number of Locations contained in this Set.
-     *
-     * @return a non-negative 'int'
-     */
-    public int size ()
-    {
-        return this.backingSet.size();
-    }
+	/**
+	 * Adds the specified {@link Location} to this set iff the location does not
+	 * exactly match the byte range specified by any Location already contained
+	 * within this Set.
+	 * 
+	 * @param loc
+	 *            a non-null {@link Location}
+	 * @return <code>true</code> if this set did not already contain the
+	 *         specified Location.
+	 * @throws IllegalArgumentException
+	 *             if loc is null.
+	 */
+	public boolean add(Location loc) {
+		// If the location is an exact match for any already contained
+		// Location, then return without adding the new location.
+		for (Iterator<Location> iter = this.iterator(); iter.hasNext();) {
+			Location testLoc = iter.next();
+			if ((testLoc.getAbsoluteBase() == loc.getAbsoluteBase())
+					&& (testLoc.getAbsoluteMaxDelta() == loc
+							.getAbsoluteMaxDelta())
+					&& (testLoc.getAbsoluteMinDelta() == loc
+							.getAbsoluteMinDelta())
+					&& (testLoc.getAddressableSize() == loc
+							.getAddressableSize())) {
+				return false;
+			}
+		}
+		return backingSet.add(loc);
+	}
 
-    /**
-     * Returns an Iterator over the Location objects contained in this
-     * Set. 
-     *
-     * @return an 'Iterator'
-     */
-    public Iterator iterator ()
-    {
-        return this.backingSet.iterator();
-    }
+	/**
+	 * Returns the number of Locations contained in this Set.
+	 * 
+	 * @return a non-negative 'int'
+	 */
+	public int size() {
+		return backingSet.size();
+	}
 
-    public String toString ()
-    {
-        return "LocationSet@" + Integer.toHexString(this.hashCode()) + this.backingSet;
-        
-    }
-    
+	/**
+	 * Returns an Iterator over the Location objects contained in this Set.
+	 * 
+	 * @return an 'Iterator'
+	 */
+	public Iterator<Location> iterator() {
+		return backingSet.iterator();
+	}
+
+	@Override
+	public String toString() {
+		return "LocationSet@" + Integer.toHexString(this.hashCode())
+				+ backingSet;
+
+	}
+
 }// LocationSet

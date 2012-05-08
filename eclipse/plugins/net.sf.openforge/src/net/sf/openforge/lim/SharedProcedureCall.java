@@ -99,8 +99,9 @@ public class SharedProcedureCall extends Access {
 		for (Iterator exitIter = body.getExits().iterator(); exitIter.hasNext();) {
 			Exit bodyExit = (Exit) exitIter.next();
 			Exit exit = getExit(Exit.DONE);
-			if (exit == null)
+			if (exit == null) {
 				exit = makeExit(bodyExit.getDataBuses().size());
+			}
 			exitMap.put(exit, bodyExit);
 
 			/*
@@ -226,16 +227,16 @@ public class SharedProcedureCall extends Access {
 
 		clone.exitMap = new HashMap();
 		clone.busMap = new HashMap();
-		Iterator origExitIter = getExits().iterator();
-		Iterator cloneExitIter = clone.getExits().iterator();
+		Iterator<Exit> origExitIter = getExits().iterator();
+		Iterator<Exit> cloneExitIter = clone.getExits().iterator();
 		while (origExitIter.hasNext()) {
-			Exit origExit = (Exit) origExitIter.next();
-			Exit cloneExit = (Exit) cloneExitIter.next();
+			Exit origExit = origExitIter.next();
+			Exit cloneExit = cloneExitIter.next();
 			Object bodyExit = exitMap.get(origExit);
 			clone.exitMap.put(cloneExit, bodyExit);
 
-			Iterator origBusIter = origExit.getDataBuses().iterator();
-			Iterator cloneBusIter = cloneExit.getDataBuses().iterator();
+			Iterator<Bus> origBusIter = origExit.getDataBuses().iterator();
+			Iterator<Bus> cloneBusIter = cloneExit.getDataBuses().iterator();
 			while (origBusIter.hasNext()) {
 				Object bodyBus = busMap.get(origBusIter.next());
 				clone.busMap.put(cloneBusIter.next(), bodyBus);
@@ -260,11 +261,8 @@ public class SharedProcedureCall extends Access {
 		// the outputs from the Procedure.
 		boolean mod = false;
 
-		for (Iterator exitIter = getExits().iterator(); exitIter.hasNext();) {
-			Exit exit = (Exit) exitIter.next();
-			for (Iterator busIter = exit.getDataBuses().iterator(); busIter
-					.hasNext();) {
-				Bus callBus = (Bus) busIter.next();
+		for (Exit exit : getExits()) {
+			for (Bus callBus : exit.getDataBuses()) {
 				Bus procBus = getProcedureBus(callBus);
 				Value procValue = procBus.getValue();
 				mod |= callBus.pushValueForward(procValue);
@@ -284,8 +282,7 @@ public class SharedProcedureCall extends Access {
 		// values to the Call's ports.
 		boolean mod = false;
 
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
-			Port callPort = (Port) iter.next();
+		for (Port callPort : getDataPorts()) {
 			Port procPort = getProcedurePort(callPort);
 			mod |= callPort.pushValueBackward(procPort.getValue());
 		}

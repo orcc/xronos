@@ -44,7 +44,7 @@ import net.sf.openforge.util.naming.ID;
  */
 public class Scoreboard extends Module implements Composable {
 
-	private Set feedbackPoints = new HashSet(7);
+	private Set<Reg> feedbackPoints = new HashSet<Reg>(7);
 
 	/* The logical AND that generates the scoreboard result */
 	private And scbdAnd;
@@ -60,14 +60,14 @@ public class Scoreboard extends Module implements Composable {
 	 * @param buses
 	 *            a value of type 'Collection'
 	 */
-	public Scoreboard(Collection buses) {
+	public Scoreboard(Collection<Bus> buses) {
 		this(buses.size());
 
-		final Iterator portIter = getDataPorts().iterator();
-		final Iterator busIter = buses.iterator();
+		final Iterator<Port> portIter = getDataPorts().iterator();
+		final Iterator<Bus> busIter = buses.iterator();
 		while (busIter.hasNext()) {
-			final Port port = (Port) portIter.next();
-			port.setBus((Bus) busIter.next());
+			final Port port = portIter.next();
+			port.setBus(busIter.next());
 			port.setUsed(true);
 		}
 	}
@@ -84,8 +84,9 @@ public class Scoreboard extends Module implements Composable {
 		getClockPort().setUsed(true);
 		getResetPort().setUsed(true);
 
-		for (int i = 0; i < count; i++)
+		for (int i = 0; i < count; i++) {
 			makeDataPort();
+		}
 
 		// make it...
 		makePhysical();
@@ -116,8 +117,8 @@ public class Scoreboard extends Module implements Composable {
 	 * @return a 'Set' of {@link Reg Reg's}
 	 */
 	@Override
-	public Set getFeedbackPoints() {
-		Set feedback = new HashSet();
+	public Set<Component> getFeedbackPoints() {
+		Set<Component> feedback = new HashSet<Component>();
 		feedback.addAll(super.getFeedbackPoints());
 		feedback.addAll(feedbackPoints);
 
@@ -169,14 +170,14 @@ public class Scoreboard extends Module implements Composable {
 			// in this case we also need an or with the reset signal
 			Or or = new Or(2);
 			addComponent(or);
-			List l = or.getDataPorts();
+			List<Port> l = or.getDataPorts();
 
 			// or together the result of the and
-			Port port = (Port) l.get(0);
+			Port port = l.get(0);
 			port.setBus(and.getResultBus());
 
 			// and the global reset
-			port = (Port) l.get(1);
+			port = l.get(1);
 			port.setBus(getResetPort().getPeer());
 
 			// connect the output of the OR to the donebus...
@@ -187,12 +188,12 @@ public class Scoreboard extends Module implements Composable {
 		resultBus = commonResultBus;
 
 		// iterator for the and
-		Iterator it = and.getDataPorts().iterator();
+		Iterator<Port> it = and.getDataPorts().iterator();
 		// iterator for the Scoreboard
-		Iterator it2 = getDataPorts().iterator();
+		Iterator<Port> it2 = getDataPorts().iterator();
 		int i = 0;
 		while (it.hasNext()) {
-			createSlice(i++, (Port) it.next(), (Port) it2.next(), false);
+			createSlice(i++, it.next(), it2.next(), false);
 		}
 	}
 
@@ -219,11 +220,11 @@ public class Scoreboard extends Module implements Composable {
 			addComponent(resetOr);
 			resetOr.getResultBus().setIDLogical(
 					ID.showLogical(this) + "_sliceOr" + number);
-			final List l = resetOr.getDataPorts();
+			final List<Port> l = resetOr.getDataPorts();
 			if (isStallPort) {
 				// set bus is the or of the input and reset
-				((Port) l.get(0)).setBus(inputPort.getPeer());
-				((Port) l.get(1)).setBus(getResetPort().getPeer());
+				l.get(0).setBus(inputPort.getPeer());
+				l.get(1).setBus(getResetPort().getPeer());
 				setBus = resetOr.getResultBus();
 				// reset bus is the scoreboard result && !resetOr
 				final And maskAnd = new And(2);
@@ -244,8 +245,8 @@ public class Scoreboard extends Module implements Composable {
 				setBus = inputPort.getPeer();
 				// reset bus is the or of the common result and the
 				// reset port
-				((Port) l.get(0)).setBus(getScbdResult());
-				((Port) l.get(1)).setBus(getResetPort().getPeer());
+				l.get(0).setBus(getScbdResult());
+				l.get(1).setBus(getResetPort().getPeer());
 				resetBus = resetOr.getResultBus();
 			}
 		} else {
@@ -278,10 +279,10 @@ public class Scoreboard extends Module implements Composable {
 			or.getResultBus().setIDLogical(
 					ID.showLogical(this) + "_resOr" + number);
 			addComponent(or);
-			List l = or.getDataPorts();
+			List<Port> l = or.getDataPorts();
 			// or together the input and the reg result
-			((Port) l.get(0)).setBus(inputPort.getPeer());
-			((Port) l.get(1)).setBus(r.getResultBus());
+			l.get(0).setBus(inputPort.getPeer());
+			l.get(1).setBus(r.getResultBus());
 			sliceDoneBus = or.getResultBus();
 		} else {
 			sliceDoneBus = r.getResultBus();

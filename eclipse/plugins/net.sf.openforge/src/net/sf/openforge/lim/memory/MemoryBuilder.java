@@ -171,8 +171,9 @@ public class MemoryBuilder {
 	 */
 	protected static PackedMemory buildMemory(LogicalMemory mem, int addrBits,
 			int memoryID) {
-		if (_memory.db)
+		if (_memory.db) {
 			_memory.ln(_memory.BUILD, "Building Structural Memory for " + mem);
+		}
 
 		// The largest and smallest access in numbers of addresses
 		// accessed atomically.
@@ -189,9 +190,10 @@ public class MemoryBuilder {
 			}
 		}
 
-		if (_memory.db)
+		if (_memory.db) {
 			_memory.ln(_memory.BUILD, "Largest Access: " + largestAccess
 					+ " Smallest Access: " + smallestAccess);
+		}
 
 		// Now build a model of the 'packed' memory which identifies
 		// how allocations/locations are stored in the memory and what
@@ -206,9 +208,10 @@ public class MemoryBuilder {
 		 * Allocations.
 		 */
 		packedMem.lock();
-		if (_memory.db)
+		if (_memory.db) {
 			_memory.ln(_memory.BUILD, "Packed Memory base Addresses: "
 					+ packedMem.getBaseAddressMap());
+		}
 
 		/*
 		 * The address map has to be computed regardless of whether any actual
@@ -281,14 +284,16 @@ public class MemoryBuilder {
 					.getMemoryImplementation(addressableBytes, isReadOnly(mem),
 							mem.getLogicalMemoryPorts().size());
 			// Just in case it wasn't set previously, handle it here
-			if (mem.getImplementation() == null)
+			if (mem.getImplementation() == null) {
 				mem.setImplementation(impl);
+			}
 
 			// Test to see if the previously determined configuration
 			// matches the final characteristics. If not that is OK.
 			GenericJob gj = EngineThread.getGenericJob();
-			if (!impl.equals(mem.getImplementation()))
+			if (!impl.equals(mem.getImplementation())) {
 				gj.warn("Selected memory implementation differs from final characteristics.  This warning is only for informational purposes");
+			}
 
 			_memory.ln(_memory.BUILD, "bitWidth " + bitWidth);
 			_memory.ln(_memory.BUILD, "numLines " + numLines);
@@ -319,8 +324,9 @@ public class MemoryBuilder {
 	 */
 	private static boolean isReadOnly(LogicalMemory mem) {
 		for (LogicalMemoryPort port : mem.getLogicalMemoryPorts()) {
-			if (!port.isReadOnly())
+			if (!port.isReadOnly()) {
 				return false;
+			}
 		}
 		return true;
 	}
@@ -393,9 +399,10 @@ public class MemoryBuilder {
 		}
 
 		public void setSmallestAccess(int acc) {
-			if (acc <= 0)
+			if (acc <= 0) {
 				throw new IllegalArgumentException(
 						"illegal minimum access width " + acc);
+			}
 			smallestAccessWidth = acc;
 		}
 
@@ -413,9 +420,10 @@ public class MemoryBuilder {
 
 			final int locAddresses = loc.getAddressableSize();
 			if (locAddresses > 0) {
-				if (_memory.db)
+				if (_memory.db) {
 					_memory.ln(_memory.BUILD, "Allocating to packed memory "
 							+ loc + " locAddresses " + locAddresses);
+				}
 				baseAddressMap.put(loc, getAddress(nextAddress));
 				nextAddress += locAddresses;
 
@@ -424,14 +432,16 @@ public class MemoryBuilder {
 					final int modulo = locAddresses % addrsPerLine;
 					final int extra = modulo == 0 ? 0 : addrsPerLine - modulo;
 
-					if (_memory.db)
+					if (_memory.db) {
 						_memory.ln(_memory.BUILD, "\textra: " + extra);
+					}
 
 					assert extra >= 0;
 					nextAddress += extra;
 
-					if (_memory.db)
+					if (_memory.db) {
 						_memory.ln(_memory.BUILD, "\tnext: " + nextAddress);
+					}
 				}
 			} else {
 				zeroLengthAllocations.add(loc);
@@ -465,9 +475,7 @@ public class MemoryBuilder {
 			// because it is used to determine the physical depth of
 			// this memory.
 			int addr = nextAddress;
-			for (Iterator iter = zeroLengthAllocations.iterator(); iter
-					.hasNext();) {
-				Allocation alloc = (Allocation) iter.next();
+			for (Allocation alloc : zeroLengthAllocations) {
 				baseAddressMap.put(alloc, getAddress(addr++));
 			}
 		}
@@ -497,8 +505,9 @@ public class MemoryBuilder {
 		 * @return a value of type 'byte[][]'
 		 */
 		public AddressableUnit[][] getInitValues() {
-			if (_memory.db)
+			if (_memory.db) {
 				_memory.ln(_memory.BUILD, "Building map of initial values");
+			}
 			// Create a map in which we can look up the allocation
 			// based on the base address.
 			final Map inverted = new HashMap();
@@ -509,7 +518,7 @@ public class MemoryBuilder {
 				inverted.put(entry.getValue(), entry.getKey());
 			}
 
-			final List lines = new ArrayList();
+			final List<AddressableUnit[]> lines = new ArrayList<AddressableUnit[]>();
 			for (int i = 0; i < nextAddress; i += addrsPerLine) {// Base
 																	// addresses
 																	// _will_
@@ -518,13 +527,15 @@ public class MemoryBuilder {
 																	// each
 																	// line.
 				final Object key = getAddress(i);
-				if (!inverted.containsKey(key))
+				if (!inverted.containsKey(key)) {
 					continue;
+				}
 				final Allocation alloc = (Allocation) inverted.get(key);
 				final LogicalValue value = alloc.getInitialValue();
 
-				if (_memory.db)
+				if (_memory.db) {
 					_memory.ln(_memory.BUILD, "Alloc: " + alloc);
+				}
 				AddressableUnit[] values = value.getRep();
 				printArr(values);
 				final int valLen = values.length;
@@ -534,10 +545,11 @@ public class MemoryBuilder {
 					Arrays.fill(line, AddressableUnit.ZERO_UNIT);
 					int remain = valLen - index;
 					int copyLen = remain < addrsPerLine ? remain : addrsPerLine;
-					if (_memory.db)
+					if (_memory.db) {
 						_memory.ln(_memory.BUILD, "Copying from values "
 								+ valLen + " index " + index + " to line "
 								+ line.length + " length " + copyLen);
+					}
 					System.arraycopy(values, index, line, 0, copyLen);
 					lines.add(line);
 					index += addrsPerLine;
@@ -546,7 +558,7 @@ public class MemoryBuilder {
 
 			AddressableUnit[][] map = new AddressableUnit[lines.size()][addrsPerLine];
 			for (int i = 0; i < lines.size(); i++) {
-				AddressableUnit[] line = (AddressableUnit[]) lines.get(i);
+				AddressableUnit[] line = lines.get(i);
 				map[i] = line;
 			}
 			return map;

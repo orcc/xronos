@@ -24,8 +24,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
+
+import net.sf.openforge.lim.Exit.Tag;
 
 /**
  * An "until" style {@link LoopBody}. That is, the test is performed at the end
@@ -77,7 +78,7 @@ public class UntilBody extends LoopBody implements Cloneable {
 		/*
 		 * Body Component to Decision.
 		 */
-		final Map exitMap = new HashMap();
+		final Map<Tag, Collection<Exit>> exitMap = new HashMap<Tag, Collection<Exit>>();
 		collectExits(getBody(), exitMap);
 
 		Exit bodyDoneExit = body.getExit(Exit.DONE);
@@ -103,17 +104,13 @@ public class UntilBody extends LoopBody implements Cloneable {
 				 */
 				final OutBuf doneOutBuf = bodyDoneExit.getPeer();
 				final OutBuf continueOutBuf = bodyContinueExit.getPeer();
-				for (Iterator iter = continueOutBuf.getEntries().iterator(); iter
-						.hasNext();) {
-					final Entry continueOutBufEntry = (Entry) iter.next();
+				for (Entry continueOutBufEntry : continueOutBuf.getEntries()) {
 					final Entry doneOutBufEntry = doneOutBuf
 							.makeEntry(continueOutBufEntry.getDrivingExit());
 					final Port continueGoPort = continueOutBuf.getGoPort();
-					final Collection continueDependencies = new ArrayList(
+					final Collection<Dependency> continueDependencies = new ArrayList<Dependency>(
 							continueOutBufEntry.getDependencies(continueGoPort));
-					for (Iterator diter = continueDependencies.iterator(); diter
-							.hasNext();) {
-						final Dependency dependency = (Dependency) diter.next();
+					for (Dependency dependency : continueDependencies) {
 						continueOutBufEntry.removeDependency(continueGoPort,
 								dependency);
 						final Dependency doneDependency = (Dependency) dependency
@@ -152,10 +149,10 @@ public class UntilBody extends LoopBody implements Cloneable {
 		/*
 		 * Feedback Exit is comprised of Decision true Exit.
 		 */
-		Collection feedbackExits = new HashSet();
+		Collection<Exit> feedbackExits = new HashSet<Exit>();
 		if (decision != null) {
 			final Exit.Tag trueTag = getDecision().getTrueExit().getTag();
-			feedbackExits = (Collection) exitMap.remove(trueTag);
+			feedbackExits = exitMap.remove(trueTag);
 		}
 
 		if (!feedbackExits.isEmpty()) {
@@ -166,13 +163,13 @@ public class UntilBody extends LoopBody implements Cloneable {
 		 * Completion Exit is comprised of Decision false Exit and body's BREAK
 		 * Exit, if any.
 		 */
-		Collection completeExits = new HashSet();
+		Collection<Exit> completeExits = new HashSet<Exit>();
 		if (decision != null) {
 			final Exit.Tag falseTag = getDecision().getFalseExit().getTag();
-			completeExits = (Collection) exitMap.remove(falseTag);
+			completeExits = exitMap.remove(falseTag);
 		}
 
-		final Collection breakExits = (Collection) exitMap.remove(Exit
+		final Collection<Exit> breakExits = exitMap.remove(Exit
 				.getTag(Exit.BREAK));
 		if (breakExits != null) {
 			completeExits.addAll(breakExits);
@@ -234,9 +231,10 @@ public class UntilBody extends LoopBody implements Cloneable {
 			decision = (Decision) inserted;
 		} else if (removed == getBody()) {
 			body = (Module) inserted;
-		} else
+		} else {
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
+		}
 
 		boolean mod = removeComponent(removed);
 		addComponent(inserted);

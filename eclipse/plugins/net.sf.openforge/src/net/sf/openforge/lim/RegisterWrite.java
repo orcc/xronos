@@ -83,16 +83,18 @@ public class RegisterWrite extends Access implements StateAccessor {
 	}
 
 	public Bus getSidebandWEBus() {
-		if (getExit(Exit.SIDEBAND) == null)
+		if (getExit(Exit.SIDEBAND) == null) {
 			return null;
+		}
 		// The ordering here MUST match the sizing applied in
 		// makeSidebandConnections
 		return getExit(Exit.SIDEBAND).getDataBuses().get(0);
 	}
 
 	public Bus getSidebandDataBus() {
-		if (getExit(Exit.SIDEBAND) == null)
+		if (getExit(Exit.SIDEBAND) == null) {
 			return null;
+		}
 		// The ordering here MUST match the sizing applied in
 		// makeSidebandConnections
 		return getExit(Exit.SIDEBAND).getDataBuses().get(1);
@@ -165,8 +167,9 @@ public class RegisterWrite extends Access implements StateAccessor {
 
 			Value inValue = getDataPort().getValue();
 			Value newValue = new Value(inValue.getSize(), isSigned());
-			for (int i = 0; i < inValue.getSize(); i++)
+			for (int i = 0; i < inValue.getSize(); i++) {
 				newValue.setBit(i, inValue.getBit(i));
+			}
 			mod |= getSidebandDataBus().pushValueForward(newValue);
 		}
 
@@ -229,6 +232,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 	 * Tests whether a given Bus is the sideband write enable Bus that was added
 	 * by the global connector.
 	 */
+	@SuppressWarnings("unused")
 	private boolean isWriteEnableBus(Bus bus) {
 		// return getExit(Exit.SIDEBAND).getDataBuses().indexOf(bus) == 0;
 		return bus != null && bus == getSidebandWEBus();
@@ -238,6 +242,7 @@ public class RegisterWrite extends Access implements StateAccessor {
 	 * Tests whether a given Bus is the sideband data Bus that was added by the
 	 * global connector.
 	 */
+	@SuppressWarnings("unused")
 	private boolean isWriteDataBus(Bus bus) {
 		// return getExit(Exit.SIDEBAND).getDataBuses().indexOf(bus) == 1;
 		return bus != null && bus == getSidebandDataBus();

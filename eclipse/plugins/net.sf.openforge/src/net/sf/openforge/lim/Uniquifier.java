@@ -23,7 +23,6 @@ package net.sf.openforge.lim;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -46,7 +45,7 @@ public class Uniquifier {
 	 * invokes its own cloned copy of the called {@link Procedure}.
 	 */
 	public static void uniquify(Design design) {
-		final Collection deadCalls = uniquifyTaskCalls(design);
+		final Collection<Call> deadCalls = uniquifyTaskCalls(design);
 		ReferenceCleaner.clean(deadCalls);
 	}
 
@@ -58,24 +57,24 @@ public class Uniquifier {
 	 *            the design to be uniquified
 	 * @return the replaced calls, which are now obsolete
 	 */
-	private static Collection uniquifyTaskCalls(Design design) {
-		final List oldCalls = new LinkedList();
+	private static Collection<Call> uniquifyTaskCalls(Design design) {
+		final List<Call> oldCalls = new LinkedList<Call>();
 		try {
-			for (Iterator iter = design.getTasks().iterator(); iter.hasNext();) {
-				final Task task = (Task) iter.next();
+			for (Task task : design.getTasks()) {
 				final Call oldCall = task.getCall();
 
 				// ensures no dependencies that we would need to copy
-				if (!oldCall.getEntries().isEmpty())
+				if (!oldCall.getEntries().isEmpty()) {
 					throw new IllegalStateException(
 							"Top call has dependencies too early");
-				for (Iterator it = oldCall.getPorts().iterator(); it.hasNext();) {
-					if (((Port) it.next()).isConnected())
+				}
+				for (Port port : oldCall.getPorts()) {
+					if (port.isConnected()) {
 						throw new IllegalStateException(
 								"Top call port connected too early");
+					}
 				}
-				for (Iterator it = oldCall.getBuses().iterator(); it.hasNext();) {
-					Bus bus = (Bus) it.next();
+				for (Bus bus : oldCall.getBuses()) {
 					if (!bus.getLogicalDependents().isEmpty()
 							|| bus.isConnected()) {
 						throw new IllegalStateException(
@@ -104,11 +103,10 @@ public class Uniquifier {
  * @version $Id: Uniquifier.java 23 2005-09-09 18:45:32Z imiller $
  */
 class ReferenceCleaner extends DefaultVisitor {
-	private static final String _RCS_ = "$Rev: 23 $";
 
-	private Collection visitedCalls = new HashSet();
+	private Collection<Call> visitedCalls = new HashSet<Call>();
 
-	private Set removedRefs = new HashSet();
+	private Set<Component> removedRefs = new HashSet<Component>();
 
 	/**
 	 * Unlinks all {@link Reference References} found in a hierarchy of
@@ -117,10 +115,10 @@ class ReferenceCleaner extends DefaultVisitor {
 	 * @param calls
 	 *            a collection of dead top-level {@link Call Calls}
 	 */
-	static void clean(Collection calls) {
+	static void clean(Collection<Call> calls) {
 		final ReferenceCleaner cleaner = new ReferenceCleaner();
-		for (Iterator iter = calls.iterator(); iter.hasNext();) {
-			((Call) iter.next()).accept(cleaner);
+		for (Call call : calls) {
+			call.accept(cleaner);
 		}
 	}
 

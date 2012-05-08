@@ -115,7 +115,7 @@ public abstract class Access extends Reference implements Referencer {
 	 *         targetted resource is null.
 	 */
 	@Override
-	public Collection getAccessedResources() {
+	public Collection<Resource> getAccessedResources() {
 		assert getResource() != null : "Intenal state error.  Access has nothing to reference";
 		return Collections.singletonList(getResource());
 	}

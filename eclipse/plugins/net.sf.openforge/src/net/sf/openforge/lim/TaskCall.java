@@ -21,7 +21,6 @@
 package net.sf.openforge.lim;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import net.sf.openforge.lim.io.SimpleInternalPin;
@@ -69,13 +68,15 @@ public class TaskCall extends Module {
 	 * Sets the target of this task call, but may only be called once.
 	 */
 	public void setTarget(Task target) {
-		if (target == null)
+		if (target == null) {
 			throw new IllegalArgumentException(
 					"Cannot set Task Call to null target");
+		}
 
-		if (targetTask != null)
+		if (targetTask != null) {
 			throw new IllegalStateException(
 					"Cannot change the target of a Task Call");
+		}
 
 		targetTask = target;
 		build();
@@ -138,9 +139,10 @@ public class TaskCall extends Module {
 			owner.addComponent(write);
 		} else {
 			final Bus doneBus = theCall.getExit(Exit.DONE).getDoneBus();
-			final Set owners = new HashSet();
-			for (Iterator iter = doneBus.getPorts().iterator(); iter.hasNext();)
-				owners.add(((Port) iter.next()).getOwner());
+			final Set<Component> owners = new HashSet<Component>();
+			for (Port port : doneBus.getPorts()) {
+				owners.add((port.getOwner()));
+			}
 			assert owners.size() == 1 : "Task done must have only one target component "
 					+ owners.size();
 

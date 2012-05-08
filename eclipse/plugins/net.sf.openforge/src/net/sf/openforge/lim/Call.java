@@ -191,7 +191,7 @@ public class Call extends Reference {
 	 * @return a collection of {@link Resource}
 	 */
 	@Override
-	public Collection getAccessedResources() {
+	public Collection<Resource> getAccessedResources() {
 		return getProcedure().getBody().getAccessedResources();
 	}
 
@@ -491,27 +491,29 @@ public class Call extends Reference {
 		String ret = toString();
 		for (Port p : getDataPorts()) {
 			Bus procBus = getProcedurePort(p).getPeer();
-			if (verbose)
+			if (verbose) {
 				ret += p.getValue() == null ? " n" : " "
 						+ p.getValue().bitSourceDebug() + "("
 						+ procBus.getValue().bitSourceDebug() + ")";
-			else
+			} else {
 				ret += p.getValue() == null ? " n" : " "
 						+ p.getValue().getSize() + "("
 						+ procBus.getValue().getSize() + ")";
+			}
 		}
 		for (Exit exit : getExits()) {
 			ret += " :";
 			for (Bus bus : exit.getDataBuses()) {
 				Bus procBus = getProcedureBus(bus);
-				if (verbose)
+				if (verbose) {
 					ret += bus.getValue() == null ? " n" : " "
 							+ bus.getValue().bitSourceDebug() + "("
 							+ procBus.getValue().bitSourceDebug() + ")";
-				else
+				} else {
 					ret += bus.getValue() == null ? " n" : " "
 							+ bus.getValue().getSize() + "("
 							+ procBus.getValue().getSize() + ")";
+				}
 			}
 		}
 		return ret;

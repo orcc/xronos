@@ -43,5 +43,5 @@ public interface CloneListener {
 	 *            cloned {@link Component Components} and their {@link Entry
 	 *            Entries}
 	 */
-	public void setCloneMap(Map cloneMap);
+	public void setCloneMap(Map<Component, Entry> cloneMap);
 }

@@ -78,7 +78,7 @@ public class RegisterReferee extends MemoryReferee implements Cloneable {
 		throw new CloneNotSupportedException();
 	}
 
-	public void connectImplementation(Reg enabledReg, List dataPorts) {
+	public void connectImplementation(Reg enabledReg, List<Port> dataPorts) {
 		assert enabledReg.getType() == Reg.REGE;
 
 		final GlobalSlot globalSlot = getGlobalSlot();
@@ -96,25 +96,25 @@ public class RegisterReferee extends MemoryReferee implements Cloneable {
 		enabledReg.getEnablePort().setBus(globalSlot.getWriteEnableBus());
 		globalSlot.getDonePort().setBus(globalSlot.getGoBus());
 
-		Iterator portIter = dataPorts.iterator();
+		Iterator<Port> portIter = dataPorts.iterator();
 		System.out.println("There are " + getTaskSlots());
 		System.out.println("There are " + dataPorts);
-		Constant zero = new SimpleConstant(0, 1);
-		for (Iterator iter = getTaskSlots().iterator(); iter.hasNext();) {
-			TaskSlot slot = (TaskSlot) iter.next();
+		Constant zero = new SimpleConstant(0, 1, false);
+		for (TaskSlot slot : getTaskSlots()) {
 			if (slot.getDataInPort() != null) {
 				assert portIter.hasNext() : "Too few write port pairs on register referee";
-				Port enablePort = (Port) portIter.next();
+				Port enablePort = portIter.next();
 				assert portIter.hasNext() : "Missing data port in pair on register referee";
-				Port dataPort = (Port) portIter.next();
+				Port dataPort = portIter.next();
 
 				slot.getGoWPort().setBus(enablePort.getPeer());
 				slot.getDataInPort().setBus(dataPort.getPeer());
 			}
 			slot.getAddressPort().setBus(zero.getValueBus());
 			slot.getSizePort().setBus(zero.getValueBus());
-			if (slot.getGoRPort() != null)
+			if (slot.getGoRPort() != null) {
 				slot.getGoRPort().setBus(zero.getValueBus());
+			}
 		}
 		assert !portIter.hasNext();
 	}

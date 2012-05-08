@@ -212,8 +212,8 @@ public abstract class MemoryAccess extends SizedAccess implements StateAccessor 
 	 * @return a collection of {@link Resource}
 	 */
 	@Override
-	public Collection<LogicalMemoryPort> getAccessedResources() {
-		return Collections.singletonList(getMemoryPort());
+	public Collection<Resource> getAccessedResources() {
+		return Collections.singletonList((Resource) getMemoryPort());
 	}
 
 	@Override

@@ -277,7 +277,7 @@ public class MemoryBank extends Component {
 		// Create/connect the enables
 		final Bus shiftedSelect;
 		if (bankNum > 0) {
-			Constant selectShiftConst = new SimpleConstant(bankNum, 32);
+			Constant selectShiftConst = new SimpleConstant(bankNum, 32, false);
 			final int shiftStages = selectShiftConst.getValueBus().getValue()
 					.getSize();
 			owner.addComponent(selectShiftConst);
@@ -375,7 +375,8 @@ public class MemoryBank extends Component {
 		}
 
 		if (bankNum > 0) {
-			Constant shiftMag = new SimpleConstant(bankNum * getWidth(), 32);
+			Constant shiftMag = new SimpleConstant(bankNum * getWidth(), 32,
+					false);
 			owner.addComponent(shiftMag);
 			final int dataStages = shiftMag.getValueBus().getValue().getSize();
 

@@ -38,7 +38,6 @@ import java.util.List;
  * @version $Id: MutexBlock.java 100 2006-02-03 22:49:08Z imiller $
  */
 public class MutexBlock extends Block {
-	private static final String rcs_id = "RCS_REVISION: $Rev: 2 $";
 
 	/**
 	 * Constructs a mutex block whose population is deferred.
@@ -47,7 +46,7 @@ public class MutexBlock extends Block {
 		super(isProcedureBody);
 	}
 
-	public MutexBlock(List sequence, boolean isProcedureBody) {
+	public MutexBlock(List<Component> sequence, boolean isProcedureBody) {
 		super(sequence, isProcedureBody);
 	}
 
