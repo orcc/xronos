@@ -61,18 +61,20 @@ public class ConditionalAndOpRule {
 
 		if (constant.longValue() != 0) {
 			if (nonConstantPort.getValue().getSize() > 1) {
-				if (_optimize.db)
+				if (_optimize.db) {
 					_optimize.ln(_optimize.HALF_CONST, "\tReplacing " + op
 							+ " due to (a && 1)");
+				}
 				// a && 1 = |a. Replace the component by ReductionOrOp
 				op.removeDataPort(constantPort);
 				visit.swapComponents(op, new ReductionOrOp());
 			} else {
-				if (_optimize.db)
+				if (_optimize.db) {
 					_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 							+ " due to (a && 1)");
-				// a && 1 = a. Simply delete the component and wire
-				// through the non-constant port
+					// a && 1 = a. Simply delete the component and wire
+					// through the non-constant port
+				}
 
 				// wire through the control.
 				ComponentSwapVisitor.wireControlThrough(op);
@@ -90,9 +92,10 @@ public class ConditionalAndOpRule {
 
 			return true;
 		} else if (constant.longValue() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a && 0)");
+			}
 			// a && 0 = 0. Simply delete the component and replace with the
 			// constant
 			visit.replaceComponent(op, new SimpleConstant(0, op.getResultBus()

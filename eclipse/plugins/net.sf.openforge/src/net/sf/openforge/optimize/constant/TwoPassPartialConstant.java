@@ -24,7 +24,6 @@ package net.sf.openforge.optimize.constant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import net.sf.openforge.app.EngineThread;
@@ -104,7 +103,8 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 	 *            will be called on the Visitable target after each complete run
 	 *            of forward then reverse visitation.
 	 */
-	public static void propagate(Visitable target, Collection<ComponentSwapVisitor> additionalOpts) {
+	public static void propagate(Visitable target,
+			Collection<ComponentSwapVisitor> additionalOpts) {
 		propagate(target, additionalOpts, true, false);
 	}
 
@@ -124,7 +124,8 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 	 *            of forward then reverse visitation.
 	 */
 	public static void propagate(Visitable target, boolean visitGlobals) {
-		propagate(target, Collections.<ComponentSwapVisitor> emptyList(), visitGlobals, false);
+		propagate(target, Collections.<ComponentSwapVisitor> emptyList(),
+				visitGlobals, false);
 	}
 
 	/**
@@ -136,7 +137,8 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 	 *            a value of type 'Visitable'
 	 */
 	public static void propagateQuiet(Visitable target) {
-		propagate(target, Collections.<ComponentSwapVisitor> emptyList(), true, true);
+		propagate(target, Collections.<ComponentSwapVisitor> emptyList(), true,
+				true);
 	}
 
 	/**
@@ -160,7 +162,8 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 	 *            propagation is not a true run of constant prop on the design
 	 *            but is being used to initialize a component
 	 */
-	public static void propagate(Visitable target, Collection<ComponentSwapVisitor> additionalOpts,
+	public static void propagate(Visitable target,
+			Collection<ComponentSwapVisitor> additionalOpts,
 			boolean shouldVisitGlobals, boolean quiet) {
 		// if (_optimize.db && target instanceof Design)
 		// _optimize.d.launchXGraph((Design)target, false);
@@ -171,16 +174,19 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 		visitor.nodeCount = 0;
 		int passCount = 0;
 		while (changed) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL,
 						"============================================");
-			if (_optimize.db)
+			}
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL,
 						"\tStarting partial constant propagation pass "
 								+ passCount + " on " + target);
-			if (_optimize.db)
+			}
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL,
 						"============================================");
+			}
 
 			if (!quiet) {
 				EngineThread.getGenericJob().verbose(
@@ -231,16 +237,19 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 		visitor.nodeCount = 0;
 		int passCount = 0;
 		while (changed) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL,
 						"============================================");
-			if (_optimize.db)
+			}
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL,
 						"\tStarting partial constant propagation forward pass only "
 								+ passCount + " on " + target);
-			if (_optimize.db)
+			}
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL,
 						"============================================");
+			}
 			passCount++;
 
 			changed = false;
@@ -254,35 +263,39 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 	}
 
 	private boolean didModify() {
-		return this.modified;
+		return modified;
 	}
 
 	private void reset() {
-		this.modified = false;
+		modified = false;
 	}
 
 	/**
 	 * Override of super method to call forward or reverse propagate depending
 	 * on the direction of traversal
 	 */
+	@Override
 	protected void preFilterAny(Component c) {
-		this.nodeCount++;
-		if (_optimize.db)
+		nodeCount++;
+		if (_optimize.db) {
 			_optimize.ln(_optimize.PARTIAL, "comp: " + c.showIDLogical() + " "
 					+ c.show(true));
+		}
 
 		if (isForward()) {
 			boolean forwardMod = c.propagateValuesForward();
-			this.modified |= forwardMod;
-			if (_optimize.db)
+			modified |= forwardMod;
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL, "\tfwd: " + c.cpDebug(true)
 						+ " \tmodified " + forwardMod);
+			}
 		} else {
 			boolean reverseMod = c.propagateValuesBackward();
-			this.modified |= reverseMod;
-			if (_optimize.db)
+			modified |= reverseMod;
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL, "\trev: " + c.cpDebug(true)
 						+ " \tmodified " + reverseMod);
+			}
 		}
 		super.preFilterAny(c);
 	}
@@ -318,14 +331,17 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 	 * @see Call#copyOutputValuesToProcedure()
 	 * @see Call#copyOutputValuesFromProcedure()
 	 */
+	@Override
 	public void visit(Call call) {
-		if (_optimize.db)
+		if (_optimize.db) {
 			_optimize.ln(_optimize.PARTIAL,
 					"Call: " + call + " proc: " + call.getProcedure());
-		if (_optimize.db ) {
-			if (!(call.getProcedure().equals(null)))
+		}
+		if (_optimize.db) {
+			if (!(call.getProcedure().equals(null))) {
 				_optimize.ln(_optimize.PARTIAL, "\tbody: "
 						+ call.getProcedure().getBody());
+			}
 		}
 
 		if (isForward()) {
@@ -333,7 +349,7 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 			 * Update the call's Port values.
 			 */
 			boolean callMod = call.propagateValuesForward();
-			this.modified |= callMod;
+			modified |= callMod;
 
 			/*
 			 * Propagate the call Port values to the procedure body Ports.
@@ -381,6 +397,7 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 	 * Override the super in order to push the unioned value info from all
 	 * Call's onto the Procedures body.
 	 */
+	@Override
 	protected void preFilter(Procedure procedure) {
 		super.preFilter(procedure);
 	}
@@ -388,6 +405,7 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 	/**
 	 * Override to run partial constant prop on the design level.
 	 */
+	@Override
 	public void visit(Design design) {
 		if (isForward()) {
 			super.preFilter((Visitable) design);
@@ -402,7 +420,7 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 			// iterating only 1 time. Why/how this fixes this I do
 			// not know!
 			boolean designModified = designProp(design);
-			this.modified |= designModified;
+			modified |= designModified;
 			// this.modified |= designProp(design);
 			super.postFilter((Visitable) design);
 		} else {
@@ -417,7 +435,7 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 			// iterating only 1 time. Why/how this fixes this I do
 			// not know!
 			boolean designModified = designProp(design);
-			this.modified |= designModified;
+			modified |= designModified;
 			// this.modified |= designProp(design);
 			// traverse(design);
 			super.postFilter((Visitable) design);
@@ -444,12 +462,12 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 			task.accept(this);
 		}
 
-		for (Iterator iter = design.getDesignModule().getComponents()
-				.iterator(); iter.hasNext();) {
-			Visitable vis = (Visitable) iter.next();
+		for (Component component : design.getDesignModule().getComponents()) {
+			Visitable vis = component;
 
-			if (taskCalls.contains(vis))
+			if (taskCalls.contains(vis)) {
 				continue;
+			}
 
 			try {
 				vis.accept(this);
@@ -468,13 +486,14 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 			// System.err.println("Need constant prop support for LogicalMemory???");
 		}
 
-		for (Iterator iter = design.getPins().iterator(); iter.hasNext();) {
-			mod |= visitPin((Pin) iter.next());
+		for (Pin pin : design.getPins()) {
+			mod |= visitPin(pin);
 		}
 
 		return mod;
 	}
 
+	@Override
 	public void visit(SimplePin pin) {
 		// Ensure that the port/bus of each SimplePin in the fifo
 		// interfaces as well as other 'simple pins' are correctly
@@ -485,26 +504,29 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 		} else {
 			pinMod = pin.propagateValuesBackward();
 		}
-		this.modified |= pinMod;
+		modified |= pinMod;
 	}
 
 	private boolean visitPin(Pin pin) {
 		boolean mod = false;
 
-		if (_optimize.db)
+		if (_optimize.db) {
 			_optimize.ln(_optimize.PARTIAL, "comp: " + pin.show(true));
+		}
 		if (isForward()) {
 			boolean isMod = pin.propagateValuesForward();
 			mod |= isMod;
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL, "\tfwd: " + pin.cpDebug(true)
 						+ " \tmodified " + mod);
+			}
 		} else {
 			boolean isMod = pin.propagateValuesBackward();
 			mod |= isMod;
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.PARTIAL, "\trev: " + pin.cpDebug(true)
 						+ " \tmodified " + mod);
+			}
 		}
 		if (pin.getInPinBuf() != null
 				&& pin.getInPinBuf().getPhysicalComponent() != null) {
@@ -530,9 +552,10 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 	}
 
 	private void catchAll(Module comp) {
-		if (_optimize.db)
+		if (_optimize.db) {
 			_optimize.ln(_optimize.PARTIAL, "Module catchAll " + comp + " "
 					+ comp.getClass());
+		}
 		preFilter(comp);
 		traverse(comp);
 		postFilter(comp);
@@ -540,9 +563,10 @@ public class TwoPassPartialConstant extends DataFlowVisitor {
 
 	@SuppressWarnings("unused")
 	private void catchAll(Component comp) {
-		if (_optimize.db)
+		if (_optimize.db) {
 			_optimize.ln(_optimize.PARTIAL, "Component catchAll " + comp + " "
 					+ comp.getClass());
+		}
 		preFilter(comp);
 		traverse(comp);
 		postFilter(comp);

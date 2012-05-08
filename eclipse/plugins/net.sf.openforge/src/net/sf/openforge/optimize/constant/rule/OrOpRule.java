@@ -58,11 +58,12 @@ public class OrOpRule {
 		// : (Port) op.getDataPorts().get(1);
 
 		if (constant.longValue() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a | 0)");
-			// a | 0 = a. Simply delete the component and wire
-			// through the non-constant port
+				// a | 0 = a. Simply delete the component and wire
+				// through the non-constant port
+			}
 
 			// wire through the control.
 			ComponentSwapVisitor.wireControlThrough(op);

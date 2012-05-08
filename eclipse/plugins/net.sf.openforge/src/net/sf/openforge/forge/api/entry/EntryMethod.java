@@ -18,7 +18,6 @@ package net.sf.openforge.forge.api.entry;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collection;
 
 import net.sf.openforge.forge.api.ForgeApiException;
 import net.sf.openforge.forge.api.internal.EntryMethods;
@@ -41,34 +40,34 @@ public class EntryMethod {
 	private ClockDomain clockDomain = ClockDomain.GLOBAL;
 
 	/** The go pin. */
-	private GoPin goPin = new GoPin();
+	private final GoPin goPin = new GoPin();
 
 	/** The done pin. */
-	private DonePin donePin = new DonePin();
+	private final DonePin donePin = new DonePin();
 
 	/** The argument pins. */
-	private PinIn[] argPins;
+	private final PinIn[] argPins;
 
 	/** The result pin used by this method. */
-	private ResultPin resultPin = new ResultPin();
+	private final ResultPin resultPin = new ResultPin();
 
 	/** All pins, excluding clock and reset. */
-	private Collection pins;
+	// private Collection<Pin> pins;
 
 	/** The object this virtual method is attached to */
 	private Object object;
 
 	/** The Class of the method belonging to */
-	private Class clazz;
+	private final Class clazz;
 
 	/** The entry method to be called on the object */
-	private Method method;
+	private final Method method;
 
 	/** The argument list of this entry method */
 	private Class[] arguments = {};
 
 	/** true if the entry method is external, false if auto start */
-	private boolean external;
+	private final boolean external;
 
 	/**
 	 * Adds a design entry method. If the method signature is not specified, the

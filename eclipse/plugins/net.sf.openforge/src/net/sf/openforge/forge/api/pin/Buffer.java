@@ -55,16 +55,17 @@ public abstract class Buffer {
 	protected String name;
 	private int size;
 	private boolean isSigned;
-	private long resetValue;
-	private boolean resetEnabled;
-	private boolean resetValueSupplied;
+	private final long resetValue;
+	private final boolean resetEnabled;
+	private final boolean resetValueSupplied;
 	protected int inputPipelineDepth = 0;
 
 	/**
 	 * A List of {@link net.sf.openforge.forge.api.ucf.UCFAttribute} which apply
 	 * to this buffer.
 	 */
-	private List<UCFAttribute> pinAttributes = new ArrayList<UCFAttribute>(32);
+	private final List<UCFAttribute> pinAttributes = new ArrayList<UCFAttribute>(
+			32);
 
 	/** The clock domain with which this buffer is associated. */
 	private ClockDomain domain;
@@ -437,10 +438,11 @@ public abstract class Buffer {
 	 */
 	protected long getMask() {
 		int lsize = getSize();
-		if (lsize == 64)
+		if (lsize == 64) {
 			return -1L;
-		else
+		} else {
 			return ~(-(1L << lsize));
+		}
 	}
 
 	// Primitive method calls used by sub-classes to interact with the

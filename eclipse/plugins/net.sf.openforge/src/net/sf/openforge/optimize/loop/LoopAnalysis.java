@@ -21,129 +21,113 @@
 
 package net.sf.openforge.optimize.loop;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
-import net.sf.openforge.lim.*;
-
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Loop;
 
 /**
- * Characterizes a {@link Loop} with respect to its unroll-ability.  This
- * class determines whether the loop is unrollable, as well as the number
- * of times it will iterate (regardless of whether it is unrollable).
- *
+ * Characterizes a {@link Loop} with respect to its unroll-ability. This class
+ * determines whether the loop is unrollable, as well as the number of times it
+ * will iterate (regardless of whether it is unrollable).
+ * 
  * @version $Id: LoopAnalysis.java 2 2005-06-09 20:00:48Z imiller $
  */
-class LoopAnalysis
-{
-    /** Revision */
-    private static final String _RCS_ = "$Rev: 2 $";
+class LoopAnalysis {
+	/** Revision */
 
-    /** True if the loop can be unrolled, false otherwise. */
-    private boolean isUnrollable = true;
+	/** True if the loop can be unrolled, false otherwise. */
+	private boolean isUnrollable = true;
 
-    /** The number of iterations, if known, regardless of unrollability */
-    private int iterationCount = Loop.ITERATIONS_UNKNOWN;
+	/** The number of iterations, if known, regardless of unrollability */
+	private int iterationCount = Loop.ITERATIONS_UNKNOWN;
 
-    private String whyNotUnrollable="";
-    
-    /**
-     * Creates a new <code>LoopAnalysis</code> instance.  This constructor
-     * has the side effect of calling {@link Loop#setIterations(int)} on
-     * <code>loop</code> with the number of iterations it calculates.
-     *
-     * @param loop the loop to be analyzed
-     */
-    LoopAnalysis (Loop loop)
-    {
-        /*
-         * Test whether the loop is still iterative, since it may
-         * have already been unrolled in a previous iteration.
-         */
-        if (loop.isIterative())
-        {
-            try
-            {
+	private String whyNotUnrollable = "";
 
-                if (hasExtraExits(loop))
-                {
-                    throw new LoopUnrollingException("contains multiple exits");
-                }
+	/**
+	 * Creates a new <code>LoopAnalysis</code> instance. This constructor has
+	 * the side effect of calling {@link Loop#setIterations(int)} on
+	 * <code>loop</code> with the number of iterations it calculates.
+	 * 
+	 * @param loop
+	 *            the loop to be analyzed
+	 */
+	LoopAnalysis(Loop loop) {
+		/*
+		 * Test whether the loop is still iterative, since it may have already
+		 * been unrolled in a previous iteration.
+		 */
+		if (loop.isIterative()) {
+			try {
 
-                DecisionCircuit decisionCircuit = new DecisionCircuit(loop);
-                this.iterationCount = decisionCircuit.getIterationCount();
+				if (hasExtraExits(loop)) {
+					throw new LoopUnrollingException("contains multiple exits");
+				}
 
-                this.isUnrollable = (iterationCount != Loop.ITERATIONS_UNKNOWN);
-                if (this.isUnrollable)
-                {
-                    whyNotUnrollable="loop iterations are unknown";
-                }
-            }
-            catch (LoopUnrollingException e)
-            {
-                this.isUnrollable = false;
-                this.whyNotUnrollable=e.toString();
-            }
-        }
-        else
-        {
-            this.isUnrollable = false;
-            this.whyNotUnrollable="not iterative";
-            this.iterationCount = 0;
-        }
+				DecisionCircuit decisionCircuit = new DecisionCircuit(loop);
+				iterationCount = decisionCircuit.getIterationCount();
 
-        loop.setIterations(iterationCount);
-    }
+				isUnrollable = (iterationCount != Loop.ITERATIONS_UNKNOWN);
+				if (isUnrollable) {
+					whyNotUnrollable = "loop iterations are unknown";
+				}
+			} catch (LoopUnrollingException e) {
+				isUnrollable = false;
+				whyNotUnrollable = e.toString();
+			}
+		} else {
+			isUnrollable = false;
+			whyNotUnrollable = "not iterative";
+			iterationCount = 0;
+		}
 
-    /**
-     * Tests whether the loop was found to be unrollable or not.
-     *
-     * @return true if the loop can be unrolled, false otherwise
-     */
-    boolean isUnrollable ()
-    {
-        return isUnrollable;
-    }
+		loop.setIterations(iterationCount);
+	}
 
-    /**
-     * Gets the number of times the loop will iterate, regardless of whether
-     * it can be unrolled or not.
-     *
-     * @return the non-negative number of iterations, or {@link Loop#ITERATIONS_UNKNOWN}
-     *         if the bounds of the loop could not be determined
-     */
-    int getIterationCount ()
-    {
-        return iterationCount;
-    }
+	/**
+	 * Tests whether the loop was found to be unrollable or not.
+	 * 
+	 * @return true if the loop can be unrolled, false otherwise
+	 */
+	boolean isUnrollable() {
+		return isUnrollable;
+	}
 
+	/**
+	 * Gets the number of times the loop will iterate, regardless of whether it
+	 * can be unrolled or not.
+	 * 
+	 * @return the non-negative number of iterations, or
+	 *         {@link Loop#ITERATIONS_UNKNOWN} if the bounds of the loop could
+	 *         not be determined
+	 */
+	int getIterationCount() {
+		return iterationCount;
+	}
 
+	private static boolean hasExtraExits(Loop loop)
+			throws LoopUnrollingException {
+		final Component body = loop.getBody().getBody();
+		if (body != null) {
+			final Set<Exit> exits = new HashSet<Exit>(body.getExits());
+			exits.remove(body.getExit(Exit.DONE));
+			if (!exits.isEmpty()) {
+				return true;
+			}
+		}
 
-    private static boolean hasExtraExits (Loop loop) throws LoopUnrollingException
-    {
-        final Component body = loop.getBody().getBody();
-        if (body != null)
-        {
-            final Set exits = new HashSet(body.getExits());
-            exits.remove(body.getExit(Exit.DONE));
-            if (!exits.isEmpty())
-            {
-                return true;
-            }
-        }
+		return false;
+	}
 
-        return false;
-    }
-    public String toString ()
-    {
-        if (isUnrollable)
-        {
-            return "Unrollable";
-        }
-        else
-        {
-            return whyNotUnrollable;
-        }
-    }
-    
-        
+	@Override
+	public String toString() {
+		if (isUnrollable) {
+			return "Unrollable";
+		} else {
+			return whyNotUnrollable;
+		}
+	}
+
 }

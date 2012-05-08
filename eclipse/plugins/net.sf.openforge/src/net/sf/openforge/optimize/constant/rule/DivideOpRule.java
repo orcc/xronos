@@ -86,9 +86,10 @@ public class DivideOpRule {
 		// : (Port) op.getDataPorts().get(1);
 
 		if (p1 != null && p1.longValue() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (0 / a)");
+			}
 			// 0 / a = 0. Simply delete the component and replace with constant
 			// 0
 			visit.replaceComponent(op, new SimpleConstant(0, op.getResultBus()
@@ -97,11 +98,12 @@ public class DivideOpRule {
 
 			return true;
 		} else if (p2 != null && p2.longValue() == 1) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a / 1)");
-			// a / 1 = a. Simply delete the component and wire through the
-			// non-constant port
+				// a / 1 = a. Simply delete the component and wire through the
+				// non-constant port
+			}
 
 			// wire through the control.
 			ComponentSwapVisitor.wireControlThrough(op);
@@ -120,9 +122,10 @@ public class DivideOpRule {
 
 			return true;
 		} else if (p2 != null && p2.longValue() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a / 0)");
+			}
 			// Simply delete the component and replace with constant
 			// 0. A warning will be caught and shown in logging.
 			visit.replaceComponent(op, new SimpleConstant(0, op.getResultBus()
@@ -137,9 +140,10 @@ public class DivideOpRule {
 			return true;
 		} else if (p2 != null && isAllOnes(p2, p2size)) // p2 is -1
 		{
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a / -1)");
+			}
 			// a / -1 = -a. Simply replace the component with a MinusOp on the
 			// non-constant port
 			MinusOp mop = new MinusOp();
@@ -182,9 +186,10 @@ public class DivideOpRule {
 		} else if (p2 != null && p2.longValue() > 1) {
 			int power = getPowerOfTwo(constant.longValue());
 			if (power != -1) {
-				if (_optimize.db)
+				if (_optimize.db) {
 					_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 							+ " due to (a / 2^n)");
+				}
 
 				Module owner = op.getOwner();
 				assert owner != null : "Cannot replace a component which is not contained in a module";
@@ -527,8 +532,9 @@ public class DivideOpRule {
 		long value = num.longValue();
 		for (int i = 0; i < busSize; i++) {
 			long bit = (value >>> i) & 0x1L;
-			if (bit == 0)
+			if (bit == 0) {
 				return false;
+			}
 		}
 		return true;
 	}

@@ -98,15 +98,19 @@ import org.eclipse.core.runtime.jobs.Job;
 public class FullConstantVisitor extends ComponentSwapVisitor implements
 		Optimization {
 
+	@Override
 	public void visit(Design design) {
 		int i = 0;
 		do {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln("======================================");
-			if (_optimize.db)
+			}
+			if (_optimize.db) {
 				_optimize.ln("# Starting Full Constant iteration " + (i++));
-			if (_optimize.db)
+			}
+			if (_optimize.db) {
 				_optimize.ln("======================================");
+			}
 			reset();
 			super.visit(design);
 		} while (isModified());
@@ -118,6 +122,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 	 * @param target
 	 *            the target on which to run this optimization
 	 */
+	@Override
 	public void run(Visitable target) {
 		target.accept(this);
 	}
@@ -131,6 +136,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 	 * @param call
 	 *            a method call
 	 */
+	@Override
 	public void preFilter(Call call) {
 	}
 
@@ -141,6 +147,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 	 * @param call
 	 *            a method call.
 	 */
+	@Override
 	public void filter(Call call) {
 	}
 
@@ -149,6 +156,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 	 * with a constant of equivalent value. This allows dead component removal
 	 * to be responsible for removing the call if/when possible.
 	 */
+	@Override
 	public void visit(Call call) {
 		preFilter(call);
 		traverse(call);
@@ -216,6 +224,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(InBuf inbuf) {
 		inbuf.propagateValuesForward();
 	}
@@ -224,11 +233,14 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 	 * Calls a custom propagate method to move fully constant values across the
 	 * module boundry.
 	 */
+	@Override
 	public void visit(OutBuf outbuf) {
-		if (outbuf.propagateValuesForward())
+		if (outbuf.propagateValuesForward()) {
 			setModified(true);
+		}
 	}
 
+	@Override
 	public void visit(AddOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -256,6 +268,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(AndOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -272,6 +285,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(CastOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -299,6 +313,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(ComplementOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -315,6 +330,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(ConditionalAndOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -331,6 +347,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(ConditionalOrOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -348,6 +365,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(DivideOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -376,6 +394,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(EqualsOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -395,6 +414,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(GreaterThanEqualToOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -414,6 +434,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(GreaterThanOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -433,6 +454,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(LeftShiftOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -450,6 +472,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(LessThanEqualToOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -469,6 +492,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(LessThanOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -488,6 +512,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(MinusOp comp) {
 		preFilter(comp);
 		// for a constant, this value is computed by the partial constant
@@ -518,6 +543,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(ModuloOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -547,6 +573,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(MultiplyOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -566,6 +593,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(NoOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -575,8 +603,9 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 			{
 				int newSize = comp.getResultBus().getValue().getSize();
 				long newResult = consts[0].longValue();
-				boolean newSign = ((Port) comp.getDataPorts().get(
-						comp.getDataPorts().size() - 1)).getValue().isSigned();
+				boolean newSign = comp.getDataPorts()
+						.get(comp.getDataPorts().size() - 1).getValue()
+						.isSigned();
 				replaceComponent(comp, new SimpleConstant(newResult, newSize,
 						newSign));
 			}
@@ -584,6 +613,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(NotEqualsOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -603,6 +633,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(NumericPromotionOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -618,6 +649,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(OrOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -634,6 +666,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(RightShiftOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -651,6 +684,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -662,8 +696,9 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 			// Calculate a mask for the input value based on the
 			// number of stages of the shift.
 			long mask = 1L;
-			for (int i = 0; i < comp.getMaxStages(); i++)
+			for (int i = 0; i < comp.getMaxStages(); i++) {
 				mask <<= (1 << i);
+			}
 			mask = mask | (mask - 1);
 
 			value &= mask;
@@ -678,6 +713,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(SubtractOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -697,6 +733,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void visit(XorOp comp) {
 		preFilter(comp);
 		Number[] consts = getPortConstants(comp);
@@ -713,6 +750,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 		filter(comp);
 	}
 
+	@Override
 	public void preFilter(Operation op) {
 		super.preFilter(op);
 		for (Port port : op.getDataPorts()) {
@@ -726,6 +764,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 	 * 
 	 * @return the number of nodes replaced by this visitor.
 	 */
+	@Override
 	public int getReplacedNodeCount() {
 		return replacedNodeCount;
 	}
@@ -742,8 +781,9 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 	 */
 	private Number[] getPortConstants(Component c) {
 		if (c.getDataPorts().size() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.FULL_CONST, "\t" + c + " has no ports");
+			}
 			return null;
 		}
 
@@ -774,6 +814,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 	/**
 	 * Reports, via {@link Job#info}, what optimization is being performed
 	 */
+	@Override
 	public void preStatus() {
 		EngineThread.getGenericJob().info(
 				"replacing constant valued expressions...");
@@ -783,6 +824,7 @@ public class FullConstantVisitor extends ComponentSwapVisitor implements
 	 * Reports, via {@link Job#verbose}, the results of <b>this</b> pass of the
 	 * optimization.
 	 */
+	@Override
 	public void postStatus() {
 		EngineThread.getGenericJob().verbose(
 				"replaced " + getReplacedNodeCount() + " expressions");

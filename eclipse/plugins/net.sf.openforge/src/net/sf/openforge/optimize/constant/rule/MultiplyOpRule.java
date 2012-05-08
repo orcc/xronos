@@ -84,11 +84,11 @@ public class MultiplyOpRule {
 		private Block container = null;
 
 		public void setContainer(Block b) {
-			this.container = b;
+			container = b;
 		}
 
 		public Block getContainer() {
-			return this.container;
+			return container;
 		}
 	}
 
@@ -104,10 +104,11 @@ public class MultiplyOpRule {
 
 		Number constant = p1 == null ? p2 : p1;
 		final int constantSize;
-		if (p1 == null)
+		if (p1 == null) {
 			constantSize = op.getRightDataPort().getValue().getSize();
-		else
+		} else {
 			constantSize = op.getLeftDataPort().getValue().getSize();
+		}
 
 		Port nonConstantPort = p1 == null ? (Port) op.getDataPorts().get(0)
 				: (Port) op.getDataPorts().get(1);
@@ -115,9 +116,10 @@ public class MultiplyOpRule {
 				: (Port) op.getDataPorts().get(1);
 
 		if (constant.longValue() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a * 0)");
+			}
 			// a * 0 = 0. Simply delete the component and replace with constant
 			// 0
 			visit.replaceComponent(op, new SimpleConstant(0, op.getResultBus()
@@ -126,11 +128,12 @@ public class MultiplyOpRule {
 
 			return true;
 		} else if (constant.longValue() == 1) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a * 1)");
-			// a * 1 = a. Simply delete the component and wire through the
-			// non-constant port
+				// a * 1 = a. Simply delete the component and wire through the
+				// non-constant port
+			}
 
 			// wire through the control.
 			ComponentSwapVisitor.wireControlThrough(op);
@@ -149,9 +152,10 @@ public class MultiplyOpRule {
 		} else if (DivideOpRule.isAllOnes(constant, constantSize)) // constant
 																	// is -1
 		{
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a * -1)");
+			}
 
 			// a * -1 = -a. Simply replace the component with a MinusOp on the
 			// non-constant port
@@ -180,9 +184,10 @@ public class MultiplyOpRule {
 						.getValue().getSize(), nonConstantPort.getValue()
 						.isSigned());
 
-				if (_optimize.db)
+				if (_optimize.db) {
 					_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 							+ " due to (a * 2^n)");
+				}
 				LeftShiftOp shift = new LeftShiftOp(
 						getLog2(op.getNaturalSize()));
 				Module owner = op.getOwner();
@@ -195,10 +200,9 @@ public class MultiplyOpRule {
 				 * setup the dependency between the shift and the new power of
 				 * two constant
 				 */
-				Entry shift_entry = (Entry) shift.getEntries().get(0);
+				Entry shift_entry = shift.getEntries().get(0);
 				Dependency dep = new DataDependency(newConst.getValueBus());
-				shift_entry.addDependency((Port) shift.getDataPorts().get(1),
-						dep);
+				shift_entry.addDependency(shift.getDataPorts().get(1), dep);
 
 				/** set the left shift bus size with this MultiplyOp sizing info **/
 				// assert false : "New constant prop: fix these lines. --SGE";
@@ -207,11 +211,10 @@ public class MultiplyOpRule {
 				// shift.getResultBus().setBits(op_value.size());
 
 				/** replace the constant with its power **/
-				Entry mult_entry = (Entry) constantPort.getOwner().getEntries()
-						.get(0);
+				Entry mult_entry = constantPort.getOwner().getEntries().get(0);
 				Collection<Dependency> list = mult_entry
 						.getDependencies(constantPort);
-				Dependency depend = (Dependency) list.iterator().next();
+				Dependency depend = list.iterator().next();
 				Component old = depend.getLogicalBus().getOwner().getOwner();
 				visit.replaceComponent(old, newConst);
 
@@ -229,9 +232,10 @@ public class MultiplyOpRule {
 
 				return true;
 			} else {
-				if (_optimize.db)
+				if (_optimize.db) {
 					_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 							+ " due to (a * constant)");
+				}
 
 				Value argValue = (nonConstantPort.getValue());
 
@@ -242,8 +246,9 @@ public class MultiplyOpRule {
 				 */
 				Container container = new Container();
 
-				if (!decompose(constant.longValue(), argValue, op, container))
+				if (!decompose(constant.longValue(), argValue, op, container)) {
 					return false;
+				}
 
 				Module owner = op.getOwner();
 				assert owner != null : "Cannot replace a component which is not contained in a module";
@@ -262,10 +267,10 @@ public class MultiplyOpRule {
 						.getDataPorts().get(0));
 
 				assert op.getExits().size() == 1 : "Only expecting one exit on node to be replaced";
-				Exit exit = (Exit) op.getExits().iterator().next();
+				Exit exit = op.getExits().iterator().next();
 				assert exit.getDataBuses().size() == 1 : "Only expecting one data bus on component to be replaced";
 
-				Exit block_exit = (Exit) container.getContainer().getExits()
+				Exit block_exit = container.getContainer().getExits()
 						.iterator().next();
 
 				Map<Bus, Bus> busCorrelation = new HashMap<Bus, Bus>();
@@ -327,7 +332,7 @@ public class MultiplyOpRule {
 		portCorrelation.put(nonConstantPort, newOp.getDataPorts().get(0));
 
 		assert multi.getExits().size() == 1 : "Only expecting one exit on node to be replaced";
-		Exit exit = (Exit) multi.getExits().iterator().next();
+		Exit exit = multi.getExits().iterator().next();
 		assert exit.getDataBuses().size() == 1 : "Only expecting one data bus on component to be replaced";
 
 		Map<Bus, Bus> busCorrelation = new HashMap<Bus, Bus>();
@@ -339,8 +344,8 @@ public class MultiplyOpRule {
 					((UnaryOp) newOp).getResultBus());
 		}
 		assert newOp.getExits().size() == 1 : "Only expecting one exit on MinusOp";
-		busCorrelation.put(exit.getDoneBus(), ((Exit) newOp.getExits()
-				.iterator().next()).getDoneBus());
+		busCorrelation.put(exit.getDoneBus(), newOp.getExits().iterator()
+				.next().getDoneBus());
 
 		assert newOp.getExits().size() == 1 : "Only expecting one exit on node to be replaced";
 		Map<Exit, Exit> exitCorrelation = new HashMap<Exit, Exit>();
@@ -425,8 +430,8 @@ public class MultiplyOpRule {
 			// true tree, but all the right handed terms of the
 			// subtract must be adders. i.e 8-7-6-5-4-3-2 ==
 			// ((8-7) - (6+5)) - ((4+3) + 2)
-			Bus b1 = (Bus) termBuses.remove(termBuses.size() - 1);
-			Bus b2 = (Bus) termBuses.remove(termBuses.size() - 1);
+			Bus b1 = termBuses.remove(termBuses.size() - 1);
+			Bus b2 = termBuses.remove(termBuses.size() - 1);
 			BinaryOp combineOp = (isAdd) ? ((BinaryOp) (new AddOp()))
 					: ((BinaryOp) (new SubtractOp()));
 			combineOp.getResultBus().copyAttributes(op.getResultBus());
@@ -437,7 +442,7 @@ public class MultiplyOpRule {
 		}
 
 		assert termBuses.size() == 1;
-		final Bus result = (Bus) termBuses.get(0);
+		final Bus result = termBuses.get(0);
 
 		// Create the block
 		Block implementation = new Block(newSequence, false);
@@ -454,15 +459,14 @@ public class MultiplyOpRule {
 		implementationData.getPeer().setSize(argValue.getSize(),
 				argValue.isSigned());
 		for (Iterator<LeftShiftOp> iter = shifts.iterator(); iter.hasNext();) {
-			deps.put(((LeftShiftOp) iter.next()).getLeftDataPort(),
-					new DataDependency(implementationData.getPeer()));
+			deps.put(iter.next().getLeftDataPort(), new DataDependency(
+					implementationData.getPeer()));
 		}
 
 		// Establish data deps
 		for (Port port : deps.keySet()) {
-			Dependency dep = (Dependency) deps.get(port);
-			((Entry) port.getOwner().getEntries().get(0)).addDependency(port,
-					dep);
+			Dependency dep = deps.get(port);
+			port.getOwner().getEntries().get(0).addDependency(port, dep);
 		}
 
 		return true;

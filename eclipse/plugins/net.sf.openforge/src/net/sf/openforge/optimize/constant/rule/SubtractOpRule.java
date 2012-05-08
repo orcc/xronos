@@ -64,11 +64,12 @@ public class SubtractOpRule {
 				: (Port) op.getDataPorts().get(1);
 
 		if (p2 != null && p2.longValue() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a - 0)");
-			// a - 0 = a. Simply delete the component and wire
-			// through the non-constant port
+				// a - 0 = a. Simply delete the component and wire
+				// through the non-constant port
+			}
 
 			// wire through the control.
 			ComponentSwapVisitor.wireControlThrough(op);
@@ -85,9 +86,10 @@ public class SubtractOpRule {
 
 			return true;
 		} else if (p1 != null && p1.longValue() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (0 - a)");
+			}
 			// 0 - a = -a. Simply replace the component with a MinusOp on the
 			// non-constant port
 			MinusOp mop = new MinusOp();

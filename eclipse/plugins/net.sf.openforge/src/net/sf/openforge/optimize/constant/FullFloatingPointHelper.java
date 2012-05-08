@@ -308,10 +308,11 @@ class FullFloatingPointHelper {
 					"    Found divide by 0 at line "
 							+ comp.getIDSourceInfo().getSourceLine()
 							+ ", replacing with 0.");
-			if (consts[1] instanceof Double)
+			if (consts[1] instanceof Double) {
 				fpc = new SimpleConstant(0, 64, false);
-			else
+			} else {
 				fpc = new SimpleConstant(0, 32, false);
+			}
 		} else if (consts[0] instanceof Double || consts[1] instanceof Double) {
 			double div = consts[0].doubleValue() / consts[1].doubleValue();
 			fpc = SimpleConstant.getDoubleConstant(div);
@@ -392,10 +393,11 @@ class FullFloatingPointHelper {
 					"    Found devide by 0 at line "
 							+ comp.getIDSourceInfo().getSourceLine()
 							+ ", replacing with 0.");
-			if (consts[0] instanceof Double)
+			if (consts[0] instanceof Double) {
 				fpc = new SimpleConstant(0, 64, false);
-			else
+			} else {
 				fpc = new SimpleConstant(0, 32, false);
+			}
 		} else if (consts[0] instanceof Double || consts[1] instanceof Double) {
 			double rem = consts[0].doubleValue() % consts[1].doubleValue();
 			fpc = SimpleConstant.getDoubleConstant(rem);

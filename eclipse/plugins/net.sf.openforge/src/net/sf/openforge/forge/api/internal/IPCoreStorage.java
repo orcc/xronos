@@ -38,17 +38,17 @@ public class IPCoreStorage {
 	private String module_name = null;
 
 	// map ipcore port name to clock pin. port name is key
-	private HashMap<String, ClockPin> portToClockMap = new HashMap<String, ClockPin>();
+	private final HashMap<String, ClockPin> portToClockMap = new HashMap<String, ClockPin>();
 	// map ipcore port name to reset pin. port name is key
-	private HashMap<String, ResetPin> portToResetMap = new HashMap<String, ResetPin>();
+	private final HashMap<String, ResetPin> portToResetMap = new HashMap<String, ResetPin>();
 
 	/** List of IPCore pins used and unused */
-	private ArrayList<Buffer> allPins = new ArrayList<Buffer>();
-	private ArrayList<Buffer> publishPins = new ArrayList<Buffer>();
-	private ArrayList<Buffer> noConnectPins = new ArrayList<Buffer>();
+	private final ArrayList<Buffer> allPins = new ArrayList<Buffer>();
+	private final ArrayList<Buffer> publishPins = new ArrayList<Buffer>();
+	private final ArrayList<Buffer> noConnectPins = new ArrayList<Buffer>();
 
 	/** List of published names for published pins */
-	private ArrayList<String> publishNames = new ArrayList<String>();
+	private final ArrayList<String> publishNames = new ArrayList<String>();
 
 	private String instanceName = null;
 

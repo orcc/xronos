@@ -21,21 +21,24 @@
 
 package net.sf.openforge.optimize.loop;
 
+import net.sf.openforge.lim.Loop;
+
 /**
- * Thrown to indicate that a {@link Loop} that is being analyzed is
- * not unrollable.
- *
+ * Thrown to indicate that a {@link Loop} that is being analyzed is not
+ * unrollable.
+ * 
  * @version $Id: LoopUnrollingException.java 2 2005-06-09 20:00:48Z imiller $
  */
-class LoopUnrollingException extends Exception
-{
-    /**
-     * Creates a new <code>LoopUnrollingException</code> instance.
-     *
-     * @param message a description of the exceptional condition
-     */
-    LoopUnrollingException (String message)
-    {
-        super(message);
-    }
+class LoopUnrollingException extends Exception {
+	private static final long serialVersionUID = 2086416081850522334L;
+
+	/**
+	 * Creates a new <code>LoopUnrollingException</code> instance.
+	 * 
+	 * @param message
+	 *            a description of the exceptional condition
+	 */
+	LoopUnrollingException(String message) {
+		super(message);
+	}
 }

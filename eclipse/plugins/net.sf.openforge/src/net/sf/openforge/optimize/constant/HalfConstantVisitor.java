@@ -79,24 +79,30 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 	 * @param target
 	 *            the target on which to run this optimization
 	 */
+	@Override
 	public void run(Visitable target) {
 		target.accept(this);
 	}
 
+	@Override
 	public void visit(Design design) {
 		int i = 0;
 		do {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln("======================================");
-			if (_optimize.db)
+			}
+			if (_optimize.db) {
 				_optimize.ln("# Starting Half Constant iteration " + (i++));
-			if (_optimize.db)
+			}
+			if (_optimize.db) {
 				_optimize.ln("======================================");
+			}
 			reset();
 			super.visit(design);
 		} while (isModified());
 	}
 
+	@Override
 	public void visit(AddOp op) {
 		super.visit(op);
 		if (op.isFloat()) // Skip float for now
@@ -111,6 +117,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(AndOp op) {
 		super.visit(op);
 		Number[] consts = getPortConstants(op);
@@ -119,6 +126,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(ArrayRead op) {
 		Number[] consts = getPortConstants(op);
 		if (ArrayReadRule.halfConstant(op, consts, this)) {
@@ -126,6 +134,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(ArrayWrite op) {
 		Number[] consts = getPortConstants(op);
 		if (ArrayWriteRule.halfConstant(op, consts, this)) {
@@ -138,6 +147,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 	 * do this for us too, but why wait and potentially force a re-run of all
 	 * the optimizations as a result.
 	 */
+	@Override
 	public void visit(InBuf ib) {
 		{
 			if (ib.propagateValuesForward()) {
@@ -146,6 +156,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(ConditionalAndOp op) {
 		super.visit(op);
 		Number[] consts = getPortConstants(op);
@@ -154,6 +165,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(ConditionalOrOp op) {
 		super.visit(op);
 		Number[] consts = getPortConstants(op);
@@ -162,6 +174,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(DivideOp op) {
 		super.visit(op);
 		if (op.isFloat()) // Skip float for now
@@ -174,6 +187,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(LeftShiftOp op) {
 		super.visit(op);
 		Number[] consts = getPortConstants(op);
@@ -183,6 +197,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(ModuloOp op) {
 		super.visit(op);
 		if (op.isFloat()) // Skip float for now
@@ -195,6 +210,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(MultiplyOp op) {
 		super.visit(op);
 		if (op.isFloat()) // Skip float for now
@@ -207,6 +223,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(OrOp op) {
 		super.visit(op);
 		Number[] consts = getPortConstants(op);
@@ -220,11 +237,14 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 	 * do this for us too, but why wait and potentially force a re-run of all
 	 * the optimizations as a result.
 	 */
+	@Override
 	public void visit(OutBuf outbuf) {
-		if (outbuf.propagateValuesForward())
+		if (outbuf.propagateValuesForward()) {
 			setModified(true);
+		}
 	}
 
+	@Override
 	public void visit(RightShiftOp op) {
 		super.visit(op);
 		Number[] consts = getPortConstants(op);
@@ -233,6 +253,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(RightShiftUnsignedOp op) {
 		super.visit(op);
 		Number[] consts = getPortConstants(op);
@@ -242,6 +263,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 		}
 	}
 
+	@Override
 	public void visit(SubtractOp op) {
 		super.visit(op);
 		if (op.isFloat()) // Skip float for now
@@ -257,8 +279,9 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 	private static Number[] getPortConstants(Component c) {
 		Number[] consts = new Number[c.getDataPorts().size()];
 		if (c.getDataPorts().size() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\t" + c + " has no ports");
+			}
 			return consts;
 		}
 
@@ -277,6 +300,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 	/**
 	 * Reports, via {@link Job#info}, what optimization is being performed
 	 */
+	@Override
 	public void preStatus() {
 		EngineThread.getGenericJob().info(
 				"reducing expressions with constants...");
@@ -286,6 +310,7 @@ public class HalfConstantVisitor extends ComponentSwapVisitor implements
 	 * Reports, via {@link Job#verbose}, the results of <b>this</b> pass of the
 	 * optimization.
 	 */
+	@Override
 	public void postStatus() {
 		EngineThread.getGenericJob().verbose(
 				"reduced " + getReplacedNodeCount() + " expressions");

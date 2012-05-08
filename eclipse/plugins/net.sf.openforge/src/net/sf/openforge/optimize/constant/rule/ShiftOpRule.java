@@ -70,11 +70,12 @@ public class ShiftOpRule {
 		// : (Port) op.getDataPorts().get(1);
 
 		if (p2 != null && p2.longValue() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (a << 0)");
-			// a << 0 = a. Simply delete the component and wire
-			// through the non-constant port
+				// a << 0 = a. Simply delete the component and wire
+				// through the non-constant port
+			}
 
 			// wire through the control.
 			ComponentSwapVisitor.wireControlThrough(op);
@@ -91,9 +92,10 @@ public class ShiftOpRule {
 
 			return true;
 		} else if (p1 != null && p1.longValue() == 0) {
-			if (_optimize.db)
+			if (_optimize.db) {
 				_optimize.ln(_optimize.HALF_CONST, "\tRemoving " + op
 						+ " due to (0 << a)");
+			}
 			// 0 << a = 0, 0 >> a, 0 >>> a, Simply delete the component and
 			// replace with 0
 			visit.replaceComponent(op, new SimpleConstant(0, op.getResultBus()

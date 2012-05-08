@@ -42,12 +42,12 @@ import net.sf.openforge.lim.op.SimpleConstant;
  */
 public class FSLFifoOutput extends FifoOutput {
 
-	private String baseName;
-	private SimplePin data;
-	private SimplePin full;
-	private SimplePin write;
-	private SimplePin ctrl;
-	private SimplePin clk;
+	private final String baseName;
+	private final SimplePin data;
+	private final SimplePin full;
+	private final SimplePin write;
+	private final SimplePin ctrl;
+	private final SimplePin clk;
 
 	/**
 	 * Constructs a new FSLFifoOutput instance, creating all the necessary pin
@@ -93,7 +93,8 @@ public class FSLFifoOutput extends FifoOutput {
 		addPin(clk);
 
 		// Tie off the unused outputs.
-		final Constant ctrl0 = new SimpleConstant(0, ctrl.getWidth());
+		final Constant ctrl0 = new SimpleConstant(0, ctrl.getWidth(),
+				ctrl.getWidth() < 0);
 		ctrl0.pushValuesForward(); // ensures the bus has a value.
 		ctrl.connectPort(ctrl0.getValueBus());
 	}

@@ -99,14 +99,14 @@ public class FifoDataOutputOptimizer extends DefaultVisitor {
 	 * Read/Write/Access nodes.
 	 */
 	private static class PinAccessCorrelator extends DefaultVisitor {
-		Map<SimplePin, Set<Referencer>> correlation = new HashMap();
+		Map<SimplePin, Set<Referencer>> correlation = new HashMap<SimplePin, Set<Referencer>>();
 
 		public Set<Referencer> getRefs(SimplePin pin) {
-			Set<Referencer> refs = this.correlation.get(pin);
+			Set<Referencer> refs = correlation.get(pin);
 
 			// Ensure that we never return null
 			if (refs == null) {
-				return Collections.EMPTY_SET;
+				return Collections.emptySet();
 			}
 
 			return refs;
@@ -130,10 +130,10 @@ public class FifoDataOutputOptimizer extends DefaultVisitor {
 		private void putAccess(Referencer ref, Referenceable refable) {
 			assert refable instanceof SimplePin : "Only expecting simple pins in correlation of pin accesses";
 			SimplePin pin = (SimplePin) refable;
-			Set<Referencer> refs = this.correlation.get(pin);
+			Set<Referencer> refs = correlation.get(pin);
 			if (refs == null) {
-				refs = new HashSet();
-				this.correlation.put(pin, refs);
+				refs = new HashSet<Referencer>();
+				correlation.put(pin, refs);
 			}
 			refs.add(ref);
 		}

@@ -64,7 +64,7 @@ import net.sf.openforge.lim.op.CastOp;
 public class FifoWrite extends FifoAccess implements Visitable {
 
 	/** A set containing only the flop if applicable */
-	private Set feedbackPoints = Collections.EMPTY_SET;
+	private Set<Reg> feedbackPoints = Collections.emptySet();
 
 	protected FifoWrite(FifoOutput targetInterface, Latency operationalLatency) {
 		super(targetInterface);
@@ -300,8 +300,9 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		} else {
 			Set cloneSet = new HashSet();
 			((FifoWrite) clone).feedbackPoints = cloneSet;
-			for (Iterator iter = feedbackPoints.iterator(); iter.hasNext();)
+			for (Iterator iter = feedbackPoints.iterator(); iter.hasNext();) {
 				cloneSet.add(cloneMap.get(iter.next()));
+			}
 			assert !cloneSet.contains(null);
 		}
 		// ((FifoWrite)clone).feedbackPoints =

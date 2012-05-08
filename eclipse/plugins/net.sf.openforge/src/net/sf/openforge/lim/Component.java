@@ -306,8 +306,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	}
 
 	public void addPostScheduleCallback(PostScheduleCallback cb) {
-		if (schedCallbacks.size() == 0)
+		if (schedCallbacks.size() == 0) {
 			schedCallbacks = new ArrayList<PostScheduleCallback>();
+		}
 		schedCallbacks.add(cb);
 	}
 
@@ -316,8 +317,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 			throw new IllegalArgumentException("No such callback " + cb
 					+ " in " + this);
 		}
-		if (schedCallbacks.size() == 0)
+		if (schedCallbacks.size() == 0) {
 			schedCallbacks = Collections.emptyList();
+		}
 	}
 
 	public void postScheduleCallback(LatencyTracker lt) {
@@ -1004,8 +1006,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		// return getMainExit().getLatency();
 		Exit doneExit = getExit(Exit.DONE);
 		if (_lim.db) {
-			if (doneExit.equals(null))
+			if (doneExit.equals(null)) {
 				_lim.ln("NO EXITS ON " + this + " RETURNING LATENCY.ZERO");
+			}
 		}
 		return doneExit != null ? doneExit.getLatency() : Latency.ZERO;
 		// return getExit(Exit.DONE).getLatency();
@@ -1074,8 +1077,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 			owner = nextOwner;
 		}
 
-		if (infiniteLoopCount >= MAX_COUNT)
+		if (infiniteLoopCount >= MAX_COUNT) {
 			return Collections.singletonList("Traceback failed.");
+		}
 
 		return callHier;
 	}
@@ -1096,14 +1100,15 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 					.debug();
 			String val = verbose ? port.toString() + "(" + value + ")" : port
 					.toString();
-			if (port == getGoPort())
+			if (port == getGoPort()) {
 				ret = ret + " go:" + val;
-			else if (port == getClockPort())
+			} else if (port == getClockPort()) {
 				ret = ret + " ck:" + val;
-			else if (port == getResetPort())
+			} else if (port == getResetPort()) {
 				ret = ret + " rs:" + val;
-			else
+			} else {
 				ret = ret + " p:" + val;
+			}
 		}
 		for (Exit exit : getExits()) {
 			for (Bus bus : exit.getBuses()) {
@@ -1111,10 +1116,11 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 						.debug();
 				String val = verbose ? bus.toString() + "(" + value + ")" : bus
 						.toString();
-				if (bus == exit.getDoneBus())
+				if (bus == exit.getDoneBus()) {
 					ret = ret + " done:" + val;
-				else
+				} else {
 					ret = ret + " data:" + val;
+				}
 			}
 		}
 
@@ -1134,22 +1140,24 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	public String cpDebug(boolean verbose) {
 		String ret = toString();
 		for (Port p : getDataPorts()) {
-			if (verbose)
+			if (verbose) {
 				ret += p.getValue() == null ? " n" : " "
 						+ p.getValue().bitSourceDebug();
-			else
+			} else {
 				ret += p.getValue() == null ? " n" : " "
 						+ p.getValue().getSize();
+			}
 		}
 		for (Exit exit : getExits()) {
 			ret += " :";
 			for (Bus bus : exit.getDataBuses()) {
-				if (verbose)
+				if (verbose) {
 					ret += bus.getValue() == null ? " n" : " "
 							+ bus.getValue().bitSourceDebug();
-				else
+				} else {
 					ret += bus.getValue() == null ? " n" : " "
 							+ bus.getValue().getSize();
+				}
 			}
 		}
 		return ret;
@@ -1452,8 +1460,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 *            a value of type 'Attribute'
 	 */
 	public void addAttribute(Attribute attribute) {
-		if (attributes.size() == 0)
+		if (attributes.size() == 0) {
 			attributes = new ArrayList<Attribute>(5);
+		}
 		attributes.add(attribute);
 	}
 

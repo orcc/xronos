@@ -142,18 +142,21 @@ class RunThread extends java.lang.Thread {
 	public void run() {
 		// Call the given method, it should have no arguments since it
 		// is an autostart method, and this fact was verified for us.
-		if (method == null)
+		if (method == null) {
 			return;
+		}
 
-		if (clazz == null)
+		if (clazz == null) {
 			return;
+		}
 
 		String className;
 
-		if (obj == null)
+		if (obj == null) {
 			className = clazz.toString();
-		else
+		} else {
 			className = obj.getClass().toString();
+		}
 
 		String methodName = method.getName();
 

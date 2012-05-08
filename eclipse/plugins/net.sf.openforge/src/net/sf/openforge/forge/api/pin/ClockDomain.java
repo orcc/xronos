@@ -31,10 +31,10 @@ public class ClockDomain {
 			ClockPin.UNDEFINED_HZ);
 
 	/** This domain's clock. */
-	private ClockPin clockPin;
+	private final ClockPin clockPin;
 
 	/** This domain's reset. */
-	private ResetPin resetPin;
+	private final ResetPin resetPin;
 
 	/**
 	 * The <code>EntryMethods</code> which are associated with this domain.

@@ -113,13 +113,13 @@ import net.sf.openforge.util.naming.ID;
 public class LWireGraph extends DefaultVisitor {
 
 	/** Use a scanner for traversing module contents */
-	private net.sf.openforge.lim.Scanner scanner;
+	private final net.sf.openforge.lim.Scanner scanner;
 
 	/** The top level Graph -- put all edges at this level */
-	private Graph topGraph;
+	private final Graph topGraph;
 
 	/** The top-most component being graphed -- to avoid trying to graphOutside. */
-	private Visitable top;
+	private final Visitable top;
 
 	/** The graph instance for the current level being visited */
 	private Graph graph;
@@ -145,13 +145,13 @@ public class LWireGraph extends DefaultVisitor {
 	private boolean graphControl = false;
 
 	/** used to handle unresolved nodes in graphing */
-	private Map<Node, Unresolved> unresolvedNodes = new HashMap<Node, Unresolved>();
+	private final Map<Node, Unresolved> unresolvedNodes = new HashMap<Node, Unresolved>();
 
 	/**
 	 * The graph stack; pushed when a new level is visited, popped when that
 	 * level is exited.
 	 */
-	private LinkedList<Graph> graphStack = new LinkedList<Graph>();
+	private final LinkedList<Graph> graphStack = new LinkedList<Graph>();
 
 	/** The number of nodes so far, used to generate unique identifiers */
 	private int nodeCount = 0;
@@ -160,9 +160,9 @@ public class LWireGraph extends DefaultVisitor {
 	 * Map of LIM object to graph Node - for dependencies and generic
 	 * connections (exits, etc)
 	 */
-	private Map<Object, Object> nodeMapDeps = new HashMap<Object, Object>();
+	private final Map<Object, Object> nodeMapDeps = new HashMap<Object, Object>();
 	/** Map of LIM object to graph Node - for physical connections */
-	private Map<Object, Object> nodeMapPhys = new HashMap<Object, Object>();
+	private final Map<Object, Object> nodeMapPhys = new HashMap<Object, Object>();
 
 	/** Weights for the various types of edges */
 	@SuppressWarnings("unused")
@@ -817,9 +817,9 @@ public class LWireGraph extends DefaultVisitor {
 	 * in the hashMap), and retrieval of the edges
 	 */
 	private static class Unresolved {
-		private Bus bus;
-		private List<Node> sources = new ArrayList<Node>();
-		private List<Edge> edges = new ArrayList<Edge>();
+		private final Bus bus;
+		private final List<Node> sources = new ArrayList<Node>();
+		private final List<Edge> edges = new ArrayList<Edge>();
 
 		@SuppressWarnings("unused")
 		Unresolved(Bus b, Node s, Edge e) {
@@ -916,7 +916,7 @@ public class LWireGraph extends DefaultVisitor {
 		/*
 		 * Draw the feedback registers and input latches.
 		 */
-		Collection<Reg> registers = new LinkedList(loop.getDataRegisters());
+		Collection<Reg> registers = new LinkedList<Reg>(loop.getDataRegisters());
 		registers.add(loop.getControlRegister());
 		for (Reg reg : registers) {
 			drawFeedbackRegister(reg);
