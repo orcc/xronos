@@ -21,206 +21,230 @@
 
 package net.sf.openforge.optimize.nesting;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.optimize.*;
-import net.sf.openforge.util.*;
+import net.sf.openforge.lim.Block;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Dependency;
+import net.sf.openforge.lim.Entry;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.optimize._optimize;
+import net.sf.openforge.util.Debug;
 
-public class UnNestingEngine
-{
+public class UnNestingEngine {
 
-    private Block deadBlock;
-    private InBuf deadInBuf;
-    private Exit lastExit;
-    private int blkCount=0;
-    
-    //
-    // ----- actual unnesting code starts here ----------
-    //
+	private Block deadBlock;
+	// private InBuf deadInBuf;
+	// private Exit lastExit;
+	private int blkCount = 0;
 
-    public void clear()
-    {
-        deadBlock=null;
-        deadInBuf=null;
-        lastExit=null;
-    }
-    
-    public void unnest(Collection c)
-    {
-        _optimize.d.inc();
-        for(Iterator it=c.iterator();it.hasNext();)
-        {
-            Block b=(Block)it.next();
-            Block owner=(Block)b.getOwner();
-            if (_optimize.db) Debug.depGraphTo(owner,"Block Unnesting","bu-nest-before"+blkCount+".dot",Debug.GR_DEFAULT);
-            unnest(b);
-            if (_optimize.db) Debug.depGraphTo(owner,"Block Unnesting","bu-nest-after"+blkCount+".dot",Debug.GR_DEFAULT);
-            blkCount++;
-        }             
-        _optimize.d.dec();
-    }
-    
-    /**
-     * Unnest a single block into its parent block
-     *
-     * @param src a value of type 'Block'
-     */
-    public void unnest(Block b)
-    {
-        deadBlock=b;
-        if(_optimize.db) _dbgln("Unnesting Block: "+deadBlock+" blk: "+blkCount);
-        _optimize.d.inc();
-        // first find the offset
-        Block dest=(Block)deadBlock.getOwner();
-        int offset=dest.getSequence().indexOf(deadBlock);
-        assert(offset>=0);
+	//
+	// ----- actual unnesting code starts here ----------
+	//
 
-        // get list of floating components
-        Set components = new LinkedHashSet(deadBlock.getComponents());
-        components.removeAll(deadBlock.getSequence());
-        components.remove(deadBlock.getInBuf());
-        components.removeAll(deadBlock.getOutBufs());
+	public void clear() {
+		deadBlock = null;
+		// deadInBuf = null;
+		// lastExit = null;
+	}
 
-        // add the floating components to the parent
-        dest.addComponents(components);
+	public void unnest(Collection<Block> c) {
+		_optimize.d.inc();
+		for (Block b : c) {
+			Block owner = (Block) b.getOwner();
+			if (_optimize.db) {
+				Debug.depGraphTo(owner, "Block Unnesting", "bu-nest-before"
+						+ blkCount + ".dot", Debug.GR_DEFAULT);
+			}
+			unnest(b);
+			if (_optimize.db) {
+				Debug.depGraphTo(owner, "Block Unnesting", "bu-nest-after"
+						+ blkCount + ".dot", Debug.GR_DEFAULT);
+			}
+			blkCount++;
+		}
+		_optimize.d.dec();
+	}
 
-        // insert the sequence
-        dest.insertComponents(deadBlock.getSequence(),offset);
+	/**
+	 * Unnest a single block into its parent block
+	 * 
+	 * @param src
+	 *            a value of type 'Block'
+	 */
+	public void unnest(Block b) {
+		deadBlock = b;
+		if (_optimize.db) {
+			_dbgln("Unnesting Block: " + deadBlock + " blk: " + blkCount);
+		}
+		_optimize.d.inc();
+		// first find the offset
+		Block dest = (Block) deadBlock.getOwner();
+		int offset = dest.getSequence().indexOf(deadBlock);
+		assert (offset >= 0);
 
-        // add the sequence into the list
-        components.addAll(deadBlock.getSequence());
+		// get list of floating components
+		Set<Component> components = new LinkedHashSet<Component>(
+				deadBlock.getComponents());
+		components.removeAll(deadBlock.getSequence());
+		components.remove(deadBlock.getInBuf());
+		components.removeAll(deadBlock.getOutBufs());
 
-        deadInBuf=deadBlock.getInBuf();
-        
-        // reconnect all the components in the parent block, except the block we got rid of
-        for(Iterator it=dest.getComponents().iterator();it.hasNext();)
-        {
-            Component c=(Component)it.next();
-            if(!c.equals(deadBlock))
-            {
-                connect(c);                
-            }
-        }
+		// add the floating components to the parent
+		dest.addComponents(components);
 
-        // now remove the old block
-        //
-        deadBlock.getOwner().removeComponent(deadBlock);
+		// insert the sequence
+		dest.insertComponents(deadBlock.getSequence(), offset);
 
-        // disconnect
-        deadBlock.disconnect();
-        
-        // clear driving exits in parent block
-        dest.accept(new Exit.ClearDrivingExitVisitor());
-        
-        _optimize.d.dec();
-    }
+		// add the sequence into the list
+		components.addAll(deadBlock.getSequence());
 
-    private void connect(Component c)
-    {
-        if(_optimize.db) _dbgln("Connecting: "+c);
-        _optimize.d.inc();
-        // for each entry
-        for(Iterator itEntries=c.getEntries().iterator();itEntries.hasNext();)
-        {
-            Entry e=(Entry)itEntries.next();
-            if(_optimize.db) _dbgln("Has Entry: "+e);
-            if(_optimize.db) _optimize.d.inc();
-            // for entries' ports
-            for(Iterator itPorts=e.getPorts().iterator();itPorts.hasNext();)
-            {
-                Port p=(Port)itPorts.next();
-                if(_optimize.db) _dbgln("Has Port: "+p);
-                connectPort(e,p);
-            }
-            if(_optimize.db) _optimize.d.dec();
-        }
+		// deadInBuf = deadBlock.getInBuf();
 
-        _optimize.d.dec();
-    }
+		// reconnect all the components in the parent block, except the block we
+		// got rid of
+		for (Component c : dest.getComponents()) {
+			if (!c.equals(deadBlock)) {
+				connect(c);
+			}
+		}
 
-    /**
-     * This finds the bus that a given port should be connected to. If
-     * it is in the deadblock, it reconnectes it, killing the old connection
-     *
-     * @param e a value of type 'Entry'
-     * @param p a value of type 'Port'
-     * @param deadBlock a value of type 'Block'
-     * @return a value of type 'Bus'
-     */
-    private void connectPort(Entry currentEntry,Port p)
-    {
-        if(_optimize.db) _dbgln("Tracing for"+currentEntry+"/"+p);
+		// now remove the old block
+		//
+		deadBlock.getOwner().removeComponent(deadBlock);
 
-        // find each bus this port currently depends on
-        Collection deps = currentEntry.getDependencies(p);
-        // for all deps
-        for(Iterator itDeps=new ArrayList(deps).iterator();itDeps.hasNext();)
-        {
-            Dependency currDep=(Dependency)itDeps.next();
+		// disconnect
+		deadBlock.disconnect();
 
-            Bus currBus=currDep.getLogicalBus();
+		// clear driving exits in parent block
+		dest.accept(new Exit.ClearDrivingExitVisitor());
 
-            if(_optimize.db) _dbgln("\t** Owner: "+currBus.getOwner().getOwner());
-            
-            // if it connects to the old blocks inbuf, or outbuf
-            if((currBus.getOwner().getOwner().equals(deadBlock.getInBuf()))||
-                (currBus.getOwner().getOwner().equals(deadBlock)))
-            {
-                if(_optimize.db) _dbgln("\tdeadblock!!!!!!");
+		_optimize.d.dec();
+	}
 
-                // reconnect
-                reconnect(currentEntry,currDep,currBus,p);
-                
-                // may now be connected to the inbuf. try again
-                connectPort(currentEntry,p);
-            }
-        }
-    }
+	private void connect(Component c) {
+		if (_optimize.db) {
+			_dbgln("Connecting: " + c);
+		}
+		_optimize.d.inc();
+		// for each entry
+		for (Entry e : c.getEntries()) {
+			if (_optimize.db) {
+				_dbgln("Has Entry: " + e);
+			}
+			if (_optimize.db) {
+				_optimize.d.inc();
+			}
+			// for entries' ports
+			for (Port p : e.getPorts()) {
+				if (_optimize.db) {
+					_dbgln("Has Port: " + p);
+				}
+				connectPort(e, p);
+			}
+			if (_optimize.db) {
+				_optimize.d.dec();
+			}
+		}
 
-    private void reconnect(Entry currentEntry,Dependency currDep,Bus currBus,Port p)
-    {
-        // connects to the old block stuff. Chase further
-        // in this case, we want the bus that is connected to the peerport
+		_optimize.d.dec();
+	}
 
-        // get the peer port
-        Port peerPort=currBus.getPeer();
+	/**
+	 * This finds the bus that a given port should be connected to. If it is in
+	 * the deadblock, it reconnectes it, killing the old connection
+	 * 
+	 * @param e
+	 *            a value of type 'Entry'
+	 * @param p
+	 *            a value of type 'Port'
+	 * @param deadBlock
+	 *            a value of type 'Block'
+	 * @return a value of type 'Bus'
+	 */
+	private void connectPort(Entry currentEntry, Port p) {
+		if (_optimize.db) {
+			_dbgln("Tracing for" + currentEntry + "/" + p);
+		}
 
-        if(_optimize.db) _dbgln("\tbus: "+currBus+" ; skipping though: "+peerPort.getOwner());
-        
-        // better have 1 entry
-        assert peerPort.getOwner().getEntries().size() == 1: "entries!=1 "+peerPort.getOwner().getEntries().size();
-        Entry entry = (Entry)peerPort.getOwner().getEntries().get(0);
-        // get the deps
-        Collection deps = entry.getDependencies(peerPort);
-        //for each dep
-        for(Iterator itDeps=new ArrayList(deps).iterator();itDeps.hasNext();)
-        {
-            Dependency oldDep=(Dependency)itDeps.next();
-            Bus newBus=oldDep.getLogicalBus();
-            Dependency newDep = (Dependency)currDep.createSameType(newBus);
-            currentEntry.addDependency(p, newDep);
-            if(_optimize.db) _dbgln("\treconnected to: "+newBus+" :: "+newBus.getSize()+" owned: "+newBus.getOwner().getOwner());
-        
-            assert p.getBus()==null; // better not be structural flow 
-        }
-        currDep.zap();
-    }
+		// find each bus this port currently depends on
+		Collection<Dependency> deps = currentEntry.getDependencies(p);
+		// for all deps
+		for (Dependency currDep : deps) {
 
-    private static final void _dbgln(Object o) 
-    {
-        _optimize.d.ln(_optimize.BLOCK_UNNEST,o);        
-    }
+			Bus currBus = currDep.getLogicalBus();
 
-    private static final void _dbg(Object o)
-    {
-        _optimize.d.o(_optimize.BLOCK_UNNEST,o);        
-    }
-    
-    private static final void _dbgln()
-    {
-        _optimize.d.ln(_optimize.BLOCK_UNNEST);        
-    }
-    
+			if (_optimize.db) {
+				_dbgln("\t** Owner: " + currBus.getOwner().getOwner());
+			}
+
+			// if it connects to the old blocks inbuf, or outbuf
+			if ((currBus.getOwner().getOwner().equals(deadBlock.getInBuf()))
+					|| (currBus.getOwner().getOwner().equals(deadBlock))) {
+				if (_optimize.db) {
+					_dbgln("\tdeadblock!!!!!!");
+				}
+
+				// reconnect
+				reconnect(currentEntry, currDep, currBus, p);
+
+				// may now be connected to the inbuf. try again
+				connectPort(currentEntry, p);
+			}
+		}
+	}
+
+	private void reconnect(Entry currentEntry, Dependency currDep, Bus currBus,
+			Port p) {
+		// connects to the old block stuff. Chase further
+		// in this case, we want the bus that is connected to the peerport
+
+		// get the peer port
+		Port peerPort = currBus.getPeer();
+
+		if (_optimize.db) {
+			_dbgln("\tbus: " + currBus + " ; skipping though: "
+					+ peerPort.getOwner());
+		}
+
+		// better have 1 entry
+		assert peerPort.getOwner().getEntries().size() == 1 : "entries!=1 "
+				+ peerPort.getOwner().getEntries().size();
+		Entry entry = peerPort.getOwner().getEntries().get(0);
+		// get the deps
+		Collection<Dependency> deps = entry.getDependencies(peerPort);
+		// for each dep
+		for (Dependency oldDep : deps) {
+			Bus newBus = oldDep.getLogicalBus();
+			Dependency newDep = currDep.createSameType(newBus);
+			currentEntry.addDependency(p, newDep);
+			if (_optimize.db) {
+				_dbgln("\treconnected to: " + newBus + " :: "
+						+ newBus.getSize() + " owned: "
+						+ newBus.getOwner().getOwner());
+			}
+
+			assert p.getBus() == null; // better not be structural flow
+		}
+		currDep.zap();
+	}
+
+	private static final void _dbgln(Object o) {
+		_optimize.d.ln(_optimize.BLOCK_UNNEST, o);
+	}
+
+	@SuppressWarnings("unused")
+	private static final void _dbg(Object o) {
+		_optimize.d.o(_optimize.BLOCK_UNNEST, o);
+	}
+
+	@SuppressWarnings("unused")
+	private static final void _dbgln() {
+		_optimize.d.ln(_optimize.BLOCK_UNNEST);
+	}
+
 }
-

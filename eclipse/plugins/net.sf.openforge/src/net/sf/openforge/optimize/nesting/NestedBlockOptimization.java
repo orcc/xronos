@@ -21,154 +21,149 @@
 
 package net.sf.openforge.optimize.nesting;
 
-import java.util.Iterator;
-
-import net.sf.openforge.app.*;
-import net.sf.openforge.app.project.*;
-import net.sf.openforge.lim.*;
-import net.sf.openforge.optimize.*;
-import net.sf.openforge.util.*;
-
-
+import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.app.OptionRegistry;
+import net.sf.openforge.lim.Block;
+import net.sf.openforge.lim.MatchingVisitor;
+import net.sf.openforge.lim.OutBuf;
+import net.sf.openforge.lim.Visitable;
+import net.sf.openforge.optimize.Optimization;
+import net.sf.openforge.optimize._optimize;
+import net.sf.openforge.util.Debug;
 
 /**
  * NestedBlockVisitor analyzes each loop in the LIM and determines if it is
- * unrollable, and if so, annotates is with the information necessary for unrolling.
- * Later the Loop.unroll() method can be called to unroll this loop (ie: during
- * optimization or scheduling)
- *
+ * unrollable, and if so, annotates is with the information necessary for
+ * unrolling. Later the Loop.unroll() method can be called to unroll this loop
+ * (ie: during optimization or scheduling)
+ * 
  * @author cschanck
  * @version $Id: NestedBlockOptimization.java 100 2006-02-03 22:49:08Z imiller $
  */
-public class NestedBlockOptimization implements Optimization
-{
-    private static final String _RCS_ = "$Rev: 100 $";
+public class NestedBlockOptimization implements Optimization {
 
-    private NestedBlockVisitor vis=new NestedBlockVisitor();
-    private UnNestingEngine engine=new UnNestingEngine();
-    private int nestedCount=0;
-    private int passCount=0;
-    
-    /**
-     * Applies this optimization to a given target.
-     *
-     * @param target the target on which to run this optimization
-     */
-    public void run (Visitable target)
-    {
-        if(isUnnestingEnabled())
-        {
-            if (_optimize.db) Debug.depGraphTo(target,"Block Unnesting","bu-before"+passCount+".dot",Debug.GR_DEFAULT);
-            target.accept(vis);
-            nestedCount=vis.getMatchingNodes().size();
-            engine.unnest(vis.getMatchingNodes());
-            if (_optimize.db) Debug.depGraphTo(target,"Block Unnesting","bu-after"+passCount+".dot",Debug.GR_DEFAULT);
-            passCount++;
-        }
-    }
+	private NestedBlockVisitor vis = new NestedBlockVisitor();
+	private UnNestingEngine engine = new UnNestingEngine();
+	private int nestedCount = 0;
+	private int passCount = 0;
 
-    public int getCount() { return nestedCount; }
-    
-    public boolean isUnnestingEnabled()
-    {
-        return !EngineThread.getGenericJob().getUnscopedBooleanOptionValue(OptionRegistry.BLOCK_NOUNNESTING);
-    }
-    
-    /**
-     * Method called prior to performing the optimization, should use
-     * Job (info, verbose, etc) to report to the user what action is
-     * being performed.
-     */
-    public void preStatus ()
-    {
-        EngineThread.getGenericJob().info("block unnesting...");
-    }
+	/**
+	 * Applies this optimization to a given target.
+	 * 
+	 * @param target
+	 *            the target on which to run this optimization
+	 */
+	@Override
+	public void run(Visitable target) {
+		if (isUnnestingEnabled()) {
+			if (_optimize.db) {
+				Debug.depGraphTo(target, "Block Unnesting", "bu-before"
+						+ passCount + ".dot", Debug.GR_DEFAULT);
+			}
+			target.accept(vis);
+			nestedCount = vis.getMatchingNodes().size();
+			engine.unnest(vis.getMatchingNodes());
+			if (_optimize.db) {
+				Debug.depGraphTo(target, "Block Unnesting", "bu-after"
+						+ passCount + ".dot", Debug.GR_DEFAULT);
+			}
+			passCount++;
+		}
+	}
 
-    /**
-     * Method called after performing the optimization, should use
-     * Job (info, verbose, etc) to report to the user the results
-     * (if any) of running the optimization
-     */
-    public void postStatus ()
-    {
-    	EngineThread.getGenericJob().info(nestedCount+" block"+((nestedCount!=1)?"s":"")+" unnested...");
-    }
-    
-    /**
-     * Should return true if the optimization modified the LIM
-     * <b>and</b> that other optimizations in its grouping should be
-     * re-run
-     */
-    public boolean didModify ()
-    {
-        return nestedCount>0;
-    }
+	public int getCount() {
+		return nestedCount;
+	}
 
-    /**
-     * The clear method is called after each complete visit to the
-     * optimization and should free up as much memory as possible, and
-     * reset any per run status gathering.
-     */
-    public void clear ()
-    {
-        nestedCount=0;
-        vis.clear();
-        engine.clear();
-    }
+	public boolean isUnnestingEnabled() {
+		return !EngineThread.getGenericJob().getUnscopedBooleanOptionValue(
+				OptionRegistry.BLOCK_NOUNNESTING);
+	}
 
+	/**
+	 * Method called prior to performing the optimization, should use Job (info,
+	 * verbose, etc) to report to the user what action is being performed.
+	 */
+	@Override
+	public void preStatus() {
+		EngineThread.getGenericJob().info("block unnesting...");
+	}
 
-    /**
-     * NestedBlockVisitor analyzes each loop in the LIM and determines if it is
-     * unrollable, and if so, annotates is with the information necessary for unrolling.
-     * Later the Loop.unroll() method can be called to unroll this loop (ie: during
-     * optimization or scheduling)
-     *
-     * @author cschanck
-     * @version $Id: NestedBlockOptimization.java 100 2006-02-03 22:49:08Z imiller $
-     */
-    class NestedBlockVisitor extends MatchingVisitor
-    {
-        private static final String _RCS_ = "$Rev: 100 $";
+	/**
+	 * Method called after performing the optimization, should use Job (info,
+	 * verbose, etc) to report to the user the results (if any) of running the
+	 * optimization
+	 */
+	@Override
+	public void postStatus() {
+		EngineThread.getGenericJob().info(
+				nestedCount + " block" + ((nestedCount != 1) ? "s" : "")
+						+ " unnested...");
+	}
 
-        public NestedBlockVisitor()
-        {
-            super(FIFO);
-        }
+	/**
+	 * Should return true if the optimization modified the LIM <b>and</b> that
+	 * other optimizations in its grouping should be re-run
+	 */
+	@Override
+	public boolean didModify() {
+		return nestedCount > 0;
+	}
 
-        // owner must be a true block, not a subclass of block ...
-        public void visit(Block b)
-        {
-            super.visit(b);
-            if (!b.isMutexModule())
-            {
-                if(b.getClass().equals(net.sf.openforge.lim.Block.class))
-                {
-                    if(b.getOwner()!=null)
-                    {
-                        // only if it is nested in a block
-                        if(b.getOwner().getClass().equals(net.sf.openforge.lim.Block.class))
-                        {
-                            //
-                            // xxxx tbd extra case to skip for now
-                            //
-                            boolean two2one=false;
-                            for(Iterator it=b.getOutBufs().iterator();it.hasNext();)
-                            {
-                                OutBuf ob=(OutBuf)it.next();
-                                if(ob.getEntries().size()>1)
-                                {
-                                    two2one=true;
-                                }
-                            }
-                            if(!two2one)
-                            {
-                                addMatchingNode(b);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+	/**
+	 * The clear method is called after each complete visit to the optimization
+	 * and should free up as much memory as possible, and reset any per run
+	 * status gathering.
+	 */
+	@Override
+	public void clear() {
+		nestedCount = 0;
+		vis.clear();
+		engine.clear();
+	}
+
+	/**
+	 * NestedBlockVisitor analyzes each loop in the LIM and determines if it is
+	 * unrollable, and if so, annotates is with the information necessary for
+	 * unrolling. Later the Loop.unroll() method can be called to unroll this
+	 * loop (ie: during optimization or scheduling)
+	 * 
+	 * @author cschanck
+	 * @version $Id: NestedBlockOptimization.java 100 2006-02-03 22:49:08Z
+	 *          imiller $
+	 */
+	class NestedBlockVisitor extends MatchingVisitor {
+
+		public NestedBlockVisitor() {
+			super(FIFO);
+		}
+
+		// owner must be a true block, not a subclass of block ...
+		@Override
+		public void visit(Block b) {
+			super.visit(b);
+			if (!b.isMutexModule()) {
+				if (b.getClass().equals(net.sf.openforge.lim.Block.class)) {
+					if (b.getOwner() != null) {
+						// only if it is nested in a block
+						if (b.getOwner().getClass()
+								.equals(net.sf.openforge.lim.Block.class)) {
+							//
+							// xxxx tbd extra case to skip for now
+							//
+							boolean two2one = false;
+							for (OutBuf ob : b.getOutBufs()) {
+								if (ob.getEntries().size() > 1) {
+									two2one = true;
+								}
+							}
+							if (!two2one) {
+								addMatchingNode(b);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
-
