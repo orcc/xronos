@@ -21,6 +21,7 @@
 
 package net.sf.openforge.optimize.nesting;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -174,7 +175,7 @@ public class UnNestingEngine {
 		// find each bus this port currently depends on
 		Collection<Dependency> deps = currentEntry.getDependencies(p);
 		// for all deps
-		for (Dependency currDep : deps) {
+		for (Dependency currDep : new ArrayList<Dependency>(deps)) {
 
 			Bus currBus = currDep.getLogicalBus();
 
@@ -218,7 +219,7 @@ public class UnNestingEngine {
 		// get the deps
 		Collection<Dependency> deps = entry.getDependencies(peerPort);
 		// for each dep
-		for (Dependency oldDep : deps) {
+		for (Dependency oldDep : new ArrayList<Dependency>(deps)) {
 			Bus newBus = oldDep.getLogicalBus();
 			Dependency newDep = currDep.createSameType(newBus);
 			currentEntry.addDependency(p, newDep);

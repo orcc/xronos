@@ -21,331 +21,355 @@
 
 package net.sf.openforge.optimize.memory;
 
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import net.sf.openforge.app.EngineThread;
+import net.sf.openforge.app.GenericJob;
 import net.sf.openforge.app.OptionRegistry;
-import net.sf.openforge.app.project.*;
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.app.project.Option;
+import net.sf.openforge.app.project.OptionInt;
+import net.sf.openforge.lim.CodeLabel;
+import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.Visitable;
+import net.sf.openforge.lim.memory.LValue;
+import net.sf.openforge.lim.memory.Location;
+import net.sf.openforge.lim.memory.LocationValueSource;
+import net.sf.openforge.lim.memory.LogicalMemory;
+import net.sf.openforge.lim.memory.LogicalMemoryPort;
+import net.sf.openforge.lim.memory.Variable;
 import net.sf.openforge.optimize.Optimization;
 import net.sf.openforge.util.naming.ID;
 
 /**
  * <code>RomReplicator</code> reduces the number of accesses on each read-only
  * {@link LogicalMemory} (ROM) in a {@link Design} by replicating the ROM once
- * for every access ({@link LValue}) to that ROM.  Once a maximum number of memory
- * bits for the design has been reached, no new memories will be allocated and all
- * accesses will be distributed among the existing copies.
+ * for every access ({@link LValue}) to that ROM. Once a maximum number of
+ * memory bits for the design has been reached, no new memories will be
+ * allocated and all accesses will be distributed among the existing copies.
  * <P>
- * Additionally, the number of copies may be reduced by the use of
- * dual-ported memories.
+ * Additionally, the number of copies may be reduced by the use of dual-ported
+ * memories.
  * <p>
- * This class uses the preferences
- * {@link OptimizeDefiner#ROM_REPLICATION_LIMIT}
+ * This class uses the preferences {@link OptimizeDefiner#ROM_REPLICATION_LIMIT}
  * and {@link OptimizeDefiner#FORCE_SINGLE_PORT_ROMS}
  * <p>
  * Created: Mon Oct 21 16:02:39 2002
- *
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: RomReplicator.java 490 2007-06-15 16:37:00Z imiller $
  */
-public class RomReplicator implements Optimization
-{
-    private static final String _RCS_ = "$Rev: 490 $";
+public class RomReplicator implements Optimization {
 
-    private static final int memLimitDivisor = 1024;
-    
-    private int repCount = 0; // Count of how many memories were replicated
+	private static final int memLimitDivisor = 1024;
 
-    private int accessesPerPort = 1; // Count of accesses per port on replicated memories
-    
+	private int repCount = 0; // Count of how many memories were replicated
 
-    /**
-     * Applies this optimization to a given target.
-     * If all LValue accessors of the given LogicalMemory are read
-     * accesses, then copy the memory and allocate dual ports based on
-     * the ROM_REPLICATION_LIMIT and FORCE_SINGLE_PORT_ROMS
-     * preferences in order to reduce the number of LValue accessors
-     * per LogicalMemoryPort.  Allocate LValues to the set of copied
-     * memories LogicalMemoryPort(s).
-     *
-     * @param target the target on which to run this optimization
-     */
-    public void run (Visitable target)
-    {
-        final Design design = (Design)target;
-        Option op;
+	private int accessesPerPort = 1; // Count of accesses per port on replicated
+										// memories
 
-        /* Rom replication limit */
-        op = EngineThread.getGenericJob().getOption(OptionRegistry.ROM_REPLICATION_LIMIT);
-        final int romRepLimit = ((OptionInt)op).getValueAsInt(CodeLabel.UNSCOPED) * memLimitDivisor >> 3;
-        if (romRepLimit <= 0)
-        {
-            return;
-        }
+	/**
+	 * Applies this optimization to a given target. If all LValue accessors of
+	 * the given LogicalMemory are read accesses, then copy the memory and
+	 * allocate dual ports based on the ROM_REPLICATION_LIMIT and
+	 * FORCE_SINGLE_PORT_ROMS preferences in order to reduce the number of
+	 * LValue accessors per LogicalMemoryPort. Allocate LValues to the set of
+	 * copied memories LogicalMemoryPort(s).
+	 * 
+	 * @param target
+	 *            the target on which to run this optimization
+	 */
+	@Override
+	public void run(Visitable target) {
+		final Design design = (Design) target;
+		Option op;
 
-        /* Flag of Single/Dual Port replication */ 
-        final boolean isSinglePort = EngineThread.getGenericJob().getUnscopedBooleanOptionValue(OptionRegistry.FORCE_SINGLE_PORT_ROMS);
-        
-        final ObjectResolver resolver = ObjectResolver.resolve(design);
+		/* Rom replication limit */
+		op = EngineThread.getGenericJob().getOption(
+				OptionRegistry.ROM_REPLICATION_LIMIT);
+		final int romRepLimit = ((OptionInt) op)
+				.getValueAsInt(CodeLabel.UNSCOPED) * memLimitDivisor >> 3;
+		if (romRepLimit <= 0) {
+			return;
+		}
 
-        int repMemSize = 0;
-        Map repMemoriesMap = new HashMap();
-        boolean recalculateRepMemSize = true;
+		/* Flag of Single/Dual Port replication */
+		final boolean isSinglePort = EngineThread.getGenericJob()
+				.getUnscopedBooleanOptionValue(
+						OptionRegistry.FORCE_SINGLE_PORT_ROMS);
 
-        /*
-         * Calculate the repicated Memory size, if the size of
-         * memories after replication exceeds ROM_REPLICATION_LIMIT,
-         * the number of accesses per port increases by 1 until the
-         * replicated memory size is less than or equal to the
-         * specified limit.
-         */
-        while (recalculateRepMemSize)
-        {
-            int maxMemRepCount = 1;
+		final ObjectResolver resolver = ObjectResolver.resolve(design);
 
-            for (Iterator logMemIter = design.getLogicalMemories().iterator(); logMemIter.hasNext();)
-            {
-                final LogicalMemory memory = (LogicalMemory)logMemIter.next();
+		int repMemSize = 0;
+		Map<LogicalMemory, Set<LogicalMemory>> repMemoriesMap = new HashMap<LogicalMemory, Set<LogicalMemory>>();
+		boolean recalculateRepMemSize = true;
 
-                /*
-                 * Count the total number of read accesses to the LogicalMemory.
-                 */
-                int accessCount = 0;
-                for (Iterator memPortIter = memory.getLogicalMemoryPorts().iterator(); memPortIter.hasNext();)
-                {
-                    final LogicalMemoryPort memPort = (LogicalMemoryPort)memPortIter.next();
-                    accessCount += memPort.getReadAccesses().size();
-                }
+		/*
+		 * Calculate the repicated Memory size, if the size of memories after
+		 * replication exceeds ROM_REPLICATION_LIMIT, the number of accesses per
+		 * port increases by 1 until the replicated memory size is less than or
+		 * equal to the specified limit.
+		 */
+		while (recalculateRepMemSize) {
+			int maxMemRepCount = 1;
 
-                int numCopies = (isSinglePort
-                    ? (int)Math.ceil((float)accessCount/(float)accessesPerPort)
-                    : (int)Math.ceil(Math.ceil((float)accessCount/2.0)/(float)accessesPerPort));
+			for (LogicalMemory memory : design.getLogicalMemories()) {
+				/*
+				 * Count the total number of read accesses to the LogicalMemory.
+				 */
+				int accessCount = 0;
+				for (LogicalMemoryPort memPort : memory.getLogicalMemoryPorts()) {
+					accessCount += memPort.getReadAccesses().size();
+				}
 
-                repMemSize += memory.getSizeInBytes() * numCopies;
-                maxMemRepCount = Math.max(maxMemRepCount, numCopies);
-            }
+				int numCopies = (isSinglePort ? (int) Math
+						.ceil((float) accessCount / (float) accessesPerPort)
+						: (int) Math.ceil(Math.ceil(accessCount / 2.0)
+								/ accessesPerPort));
 
-            if ((repMemSize > romRepLimit) && (maxMemRepCount > 1))
-            {
-                accessesPerPort++;
-                repMemSize = 0;
-            }
-            else
-            {
-                recalculateRepMemSize = false;
-            }
-        }
-            
-        /*
-         * Replicate each read-only LogicalMemory
-         */
-        for (Iterator logMemIter = design.getLogicalMemories().iterator(); logMemIter.hasNext();)
-        {
-            final LogicalMemory memory = (LogicalMemory)logMemIter.next();
-            boolean isReadOnly = true;
+				repMemSize += memory.getSizeInBytes() * numCopies;
+				maxMemRepCount = Math.max(maxMemRepCount, numCopies);
+			}
 
-            for (LogicalMemoryPort memPort : memory.getLogicalMemoryPorts())
-            {
-                if (!memPort.isReadOnly())
-                    isReadOnly = false;
-            }
-            
-//             for (Iterator memPortIter = memory.getLogicalMemoryPorts().iterator(); memPortIter.hasNext();)
-//             {
-//                 isReadOnly = isReadOnly && ((LogicalMemoryPort)memPortIter.next()).isReadOnly();
-//             }
+			if ((repMemSize > romRepLimit) && (maxMemRepCount > 1)) {
+				accessesPerPort++;
+				repMemSize = 0;
+			} else {
+				recalculateRepMemSize = false;
+			}
+		}
 
-            if (isReadOnly)
-            {
-                repMemoriesMap.put(memory, replicate(memory, resolver, isSinglePort));
-            }
-        }
-            
-        /*
-         * If a LogicalMemory has been replicated, remove the original from the Design
-         * and add the replicas.
-         */
-        for (Iterator memorySetIter = repMemoriesMap.entrySet().iterator(); memorySetIter.hasNext();)
-        {
-            final Map.Entry entry = (Map.Entry)memorySetIter.next();
-            final LogicalMemory origMem = (LogicalMemory)entry.getKey();
-            final Set repMemorySet = (Set)entry.getValue();
+		/*
+		 * Replicate each read-only LogicalMemory
+		 */
+		for (LogicalMemory memory : design.getLogicalMemories()) {
+			boolean isReadOnly = true;
 
-            if (!repMemorySet.isEmpty())
-            {
-                design.removeMemory(origMem);
-                for (Iterator repMemIter = repMemorySet.iterator(); repMemIter.hasNext();)
-                {
-                    design.addMemory((LogicalMemory)repMemIter.next());
-                }
-            }
-        }
-    }
-    
-    
-    /**
-     * Returns false, the didModify is used to determine if this
-     * optimization caused a change which necessitates other
-     * optimizations to re-run.
-     */
-    public boolean didModify ()
-    {
-        return false;
-    }
+			for (LogicalMemoryPort memPort : memory.getLogicalMemoryPorts()) {
+				if (!memPort.isReadOnly()) {
+					isReadOnly = false;
+				}
+			}
 
-    /**
-     * Does nothing.
-     */
-    public void clear () {}
-    
-    /**
-     * Reports, via {@link GenericJob#info}, what optimization is being
-     * performed
-     */
-    public void preStatus ()
-    {
-        EngineThread.getGenericJob().info("optimizing read-only memory locations...");
-    }
-    
-    /**
-     * Reports, via {@link GenericJob#verbose}, the results of <b>this</b>
-     * pass of the optimization.
-     */
-    public void postStatus ()
-    {
-        if (this.repCount > 0)
-            EngineThread.getGenericJob().info("replicated " + this.repCount + " read-only memories");
-        else
-            EngineThread.getGenericJob().verbose("replicated " + this.repCount + " read-only memories");
-    }
+			// for (Iterator memPortIter =
+			// memory.getLogicalMemoryPorts().iterator();
+			// memPortIter.hasNext();)
+			// {
+			// isReadOnly = isReadOnly &&
+			// ((LogicalMemoryPort)memPortIter.next()).isReadOnly();
+			// }
 
-    /**
-     * Replicate the given LogicalMemory
-     *
-     * <p>requires: non-null memory
-     * <p>modifies: memory (may create second LogicalMemoryPort),
-     * removes accesses (LValues)
-     * <p>effects: returns a Set of the replicated LogicalMemories.
-     *
-     * @param memory a LogicalMemory
-     * @param locationBaseMap a HashMap which keeps the
-     *        LocationConstant associated with each access.
-     * @param isSingle a boolean flag of single/dual port(s) replication
-     * @return a non-null Set of newly created LogicalMemory objects.
-     * May be empty if no copies were made.
-     * @throws IllegalArgumentException if 'memory' is null.
-     */
-    Set replicate (LogicalMemory memory, ObjectResolver resolver, boolean isSinglePort)
-    {
-        /* Collect up duplicated rom */
-        Set replicatedMemories = new HashSet();
+			if (isReadOnly) {
+				repMemoriesMap.put(memory,
+						replicate(memory, resolver, isSinglePort));
+			}
+		}
 
-        /*
-         * Make a memory copy and allocate pre-calculated number of accesses per port
-         */
-        for (Iterator accessIter = new ArrayList(memory.getLValues()).iterator(); accessIter.hasNext();)
-        {
-            final MemoryCopier copier = new MemoryCopier(memory);
-            final LogicalMemory copiedMem = copier.getCopy();
-            repCount++;
+		/*
+		 * If a LogicalMemory has been replicated, remove the original from the
+		 * Design and add the replicas.
+		 */
+		for (Iterator memorySetIter = repMemoriesMap.entrySet().iterator(); memorySetIter
+				.hasNext();) {
+			final Map.Entry entry = (Map.Entry) memorySetIter.next();
+			final LogicalMemory origMem = (LogicalMemory) entry.getKey();
+			final Set repMemorySet = (Set) entry.getValue();
 
-            assert copiedMem.getLogicalMemoryPorts().size() < 3;
-            final Iterator memoryPortIter = copiedMem.getLogicalMemoryPorts().iterator();
-            final Collection retargetedAccesses = new HashSet();
+			if (!repMemorySet.isEmpty()) {
+				design.removeMemory(origMem);
+				for (Iterator repMemIter = repMemorySet.iterator(); repMemIter
+						.hasNext();) {
+					design.addMemory((LogicalMemory) repMemIter.next());
+				}
+			}
+		}
+	}
 
-            RetargetVisitor retargetVis = new RetargetVisitor(copier.getLocationMap());
-            LogicalMemoryPort memoryPort = (LogicalMemoryPort)memoryPortIter.next();
-            for (int i = 0; i < accessesPerPort && accessIter.hasNext(); i++)
-            {
-                final LValue access = (LValue)accessIter.next();
+	/**
+	 * Returns false, the didModify is used to determine if this optimization
+	 * caused a change which necessitates other optimizations to re-run.
+	 */
+	@Override
+	public boolean didModify() {
+		return false;
+	}
 
-                access.getLogicalMemoryPort().removeAccess(access);
-                memoryPort.addAccess(access);
-                access.accept(retargetVis);
-                
-                retargetedAccesses.add(access);
+	/**
+	 * Does nothing.
+	 */
+	@Override
+	public void clear() {
+	}
 
-                for (Iterator sourceIter = resolver.getAddressSources(access).iterator(); sourceIter.hasNext();)
-                {
-                    final LocationValueSource source = (LocationValueSource)sourceIter.next();
-                    final Location oldLoc = source.getTarget();
-                    final Location newLoc = Variable.getCorrelatedLocation(copier.getLocationMap(), oldLoc);
-                    assert newLoc != null : "Illegal null correlated location";
-                    source.setTarget(newLoc);
-                }
-            }
+	/**
+	 * Reports, via {@link GenericJob#info}, what optimization is being
+	 * performed
+	 */
+	@Override
+	public void preStatus() {
+		EngineThread.getGenericJob().info(
+				"optimizing read-only memory locations...");
+	}
 
-            /*
-             * If a second memory port is allowed...
-             */
-            if (!isSinglePort)
-            {
-                /*
-                 * If a second memory port is needed, create it if it doesn't exist.
-                 */
-                if (accessIter.hasNext())
-                {
-                    memoryPort = (memoryPortIter.hasNext()
-                        ? (LogicalMemoryPort)memoryPortIter.next()
-                        : copiedMem.createLogicalMemoryPort());
-                }
+	/**
+	 * Reports, via {@link GenericJob#verbose}, the results of <b>this</b> pass
+	 * of the optimization.
+	 */
+	@Override
+	public void postStatus() {
+		if (repCount > 0) {
+			EngineThread.getGenericJob().info(
+					"replicated " + repCount + " read-only memories");
+		} else {
+			EngineThread.getGenericJob().verbose(
+					"replicated " + repCount + " read-only memories");
+		}
+	}
 
-                for (int i = 0; i < accessesPerPort && accessIter.hasNext(); i++)
-                {
-                    final LValue access = (LValue)accessIter.next();
+	/**
+	 * Replicate the given LogicalMemory
+	 * 
+	 * <p>
+	 * requires: non-null memory
+	 * <p>
+	 * modifies: memory (may create second LogicalMemoryPort), removes accesses
+	 * (LValues)
+	 * <p>
+	 * effects: returns a Set of the replicated LogicalMemories.
+	 * 
+	 * @param memory
+	 *            a LogicalMemory
+	 * @param locationBaseMap
+	 *            a HashMap which keeps the LocationConstant associated with
+	 *            each access.
+	 * @param isSingle
+	 *            a boolean flag of single/dual port(s) replication
+	 * @return a non-null Set of newly created LogicalMemory objects. May be
+	 *         empty if no copies were made.
+	 * @throws IllegalArgumentException
+	 *             if 'memory' is null.
+	 */
+	Set<LogicalMemory> replicate(LogicalMemory memory, ObjectResolver resolver,
+			boolean isSinglePort) {
+		/* Collect up duplicated rom */
+		Set<LogicalMemory> replicatedMemories = new HashSet();
 
-                    access.getLogicalMemoryPort().removeAccess(access);
-                    memoryPort.addAccess(access);
-                    access.accept(retargetVis);
-                    retargetedAccesses.add(access);
+		/*
+		 * Make a memory copy and allocate pre-calculated number of accesses per
+		 * port
+		 */
+		for (Iterator accessIter = new ArrayList(memory.getLValues())
+				.iterator(); accessIter.hasNext();) {
+			final MemoryCopier copier = new MemoryCopier(memory);
+			final LogicalMemory copiedMem = copier.getCopy();
+			repCount++;
 
-                    for (Iterator sourceIter = resolver.getAddressSources(access).iterator(); sourceIter.hasNext();)
-                    {
-//                         final LocationConstant addressSource = (LocationConstant)sourceIter.next();
-//                         addressSource.accept(retargetVis);
-                        final LocationValueSource source = (LocationValueSource)sourceIter.next();
-                        final Location oldLoc = source.getTarget();
-                        final Location newLoc = Variable.getCorrelatedLocation(copier.getLocationMap(), oldLoc);
-                        assert newLoc != null : "Illegal null correlated location";
-                        source.setTarget(newLoc);
-                    }
-                }
-            }
+			assert copiedMem.getLogicalMemoryPorts().size() < 3;
+			final Iterator<LogicalMemoryPort> memoryPortIter = copiedMem
+					.getLogicalMemoryPorts().iterator();
+			final Collection<LValue> retargetedAccesses = new HashSet<LValue>();
 
-            /*
-             * Only keep the retargeted accesses in the copied memory
-             * and remove the rest, also remove the retargeted
-             * accesses in the origical memory.
-             */
-            final ArrayList lValues = new ArrayList(memory.getLValues());
-            for (Iterator lvIter = lValues.iterator(); lvIter.hasNext();)
-            {
-                final LValue lvalue = (LValue)lvIter.next();
-                if (!retargetedAccesses.contains(lvalue))
-                {
-                    copiedMem.removeAccessor(lvalue);
-                }
-                else
-                {
-                    memory.removeAccessor(lvalue);
-                }
-            }
-            
-            replicatedMemories.add(copiedMem);
-        }
+			RetargetVisitor retargetVis = new RetargetVisitor(
+					copier.getLocationMap());
+			LogicalMemoryPort memoryPort = memoryPortIter.next();
+			for (int i = 0; i < accessesPerPort && accessIter.hasNext(); i++) {
+				final LValue access = (LValue) accessIter.next();
 
-        return replicatedMemories;
-    }
-    
-    private static void overLimit (Design design, LogicalMemory mem, int romSize, boolean partial)
-    {
-        design.getEngine().getGenericJob().warn("could not " + (partial ? "fully ":"") + "replicate " + ID.showLogical(mem)
-            + ";\nuser pref memory limit reached -- increase value for preference: "
-            + OptionRegistry.ROM_REPLICATION_LIMIT.getKey() + " by "
-            + ((int)Math.ceil((float)romSize/(float)memLimitDivisor)) + " per desired copy");
-    }
-    
+				access.getLogicalMemoryPort().removeAccess(access);
+				memoryPort.addAccess(access);
+				access.accept(retargetVis);
+
+				retargetedAccesses.add(access);
+
+				for (Iterator sourceIter = resolver.getAddressSources(access)
+						.iterator(); sourceIter.hasNext();) {
+					final LocationValueSource source = (LocationValueSource) sourceIter
+							.next();
+					final Location oldLoc = source.getTarget();
+					final Location newLoc = Variable.getCorrelatedLocation(
+							copier.getLocationMap(), oldLoc);
+					assert newLoc != null : "Illegal null correlated location";
+					source.setTarget(newLoc);
+				}
+			}
+
+			/*
+			 * If a second memory port is allowed...
+			 */
+			if (!isSinglePort) {
+				/*
+				 * If a second memory port is needed, create it if it doesn't
+				 * exist.
+				 */
+				if (accessIter.hasNext()) {
+					memoryPort = (memoryPortIter.hasNext() ? (LogicalMemoryPort) memoryPortIter
+							.next() : copiedMem.createLogicalMemoryPort());
+				}
+
+				for (int i = 0; i < accessesPerPort && accessIter.hasNext(); i++) {
+					final LValue access = (LValue) accessIter.next();
+
+					access.getLogicalMemoryPort().removeAccess(access);
+					memoryPort.addAccess(access);
+					access.accept(retargetVis);
+					retargetedAccesses.add(access);
+
+					for (Iterator sourceIter = resolver.getAddressSources(
+							access).iterator(); sourceIter.hasNext();) {
+						// final LocationConstant addressSource =
+						// (LocationConstant)sourceIter.next();
+						// addressSource.accept(retargetVis);
+						final LocationValueSource source = (LocationValueSource) sourceIter
+								.next();
+						final Location oldLoc = source.getTarget();
+						final Location newLoc = Variable.getCorrelatedLocation(
+								copier.getLocationMap(), oldLoc);
+						assert newLoc != null : "Illegal null correlated location";
+						source.setTarget(newLoc);
+					}
+				}
+			}
+
+			/*
+			 * Only keep the retargeted accesses in the copied memory and remove
+			 * the rest, also remove the retargeted accesses in the origical
+			 * memory.
+			 */
+			final ArrayList lValues = new ArrayList(memory.getLValues());
+			for (Iterator lvIter = lValues.iterator(); lvIter.hasNext();) {
+				final LValue lvalue = (LValue) lvIter.next();
+				if (!retargetedAccesses.contains(lvalue)) {
+					copiedMem.removeAccessor(lvalue);
+				} else {
+					memory.removeAccessor(lvalue);
+				}
+			}
+
+			replicatedMemories.add(copiedMem);
+		}
+
+		return replicatedMemories;
+	}
+
+	private static void overLimit(Design design, LogicalMemory mem,
+			int romSize, boolean partial) {
+		design.getEngine()
+				.getGenericJob()
+				.warn("could not "
+						+ (partial ? "fully " : "")
+						+ "replicate "
+						+ ID.showLogical(mem)
+						+ ";\nuser pref memory limit reached -- increase value for preference: "
+						+ OptionRegistry.ROM_REPLICATION_LIMIT.getKey()
+						+ " by "
+						+ ((int) Math.ceil((float) romSize
+								/ (float) memLimitDivisor))
+						+ " per desired copy");
+	}
+
 }// RomReplicator

@@ -24,7 +24,6 @@ package net.sf.openforge.optimize.memory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import net.sf.openforge.lim.memory.Allocation;
@@ -101,10 +100,7 @@ public class MemoryCopier {
 			/*
 			 * Copy the Allocations and keep association in this.locationMap.
 			 */
-			for (Iterator allocationIter = sourceMemory.getAllocations()
-					.iterator(); allocationIter.hasNext();) {
-				final Allocation sourceAllocation = (Allocation) allocationIter
-						.next();
+			for (Allocation sourceAllocation : sourceMemory.getAllocations()) {
 				final Allocation copiedAllocation = copiedMemory
 						.allocate(sourceAllocation.getInitialValue().copy());
 				ID.copy(sourceAllocation, copiedAllocation);
@@ -115,10 +111,7 @@ public class MemoryCopier {
 			/*
 			 * Reset the target location for any Pointer initial values.
 			 */
-			for (Iterator allocationIter = sourceMemory.getAllocations()
-					.iterator(); allocationIter.hasNext();) {
-				final Allocation sourceAllocation = (Allocation) allocationIter
-						.next();
+			for (Allocation sourceAllocation : sourceMemory.getAllocations()) {
 				final Allocation copiedAllocation = (Allocation) locationMap
 						.get(sourceAllocation);
 
@@ -135,11 +128,9 @@ public class MemoryCopier {
 			/*
 			 * Copy the LogicalMemoryPorts.
 			 */
-			Map logicalMemoryPortMap = new HashMap();
-			for (Iterator memoryPortIter = sourceMemory.getLogicalMemoryPorts()
-					.iterator(); memoryPortIter.hasNext();) {
-				final LogicalMemoryPort sourceMemoryPort = (LogicalMemoryPort) memoryPortIter
-						.next();
+			Map<LogicalMemoryPort, LogicalMemoryPort> logicalMemoryPortMap = new HashMap<LogicalMemoryPort, LogicalMemoryPort>();
+			for (LogicalMemoryPort sourceMemoryPort : sourceMemory
+					.getLogicalMemoryPorts()) {
 				final LogicalMemoryPort copiedMemoryPort = copiedMemory
 						.createLogicalMemoryPort();
 				logicalMemoryPortMap.put(sourceMemoryPort, copiedMemoryPort);
@@ -148,20 +139,15 @@ public class MemoryCopier {
 			/*
 			 * Copy the read/write accesses on each LogicalmemoryPort.
 			 */
-			for (Iterator lValueIter = sourceMemory.getLValues().iterator(); lValueIter
-					.hasNext();) {
-				final LValue lValue = (LValue) lValueIter.next();
+			for (LValue lValue : sourceMemory.getLValues()) {
 				final LogicalMemoryPort sourceMemPort = sourceMemory
 						.getLogicalMemoryPort(lValue);
-				final LogicalMemoryPort copiedMemPort = (LogicalMemoryPort) logicalMemoryPortMap
+				final LogicalMemoryPort copiedMemPort = logicalMemoryPortMap
 						.get(sourceMemPort);
 
-				final Collection sourceLocations = sourceMemory
+				final Collection<Location> sourceLocations = sourceMemory
 						.getAccesses(lValue);
-				for (Iterator sourceLocationIter = sourceLocations.iterator(); sourceLocationIter
-						.hasNext();) {
-					final Location sourceLocation = (Location) sourceLocationIter
-							.next();
+				for (Location sourceLocation : sourceLocations) {
 					final Location copiedLocation = Variable
 							.getCorrelatedLocation(locationMap, sourceLocation);
 					locationMap.put(sourceLocation, copiedLocation);
@@ -172,10 +158,8 @@ public class MemoryCopier {
 			/*
 			 * Copy and add each LocationConstant.
 			 */
-			for (Iterator constIter = sourceMemory.getLocationConstants()
-					.iterator(); constIter.hasNext();) {
-				final LocationConstant locationConstant = (LocationConstant) constIter
-						.next();
+			for (LocationConstant locationConstant : sourceMemory
+					.getLocationConstants()) {
 				final Location newLocation = Variable.getCorrelatedLocation(
 						locationMap, locationConstant.getTarget());
 				locationMap.put(locationConstant.getTarget(), newLocation);
@@ -199,7 +183,7 @@ public class MemoryCopier {
 	 * 
 	 * @return a 'Map' of Location : Location
 	 */
-	public Map getLocationMap() {
+	public Map<Location, Location> getLocationMap() {
 		return Collections.unmodifiableMap(locationMap);
 	}
 

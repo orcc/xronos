@@ -234,7 +234,7 @@ public class ObjectResolver extends DataFlowVisitor {
 	 * @return a set of {@link LocationValueSource LocationValueSources}
 	 *         representing the address sources for the <code>access</code>
 	 */
-	public Set getAddressSources(LValue access) {
+	public Set<LocationValueSource> getAddressSources(LValue access) {
 		final Set set = (Set) addressSourceMap.get(access);
 		return set == null ? Collections.EMPTY_SET : Collections
 				.unmodifiableSet(set);
