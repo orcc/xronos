@@ -153,8 +153,8 @@ public class BaseAddressUniquifier extends DefaultVisitor implements
 							// an IllegalInitialValueContextException
 							// which we may catch here. Do not remove
 							// this call.
-							// final LogicalValue fixedValue = logicalValue
-							// .toLocation().getInitialValue();
+							// final LogicalValue fixedValue =
+							logicalValue.toLocation().getInitialValue();
 							if (logicalValue.toLocation() != Location.INVALID) {
 								LocationConstant locConst = (LocationConstant) logicalValue
 										.toConstant();
