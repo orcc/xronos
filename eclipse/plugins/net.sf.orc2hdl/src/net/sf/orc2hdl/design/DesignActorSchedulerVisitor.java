@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import net.sf.dftools.util.util.EcoreHelper;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Block;
@@ -67,6 +66,7 @@ import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
