@@ -205,7 +205,12 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		Component branch = buildBranch(branchDecision, thenBlock, null,
 				Arrays.asList(outDecision), Collections.<Var> emptyList(),
 				"callTask_" + task.getIDGlobalType(), null);
-		return branch;
+
+		Module module = (Module) buildModule(Arrays.asList(branch),
+				Arrays.asList(outDecision), Collections.<Var> emptyList(),
+				"taskCallBlock", null);
+
+		return module;
 	}
 
 	@Override
@@ -333,7 +338,8 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 									+ Integer.toString(componentCounter),
 							currentComponent);
 					// mapInPorts(varLitteralPeek);
-					mapInPorts(new ArrayList<Var>(Arrays.asList(litteralVar)));
+					mapInPorts(new ArrayList<Var>(Arrays.asList(litteralVar)),
+							currentComponent);
 					mapOutPorts(peekVar);
 					currentListComponent.add(currentComponent);
 					componentCounter++;
@@ -465,7 +471,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				}
 
 				currentComponent = new And(patternVars.size());
-				mapInPorts(patternVars);
+				mapInPorts(patternVars, currentComponent);
 				// Create Decision Var
 				Type type = IrFactory.eINSTANCE.createTypeBool();
 				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,

@@ -233,7 +233,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			// Get variables for E1 and E2
 			Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
 			Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-			mapInPorts(new ArrayList<Var>(Arrays.asList(e1, e2)));
+			mapInPorts(new ArrayList<Var>(Arrays.asList(e1, e2)),
+					currentComponent);
 			currentListComponent.add(currentComponent);
 			return null;
 		}
@@ -270,8 +271,10 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			// TODO: See if NoOP can have more than one inputs after all actors
 			// Transformations
 			currentComponent = new NoOp(1, Exit.DONE);
-			mapInPorts(new ArrayList<Var>(Arrays.asList(var.getUse()
-					.getVariable())));
+			mapInPorts(
+					new ArrayList<Var>(
+							Arrays.asList(var.getUse().getVariable())),
+					currentComponent);
 			return null;
 		}
 
@@ -364,9 +367,14 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			branch = new Branch(decision, thenBlock, elseBlock);
 			portCache.publish(elseBlock);
 		}
-		mapOutControlPort(branch);
+
 		createModuleInterface(branch, inVars, outVars, exitType);
-		// FIXME: bug in the dependencies
+
+		// Map In/Out port of branch
+		mapInPorts(inVars, branch, branch.showIDLogical());
+		mapOutControlPort(branch);
+
+		// FIXME: Bug in the dependencies
 		operationDependencies(Arrays.asList((Component) branch),
 				componentDependency, branch.getExit(Exit.DONE));
 
@@ -552,12 +560,20 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 					portCache.putSource(var, port.getPeer());
 				} else {
 					Var varCopyDep = IrFactory.eINSTANCE.createVar(0,
-							var.getType(), var.getIndexedName() + "_dep",
+							var.getType(),
+							var.getIndexedName() + "_" + module.showIDGlobal(),
 							false, 0);
 					port.setIDLogical(varCopyDep.getIndexedName());
 					portCache.putTarget(varCopyDep, port);
-					portCache.putSource(varCopyDep, port.getPeer());
-					componentDependency.put(module, Arrays.asList(varCopyDep));
+					portCache.putSource(varCopyDep, portCache.getSource(var));
+					if (componentDependency.containsKey(module)) {
+						List<Var> depVars = componentDependency.get(module);
+						depVars.add(varCopyDep);
+						componentDependency.put(module, depVars);
+					} else {
+						componentDependency.put(module,
+								Arrays.asList(varCopyDep));
+					}
 				}
 			}
 		}
@@ -773,15 +789,16 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		Var pinWriteVar = currentAction.getOutputPattern().getPortToVarMap()
 				.get(port);
 
-		mapInPorts(new ArrayList<Var>(Arrays.asList(pinWriteVar)));
+		mapInPorts(new ArrayList<Var>(Arrays.asList(pinWriteVar)),
+				currentComponent);
 		// Add done dependency for this operation to the current module exit
 		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
 		portCache.putDoneBus(currentComponent, doneBus);
 		componentCounter++;
 	}
 
-	protected void mapInPorts(List<Var> inVars) {
-		Iterator<Port> portIter = currentComponent.getDataPorts().iterator();
+	protected void mapInPorts(List<Var> inVars, Component component) {
+		Iterator<Port> portIter = component.getDataPorts().iterator();
 		for (Var var : inVars) {
 			Port dataPort = portIter.next();
 			dataPort.setIDLogical(var.getIndexedName());
@@ -791,7 +808,27 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		}
 
 		// Put Input dependency
-		componentDependency.put(currentComponent, inVars);
+		componentDependency.put(component, inVars);
+	}
+
+	protected void mapInPorts(List<Var> inVars, Component component,
+			String prefix) {
+		List<Var> changedVar = new ArrayList<Var>();
+		Iterator<Port> portIter = component.getDataPorts().iterator();
+
+		for (Var var : inVars) {
+			Var varDep = IrFactory.eINSTANCE.createVar(0, var.getType(),
+					var.getIndexedName() + "_" + prefix, false, 0);
+			Port dataPort = portIter.next();
+			dataPort.setIDLogical(varDep.getIndexedName());
+			dataPort.setSize(varDep.getType().getSizeInBits(), varDep.getType()
+					.isInt() || varDep.getType().isBool());
+			portCache.putTarget(varDep, dataPort);
+			changedVar.add(varDep);
+		}
+
+		// Put Input dependency
+		componentDependency.put(component, changedVar);
 	}
 
 	protected void mapOutPorts(Var var) {

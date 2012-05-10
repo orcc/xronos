@@ -50,12 +50,25 @@ radix -decimal
 ## Add clock(s) and reset signal
 <printClocks(network)> 
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/RESET
-## Action(s) Go & Done Output Ports
+
+## Add instance IO signals
+<network.instances: printInstanceIO(); separator="\n">
 <printNetworkOutputPorts(network)>
+
+## FIFO FULL
+add wave -noupdate -divider -height 10 "FIFO FULL"
 <network.instances: printInstanceInputBuffer(); separator="\n">
 <if(options.modelsimAnalysis)>
 run <options.simTime>ns
 quit -force
+<else>
+<if(!network.inputs)>
+force -freeze sim:/<network.simpleName>/CLK 1 0, 0 {50 ns} -r 100
+force -freeze sim:/<network.simpleName>/RESET 1 0
+run 500ns
+force -freeze sim:/<network.simpleName>/RESET 0 0
+run 100000ns
+<endif>
 <endif>
 >>
 
@@ -83,11 +96,29 @@ printInstanceInputBuffer(instance) ::=<<
 <instance.actor.inputs: printInputQueues(); separator="\n">
 >>
 
+printInstanceIO(instance) ::=<<
+add wave -noupdate -divider -height 10 i_<instance.simpleName>
+<instance.actor.inputs: printActorInput(); separator="\n">
+<instance.actor.outputs: printActorOutput(); separator="\n">
+>>
+
+printActorInput(port) ::=<<
+add wave sim:/<network.simpleName>/i_<instance.simpleName>/<port.name>_DATA
+add wave sim:/<network.simpleName>/i_<instance.simpleName>/<port.name>_ACK  
+>>
+
+printActorOutput(port) ::=<<
+add wave sim:/<network.simpleName>/i_<instance.simpleName>/<port.name>_DATA
+add wave sim:/<network.simpleName>/i_<instance.simpleName>/<port.name>_SEND  
+>>
+
+
 printInputQueues(port) ::=<<
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<if(options.modelsimAnalysis)>n_<network.simpleName>/<endif>q_ai_<instance.simpleName>_<port.name>/fifo/msync_full 
 >>
 
 printOutputPorts(port) ::=<<
+add wave -noupdate -divider -height 10 no_<port.name>
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_DATA 
 <if (!port.native)>
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_SEND 

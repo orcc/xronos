@@ -229,11 +229,11 @@ public abstract class AbstractPrinter {
 	}
 
 	public void setExpressionPrinter(ExpressionPrinter printer) {
-		this.exprPrinterClass = printer.getClass();
+		exprPrinterClass = printer.getClass();
 	}
 
 	public void setTypePrinter(TypePrinter printer) {
-		this.typePrinterClass = printer.getClass();
+		typePrinterClass = printer.getClass();
 	}
 
 }
