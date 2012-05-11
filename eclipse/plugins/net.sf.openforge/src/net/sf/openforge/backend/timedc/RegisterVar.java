@@ -45,15 +45,15 @@ class RegisterVar implements StateVar {
 
 	public RegisterVar(Register reg) {
 		this.reg = reg;
-		this.regName = CNameCache.getLegalIdentifier(ID.showLogical(reg)
+		regName = CNameCache.getLegalIdentifier(ID.showLogical(reg)
 				+ System.identityHashCode(reg));
 	}
 
 	@Override
 	public void declareGlobal(PrintStream ps) {
 		String type = StateVar.STORAGE_CLASS
-				+ OpHandle.getTypeDeclaration(this.reg.getInitWidth(),
-						this.reg.isSigned());
+				+ OpHandle.getTypeDeclaration(reg.getInitWidth(),
+						Register.isSigned());
 		long initValue = MemoryWriter.constantValue(reg.getInitialValue()
 				.getRep(), ADDRESSING_POLICY);
 		ps.println(type + " " + getDataOut() + " = " + initValue + ";");
@@ -63,8 +63,8 @@ class RegisterVar implements StateVar {
 
 	@Override
 	public void writeTick(PrintStream ps) {
-		if (!this.tickWritten) {
-			this.tickWritten = true;
+		if (!tickWritten) {
+			tickWritten = true;
 			/*
 			 * if (enable) dataout = dataIn; enable = 0;
 			 */
@@ -88,6 +88,6 @@ class RegisterVar implements StateVar {
 	}
 
 	private String getBaseName() {
-		return this.regName;
+		return regName;
 	}
 }

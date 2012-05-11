@@ -23,15 +23,16 @@ package net.sf.openforge.backend.timedc;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.app.ForgeFileTyper;
+import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.DefaultVisitor;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.GlobalReset;
+import net.sf.openforge.lim.Referenceable;
 import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Register;
 import net.sf.openforge.lim.RegisterWrite;
@@ -49,41 +50,39 @@ import net.sf.openforge.lim.memory.MemoryWrite;
  */
 class StateComponentFinder extends DefaultVisitor {
 	private CNameCache nameCache;
-	private Map referenceableMap;
+	private Map<Referenceable, StateVar> referenceableMap;
 
 	/**
 	 * A Map of component to StateVar.
 	 */
-	private Map seqElements = new LinkedHashMap();
+	private Map<Component, StateVar> seqElements = new LinkedHashMap<Component, StateVar>();
 
-	StateComponentFinder(CNameCache cache, Map refMap) {
+	StateComponentFinder(CNameCache cache, Map<Referenceable, StateVar> refMap) {
 		super();
 		setTraverseComposable(true);
-		this.nameCache = cache;
-		this.referenceableMap = refMap;
+		nameCache = cache;
+		referenceableMap = refMap;
 	}
 
-	Map getSeqElements() {
-		return Collections.unmodifiableMap(this.seqElements);
+	Map<Component, StateVar> getSeqElements() {
+		return Collections.unmodifiableMap(seqElements);
 	}
 
+	@Override
 	public void visit(Design design) {
 		// The design module will contain the kickers. No need to
 		// visit them individually
-		for (Iterator iter = design.getResetPins().iterator(); iter.hasNext();) {
-			GlobalReset grst = (GlobalReset) iter.next();
+		for (GlobalReset grst : design.getResetPins()) {
 			final File[] inputFiles = EngineThread.getGenericJob()
 					.getTargetFiles();
 			int delay = 5;
 			if (ForgeFileTyper.isXLIMSource(inputFiles[0].getName()))
 				delay = 10;
-			this.seqElements.put(grst,
-					new ResetVar(grst, this.nameCache, delay));
+			seqElements.put(grst, new ResetVar(grst, nameCache, delay));
 		}
-		for (Iterator iter = design.getDesignModule().getComponents()
-				.iterator(); iter.hasNext();) {
+		for (Component comp : design.getDesignModule().getComponents()) {
 			try {
-				((Visitable) iter.next()).accept(this);
+				((Visitable) comp).accept(this);
 			}
 			// Anything that throws a UVE is not going to factor
 			// into the c translation anyway.
@@ -95,48 +94,49 @@ class StateComponentFinder extends DefaultVisitor {
 		// super.visit(design);
 	}
 
+	@Override
 	public void visit(Reg comp) {
 		super.visit(comp);
-		this.seqElements.put(comp, new RegVar(comp, this.nameCache));
+		seqElements.put(comp, new RegVar(comp, nameCache));
 	}
 
+	@Override
 	public void visit(MemoryRead comp) {
 		super.visit(comp);
-		MemoryVar memVar = (MemoryVar) this.referenceableMap.get(comp
+		MemoryVar memVar = (MemoryVar) referenceableMap.get(comp
 				.getMemoryPort().getLogicalMemory());
-		this.seqElements.put(comp, new MemAccessVar(comp, memVar,
-				this.nameCache));
+		seqElements.put(comp, new MemAccessVar(comp, memVar, nameCache));
 	}
 
+	@Override
 	public void visit(MemoryWrite comp) {
 		super.visit(comp);
-		MemoryVar memVar = (MemoryVar) this.referenceableMap.get(comp
+		MemoryVar memVar = (MemoryVar) referenceableMap.get(comp
 				.getMemoryPort().getLogicalMemory());
-		this.seqElements.put(comp, new MemAccessVar(comp, memVar,
-				this.nameCache));
+		seqElements.put(comp, new MemAccessVar(comp, memVar, nameCache));
 	}
 
 	// No need for a stateful var for register reads.... they are
 	// just a direct wire from the register.
 	// public void visit (RegisterRead comp){}
 
+	@Override
 	public void visit(RegisterWrite comp) {
 		Register target = (Register) comp.getReferenceable();
 		assert target != null : "null target of " + comp;
-		RegisterVar registerVar = (RegisterVar) this.referenceableMap
-				.get(target);
+		RegisterVar registerVar = (RegisterVar) referenceableMap.get(target);
 		if (registerVar == null) {
 			registerVar = new RegisterVar(target);
-			this.referenceableMap.put(target, registerVar);
+			referenceableMap.put(target, registerVar);
 		}
-		RegWriteVar writeVar = new RegWriteVar(comp, registerVar,
-				this.nameCache);
-		this.seqElements.put(comp, writeVar);
+		RegWriteVar writeVar = new RegWriteVar(comp, registerVar, nameCache);
+		seqElements.put(comp, writeVar);
 	}
 
+	@Override
 	public void visit(SRL16 comp) {
 		super.visit(comp);
-		this.seqElements.put(comp, new SRL16Var(comp, this.nameCache));
+		seqElements.put(comp, new SRL16Var(comp, nameCache));
 	}
 
 	/*

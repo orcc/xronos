@@ -73,6 +73,7 @@ import net.sf.openforge.lim.PinStateChange;
 import net.sf.openforge.lim.PinWrite;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.PriorityMux;
+import net.sf.openforge.lim.Referenceable;
 import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Register;
 import net.sf.openforge.lim.RegisterGateway;
@@ -178,7 +179,6 @@ import net.sf.openforge.util.naming.ID;
  * @version $Id: CycleCTranslator.java 424 2007-02-26 22:36:09Z imiller $
  */
 public class CycleCTranslator {
-	private static final String _RCS_ = "$Rev: 424 $";
 
 	/**
 	 * Map of Component to the OpHandle (StateVar) for that component.
@@ -191,7 +191,7 @@ public class CycleCTranslator {
 	/*
 	 * A Map of Referenceable to object, may be a MemoryVar or a RegisterVar.
 	 */
-	private final Map referenceableMap = new LinkedHashMap();
+	private final Map<Referenceable, StateVar> referenceableMap = new LinkedHashMap<Referenceable, StateVar>();
 
 	/**
 	 * A class which ensures unique naming for all lim objects.
@@ -214,7 +214,7 @@ public class CycleCTranslator {
 	 * Access via the static translate method.
 	 */
 	private CycleCTranslator(Design design, File headerFile) {
-		this.ioHandle = IOHandler.makeIOHandler(design);
+		ioHandle = IOHandler.makeIOHandler(design);
 
 		this.headerFile = headerFile;
 	}
@@ -230,7 +230,7 @@ public class CycleCTranslator {
 						OptionRegistry.X_WRITE_CYCLE_C_VPGEN);
 
 		final String funcName;
-		if (doVPCompliant || true) {
+		if (doVPCompliant) {
 			// If we are doing a VP compatible compile, make the name
 			// of the generated function unique. Use the same name as
 			// from the Verilog module.
@@ -278,11 +278,11 @@ public class CycleCTranslator {
 	}
 
 	private void writeFile(Design design, String funcName, PrintStream ps) {
-		this.createSequentialVars(design, ps);
-		this.buildLogic(design, funcName, ps);
+		createSequentialVars(design, ps);
+		buildLogic(design, funcName, ps);
 		// Write the logic for updating at the clock edge
-		this.writeTick(ps, funcName);
-		this.writeAPI(ps, false);
+		writeTick(ps, funcName);
+		writeAPI(ps, false);
 	}
 
 	private void writeDebugMain(PrintStream ps, String funcName, String baseName) {
@@ -293,10 +293,10 @@ public class CycleCTranslator {
 			ps.println("#ifdef FORGE_ATB");
 			if (ForgeFileTyper.isXLIMSource(inputFiles[0].getName()))
 				CycleCTestbench.writeQueueTestingMain(ps, funcName, baseName,
-						this.ioHandle, this.taskGoVars);
+						ioHandle, taskGoVars);
 			else if (ForgeFileTyper.isCSource(inputFiles[0].getName()))
 				CycleCTestbench.writeVECTestingMain(ps, funcName, baseName,
-						this.ioHandle);
+						ioHandle);
 			ps.println("#endif");
 		}
 
@@ -334,10 +334,10 @@ public class CycleCTranslator {
 		MemoryVar.declareType(headerPS);
 		headerPS.println(getUpdateFunctionDecl(baseName) + ";");
 		headerPS.println(getClockEdgeFunctionDecl(baseName) + ";");
-		this.writeAPI(headerPS, true);
+		writeAPI(headerPS, true);
 		headerPS.println("#endif");
 
-		ps.println("#include \"" + this.headerFile.getName() + "\"");
+		ps.println("#include \"" + headerFile.getName() + "\"");
 		// The string class is needed for the getID API function in the
 		// IOHandler API.
 		ps.println("#include <string.h>");
@@ -345,7 +345,7 @@ public class CycleCTranslator {
 
 	private void buildLogic(Design design, String funcName, PrintStream ps) {
 		// Write the I/O handling data structures and their inits.
-		this.ioHandle.declareStructures(ps);
+		ioHandle.declareStructures(ps);
 
 		// The stream for the logic of the design update function
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -356,8 +356,9 @@ public class CycleCTranslator {
 		// each task, this tvis will hold handles to only the design
 		// module level components.
 		final TranslateVisitor tvis = new TranslateVisitor(designFxnPS, ps);
-		tvis.opHandles.putAll(this.sequentialElements);
-		final Set preDefinedOpHandles = new HashSet(tvis.opHandles.values());
+		tvis.opHandles.putAll(sequentialElements);
+		final Set<OpHandle> preDefinedOpHandles = new HashSet<OpHandle>(
+				tvis.opHandles.values());
 		design.accept(tvis);
 
 		// Print the task definitions/implementations
@@ -381,15 +382,15 @@ public class CycleCTranslator {
 		// Each output value must be initialized to 0 so that the pin
 		// writes can use a logical OR to update their value.
 		ps.println("/* Initialize each output (produced value) to zero so that a 'wired-or' \n can be used to derive the final value */");
-		this.ioHandle.writeOutputInits(ps);
+		ioHandle.writeOutputInits(ps);
 		// Each internal pin always resets to zero at a clock edge
 		// because they are simply wires. Effectively this is
 		// allowing us to do a wired or for its behavior.
-		this.taskGoVars = new HashSet();
-		for (Map.Entry entry : tvis.opHandles.entrySet()) {
+		taskGoVars = new HashSet<String>();
+		for (Map.Entry<Component, OpHandle> entry : tvis.opHandles.entrySet()) {
 			// XXX: FIXME -- Kludgy but works...
 			if (entry.getKey() instanceof SimpleInternalPin) {
-				OpHandle handle = (OpHandle) entry.getValue();
+				OpHandle handle = entry.getValue();
 				SimpleInternalPin pin = (SimpleInternalPin) entry.getKey();
 				ps.println(handle.assign(pin.getXLatData().getSource(), "0"));
 				String name = handle.getBusName(pin.getXLatData().getSource());
@@ -404,9 +405,9 @@ public class CycleCTranslator {
 		// method in OpHandles, this functionality cannot be executed
 		// until the visitor has visited all the logic of the design
 		// module.
-		ArrayList<Bus> fbBuses = new ArrayList();
-		for (Map.Entry entry : tvis.opHandles.entrySet()) {
-			OpHandle handle = (OpHandle) entry.getValue();
+		ArrayList<Bus> fbBuses = new ArrayList<Bus>();
+		for (Map.Entry<Component, OpHandle> entry : tvis.opHandles.entrySet()) {
+			OpHandle handle = entry.getValue();
 			// Any opHandle that was 'pre defined' was not discovered
 			// as a feedback point in the design. Therefor we can
 			// safely ignore them in the calculation of the iterate
@@ -414,13 +415,11 @@ public class CycleCTranslator {
 			if (preDefinedOpHandles.contains(handle)) {
 				continue;
 			}
-			for (Exit exit : ((Component) entry.getKey()).getExits()) {
+			for (Exit exit : entry.getKey().getExits()) {
 				if (exit.getTag().getType() == Exit.SIDEBAND) {
 					continue;
 				}
-				for (Iterator bIter = exit.getBuses().iterator(); bIter
-						.hasNext();) {
-					Bus b = (Bus) bIter.next();
+				for (Bus b : exit.getBuses()) {
 					// If the bus has not been declared by now then it
 					// did not figure into the design level logic and
 					// is 'unused'
@@ -463,7 +462,7 @@ public class CycleCTranslator {
 		ps.println("/* Logic for updating state variables at the clock edge */");
 		ps.println(getClockEdgeFunctionDecl(baseName) + " {");
 
-		for (Iterator iter = this.sequentialElements.values().iterator(); iter
+		for (Iterator<OpHandle> iter = sequentialElements.values().iterator(); iter
 				.hasNext();) {
 			((StateVar) iter.next()).writeTick(ps);
 		}
@@ -492,21 +491,21 @@ public class CycleCTranslator {
 	}
 
 	private void createSequentialVars(Design design, PrintStream stream) {
-		this.referenceableMap.putAll(MemoryWriter.generateMemories(design));
-		StateComponentFinder finder = new StateComponentFinder(this.nameCache,
-				this.referenceableMap);
+		referenceableMap.putAll(MemoryWriter.generateMemories(design));
+		StateComponentFinder finder = new StateComponentFinder(nameCache,
+				referenceableMap);
 		design.accept(finder);
 
-		for (Iterator iter = this.referenceableMap.values().iterator(); iter
+		for (Iterator<StateVar> iter = referenceableMap.values().iterator(); iter
 				.hasNext();) {
-			((StateVar) iter.next()).declareGlobal(stream);
+			iter.next().declareGlobal(stream);
 		}
-		for (Iterator iter = finder.getSeqElements().values().iterator(); iter
-				.hasNext();) {
-			((StateVar) iter.next()).declareGlobal(stream);
+		for (Iterator<StateVar> iter = finder.getSeqElements().values()
+				.iterator(); iter.hasNext();) {
+			iter.next().declareGlobal(stream);
 		}
 
-		this.sequentialElements.putAll(finder.getSeqElements());
+		sequentialElements.putAll(finder.getSeqElements());
 	}
 
 	/**
@@ -516,14 +515,14 @@ public class CycleCTranslator {
 		/*
 		 * A Set of Component objects, as returned by module.getFeedbackPoints
 		 */
-		private final Set fbPoints = new LinkedHashSet();
+		private final Set<Component> fbPoints = new LinkedHashSet<Component>();
 
 		/**
 		 * Returns a Set of all components which are the feedback points in the
 		 * LIM.
 		 */
-		public Set getFbPoints() {
-			return this.fbPoints;
+		public Set<Component> getFbPoints() {
+			return fbPoints;
 		}
 
 		@Override
@@ -536,38 +535,38 @@ public class CycleCTranslator {
 
 		@Override
 		public void preFilter(Module m) {
-			this.fbPoints.addAll(m.getFeedbackPoints());
+			fbPoints.addAll(m.getFeedbackPoints());
 		}
 	}
 
 	private class TranslateVisitor extends DataFlowVisitor {
 		/* A map of Component to OpHandle */
-		Map<Component, OpHandle> opHandles = new HashMap();
+		Map<Component, OpHandle> opHandles = new HashMap<Component, OpHandle>();
 		private final PrintStream ps;
 		private final PrintStream alternateDeclarationPS; // may be null
-		private final Map callBoundryMap = new HashMap();
-		private final Map<String, ByteArrayOutputStream> taskImplementationMap = new LinkedHashMap();
+		private final Map<ID, ID> callBoundryMap = new HashMap<ID, ID>();
+		private final Map<String, ByteArrayOutputStream> taskImplementationMap = new LinkedHashMap<String, ByteArrayOutputStream>();
 
 		public TranslateVisitor(PrintStream ps) {
 			this(ps, null);
 		}
 
 		private TranslateVisitor(PrintStream ps, PrintStream declarationStream) {
-			this.setRunForward(true);
+			setRunForward(true);
 			this.ps = ps;
-			this.alternateDeclarationPS = declarationStream;
+			alternateDeclarationPS = declarationStream;
 		}
 
 		public Map<String, ByteArrayOutputStream> getTaskImplementations() {
-			return Collections.unmodifiableMap(this.taskImplementationMap);
+			return Collections.unmodifiableMap(taskImplementationMap);
 		}
 
 		@Override
 		public void visit(Design design) {
 			// The design module contains the kickers.
-			List taskCalls = new ArrayList();
-			for (Iterator iter = design.getTasks().iterator(); iter.hasNext();) {
-				taskCalls.add(((Task) iter.next()).getCall());
+			List<Call> taskCalls = new ArrayList<Call>();
+			for (Task task : design.getTasks()) {
+				taskCalls.add(task.getCall());
 			}
 			// First, create op handles for ALL the components in the
 			// design module
@@ -577,9 +576,7 @@ public class CycleCTranslator {
 			// Now visit the components and connect them, not
 			// traversing the calls. These will be handled when we
 			// visit tasks later.
-			for (Iterator iter = design.getDesignModule().getComponents()
-					.iterator(); iter.hasNext();) {
-				Component comp = (Component) iter.next();
+			for (Component comp : design.getDesignModule().getComponents()) {
 				if (!taskCalls.contains(comp)) {
 					try {
 						comp.accept(this);
@@ -608,11 +605,11 @@ public class CycleCTranslator {
 				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				final TranslateVisitor tvis = new TranslateVisitor(
 						new PrintStream(baos));
-				tvis.opHandles.putAll(this.opHandles);
+				tvis.opHandles.putAll(opHandles);
 				task.accept(tvis);
 				final String functionName = CNameCache.getLegalIdentifier(ID
 						.showLogical(task) + "_logic");
-				this.taskImplementationMap.put(functionName, baos);
+				taskImplementationMap.put(functionName, baos);
 			}
 		}
 
@@ -627,22 +624,17 @@ public class CycleCTranslator {
 			outln("// Beginning of task " + id);
 			FeedbackFinder fbFinder = new FeedbackFinder();
 			task.accept(fbFinder);
-			final Set fbPoints = new LinkedHashSet(fbFinder.getFbPoints());
-			fbPoints.removeAll(CycleCTranslator.this.sequentialElements
-					.keySet());
-			final Set fbBuses = new LinkedHashSet();
-			for (Iterator iter = fbPoints.iterator(); iter.hasNext();) {
-				Component comp = (Component) iter.next();
+			final Set<Component> fbPoints = new LinkedHashSet<Component>(
+					fbFinder.getFbPoints());
+			fbPoints.removeAll(sequentialElements.keySet());
+			final Set<Bus> fbBuses = new LinkedHashSet<Bus>();
+			for (Component comp : fbPoints) {
 				OpHandle handle = makeOpHandle(comp);
-				for (Iterator eIter = comp.getExits().iterator(); eIter
-						.hasNext();) {
-					Exit exit = (Exit) eIter.next();
+				for (Exit exit : comp.getExits()) {
 					if (exit.getTag().getType() == Exit.SIDEBAND) {
 						continue;
 					}
-					for (Iterator bIter = exit.getBuses().iterator(); bIter
-							.hasNext();) {
-						Bus b = (Bus) bIter.next();
+					for (Bus b : exit.getBuses()) {
 						fbBuses.add(b);
 						outln(handle.declare(b));
 						outln(handle.declare(b, "_prev"));
@@ -655,9 +647,8 @@ public class CycleCTranslator {
 			super.visit(task);
 
 			outln(iterateVar + "=0;");
-			for (Iterator iter = fbBuses.iterator(); iter.hasNext();) {
-				Bus b = (Bus) iter.next();
-				OpHandle handle = this.opHandles.get(b.getOwner().getOwner());
+			for (Bus b : fbBuses) {
+				OpHandle handle = opHandles.get(b.getOwner().getOwner());
 				outln(iterateVar + " |= (" + handle.getBusName(b, "_prev")
 						+ " != " + handle.getBusName(b) + ");");
 				outln(handle.getBusName(b, "_prev") + " = "
@@ -672,7 +663,7 @@ public class CycleCTranslator {
 
 		@Override
 		public void visit(Call call) {
-			if (!this.opHandles.containsKey(call)) {
+			if (!opHandles.containsKey(call)) {
 				// The top level call, due to feedback from done to
 				// kicker, should already be created, but other calls
 				// may not be.
@@ -680,13 +671,11 @@ public class CycleCTranslator {
 			}
 
 			// Create correlations from call port/bus to block port/bus
-			for (Iterator iter = call.getPorts().iterator(); iter.hasNext();) {
-				Port port = (Port) iter.next();
+			for (Port port : call.getPorts()) {
 				Port match = call.getProcedurePort(port);
 				callBoundryMap.put(match, port);
 			}
-			for (Iterator iter = call.getBuses().iterator(); iter.hasNext();) {
-				Bus bus = (Bus) iter.next();
+			for (Bus bus : call.getBuses()) {
 				Bus match = call.getProcedureBus(bus);
 				callBoundryMap.put(match, bus);
 			}
@@ -695,13 +684,12 @@ public class CycleCTranslator {
 
 		@Override
 		public void visit(InBuf ib) {
-			List buses = new ArrayList();
+			List<Bus> buses = new ArrayList<Bus>();
 			buses.add(ib.getGoBus());
 			buses.add(ib.getResetBus());
 			buses.addAll(ib.getDataBuses());
 			OpHandle ibHandler = makeOpHandle(ib);
-			for (Iterator iter = buses.iterator(); iter.hasNext();) {
-				Bus ibBus = (Bus) iter.next();
+			for (Bus ibBus : buses) {
 				if (ibBus.getTag() == Component.SIDEBAND) {
 					continue;
 				}
@@ -727,13 +715,11 @@ public class CycleCTranslator {
 
 		@Override
 		public void visit(OutBuf ob) {
-			OpHandle ownerHandler = this.opHandles.get(ob.getOwner());
+			OpHandle ownerHandler = opHandles.get(ob.getOwner());
 			assert ownerHandler != null : "Null owner handler for outbuf "
 					+ ob.getOwner();
 
-			for (Iterator iter = ob.getPorts().iterator(); iter.hasNext();) {
-				Port port = (Port) iter.next();
-
+			for (Port port : ob.getPorts()) {
 				if (port.getTag() == Component.SIDEBAND) {
 					continue;
 				}
@@ -744,8 +730,8 @@ public class CycleCTranslator {
 					outln(ownerHandler.assign(target, getRValue(source)));
 					if (callBoundryMap.containsKey(target)) {
 						Bus peer = (Bus) callBoundryMap.get(target);
-						OpHandle callHandler = this.opHandles.get(peer
-								.getOwner().getOwner());
+						OpHandle callHandler = opHandles.get(peer.getOwner()
+								.getOwner());
 						assert callHandler != null : "Null call handler "
 								+ peer.getOwner().getOwner();
 						preDeclare(callHandler, peer);
@@ -762,7 +748,7 @@ public class CycleCTranslator {
 
 		@Override
 		public void visit(Reg reg) {
-			RegVar var = (RegVar) this.opHandles.get(reg);
+			RegVar var = (RegVar) opHandles.get(reg);
 			assert var != null : "Unknown register found";
 
 			int type = reg.getType();
@@ -878,7 +864,7 @@ public class CycleCTranslator {
 			 * target.address_next = addr; target.en_next = 1; target.wen_next =
 			 * 0; target.size_next = sizePort; } else { memRead.pending = 0; }
 			 */
-			MemAccessVar accHandle = (MemAccessVar) this.opHandles.get(memRead);
+			MemAccessVar accHandle = (MemAccessVar) opHandles.get(memRead);
 			preDeclare(accHandle, memRead.getResultBus());
 			preDeclare(accHandle, memRead.getExit(Exit.DONE).getDoneBus());
 			outln(accHandle.assign(memRead.getResultBus(),
@@ -914,8 +900,7 @@ public class CycleCTranslator {
 			 * target.en_next = 1; target.wen_next = 1; target.size_next =
 			 * sizePort; } else { memwrite.pending = 0; }
 			 */
-			MemAccessVar accHandle = (MemAccessVar) this.opHandles
-					.get(memWrite);
+			MemAccessVar accHandle = (MemAccessVar) opHandles.get(memWrite);
 			outln(accHandle.assign(memWrite.getExit(Exit.DONE).getDoneBus(),
 					accHandle.getPendingOut()));
 			outln("if (" + getRValue(memWrite.getGoPort().getBus()) + ") {");
@@ -938,8 +923,7 @@ public class CycleCTranslator {
 			// Tap off the register.
 			Register target = (Register) regRead.getReferenceable();
 			assert target != null : "Null target reference " + regRead;
-			RegisterVar var = (RegisterVar) CycleCTranslator.this.referenceableMap
-					.get(target);
+			RegisterVar var = (RegisterVar) referenceableMap.get(target);
 			OpHandle handle = makeOpHandle(regRead);
 			preDeclare(handle, regRead.getResultBus());
 			outln(handle.assign(regRead.getResultBus(), var.getDataOut()));
@@ -956,10 +940,8 @@ public class CycleCTranslator {
 			 */
 			final Register target = (Register) regWrite.getReferenceable();
 			assert target != null : "Null target reference " + regWrite;
-			final RegisterVar var = (RegisterVar) CycleCTranslator.this.referenceableMap
-					.get(target);
-			final RegWriteVar handle = (RegWriteVar) this.opHandles
-					.get(regWrite);
+			final RegisterVar var = (RegisterVar) referenceableMap.get(target);
+			final RegWriteVar handle = (RegWriteVar) opHandles.get(regWrite);
 			assert regWrite.getGoPort().getBus() != null : "No control for "
 					+ regWrite;
 			outln("if (" + getRValue(regWrite.getGoPort().getBus()) + ") {");
@@ -999,8 +981,9 @@ public class CycleCTranslator {
 			// The Or can have 1-N inputs
 			OpHandle handle = makeOpHandle(or);
 			String rvalue = "";
-			for (Iterator iter = or.getDataPorts().iterator(); iter.hasNext();) {
-				Port port = (Port) iter.next();
+			for (Iterator<Port> iter = or.getDataPorts().iterator(); iter
+					.hasNext();) {
+				Port port = iter.next();
 				Bus source = port.getBus();
 				rvalue += getRValue(source);
 				if (iter.hasNext())
@@ -1018,9 +1001,9 @@ public class CycleCTranslator {
 			} else {
 				OpHandle handle = makeOpHandle(a);
 				String rvalue = "";
-				for (Iterator iter = a.getDataPorts().iterator(); iter
+				for (Iterator<Port> iter = a.getDataPorts().iterator(); iter
 						.hasNext();) {
-					Bus source = ((Port) iter.next()).getBus();
+					Bus source = iter.next().getBus();
 					rvalue += getRValue(source);
 					if (iter.hasNext())
 						rvalue += " & ";
@@ -1046,7 +1029,7 @@ public class CycleCTranslator {
 		public void visit(SRL16 srl16) {
 			// next = data in
 			// enable = rotate
-			SRL16Var handle = (SRL16Var) this.opHandles.get(srl16);
+			SRL16Var handle = (SRL16Var) opHandles.get(srl16);
 			outln(handle.getDataIn() + " = "
 					+ getRValue(srl16.getInDataPort().getBus()) + ";");
 			if (srl16.getEnablePort().isUsed()) {
@@ -1062,8 +1045,7 @@ public class CycleCTranslator {
 			// (they are handled via the clockEdge function and the
 			// kicker circuitry. ALL other 'external' pins should be
 			// handled by the IOHandler.
-			if (pin instanceof SimpleInternalPin
-					|| !CycleCTranslator.this.ioHandle.isHandled(pin)) {
+			if (pin instanceof SimpleInternalPin || !ioHandle.isHandled(pin)) {
 				OpHandle handle = makeOpHandle(pin);
 				preDeclare(handle, pin.getXLatData().getSource());
 			}
@@ -1073,16 +1055,15 @@ public class CycleCTranslator {
 		public void visit(SimplePinRead comp) {
 			OpHandle handle = makeOpHandle(comp);
 			String rhs;
-			if (CycleCTranslator.this.ioHandle.isHandled((SimplePin) comp
-					.getReferenceable())) {
+			if (ioHandle.isHandled((SimplePin) comp.getReferenceable())) {
 				// String member =
 				// CycleCTranslator.this.ioHandle.getAccessString(comp);
 				// Handle External pins via the IOHandler
-				rhs = CycleCTranslator.this.ioHandle.getAccessString(comp);
+				rhs = ioHandle.getAccessString(comp);
 			} else {
 				// Handle Internal pins.
 				SimplePin pin = (SimplePin) comp.getReferenceable();
-				rhs = this.opHandles.get(pin).getBusName(
+				rhs = opHandles.get(pin).getBusName(
 						pin.getXLatData().getSource());
 			}
 
@@ -1099,10 +1080,8 @@ public class CycleCTranslator {
 			makeOpHandle(comp);
 			String dataValue = getRValue(comp.getDataPort().getBus());
 			String enable = getRValue(comp.getGoPort().getBus());
-			if (CycleCTranslator.this.ioHandle.isHandled((SimplePin) comp
-					.getReferenceable())) {
-				String member = CycleCTranslator.this.ioHandle
-						.getAccessString(comp);
+			if (ioHandle.isHandled((SimplePin) comp.getReferenceable())) {
+				String member = ioHandle.getAccessString(comp);
 				// Instead of having a unique write value for each pin
 				// write, assume that the initial value of the pin is 0
 				// and do a bitwise OR.
@@ -1111,7 +1090,7 @@ public class CycleCTranslator {
 			} else {
 				// Handle Internal pins.
 				SimplePin pin = (SimplePin) comp.getReferenceable();
-				String pinVar = this.opHandles.get(pin).getBusName(
+				String pinVar = opHandles.get(pin).getBusName(
 						pin.getXLatData().getSource());
 				outln("if (" + enable + ") { " + pinVar + " = " + dataValue
 						+ "; }");
@@ -1317,7 +1296,7 @@ public class CycleCTranslator {
 		public void visit(Scoreboard scoreboard) {
 			// A stallboard will be a feedback point in a block, thus
 			// we may have already created an OpHandle for it.
-			if (!this.opHandles.containsKey(scoreboard)) {
+			if (!opHandles.containsKey(scoreboard)) {
 				makeOpHandle(scoreboard);
 			}
 			super.visit(scoreboard);
@@ -1500,23 +1479,22 @@ public class CycleCTranslator {
 		}
 
 		private void preDeclare(OpHandle handle, Bus b) {
-			if (this.alternateDeclarationPS != null) {
-				this.alternateDeclarationPS.println(handle.declare(b));
+			if (alternateDeclarationPS != null) {
+				alternateDeclarationPS.println(handle.declare(b));
 			}
 		}
 
 		private OpHandle makeOpHandle(Component comp) {
 			// assert !this.opHandles.containsKey(comp) :
 			// "duplicate op handle for " + comp + " of " + comp.getOwner();
-			if (this.opHandles.containsKey(comp)) {
+			if (opHandles.containsKey(comp)) {
 				// System.out.println("WARNING: Repeated call to makeOpHandle for component "
 				// + comp + " of " + comp.showOwners());
-				return this.opHandles.get(comp);
+				return opHandles.get(comp);
 			}
 
-			OpHandle handle = new OpHandle(comp,
-					CycleCTranslator.this.nameCache);
-			this.opHandles.put(comp, handle);
+			OpHandle handle = new OpHandle(comp, nameCache);
+			opHandles.put(comp, handle);
 
 			return handle;
 		}
@@ -1570,7 +1548,7 @@ public class CycleCTranslator {
 				Component owner = bus.getOwner().getOwner();
 				assert opHandles.containsKey(owner) : "Unknown driver " + owner;
 				assert opHandles.containsKey(owner);
-				OpHandle handle = this.opHandles.get(owner);
+				OpHandle handle = opHandles.get(owner);
 				return handle.getBusName(bus);
 			}
 		}
@@ -1586,13 +1564,18 @@ public class CycleCTranslator {
 	//
 
 	public static class CycleCTranslatorException extends RuntimeException {
+		private static final long serialVersionUID = -5542531110540842047L;
+
 		public CycleCTranslatorException(String msg) {
 			super(msg);
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private static class UnsupportedCompileTypeException extends
 			CycleCTranslatorException {
+		private static final long serialVersionUID = 9173443035775914442L;
+
 		public UnsupportedCompileTypeException(String msg) {
 			super(msg);
 		}
@@ -1600,6 +1583,8 @@ public class CycleCTranslator {
 
 	private static class FileHandlingException extends
 			CycleCTranslatorException {
+		private static final long serialVersionUID = 6002577187474834056L;
+
 		public FileHandlingException(String msg) {
 			super(msg);
 		}
@@ -1607,6 +1592,8 @@ public class CycleCTranslator {
 
 	private static class UnexpectedStructureException extends
 			CycleCTranslatorException {
+		private static final long serialVersionUID = -4054912413950885741L;
+
 		public UnexpectedStructureException(String msg) {
 			super(msg);
 		}
@@ -1614,6 +1601,8 @@ public class CycleCTranslator {
 
 	private static class UnexpectedTraversalException extends
 			CycleCTranslatorException {
+		private static final long serialVersionUID = 3244085632475618560L;
+
 		public UnexpectedTraversalException(String msg) {
 			super(msg);
 		}
@@ -1621,6 +1610,8 @@ public class CycleCTranslator {
 
 	private static class ObsoleteTraversalException extends
 			CycleCTranslatorException {
+		private static final long serialVersionUID = 6836860953349806325L;
+
 		public ObsoleteTraversalException(String msg) {
 			super(msg);
 		}

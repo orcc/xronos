@@ -77,16 +77,16 @@ public class VPGenWrapper {
 	 *            a value of type 'File'
 	 */
 	public VPGenWrapper(IOHandler io, String fxnName, File simHeaderFile) {
-		this.ioHandle = io;
+		ioHandle = io;
 		this.fxnName = fxnName;
 		this.simHeaderFile = simHeaderFile;
-		this.headerFile = EngineThread.getGenericJob().getFileHandler()
+		headerFile = EngineThread.getGenericJob().getFileHandler()
 				.getFile(CycleCTranslateEngine.VPGEN_HEADER);
-		this.sourceFile = EngineThread.getGenericJob().getFileHandler()
+		sourceFile = EngineThread.getGenericJob().getFileHandler()
 				.getFile(CycleCTranslateEngine.VPGEN_WRAPPER);
 
-		this.fifoIFs = new ArrayList<FifoIF>(this.ioHandle.getInputs());
-		fifoIFs.addAll(this.ioHandle.getOutputs());
+		fifoIFs = new ArrayList<FifoIF>(ioHandle.getInputs());
+		fifoIFs.addAll(ioHandle.getOutputs());
 	}
 
 	public void generateVPWrapper(File cModel) throws IOException {
@@ -102,65 +102,65 @@ public class VPGenWrapper {
 	 */
 	private VarInits writeHeaderFile() throws IOException {
 		final VarInits varInits = new VarInits();
-		final PrintStream ps = new PrintStream(new FileOutputStream(
-				this.headerFile), true);
+		final PrintStream ps = new PrintStream(
+				new FileOutputStream(headerFile), true);
 
-		ps.println("#ifndef _" + this.fxnName + "_H_");
-		ps.println("#define _" + this.fxnName + "_H_");
+		ps.println("#ifndef _" + fxnName + "_H_");
+		ps.println("#define _" + fxnName + "_H_");
 		ps.println();
 		ps.println("#include \"pcore.h\"");
-		ps.println("#include \"" + this.simHeaderFile.getName() + "\"");
+		ps.println("#include \"" + simHeaderFile.getName() + "\"");
 		ps.println();
 
 		// Define the ports struct, one var for each port of the
 		// design, including the clock port.
 		ps.println("typedef struct ");
 		ps.println("{");
-		for (FifoIF fifo : this.fifoIFs) {
+		for (FifoIF fifo : fifoIFs) {
 			for (SimplePin pin : fifo.getPins()) {
 				ps.println("    UINT32 *" + getVPName(pin) + ";");
 			}
 		}
 		ps.println("    UINT32 *clk;");
-		ps.println("} " + this.fxnName + "_ports;");
+		ps.println("} " + fxnName + "_ports;");
 
 		// We dont use any generics
 		ps.println();
 		ps.println("typedef struct");
 		ps.println("{");
-		ps.println("} " + this.fxnName + "_generics;");
+		ps.println("} " + fxnName + "_generics;");
 
 		// Nor do we publish any of our internal registers
 		ps.println();
 		ps.println("typedef struct");
 		ps.println("{");
-		ps.println("} " + this.fxnName + "_regs;");
+		ps.println("} " + fxnName + "_regs;");
 
 		// Define the pcore instance for this function
 		ps.println();
-		ps.println("class " + this.fxnName + " : public pcore");
+		ps.println("class " + fxnName + " : public pcore");
 		ps.println("{");
 		ps.println(" private:");
 
 		// Create a private variable for each fsl input and output
 		// which is of the type that our simulation uses.
-		for (FifoIF fifo : this.ioHandle.getInputs()) {
+		for (FifoIF fifo : ioHandle.getInputs()) {
 			// final FifoIF fifo = (FifoIF)iter.next();
 			final String name = getVPName(fifo);
 			ps.println("    " + ioHandle.getInputType() + " " + name + ";");
 			for (SimplePin pin : fifo.getPins()) {
 				varInits.structMemberInits.add(name + "."
-						+ this.ioHandle.getMemberName(pin) + " = 0;");
+						+ ioHandle.getMemberName(pin) + " = 0;");
 			}
 			varInits.inputPointers.add(name);
 		}
-		for (FifoIF fifo : this.ioHandle.getOutputs()) {
+		for (FifoIF fifo : ioHandle.getOutputs()) {
 			// final FifoIF fifo = (FifoIF)iter.next();
 			final String name = getVPName(fifo);
 			ps.println("    " + ioHandle.getOutputType() + " " + name + ";");
 			for (SimplePin pin : fifo.getPins()) {
 				varInits.structMemberInits.add(name + "."
-						+ this.ioHandle.getMemberName(pin) + " = 0;");
+						+ ioHandle.getMemberName(pin) + " = 0;");
 			}
 			varInits.outputPointers.add(name);
 		}
@@ -175,9 +175,9 @@ public class VPGenWrapper {
 		ps.println();
 		ps.println(" public:");
 
-		ps.println("    " + this.fxnName + "_ports *ports;");
-		ps.println("    " + this.fxnName + "_generics *generics;");
-		ps.println("    " + this.fxnName + "_regs *regs;");
+		ps.println("    " + fxnName + "_ports *ports;");
+		ps.println("    " + fxnName + "_generics *generics;");
+		ps.println("    " + fxnName + "_regs *regs;");
 
 		// Provide prototypes for the API functions that VP uses.
 		ps.println("    UINT8 EvalAsyncOutputs();");
@@ -187,14 +187,14 @@ public class VPGenWrapper {
 
 		// A constructor for the pcore instance.
 		ps.println();
-		ps.println("    " + this.fxnName + "() ");
+		ps.println("    " + fxnName + "() ");
 		ps.println("    {");
 		ps.println("        InitModel();");
 		ps.println("    }");
 
 		// A destructor.
 		ps.println();
-		ps.println("    ~" + this.fxnName + "()");
+		ps.println("    ~" + fxnName + "()");
 		ps.println("    {");
 		ps.println("        delete ports;");
 		ps.println("        delete generics;");
@@ -217,48 +217,47 @@ public class VPGenWrapper {
 	 */
 	private void writeSourceFile(File cModel, VarInits varInits)
 			throws IOException {
-		final PrintStream ps = new PrintStream(new FileOutputStream(
-				this.sourceFile), true);
-		ps.println("#include \"" + this.headerFile.getName() + "\"");
+		final PrintStream ps = new PrintStream(
+				new FileOutputStream(sourceFile), true);
+		ps.println("#include \"" + headerFile.getName() + "\"");
 		ps.println("#include \"" + cModel.getName() + "\"");
 
 		//
 		// Generate the EvalAsyncOutputs function
 		//
 		ps.println();
-		ps.println("UINT8 " + this.fxnName + "::EvalAsyncOutputs()");
+		ps.println("UINT8 " + fxnName + "::EvalAsyncOutputs()");
 		ps.println("{");
 		// copy values from VP structures into our structures
-		for (FifoIF fifo : this.fifoIFs) {
+		for (FifoIF fifo : fifoIFs) {
 			final String base = getVPName(fifo);
 			for (SimplePin pin : fifo.getPins()) {
-				final String member = this.ioHandle.getMemberName(pin);
+				final String member = ioHandle.getMemberName(pin);
 				ps.println("    " + base + "." + member + " = *ports->"
 						+ getVPName(pin) + ";");
 			}
 		}
 
 		ps.println("    // Call update");
-		ps.println("    " + this.fxnName + "_update(" + I_PTR + ", " + O_PTR
-				+ ");");
+		ps.println("    " + fxnName + "_update(" + I_PTR + ", " + O_PTR + ");");
 
 		ps.println("    // Check to see if values changed");
 		ps.println("    UINT8 retVal = (");
 		// Store the terms in a list so that we get the "||" correct.
-		final List<String> compareTerms = new ArrayList();
-		final List<String> copyTerms = new ArrayList();
-		for (FifoIF fifo : this.fifoIFs) {
+		final List<String> compareTerms = new ArrayList<String>();
+		final List<String> copyTerms = new ArrayList<String>();
+		for (FifoIF fifo : fifoIFs) {
 			final String base = getVPName(fifo);
 			for (SimplePin outPin : fifo.getOutputPins()) {
 				compareTerms.add("(" + base + "."
-						+ this.ioHandle.getMemberName(outPin) + " != *ports->"
+						+ ioHandle.getMemberName(outPin) + " != *ports->"
 						+ getVPName(outPin) + ")");
 				copyTerms.add("*ports->" + getVPName(outPin) + " = " + base
-						+ "." + this.ioHandle.getMemberName(outPin) + ";");
+						+ "." + ioHandle.getMemberName(outPin) + ";");
 			}
 		}
-		for (Iterator iter = compareTerms.iterator(); iter.hasNext();) {
-			String term = (String) iter.next();
+		for (Iterator<String> iter = compareTerms.iterator(); iter.hasNext();) {
+			String term = iter.next();
 			String trail = (iter.hasNext()) ? " ||" : "";
 			ps.println("        " + term + trail);
 		}
@@ -279,7 +278,7 @@ public class VPGenWrapper {
 		// just for cmodelgen.
 		//
 		ps.println();
-		ps.println("void " + this.fxnName + "::clk_EvalSyncInputs()");
+		ps.println("void " + fxnName + "::clk_EvalSyncInputs()");
 		ps.println("{");
 		ps.println("    // This function intentionally left empty");
 		ps.println("}");
@@ -289,7 +288,7 @@ public class VPGenWrapper {
 		// most of the work is done.
 		//
 		ps.println();
-		ps.println("void " + this.fxnName + "::clk_UpdateSyncOutputs()");
+		ps.println("void " + fxnName + "::clk_UpdateSyncOutputs()");
 		ps.println("{");
 		ps.println("    // Call the clockEdge() function.");
 		ps.println("    // Check that the clock is in the '1' state, ie rising edge");
@@ -297,7 +296,7 @@ public class VPGenWrapper {
 		ps.println("    // core outputs to the vp outputs (yet).");
 		ps.println("    if (*ports->clk == 1)");
 		ps.println("    {");
-		ps.println("        " + this.fxnName + "_clockEdge();");
+		ps.println("        " + fxnName + "_clockEdge();");
 		ps.println("    }");
 		/*
 		 * I dont think that this needs to be done here. I believe that this
@@ -314,7 +313,7 @@ public class VPGenWrapper {
 		// all the global variables used in our model too.
 		//
 		ps.println();
-		ps.println("int " + this.fxnName + "::InitModel ()");
+		ps.println("int " + fxnName + "::InitModel ()");
 		ps.println("{");
 
 		writeVarInits(varInits, ps);
@@ -325,8 +324,8 @@ public class VPGenWrapper {
 		ps.println("    for (i=0; i < 5; i++)");
 		ps.println("    {");
 		ps.println("        // we init exists and full to 0, so no need to reset ports during these 5 cycles");
-		ps.println("        " + this.fxnName + "_update(iptr, optr);");
-		ps.println("        " + this.fxnName + "_clockEdge();");
+		ps.println("        " + fxnName + "_update(iptr, optr);");
+		ps.println("        " + fxnName + "_clockEdge();");
 		ps.println("    }");
 		ps.println("}");
 	}
@@ -334,9 +333,9 @@ public class VPGenWrapper {
 	private void writeVarInits(VarInits varInits, PrintStream ps) {
 		final String tab = "    ";
 		ps.println("// Initialization of the member vars");
-		ps.println(tab + "ports = new " + this.fxnName + "_ports();");
-		ps.println(tab + "generics = new " + this.fxnName + "_generics();");
-		ps.println(tab + "regs = new " + this.fxnName + "_regs();");
+		ps.println(tab + "ports = new " + fxnName + "_ports();");
+		ps.println(tab + "generics = new " + fxnName + "_generics();");
+		ps.println(tab + "regs = new " + fxnName + "_regs();");
 		for (int i = 0; i < varInits.inputPointers.size(); i++) {
 			ps.println(tab + "" + I_PTR + "[" + i + "] = &"
 					+ varInits.inputPointers.get(i) + ";");
@@ -346,7 +345,7 @@ public class VPGenWrapper {
 					+ varInits.outputPointers.get(i) + ";");
 		}
 
-		for (Iterator iter = varInits.structMemberInits.iterator(); iter
+		for (Iterator<String> iter = varInits.structMemberInits.iterator(); iter
 				.hasNext();) {
 			ps.println(tab + "" + iter.next());
 		}
@@ -363,7 +362,7 @@ public class VPGenWrapper {
 		return pin.getName().toLowerCase();
 	}
 
-	private final Map nameMap = new HashMap();
+	private final Map<FifoIF, String> nameMap = new HashMap<FifoIF, String>();
 
 	/**
 	 * Generates/caches a name for the given fifo interface. This is the name
@@ -375,7 +374,7 @@ public class VPGenWrapper {
 	 */
 	private String getVPName(FifoIF fifo) {
 		if (nameMap.containsKey(fifo))
-			return (String) nameMap.get(fifo);
+			return nameMap.get(fifo);
 
 		String prefix = fifo.getPins().iterator().next().getName();
 		prefix = prefix.substring(0, prefix.indexOf("_"));
@@ -386,9 +385,9 @@ public class VPGenWrapper {
 	}
 
 	private static class VarInits {
-		List inputPointers = new ArrayList();
-		List outputPointers = new ArrayList();
-		List structMemberInits = new ArrayList();
+		List<String> inputPointers = new ArrayList<String>();
+		List<String> outputPointers = new ArrayList<String>();
+		List<String> structMemberInits = new ArrayList<String>();
 	}
 
 }// VPGenWrapper

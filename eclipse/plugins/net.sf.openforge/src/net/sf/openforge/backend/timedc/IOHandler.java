@@ -97,8 +97,8 @@ public abstract class IOHandler {
 			fifoPins.addAll(fifo.getPins());
 		}
 
-		this.inputs = sort(ins);
-		this.outputs = sort(outs);
+		inputs = sort(ins);
+		outputs = sort(outs);
 	}
 
 	public boolean isHandled(SimplePin pin) {
@@ -121,33 +121,33 @@ public abstract class IOHandler {
 		// getAccessString and API functions
 
 		// Declare the inputs first, then the outputs
-		ps.println(this.getInputType() + " __inputShadow["
-				+ this.getInputCount() + "] = {");
-		for (int i = 0; i < this.getInputCount(); i++) {
-			ps.println(this.getInputTypeInitString()
-					+ (i < (this.getInputCount() - 1) ? "," : ""));
+		ps.println(getInputType() + " __inputShadow[" + getInputCount()
+				+ "] = {");
+		for (int i = 0; i < getInputCount(); i++) {
+			ps.println(getInputTypeInitString()
+					+ (i < (getInputCount() - 1) ? "," : ""));
 		}
 		ps.println("};");
 
-		ps.println(this.getInputDecl() + "= {");
-		for (int i = 0; i < this.getInputCount(); i++) {
+		ps.println(getInputDecl() + "= {");
+		for (int i = 0; i < getInputCount(); i++) {
 			ps.print("&__inputShadow[" + i + "]"
-					+ ((i < this.getInputCount() - 1) ? "," : ""));
+					+ ((i < getInputCount() - 1) ? "," : ""));
 		}
 		ps.println("};");
 
-		ps.println(this.getOutputType() + " __outputShadow["
-				+ this.getOutputCount() + "] = {");
-		for (int i = 0; i < this.getOutputCount(); i++) {
-			ps.println(this.getOutputTypeInitString()
-					+ (i < (this.getOutputCount() - 1) ? "," : ""));
+		ps.println(getOutputType() + " __outputShadow[" + getOutputCount()
+				+ "] = {");
+		for (int i = 0; i < getOutputCount(); i++) {
+			ps.println(getOutputTypeInitString()
+					+ (i < (getOutputCount() - 1) ? "," : ""));
 		}
 		ps.println("};");
 
-		ps.println(this.getOutputDecl() + "= {");
-		for (int i = 0; i < this.getOutputCount(); i++) {
+		ps.println(getOutputDecl() + "= {");
+		for (int i = 0; i < getOutputCount(); i++) {
 			ps.print("&__outputShadow[" + i + "]"
-					+ ((i < this.getOutputCount() - 1) ? "," : ""));
+					+ ((i < getOutputCount() - 1) ? "," : ""));
 		}
 		ps.println("};");
 	}
@@ -213,11 +213,11 @@ public abstract class IOHandler {
 	public abstract void writeSetValue(PrintStream ps, boolean declOnly);
 
 	protected List<FifoIF> getInputs() {
-		return this.inputs;
+		return inputs;
 	}
 
 	protected List<FifoIF> getOutputs() {
-		return this.outputs;
+		return outputs;
 	}
 
 	/** Writes the getID API call. */
@@ -360,19 +360,19 @@ public abstract class IOHandler {
 		}
 
 		@Override
-		protected List sort(List list) {
+		protected List<FifoIF> sort(List<FifoIF> list) {
 			// No sorting.
 			return Collections.unmodifiableList(list);
 		}
 
 		@Override
 		public String getInputType() {
-			return this.IN_TYPE;
+			return IN_TYPE;
 		}
 
 		@Override
 		public String getOutputType() {
-			return this.OUT_TYPE;
+			return OUT_TYPE;
 		}
 
 		@Override
@@ -534,12 +534,12 @@ public abstract class IOHandler {
 
 		@Override
 		public String getInputType() {
-			return this.IN_TYPE;
+			return IN_TYPE;
 		}
 
 		@Override
 		public String getOutputType() {
-			return this.OUT_TYPE;
+			return OUT_TYPE;
 		}
 
 		@Override
