@@ -56,7 +56,7 @@ add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/RESET
 <printNetworkOutputPorts(network)>
 
 ## FIFO FULL
-add wave -noupdate -divider -height 10 "FIFO FULL"
+add wave -noupdate -divider -height 20 "FIFO FULL"
 <network.instances: printInstanceInputBuffer(); separator="\n">
 <if(options.modelsimAnalysis)>
 run <options.simTime>ns
@@ -68,6 +68,7 @@ force -freeze sim:/<network.simpleName>/RESET 1 0
 run 500ns
 force -freeze sim:/<network.simpleName>/RESET 0 0
 run 100000ns
+wave zoom full
 <endif>
 <endif>
 >>
@@ -97,7 +98,7 @@ printInstanceInputBuffer(instance) ::=<<
 >>
 
 printInstanceIO(instance) ::=<<
-add wave -noupdate -divider -height 10 i_<instance.simpleName>
+add wave -noupdate -divider -height 20 i_<instance.simpleName>
 <instance.actor.inputs: printActorInput(); separator="\n">
 <instance.actor.outputs: printActorOutput(); separator="\n">
 >>
@@ -118,7 +119,7 @@ add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<if(o
 >>
 
 printOutputPorts(port) ::=<<
-add wave -noupdate -divider -height 10 no_<port.name>
+add wave -noupdate -divider -height 20 no_<port.name>
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_DATA 
 <if (!port.native)>
 add wave sim:/<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>/<port.name>_SEND 
