@@ -22,7 +22,6 @@ package net.sf.openforge.lim;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -150,8 +149,8 @@ public abstract class Latency implements Cloneable {
 	 *            a value of type 'Map'
 	 * @return a value of type 'Map'
 	 */
-	public static Map getLatest(Map inputMap) {
-		return getLatest(inputMap, Collections.EMPTY_SET);
+	public static Map<Object, Latency> getLatest(Map<?, Latency> inputMap) {
+		return getLatest(inputMap, Collections.emptySet());
 	}
 
 	/**
@@ -172,33 +171,31 @@ public abstract class Latency implements Cloneable {
 	 *            in the set, then one is selected randomly.
 	 * @return a 'Map' of Object=>{@link Latency Latency} pairings.
 	 */
-	public static Map getLatest(Map inputMap, Set preferred) {
+	public static Map<Object, Latency> getLatest(Map<?, Latency> inputMap,
+			Set<Object> preferred) {
 		if (_lim.db)
 			_lim.ln(_lim.LATENCY, "Getting latest latency from map: "
 					+ inputMap);
 		if (_lim.db) {
-			for (Iterator iter = inputMap.entrySet().iterator(); iter.hasNext();) {
-				Map.Entry entry = (Map.Entry) iter.next();
+			for (Map.Entry<?, Latency> entry : inputMap.entrySet()) {
 				_lim.ln(_lim.LATENCY,
 						"\t" + entry.getKey() + "=>" + entry.getValue());
 			}
 		}
 
 		// latestMap is a latency->object map
-		Map latestMap = new HashMap(inputMap.size());
-		for (Iterator iter = inputMap.entrySet().iterator(); iter.hasNext();) {
-			Map.Entry inputEntry = (Map.Entry) iter.next();
-			Latency latency = (Latency) inputEntry.getValue();
+		Map<Latency, Object> latestMap = new HashMap<Latency, Object>(
+				inputMap.size());
+		for (Map.Entry<?, Latency> inputEntry : inputMap.entrySet()) {
+			Latency latency = inputEntry.getValue();
 			Object value = inputEntry.getKey();
-			List toTrash = new LinkedList();
+			List<Latency> toTrash = new LinkedList<Latency>();
 			boolean addCurrent = false;
 
 			if (_lim.db)
 				_lim.ln(_lim.LATENCY, "Testing: " + latency);
-			for (Iterator testIter = latestMap.entrySet().iterator(); testIter
-					.hasNext();) {
-				Map.Entry entry = (Map.Entry) testIter.next();
-				Latency savedLatency = (Latency) entry.getKey();
+			for (Map.Entry<Latency, Object> entry : latestMap.entrySet()) {
+				Latency savedLatency = entry.getKey();
 				assert savedLatency != null;
 				Object savedValue = entry.getValue();
 				if (_lim.db)
@@ -246,8 +243,8 @@ public abstract class Latency implements Cloneable {
 				}
 			}
 
-			for (Iterator trashIter = toTrash.iterator(); trashIter.hasNext();) {
-				latestMap.remove(trashIter.next());
+			for (Latency lat : toTrash) {
+				latestMap.remove(lat);
 			}
 
 			if (addCurrent || latestMap.isEmpty()) {
@@ -257,17 +254,16 @@ public abstract class Latency implements Cloneable {
 
 		// turn the latency->object latestMap into an object->latency
 		// map.
-		Map retMap = new HashMap(latestMap.size());
-		for (Iterator iter = latestMap.entrySet().iterator(); iter.hasNext();) {
-			Map.Entry me = (Map.Entry) iter.next();
+		Map<Object, Latency> retMap = new HashMap<Object, Latency>(
+				latestMap.size());
+		for (Map.Entry<Latency, Object> me : latestMap.entrySet()) {
 			retMap.put(me.getValue(), me.getKey());
 		}
 
 		if (_lim.db)
 			_lim.ln(_lim.LATENCY, "Return map");
 		if (_lim.db) {
-			for (Iterator iter = retMap.entrySet().iterator(); iter.hasNext();) {
-				Map.Entry entry = (Map.Entry) iter.next();
+			for (Map.Entry<Object, Latency> entry : retMap.entrySet()) {
 				_lim.ln(_lim.LATENCY,
 						"\t" + entry.getKey() + "=>" + entry.getValue());
 			}

@@ -297,11 +297,11 @@ class EntrySchedule {
 		for (Bus bus : buses) {
 			busLatencies.put(bus, tracker.getLatency(bus));
 		}
-		final Map maxLatencies = Latency.getLatest(busLatencies);
+		final Map<Object, Latency> maxLatencies = Latency
+				.getLatest(busLatencies);
 		assert maxLatencies.size() == 1 : "unable to balance control Buses";
 
-		final Latency maxLatency = (Latency) maxLatencies.values().iterator()
-				.next();
+		final Latency maxLatency = maxLatencies.values().iterator().next();
 		assert maxLatency.isFixed() : "unable to balance control Bus with unfixed Latency";
 		final int maxClocks = maxLatency.getMaxClocks();
 

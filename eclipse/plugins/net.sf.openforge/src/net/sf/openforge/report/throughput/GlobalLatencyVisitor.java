@@ -21,286 +21,295 @@
 
 package net.sf.openforge.report.throughput;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Call;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.DataFlowVisitor;
+import net.sf.openforge.lim.Dependency;
+import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.Entry;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.InBuf;
+import net.sf.openforge.lim.Latch;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.Mux;
+import net.sf.openforge.lim.OutBuf;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Scoreboard;
+import net.sf.openforge.lim.Task;
+import net.sf.openforge.lim.Visitor;
+import net.sf.openforge.lim.memory.MemoryRead;
+import net.sf.openforge.lim.memory.MemoryWrite;
 
 /**
- * GlobalLatencyVisitor will calculate the latency of every component
- * in the LIM (actually the latency of every Bus in the LIM) and store
- * it in a Map.  This in intended to be used by the
- * ThroughtputAnalyzer which means that the data isn't even calculated
- * unless the design is balanced during scheduling.  This class makes
- * use of the latency information annotated on the Exits of each
+ * GlobalLatencyVisitor will calculate the latency of every component in the LIM
+ * (actually the latency of every Bus in the LIM) and store it in a Map. This in
+ * intended to be used by the ThroughtputAnalyzer which means that the data
+ * isn't even calculated unless the design is balanced during scheduling. This
+ * class makes use of the latency information annotated on the Exits of each
  * component by scheduling.
- *
- *
- * <p>Created: Wed Jan 15 15:28:55 2003
- *
+ * 
+ * 
+ * <p>
+ * Created: Wed Jan 15 15:28:55 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: GlobalLatencyVisitor.java 109 2006-02-24 18:10:34Z imiller $
  */
-public class GlobalLatencyVisitor extends DataFlowVisitor implements Visitor
-{
-    private static final String _RCS_ = "$Rev: 109 $";
+public class GlobalLatencyVisitor extends DataFlowVisitor implements Visitor {
 
-    /** A map of Bus -> Latency for every bus in the design. */
-    private Map latencyMap = new HashMap();
-    /** A map of Port -> Latency for each procedure body port. */
-    private Map procedurePortLatency = new HashMap();
-    
-    /** A map of Component -> Latency for every component.  The
-     * latency is the calculated latest latency for any input of that
-     * component. */
-    private Map inputLatencyMap = new HashMap();
-    
-    public GlobalLatencyVisitor ()
-    {
-        setRunForward(true);
-    }
+	/** A map of Bus -> Latency for every bus in the design. */
+	private Map<Bus, Latency> latencyMap = new HashMap<Bus, Latency>();
+	/** A map of Port -> Latency for each procedure body port. */
+	private Map<Port, Latency> procedurePortLatency = new HashMap<Port, Latency>();
 
-    public Map getLatencyMap ()
-    {
-        return this.latencyMap;
-    }
+	/**
+	 * A map of Component -> Latency for every component. The latency is the
+	 * calculated latest latency for any input of that component.
+	 */
+	private Map<Component, Latency> inputLatencyMap = new HashMap<Component, Latency>();
 
-    public Map getInputLatencyMap ()
-    {
-        return this.inputLatencyMap;
-    }
+	public GlobalLatencyVisitor() {
+		setRunForward(true);
+	}
 
-    public void visit (Design des)
-    {
-        //if (_throughput.db) _throughput.d.launchXGraph(des, false);
-        super.visit(des);
-    }
+	public Map<Bus, Latency> getLatencyMap() {
+		return latencyMap;
+	}
 
-    public void visit (Task task)
-    {
-        if (_throughput.db) _throughput.d.launchXGraph(task.getCall().getProcedure().getBody(), "foo", false);
-        if (_throughput.db) _throughput.d.launchGraph(task.getCall().getProcedure().getBody(), "foo", net.sf.openforge.util.Debug.GR_DEFAULT, false);
-        super.visit(task);
-    }
+	public Map<Component, Latency> getInputLatencyMap() {
+		return inputLatencyMap;
+	}
 
-    public void visit (Latch comp)
-    {
-        preFilter(comp);
-        // Treat the latch as atomic.
-        //traverse(comp);
-        postFilter(comp);
-    }
+	@Override
+	public void visit(Design des) {
+		// if (_throughput.db) _throughput.d.launchXGraph(des, false);
+		super.visit(des);
+	}
 
-    public void visit (Mux comp)
-    {
-        preFilter(comp);
-        Map latencies = Latency.getLatest(getInputLatencies(comp));
-        Latency latency = Latency.or(new HashSet(latencies.values()), comp.getExit(Exit.DONE));
-        this.inputLatencyMap.put(comp, latency);
-        updateBuses(comp, latency);
-    }
+	@Override
+	public void visit(Task task) {
+		if (_throughput.db)
+			_throughput.d.launchXGraph(task.getCall().getProcedure().getBody(),
+					"foo", false);
+		if (_throughput.db)
+			_throughput.d.launchGraph(task.getCall().getProcedure().getBody(),
+					"foo", net.sf.openforge.util.Debug.GR_DEFAULT, false);
+		super.visit(task);
+	}
 
-    public void visit (Scoreboard comp)
-    {
-        preFilter(comp);
-        // Treat the scoreboard as atomic.
-        //traverse(comp);
-        Map latencies = Latency.getLatest(getInputLatencies(comp));
-        Latency latency = Latency.and(new HashSet(latencies.values()), comp.getExit(Exit.DONE));
-        this.inputLatencyMap.put(comp, latency);
-        updateBuses(comp, latency);
-    }
+	@Override
+	public void visit(Latch comp) {
+		preFilter(comp);
+		// Treat the latch as atomic.
+		// traverse(comp);
+		postFilter(comp);
+	}
 
-    public void visit (Call comp)
-    {
-        preFilter(comp);
-        for (Iterator iter = comp.getPorts().iterator(); iter.hasNext();)
-        {
-            Port port = (Port)iter.next();
-            Port procPort = comp.getProcedurePort(port);
-            Latency portLatency = getLatency(port);
-            this.procedurePortLatency.put(procPort, portLatency);
-        }
-        traverse(comp);
-        postFilter(comp);
-    }
+	@Override
+	public void visit(Mux comp) {
+		preFilter(comp);
+		Map<?, Latency> latencies = Latency.getLatest(getInputLatencies(comp));
+		Latency latency = Latency.or(new HashSet<Latency>(latencies.values()),
+				comp.getExit(Exit.DONE));
+		inputLatencyMap.put(comp, latency);
+		updateBuses(comp, latency);
+	}
 
-    public void visit (InBuf comp)
-    {
-        preFilter(comp);
-        traverse(comp);
-        
-        if (_throughput.db) _throughput.d.ln(_throughput.GLV,"Comp: " + comp.show());
-        Latency goLatency = getLatency(comp.getGoBus().getPeer());
-        for (Iterator iter = comp.getBuses().iterator(); iter.hasNext();)
-        {
-            Bus bus = (Bus)iter.next();
-            Port port = bus.getPeer();
-            Latency lat = getLatency(port);
+	@Override
+	public void visit(Scoreboard comp) {
+		preFilter(comp);
+		// Treat the scoreboard as atomic.
+		// traverse(comp);
+		Map<?, Latency> latencies = Latency.getLatest(getInputLatencies(comp));
+		Latency latency = Latency.and(new HashSet<Latency>(latencies.values()),
+				comp.getExit(Exit.DONE));
+		inputLatencyMap.put(comp, latency);
+		updateBuses(comp, latency);
+	}
 
-            //
-            // A module is enabled by its GO which, by definition,
-            // must take into account all (real) inputs.  Sideband
-            // data may come in via an input as well, but it will seem
-            // as though it arrives at time 0 since it comes straight
-            // from the top level inbuf.  In truth it comes in at the
-            // time that correlates with the time that the 'fetch'
-            // signal was sent to the global.
-            //
-            if (goLatency.isGT(lat))
-                lat = goLatency;
-            putLatency(bus, lat);
-        }
-    }
+	@Override
+	public void visit(Call comp) {
+		preFilter(comp);
+		for (Port port : comp.getPorts()) {
+			Port procPort = comp.getProcedurePort(port);
+			Latency portLatency = getLatency(port);
+			procedurePortLatency.put(procPort, portLatency);
+		}
+		traverse(comp);
+		postFilter(comp);
+	}
 
-    public void visit (OutBuf comp)
-    {
-        // Scheduling should leave the exit latencies correct for each
-        // module.  So, when we process each module as a component
-        // (during postFilter) we'll use that latency.  Thus we don't
-        // need to push our calculated latency out.
-        super.visit(comp);
-    }
-    
-    
-    /**
-     * Override the method in DataFlowVisitor because we don't want to
-     * traverse the physical component.  Scheduling only annotates the
-     * Latency on the actual MemoryRead component and not on anything
-     * in the physical implementation.  This overridden method ignores
-     * the physical, and thus acts on the same componentry as
-     * scheduling.
-     */
-    public void visit(MemoryRead memoryRead)
-    {
-        preFilter(memoryRead);
-        traverse(memoryRead);
-        postFilter(memoryRead);
-    }
-    
-    /**
-     * Override the method in DataFlowVisitor because we don't want to
-     * traverse the physical component.  Scheduling only annotates the
-     * Latency on the actual MemoryWrite component and not on anything
-     * in the physical implementation.  This overridden method ignores
-     * the physical, and thus acts on the same componentry as
-     * scheduling.
-     */
-    public void visit(MemoryWrite memoryWrite)
-    {
-        preFilter(memoryWrite);
-        traverse(memoryWrite);
-        postFilter(memoryWrite);
-    }
-    
-    protected void postFilterAny (Component comp)
-    {
-        super.postFilterAny(comp);
-        
-        final Map latest = Latency.getLatest(getInputLatencies(comp));
-        assert latest.keySet().size() == 1 : comp + " " + comp.showOwners() + " " + latest;
-        final Latency inputLatency = (Latency)latest.values().iterator().next();
+	@Override
+	public void visit(InBuf comp) {
+		preFilter(comp);
+		traverse(comp);
 
-        this.inputLatencyMap.put(comp, inputLatency);
-        
-        updateBuses(comp, inputLatency);
-    }
+		if (_throughput.db)
+			_throughput.d.ln(_throughput.GLV, "Comp: " + comp.show());
+		Latency goLatency = getLatency(comp.getGoBus().getPeer());
+		for (Bus bus : comp.getBuses()) {
+			Port port = bus.getPeer();
+			Latency lat = getLatency(port);
 
-    private void updateBuses (Component comp, Latency inputLatency)
-    {
-        if (_throughput.db) _throughput.d.ln(_throughput.GLV,"Comp: " + comp.show());
-        for (Iterator iter = comp.getBuses().iterator(); iter.hasNext();)
-        {
-            final Bus bus = (Bus)iter.next();
-            final Exit exit = bus.getOwner();
-            if (_throughput.db) _throughput.d.ln(_throughput.GLV,"  exit " + exit.getTag());
-            if (exit.getTag() != null && exit.getTag().getType() == Exit.SIDEBAND)
-                continue;
-            final Latency exitLatency = bus.getOwner().getLatency();
-            if (_throughput.db) _throughput.d.ln(_throughput.GLV,"  ->bus " + bus + " exit " + exit + " lat " + exitLatency);
-            final Latency busLatency = exitLatency.addTo(inputLatency);
-            putLatency(bus, busLatency);
-        }
-    }
+			//
+			// A module is enabled by its GO which, by definition,
+			// must take into account all (real) inputs. Sideband
+			// data may come in via an input as well, but it will seem
+			// as though it arrives at time 0 since it comes straight
+			// from the top level inbuf. In truth it comes in at the
+			// time that correlates with the time that the 'fetch'
+			// signal was sent to the global.
+			//
+			if (goLatency.isGT(lat))
+				lat = goLatency;
+			putLatency(bus, lat);
+		}
+	}
 
-    private Map getInputLatencies (Component comp)
-    {
-        final Map map = new HashMap();
-        for (Iterator iter = comp.getPorts().iterator(); iter.hasNext();)
-        {
-            final Port port = (Port)iter.next();
-            final Latency portLatency = getLatency(port);
-            if (_throughput.db) _throughput.d.ln(_throughput.GLV," p: " + port + " lat " + portLatency);
-            map.put(port, portLatency);
-        }
+	@Override
+	public void visit(OutBuf comp) {
+		// Scheduling should leave the exit latencies correct for each
+		// module. So, when we process each module as a component
+		// (during postFilter) we'll use that latency. Thus we don't
+		// need to push our calculated latency out.
+		super.visit(comp);
+	}
 
-        // The latencies of all dependecies must be considered as well
-        // since scheduling may not create an explicit bus for each
-        // dependency if it has figured out that a bus isn't needed
-        // (eg a register read is 'always on' and thus needs no
-        // enables).  We could probably get away with using just
-        // resource and wait dependencies, but we are using all deps
-        // to be safe.
-        for (Iterator iter = comp.getPorts().iterator(); iter.hasNext();)
-        {
-            Port port = (Port)iter.next();
-            for (Iterator entryIter = comp.getEntries().iterator(); entryIter.hasNext();)
-            {
-                Entry entry = (Entry)entryIter.next();
-                for (Iterator depIter = entry.getDependencies(port).iterator(); depIter.hasNext();)
-                {
-                    Dependency dep = (Dependency)depIter.next();
-                    Latency depLat = getLatency(dep.getLogicalBus());
-                    if (_throughput.db) _throughput.d.ln(_throughput.GLV," d: " + dep + " lat " + depLat);
-                    map.put(dep, depLat);
-                }
-            }
-        }
-        
-        if (map.keySet().size() == 0)
-        {
-            map.put(new Object(), Latency.ZERO);
-        }
-        
-        return map;
-    }
-    
-    private void putLatency (Bus bus, Latency lat)
-    {
-        this.latencyMap.put(bus, lat);
-        if (_throughput.db) _throughput.d.ln(_throughput.GLV,"\tBus " + bus + " latency " + lat);
-    }
-    
-    private Latency getLatency (Port port)
-    {
-        Bus bus = port.getBus();
+	/**
+	 * Override the method in DataFlowVisitor because we don't want to traverse
+	 * the physical component. Scheduling only annotates the Latency on the
+	 * actual MemoryRead component and not on anything in the physical
+	 * implementation. This overridden method ignores the physical, and thus
+	 * acts on the same componentry as scheduling.
+	 */
+	@Override
+	public void visit(MemoryRead memoryRead) {
+		preFilter(memoryRead);
+		traverse(memoryRead);
+		postFilter(memoryRead);
+	}
 
-        if (bus == null)
-        {
-            // May be a procedure port, otherwise, default to 0.
-            Latency latency = (Latency)this.procedurePortLatency.get(port);
-            if (latency == null)
-            {
-                latency = Latency.ZERO;
-            }
-            
-            return latency;
-        }
-        
-        return getLatency(bus);
-    }
-    
-    private Latency getLatency (Bus bus)
-    {
-        Latency lat = (Latency)this.latencyMap.get(bus);
+	/**
+	 * Override the method in DataFlowVisitor because we don't want to traverse
+	 * the physical component. Scheduling only annotates the Latency on the
+	 * actual MemoryWrite component and not on anything in the physical
+	 * implementation. This overridden method ignores the physical, and thus
+	 * acts on the same componentry as scheduling.
+	 */
+	@Override
+	public void visit(MemoryWrite memoryWrite) {
+		preFilter(memoryWrite);
+		traverse(memoryWrite);
+		postFilter(memoryWrite);
+	}
 
-        if (lat == null)
-        {
-            lat = Latency.ZERO;
-            this.latencyMap.put(bus, lat);
-        }
-        
-        return lat;
-    }
-    
+	@Override
+	protected void postFilterAny(Component comp) {
+		super.postFilterAny(comp);
+
+		final Map<?, Latency> latest = Latency
+				.getLatest(getInputLatencies(comp));
+		assert latest.keySet().size() == 1 : comp + " " + comp.showOwners()
+				+ " " + latest;
+		final Latency inputLatency = latest.values().iterator().next();
+
+		inputLatencyMap.put(comp, inputLatency);
+
+		updateBuses(comp, inputLatency);
+	}
+
+	private void updateBuses(Component comp, Latency inputLatency) {
+		if (_throughput.db)
+			_throughput.d.ln(_throughput.GLV, "Comp: " + comp.show());
+		for (Bus bus : comp.getBuses()) {
+			final Exit exit = bus.getOwner();
+			if (_throughput.db)
+				_throughput.d.ln(_throughput.GLV, "  exit " + exit.getTag());
+			if (exit.getTag() != null
+					&& exit.getTag().getType() == Exit.SIDEBAND)
+				continue;
+			final Latency exitLatency = bus.getOwner().getLatency();
+			if (_throughput.db)
+				_throughput.d.ln(_throughput.GLV, "  ->bus " + bus + " exit "
+						+ exit + " lat " + exitLatency);
+			final Latency busLatency = exitLatency.addTo(inputLatency);
+			putLatency(bus, busLatency);
+		}
+	}
+
+	private Map<Object, Latency> getInputLatencies(Component comp) {
+		final Map<Object, Latency> map = new HashMap<Object, Latency>();
+		for (Port port : comp.getPorts()) {
+			final Latency portLatency = getLatency(port);
+			if (_throughput.db)
+				_throughput.d.ln(_throughput.GLV, " p: " + port + " lat "
+						+ portLatency);
+			map.put(port, portLatency);
+		}
+
+		// The latencies of all dependecies must be considered as well
+		// since scheduling may not create an explicit bus for each
+		// dependency if it has figured out that a bus isn't needed
+		// (eg a register read is 'always on' and thus needs no
+		// enables). We could probably get away with using just
+		// resource and wait dependencies, but we are using all deps
+		// to be safe.
+		for (Port port : comp.getPorts()) {
+			for (Entry entry : comp.getEntries()) {
+				for (Dependency dep : entry.getDependencies(port)) {
+					Latency depLat = getLatency(dep.getLogicalBus());
+					if (_throughput.db)
+						_throughput.d.ln(_throughput.GLV, " d: " + dep
+								+ " lat " + depLat);
+					map.put(dep, depLat);
+				}
+			}
+		}
+
+		if (map.keySet().size() == 0) {
+			map.put(new Object(), Latency.ZERO);
+		}
+
+		return map;
+	}
+
+	private void putLatency(Bus bus, Latency lat) {
+		latencyMap.put(bus, lat);
+		if (_throughput.db)
+			_throughput.d.ln(_throughput.GLV, "\tBus " + bus + " latency "
+					+ lat);
+	}
+
+	private Latency getLatency(Port port) {
+		Bus bus = port.getBus();
+
+		if (bus == null) {
+			// May be a procedure port, otherwise, default to 0.
+			Latency latency = procedurePortLatency.get(port);
+			if (latency == null) {
+				latency = Latency.ZERO;
+			}
+
+			return latency;
+		}
+
+		return getLatency(bus);
+	}
+
+	private Latency getLatency(Bus bus) {
+		Latency lat = latencyMap.get(bus);
+
+		if (lat == null) {
+			lat = Latency.ZERO;
+			latencyMap.put(bus, lat);
+		}
+
+		return lat;
+	}
+
 }// GlobalLatencyVisitor

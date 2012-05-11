@@ -20,47 +20,43 @@
  */
 package net.sf.openforge.report;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ResourceBank tracks the resources within a graph
- *
+ * 
  * @author ysyu
  * @version $Id: ResourceBank.java 2 2005-06-09 20:00:48Z imiller $
  */
-public abstract class ResourceBank
-{
-    private final static String _RCS_ = "$Rev: 2 $";
+public abstract class ResourceBank {
 
-    /** a list of resources */
-    private List resources = new ArrayList();
-    
-    public ResourceBank()
-    {
-    }
+	/** a list of resources */
+	private List<Object> resources = new ArrayList<Object>();
 
-    /** 
-     * @return a mapping of resources to their counts
-     */
-    public abstract Map generateReport();
+	public ResourceBank() {
+	}
 
-    /**
-     * Add a resource discovered in a graph
-     *
-     * @param o a resource
-     */
-    public void addResource(Object o)
-    {
-        resources.add(o);
-    }
+	/**
+	 * @return a mapping of resources to their counts
+	 */
+	public abstract Map generateReport();
 
-    /**
-     * @return a list of resources used in a graph
-     */
-    public List getResources()
-    {
-        return resources;
-    }
+	/**
+	 * Add a resource discovered in a graph
+	 * 
+	 * @param o
+	 *            a resource
+	 */
+	public void addResource(Object o) {
+		resources.add(o);
+	}
+
+	/**
+	 * @return a list of resources used in a graph
+	 */
+	public List<Object> getResources() {
+		return resources;
+	}
 }
-
-        

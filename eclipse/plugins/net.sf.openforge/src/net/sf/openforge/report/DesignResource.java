@@ -20,71 +20,63 @@
  */
 package net.sf.openforge.report;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
-import net.sf.openforge.lim.*;
-
+import net.sf.openforge.lim.Design;
 
 /**
  * DesignResource is responsible to report all resources in a Design
- *
+ * 
  * @author ysyu
  * @version $Id: DesignResource.java 132 2006-04-10 15:43:06Z imiller $
  */
-public class DesignResource extends ResourceBank
-{
-    private final static String _RCS_ = "$Rev: 132 $";
-    
-    /** The design that owns the resources */
-    private Design design = null;
+public class DesignResource extends ResourceBank {
 
-    public DesignResource(Design design)
-    {
-        super();
-        this.design = design;
-    }
+	/** The design that owns the resources */
+	private Design design = null;
 
-    /**
-     * Proceduces a mapping of resource counts by total up all the resources
-     * in task(s) of this design.
-     *
-     * @return a mapping of resources to their counts in this design
-     */
-    public Map generateReport()
-    {
-        Map total = new HashMap();
-        for(Iterator iter = getResources().iterator(); iter.hasNext();)
-        {
-            TaskResource tResource = (TaskResource)iter.next();
-            Map tReport = tResource.generateReport();
-            for(Iterator riter = tReport.keySet().iterator(); riter.hasNext();)
-            {
-                Class klass = (Class)riter.next();
-                if(total.containsKey(klass))
-                {
-                    Set left = (Set)total.get(klass);
-                    Set right = (Set)tReport.get(klass);
-                    Set combined = new HashSet();
-                    combined.addAll(left);
-                    combined.addAll(right);
-                    total.put(klass, combined);
-                }
-                else
-                {
-                    total.put(klass, tReport.get(klass));
-                }
-            }
-        }
-        return total;
-    }
+	public DesignResource(Design design) {
+		super();
+		this.design = design;
+	}
 
-    /**
-     * @return the design that owns these resources.
-     */
-    public Design getDesign()
-    {
-        return this.design;
-    }
+	/**
+	 * Proceduces a mapping of resource counts by total up all the resources in
+	 * task(s) of this design.
+	 * 
+	 * @return a mapurces to their counts in this design
+	 */
+	@Override
+	public Map generateReport() {
+		Map total = new HashMap();
+		for (Iterator iter = getResources().iterator(); iter.hasNext();) {
+			TaskResource tResource = (TaskResource) iter.next();
+			Map tReport = tResource.generateReport();
+			for (Iterator riter = tReport.keySet().iterator(); riter.hasNext();) {
+				Class klass = (Class) riter.next();
+				if (total.containsKey(klass)) {
+					Set left = (Set) total.get(klass);
+					Set right = (Set) tReport.get(klass);
+					Set combined = new HashSet();
+					combined.addAll(left);
+					combined.addAll(right);
+					total.put(klass, combined);
+				} else {
+					total.put(klass, tReport.get(klass));
+				}
+			}
+		}
+		return total;
+	}
+
+	/**
+	 * @return the design that owns these resources.
+	 */
+	public Design getDesign() {
+		return design;
+	}
 }
-
-        

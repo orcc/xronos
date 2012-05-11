@@ -21,52 +21,48 @@
 
 package net.sf.openforge.report.throughput;
 
-import java.io.*;
+import java.io.PrintStream;
 
-import net.sf.openforge.lim.*;
+import net.sf.openforge.lim.Call;
 
 /**
- * ThroughputLocalLimit reflects the limitation on throughput imposed by a 
- * user specified limit in the task.
+ * ThroughputLocalLimit reflects the limitation on throughput imposed by a user
+ * specified limit in the task.
  */
-public class ThroughputLocalLimit implements ThroughputLimit
-{
-    private Call resource;
-    
-    public ThroughputLocalLimit (Call call)
-    {
-        this.resource = call;
-    }
+public class ThroughputLocalLimit implements ThroughputLimit {
+	private Call resource;
 
-    /**
-     * Returns the maximum number of cycles that you must wait before
-     * asserting new data to the method being characterized by this
-     * instance.
-     */
-    public int getLimit ()
-    {
-        int limit = resource.getThroughputLocal();
-        return limit;
-    }
+	public ThroughputLocalLimit(Call call) {
+		resource = call;
+	}
 
-    /**
-     * Writes a report string to the stream indicated detailing the
-     * constraints that this method call puts on throughput.
-     */
-    public void writeReport (PrintStream ps, int tabDepth)
-    {
-        ps.println("Resource: " 
-                   + resource.showIDLogical() 
-                   + " method/function "
-                   + resource.getProcedure().getBody().showIDLocation());
-        final int limit = getLimit();
-        String string = (limit < 0) ? "indeterminate":Integer.toString(limit);
-        ps.println("\tclocks: " + string);
-    }
+	/**
+	 * Returns the maximum number of cycles that you must wait before asserting
+	 * new data to the method being characterized by this instance.
+	 */
+	@Override
+	public int getLimit() {
+		int limit = resource.getThroughputLocal();
+		return limit;
+	}
 
-    public String toString ()
-    {
-        return "ThroughputLocalLimit for " + this.resource + " " + getLimit() + " clocks";
-    }
+	/**
+	 * Writes a report string to the stream indicated detailing the constraints
+	 * that this method call puts on throughput.
+	 */
+	@Override
+	public void writeReport(PrintStream ps, int tabDepth) {
+		ps.println("Resource: " + resource.showIDLogical()
+				+ " method/function "
+				+ resource.getProcedure().getBody().showIDLocation());
+		final int limit = getLimit();
+		String string = (limit < 0) ? "indeterminate" : Integer.toString(limit);
+		ps.println("\tclocks: " + string);
+	}
+
+	@Override
+	public String toString() {
+		return "ThroughputLocalLimit for " + resource + " " + getLimit()
+				+ " clocks";
+	}
 }
-

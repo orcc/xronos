@@ -21,55 +21,52 @@
 
 package net.sf.openforge.report.throughput;
 
-import java.io.*;
+import java.io.PrintStream;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.util.naming.*;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.Loop;
+import net.sf.openforge.util.naming.ID;
 
 /**
- * LoopLimit reflects the limitation on throughput imposed by a loop
- * in the task.  The limitation is equal to the latency of the loop
+ * LoopLimit reflects the limitation on throughput imposed by a loop in the
+ * task. The limitation is equal to the latency of the loop
  */
-public class LoopLimit implements ThroughputLimit
-{
-    private Loop resource;
-    private ID location;
+public class LoopLimit implements ThroughputLimit {
+	private Loop resource;
+	private ID location;
 
-    public LoopLimit (Loop loop, ID loc)
-    {
-        this.resource = loop;
-        this.location = loc;
-    }
+	public LoopLimit(Loop loop, ID loc) {
+		resource = loop;
+		location = loc;
+	}
 
-    /**
-     * Returns the maximum number of cycles that you must wait before
-     * asserting new data to the loop being characterized by this
-     * instance.
-     */
-    public int getLimit ()
-    {
-        Latency lat = this.resource.getLatency();
-        int limit = (lat == null) ? -1:lat.getMaxClocks();
-        return limit;
-    }
+	/**
+	 * Returns the maximum number of cycles that you must wait before asserting
+	 * new data to the loop being characterized by this instance.
+	 */
+	@Override
+	public int getLimit() {
+		Latency lat = resource.getLatency();
+		int limit = (lat == null) ? -1 : lat.getMaxClocks();
+		return limit;
+	}
 
-    /**
-     * Writes a report string to the stream indicated detailing the
-     * constraints that this loop puts on throughput.
-     */
-    public void writeReport (PrintStream ps, int tabDepth)
-    {
-        IDSourceInfo info = location.getIDSourceInfo();
-        ps.println("Resource: " + resource.showIDLocation() + 
-            " in method/function '" + location.showIDLogical() + "'");
-        final int limit = getLimit();
-        String string = (limit < 0) ? "indeterminate":Integer.toString(limit);
-        ps.println("\tclocks: " + string);
-    }
+	/**
+	 * Writes a report string to the stream indicated detailing the constraints
+	 * that this loop puts on throughput.
+	 */
+	@Override
+	public void writeReport(PrintStream ps, int tabDepth) {
+		// IDSourceInfo info = location.getIDSourceInfo();
+		ps.println("Resource: " + resource.showIDLocation()
+				+ " in method/function '" + location.showIDLogical() + "'");
+		final int limit = getLimit();
+		String string = (limit < 0) ? "indeterminate" : Integer.toString(limit);
+		ps.println("\tclocks: " + string);
+	}
 
-    public String toString ()
-    {
-        return "LoopLimit for " + this.resource + " " + getLimit() + " clocks";
-    }
+	@Override
+	public String toString() {
+		return "LoopLimit for " + resource + " " + getLimit() + " clocks";
+	}
 }
-

@@ -21,114 +21,106 @@
 
 package net.sf.openforge.report.throughput;
 
-import java.util.*;
-import java.io.*;
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.memory.*;
-import net.sf.openforge.util.naming.*;
+import net.sf.openforge.lim.Access;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.Task;
+import net.sf.openforge.lim.memory.LogicalMemoryPort;
+import net.sf.openforge.util.naming.ID;
 
 /**
- * MemAddrLimit is a ThroughputLimit that is used for tracking the
- * limitation that a particular MemoryPort address port puts on a
- * design.  Because we must guarantee that no two accesses use that
- * address port simultaneously, there is a limitation that the method
- * cannot be re-called until the last access (regardless of the first
- * access type) has completed.  This limitation on throughput is not
- * dependent on the backing data remaining consistent, but rather
- * ensuring that no 2 accesses collide on the port.
+ * MemAddrLimit is a ThroughputLimit that is used for tracking the limitation
+ * that a particular MemoryPort address port puts on a design. Because we must
+ * guarantee that no two accesses use that address port simultaneously, there is
+ * a limitation that the method cannot be re-called until the last access
+ * (regardless of the first access type) has completed. This limitation on
+ * throughput is not dependent on the backing data remaining consistent, but
+ * rather ensuring that no 2 accesses collide on the port.
  * <p>
- * <b>NOTE: More advanced analysis could be used to detect if the
- * suggested GO spacing would keep the accesses from colliding.  In
- * that case the restriction based on this limit could be relaxed.</b>
+ * <b>NOTE: More advanced analysis could be used to detect if the suggested GO
+ * spacing would keep the accesses from colliding. In that case the restriction
+ * based on this limit could be relaxed.</b>
  */
-public class MemAddrLimit implements ThroughputLimit
-{
-    private LogicalMemoryPort resource;
-    private MemMark base;
-    private Map latest;
+public class MemAddrLimit implements ThroughputLimit {
+	private LogicalMemoryPort resource;
+	private MemMark base;
+	private Map<Object, Latency> latest;
 
-    public MemAddrLimit (LogicalMemoryPort resource, Access base, Latency lat, ID location)
-    {
-        this.resource = resource;
-        this.base = new MemMark(base, lat, location);
-        this.latest = new HashMap();
-    }
-    
-    /**
-     * Marks the given access as another access to the resource being
-     * tracked here.
-     */
-    public void mark (Access access, Latency lat, ID location)
-    {
-        this.latest.put(new MemMark(access, lat, location), lat);
-        this.latest = Latency.getLatest(latest);
-    }
+	public MemAddrLimit(LogicalMemoryPort resource, Access base, Latency lat,
+			ID location) {
+		this.resource = resource;
+		this.base = new MemMark(base, lat, location);
+		latest = new HashMap<Object, Latency>();
+	}
 
-    /**
-     * Returns the maximum distance (clock cycles)between any 2
-     * accesses to the resource (memory port) being tracked here.
-     * This is the differenct between the latest access' max clocks
-     * and the base access' min clocks.
-     */
-    public int getLimit ()
-    {
-        // If there is no 2nd access to the resource, then there is no
-        // restriction on throughput so return 0.
-        if (this.latest.isEmpty())
-        {
-            return 0;
-        }
-        
-        if (base.lat.isOpen())
-        {
-            return Task.INDETERMINATE_GO_SPACING;
-        }
+	/**
+	 * Marks the given access as another access to the resource being tracked
+	 * here.
+	 */
+	public void mark(Access access, Latency lat, ID location) {
+		latest.put(new MemMark(access, lat, location), lat);
+		latest = Latency.getLatest(latest);
+	}
 
-        int longest = -1;
-        for (Iterator iter = this.latest.values().iterator(); iter.hasNext();)
-        {
-            Latency lat = (Latency)iter.next();
-            if (lat.getMaxClocks() == Latency.UNKNOWN)
-            {
-                return Task.INDETERMINATE_GO_SPACING;
-            }
-            longest = Math.max(longest, lat.getMaxClocks());
-        }
+	/**
+	 * Returns the maximum distance (clock cycles)between any 2 accesses to the
+	 * resource (memory port) being tracked here. This is the differenct between
+	 * the latest access' max clocks and the base access' min clocks.
+	 */
+	@Override
+	public int getLimit() {
+		// If there is no 2nd access to the resource, then there is no
+		// restriction on throughput so return 0.
+		if (latest.isEmpty()) {
+			return 0;
+		}
 
-        return longest - base.lat.getMinClocks();
-    }
+		if (base.lat.isOpen()) {
+			return Task.INDETERMINATE_GO_SPACING;
+		}
 
-    public void writeReport (PrintStream ps, int tabDepth)
-    {
-        if (this.latest.isEmpty())
-        {
-            // No path, so don't write anything into the report!
-            return;
-        }
-        ps.println("Resource: \"" + resource.showIDLogical() + "\" limit imposed by address port of memory");
-        ps.println("  Path start point: " + this.base.acc.showIDLocation() +
-            " in method/function " + this.base.loc.showIDLogical());
+		int longest = -1;
+		for (Latency lat : latest.values()) {
+			if (lat.getMaxClocks() == Latency.UNKNOWN) {
+				return Task.INDETERMINATE_GO_SPACING;
+			}
+			longest = Math.max(longest, lat.getMaxClocks());
+		}
 
-        for (Iterator pathIter = this.latest.keySet().iterator(); pathIter.hasNext();)
-        {
-            MemMark mark = (MemMark)pathIter.next();
-            ps.println("\tend point: " + mark.acc.showIDLocation() +
-                " in method/function " + mark.loc.showIDLogical() +
-                " length is: " + ResourceMark.latDiff(base.lat, mark.lat));
-        }
-    }
+		return longest - base.lat.getMinClocks();
+	}
 
-    static class MemMark
-    {
-        final Access acc;
-        final Latency lat;
-        final ID loc;
-        MemMark (Access a, Latency l, ID i)
-        {
-            this.acc = a;
-            this.lat = l;
-            this.loc = i;
-        }
-    }
+	@Override
+	public void writeReport(PrintStream ps, int tabDepth) {
+		if (latest.isEmpty()) {
+			// No path, so don't write anything into the report!
+			return;
+		}
+		ps.println("Resource: \"" + resource.showIDLogical()
+				+ "\" limit imposed by address port of memory");
+		ps.println("  Path start point: " + base.acc.showIDLocation()
+				+ " in method/function " + base.loc.showIDLogical());
+
+		for (Object obj : latest.keySet()) {
+			MemMark mark = (MemMark) obj;
+			ps.println("\tend point: " + mark.acc.showIDLocation()
+					+ " in method/function " + mark.loc.showIDLogical()
+					+ " length is: " + ResourceMark.latDiff(base.lat, mark.lat));
+		}
+	}
+
+	static class MemMark {
+		final Access acc;
+		final Latency lat;
+		final ID loc;
+
+		MemMark(Access a, Latency l, ID i) {
+			acc = a;
+			lat = l;
+			loc = i;
+		}
+	}
 }

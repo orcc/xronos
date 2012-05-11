@@ -84,7 +84,7 @@ public class XmlResourcePrinter {
 
 	private void writeTasks(Element parent) {
 
-		for (Task task : this.design.getTasks()) {
+		for (Task task : design.getTasks()) {
 			final Call topCall = task.getCall();
 			if (topCall instanceof IPCoreCall)
 				continue;

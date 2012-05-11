@@ -20,46 +20,40 @@
  */
 package net.sf.openforge.report;
 
-import java.util.*;
+import java.util.Map;
 
-import net.sf.openforge.lim.*;
-
+import net.sf.openforge.lim.Task;
 
 /**
  * TaskResource is responsible to report all resources in a Task.
- *
+ * 
  * @author ysyu
  * @version $Id: TaskResource.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class TaskResource extends ResourceBank
-{
-    private final static String _RCS_ = "$Rev: 2 $";
-    
-    /** the task that owns all these resources */
-    private Task task = null;
+public class TaskResource extends ResourceBank {
 
-    public TaskResource(Task task)
-    {
-        super();
-        this.task = task;
-    }
+	/** the task that owns all these resources */
+	private Task task = null;
 
-    /**
-     * @return a mapping of all resources to its counts
-     */
-    public Map generateReport()
-    {
-        ProcedureResource pResource = (ProcedureResource)getResources().iterator().next();
-        return pResource.getTotalReport();
-    }
+	public TaskResource(Task task) {
+		super();
+		this.task = task;
+	}
 
-    /**
-     * @return the Task that owns these resources
-     */
-    public Task getTask()
-    {
-        return task;
-    }
+	/**
+	 * @return a mapping of all resources to its counts
+	 */
+	@Override
+	public Map generateReport() {
+		ProcedureResource pResource = (ProcedureResource) getResources()
+				.iterator().next();
+		return pResource.getTotalReport();
+	}
+
+	/**
+	 * @return the Task that owns these resources
+	 */
+	public Task getTask() {
+		return task;
+	}
 }
-
-        
