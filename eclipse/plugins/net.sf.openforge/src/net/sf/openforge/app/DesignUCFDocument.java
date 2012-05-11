@@ -62,9 +62,9 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 			partstring = "";
 		if (!(new XilinxDevice(partstring)).isFullySpecified())
 			partstring = "xc2v8000-5-ff1152C";
-		this.family = (new XilinxDevice(partstring)).getFamily();
+		family = (new XilinxDevice(partstring)).getFamily();
 
-		this.targetspeed = gj.getTargetSpeed();
+		targetspeed = gj.getTargetSpeed();
 		if (targetspeed == null)
 			targetspeed = "";
 
@@ -107,7 +107,7 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 
 		final FileOutputStream ucfFos = new FileOutputStream(ucfFile);
 
-		this.generateUCFDocument(design);
+		generateUCFDocument(design);
 
 		this.write(ucfFos);
 		ucfFos.flush();
@@ -132,13 +132,14 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 	 * @param design
 	 *            the design
 	 */
+	@SuppressWarnings("deprecation")
 	private void generateUCFDocument(Design design) {
 		includeUserUCF();
 
 		addHeader();
 
-		Collection inputPins = design.getInputPins();
-		Collection clockPins = design.getClockPins();
+		Collection<Pin> inputPins = design.getInputPins();
+		Collection<Pin> clockPins = design.getClockPins();
 
 		inputPins.removeAll(clockPins);
 
@@ -169,7 +170,7 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 	}
 
 	private void includeUserUCF() {
-		ArrayList ucf_list = new ArrayList();
+		List<String> ucf_list = new ArrayList<String>();
 		Option op = EngineThread.getGenericJob().getOption(
 				OptionRegistry.UCF_INCLUDES);
 		ucf_list.addAll(((OptionMultiFile) op)
@@ -178,8 +179,8 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 		// Include each of the specified ucf files first
 		// with header comments detailing which file they
 		// came from.
-		for (Iterator it = ucf_list.iterator(); it.hasNext();) {
-			File userUcfFile = new File((String) it.next());
+		for (String string : ucf_list) {
+			File userUcfFile = new File(string);
 			LineNumberReader bis = null;
 
 			// open the file and copy its contents into
@@ -226,7 +227,7 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 		comment("Timing constraints for clocks.");
 	}
 
-	private void addClocks(Collection pins) {
+	private void addClocks(Collection<Pin> pins) {
 		String dsp48 = "";
 		String mults = "";
 
@@ -245,8 +246,7 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 
 			long frequency = 0;
 
-			for (Iterator it = pins.iterator(); it.hasNext();) {
-				Pin pin = (Pin) it.next();
+			for (Pin pin : pins) {
 				ClockPin apiPin = (ClockPin) pin.getApiPin();
 
 				if (apiPin != null) {
@@ -301,10 +301,8 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 		comment("Values for the LOC settings are package dependent.");
 	}
 
-	private void addPins(Collection pins) {
-		for (Iterator it = pins.iterator(); it.hasNext();) {
-			Pin pin = (Pin) it.next();
-
+	private void addPins(Collection<Pin> pins) {
+		for (Pin pin : pins) {
 			if (!Core.hasThisPin(pin.getApiPin())
 					|| Core.hasPublished(pin.getApiPin())) {
 				String netName = ID.toVerilogIdentifier(ID.showLogical(pin));
@@ -312,17 +310,16 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 
 				addApiPin(apiPin, pin.getWidth(), netName);
 			}
-
 		}
-
 	}
 
 	private void addApiPin(Buffer apiPin, int size, String netName) {
 		if (size == 1) {
 			if ((apiPin != null) && (apiPin.getUCFAttributes().size() > 0)) {
-				List attrList = apiPin.getUCFAttributes();
+				List<UCFAttribute> attrList = apiPin.getUCFAttributes();
 
-				for (Iterator attrs = attrList.iterator(); attrs.hasNext();) {
+				for (Iterator<UCFAttribute> attrs = attrList.iterator(); attrs
+						.hasNext();) {
 					state(new UCFArbitraryStatement("NET \"" + netName + "\""
 							+ "\t" + attrs.next().toString()));
 				}
@@ -334,16 +331,11 @@ public class DesignUCFDocument extends UCFDocument implements OutputEngine {
 			}
 		} else {
 			if ((apiPin != null) && (apiPin.getUCFAttributes().size() > 0)) {
-				for (Iterator attrs = apiPin.getUCFAttributes().iterator(); attrs
-						.hasNext();) {
-					UCFAttribute attr = (UCFAttribute) attrs.next();
-
+				for (UCFAttribute attr : apiPin.getUCFAttributes()) {
 					String bitSpec = "<*";
-
 					if (attr.getBit() >= 0) {
 						bitSpec = "<" + attr.getBit() + ">";
 					}
-
 					state(new UCFArbitraryStatement("NET \"" + netName
 							+ bitSpec + "\"" + "\t" + attr.toString()));
 				}

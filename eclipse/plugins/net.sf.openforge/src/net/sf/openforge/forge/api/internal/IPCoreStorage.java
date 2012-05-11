@@ -18,6 +18,7 @@ package net.sf.openforge.forge.api.internal;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import net.sf.openforge.forge.api.ForgeApiException;
 import net.sf.openforge.forge.api.ipcore.HDLWriter;
@@ -80,7 +81,7 @@ public class IPCoreStorage {
 	/**
 	 * @return all Buffers associate with this ip core
 	 */
-	public ArrayList<Buffer> getAllPins() {
+	public List<Buffer> getAllPins() {
 		return allPins;
 	}
 
@@ -105,14 +106,14 @@ public class IPCoreStorage {
 	/**
 	 * @return a List of published pins
 	 */
-	public ArrayList<Buffer> getPublishedPins() {
+	public List<Buffer> getPublishedPins() {
 		return publishPins;
 	}
 
 	/**
 	 * @return a List of published pin names
 	 */
-	public ArrayList<String> getPublishedNames() {
+	public List<String> getPublishedNames() {
 		return publishNames;
 	}
 
@@ -129,7 +130,7 @@ public class IPCoreStorage {
 	/**
 	 * @return a List of no connect pins
 	 */
-	public ArrayList<Buffer> getNoConnectPins() {
+	public List<Buffer> getNoConnectPins() {
 		return noConnectPins;
 	}
 

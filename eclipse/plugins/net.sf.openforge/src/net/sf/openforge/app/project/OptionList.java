@@ -17,7 +17,6 @@
 package net.sf.openforge.app.project;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -58,7 +57,7 @@ public class OptionList extends Option {
 	 * representation of this list into elements.
 	 */
 	public String getSeparators() {
-		return this.separators;
+		return separators;
 	}
 
 	/**
@@ -66,7 +65,7 @@ public class OptionList extends Option {
 	 * the String representation of this list into elements.
 	 */
 	public void setSeparators(String sep) {
-		this.separators = sep;
+		separators = sep;
 	}
 
 	/**
@@ -115,7 +114,7 @@ public class OptionList extends Option {
 	 */
 	@Override
 	public void setValue(SearchLabel slabel, Object val) {
-		if (!this.isValid(val.toString())) {
+		if (!isValid(val.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
 					.getKey(), val.toString());
 		} else {
@@ -123,10 +122,10 @@ public class OptionList extends Option {
 				super.replaceValue(slabel, val);
 			} else {
 				// if the value is already present, then append the new value;
-				List oldList = this.getValueAsList(slabel);
-				List newList = this.toList(val.toString());
+				List<String> oldList = getValueAsList(slabel);
+				List<String> newList = toList(val.toString());
 				oldList.addAll(newList);
-				String s = this.toString(oldList);
+				String s = OptionList.toString(oldList);
 				super.setValue(slabel, s);
 			}
 		}
@@ -145,7 +144,7 @@ public class OptionList extends Option {
 	 */
 	@Override
 	public void replaceValue(SearchLabel slabel, Object value) {
-		if (!this.isValid(value.toString())) {
+		if (!isValid(value.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
 					.getKey(), value.toString());
 		} else {
@@ -160,8 +159,8 @@ public class OptionList extends Option {
 	 *            SearchLabel that can be used to get the scope.
 	 * @return List value of the option as a List.
 	 */
-	public List getValueAsList(SearchLabel slabel) {
-		return this.toList(super.getValue(slabel).toString());
+	public List<String> getValueAsList(SearchLabel slabel) {
+		return toList(super.getValue(slabel).toString());
 	}
 
 	@Override
@@ -172,15 +171,15 @@ public class OptionList extends Option {
 	/**
 	 * Converts a list of elements to a single string representation.
 	 */
-	public static String toString(java.util.List l) {
-		return l.toString();
+	public static String toString(List<String> defaultlibs) {
+		return defaultlibs.toString();
 	} // toString()
 
-	public java.util.List toList(String s) {
+	public java.util.List<String> toList(String s) {
 		// StringTokenizer st = new StringTokenizer(s, "[]," +
 		// java.io.File.pathSeparator);
 		StringTokenizer st = new StringTokenizer(s, separators);
-		java.util.List reply = new ArrayList();
+		List<String> reply = new ArrayList<String>();
 
 		while (st.hasMoreTokens()) {
 			reply.add(st.nextToken().trim());
@@ -202,14 +201,13 @@ public class OptionList extends Option {
 
 	@Override
 	public void printXML(IndentWriter printer, String value) {
-		java.util.List entries = this.toList(value);
+		List<String> entries = toList(value);
 
 		printer.println("<option name=\"" + getOptionKey().getKey() + "\" "
 				+ "type=\"" + getTypeName() + "\">");
 		printer.inc();
 
-		for (Iterator eit = entries.iterator(); eit.hasNext();) {
-			String entry = (String) eit.next();
+		for (String entry : entries) {
 			printer.println("<entry>" + entry + "</entry>");
 		}
 		printer.dec();

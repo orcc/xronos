@@ -22,7 +22,6 @@
 package net.sf.openforge.app.project;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -113,7 +112,7 @@ public class OptionMultiFile extends OptionFile {
 	 */
 	@Override
 	public void setValue(SearchLabel slabel, Object val) {
-		if (!this.isValid(val.toString())) {
+		if (!isValid(val.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
 					.getKey(), val.toString());
 		} else {
@@ -121,9 +120,9 @@ public class OptionMultiFile extends OptionFile {
 				super.replaceValue(slabel, val, true);
 			} else {
 				// if the value is already present, then append the new value;
-				List oldList = this.getValueAsList(slabel);
+				List<String> oldList = getValueAsList(slabel);
 				oldList.add(val.toString().trim());
-				String s = this.toString(oldList);
+				String s = OptionMultiFile.toString(oldList);
 				super.setValue(slabel, s, true);
 			}
 		}
@@ -142,7 +141,7 @@ public class OptionMultiFile extends OptionFile {
 	 */
 	@Override
 	public void replaceValue(SearchLabel slabel, Object value) {
-		if (!this.isValid(value.toString())) {
+		if (!isValid(value.toString())) {
 			throw new NewJob.InvalidOptionValueException(getOptionKey()
 					.getKey(), value.toString());
 		} else {
@@ -158,7 +157,7 @@ public class OptionMultiFile extends OptionFile {
 	 * @return List value of the option as a List.
 	 */
 	public List<String> getValueAsList(SearchLabel slabel) {
-		return this.toList(super.getValue(slabel).toString());
+		return toList(super.getValue(slabel).toString());
 	}
 
 	/**
@@ -166,9 +165,9 @@ public class OptionMultiFile extends OptionFile {
 	 */
 	@Override
 	public boolean isValid(String s) {
-		List files = this.toList(s);
-		for (Iterator it = files.iterator(); it.hasNext();) {
-			if (!super.isValid((String) it.next()))
+		List<String> files = toList(s);
+		for (String string : files) {
+			if (!super.isValid(string))
 				return false;
 		}
 		return true;
@@ -176,7 +175,7 @@ public class OptionMultiFile extends OptionFile {
 
 	public List<String> toList(String s) {
 		StringTokenizer st = new StringTokenizer(s, separators);
-		List reply = new ArrayList();
+		List<String> reply = new ArrayList<String>();
 
 		while (st.hasMoreTokens()) {
 			reply.add(st.nextToken().trim());
@@ -196,7 +195,7 @@ public class OptionMultiFile extends OptionFile {
 		return reply;
 	}
 
-	public static String toString(java.util.List l) {
+	public static String toString(List<String> l) {
 		return l.toString();
 	} // toString()
 
@@ -206,14 +205,14 @@ public class OptionMultiFile extends OptionFile {
 	 */
 	@Override
 	public void printXML(IndentWriter printer, String value) {
-		java.util.List files = this.toList(value);
+		List<String> files = toList(value);
 
 		printer.println("<option name=\"" + getOptionKey().getKey() + "\" "
 				+ "type=\"" + getTypeName() + "\">");
 		printer.inc();
 
-		for (Iterator it = files.iterator(); it.hasNext();) {
-			printer.println("<entry>" + (String) it.next() + "</entry>");
+		for (String file : files) {
+			printer.println("<entry>" + file + "</entry>");
 		}
 		printer.dec();
 		printer.println("</option>");

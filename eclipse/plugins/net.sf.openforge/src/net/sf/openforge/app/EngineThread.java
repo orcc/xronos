@@ -84,9 +84,10 @@ public class EngineThread {
 	 */
 	public static void removeJob(Engine engine) {
 		synchronized (threadToJob) {
-			for (Iterator it = threadToJob.entrySet().iterator(); it.hasNext();) {
-				Entry entry = (Entry) it.next();
-				Engine e = (Engine) entry.getValue();
+			for (Iterator<Entry<Thread, Engine>> it = threadToJob.entrySet()
+					.iterator(); it.hasNext();) {
+				Entry<Thread, Engine> entry = it.next();
+				Engine e = entry.getValue();
 				if (e.equals(engine))
 					it.remove();
 			}

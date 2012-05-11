@@ -379,9 +379,9 @@ public class CycleSimTestBench {
 		Map<Pin, PinLogic> pinToLogic = new HashMap<Pin, PinLogic>();
 		Set<ClockPin> unInitedClocks = new HashSet<ClockPin>(clocksUsed);
 
-		for (InputPin pin : design.getClockPins()) {
+		for (Pin pin : design.getClockPins()) {
 			unInitedClocks.remove(pin.getApiPin());
-			pinToLogic.put(pin, new ClkPinLogic(pin));
+			pinToLogic.put(pin, new ClkPinLogic((InputPin) pin));
 		}
 
 		for (Pin pin : design.getInputPins()) {
@@ -715,7 +715,7 @@ public class CycleSimTestBench {
 		// Now go through all the design pins and if there is
 		// nothing registered in the pinToClockPinMap, then ask
 		// the api pin for its clock domain
-		Collection<InputPin> clkpins = design.getClockPins();
+		Collection<Pin> clkpins = design.getClockPins();
 
 		for (Pin p : design.getInputPins()) {
 			InputPin pin = (InputPin) p;

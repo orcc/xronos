@@ -41,6 +41,7 @@ import net.sf.openforge.lim.BidirectionalPin;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
+import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.IPCoreCall;
@@ -79,7 +80,7 @@ public class IPCoreInstantiator {
 	 * that storage. This contains only those pins that the user actually
 	 * accesses in their design.
 	 */
-	private final Map coreStorageToUserPins = new HashMap();
+	private final Map<IPCoreStorage, Collection<Buffer>> coreStorageToUserPins = new HashMap<IPCoreStorage, Collection<Buffer>>();
 
 	/**
 	 * Instantiates each ipcore module and ports & buses.
@@ -111,24 +112,21 @@ public class IPCoreInstantiator {
 	 * module instantiation 3. add each ip core call to the design
 	 */
 	private void instantiate() {
-		for (Iterator iter = design.getPins().iterator(); iter.hasNext();) {
-			final Pin pin = (Pin) iter.next();
+		for (Pin pin : design.getPins()) {
 
 			final IPCoreStorage storage = Core
 					.getIPCoreStorage(pin.getApiPin());
 			if (storage != null) {
-				Collection pins = (Collection) coreStorageToUserPins
-						.get(storage);
+				Collection<Buffer> pins = coreStorageToUserPins.get(storage);
 				if (pins == null) {
-					pins = new HashSet();
+					pins = new HashSet<Buffer>();
 					coreStorageToUserPins.put(storage, pins);
 				}
 				pins.add(pin.getApiPin());
 			}
 		}
 
-		for (Iterator iter = design.getPins().iterator(); iter.hasNext();) {
-			final Pin pin = (Pin) iter.next();
+		for (Pin pin : design.getPins()) {
 			final IPCoreStorage storage = Core
 					.getIPCoreStorage(pin.getApiPin());
 			if (storage != null) {
@@ -140,7 +138,8 @@ public class IPCoreInstantiator {
 				 */
 				Call call = ipCoreCallMap.get(storage);
 				if (call == null) {
-					Block block = new Block(Collections.EMPTY_LIST, true);
+					Block block = new Block(
+							Collections.<Component> emptyList(), true);
 					final Procedure proc = new Procedure(block);
 					call = new IPCoreCall(null);
 					call.setProcedure(proc);
@@ -149,13 +148,12 @@ public class IPCoreInstantiator {
 			}
 		}
 
-		for (Iterator it = ipCoreCallMap.keySet().iterator(); it.hasNext();) {
-			final IPCoreStorage ipcs = (IPCoreStorage) it.next();
+		for (IPCoreStorage ipcs : ipCoreCallMap.keySet()) {
 			final IPCoreCall call = (IPCoreCall) ipCoreCallMap.get(ipcs);
 			final Task core_task = new Task(call);
-			this.design.addTask(core_task);
+			design.addTask(core_task);
 			if (ipcs.getHDLSource() != null) {
-				this.design.addIncludeStatement(ipcs.getHDLSource());
+				design.addIncludeStatement(ipcs.getHDLSource());
 			}
 		}
 	}
@@ -209,6 +207,7 @@ public class IPCoreInstantiator {
 		// }
 	}
 
+	@SuppressWarnings("unused")
 	private static void createPort(Call call, String portName, Bus bus,
 			int width) {
 		Port port = call.makeDataPort();
@@ -227,6 +226,7 @@ public class IPCoreInstantiator {
 	 *            a value of type 'IPCoreStorage'
 	 * @return a value of type 'InputPin'
 	 */
+	@SuppressWarnings("unused")
 	private InputPin findStandinClock(IPCoreStorage ipcs) {
 		InputPin ckPin = null;
 		// // Look at all the pins and see what clock pin/reset pin
@@ -274,6 +274,7 @@ public class IPCoreInstantiator {
 	 *            a value of type 'IPCoreStorage'
 	 * @return a value of type 'InputPin'
 	 */
+	@SuppressWarnings("unused")
 	private InputPin findStandinReset(IPCoreStorage ipcs) {
 		InputPin rstPin = null;
 		// for (Iterator iter = ipcs.getAllPins().iterator(); iter.hasNext();)
@@ -315,8 +316,7 @@ public class IPCoreInstantiator {
 	 * Naming
 	 */
 	private void makeName() {
-		for (Iterator it = ipCoreCallMap.keySet().iterator(); it.hasNext();) {
-			final IPCoreStorage ipcs = (IPCoreStorage) it.next();
+		for (IPCoreStorage ipcs : ipCoreCallMap.keySet()) {
 			final Call call = ipCoreCallMap.get(ipcs);
 
 			if (ipcs.getHDLInstanceName() == null) {
@@ -329,6 +329,7 @@ public class IPCoreInstantiator {
 			/*
 			 * Name procedure ports & buses
 			 */
+			@SuppressWarnings("unused")
 			final Block block = call.getProcedure().getBody();
 			call.getProcedure().setIDLogical(ipcs.getModuleName());
 		}
@@ -338,16 +339,14 @@ public class IPCoreInstantiator {
 	 * creates neccessary inputs and outputs for the ip core
 	 */
 	private void makeDataPortsAndBuses() {
-		for (Iterator it = ipCoreCallMap.keySet().iterator(); it.hasNext();) {
-			final IPCoreStorage ipcs = (IPCoreStorage) it.next();
+		for (IPCoreStorage ipcs : ipCoreCallMap.keySet()) {
 			final IPCoreCall call = (IPCoreCall) ipCoreCallMap.get(ipcs);
 			final Procedure proc = call.getProcedure();
-			Collection userPins = (Collection) coreStorageToUserPins.get(ipcs);
+			Collection<Buffer> userPins = coreStorageToUserPins.get(ipcs);
 
-			for (Iterator iter = userPins.iterator(); iter.hasNext();) {
-				final Buffer buffer = (Buffer) iter.next();
+			for (Buffer buffer : userPins) {
 				final String name = buffer.getName();
-				final int width = buffer.getSize();
+				// final int width = buffer.getSize();
 				final Pin pin = apiToLimPins.get(buffer);
 
 				if ((pin instanceof InputPin)) {
@@ -405,17 +404,14 @@ public class IPCoreInstantiator {
 	 * Publishes ip core pins up to the design
 	 */
 	private void makePublishPins() {
-		for (Iterator it = ipCoreCallMap.keySet().iterator(); it.hasNext();) {
-			final IPCoreStorage ipcs = (IPCoreStorage) it.next();
+		for (IPCoreStorage ipcs : ipCoreCallMap.keySet()) {
 			final IPCoreCall call = (IPCoreCall) ipCoreCallMap.get(ipcs);
 			final Procedure proc = call.getProcedure();
 
-			Iterator pni = ipcs.getPublishedNames().iterator();
-			for (Iterator iter = ipcs.getPublishedPins().iterator(); iter
-					.hasNext();) {
-				final Buffer buffer = (Buffer) iter.next();
+			Iterator<String> pni = ipcs.getPublishedNames().iterator();
+			for (Buffer buffer : ipcs.getPublishedPins()) {
 				final int width = buffer.getSize();
-				final String publish_name = (String) pni.next();
+				final String publish_name = pni.next();
 
 				if (buffer instanceof PinIn) {
 					final Bus bus = call.getExits().iterator().next()
@@ -476,14 +472,11 @@ public class IPCoreInstantiator {
 	 * make no connect pins
 	 */
 	private void makeNoConnectPins() {
-		for (Iterator it = ipCoreCallMap.keySet().iterator(); it.hasNext();) {
-			final IPCoreStorage ipcs = (IPCoreStorage) it.next();
+		for (IPCoreStorage ipcs : ipCoreCallMap.keySet()) {
 			final IPCoreCall call = (IPCoreCall) ipCoreCallMap.get(ipcs);
 			final Procedure proc = call.getProcedure();
 
-			for (Iterator iter = ipcs.getNoConnectPins().iterator(); iter
-					.hasNext();) {
-				final Buffer buffer = (Buffer) iter.next();
+			for (Buffer buffer : ipcs.getNoConnectPins()) {
 				final int width = buffer.getSize();
 
 				/** we need a dummy bus, so why not from a Pin? */
@@ -506,13 +499,11 @@ public class IPCoreInstantiator {
 	 * PinIn => no connect pin PinOut => feed it with its reset value
 	 */
 	private void makeUnusedPins() {
-		for (Iterator it = ipCoreCallMap.keySet().iterator(); it.hasNext();) {
-			final IPCoreStorage ipcs = (IPCoreStorage) it.next();
+		for (IPCoreStorage ipcs : ipCoreCallMap.keySet()) {
 			final IPCoreCall call = (IPCoreCall) ipCoreCallMap.get(ipcs);
 			final Procedure proc = call.getProcedure();
-			Collection userPins = (Collection) coreStorageToUserPins.get(ipcs);
-			for (Iterator itt = ipcs.getAllPins().iterator(); itt.hasNext();) {
-				final Buffer buffer = (Buffer) itt.next();
+			Collection<Buffer> userPins = coreStorageToUserPins.get(ipcs);
+			for (Buffer buffer : ipcs.getAllPins()) {
 
 				if (userPins.contains(buffer)
 						|| ipcs.getPublishedPins().contains(buffer)
@@ -560,16 +551,10 @@ public class IPCoreInstantiator {
 	 * names of pins on user application.
 	 */
 	private void checkPublishPinNames() {
-		Set names = new HashSet();
-		for (Iterator iter = Core.getIPCoreStorages().iterator(); iter
-				.hasNext();) {
-			IPCoreStorage storage = (IPCoreStorage) iter.next();
-
+		Set<String> names = new HashSet<String>();
+		for (IPCoreStorage storage : Core.getIPCoreStorages()) {
 			// Check for duplicated name
-			for (Iterator iterate = storage.getPublishedNames().iterator(); iterate
-					.hasNext();) {
-				String pname = (String) iterate.next();
-
+			for (String pname : storage.getPublishedNames()) {
 				if (!names.add(pname)) {
 					throw new ForgeApiException(
 							"Duplicate Publish Pin Name Found: " + pname);

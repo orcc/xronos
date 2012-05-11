@@ -98,7 +98,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	private final Map<String, ClockDomain> clockDomains = new HashMap<String, ClockDomain>();
 
 	/** map of api clock pin name to input pins (clocks) */
-	private final HashMap<String, InputPin> apiClockNameToLIMClockMap = new HashMap<String, InputPin>();
+	private final HashMap<String, Pin> apiClockNameToLIMClockMap = new HashMap<String, Pin>();
 
 	/** map of api reset pin name to input pins (reset) */
 	private final HashMap<String, GlobalReset> apiResetNameToLIMResetMap = new HashMap<String, GlobalReset>();
@@ -380,16 +380,16 @@ public class Design extends ID implements Visitable, Cloneable {
 							+ apiClockPin);
 		}
 
-		InputPin clockPin = apiClockNameToLIMClockMap.get(name);
+		Pin clockPin = apiClockNameToLIMClockMap.get(name);
 		// if not defined, then define a clock pin & store it
 		if (clockPin == null) {
 			clockPin = new InputPin(1, false);
 			clockPin.setApiPin(apiClockPin);
 			clockPin.setIDLogical(name);
-			addInputPin(clockPin);
+			addInputPin((InputPin) clockPin);
 			apiClockNameToLIMClockMap.put(name, clockPin);
 		}
-		return clockPin;
+		return (InputPin) clockPin;
 	}
 
 	/**
@@ -429,7 +429,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	/**
 	 * return the LIM Clock Pins
 	 */
-	public Collection<InputPin> getClockPins() {
+	public Collection<Pin> getClockPins() {
 		return apiClockNameToLIMClockMap.values();
 	}
 
