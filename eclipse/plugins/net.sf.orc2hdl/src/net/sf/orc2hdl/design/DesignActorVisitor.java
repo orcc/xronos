@@ -301,7 +301,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				// TODO: Load index of the List
 			} else {
 				currentComponent = new NoOp(1, Exit.DONE);
-
 			}
 			return null;
 		}

@@ -51,9 +51,9 @@ import net.sf.orcc.ir.Var;
  */
 public class PortCache {
 
-	private final Map<Var, Bus> sourceCache = new HashMap<Var, Bus>();
+	private final Map<Bus, Var> sourceCache = new HashMap<Bus, Var>();
 
-	private final Map<Var, Port> targetCache = new HashMap<Var, Port>();
+	private final Map<Port, Var> targetCache = new HashMap<Port, Var>();
 
 	private final Map<Component, Bus> doneBusComponents = new HashMap<Component, Bus>();
 
@@ -67,7 +67,7 @@ public class PortCache {
 	 * @return
 	 */
 	public Boolean varExists(Var var) {
-		return targetCache.containsKey(var) && sourceCache.containsKey(var);
+		return targetCache.containsValue(var) && sourceCache.containsValue(var);
 	}
 
 	public Bus getDoneBus(Component component) {
@@ -82,7 +82,13 @@ public class PortCache {
 	 * @return
 	 */
 	public Bus getSource(Var var) {
-		return sourceCache.get(var);
+		Bus bus = null;
+		for (Bus value : sourceCache.keySet()) {
+			if (var == sourceCache.get(value)) {
+				bus = value;
+			}
+		}
+		return bus;
 	}
 
 	/**
@@ -93,7 +99,13 @@ public class PortCache {
 	 * @return
 	 */
 	public Port getTarget(Var var) {
-		return targetCache.get(var);
+		Port port = null;
+		for (Port value : targetCache.keySet()) {
+			if (var == targetCache.get(value)) {
+				port = value;
+			}
+		}
+		return port;
 	}
 
 	public void putDoneBus(Component component, Bus bus) {
@@ -109,7 +121,7 @@ public class PortCache {
 	 * @param bus
 	 */
 	public void putSource(Var var, Bus bus) {
-		sourceCache.put(var, bus);
+		sourceCache.put(bus, var);
 	}
 
 	/**
@@ -121,7 +133,7 @@ public class PortCache {
 	 * @param limPort
 	 */
 	public void putTarget(Var var, Port limPort) {
-		targetCache.put(var, limPort);
+		targetCache.put(limPort, var);
 	}
 
 	/**
@@ -134,15 +146,14 @@ public class PortCache {
 	 *            the new Bus to be associated
 	 */
 	public void replaceSource(Bus original, Bus replacement) {
-		Var key = null;
-		for (Entry<Var, Bus> entry : sourceCache.entrySet()) {
-			if (entry.getValue() == original) {
-				key = entry.getKey();
+		Var value = null;
+		for (Entry<Bus, Var> entry : sourceCache.entrySet()) {
+			if (entry.getKey() == original) {
+				value = entry.getValue();
 				break;
 			}
 		}
-		assert key != null : "Could not replace source bus";
-		putSource(key, replacement);
+		putSource(value, replacement);
 	}
 
 	/**
@@ -155,29 +166,29 @@ public class PortCache {
 	 *            the new Port to be associated
 	 */
 	public void replaceTarget(Port original, Port replacement) {
-		Var key = null;
-		for (Entry<Var, Port> entry : targetCache.entrySet()) {
-			if (entry.getValue() == original) {
-				key = entry.getKey();
+		Var value = null;
+		for (Entry<Port, Var> entry : targetCache.entrySet()) {
+			if (entry.getKey() == original) {
+				value = entry.getValue();
 				break;
 			}
 		}
-		if (key != null) {
-			putTarget(key, replacement);
+		if (value != null) {
+			putTarget(value, replacement);
 		}
 	}
 
 	public void publish(Module module) {
 		Set<ID> modulePorts = new HashSet<ID>(module.getPorts());
 		modulePorts.addAll(module.getBuses());
-		for (Entry<Var, Bus> entry : sourceCache.entrySet()) {
+		for (Entry<Bus, Var> entry : sourceCache.entrySet()) {
 			if (modulePorts.contains(entry.getValue())) {
-				putSource(entry.getKey(), entry.getValue());
+				putSource(entry.getValue(), entry.getKey());
 			}
 		}
-		for (Entry<Var, Port> entry : targetCache.entrySet()) {
+		for (Entry<Port, Var> entry : targetCache.entrySet()) {
 			if (modulePorts.contains(entry.getValue())) {
-				putTarget(entry.getKey(), entry.getValue());
+				putTarget(entry.getValue(), entry.getKey());
 			}
 		}
 

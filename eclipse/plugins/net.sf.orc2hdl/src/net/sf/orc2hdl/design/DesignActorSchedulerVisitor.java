@@ -187,7 +187,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	}
 
 	private Component buildTaskCall(Task task, Var outDecision) {
-		String varName = "decision_outputPattern_" + task.getSourceName();
+		String varName = "decision_outputPattern_" + task.showIDGlobal();
 		currentListComponent = new ArrayList<Component>();
 		Decision branchDecision = buildDecision(outDecision, varName);
 
