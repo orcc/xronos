@@ -91,9 +91,9 @@ import net.sf.openforge.util.naming.ID;
  */
 public class MemoryConnectionVisitor extends DefaultVisitor {
 
-	private Stack accessFrames = new Stack();
+	private Stack<Frame> accessFrames = new Stack<Frame>();
 	private Frame currentFrame = new Frame();
-	private Map designResourceBundles = new HashMap();
+	private Map<Resource, ResourceBundle> designResourceBundles = new HashMap<Resource, ResourceBundle>();
 
 	public MemoryConnectionVisitor() {
 	}
@@ -106,17 +106,13 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 	public void visit(Design design) {
 		super.visit(design);
 
-		for (Iterator memories = design.getLogicalMemories().iterator(); memories
-				.hasNext();) {
-			LogicalMemory memory = (LogicalMemory) memories.next();
+		for (LogicalMemory memory : design.getLogicalMemories()) {
 			StructuralMemory structMem = memory.getStructuralMemory();
 
 			// InputPin clock = null;
 			// InputPin reset = null;
 
-			for (Iterator memports = memory.getLogicalMemoryPorts().iterator(); memports
-					.hasNext();) {
-				LogicalMemoryPort memport = (LogicalMemoryPort) memports.next();
+			for (LogicalMemoryPort memport : memory.getLogicalMemoryPorts()) {
 				/*
 				 * query the memory port for clock and reset. If different ports
 				 * have different clock or reset then fatally err out.
@@ -161,8 +157,7 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 		// represents 1 accessing task. The value stored in each
 		// read/write list at each position will be either a MemAccess
 		// or null if that task did not read or write.
-		ResourceBundle bundle = (ResourceBundle) designResourceBundles
-				.get(memport);
+		ResourceBundle bundle = designResourceBundles.get(memport);
 
 		if (bundle == null)
 			return;
@@ -187,11 +182,11 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 		for (int i = 0; i < referee.getTaskSlots().size(); i++) {
 			MemoryReferee.TaskSlot slot = referee.getTaskSlots().get(i);
 			if (bundle.getReads().get(i) != null) {
-				((MemAccess) bundle.getReads().get(i)).connect(slot);
+				bundle.getReads().get(i).connect(slot);
 			}
 
 			if (bundle.getWrites().get(i) != null) {
-				((MemAccess) bundle.getWrites().get(i)).connect(slot);
+				bundle.getWrites().get(i).connect(slot);
 			}
 		}
 	}
@@ -210,9 +205,7 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 
 		// Add any read and/or write access to the read/write list for
 		// each resource.
-		for (Iterator iter = currentFrame.getResources().iterator(); iter
-				.hasNext();) {
-			Resource res = (Resource) iter.next();
+		for (Resource res : currentFrame.getResources()) {
 			ResourceBundle bundle = currentFrame.getBundle(res);
 			assert bundle.getReads().size() < 2;
 			assert bundle.getWrites().size() < 2;
@@ -221,18 +214,17 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 				continue;
 			}
 
-			ResourceBundle designBundle = (ResourceBundle) designResourceBundles
-					.get(res);
+			ResourceBundle designBundle = designResourceBundles.get(res);
 			if (designBundle == null) {
 				designBundle = new ResourceBundle(res);
 				designResourceBundles.put(res, designBundle);
 			}
 			if (bundle.getReads().size() > 0)
-				designBundle.addRead((MemAccess) bundle.getReads().get(0));
+				designBundle.addRead(bundle.getReads().get(0));
 			else
 				designBundle.addRead(null);
 			if (bundle.getWrites().size() > 0)
-				designBundle.addWrite((MemAccess) bundle.getWrites().get(0));
+				designBundle.addWrite(bundle.getWrites().get(0));
 			else
 				designBundle.addWrite(null);
 		}
@@ -253,9 +245,7 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 		super.visit(call);
 
 		// Map duplication = new HashMap();
-		for (Iterator iter = currentFrame.getAllAccesses().iterator(); iter
-				.hasNext();) {
-			MemAccess acc = (MemAccess) iter.next();
+		for (MemAccess acc : currentFrame.getAllAccesses()) {
 			// MemAccess pushed = acc.pushAcrossCall(call, duplication);
 			MemAccess pushed = acc.pushAcrossCall(call);
 			superFrame.addAccess(pushed);
@@ -265,8 +255,8 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 		// accesses pulled out from the procedure to the call.
 		currentFrame = superFrame;
 
-		for (Iterator iter = call.getBuses().iterator(); iter.hasNext();) {
-			Bus callBus = (Bus) iter.next();
+		for (Bus callBus : call.getBuses()) {
+			@SuppressWarnings("unused")
 			Bus procBus = call.getProcedureBus(callBus);
 		}
 	}
@@ -497,25 +487,26 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 	 */
 	private void exitModule(Module module) {
 		Frame frame = currentFrame;
-		currentFrame = (Frame) accessFrames.pop();
+		currentFrame = accessFrames.pop();
 
-		for (Iterator iter = frame.getResources().iterator(); iter.hasNext();) {
+		for (Iterator<Resource> iter = frame.getResources().iterator(); iter
+				.hasNext();) {
 			final LogicalMemoryPort memoryPort = (LogicalMemoryPort) iter
 					.next();
 			ResourceBundle bundle = frame.getBundle(memoryPort);
-			List reads = bundle.getReads();
-			List writes = bundle.getWrites();
+			List<MemAccess> reads = bundle.getReads();
+			List<MemAccess> writes = bundle.getWrites();
 
 			MemoryGateway gateway = new MemoryGateway(memoryPort, reads.size(),
 					writes.size(), memoryPort.getMaxAddressWidth());
 			module.addComponent(gateway);
 
 			for (int i = 0; i < reads.size(); i++) {
-				((MemAccess) reads.get(i)).connect(gateway, i);
+				reads.get(i).connect(gateway, i);
 			}
 
 			for (int i = 0; i < writes.size(); i++) {
-				((MemAccess) writes.get(i)).connect(gateway, i);
+				writes.get(i).connect(gateway, i);
 			}
 
 			Map duplicate = new HashMap();
@@ -539,14 +530,13 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 	 */
 	private static class Frame {
 		/** A map of Resource (memory port) to ResourceBundle. */
-		private Map resourceToBundle = new HashMap();
+		private Map<Resource, ResourceBundle> resourceToBundle = new HashMap<Resource, ResourceBundle>();
 
 		/**
 		 * Adds a MemAccess to this frame.
 		 */
 		public void addAccess(MemAccess acc) {
-			ResourceBundle bundle = (ResourceBundle) resourceToBundle.get(acc
-					.getTarget());
+			ResourceBundle bundle = resourceToBundle.get(acc.getTarget());
 			if (bundle == null) {
 				bundle = new ResourceBundle(acc.getTarget());
 				resourceToBundle.put(acc.getTarget(), bundle);
@@ -562,24 +552,22 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 		 * Retrieve the ResourceBundle for a given Resource.
 		 */
 		public ResourceBundle getBundle(Resource target) {
-			return (ResourceBundle) resourceToBundle.get(target);
+			return resourceToBundle.get(target);
 		}
 
 		/**
 		 * Retrieve all the Resoruces tracked in this frame.
 		 */
-		public Set getResources() {
+		public Set<Resource> getResources() {
 			return resourceToBundle.keySet();
 		}
 
 		/**
 		 * Retrieve every MemAccess allocated in this frame.
 		 */
-		public Set getAllAccesses() {
-			Set accesses = new HashSet();
-			for (Iterator iter = resourceToBundle.values().iterator(); iter
-					.hasNext();) {
-				ResourceBundle bundle = (ResourceBundle) iter.next();
+		public Set<MemAccess> getAllAccesses() {
+			Set<MemAccess> accesses = new HashSet<MemAccess>();
+			for (ResourceBundle bundle : resourceToBundle.values()) {
 				accesses.addAll(bundle.getReads());
 				accesses.addAll(bundle.getWrites());
 			}
@@ -592,13 +580,14 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 	 */
 	private static class ResourceBundle {
 		/** A List of MemAccess objects */
-		private List reads = new ArrayList();
+		private List<MemAccess> reads = new ArrayList<MemAccess>();
 		/** A List of MemAccess objects */
-		private List writes = new ArrayList();
-		private Resource target;
+		private List<MemAccess> writes = new ArrayList<MemAccess>();
+
+		// private Resource target;
 
 		public ResourceBundle(Resource target) {
-			this.target = target;
+			// this.target = target;
 		}
 
 		/** acc MAY be null @ task level */
@@ -614,7 +603,7 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 		/**
 		 * Retrieves a List of MemAccess objects, each of which is a read access
 		 */
-		public List getReads() {
+		public List<MemAccess> getReads() {
 			return reads;
 		}
 
@@ -622,10 +611,11 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 		 * Retrieves a List of MemAccess objects, each of which is a write
 		 * access
 		 */
-		public List getWrites() {
+		public List<MemAccess> getWrites() {
 			return writes;
 		}
 
+		@SuppressWarnings("unused")
 		public int getAccessCount() {
 			return reads.size() + writes.size();
 		}
@@ -636,8 +626,8 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 	 * to a single access of a given resource.
 	 */
 	private static abstract class MemAccess {
-		private List ports = new ArrayList(7);
-		private List buses = new ArrayList(7);
+		private List<Port> ports = new ArrayList<Port>(7);
+		private List<Bus> buses = new ArrayList<Bus>(7);
 		private boolean isRead = false;
 		private Resource target;
 
@@ -663,11 +653,11 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 		}
 
 		protected Port getPort(int index) {
-			return (Port) ports.get(index);
+			return ports.get(index);
 		}
 
 		protected Bus getBus(int index) {
-			return (Bus) buses.get(index);
+			return buses.get(index);
 		}
 
 		/**
@@ -680,8 +670,7 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 		 */
 		public MemAccess pushAcrossCall(Call call) {
 			MemAccess copy = copy();
-			for (Iterator iter = ports.iterator(); iter.hasNext();) {
-				Port orig = (Port) iter.next();
+			for (Port orig : ports) {
 				// Port cPort = (Port)duplicateMap.get(orig);
 				Port cPort = call.getPortFromProcedurePort(orig);
 				if (cPort == null) {
@@ -691,8 +680,7 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 				copy.addPort(cPort);
 			}
 
-			for (Iterator iter = buses.iterator(); iter.hasNext();) {
-				Bus orig = (Bus) iter.next();
+			for (Bus orig : buses) {
 				// Bus cBus = (Bus)duplicateMap.get(orig);
 				Bus cBus = call.getBusFromProcedureBus(orig);
 

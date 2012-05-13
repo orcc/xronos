@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,19 +62,19 @@ public class LatencyTracker implements LatencyCache {
 	private OpCache cache = null;
 
 	/** Map of Exit to control Bus */
-	private Map exitControlBusMap = new HashMap();
+	private Map<Exit, Bus> exitControlBusMap = new HashMap<Exit, Bus>();
 
 	/** Map of Component to control Bus */
-	private Map entryControlBusMap = new HashMap();
+	private Map<Component, Bus> entryControlBusMap = new HashMap<Component, Bus>();
 
 	/** Map of control Bus to Latency */
-	private Map latencyMap = new HashMap();
+	private Map<Bus, Latency> latencyMap = new HashMap<Bus, Latency>();
 
 	/** Set of Latches created by this tracker. */
-	private Set latches = new HashSet();
+	private Set<Latch> latches = new HashSet<Latch>();
 
 	/** Set of Enable Regs created by this tracker. */
-	private Set enableRegs = new HashSet();
+	private Set<Reg> enableRegs = new HashSet<Reg>();
 
 	/**
 	 * Creates a new latency tracker with an empty OpCache.
@@ -115,7 +114,7 @@ public class LatencyTracker implements LatencyCache {
 	 * Gets the control Bus for an Exit.
 	 */
 	Bus getControlBus(Exit exit) {
-		return (Bus) exitControlBusMap.get(exit);
+		return exitControlBusMap.get(exit);
 	}
 
 	/**
@@ -137,7 +136,7 @@ public class LatencyTracker implements LatencyCache {
 	 */
 	@Override
 	public Bus getControlBus(Component component) {
-		return (Bus) entryControlBusMap.get(component);
+		return entryControlBusMap.get(component);
 	}
 
 	/**
@@ -169,7 +168,7 @@ public class LatencyTracker implements LatencyCache {
 	 * control Bus.
 	 */
 	Latency getLatency(Exit exit) {
-		return (Latency) latencyMap.get(getControlBus(exit));
+		return latencyMap.get(getControlBus(exit));
 	}
 
 	/**
@@ -178,7 +177,7 @@ public class LatencyTracker implements LatencyCache {
 	 */
 	@Override
 	public Latency getLatency(Component component) {
-		return (Latency) latencyMap.get(getControlBus(component));
+		return latencyMap.get(getControlBus(component));
 	}
 
 	/**
@@ -258,17 +257,16 @@ public class LatencyTracker implements LatencyCache {
 	 *            the module to which the scoreboard will be added
 	 * @return the scoreboard
 	 */
-	Scoreboard getScoreboard(Collection controlBuses, Module module) {
+	Scoreboard getScoreboard(Collection<Bus> controlBuses, Module module) {
 		final Scoreboard scoreboard = cache.getScoreboard(controlBuses);
 		if (scoreboard.getOwner() == null) {
 			module.addComponent(scoreboard);
 		}
 		final Exit exit = scoreboard.getDoneBus().getOwner();
 
-		final Set latencies = new HashSet(controlBuses.size());
+		final Set<Latency> latencies = new HashSet<Latency>(controlBuses.size());
 		// final Map latencies = new LinkedHashMap(controlBuses.size());
-		for (Iterator iter = controlBuses.iterator(); iter.hasNext();) {
-			final Bus bus = (Bus) iter.next();
+		for (Bus bus : controlBuses) {
 			// latencies.put(bus, getLatency(bus));
 			latencies.add(getLatency(bus));
 		}
@@ -277,16 +275,15 @@ public class LatencyTracker implements LatencyCache {
 		return scoreboard;
 	}
 
-	Stallboard getStallboard(Collection controlBuses, Module module) {
+	Stallboard getStallboard(Collection<Bus> controlBuses, Module module) {
 		final Stallboard stallboard = cache.getStallboard(controlBuses);
 		if (stallboard.getOwner() == null) {
 			module.addComponent(stallboard);
 		}
 		final Exit exit = stallboard.getDoneBus().getOwner();
-		final Set latencies = new HashSet(controlBuses.size());
+		final Set<Latency> latencies = new HashSet<Latency>(controlBuses.size());
 		// final Map latencies = new LinkedHashMap(controlBuses.size());
-		for (Iterator iter = controlBuses.iterator(); iter.hasNext();) {
-			final Bus bus = (Bus) iter.next();
+		for (Bus bus : controlBuses) {
 			// latencies.put(bus, getLatency(bus));
 			latencies.add(getLatency(bus));
 		}
@@ -360,7 +357,7 @@ public class LatencyTracker implements LatencyCache {
 		 * cached.
 		 */
 		if (reg.getResultBus().getValue() == null) {
-			final Value inputValue = inputBus.getValue();
+			// final Value inputValue = inputBus.getValue();
 			reg.getResultBus().setSize(1, false);
 		}
 
@@ -420,16 +417,15 @@ public class LatencyTracker implements LatencyCache {
 	 *            the module to which the Or will be added
 	 * @return the new OR gate as retrieved from the cache
 	 */
-	Or getOr(Collection controlBuses, Module module) {
+	Or getOr(Collection<Bus> controlBuses, Module module) {
 		final Or or = cache.getOr(controlBuses);
 		if (or.getOwner() == null) {
 			module.addComponent(or);
 		}
 		final Exit exit = or.getResultBus().getOwner();
-		final Set latencies = new HashSet(controlBuses.size());
+		final Set<Latency> latencies = new HashSet<Latency>(controlBuses.size());
 		// final Map latencies = new LinkedHashMap(controlBuses.size());
-		for (Iterator iter = controlBuses.iterator(); iter.hasNext();) {
-			final Bus bus = (Bus) iter.next();
+		for (Bus bus : controlBuses) {
 			// latencies.put(bus, getLatency(bus));
 			latencies.add(getLatency(bus));
 		}
@@ -448,17 +444,16 @@ public class LatencyTracker implements LatencyCache {
 	 *            the module to which the And will be added
 	 * @return the new AND gate as retrieved from the cache
 	 */
-	And getAnd(Collection controlBuses, Module module) {
+	And getAnd(Collection<Bus> controlBuses, Module module) {
 		final And and = cache.getAnd(controlBuses);
 		if (and.getOwner() == null) {
 			module.addComponent(and);
 		}
 		final Exit exit = and.getResultBus().getOwner();
 
-		final Set latencies = new HashSet(controlBuses.size());
+		final Set<Latency> latencies = new HashSet<Latency>(controlBuses.size());
 		// final Map latencies = new LinkedHashMap(controlBuses.size());
-		for (Iterator iter = controlBuses.iterator(); iter.hasNext();) {
-			final Bus bus = (Bus) iter.next();
+		for (Bus bus : controlBuses) {
 			// latencies.put(bus, getLatency(bus));
 			latencies.add(getLatency(bus));
 		}
@@ -478,16 +473,16 @@ public class LatencyTracker implements LatencyCache {
 	 *            the module to which the Mux will be added
 	 * @return the new MUX as retrieved from the cache
 	 */
-	Mux getMux(List selectBuses, List dataBuses, Module module) {
+	Mux getMux(List<Bus> selectBuses, List<Bus> dataBuses, Module module) {
 		final Mux mux = cache.getMux(selectBuses, dataBuses);
 		if (mux.getOwner() == null) {
 			module.addComponent(mux);
 		}
 		final Exit exit = mux.getResultBus().getOwner();
 
-		final Map latencies = new LinkedHashMap(selectBuses.size());
-		for (Iterator iter = selectBuses.iterator(); iter.hasNext();) {
-			final Bus bus = (Bus) iter.next();
+		final Map<Bus, Latency> latencies = new LinkedHashMap<Bus, Latency>(
+				selectBuses.size());
+		for (Bus bus : selectBuses) {
 			latencies.put(bus, getLatency(bus));
 		}
 
@@ -506,12 +501,11 @@ public class LatencyTracker implements LatencyCache {
 		 */
 		final Bus entryControlBus = getControlBus(component);
 		final Latency entryLatency = getLatency(component);
-		for (Iterator iter = component.getExits().iterator(); iter.hasNext();) {
+		for (Exit exit : component.getExits()) {
 			/*
 			 * Get the component's internal latency and add it to the entry
 			 * latency to get the cumulative latency for the Exit.
 			 */
-			final Exit exit = (Exit) iter.next();
 			final Latency exitLatency = exit.getLatency();
 			// IDM. 01/13/2005 I would expect MOST exit latencies to
 			// be ZERO (combinational components). Instead of
@@ -554,7 +548,7 @@ public class LatencyTracker implements LatencyCache {
 					 * Otherwise AND the component's done bus with the entry's
 					 * control bus to get a valid done bus for the exit.
 					 */
-					final Collection andBuses = new ArrayList(2);
+					final Collection<Bus> andBuses = new ArrayList<Bus>(2);
 					andBuses.add(exit.getDoneBus());
 					andBuses.add(entryControlBus);
 					final And and = cache.getAnd(andBuses);

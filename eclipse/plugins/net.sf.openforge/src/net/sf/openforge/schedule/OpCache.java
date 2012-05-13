@@ -23,7 +23,6 @@ package net.sf.openforge.schedule;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,12 +54,12 @@ import net.sf.openforge.optimize.constant.TwoPassPartialConstant;
 public class OpCache {
 
 	private Map<Bus, Reg> eregMap = new HashMap<Bus, Reg>();
-	private Map scoreMap = new HashMap();
-	private Map<Bus, Latch> latchMap = new HashMap();
-	private Map<Bus, Reg> regMap = new HashMap();
-	private Map orMap = new HashMap();
-	private Map andMap = new HashMap();
-	private Map muxMap = new HashMap();
+	private Map<Set<Bus>, Scoreboard> scoreMap = new HashMap<Set<Bus>, Scoreboard>();
+	private Map<Bus, Latch> latchMap = new HashMap<Bus, Latch>();
+	private Map<Bus, Reg> regMap = new HashMap<Bus, Reg>();
+	private Map<Set<Bus>, Or> orMap = new HashMap<Set<Bus>, Or>();
+	private Map<Set<Bus>, And> andMap = new HashMap<Set<Bus>, And>();
+	private Map<Set<Bus>, Mux> muxMap = new HashMap<Set<Bus>, Mux>();
 
 	public OpCache() {
 	}
@@ -101,9 +100,9 @@ public class OpCache {
 		return latch;
 	}
 
-	Scoreboard getScoreboard(Collection controlBuses) {
-		final Set uniqueControlBuses = new LinkedHashSet(controlBuses);
-		Scoreboard scoreboard = (Scoreboard) scoreMap.get(uniqueControlBuses);
+	Scoreboard getScoreboard(Collection<Bus> controlBuses) {
+		final Set<Bus> uniqueControlBuses = new LinkedHashSet<Bus>(controlBuses);
+		Scoreboard scoreboard = scoreMap.get(uniqueControlBuses);
 		if (scoreboard == null) {
 			scoreboard = new Scoreboard(uniqueControlBuses);
 			TwoPassPartialConstant.propagateQuiet(scoreboard);
@@ -120,8 +119,8 @@ public class OpCache {
 	 *            a Collection of Bus objects to be stallboarded.
 	 * @return a non-null, unique Stallboard
 	 */
-	Stallboard getStallboard(Collection controlBuses) {
-		final Set uniqueControlBuses = new LinkedHashSet(controlBuses);
+	Stallboard getStallboard(Collection<Bus> controlBuses) {
+		final Set<Bus> uniqueControlBuses = new LinkedHashSet<Bus>(controlBuses);
 		Stallboard stallboard = new Stallboard(uniqueControlBuses);
 		TwoPassPartialConstant.propagateQuiet(stallboard);
 		return stallboard;
@@ -168,15 +167,15 @@ public class OpCache {
 	 * @return the Or, with buses connected. NOTE there will be no dependencies
 	 *         created or connected
 	 */
-	public Or getOr(Collection buses) {
-		final Set uniqueBuses = new LinkedHashSet(buses);
-		Or or = (Or) orMap.get(uniqueBuses);
+	public Or getOr(Collection<Bus> buses) {
+		final Set<Bus> uniqueBuses = new LinkedHashSet<Bus>(buses);
+		Or or = orMap.get(uniqueBuses);
 		if (or == null) {
 			or = new Or(uniqueBuses.size());
 			int i = 0;
-			for (Iterator iter = uniqueBuses.iterator(); iter.hasNext();) {
+			for (Bus bus : uniqueBuses) {
 				Port port = or.getDataPorts().get(i);
-				port.setBus((Bus) iter.next());
+				port.setBus(bus);
 				i++;
 			}
 			or.propagateValuesForward();
@@ -193,17 +192,17 @@ public class OpCache {
 	 *            the And
 	 * @return the And, with its Ports connected to the given Buses
 	 */
-	public And getAnd(Collection buses) {
-		final Set uniqueBuses = new LinkedHashSet(buses);
-		And and = (And) andMap.get(uniqueBuses);
+	public And getAnd(Collection<Bus> buses) {
+		final Set<Bus> uniqueBuses = new LinkedHashSet<Bus>(buses);
+		And and = andMap.get(uniqueBuses);
 		if (and == null) {
 
 			// and = new And(buses.size());
 			and = new And(uniqueBuses.size());
 			int i = 0;
-			for (Iterator iter = uniqueBuses.iterator(); iter.hasNext();) {
+			for (Bus bus : uniqueBuses) {
 				Port port = and.getDataPorts().get(i);
-				port.setBus((Bus) iter.next());
+				port.setBus(bus);
 				i++;
 			}
 			and.propagateValuesForward();
@@ -224,26 +223,26 @@ public class OpCache {
 	 * @return the Mux, with buses connected. NOTE there will be no dependencies
 	 *         created or connected
 	 */
-	public Mux getMux(List goBuses, List dataBuses) {
+	public Mux getMux(List<Bus> goBuses, List<Bus> dataBuses) {
 		if (goBuses.size() != dataBuses.size()) {
 			throw new IllegalArgumentException(
 					"mismatched number of go and data buses");
 		}
 
-		final Set uniqueBuses = new LinkedHashSet(goBuses);
-		uniqueBuses.add(dataBuses);
-		Mux mux = (Mux) muxMap.get(uniqueBuses);
+		final Set<Bus> uniqueBuses = new LinkedHashSet<Bus>(goBuses);
+		uniqueBuses.addAll(dataBuses);
+		Mux mux = muxMap.get(uniqueBuses);
 		if (mux == null) {
 			mux = new Mux(goBuses.size());
-			List goPorts = mux.getGoPorts();
+			List<Port> goPorts = mux.getGoPorts();
 
 			for (int i = 0; i < goPorts.size(); i++) {
-				Port goPort = (Port) goPorts.get(i);
-				Bus bus = (Bus) goBuses.get(i);
+				Port goPort = goPorts.get(i);
+				Bus bus = goBuses.get(i);
 				goPort.setBus(bus);
 
 				Port dataPort = mux.getDataPort(goPort);
-				bus = (Bus) dataBuses.get(i);
+				bus = dataBuses.get(i);
 				dataPort.setBus(bus);
 			}
 			mux.propagateValuesForward();

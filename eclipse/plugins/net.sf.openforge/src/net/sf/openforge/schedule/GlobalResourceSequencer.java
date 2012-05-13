@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -552,8 +551,10 @@ public class GlobalResourceSequencer extends DefaultVisitor {
 				// To create the dependency we need the min delay
 				// clocks. This is specified by the resource based on
 				// the types of the source and target.
-				Set trueSources = tracker.getTrueSources(source, refable);
-				Set trueSinks = subTracker.getTrueSinks(comp, refable);
+				Set<Component> trueSources = tracker.getTrueSources(source,
+						refable);
+				Set<Component> trueSinks = subTracker.getTrueSinks(comp,
+						refable);
 				int delayClocks = findDelayClocks(trueSources, trueSinks,
 						refable);
 				int goDelayClocks = findGoDelayClocks(trueSources, trueSinks,
@@ -603,7 +604,8 @@ public class GlobalResourceSequencer extends DefaultVisitor {
 		}
 	}
 
-	private static int findDelayClocks(Set fromSet, Set toSet, Referenceable ref) {
+	private static int findDelayClocks(Set<Component> fromSet,
+			Set<Component> toSet, Referenceable ref) {
 		if (debug) {
 			System.out.println("Refable: " + ref);
 			System.out.println("\tFromSet: " + fromSet);
@@ -611,27 +613,29 @@ public class GlobalResourceSequencer extends DefaultVisitor {
 		}
 
 		int delay = 0;
-		for (Referencer from : ((Set<Referencer>) fromSet)) {
-			for (Referencer to : ((Set<Referencer>) toSet)) {
+		for (Component from : fromSet) {
+			for (Component to : toSet) {
 				if (debug)
 					System.out.println("delay clocks from " + from + " to "
 							+ to);
-				delay = Math.max(delay, ref.getSpacing(from, to));
+				delay = Math.max(delay,
+						ref.getSpacing((Referencer) from, (Referencer) to));
 			}
 		}
 		return delay;
 	}
 
-	private static int findGoDelayClocks(Set<Referencer> fromSet,
-			Set<Referencer> toSet, Referenceable ref) {
+	private static int findGoDelayClocks(Set<Component> fromSet,
+			Set<Component> toSet, Referenceable ref) {
 		if (debug) {
 			System.out.println("Go spacing...");
 		}
 
 		int delay = 0;
-		for (Referencer from : fromSet) {
-			for (Referencer to : toSet) {
-				int space = ref.getGoSpacing(from, to);
+		for (Component from : fromSet) {
+			for (Component to : toSet) {
+				int space = ref
+						.getGoSpacing((Referencer) from, (Referencer) to);
 				if (debug)
 					System.out.println("go delay clocks from " + from + " to "
 							+ to + " = " + space);
@@ -645,7 +649,8 @@ public class GlobalResourceSequencer extends DefaultVisitor {
 		return delay;
 	}
 
-	private static boolean checkForGoSpacing(Set fromSet, Component to) {
+	private static boolean checkForGoSpacing(Set<Component> fromSet,
+			Component to) {
 		// In order to guarantee that the delta between GO's is at
 		// least the specified amount all entries in the fromSet (ie
 		// the true sources of the dep) must be in the same context as
@@ -654,9 +659,7 @@ public class GlobalResourceSequencer extends DefaultVisitor {
 		// intended (as part of a sub module). **NOTE** using a
 		// scheduling callback the source node may now be one level of
 		// hierarchy below the target node.
-		for (Iterator iter = fromSet.iterator(); iter.hasNext();) {
-			Component comp = (Component) iter.next();
-
+		for (Component comp : fromSet) {
 			if ((comp.getOwner() != to.getOwner())
 					&& (comp.getOwner().getOwner() != to.getOwner()))
 				return false;
@@ -763,7 +766,8 @@ public class GlobalResourceSequencer extends DefaultVisitor {
 			return stateMap.get(ref).priorAccesses;
 		}
 
-		private Set getTrue(Component comp, Referenceable ref, boolean getSource) {
+		private Set<Component> getTrue(Component comp, Referenceable ref,
+				boolean getSource) {
 			if (debug)
 				System.out.println("getTrue " + getSource + "called on " + this
 						+ " with statemap "
@@ -802,11 +806,11 @@ public class GlobalResourceSequencer extends DefaultVisitor {
 			return trueComps;
 		}
 
-		public Set getTrueSources(Component comp, Referenceable ref) {
+		public Set<Component> getTrueSources(Component comp, Referenceable ref) {
 			return getTrue(comp, ref, true);
 		}
 
-		public Set getTrueSinks(Component comp, Referenceable ref) {
+		public Set<Component> getTrueSinks(Component comp, Referenceable ref) {
 			return getTrue(comp, ref, false);
 		}
 

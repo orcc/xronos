@@ -292,7 +292,7 @@ public class LoopConditionalBranchBalancer implements Visitor {
 		for (Latency lat : currentLatencies) {
 			allLatencies.put(lat, lat);
 		}
-		final Map maxLatencies = Latency.getLatest(allLatencies);
+		final Map<?, Latency> maxLatencies = Latency.getLatest(allLatencies);
 		final Set<Latency> max = new HashSet<Latency>(maxLatencies.values());
 
 		// Also pick up any dependencies
