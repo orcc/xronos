@@ -147,6 +147,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	/** Dependency between Components and Done Bus **/
 	protected Map<Component, Bus> componentDoneBusDependency = new HashMap<Component, Bus>();
 
+	/** Dependency between Module Ports and its associated Var **/
+	protected Map<Module, Map<Port, Var>> modulePortDependency = new HashMap<Module, Map<Port, Var>>();
+
 	/** Current visited action **/
 	protected Action currentAction = null;
 
@@ -379,7 +382,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		mapInPorts(inVars, branch, branch.showIDLogical());
 		mapOutControlPort(branch);
 
-		// FIXME: Bug in the dependencies
 		operationDependencies(branch, Arrays.asList((Component) branch),
 				componentPortDependency, branch.getExit(Exit.DONE));
 
@@ -542,16 +544,17 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	protected void createModuleInterface(Module module, List<Var> inVars,
 			List<Var> outVars, Exit.Type exitType) {
 		if (inVars != null) {
+			Map<Port, Var> portDep = new HashMap<Port, Var>();
 			for (Var var : inVars) {
 				Port port = module.makeDataPort();
 				port.setIDLogical(var.getIndexedName());
-				portCache.putTarget(var, port);
-				portCache.putSource(var, port.getPeer());
+				portDep.put(port, var);
+
+				// portCache.putTarget(var, port);
+				// portCache.putSource(var, port.getPeer());
 			}
+			modulePortDependency.put(module, portDep);
 		}
-		// if (module.getExit(Exit.DONE) == null) {
-		// module.getExit(Exit.DONE);
-		// }
 		// TODO: outVars for PHI
 
 		// Create modules exit
@@ -834,7 +837,20 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		// Build Data Dependencies
 		for (Component component : components) {
 			for (Port port : component.getDataPorts()) {
-
+				Var var = componentPortDependency.get(component).get(port);
+				if (dependencyOnModulePort(module, var)) {
+					Bus sourceBus = getModulePortPeer(module, var);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(0);
+					Dependency dep = new DataDependency(sourceBus);
+					entry.addDependency(port, dep);
+				} else {
+					Bus sourceBus = getModuleComponentPortPeer(module, var);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(0);
+					Dependency dep = new DataDependency(sourceBus);
+					entry.addDependency(port, dep);
+				}
 			}
 		}
 		// Build control Dependencies
@@ -851,14 +867,38 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 	}
 
+	protected Bus getModulePortPeer(Module module, Var var) {
+		Bus bus = null;
+		Map<Port, Var> portVar = modulePortDependency.get(module);
+		for (Port port : portVar.keySet()) {
+			if (var == portVar.get(port)) {
+				bus = port.getPeer();
+			}
+		}
+		return bus;
+	}
+
+	protected Bus getModuleComponentPortPeer(Module module, Var var) {
+		Bus bus = null;
+		for (Component component : module.getComponents()) {
+			Map<Port, Var> portVar = componentPortDependency.get(component);
+			for (Port port : portVar.keySet()) {
+				if (var == portVar.get(port)) {
+					bus = port.getPeer();
+				}
+			}
+		}
+		return bus;
+	}
+
 	protected Boolean dependencyOnModulePort(Module module, Var var) {
-		Boolean dependency = false;
-		for (Port port : module.getDataPorts()) {
-			if (portCache.getVar(port) == var) {
+		Map<Port, Var> portVar = modulePortDependency.get(module);
+		for (Port port : portVar.keySet()) {
+			if (portVar.get(port) == var) {
 				return true;
 			}
 		}
-		return dependency;
+		return false;
 	}
 
 	/**
