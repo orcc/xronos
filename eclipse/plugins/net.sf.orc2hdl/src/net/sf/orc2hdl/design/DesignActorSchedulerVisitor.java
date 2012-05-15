@@ -170,8 +170,8 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		populateModule(currentModule, currentListComponent);
 
 		// Build Dependencies
-		operationDependencies(currentListComponent, componentDependency,
-				currentExit);
+		operationDependencies(currentModule, currentListComponent,
+				componentPortDependency, currentExit);
 
 		// Create the decision
 		decision = new Decision((Block) currentModule, currentComponent);

@@ -138,8 +138,14 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	/** Action component Counter **/
 	protected Integer componentCounter;
 
-	/** Dependency between Components and Vars **/
-	protected Map<Component, List<Var>> componentDependency = new HashMap<Component, List<Var>>();
+	/** Dependency between Components and Port-Var **/
+	protected Map<Component, Map<Port, Var>> componentPortDependency = new HashMap<Component, Map<Port, Var>>();
+
+	/** Dependency between Components and Bus-Var **/
+	protected Map<Component, Map<Bus, Var>> componentBusDependency = new HashMap<Component, Map<Bus, Var>>();
+
+	/** Dependency between Components and Done Bus **/
+	protected Map<Component, Bus> componentDoneBusDependency = new HashMap<Component, Bus>();
 
 	/** Current visited action **/
 	protected Action currentAction = null;
@@ -374,8 +380,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		mapOutControlPort(branch);
 
 		// FIXME: Bug in the dependencies
-		operationDependencies(Arrays.asList((Component) branch),
-				componentDependency, branch.getExit(Exit.DONE));
+		operationDependencies(branch, Arrays.asList((Component) branch),
+				componentPortDependency, branch.getExit(Exit.DONE));
 
 		// Give the name of the searchScope
 		branch.specifySearchScope(searchScope);
@@ -395,7 +401,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		populateModule(module, components);
 
 		// Set all the dependencies
-		operationDependencies(components, componentDependency,
+		operationDependencies(module, components, componentPortDependency,
 				module.getExit(Exit.DONE));
 
 		// Give the name of the searchScope
@@ -512,21 +518,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		entry.addDependency(comp.getGoPort(), new ControlDependency(goBus));
 	}
 
-	protected Var createComponentDependency(Var dependency) {
-		Var copyDepVar = null;
-		for (Component component : componentDependency.keySet()) {
-			List<Var> depVars = componentDependency.get(component);
-			if (depVars.contains(dependency)) {
-				Var newVarDep = IrFactory.eINSTANCE.createVar(0,
-						dependency.getType(), dependency.getIndexedName()
-								+ "_dep", false, 0);
-				depVars.add(newVarDep);
-				copyDepVar = newVarDep;
-			}
-		}
-		return copyDepVar;
-	}
-
 	protected Call createCall(String name, Module module) {
 		Block procedureBlock = (Block) module;
 		net.sf.openforge.lim.Procedure proc = new net.sf.openforge.lim.Procedure(
@@ -553,27 +544,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		if (inVars != null) {
 			for (Var var : inVars) {
 				Port port = module.makeDataPort();
-				if (!portCache.varExists(var)) {
-					port.setIDLogical(var.getIndexedName());
-					portCache.putTarget(var, port);
-					portCache.putSource(var, port.getPeer());
-				} else {
-					Var varCopyDep = IrFactory.eINSTANCE.createVar(0,
-							var.getType(),
-							var.getIndexedName() + "_" + module.showIDGlobal(),
-							false, 0);
-					port.setIDLogical(varCopyDep.getIndexedName());
-					portCache.putTarget(varCopyDep, port);
-					portCache.putSource(varCopyDep, portCache.getSource(var));
-					if (componentDependency.containsKey(module)) {
-						List<Var> depVars = componentDependency.get(module);
-						depVars.add(varCopyDep);
-						componentDependency.put(module, depVars);
-					} else {
-						componentDependency.put(module,
-								Arrays.asList(varCopyDep));
-					}
-				}
+				port.setIDLogical(var.getIndexedName());
+				portCache.putTarget(var, port);
+				portCache.putSource(var, port.getPeer());
 			}
 		}
 		// if (module.getExit(Exit.DONE) == null) {
@@ -597,8 +570,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		populateModule(currentModule, currentListComponent);
 
 		// Build Dependencies
-		operationDependencies(currentListComponent, componentDependency,
-				currentExit);
+		operationDependencies(currentModule, currentListComponent,
+				componentPortDependency, currentExit);
 		// Build option scope
 		currentModule.specifySearchScope(name);
 
@@ -798,22 +771,25 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 	protected void mapInPorts(List<Var> inVars, Component component) {
 		Iterator<Port> portIter = component.getDataPorts().iterator();
+		Map<Port, Var> portDep = new HashMap<Port, Var>();
 		for (Var var : inVars) {
 			Port dataPort = portIter.next();
 			dataPort.setIDLogical(var.getIndexedName());
 			dataPort.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
-			portCache.putTarget(var, dataPort);
+			portDep.put(dataPort, var);
+			// portCache.putTarget(var, dataPort);
 		}
 
 		// Put Input dependency
-		componentDependency.put(component, inVars);
+		componentPortDependency.put(component, portDep);
 	}
 
 	protected void mapInPorts(List<Var> inVars, Component component,
 			String prefix) {
 		List<Var> changedVar = new ArrayList<Var>();
 		Iterator<Port> portIter = component.getDataPorts().iterator();
+		Map<Port, Var> portDep = new HashMap<Port, Var>();
 
 		for (Var var : inVars) {
 			Var varDep = IrFactory.eINSTANCE.createVar(0, var.getType(),
@@ -822,52 +798,48 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			dataPort.setIDLogical(varDep.getIndexedName());
 			dataPort.setSize(varDep.getType().getSizeInBits(), varDep.getType()
 					.isInt() || varDep.getType().isBool());
-			portCache.putTarget(varDep, dataPort);
+			portDep.put(dataPort, varDep);
+			// portCache.putTarget(varDep, dataPort);
 			changedVar.add(varDep);
 		}
 
 		// Put Input dependency
-		componentDependency.put(component, changedVar);
+		componentPortDependency.put(component, portDep);
 	}
 
 	protected void mapOutPorts(Var var) {
 		Bus dataBus = currentComponent.getExit(Exit.DONE).getDataBuses().get(0);
+		Map<Bus, Var> busDep = new HashMap<Bus, Var>();
 		if (dataBus.getValue() == null) {
 			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 		}
 		dataBus.setIDLogical(var.getIndexedName());
-		portCache.putSource(var, dataBus);
+		busDep.put(dataBus, var);
+		componentBusDependency.put(currentComponent, busDep);
+		// portCache.putSource(var, dataBus);
 
 		mapOutControlPort(currentComponent);
 	}
 
 	protected void mapOutControlPort(Component component) {
 		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
-		portCache.putDoneBus(component, doneBus);
+		componentDoneBusDependency.put(component, doneBus);
+		// portCache.putDoneBus(component, doneBus);
 	}
 
-	protected void operationDependencies(List<Component> components,
-			Map<Component, List<Var>> dependecies, Exit exit) {
+	protected void operationDependencies(Module module,
+			List<Component> components,
+			Map<Component, Map<Port, Var>> dependecies, Exit exit) {
 		// Build Data Dependencies
 		for (Component component : components) {
-			if (dependecies.get(component) != null) {
-				for (Var depVar : dependecies.get(component)) {
-					if (depVar != null) {
-						Bus sourceBus = portCache.getSource(depVar);
-						Port targetPort = portCache.getTarget(depVar);
-						List<Entry> entries = targetPort.getOwner()
-								.getEntries();
-						Entry entry = entries.get(0);
-						Dependency dep = new DataDependency(sourceBus);
-						entry.addDependency(targetPort, dep);
-					}
-				}
+			for (Port port : component.getDataPorts()) {
+
 			}
 		}
 		// Build control Dependencies
 		for (Component component : components) {
-			Bus busDone = portCache.getDoneBus(component);
+			Bus busDone = componentDoneBusDependency.get(component);
 			if (busDone != null) {
 				Port donePort = exit.getDoneBus().getPeer();
 				List<Entry> entries = donePort.getOwner().getEntries();
@@ -877,6 +849,16 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			}
 		}
 
+	}
+
+	protected Boolean dependencyOnModulePort(Module module, Var var) {
+		Boolean dependency = false;
+		for (Port port : module.getDataPorts()) {
+			if (portCache.getVar(port) == var) {
+				return true;
+			}
+		}
+		return dependency;
 	}
 
 	/**

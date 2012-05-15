@@ -108,6 +108,14 @@ public class PortCache {
 		return port;
 	}
 
+	public Var getVar(Port port) {
+		return targetCache.get(port);
+	}
+
+	public Var getVar(Bus bus) {
+		return sourceCache.get(bus);
+	}
+
 	public void putDoneBus(Component component, Bus bus) {
 		doneBusComponents.put(component, bus);
 	}
