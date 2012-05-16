@@ -275,7 +275,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		// Create the testAction Module
 		Module bodyModule = (Block) buildModule(schedulerComponents,
 				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
-				"schedulerBody", null);
+				"schedulerBody", Exit.DONE);
 		bodyModule.setIDLogical("schedulerBody");
 
 		// Create the scheduler Loop Body
@@ -284,7 +284,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		Module scheduler = (Block) buildModule(
 				Arrays.asList((Component) loopBody),
 				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
-				"schedulerBody", null);
+				"schedulerBody", Exit.DONE);
 		scheduler.makeExit(0, Exit.RETURN);
 		Call call = createCall("scheduler", scheduler);
 		topLevelInit(call);
