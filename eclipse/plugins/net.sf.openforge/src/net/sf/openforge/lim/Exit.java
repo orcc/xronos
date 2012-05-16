@@ -95,7 +95,6 @@ public class Exit extends ID implements LatencyKey {
 	 * @version $Id: Exit.java 109 2006-02-24 18:10:34Z imiller $
 	 */
 	public final static class Type {
-		private static final String _RCS_ = "$Rev: 109 $";
 
 		static final int ID_DONE = 0;
 		static final int ID_RETURN = 1;

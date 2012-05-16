@@ -158,20 +158,11 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				varActorLoop, IrFactory.eINSTANCE.createExprVar(varActorSched));
 		doSwitch(assignLoop);
 
-		currentModule = new Block(false);
+		currentExit = Exit.DONE;
 
-		// Make an Exit with zero data buses at the output
-		currentExit = currentModule.makeExit(0);
-
-		// Add done dependency
-		mapOutControlPort(currentModule);
-
-		// Add all components to the module
-		populateModule(currentModule, currentListComponent);
-
-		// Build Dependencies
-		operationDependencies(currentModule, currentListComponent,
-				componentPortDependency, currentExit);
+		currentModule = (Module) buildModule(currentListComponent,
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				"schedulerInfiteLoop", currentExit);
 
 		// Create the decision
 		decision = new Decision((Block) currentModule, currentComponent);

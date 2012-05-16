@@ -157,7 +157,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	protected Component currentComponent = null;
 
 	/** Current Exit **/
-	protected Exit currentExit;
+	protected Exit.Type currentExit;
 
 	/** Current List Component **/
 	protected List<Component> currentListComponent;
@@ -404,7 +404,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		// Set all the dependencies
 		operationDependencies(module, components, componentPortDependency,
-				module.getExit(Exit.DONE));
+				module.getExit(exitType));
 
 		// Give the name of the searchScope
 		module.specifySearchScope(searchScope);
@@ -418,10 +418,10 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		componentCounter = 0;
 		currentListComponent = new ArrayList<Component>();
 		// Initialize currentModule and its exit Type
-		currentModule = new Block(false);
+		// currentModule = new Block(false);
 
 		// Make Action module exit
-		currentExit = currentModule.makeExit(0, Exit.RETURN);
+		currentExit = Exit.RETURN;
 		// Get pinRead Operation(s)
 
 		for (net.sf.orcc.df.Port port : action.getInputPattern().getPorts()) {
@@ -569,14 +569,10 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 	protected Task createTask(String name) {
 		Task task = null;
-		// Add all components to the module
-		populateModule(currentModule, currentListComponent);
 
-		// Build Dependencies
-		operationDependencies(currentModule, currentListComponent,
-				componentPortDependency, currentExit);
-		// Build option scope
-		currentModule.specifySearchScope(name);
+		currentModule = (Module) buildModule(currentListComponent,
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				name, currentExit);
 
 		// create Call
 		Call call = createCall(name, currentModule);
@@ -882,9 +878,11 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		Bus bus = null;
 		for (Component component : module.getComponents()) {
 			Map<Port, Var> portVar = componentPortDependency.get(component);
-			for (Port port : portVar.keySet()) {
-				if (var == portVar.get(port)) {
-					bus = port.getPeer();
+			if (portVar != null) {
+				for (Port port : portVar.keySet()) {
+					if (var == portVar.get(port)) {
+						return port.getPeer();
+					}
 				}
 			}
 		}
