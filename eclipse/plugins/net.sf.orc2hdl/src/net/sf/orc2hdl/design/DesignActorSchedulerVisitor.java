@@ -192,14 +192,14 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		Block thenBlock = (Block) buildModule(
 				Arrays.asList((Component) taskCall),
 				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
-				"block", null);
+				"block", Exit.DONE);
 		Component branch = buildBranch(branchDecision, thenBlock, null,
 				Arrays.asList(outDecision), Collections.<Var> emptyList(),
-				"callTask_" + task.getIDGlobalType(), null);
+				"callTask_" + task.getIDGlobalType(), Exit.DONE);
 
 		Module module = (Module) buildModule(Arrays.asList(branch),
 				Arrays.asList(outDecision), Collections.<Var> emptyList(),
-				"taskCallBlock", null);
+				"taskCallBlock", Exit.DONE);
 
 		return module;
 	}

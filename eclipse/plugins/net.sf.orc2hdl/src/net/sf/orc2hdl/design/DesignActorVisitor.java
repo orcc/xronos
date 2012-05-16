@@ -129,68 +129,19 @@ import org.eclipse.emf.common.util.EList;
  */
 public class DesignActorVisitor extends DfVisitor<Object> {
 
-	/** List which associates each action with its components **/
-	private final Map<Action, List<Component>> actionComponents = new HashMap<Action, List<Component>>();
-
-	/** Map of action associated to its Task **/
-	private final Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
-
-	/** Action component Counter **/
-	protected Integer componentCounter;
-
-	/** Dependency between Components and Port-Var **/
-	protected Map<Component, Map<Port, Var>> componentPortDependency = new HashMap<Component, Map<Port, Var>>();
-
-	/** Dependency between Components and Bus-Var **/
-	protected Map<Component, Map<Bus, Var>> componentBusDependency = new HashMap<Component, Map<Bus, Var>>();
-
-	/** Dependency between Components and Done Bus **/
-	protected Map<Component, Bus> componentDoneBusDependency = new HashMap<Component, Bus>();
-
-	/** Dependency between Module Ports and its associated Var **/
-	protected Map<Module, Map<Port, Var>> modulePortDependency = new HashMap<Module, Map<Port, Var>>();
-
-	/** Current visited action **/
-	protected Action currentAction = null;
-
-	/** Current Component **/
-	protected Component currentComponent = null;
-
-	/** Current Exit **/
-	protected Exit.Type currentExit;
-
-	/** Current List Component **/
-	protected List<Component> currentListComponent;
-
-	/** The current module which represents the Action **/
-	protected Module currentModule;
-
-	/** Design to be build **/
-	protected Design design;
-
-	/** Port Cache **/
-	protected PortCache portCache = new PortCache();
-
-	/** Design Resources **/
-	protected ResourceCache resources;
-
-	/** Design stateVars **/
-	protected Map<LogicalValue, Var> stateVars;
-
-	/** Instance **/
-	Instance instance;
-
-	public DesignActorVisitor(Instance instance, Design design,
-			ResourceCache resources) {
-		this.instance = instance;
-		this.design = design;
-		this.resources = resources;
-		irVisitor = new InnerIrVisitor();
-	}
-
 	protected class InnerIrVisitor extends AbstractIrVisitor<Object> {
 		public InnerIrVisitor() {
 			super(true);
+		}
+
+		@Override
+		public Object caseBlockIf(BlockIf blockIf) {
+			return null;
+		}
+
+		@Override
+		public Object caseBlockWhile(BlockWhile blockWhile) {
+			return null;
 		}
 
 		@Override
@@ -315,22 +266,104 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		}
 
 		@Override
-		public Object caseBlockIf(BlockIf blockIf) {
-			return null;
-		}
-
-		@Override
-		public Object caseBlockWhile(BlockWhile blockWhile) {
-			return null;
-		}
-
-		@Override
 		public Object caseVar(Var var) {
 			if (var.isGlobal()) {
 				stateVars.put(makeLogicalValue(var), var);
 			}
 			return null;
 		}
+	}
+
+	/** List which associates each action with its components **/
+	private final Map<Action, List<Component>> actionComponents = new HashMap<Action, List<Component>>();
+
+	/** Map of action associated to its Task **/
+	private final Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
+
+	/** Dependency between Components and Bus-Var **/
+	protected Map<Component, Map<Bus, Var>> componentBusDependency = new HashMap<Component, Map<Bus, Var>>();
+
+	/** Action component Counter **/
+	protected Integer componentCounter;
+
+	/** Dependency between Components and Done Bus **/
+	protected Map<Component, Bus> componentDoneBusDependency = new HashMap<Component, Bus>();
+
+	/** Dependency between Components and Port-Var **/
+	protected Map<Component, Map<Port, Var>> componentPortDependency = new HashMap<Component, Map<Port, Var>>();
+
+	/** Current visited action **/
+	protected Action currentAction = null;
+
+	/** Current Component **/
+	protected Component currentComponent = null;
+
+	/** Current Exit **/
+	protected Exit.Type currentExit;
+
+	/** Current List Component **/
+	protected List<Component> currentListComponent;
+
+	/** The current module which represents the Action **/
+	protected Module currentModule;
+
+	/** Design to be build **/
+	protected Design design;
+
+	/** Instance **/
+	Instance instance;
+
+	/** Dependency between Module Ports and its associated Var **/
+	protected Map<Module, Map<Port, Var>> modulePortDependency = new HashMap<Module, Map<Port, Var>>();
+
+	/** Port Cache **/
+	protected PortCache portCache = new PortCache();
+
+	/** Design Resources **/
+	protected ResourceCache resources;
+
+	/** Design stateVars **/
+	protected Map<LogicalValue, Var> stateVars;
+
+	public DesignActorVisitor(Instance instance, Design design,
+			ResourceCache resources) {
+		this.instance = instance;
+		this.design = design;
+		this.resources = resources;
+		irVisitor = new InnerIrVisitor();
+	}
+
+	protected Component buildBranch(Decision decision, Block thenBlock,
+			Block elseBlock, List<Var> inVars, List<Var> outVars,
+			String searchScope, Exit.Type exitType) {
+		Branch branch = null;
+		portCache.publish(decision);
+		portCache.publish(thenBlock);
+		List<Component> branchComponents = new ArrayList<Component>();
+		if (elseBlock == null) {
+			branch = new Branch(decision, thenBlock);
+			branchComponents.add(decision);
+			branchComponents.add(thenBlock);
+		} else {
+			branch = new Branch(decision, thenBlock, elseBlock);
+			branchComponents.add(decision);
+			branchComponents.add(thenBlock);
+			branchComponents.add(elseBlock);
+			portCache.publish(elseBlock);
+		}
+
+		createModuleInterface(branch, inVars, outVars, exitType);
+
+		// Map In/Out port of branch
+		mapInPorts(inVars, branch);
+		mapOutControlPort(branch);
+
+		operationDependencies(branch, branchComponents,
+				componentPortDependency, branch.getExit(Exit.DONE));
+
+		// Give the name of the searchScope
+		branch.specifySearchScope(searchScope);
+		return branch;
 	}
 
 	protected Decision buildDecision(Var inputDecision, String resultName) {
@@ -346,7 +379,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		currentModule = (Module) buildModule(Arrays.asList(currentComponent),
 				Arrays.asList(inputDecision), Collections.<Var> emptyList(),
-				"decisionBlock", null);
+				"decisionBlock", Exit.DONE);
 
 		// Add done dependency
 		mapOutControlPort(currentModule);
@@ -358,36 +391,18 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		// to propagate. They are inferred true/false.
 		propagateInputs(decision, (Block) currentModule);
 
+		// Add to dependency, A Decision has only one Input
+		Map<Port, Var> portDep = new HashMap<Port, Var>();
+		Port port = decision.getDataPorts().get(0);
+		portDep.put(port, inputDecision);
+		componentPortDependency.put(decision, portDep);
+
 		// Build option scope
 		currentModule.specifySearchScope("moduleDecision");
+
+		// Add done dependency on decision
+		mapOutControlPort(decision);
 		return decision;
-	}
-
-	protected Component buildBranch(Decision decision, Block thenBlock,
-			Block elseBlock, List<Var> inVars, List<Var> outVars,
-			String searchScope, Exit.Type exitType) {
-		Branch branch = null;
-		portCache.publish(decision);
-		portCache.publish(thenBlock);
-		if (elseBlock == null) {
-			branch = new Branch(decision, thenBlock);
-		} else {
-			branch = new Branch(decision, thenBlock, elseBlock);
-			portCache.publish(elseBlock);
-		}
-
-		createModuleInterface(branch, inVars, outVars, exitType);
-
-		// Map In/Out port of branch
-		mapInPorts(inVars, branch, branch.showIDLogical());
-		mapOutControlPort(branch);
-
-		operationDependencies(branch, Arrays.asList((Component) branch),
-				componentPortDependency, branch.getExit(Exit.DONE));
-
-		// Give the name of the searchScope
-		branch.specifySearchScope(searchScope);
-		return branch;
 	}
 
 	protected Component buildModule(List<Component> components,
@@ -408,7 +423,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		// Give the name of the searchScope
 		module.specifySearchScope(searchScope);
-
+		// Add done dependency on module
+		mapOutControlPort(module);
 		return module;
 	}
 
@@ -418,14 +434,13 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		componentCounter = 0;
 		currentListComponent = new ArrayList<Component>();
 		// Initialize currentModule and its exit Type
-		// currentModule = new Block(false);
 
 		// Make Action module exit
 		currentExit = Exit.RETURN;
 		// Get pinRead Operation(s)
 
 		for (net.sf.orcc.df.Port port : action.getInputPattern().getPorts()) {
-			makePinReadOperation(port, portCache);
+			makePinReadOperation(port);
 			currentListComponent.add(currentComponent);
 		}
 
@@ -434,7 +449,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		// Get pinWrite Operation(s)
 		for (net.sf.orcc.df.Port port : action.getOutputPattern().getPorts()) {
-			makePinWriteOperation(port, portCache);
+			makePinWriteOperation(port);
 			currentListComponent.add(currentComponent);
 		}
 		// Create the task
@@ -549,9 +564,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				Port port = module.makeDataPort();
 				port.setIDLogical(var.getIndexedName());
 				portDep.put(port, var);
-
-				// portCache.putTarget(var, port);
-				// portCache.putSource(var, port.getPeer());
 			}
 			modulePortDependency.put(module, portDep);
 		}
@@ -582,6 +594,18 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		task.setKickerRequired(false);
 		task.setSourceName(name);
 		return task;
+	}
+
+	protected Boolean dependencyOnModulePort(Module module, Var var) {
+		Map<Port, Var> portVar = modulePortDependency.get(module);
+		if (portVar != null) {
+			for (Port port : portVar.keySet()) {
+				if (portVar.get(port) == var) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	// TODO: set all the necessary information here
@@ -625,6 +649,40 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				resources.addIOHandler(port, ioHandler);
 			}
 		}
+	}
+
+	protected Bus getModuleComponentPortPeer(Module module, Var var) {
+		for (Component component : module.getComponents()) {
+			Map<Bus, Var> portVar = componentBusDependency.get(component);
+			if (portVar != null) {
+				for (Bus bus : portVar.keySet()) {
+					if (var == portVar.get(bus)) {
+						return bus;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	protected Port getModulePort(Component component, Var var) {
+		Map<Port, Var> portVar = componentPortDependency.get(component);
+		for (Port port : portVar.keySet()) {
+			if (var == portVar.get(port)) {
+				return port;
+			}
+		}
+		return null;
+	}
+
+	protected Bus getModulePortPeer(Component component, Var var) {
+		Map<Port, Var> portVar = modulePortDependency.get(component);
+		for (Port port : portVar.keySet()) {
+			if (var == portVar.get(port)) {
+				return port.getPeer();
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -729,8 +787,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		return logicalValue;
 	}
 
-	private void makePinReadOperation(net.sf.orcc.df.Port port,
-			PortCache portCache) {
+	private void makePinReadOperation(net.sf.orcc.df.Port port) {
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 		currentComponent = ioHandler.getReadAccess();
 		setAttributes(
@@ -738,20 +795,21 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 						+ Integer.toString(componentCounter), currentComponent);
 		Var pinReadVar = currentAction.getInputPattern().getPortToVarMap()
 				.get(port);
-
+		Map<Bus, Var> busDep = new HashMap<Bus, Var>();
 		for (Bus dataBus : currentComponent.getExit(Exit.DONE).getDataBuses()) {
 			if (dataBus.getValue() == null) {
 				dataBus.setSize(port.getType().getSizeInBits(), port.getType()
 						.isInt() || port.getType().isBool());
+				dataBus.setIDLogical(pinReadVar.getIndexedName());
 			}
-			portCache.putSource(pinReadVar, dataBus);
+			busDep.put(dataBus, pinReadVar);
+			componentBusDependency.put(currentComponent, busDep);
 		}
 		mapOutPorts(pinReadVar);
 		componentCounter++;
 	}
 
-	private void makePinWriteOperation(net.sf.orcc.df.Port port,
-			PortCache portCache) {
+	private void makePinWriteOperation(net.sf.orcc.df.Port port) {
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 		currentComponent = ioHandler.getWriteAccess();
 		setAttributes(
@@ -763,8 +821,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		mapInPorts(new ArrayList<Var>(Arrays.asList(pinWriteVar)),
 				currentComponent);
 		// Add done dependency for this operation to the current module exit
-		Bus doneBus = currentComponent.getExit(Exit.DONE).getDoneBus();
-		portCache.putDoneBus(currentComponent, doneBus);
+		mapOutControlPort(currentComponent);
 		componentCounter++;
 	}
 
@@ -777,7 +834,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			dataPort.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 			portDep.put(dataPort, var);
-			// portCache.putTarget(var, dataPort);
 		}
 
 		// Put Input dependency
@@ -798,7 +854,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			dataPort.setSize(varDep.getType().getSizeInBits(), varDep.getType()
 					.isInt() || varDep.getType().isBool());
 			portDep.put(dataPort, varDep);
-			// portCache.putTarget(varDep, dataPort);
 			changedVar.add(varDep);
 		}
 
@@ -806,100 +861,64 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		componentPortDependency.put(component, portDep);
 	}
 
+	protected void mapOutControlPort(Component component) {
+		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
+		componentDoneBusDependency.put(component, doneBus);
+	}
+
 	protected void mapOutPorts(Var var) {
 		Bus dataBus = currentComponent.getExit(Exit.DONE).getDataBuses().get(0);
 		Map<Bus, Var> busDep = new HashMap<Bus, Var>();
-		Map<Port, Var> portDep = new HashMap<Port, Var>();
 		if (dataBus.getValue() == null) {
 			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 		}
 		dataBus.setIDLogical(var.getIndexedName());
 		busDep.put(dataBus, var);
-		portDep.put(dataBus.getPeer(), var);
-		componentPortDependency.put(currentComponent, portDep);
 		componentBusDependency.put(currentComponent, busDep);
-		// portCache.putSource(var, dataBus);
 
 		mapOutControlPort(currentComponent);
-	}
-
-	protected void mapOutControlPort(Component component) {
-		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
-		componentDoneBusDependency.put(component, doneBus);
-		// portCache.putDoneBus(component, doneBus);
 	}
 
 	protected void operationDependencies(Module module,
 			List<Component> components,
 			Map<Component, Map<Port, Var>> dependecies, Exit exit) {
-		// Build Data Dependencies
-		for (Component component : components) {
-			for (Port port : component.getDataPorts()) {
-				Var var = componentPortDependency.get(component).get(port);
-				if (dependencyOnModulePort(module, var)) {
-					Bus sourceBus = getModulePortPeer(module, var);
-					List<Entry> entries = port.getOwner().getEntries();
-					Entry entry = entries.get(0);
-					Dependency dep = new DataDependency(sourceBus);
-					entry.addDependency(port, dep);
-				} else {
-					Bus sourceBus = getModuleComponentPortPeer(module, var);
-					List<Entry> entries = port.getOwner().getEntries();
-					Entry entry = entries.get(0);
-					Dependency dep = new DataDependency(sourceBus);
-					entry.addDependency(port, dep);
-				}
-			}
-		}
-		// Build control Dependencies
-		for (Component component : components) {
-			Bus busDone = componentDoneBusDependency.get(component);
-			if (busDone != null) {
-				Port donePort = exit.getDoneBus().getPeer();
-				List<Entry> entries = donePort.getOwner().getEntries();
-				Entry entry = entries.get(0);
-				Dependency dep = new ControlDependency(busDone);
-				entry.addDependency(donePort, dep);
-			}
-		}
 
-	}
-
-	protected Bus getModulePortPeer(Module module, Var var) {
-		Bus bus = null;
-		Map<Port, Var> portVar = modulePortDependency.get(module);
-		for (Port port : portVar.keySet()) {
-			if (var == portVar.get(port)) {
-				bus = port.getPeer();
-			}
-		}
-		return bus;
-	}
-
-	protected Bus getModuleComponentPortPeer(Module module, Var var) {
-		Bus bus = null;
 		for (Component component : module.getComponents()) {
-			Map<Port, Var> portVar = componentPortDependency.get(component);
-			if (portVar != null) {
-				for (Port port : portVar.keySet()) {
-					if (var == portVar.get(port)) {
-						return port.getPeer();
+			if (components.contains(component)) {
+				// Build Data dependencies
+				for (Port port : component.getDataPorts()) {
+					Var var = componentPortDependency.get(component).get(port);
+					if (dependencyOnModulePort(module, var)) {
+						Bus sourceBus = getModulePortPeer(module, var);
+						Port targetPort = getModulePort(component, var);
+						List<Entry> entries = targetPort.getOwner()
+								.getEntries();
+						Entry entry = entries.get(0);
+						Dependency dep = new DataDependency(sourceBus);
+						entry.addDependency(targetPort, dep);
+					} else {
+						Bus sourceBus = getModuleComponentPortPeer(module, var);
+						List<Entry> entries = port.getOwner().getEntries();
+						Entry entry = entries.get(0);
+						Dependency dep = new DataDependency(sourceBus);
+						entry.addDependency(port, dep);
 					}
 				}
-			}
-		}
-		return bus;
-	}
 
-	protected Boolean dependencyOnModulePort(Module module, Var var) {
-		Map<Port, Var> portVar = modulePortDependency.get(module);
-		for (Port port : portVar.keySet()) {
-			if (portVar.get(port) == var) {
-				return true;
+				// Build control Dependencies
+				Bus busDone = componentDoneBusDependency.get(component);
+				if (busDone != null) {
+					Port donePort = exit.getDoneBus().getPeer();
+					List<Entry> entries = donePort.getOwner().getEntries();
+					Entry entry = entries.get(0);
+					Dependency dep = new ControlDependency(busDone);
+					entry.addDependency(donePort, dep);
+				}
+
 			}
 		}
-		return false;
+
 	}
 
 	/**
@@ -944,7 +963,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			Entry entry = port.getOwner().getEntries().get(0);
 			entry.addDependency(port,
 					new DataDependency(decisionPort.getPeer()));
-			portCache.replaceTarget(port, decisionPort);
 		}
 	}
 
