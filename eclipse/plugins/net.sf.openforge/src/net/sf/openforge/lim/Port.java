@@ -246,11 +246,12 @@ public class Port extends ID {
 			setSize(derived.getSize(), derived.isSigned());
 			isModified = true;
 		}
-		if (derived.getSize() != getValue().getSize())
+		if (derived.getSize() != getValue().getSize()) {
 			throw new SizeMismatchException("derived: " + derived.getSize()
 					+ " current: " + getValue().getSize());
-		// assert derived.getSize()==getValue().getSize():
-		// "derived: "+derived.getSize()+" current: "+getValue().getSize();
+			// assert derived.getSize()==getValue().getSize():
+			// "derived: "+derived.getSize()+" current: "+getValue().getSize();
+		}
 
 		/*
 		 * If not all inputs have values yet, as can be the case when there is
@@ -498,7 +499,7 @@ public class Port extends ID {
 	 */
 	@Override
 	public String toString() {
-		return ID.showLogical(this);
+		return ID.showLogical(this) + ":" + ID.glob(this);
 	}
 
 	/** set the type (used to denote sideband ports/buses) */

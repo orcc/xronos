@@ -507,7 +507,7 @@ public class Bus extends ID {
 	 */
 	@Override
 	public String toString() {
-		return ID.glob(this);
+		return ID.showLogical(this) + ":" + ID.glob(this);
 	}
 
 	/** set the type (used to denote sideband ports/buses) */

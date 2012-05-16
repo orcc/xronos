@@ -33,7 +33,7 @@ import org.w3c.dom.Node;
  * <p>
  * Created: Wed Jul 13 12:50:32 2005
  * 
- * @author imiller, last modified by $Author: imiller $
+ * @author imiller, last modified by $Author: Endri B $
  */
 public class XBranchFactory extends XModuleFactory {
 

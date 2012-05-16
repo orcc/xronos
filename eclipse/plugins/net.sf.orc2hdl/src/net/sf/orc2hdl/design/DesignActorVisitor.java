@@ -401,7 +401,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		currentModule.specifySearchScope("moduleDecision");
 
 		// Add done dependency on decision
-		mapOutControlPort(decision);
+		// mapOutControlPort(decision);
 		return decision;
 	}
 
@@ -423,8 +423,11 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		// Give the name of the searchScope
 		module.specifySearchScope(searchScope);
-		// Add done dependency on module
-		mapOutControlPort(module);
+		if (exitType != Exit.RETURN) {
+			// Add done dependency on module
+			mapOutControlPort(module);
+		}
+
 		return module;
 	}
 
@@ -566,6 +569,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				portDep.put(port, var);
 			}
 			modulePortDependency.put(module, portDep);
+			componentPortDependency.put(module, portDep);
 		}
 		// TODO: outVars for PHI
 
