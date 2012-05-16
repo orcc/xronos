@@ -809,12 +809,15 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	protected void mapOutPorts(Var var) {
 		Bus dataBus = currentComponent.getExit(Exit.DONE).getDataBuses().get(0);
 		Map<Bus, Var> busDep = new HashMap<Bus, Var>();
+		Map<Port, Var> portDep = new HashMap<Port, Var>();
 		if (dataBus.getValue() == null) {
 			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 		}
 		dataBus.setIDLogical(var.getIndexedName());
 		busDep.put(dataBus, var);
+		portDep.put(dataBus.getPeer(), var);
+		componentPortDependency.put(currentComponent, portDep);
 		componentBusDependency.put(currentComponent, busDep);
 		// portCache.putSource(var, dataBus);
 
