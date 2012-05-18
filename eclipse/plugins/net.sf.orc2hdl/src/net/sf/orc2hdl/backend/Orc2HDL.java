@@ -351,6 +351,7 @@ public class Orc2HDL extends AbstractBackend {
 			DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
 					new DfVisitor<Void>(new SSATransformation()),
 					new GlobalArrayInitializer(true), new UnaryListRemoval(),
+					new DfVisitor<Void>(new ListFlattener()),
 					new DfVisitor<Expression>(new TacTransformation()),
 					new DfVisitor<CfgNode>(new CfgBuilder()),
 					new DfVisitor<Expression>(new LiteralIntegersAdder()) };

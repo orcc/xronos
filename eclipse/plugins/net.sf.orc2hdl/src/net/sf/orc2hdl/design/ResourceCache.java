@@ -65,6 +65,10 @@ public class ResourceCache {
 		memLocations.put(var, location);
 	}
 
+	public Location getLocation(Var var) {
+		return memLocations.get(var);
+	}
+
 	public void addTaskCall(InstCall instCall, TaskCall taskCall) {
 		taskCalls.put(instCall, taskCall);
 	}

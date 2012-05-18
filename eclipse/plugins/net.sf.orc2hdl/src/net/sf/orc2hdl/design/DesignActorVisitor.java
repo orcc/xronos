@@ -43,6 +43,8 @@ import java.util.Map;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler.FifoIOHandler;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler.NativeIOHandler;
+import net.sf.openforge.frontend.slim.builder.SLIMConstants;
+import net.sf.openforge.frontend.slim.builder.XModuleFactory;
 import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Branch;
@@ -57,25 +59,33 @@ import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.HeapRead;
 import net.sf.openforge.lim.InBuf;
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.OffsetMemoryAccess;
 import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.ResetDependency;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
+import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
 import net.sf.openforge.lim.memory.AddressStridePolicy;
 import net.sf.openforge.lim.memory.AddressableUnit;
 import net.sf.openforge.lim.memory.Allocation;
+import net.sf.openforge.lim.memory.LValue;
+import net.sf.openforge.lim.memory.Location;
+import net.sf.openforge.lim.memory.LocationConstant;
 import net.sf.openforge.lim.memory.LogicalMemory;
+import net.sf.openforge.lim.memory.LogicalMemoryPort;
 import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.openforge.lim.memory.Record;
 import net.sf.openforge.lim.memory.Scalar;
 import net.sf.openforge.lim.op.AddOp;
 import net.sf.openforge.lim.op.AndOp;
+import net.sf.openforge.lim.op.CastOp;
 import net.sf.openforge.lim.op.ComplementOp;
 import net.sf.openforge.lim.op.DivideOp;
 import net.sf.openforge.lim.op.EqualsOp;
@@ -260,10 +270,44 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		@Override
 		public Object caseInstLoad(InstLoad load) {
+			Var sourceVar = load.getSource().getVariable();
+			Boolean isSigned = sourceVar.getType().isUint();
+			Location targetLocation = resources.getLocation(sourceVar);
+
+			LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
+
+			AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
+					.getInitialValue().getAddressStridePolicy();
+
 			if (load.getSource().getVariable().getType().isList()) {
-				// TODO: Load index of the List
+				int dataSize = sourceVar.getType().getSizeInBits();
+				HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(),
+						32, 0, isSigned, addrPolicy);
+				CastOp castOp = new CastOp(dataSize, isSigned);
+				Block block = buildAddressedBlock(read, targetLocation,
+						Collections.singletonList((Component) castOp));
+				Bus result = block.getExit(Exit.DONE).makeDataBus();
+				castOp.getEntries()
+						.get(0)
+						.addDependency(castOp.getDataPort(),
+								new DataDependency(read.getResultBus()));
+				result.getPeer()
+						.getOwner()
+						.getEntries()
+						.get(0)
+						.addDependency(result.getPeer(),
+								new DataDependency(castOp.getResultBus()));
+
+				memPort.addAccess(read, targetLocation);
+				currentComponent = block;
+				mapInPorts(new ArrayList<Var>(Arrays.asList(sourceVar)),
+						currentComponent);
+				mapOutPorts(load.getTarget().getVariable());
 			} else {
-				currentComponent = new NoOp(1, Exit.DONE);
+				currentComponent = new AbsoluteMemoryRead(targetLocation, 32,
+						isSigned);
+				memPort.addAccess((LValue) currentComponent, targetLocation);
 			}
 			return null;
 		}
@@ -274,6 +318,57 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				stateVars.put(makeLogicalValue(var), var);
 			}
 			return null;
+		}
+
+		private Block buildAddressedBlock(OffsetMemoryAccess memAccess,
+				Location targetLocation, List<Component> otherComps) {
+			final LocationConstant locationConst = new LocationConstant(
+					targetLocation, SLIMConstants.MAX_ADDR_WIDTH,
+					targetLocation.getAbsoluteBase().getLogicalMemory()
+							.getAddressStridePolicy());
+			final AddOp adder = new AddOp();
+			final CastOp cast = new CastOp(SLIMConstants.MAX_ADDR_WIDTH, false);
+
+			final Block block = new Block(false);
+			final Exit done = block.makeExit(0, Exit.DONE);
+			final List<Component> comps = new ArrayList<Component>();
+			comps.add(locationConst);
+			comps.add(cast);
+			comps.add(adder);
+			comps.add(memAccess);
+			comps.addAll(otherComps);
+			XModuleFactory.populateModule(block, comps);
+			final Port index = block.makeDataPort();
+
+			// Now build the dependencies
+			cast.getEntries()
+					.get(0)
+					.addDependency(cast.getDataPort(),
+							new DataDependency(index.getPeer()));
+			adder.getEntries()
+					.get(0)
+					.addDependency(adder.getLeftDataPort(),
+							new DataDependency(locationConst.getValueBus()));
+			adder.getEntries()
+					.get(0)
+					.addDependency(adder.getRightDataPort(),
+							new DataDependency(cast.getResultBus()));
+
+			memAccess
+					.getEntries()
+					.get(0)
+					.addDependency(memAccess.getBaseAddressPort(),
+							new DataDependency(adder.getResultBus()));
+
+			done.getPeer()
+					.getEntries()
+					.get(0)
+					.addDependency(
+							done.getDoneBus().getPeer(),
+							new ControlDependency(memAccess.getExit(Exit.DONE)
+									.getDoneBus()));
+
+			return block;
 		}
 	}
 
