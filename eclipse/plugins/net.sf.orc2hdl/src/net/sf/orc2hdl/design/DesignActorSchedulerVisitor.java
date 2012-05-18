@@ -51,6 +51,7 @@ import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.WhileBody;
+import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
@@ -128,9 +129,11 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	private final List<Component> schedulerComponents = new ArrayList<Component>();
 
 	public DesignActorSchedulerVisitor(Instance instance, Design design,
-			Map<Action, Task> actorsTasks, ResourceCache resources) {
+			Map<Action, Task> actorsTasks, ResourceCache resources,
+			Map<LogicalValue, Var> stateVars) {
 		super(instance, design, resources);
 		this.actorsTasks = actorsTasks;
+		this.stateVars = stateVars;
 		irVisitor = new InheritedInnerIrVisitor();
 	}
 

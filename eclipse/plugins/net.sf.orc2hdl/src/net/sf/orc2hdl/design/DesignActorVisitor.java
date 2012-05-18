@@ -529,7 +529,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		// Create a task for the scheduler and add it directly to the design
 		DesignActorSchedulerVisitor schedulerVisitor = new DesignActorSchedulerVisitor(
-				instance, design, actorsTasks, resources);
+				instance, design, actorsTasks, resources, stateVars);
 		schedulerVisitor.doSwitch(actor);
 
 		for (Task task : design.getTasks()) {
@@ -900,8 +900,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	}
 
 	@SuppressWarnings("unused")
-	// Just for the moment suppress the warning, only simple support,in
-	// construction
+	// Just for the moment suppress the warning, in construction
 	protected void operationDependencies(Module module,
 			List<Component> components,
 			Map<Component, Map<Port, Var>> dependecies, Exit exit) {
