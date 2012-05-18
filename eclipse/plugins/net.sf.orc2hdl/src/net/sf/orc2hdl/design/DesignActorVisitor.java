@@ -33,6 +33,7 @@ import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -57,6 +58,8 @@ import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.InBuf;
+import net.sf.openforge.lim.Loop;
+import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.OutBuf;
@@ -456,7 +459,12 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			currentListComponent.add(currentComponent);
 		}
 		// Create the task
-		Task task = createTask(currentAction.getName());
+		String taskName = currentAction.getName();
+		currentModule = (Module) buildModule(currentListComponent,
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				taskName + "Body", currentExit);
+
+		Task task = createTask(taskName, currentModule, false);
 		actorsTasks.put(action, task);
 		// Add it to the design
 		design.addTask(task);
@@ -524,6 +532,16 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				instance, design, actorsTasks, resources);
 		schedulerVisitor.doSwitch(actor);
 
+		for (Task task : design.getTasks()) {
+			Call call = task.getCall();
+			if (call.getExit(Exit.DONE).getDoneBus().isConnected()) {
+				call.getProcedure().getBody().setProducesDone(true);
+			}
+			if (call.getGoPort().isConnected()) {
+				call.getProcedure().getBody().setConsumesGo(true);
+			}
+		}
+
 		return null;
 	}
 
@@ -583,20 +601,17 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		}
 	}
 
-	protected Task createTask(String name) {
+	protected Task createTask(String taskName, Module taskModule,
+			Boolean requiresKicker) {
 		Task task = null;
 
-		currentModule = (Module) buildModule(currentListComponent,
-				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
-				name, currentExit);
-
 		// create Call
-		Call call = createCall(name, currentModule);
+		Call call = createCall(taskName, taskModule);
 		topLevelInit(call);
 		// Create task
 		task = new Task(call);
-		task.setKickerRequired(false);
-		task.setSourceName(name);
+		task.setKickerRequired(requiresKicker);
+		task.setSourceName(taskName);
 		return task;
 	}
 
@@ -884,6 +899,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		mapOutControlPort(currentComponent);
 	}
 
+	@SuppressWarnings("unused")
+	// Just for the moment suppress the warning, only simple support,in
+	// construction
 	protected void operationDependencies(Module module,
 			List<Component> components,
 			Map<Component, Map<Port, Var>> dependecies, Exit exit) {
@@ -909,15 +927,53 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 						entry.addDependency(port, dep);
 					}
 				}
+				if (component instanceof Loop) {
+					Map<Port, Map<Port, Bus>> feedbackDeps = new HashMap<Port, Map<Port, Bus>>();
+					Map<Port, Map<Port, Bus>> initialDeps = new HashMap<Port, Map<Port, Bus>>();
+					Map<Port, Map<Port, Bus>> outputDeps = new HashMap<Port, Map<Port, Bus>>();
 
-				// Build control Dependencies
-				Bus busDone = componentDoneBusDependency.get(component);
-				if (busDone != null) {
-					Port donePort = exit.getDoneBus().getPeer();
-					List<Entry> entries = donePort.getOwner().getEntries();
-					Entry entry = entries.get(0);
-					Dependency dep = new ControlDependency(busDone);
-					entry.addDependency(donePort, dep);
+					LoopBody loopBody = ((Loop) component).getBody();
+					Exit fbExit = loopBody.getFeedbackExit();
+					Exit doneExit = loopBody.getLoopCompleteExit();
+					Exit initExit = ((Loop) component).getInBuf().getExit(
+							Exit.DONE);
+
+					// Populate outputDeps with Done Exit
+					Map<Port, Bus> doneMap = new HashMap<Port, Bus>();
+					Bus doneBus = loopBody.getExit(Exit.DONE).getDoneBus();
+					Port donePort = component.getExit(Exit.DONE).getDoneBus()
+							.getPeer();
+					doneMap.put(donePort, doneBus);
+					outputDeps.put(donePort, doneMap);
+
+					Entry initEntry = ((Loop) component).getBodyInitEntry();
+					Entry fbEntry = ((Loop) component).getBodyFeedbackEntry();
+					Collection<Dependency> goInitDeps = initEntry
+							.getDependencies(loopBody.getGoPort());
+					Bus initDoneBus = goInitDeps.iterator().next()
+							.getLogicalBus();
+					// Build the output dependencies
+					Entry outbufEntry = ((Loop) component).getExit(Exit.DONE)
+							.getPeer().getEntries().get(0);
+					for (Port port : outputDeps.keySet()) {
+						Port targetPort = port;
+						Bus sourceBus = outputDeps.get(port).get(port);
+						Dependency dep = (targetPort == targetPort.getOwner()
+								.getGoPort()) ? new ControlDependency(sourceBus)
+								: new DataDependency(sourceBus);
+						outbufEntry.addDependency(targetPort, dep);
+					}
+
+				} else {
+					// Build control Dependencies
+					Bus busDone = componentDoneBusDependency.get(component);
+					if (busDone != null) {
+						Port donePort = exit.getDoneBus().getPeer();
+						List<Entry> entries = donePort.getOwner().getEntries();
+						Entry entry = entries.get(0);
+						Dependency dep = new ControlDependency(busDone);
+						entry.addDependency(donePort, dep);
+					}
 				}
 
 			}

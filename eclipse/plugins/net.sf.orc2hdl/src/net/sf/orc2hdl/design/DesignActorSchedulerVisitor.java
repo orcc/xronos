@@ -41,11 +41,11 @@ import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Branch;
-import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Decision;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Task;
@@ -281,16 +281,16 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		// Create the scheduler Loop Body
 		LoopBody loopBody = new WhileBody(loopDecision, bodyModule);
 
-		Module scheduler = (Block) buildModule(
-				Arrays.asList((Component) loopBody),
+		Loop loop = new Loop(loopBody);
+
+		Module scheduler = (Block) buildModule(Arrays.asList((Component) loop),
 				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
 				"schedulerBody", Exit.DONE);
 		scheduler.makeExit(0, Exit.RETURN);
-		Call call = createCall("scheduler", scheduler);
-		topLevelInit(call);
-		Task task = new Task(call);
-		task.setKickerRequired(true);
-		task.setSourceName("scheduler");
+
+		// Create scheduler task
+		Task task = createTask("scheduler", scheduler, true);
+
 		// Add it to the design
 		design.addTask(task);
 		return null;
