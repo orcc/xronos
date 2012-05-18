@@ -271,44 +271,51 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		@Override
 		public Object caseInstLoad(InstLoad load) {
 			Var sourceVar = load.getSource().getVariable();
-			Boolean isSigned = sourceVar.getType().isUint();
-			Location targetLocation = resources.getLocation(sourceVar);
+			if (sourceVar.isGlobal()) {
+				Boolean isSigned = sourceVar.getType().isUint();
+				Location targetLocation = resources.getLocation(sourceVar);
 
-			LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
-					.getLogicalMemoryPorts().iterator().next();
+				LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+						.getLogicalMemoryPorts().iterator().next();
 
-			AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
-					.getInitialValue().getAddressStridePolicy();
+				AddressStridePolicy addrPolicy = targetLocation
+						.getAbsoluteBase().getInitialValue()
+						.getAddressStridePolicy();
 
-			if (load.getSource().getVariable().getType().isList()) {
-				int dataSize = sourceVar.getType().getSizeInBits();
-				HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(),
-						32, 0, isSigned, addrPolicy);
-				CastOp castOp = new CastOp(dataSize, isSigned);
-				Block block = buildAddressedBlock(read, targetLocation,
-						Collections.singletonList((Component) castOp));
-				Bus result = block.getExit(Exit.DONE).makeDataBus();
-				castOp.getEntries()
-						.get(0)
-						.addDependency(castOp.getDataPort(),
-								new DataDependency(read.getResultBus()));
-				result.getPeer()
-						.getOwner()
-						.getEntries()
-						.get(0)
-						.addDependency(result.getPeer(),
-								new DataDependency(castOp.getResultBus()));
+				if (load.getSource().getVariable().getType().isList()) {
+					int dataSize = sourceVar.getType().getSizeInBits();
+					HeapRead read = new HeapRead(dataSize
+							/ addrPolicy.getStride(), 32, 0, isSigned,
+							addrPolicy);
+					CastOp castOp = new CastOp(dataSize, isSigned);
+					Block block = buildAddressedBlock(read, targetLocation,
+							Collections.singletonList((Component) castOp));
+					Bus result = block.getExit(Exit.DONE).makeDataBus();
+					castOp.getEntries()
+							.get(0)
+							.addDependency(castOp.getDataPort(),
+									new DataDependency(read.getResultBus()));
+					result.getPeer()
+							.getOwner()
+							.getEntries()
+							.get(0)
+							.addDependency(result.getPeer(),
+									new DataDependency(castOp.getResultBus()));
 
-				memPort.addAccess(read, targetLocation);
-				currentComponent = block;
-				mapInPorts(new ArrayList<Var>(Arrays.asList(sourceVar)),
-						currentComponent);
-				mapOutPorts(load.getTarget().getVariable());
+					memPort.addAccess(read, targetLocation);
+					currentComponent = block;
+
+				} else {
+					currentComponent = new AbsoluteMemoryRead(targetLocation,
+							32, isSigned);
+					memPort.addAccess((LValue) currentComponent, targetLocation);
+				}
 			} else {
-				currentComponent = new AbsoluteMemoryRead(targetLocation, 32,
-						isSigned);
-				memPort.addAccess((LValue) currentComponent, targetLocation);
+				currentComponent = new NoOp(1, Exit.DONE);
 			}
+			mapInPorts(new ArrayList<Var>(Arrays.asList(sourceVar)),
+					currentComponent);
+			mapOutPorts(load.getTarget().getVariable());
 			return null;
 		}
 
