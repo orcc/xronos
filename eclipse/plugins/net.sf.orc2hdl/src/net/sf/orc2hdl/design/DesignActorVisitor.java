@@ -60,6 +60,7 @@ import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.HeapRead;
+import net.sf.openforge.lim.HeapWrite;
 import net.sf.openforge.lim.InBuf;
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.LoopBody;
@@ -122,6 +123,7 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.OpUnary;
@@ -146,6 +148,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		private Def assignTarget;
 		private Integer castIndex = 0;
+		private Integer listIndexes = 0;
 
 		public InnerIrVisitor() {
 			super(true);
@@ -386,8 +389,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			memPort.addAccess(read, targetLocation);
 
 			Var indexVar = procedure.newTempLocalVariable(
-					IrFactory.eINSTANCE.createTypeInt(), "index");
-
+					IrFactory.eINSTANCE.createTypeInt(), "index" + listIndexes);
+			listIndexes++;
 			currentComponent = new CastOp(dataSize, isSigned);
 			mapInPorts(new ArrayList<Var>(Arrays.asList(loadIndexVar)),
 					currentComponent);
@@ -406,6 +409,79 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			mapInPorts(new ArrayList<Var>(Arrays.asList(indexVar)),
 					currentComponent);
 			mapOutPorts(load.getTarget().getVariable());
+
+			currentListComponent.add(currentComponent);
+
+			return null;
+		}
+
+		@Override
+		public Object caseInstStore(InstStore store) {
+			Var targetVar = store.getTarget().getVariable();
+
+			// At this moment the load should have only one index
+			Var storeIndexVar = null;
+			List<Expression> indexes = store.getIndexes();
+			for (Expression expr : new ArrayList<Expression>(indexes)) {
+				storeIndexVar = ((ExprVar) expr).getUse().getVariable();
+			}
+
+			// Get store Value Var, after TAC the expression is a ExprVar
+			ExprVar value = (ExprVar) store.getValue();
+			Var valueVar = value.getUse().getVariable();
+
+			// Get the inner type of the list
+			TypeList typeList = (TypeList) targetVar.getType();
+			Type type = typeList.getInnermostType();
+
+			// Get Location form resources
+			Location targetLocation = resources.getLocation(targetVar);
+			LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
+			AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
+					.getInitialValue().getAddressStridePolicy();
+
+			int dataSize = type.getSizeInBits();
+			Boolean isSigned = type.isInt();
+
+			HeapWrite heapWrite = new HeapWrite(dataSize
+					/ addrPolicy.getStride(), 32, // max address width
+					0, // fixed offset
+					isSigned, // is signed?
+					addrPolicy); // addressing policy
+
+			Block block = buildAddressedBlock(heapWrite, targetLocation,
+					Collections.<Component> emptyList());
+			Port data = block.makeDataPort();
+			heapWrite
+					.getEntries()
+					.get(0)
+					.addDependency(heapWrite.getValuePort(),
+							new DataDependency(data.getPeer()));
+
+			memPort.addAccess(heapWrite, targetLocation);
+
+			Var indexVar = procedure.newTempLocalVariable(
+					IrFactory.eINSTANCE.createTypeInt(), "index" + listIndexes);
+			listIndexes++;
+			currentComponent = new CastOp(dataSize, isSigned);
+			mapInPorts(new ArrayList<Var>(Arrays.asList(storeIndexVar)),
+					currentComponent);
+			Var castedIndexVar = procedure.newTempLocalVariable(
+					IrFactory.eINSTANCE.createTypeInt(), "casted_"
+							+ storeIndexVar.getIndexedName());
+			mapOutPorts(castedIndexVar);
+			currentListComponent.add(currentComponent);
+
+			// add the assign instruction for each index
+			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
+					castedIndexVar);
+			doSwitch(assign);
+
+			currentComponent = block;
+			mapInPorts(new ArrayList<Var>(Arrays.asList(indexVar, valueVar)),
+					currentComponent);
+			mapOutControlPort(currentComponent);
 			currentListComponent.add(currentComponent);
 
 			return null;
