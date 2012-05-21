@@ -118,6 +118,7 @@ import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprUnary;
 import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
@@ -144,6 +145,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	protected class InnerIrVisitor extends AbstractIrVisitor<Object> {
 
 		private Def assignTarget;
+		private Integer castIndex = 0;
 
 		public InnerIrVisitor() {
 			super(true);
@@ -164,58 +166,111 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			// Get the size of the target and give it to the component
 			int sizeInBits = assignTarget.getVariable().getType()
 					.getSizeInBits();
-
+			Component component = null;
 			if (expr.getOp() == OpBinary.BITAND) {
-				currentComponent = new AndOp();
+				component = new AndOp();
 			} else if (expr.getOp() == OpBinary.BITOR) {
-				currentComponent = new OrOp();
+				component = new OrOp();
 			} else if (expr.getOp() == OpBinary.BITXOR) {
-				currentComponent = new XorOp();
+				component = new XorOp();
 			} else if (expr.getOp() == OpBinary.DIV) {
-				currentComponent = new DivideOp(sizeInBits);
+				component = new DivideOp(sizeInBits);
 			} else if (expr.getOp() == OpBinary.DIV_INT) {
-				currentComponent = new DivideOp(sizeInBits);
+				component = new DivideOp(sizeInBits);
 			} else if (expr.getOp() == OpBinary.EQ) {
-				currentComponent = new EqualsOp();
+				component = new EqualsOp();
 			} else if (expr.getOp() == OpBinary.GE) {
-				currentComponent = new GreaterThanEqualToOp();
+				component = new GreaterThanEqualToOp();
 			} else if (expr.getOp() == OpBinary.GT) {
-				currentComponent = new GreaterThanOp();
+				component = new GreaterThanOp();
 			} else if (expr.getOp() == OpBinary.LE) {
-				currentComponent = new LessThanEqualToOp();
+				component = new LessThanEqualToOp();
 			} else if (expr.getOp() == OpBinary.LOGIC_AND) {
-				currentComponent = new And(2);
+				component = new And(2);
 			} else if (expr.getOp() == OpBinary.LOGIC_OR) {
-				currentComponent = new Or(2);
+				component = new Or(2);
 			} else if (expr.getOp() == OpBinary.LT) {
-				currentComponent = new LessThanOp();
+				component = new LessThanOp();
 			} else if (expr.getOp() == OpBinary.MINUS) {
-				currentComponent = new SubtractOp();
+				component = new SubtractOp();
 			} else if (expr.getOp() == OpBinary.MOD) {
-				currentComponent = new ModuloOp();
+				component = new ModuloOp();
 			} else if (expr.getOp() == OpBinary.NE) {
-				currentComponent = new NotEqualsOp();
+				component = new NotEqualsOp();
 			} else if (expr.getOp() == OpBinary.PLUS) {
-				currentComponent = new AddOp();
+				component = new AddOp();
 			} else if (expr.getOp() == OpBinary.SHIFT_LEFT) {
 				int log2N = MathStuff.log2(sizeInBits);
-				currentComponent = new LeftShiftOp(log2N);
+				component = new LeftShiftOp(log2N);
 			} else if (expr.getOp() == OpBinary.SHIFT_RIGHT) {
 				int log2N = MathStuff.log2(sizeInBits);
-				currentComponent = new RightShiftOp(log2N);
+				component = new RightShiftOp(log2N);
 			} else if (expr.getOp() == OpBinary.TIMES) {
-				currentComponent = new MultiplyOp(expr.getType()
-						.getSizeInBits());
+				component = new MultiplyOp(expr.getType().getSizeInBits());
 			}
 			// Three address code obligated, a binary expression
 			// can not contain another binary expression
 			// Get variables for E1 and E2
 			Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
 			Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-			mapInPorts(new ArrayList<Var>(Arrays.asList(e1, e2)),
-					currentComponent);
-			currentListComponent.add(currentComponent);
+			mapInPorts(binaryCastOp(e1, e2), component);
+			currentComponent = component;
 			return null;
+		}
+
+		protected List<Var> binaryCastOp(Var e1, Var e2) {
+			int sizeE1 = e1.getType().getSizeInBits();
+			int sizeE2 = e2.getType().getSizeInBits();
+			Boolean isSigned = e1.getType().isInt() || e2.getType().isInt();
+
+			List<Var> newVars = new ArrayList<Var>();
+
+			if (sizeE1 != sizeE2) {
+				Var varTobeCasted = null;
+				int newMaxSize = Math.max(sizeE1, sizeE2);
+				if (sizeE1 < newMaxSize) {
+					varTobeCasted = e1;
+					newVars.add(e2);
+				} else if (sizeE2 < newMaxSize) {
+					varTobeCasted = e2;
+					newVars.add(e1);
+				}
+				currentComponent = new CastOp(newMaxSize, isSigned);
+				mapInPorts(new ArrayList<Var>(Arrays.asList(varTobeCasted)),
+						currentComponent);
+				Var castedVar = procedure.newTempLocalVariable(
+						IrFactory.eINSTANCE.createTypeInt(),
+						"casted_" + castIndex + "_"
+								+ varTobeCasted.getIndexedName());
+				mapOutPorts(castedVar);
+				currentListComponent.add(currentComponent);
+				newVars.add(castedVar);
+				castIndex++;
+			} else {
+				newVars.add(e1);
+				newVars.add(e2);
+			}
+			return newVars;
+		}
+
+		protected Var unaryCastOp(Var var, Integer newMaxSize, Boolean isSigned) {
+			Var newVar = var;
+			Integer sizeVar = var.getType().getSizeInBits();
+
+			if (sizeVar != newMaxSize) {
+				currentComponent = new CastOp(newMaxSize, isSigned);
+				mapInPorts(new ArrayList<Var>(Arrays.asList(var)),
+						currentComponent);
+				Var castedVar = procedure.newTempLocalVariable(
+						IrFactory.eINSTANCE.createTypeInt(), "casted_"
+								+ castIndex + "_" + var.getIndexedName());
+				mapOutPorts(castedVar);
+				currentListComponent.add(currentComponent);
+				newVar = castedVar;
+				castIndex++;
+			}
+
+			return newVar;
 		}
 
 		@Override
@@ -290,46 +345,69 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		@Override
 		public Object caseInstLoad(InstLoad load) {
 			Var sourceVar = load.getSource().getVariable();
-			if (sourceVar.isGlobal()) {
-				Boolean isSigned = sourceVar.getType().isUint();
-				Location targetLocation = resources.getLocation(sourceVar);
 
-				LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
-						.getLogicalMemoryPorts().iterator().next();
-
-				AddressStridePolicy addrPolicy = targetLocation
-						.getAbsoluteBase().getInitialValue()
-						.getAddressStridePolicy();
-
-				int dataSize = sourceVar.getType().getSizeInBits();
-				HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(),
-						32, 0, isSigned, addrPolicy);
-				CastOp castOp = new CastOp(dataSize, isSigned);
-				Block block = buildAddressedBlock(read, targetLocation,
-						Collections.singletonList((Component) castOp));
-				Bus result = block.getExit(Exit.DONE).makeDataBus();
-				castOp.getEntries()
-						.get(0)
-						.addDependency(castOp.getDataPort(),
-								new DataDependency(read.getResultBus()));
-				result.getPeer()
-						.getOwner()
-						.getEntries()
-						.get(0)
-						.addDependency(result.getPeer(),
-								new DataDependency(castOp.getResultBus()));
-
-				memPort.addAccess(read, targetLocation);
-				currentComponent = block;
-
-			} else {
-				currentComponent = new NoOp(0, Exit.DONE);
-				currentComponent.makeDataPort();
-				currentComponent.getExit(Exit.DONE).makeDataBus();
+			// At this moment the load should have only one index
+			Var loadIndexVar = null;
+			List<Expression> indexes = load.getIndexes();
+			for (Expression expr : new ArrayList<Expression>(indexes)) {
+				loadIndexVar = ((ExprVar) expr).getUse().getVariable();
 			}
-			mapInPorts(new ArrayList<Var>(Arrays.asList(sourceVar)),
+
+			TypeList typeList = (TypeList) sourceVar.getType();
+			Type type = typeList.getInnermostType();
+
+			Boolean isSigned = type.isInt();
+			Location targetLocation = resources.getLocation(sourceVar);
+
+			LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
+
+			AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
+					.getInitialValue().getAddressStridePolicy();
+
+			int dataSize = sourceVar.getType().getSizeInBits();
+			HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(), 32,
+					0, isSigned, addrPolicy);
+			CastOp castOp = new CastOp(dataSize, isSigned);
+			Block block = buildAddressedBlock(read, targetLocation,
+					Collections.singletonList((Component) castOp));
+			Bus result = block.getExit(Exit.DONE).makeDataBus();
+			castOp.getEntries()
+					.get(0)
+					.addDependency(castOp.getDataPort(),
+							new DataDependency(read.getResultBus()));
+			result.getPeer()
+					.getOwner()
+					.getEntries()
+					.get(0)
+					.addDependency(result.getPeer(),
+							new DataDependency(castOp.getResultBus()));
+
+			memPort.addAccess(read, targetLocation);
+
+			Var indexVar = procedure.newTempLocalVariable(
+					IrFactory.eINSTANCE.createTypeInt(), "index");
+
+			currentComponent = new CastOp(dataSize, isSigned);
+			mapInPorts(new ArrayList<Var>(Arrays.asList(loadIndexVar)),
+					currentComponent);
+			Var castedIndexVar = procedure.newTempLocalVariable(
+					IrFactory.eINSTANCE.createTypeInt(), "casted_"
+							+ loadIndexVar.getIndexedName());
+			mapOutPorts(castedIndexVar);
+			currentListComponent.add(currentComponent);
+
+			// add the assign instruction for each index
+			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
+					castedIndexVar);
+			doSwitch(assign);
+
+			currentComponent = block;
+			mapInPorts(new ArrayList<Var>(Arrays.asList(indexVar)),
 					currentComponent);
 			mapOutPorts(load.getTarget().getVariable());
+			currentListComponent.add(currentComponent);
+
 			return null;
 		}
 
