@@ -365,7 +365,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
 					.getInitialValue().getAddressStridePolicy();
 
-			int dataSize = sourceVar.getType().getSizeInBits();
+			int dataSize = type.getSizeInBits();
 			HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(), 32,
 					0, isSigned, addrPolicy);
 			CastOp castOp = new CastOp(dataSize, isSigned);
