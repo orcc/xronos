@@ -71,11 +71,9 @@ import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.ResetDependency;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
-import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
 import net.sf.openforge.lim.memory.AddressStridePolicy;
 import net.sf.openforge.lim.memory.AddressableUnit;
 import net.sf.openforge.lim.memory.Allocation;
-import net.sf.openforge.lim.memory.LValue;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.openforge.lim.memory.LocationConstant;
 import net.sf.openforge.lim.memory.LogicalMemory;
@@ -114,6 +112,7 @@ import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
@@ -143,6 +142,9 @@ import org.eclipse.emf.common.util.EList;
 public class DesignActorVisitor extends DfVisitor<Object> {
 
 	protected class InnerIrVisitor extends AbstractIrVisitor<Object> {
+
+		private Def assignTarget;
+
 		public InnerIrVisitor() {
 			super(true);
 		}
@@ -159,6 +161,10 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		@Override
 		public Object caseExprBinary(ExprBinary expr) {
+			// Get the size of the target and give it to the component
+			int sizeInBits = assignTarget.getVariable().getType()
+					.getSizeInBits();
+
 			if (expr.getOp() == OpBinary.BITAND) {
 				currentComponent = new AndOp();
 			} else if (expr.getOp() == OpBinary.BITOR) {
@@ -166,9 +172,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			} else if (expr.getOp() == OpBinary.BITXOR) {
 				currentComponent = new XorOp();
 			} else if (expr.getOp() == OpBinary.DIV) {
-				currentComponent = new DivideOp(expr.getType().getSizeInBits());
+				currentComponent = new DivideOp(sizeInBits);
 			} else if (expr.getOp() == OpBinary.DIV_INT) {
-				currentComponent = new DivideOp(expr.getType().getSizeInBits());
+				currentComponent = new DivideOp(sizeInBits);
 			} else if (expr.getOp() == OpBinary.EQ) {
 				currentComponent = new EqualsOp();
 			} else if (expr.getOp() == OpBinary.GE) {
@@ -192,10 +198,10 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			} else if (expr.getOp() == OpBinary.PLUS) {
 				currentComponent = new AddOp();
 			} else if (expr.getOp() == OpBinary.SHIFT_LEFT) {
-				int log2N = MathStuff.log2(expr.getType().getSizeInBits());
+				int log2N = MathStuff.log2(sizeInBits);
 				currentComponent = new LeftShiftOp(log2N);
 			} else if (expr.getOp() == OpBinary.SHIFT_RIGHT) {
-				int log2N = MathStuff.log2(expr.getType().getSizeInBits());
+				int log2N = MathStuff.log2(sizeInBits);
 				currentComponent = new RightShiftOp(log2N);
 			} else if (expr.getOp() == OpBinary.TIMES) {
 				currentComponent = new MultiplyOp(expr.getType()
@@ -222,8 +228,17 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		@Override
 		public Object caseExprInt(ExprInt expr) {
 			final long value = expr.getIntValue();
-			currentComponent = new SimpleConstant(value, expr.getType()
-					.getSizeInBits(), expr.getType().isInt());
+			int sizeInBits = 32;
+
+			if (assignTarget != null) {
+				sizeInBits = assignTarget.getVariable().getType()
+						.getSizeInBits();
+			} else {
+				sizeInBits = expr.getType().getSizeInBits();
+			}
+
+			currentComponent = new SimpleConstant(value, sizeInBits, expr
+					.getType().isInt());
 			return null;
 		}
 
@@ -253,11 +268,15 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		@Override
 		public Object caseInstAssign(InstAssign assign) {
+			// Get the size in bits of the target
+			assignTarget = assign.getTarget();
 			super.caseInstAssign(assign);
 			if (currentComponent != null) {
 				currentListComponent.add(currentComponent);
 				mapOutPorts(assign.getTarget().getVariable());
 			}
+			// Put target to null
+			assignTarget = null;
 			return null;
 		}
 
@@ -282,36 +301,31 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 						.getAbsoluteBase().getInitialValue()
 						.getAddressStridePolicy();
 
-				if (load.getSource().getVariable().getType().isList()) {
-					int dataSize = sourceVar.getType().getSizeInBits();
-					HeapRead read = new HeapRead(dataSize
-							/ addrPolicy.getStride(), 32, 0, isSigned,
-							addrPolicy);
-					CastOp castOp = new CastOp(dataSize, isSigned);
-					Block block = buildAddressedBlock(read, targetLocation,
-							Collections.singletonList((Component) castOp));
-					Bus result = block.getExit(Exit.DONE).makeDataBus();
-					castOp.getEntries()
-							.get(0)
-							.addDependency(castOp.getDataPort(),
-									new DataDependency(read.getResultBus()));
-					result.getPeer()
-							.getOwner()
-							.getEntries()
-							.get(0)
-							.addDependency(result.getPeer(),
-									new DataDependency(castOp.getResultBus()));
+				int dataSize = sourceVar.getType().getSizeInBits();
+				HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(),
+						32, 0, isSigned, addrPolicy);
+				CastOp castOp = new CastOp(dataSize, isSigned);
+				Block block = buildAddressedBlock(read, targetLocation,
+						Collections.singletonList((Component) castOp));
+				Bus result = block.getExit(Exit.DONE).makeDataBus();
+				castOp.getEntries()
+						.get(0)
+						.addDependency(castOp.getDataPort(),
+								new DataDependency(read.getResultBus()));
+				result.getPeer()
+						.getOwner()
+						.getEntries()
+						.get(0)
+						.addDependency(result.getPeer(),
+								new DataDependency(castOp.getResultBus()));
 
-					memPort.addAccess(read, targetLocation);
-					currentComponent = block;
+				memPort.addAccess(read, targetLocation);
+				currentComponent = block;
 
-				} else {
-					currentComponent = new AbsoluteMemoryRead(targetLocation,
-							32, isSigned);
-					memPort.addAccess((LValue) currentComponent, targetLocation);
-				}
 			} else {
-				currentComponent = new NoOp(1, Exit.DONE);
+				currentComponent = new NoOp(0, Exit.DONE);
+				currentComponent.makeDataPort();
+				currentComponent.getExit(Exit.DONE).makeDataBus();
 			}
 			mapInPorts(new ArrayList<Var>(Arrays.asList(sourceVar)),
 					currentComponent);

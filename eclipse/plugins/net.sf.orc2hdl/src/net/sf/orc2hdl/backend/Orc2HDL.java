@@ -66,7 +66,6 @@ import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.CustomPrinter;
 import net.sf.orcc.backends.StandardPrinter;
-import net.sf.orcc.backends.transformations.CastAdder;
 import net.sf.orcc.backends.transformations.DivisionSubstitution;
 import net.sf.orcc.backends.transformations.EmptyBlockRemover;
 import net.sf.orcc.backends.transformations.Inliner;
@@ -351,6 +350,8 @@ public class Orc2HDL extends AbstractBackend {
 			DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
 					new DfVisitor<Void>(new SSATransformation()),
 					new GlobalArrayInitializer(true), new UnaryListRemoval(),
+					new DfVisitor<Void>(new DeadCodeElimination()),
+					new DfVisitor<Void>(new XlimDeadVariableRemoval()),
 					new DfVisitor<Void>(new ListFlattener()),
 					new DfVisitor<Expression>(new TacTransformation()),
 					new DfVisitor<CfgNode>(new CfgBuilder()),
@@ -375,7 +376,8 @@ public class Orc2HDL extends AbstractBackend {
 					new GlobalArrayInitializer(true),
 					new DfVisitor<Void>(new Inliner(true, true)),
 					new DfVisitor<Void>(new InstTernaryAdder()),
-					new UnaryListRemoval(), new CustomPeekAdder(),
+					new UnaryListRemoval(),
+					new CustomPeekAdder(),
 					new DeadGlobalElimination(),
 					new DfVisitor<Void>(new DeadCodeElimination()),
 					new DfVisitor<Void>(new XlimDeadVariableRemoval()),
@@ -384,7 +386,7 @@ public class Orc2HDL extends AbstractBackend {
 					new DfVisitor<CfgNode>(new CfgBuilder()),
 					new DfVisitor<Void>(new InstPhiTransformation()),
 					new DfVisitor<Expression>(new LiteralIntegersAdder()),
-					new DfVisitor<Expression>(new CastAdder(true)),
+					// new DfVisitor<Expression>(new CastAdder(true)),
 					new XlimVariableRenamer(),
 					new DfVisitor<Void>(new EmptyBlockRemover()),
 					new DfVisitor<Void>(new BlockCombine()) };
