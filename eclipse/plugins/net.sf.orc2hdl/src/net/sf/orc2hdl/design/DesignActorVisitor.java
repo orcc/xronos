@@ -437,13 +437,14 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			memPort.addAccess(heapWrite, targetLocation);
 
 			Var indexVar = procedure.newTempLocalVariable(
-					IrFactory.eINSTANCE.createTypeInt(), "index" + listIndexes);
+					IrFactory.eINSTANCE.createTypeInt(32), "index"
+							+ listIndexes);
 			listIndexes++;
-			currentComponent = new CastOp(dataSize, isSigned);
+			currentComponent = new CastOp(32, isSigned);
 			mapInPorts(new ArrayList<Var>(Arrays.asList(storeIndexVar)),
 					currentComponent);
 			Var castedIndexVar = procedure.newTempLocalVariable(
-					IrFactory.eINSTANCE.createTypeInt(dataSize), "casted_"
+					IrFactory.eINSTANCE.createTypeInt(32), "casted_"
 							+ castIndex + "_" + storeIndexVar.getIndexedName());
 			mapOutPorts(castedIndexVar);
 			currentListComponent.add(currentComponent);
@@ -1026,14 +1027,29 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			logicalValue = new Record(subElements);
 		} else {
 			if (dimension.get(0).equals(1)) {
-				BigInteger value = (BigInteger) ValueUtil.get(type, obj, 0);
+				BigInteger value = BigInteger.valueOf(0);
+				if (type.isBool()) {
+					int boolValue = ((Boolean) ValueUtil.get(type, obj, 0)) ? 1
+							: 0;
+					value = BigInteger.valueOf(boolValue);
+				} else {
+					value = (BigInteger) ValueUtil.get(type, obj, 0);
+				}
 				String valueString = value.toString();
 				logicalValue = makeLogicalValue(valueString, type);
 			} else {
 				List<LogicalValue> subElements = new ArrayList<LogicalValue>(
 						dimension.get(0));
 				for (int i = 0; i < dimension.get(0); i++) {
-					BigInteger value = (BigInteger) ValueUtil.get(type, obj, i);
+					BigInteger value = BigInteger.valueOf(0);
+					if (type.isBool()) {
+						int boolValue = ((Boolean) ValueUtil.get(type, obj, i)) ? 1
+								: 0;
+						value = BigInteger.valueOf(boolValue);
+					} else {
+						value = (BigInteger) ValueUtil.get(type, obj, i);
+					}
+
 					String valueString = value.toString();
 					subElements.add(makeLogicalValue(valueString, type));
 				}

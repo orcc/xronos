@@ -210,13 +210,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	@Override
 	public Object caseAction(Action action) {
 		currentAction = action;
-
-		// Clean used Arrays and Maps
 		currentListComponent = new ArrayList<Component>();
-		isSchedulableComponents = new HashMap<Action, List<Component>>();
-		inputPatternComponents = new HashMap<Action, List<Component>>();
-		outputPatternComponents = new HashMap<Action, List<Component>>();
-
 		// Build pinPeek
 		doSwitch(action.getPeekPattern());
 
@@ -242,7 +236,11 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	@Override
 	public Object caseActor(Actor actor) {
 		componentCounter = 0;
+		// Clean used Arrays and Maps
 		currentListComponent = new ArrayList<Component>();
+		isSchedulableComponents = new HashMap<Action, List<Component>>();
+		inputPatternComponents = new HashMap<Action, List<Component>>();
+		outputPatternComponents = new HashMap<Action, List<Component>>();
 
 		// Build infinite loop decision
 		Decision loopDecision = buildInfiniteLoopDecision();
@@ -377,14 +375,27 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				// Create the "else" body
 				if (it.hasNext()) {
 					newActionList.remove(action);
+					List<Var> elseInputPorts = new ArrayList<Var>();
+
+					// Fill Up the branch Input Ports with its associated Vars
+					for (Action elseAction : newActionList) {
+						if (actionSchedulerInDecisions.containsKey(elseAction)) {
+							elseInputPorts.add(actionSchedulerInDecisions
+									.get(elseAction));
+						}
+						if (actionSchedulerOutDecisions.containsKey(elseAction)) {
+							elseInputPorts.add(actionSchedulerOutDecisions
+									.get(elseAction));
+						}
+					}
+
 					Component elseBlock = createActionTest(newActionList);
-					Module elseModule = (Block) buildModule(
-							Arrays.asList(elseBlock),
-							Collections.<Var> emptyList(),
-							Collections.<Var> emptyList(), "block", null);
+					Block elseModule = (Block) buildModule(
+							Arrays.asList(elseBlock), elseInputPorts,
+							Collections.<Var> emptyList(), "block", Exit.DONE);
 					elseModule.setIDLogical("branchElse_" + action.getName());
 					branch = (Branch) buildBranch(decision, thenBlock,
-							(Block) elseModule, branchInputPorts, null,
+							elseModule, branchInputPorts, null,
 							"ifThenElseBlock", null);
 				} else {
 					branch = (Branch) buildBranch(decision, thenBlock, null,
