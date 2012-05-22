@@ -216,43 +216,19 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			// Get variables for E1 and E2
 			Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
 			Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-			mapInPorts(binaryCastOp(e1, e2), component);
+			Integer newMaxSize = assignTarget.getVariable().getType()
+					.getSizeInBits();
+			mapInPorts(binaryCastOp(e1, e2, newMaxSize), component);
 			currentComponent = component;
 			return null;
 		}
 
-		protected List<Var> binaryCastOp(Var e1, Var e2) {
-			int sizeE1 = e1.getType().getSizeInBits();
-			int sizeE2 = e2.getType().getSizeInBits();
+		protected List<Var> binaryCastOp(Var e1, Var e2, Integer newMaxSize) {
 			Boolean isSigned = e1.getType().isInt() || e2.getType().isInt();
-
 			List<Var> newVars = new ArrayList<Var>();
-
-			if (sizeE1 != sizeE2) {
-				Var varTobeCasted = null;
-				int newMaxSize = Math.max(sizeE1, sizeE2);
-				if (sizeE1 < newMaxSize) {
-					varTobeCasted = e1;
-					newVars.add(e2);
-				} else if (sizeE2 < newMaxSize) {
-					varTobeCasted = e2;
-					newVars.add(e1);
-				}
-				currentComponent = new CastOp(newMaxSize, isSigned);
-				mapInPorts(new ArrayList<Var>(Arrays.asList(varTobeCasted)),
-						currentComponent);
-				Var castedVar = procedure.newTempLocalVariable(
-						IrFactory.eINSTANCE.createTypeInt(),
-						"casted_" + castIndex + "_"
-								+ varTobeCasted.getIndexedName());
-				mapOutPorts(castedVar);
-				currentListComponent.add(currentComponent);
-				newVars.add(castedVar);
-				castIndex++;
-			} else {
-				newVars.add(e1);
-				newVars.add(e2);
-			}
+			// Add the new Casted variables
+			newVars.add(unaryCastOp(e1, newMaxSize, isSigned));
+			newVars.add(unaryCastOp(e2, newMaxSize, isSigned));
 			return newVars;
 		}
 
@@ -265,8 +241,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				mapInPorts(new ArrayList<Var>(Arrays.asList(var)),
 						currentComponent);
 				Var castedVar = procedure.newTempLocalVariable(
-						IrFactory.eINSTANCE.createTypeInt(), "casted_"
-								+ castIndex + "_" + var.getIndexedName());
+						IrFactory.eINSTANCE.createTypeInt(newMaxSize),
+						"casted_" + castIndex + "_" + var.getIndexedName());
 				mapOutPorts(castedVar);
 				currentListComponent.add(currentComponent);
 				newVar = castedVar;
@@ -394,12 +370,13 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			currentComponent = new CastOp(dataSize, isSigned);
 			mapInPorts(new ArrayList<Var>(Arrays.asList(loadIndexVar)),
 					currentComponent);
+			// For the moment all indexes are considered 32bits
 			Var castedIndexVar = procedure.newTempLocalVariable(
-					IrFactory.eINSTANCE.createTypeInt(), "casted_"
-							+ loadIndexVar.getIndexedName());
+					IrFactory.eINSTANCE.createTypeInt(32), "casted_"
+							+ castIndex + "_" + loadIndexVar.getIndexedName());
 			mapOutPorts(castedIndexVar);
 			currentListComponent.add(currentComponent);
-
+			castIndex++;
 			// add the assign instruction for each index
 			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
 					castedIndexVar);
@@ -468,11 +445,11 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			mapInPorts(new ArrayList<Var>(Arrays.asList(storeIndexVar)),
 					currentComponent);
 			Var castedIndexVar = procedure.newTempLocalVariable(
-					IrFactory.eINSTANCE.createTypeInt(), "casted_"
-							+ storeIndexVar.getIndexedName());
+					IrFactory.eINSTANCE.createTypeInt(dataSize), "casted_"
+							+ castIndex + "_" + storeIndexVar.getIndexedName());
 			mapOutPorts(castedIndexVar);
 			currentListComponent.add(currentComponent);
-
+			castIndex++;
 			// add the assign instruction for each index
 			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
 					castedIndexVar);
