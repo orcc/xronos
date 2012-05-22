@@ -185,9 +185,9 @@ public class ObjectResolver extends DataFlowVisitor {
 
 		if (debug) {
 			System.out.println("OBJECT RESOLVING");
-			for (Iterator iter = design.getLogicalMemories().iterator(); iter
-					.hasNext();) {
-				((LogicalMemory) iter.next()).showContents();
+			for (Iterator<LogicalMemory> iter = design.getLogicalMemories()
+					.iterator(); iter.hasNext();) {
+				iter.next().showContents();
 			}
 		}
 
@@ -199,9 +199,9 @@ public class ObjectResolver extends DataFlowVisitor {
 		resolver.finish();
 
 		if (debug) {
-			for (Iterator iter = design.getLogicalMemories().iterator(); iter
-					.hasNext();) {
-				((LogicalMemory) iter.next()).showAccessors();
+			for (Iterator<LogicalMemory> iter = design.getLogicalMemories()
+					.iterator(); iter.hasNext();) {
+				iter.next().showAccessors();
 			}
 		}
 
@@ -275,8 +275,7 @@ public class ObjectResolver extends DataFlowVisitor {
 			logicalMemory.accept(new PtrFinder());
 		}
 
-		for (Iterator iter = design.getRegisters().iterator(); iter.hasNext();) {
-			final Register reg = (Register) iter.next();
+		for (Register reg : design.getRegisters()) {
 			MemoryVisitable init = reg.getInitialValue();
 			init.accept(new RegPtrFinder(reg));
 		}

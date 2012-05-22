@@ -21,57 +21,80 @@
 
 package net.sf.openforge.optimize.memory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.ArrayRead;
+import net.sf.openforge.lim.ArrayWrite;
+import net.sf.openforge.lim.FailVisitor;
+import net.sf.openforge.lim.HeapRead;
+import net.sf.openforge.lim.HeapWrite;
+import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
+import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
+import net.sf.openforge.lim.memory.Location;
+import net.sf.openforge.lim.memory.LocationConstant;
+import net.sf.openforge.lim.memory.Variable;
 
 /**
- * RetargetVisitor is a small visitor which is used to retarget LValue
- * accesses when the Locations on which they were based have changed.
- * It will NOT work for retargeting LValues when the structure of the
- * Locations they target have changed.  Effectively, this class finds
- * the LocationConstant inside absolute accesses and modifies them to
- * point to a new Location as defined by the correlation map with
- * which this class is constructed.
- *
- *
- * <p>Created: Fri Oct 31 17:00:05 2003
- *
+ * RetargetVisitor is a small visitor which is used to retarget LValue accesses
+ * when the Locations on which they were based have changed. It will NOT work
+ * for retargeting LValues when the structure of the Locations they target have
+ * changed. Effectively, this class finds the LocationConstant inside absolute
+ * accesses and modifies them to point to a new Location as defined by the
+ * correlation map with which this class is constructed.
+ * 
+ * 
+ * <p>
+ * Created: Fri Oct 31 17:00:05 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: RetargetVisitor.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class RetargetVisitor extends FailVisitor
-{
-    private Map correlate;
-    public RetargetVisitor (Map corr)
-    {
-        super("location letargetting");
-        this.correlate = Collections.unmodifiableMap(corr);
-    }
-    
-    //Nothing to do...
-    public void visit (ArrayRead comp){}
-    public void visit (ArrayWrite comp){}
-    // Nothing to do so long as we arent modifying the structure
-    // of what is being accessed (which we arent here)
-    public void visit (HeapRead comp){}
-    public void visit (HeapWrite comp){}
-    
-    public void visit (AbsoluteMemoryRead comp)
-    { // Let the visit(LocationConstant do the work for us!)
-        comp.getAddressConstant().accept(this);
-    }
-    public void visit (AbsoluteMemoryWrite comp)
-    { // Let the visit(LocationConstant do the work for us!)
-        comp.getAddressConstant().accept(this);
-    }
-    
-    public void visit (LocationConstant comp)
-    {
-        Location oldLoc = comp.getTarget();
-        Location newLoc = Variable.getCorrelatedLocation(this.correlate, oldLoc);
-        comp.setTarget(newLoc);
-    }
-}
+public class RetargetVisitor extends FailVisitor {
+	private Map<Location, Location> correlate;
 
+	public RetargetVisitor(Map<Location, Location> corr) {
+		super("location letargetting");
+		correlate = Collections.unmodifiableMap(corr);
+	}
+
+	// Nothing to do...
+	@Override
+	public void visit(ArrayRead comp) {
+	}
+
+	@Override
+	public void visit(ArrayWrite comp) {
+	}
+
+	// Nothing to do so long as we arent modifying the structure
+	// of what is being accessed (which we arent here)
+	@Override
+	public void visit(HeapRead comp) {
+	}
+
+	@Override
+	public void visit(HeapWrite comp) {
+	}
+
+	@Override
+	public void visit(AbsoluteMemoryRead comp) { // Let the
+													// visit(LocationConstant do
+													// the work for us!)
+		comp.getAddressConstant().accept(this);
+	}
+
+	@Override
+	public void visit(AbsoluteMemoryWrite comp) { // Let the
+													// visit(LocationConstant do
+													// the work for us!)
+		comp.getAddressConstant().accept(this);
+	}
+
+	@Override
+	public void visit(LocationConstant comp) {
+		Location oldLoc = comp.getTarget();
+		Location newLoc = Variable.getCorrelatedLocation(correlate, oldLoc);
+		comp.setTarget(newLoc);
+	}
+}

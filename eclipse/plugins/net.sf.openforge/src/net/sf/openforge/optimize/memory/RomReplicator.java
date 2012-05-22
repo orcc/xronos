@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -174,17 +175,16 @@ public class RomReplicator implements Optimization {
 		 * If a LogicalMemory has been replicated, remove the original from the
 		 * Design and add the replicas.
 		 */
-		for (Iterator memorySetIter = repMemoriesMap.entrySet().iterator(); memorySetIter
-				.hasNext();) {
-			final Map.Entry entry = (Map.Entry) memorySetIter.next();
-			final LogicalMemory origMem = (LogicalMemory) entry.getKey();
-			final Set repMemorySet = (Set) entry.getValue();
+		for (Map.Entry<LogicalMemory, Set<LogicalMemory>> entry : repMemoriesMap
+				.entrySet()) {
+			final LogicalMemory origMem = entry.getKey();
+			final Set<LogicalMemory> repMemorySet = entry.getValue();
 
 			if (!repMemorySet.isEmpty()) {
 				design.removeMemory(origMem);
-				for (Iterator repMemIter = repMemorySet.iterator(); repMemIter
-						.hasNext();) {
-					design.addMemory((LogicalMemory) repMemIter.next());
+				for (Iterator<LogicalMemory> repMemIter = repMemorySet
+						.iterator(); repMemIter.hasNext();) {
+					design.addMemory(repMemIter.next());
 				}
 			}
 		}
@@ -257,14 +257,14 @@ public class RomReplicator implements Optimization {
 	Set<LogicalMemory> replicate(LogicalMemory memory, ObjectResolver resolver,
 			boolean isSinglePort) {
 		/* Collect up duplicated rom */
-		Set<LogicalMemory> replicatedMemories = new HashSet();
+		Set<LogicalMemory> replicatedMemories = new HashSet<LogicalMemory>();
 
 		/*
 		 * Make a memory copy and allocate pre-calculated number of accesses per
 		 * port
 		 */
-		for (Iterator accessIter = new ArrayList(memory.getLValues())
-				.iterator(); accessIter.hasNext();) {
+		for (Iterator<LValue> accessIter = new ArrayList<LValue>(
+				memory.getLValues()).iterator(); accessIter.hasNext();) {
 			final MemoryCopier copier = new MemoryCopier(memory);
 			final LogicalMemory copiedMem = copier.getCopy();
 			repCount++;
@@ -278,7 +278,7 @@ public class RomReplicator implements Optimization {
 					copier.getLocationMap());
 			LogicalMemoryPort memoryPort = memoryPortIter.next();
 			for (int i = 0; i < accessesPerPort && accessIter.hasNext(); i++) {
-				final LValue access = (LValue) accessIter.next();
+				final LValue access = accessIter.next();
 
 				access.getLogicalMemoryPort().removeAccess(access);
 				memoryPort.addAccess(access);
@@ -286,10 +286,8 @@ public class RomReplicator implements Optimization {
 
 				retargetedAccesses.add(access);
 
-				for (Iterator sourceIter = resolver.getAddressSources(access)
-						.iterator(); sourceIter.hasNext();) {
-					final LocationValueSource source = (LocationValueSource) sourceIter
-							.next();
+				for (LocationValueSource source : resolver
+						.getAddressSources(access)) {
 					final Location oldLoc = source.getTarget();
 					final Location newLoc = Variable.getCorrelatedLocation(
 							copier.getLocationMap(), oldLoc);
@@ -312,20 +310,19 @@ public class RomReplicator implements Optimization {
 				}
 
 				for (int i = 0; i < accessesPerPort && accessIter.hasNext(); i++) {
-					final LValue access = (LValue) accessIter.next();
+					final LValue access = accessIter.next();
 
 					access.getLogicalMemoryPort().removeAccess(access);
 					memoryPort.addAccess(access);
 					access.accept(retargetVis);
 					retargetedAccesses.add(access);
 
-					for (Iterator sourceIter = resolver.getAddressSources(
-							access).iterator(); sourceIter.hasNext();) {
+					for (LocationValueSource source : resolver
+							.getAddressSources(access)) {
 						// final LocationConstant addressSource =
 						// (LocationConstant)sourceIter.next();
 						// addressSource.accept(retargetVis);
-						final LocationValueSource source = (LocationValueSource) sourceIter
-								.next();
+
 						final Location oldLoc = source.getTarget();
 						final Location newLoc = Variable.getCorrelatedLocation(
 								copier.getLocationMap(), oldLoc);
@@ -340,9 +337,9 @@ public class RomReplicator implements Optimization {
 			 * the rest, also remove the retargeted accesses in the origical
 			 * memory.
 			 */
-			final ArrayList lValues = new ArrayList(memory.getLValues());
-			for (Iterator lvIter = lValues.iterator(); lvIter.hasNext();) {
-				final LValue lvalue = (LValue) lvIter.next();
+			final List<LValue> lValues = new ArrayList<LValue>(
+					memory.getLValues());
+			for (LValue lvalue : lValues) {
 				if (!retargetedAccesses.contains(lvalue)) {
 					copiedMem.removeAccessor(lvalue);
 				} else {
@@ -356,6 +353,7 @@ public class RomReplicator implements Optimization {
 		return replicatedMemories;
 	}
 
+	@SuppressWarnings("unused")
 	private static void overLimit(Design design, LogicalMemory mem,
 			int romSize, boolean partial) {
 		design.getEngine()
