@@ -232,8 +232,9 @@ public abstract class Variable extends ID implements Location {
 		final Location thisBase = getAbsoluteBase();
 		final Location testBase = loc.getAbsoluteBase();
 
-		if (thisBase != testBase)
+		if (thisBase != testBase) {
 			return false;
+		}
 
 		Location thisLoc = this;
 		int thisMinDelta = thisLoc.getAbsoluteMinDelta();
@@ -268,11 +269,13 @@ public abstract class Variable extends ID implements Location {
 	 */
 	@Override
 	public void chopStart(Location loc, int units) {
-		if (loc == null)
+		if (loc == null) {
 			throw new NullPointerException("null location not allowed");
-		if (units < 0)
+		}
+		if (units < 0) {
 			throw new IllegalArgumentException(
 					"cannot chop a negative number of addressable units from an allocation");
+		}
 	}
 
 	/**

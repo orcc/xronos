@@ -28,12 +28,22 @@
  */
 package net.sf.orc2hdl.backend.transformations;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstStore;
+import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.OpBinary;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.util.util.EcoreHelper;
 
 /**
  * This class defines an actor transformation that transforms index declaration
@@ -44,12 +54,64 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
  * 
  */
 public class IndexFlattener extends AbstractIrVisitor<Void> {
+
+	private void toOneDimIndex(BlockBasic currentBlock,
+			List<Expression> indexes, Type listType) {
+
+		// Get last index
+		Integer lastIndex = indexes.size() - 1;
+		Expression lastExpr = indexes.get(lastIndex);
+		// For the rest of the indexes create a binary expression
+		// of the index * Dim(index)
+		List<Expression> restOfIndex = new ArrayList<Expression>(indexes);
+		restOfIndex.remove(lastExpr);
+		// Get the Dimension for the rest of Indexes
+		List<Integer> listDim = listType.getDimensions();
+
+		int dimCounter = listDim.size() - 1;
+		Expression restIndex = null;
+		// Index in openForge is represented like a 32bit Integer
+		Type exrpType = IrFactory.eINSTANCE.createTypeInt(32);
+
+		for (Expression expr : new ArrayList<Expression>(restOfIndex)) {
+			Integer dim = listDim.get(dimCounter);
+			ExprInt exprDim = IrFactory.eINSTANCE.createExprInt(dim);
+			if (restIndex == null) {
+				restIndex = IrFactory.eINSTANCE.createExprBinary(expr,
+						OpBinary.TIMES, exprDim, exrpType);
+			} else {
+				Expression e = IrFactory.eINSTANCE.createExprBinary(expr,
+						OpBinary.TIMES, exprDim, exrpType);
+				restIndex = IrFactory.eINSTANCE.createExprBinary(restIndex,
+						OpBinary.PLUS, e, exrpType);
+			}
+			dimCounter--;
+		}
+
+		Expression finalIndex = IrFactory.eINSTANCE.createExprBinary(restIndex,
+				OpBinary.PLUS, lastExpr, exrpType);
+
+		Var indexVar = procedure.newTempLocalVariable(
+				IrFactory.eINSTANCE.createTypeInt(), "index");
+		// sets indexVar as memory index
+		IrUtil.delete(indexes);
+		indexes.add(IrFactory.eINSTANCE.createExprVar(indexVar));
+		// Add the assign instruction that hold the one-dim index
+		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
+				finalIndex);
+		currentBlock.add(indexInst, assign);
+		indexInst++;
+	}
+
 	@Override
 	public Void caseInstLoad(InstLoad load) {
 		List<Expression> indexes = load.getIndexes();
 
 		if (indexes.size() > 1) {
-
+			toOneDimIndex(
+					EcoreHelper.getContainerOfType(load, BlockBasic.class),
+					indexes,
+					IrUtil.copy(load.getSource().getVariable().getType()));
 		}
 
 		return null;
@@ -60,7 +122,10 @@ public class IndexFlattener extends AbstractIrVisitor<Void> {
 		List<Expression> indexes = store.getIndexes();
 
 		if (indexes.size() > 1) {
-
+			toOneDimIndex(
+					EcoreHelper.getContainerOfType(store, BlockBasic.class),
+					indexes,
+					IrUtil.copy(store.getTarget().getVariable().getType()));
 		}
 
 		return null;

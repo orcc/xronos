@@ -290,8 +290,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		@Override
 		public Object caseExprVar(ExprVar var) {
-			// TODO: See if NoOP can have more than one inputs after all actors
-			// Transformations
 			currentComponent = new NoOp(1, Exit.DONE);
 			mapInPorts(
 					new ArrayList<Var>(
@@ -524,9 +522,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		}
 	}
 
-	/** List which associates each action with its components **/
-	private final Map<Action, List<Component>> actionComponents = new HashMap<Action, List<Component>>();
-
 	/** Map of action associated to its Task **/
 	private final Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
 
@@ -716,8 +711,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		// Add it to the design
 		design.addTask(task);
 
-		// TODO: To be deleted
-		actionComponents.put(currentAction, currentListComponent);
 		return null;
 	}
 
@@ -874,7 +867,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		return false;
 	}
 
-	// TODO: set all the necessary information here
 	protected IDSourceInfo deriveIDSourceInfo(String name) {
 		String fileName = null;
 		String packageName = null;
@@ -989,7 +981,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			Type type = typeList.getInnermostType();
 
 			List<Integer> listDimension = typeList.getDimensions();
-
 			Object varValue = var.getValue();
 			logicalValue = makeLogicalValueObject(varValue, listDimension, type);
 		} else {
@@ -1025,8 +1016,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			List<LogicalValue> subElements = new ArrayList<LogicalValue>(
 					dimension.get(0));
 			List<Integer> newListDimension = dimension;
+			Integer firstDim = dimension.get(0);
 			newListDimension.remove(0);
-			for (int i = 0; i < dimension.get(0); i++) {
+			for (int i = 0; i < firstDim; i++) {
 				subElements.add(makeLogicalValueObject(Array.get(obj, i),
 						newListDimension, type));
 			}

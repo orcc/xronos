@@ -871,10 +871,8 @@ public class MemoryReducer implements Optimization {
 		// Only applicable to LogicalMemories.
 		final ObjectResolver resolver = ObjectResolver.resolve(design);
 
-		Set baseMaps = new HashSet();
-		for (Iterator iter = design.getLogicalMemories().iterator(); iter
-				.hasNext();) {
-			LogicalMemory mem = (LogicalMemory) iter.next();
+		Set<DeltaMap> baseMaps = new HashSet<DeltaMap>();
+		for (LogicalMemory mem : design.getLogicalMemories()) {
 			if (!mem.getLValues().isEmpty()) {
 				try {
 					DeltaMap correlation = reduce(mem, resolver);

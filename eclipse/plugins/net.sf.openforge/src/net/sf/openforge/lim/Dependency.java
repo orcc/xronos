@@ -34,7 +34,6 @@ package net.sf.openforge.lim;
  * @version $Id: Dependency.java 556 2008-03-14 02:27:40Z imiller $
  */
 public abstract class Dependency implements Cloneable {
-	private static final String rcs_id = "RCS_REVISION: $Rev:2 $";
 
 	/** The port which this Dependency annotates */
 	private Port port = null;
