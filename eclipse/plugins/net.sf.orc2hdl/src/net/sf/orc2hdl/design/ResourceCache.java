@@ -29,13 +29,16 @@
 
 package net.sf.orc2hdl.design;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.orcc.df.Port;
+import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.Var;
 
@@ -53,6 +56,8 @@ public class ResourceCache {
 	private final Map<Var, Location> memLocations = new HashMap<Var, Location>();
 
 	private final Map<InstCall, TaskCall> taskCalls = new HashMap<InstCall, TaskCall>();
+
+	private final Map<BlockIf, List<Var>> blockIfInputs = new HashMap<BlockIf, List<Var>>();
 
 	public ResourceCache() {
 	}
@@ -75,5 +80,15 @@ public class ResourceCache {
 
 	public ActionIOHandler getIOHandler(Port port) {
 		return ioHandlers.get(port);
+	}
+
+	public void addBlockIfInput(BlockIf blockIf, Var var) {
+		if (blockIfInputs.containsKey(blockIf)) {
+			blockIfInputs.get(blockIf).add(var);
+		} else {
+			List<Var> inputVars = new ArrayList<Var>();
+			inputVars.add(var);
+			blockIfInputs.put(blockIf, inputVars);
+		}
 	}
 }

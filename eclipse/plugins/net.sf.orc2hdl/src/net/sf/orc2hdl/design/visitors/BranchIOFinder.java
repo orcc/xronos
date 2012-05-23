@@ -27,51 +27,62 @@
  * SUCH DAMAGE.
  */
 
-package net.sf.orc2hdl.design;
+package net.sf.orc2hdl.design.visitors;
 
-import net.sf.openforge.app.EngineThread;
-import net.sf.openforge.app.GenericJob;
-import net.sf.openforge.app.OptionRegistry;
-import net.sf.openforge.lim.Design;
-import net.sf.orc2hdl.design.visitors.BranchIOFinder;
-import net.sf.orcc.df.Instance;
-import net.sf.orcc.df.util.DfSwitch;
-import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orcc.ir.Block;
+import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.AbstractIrVisitor;
 
 /**
- * This class transforms an Orcc {@link Instance} Object to an OpenForge
- * {@link Design} Object
+ * This visitor finds the Input and Output Vars of an IfBlock
  * 
  * @author Endri Bezati
+ * 
  */
-public class InstanceToDesign {
-	Design design;
-	Instance instance;
+public class BranchIOFinder extends AbstractIrVisitor<Void> {
 
-	public InstanceToDesign(Instance instance) {
-		this.instance = instance;
-		design = new Design();
+	/** Design Resources **/
+	private final ResourceCache resources;
+
+	private Block currentIfBlock = null;
+
+	private final Block currentBlock = null;
+
+	public BranchIOFinder(ResourceCache resources) {
+		this.resources = resources;
 	}
 
-	public Design buildDesign() {
-		// Get Instance name
-		String designName = instance.getName();
-		design.setIDLogical(designName);
-		GenericJob job = EngineThread.getGenericJob();
-		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
-				design.getSearchLabel(), designName);
+	@Override
+	public Void caseBlockIf(BlockIf blockIf) {
+		currentIfBlock = blockIf;
+		Expression condExpr = blockIf.getCondition();
+		Var condVar = ((ExprVar) condExpr).getUse().getVariable();
+		resources.addBlockIfInput(blockIf, condVar);
+		// Visit thenBlock
+		doSwitch(blockIf.getThenBlocks());
+		// Visit elseBlock
+		doSwitch(blockIf.getElseBlocks());
+		return null;
+	}
 
-		ResourceCache resources = new ResourceCache();
+	@Override
+	public Void caseBlockBasic(BlockBasic block) {
+		// Visit only the instruction of the If block
+		if (block.eContainer() == currentIfBlock) {
+			super.caseBlockBasic(block);
+		}
+		return null;
+	}
 
-		DfSwitch<Void> branchIOFinder = new DfVisitor<Void>(new BranchIOFinder(
-				resources));
-		branchIOFinder.doSwitch(instance.getActor());
-
-		DesignActorVisitor designVisitor = new DesignActorVisitor(instance,
-				design, resources);
-		designVisitor.doSwitch(instance.getActor());
-
-		return design;
+	@Override
+	public Void caseInstAssign(InstAssign assign) {
+		return null;
 	}
 
 }

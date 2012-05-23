@@ -156,6 +156,19 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		@Override
 		public Object caseBlockIf(BlockIf blockIf) {
+			// Create the decision
+			// Expression condExpr = blockIf.getCondition();
+			// Var condVar = ((ExprVar) condExpr).getUse().getVariable();
+			// String condName = "decision_" + currentAction.getName() + "_"
+			// + condVar.getIndexedName();
+			// Decision decision = buildDecision(condVar, condName);
+			// Visit the then block
+			currentListComponent = new ArrayList<Component>();
+			doSwitch(blockIf.getThenBlocks());
+
+			// Visit the else block
+			currentListComponent = new ArrayList<Component>();
+			doSwitch(blockIf.getElseBlocks());
 			return null;
 		}
 
@@ -666,6 +679,26 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		// Set all the dependencies
 		operationDependencies(module, components, componentPortDependency,
 				module.getExit(exitType));
+
+		// Give the name of the searchScope
+		module.specifySearchScope(searchScope);
+		if (exitType != Exit.RETURN) {
+			// Add done dependency on module
+			mapOutControlPort(module);
+		}
+
+		return module;
+	}
+
+	protected Component buildComponentModule(Component component,
+			List<Var> inVars, List<Var> outVars, String searchScope,
+			Exit.Type exitType) {
+		Module module = (Module) component;
+		// Add Input and Output Port for the Module
+		createModuleInterface(module, inVars, outVars, exitType);
+		// Set all the dependencies
+		operationDependencies(module, Arrays.asList(component),
+				componentPortDependency, module.getExit(exitType));
 
 		// Give the name of the searchScope
 		module.specifySearchScope(searchScope);
