@@ -100,7 +100,8 @@ public class Kicker extends Module implements Composable {
 		getGoPort().setUsed(false);
 
 		// useful
-		Bus resetBus = getInBuf().getResetBus();
+		// Bus resetBus =
+		getInBuf().getResetBus();
 
 		// now, construct the guts of this.
 

@@ -1237,9 +1237,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * @param cloneMap
 	 *            a map of original components to cloned components
 	 */
-	static Exit getExitClone(Exit exit, Map cloneMap) {
-		final Component componentClone = (Component) cloneMap.get(exit
-				.getOwner());
+	static Exit getExitClone(Exit exit, Map<Component, Component> cloneMap) {
+		final Component componentClone = cloneMap.get(exit.getOwner());
 		assert componentClone != null : "Unable to find clone map entry for: "
 				+ exit.getOwner();
 		return componentClone.getExit(exit.getTag());

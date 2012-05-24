@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.sf.openforge.util.naming.ID;
+
 /**
  * DesignCopier is used to create parallel, independent versions of portions of
  * a Design.
@@ -33,7 +35,6 @@ import java.util.Map;
  * @version $Id: DesignCopier.java 121 2006-03-27 19:58:31Z imiller $
  */
 public class DesignCopier {
-	private static final String _RCS_ = "RCS_REVISION: $Rev: 121 $";
 
 	private final CloneCorrelationMap cloneMap = new CloneCorrelationMap();
 
@@ -59,7 +60,7 @@ public class DesignCopier {
 	public Design copyLogicOnly(Design design) {
 		Design newDesign = new Design();
 
-		Map taskCorrelation = new HashMap();
+		Map<ID, ID> taskCorrelation = new HashMap<ID, ID>();
 		for (Task task : design.getTasks()) {
 			try {
 				Call originalCall = task.getCall();

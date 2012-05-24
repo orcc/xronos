@@ -36,6 +36,7 @@ import net.sf.openforge.lim.ArrayWrite;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
+import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.DataFlowVisitor;
 import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Design;
@@ -142,7 +143,7 @@ public class ObjectResolver extends DataFlowVisitor {
 	private Design design;
 
 	/** The set of components at the top level. Calls, pins, etc. */
-	private Set topLevelComponents;
+	private Set<?> topLevelComponents;
 
 	/** True if modified during the current iteration */
 	private boolean isModified = false;
@@ -151,13 +152,13 @@ public class ObjectResolver extends DataFlowVisitor {
 	private Map<Object, Set<LogicalValue>> valueMap = new HashMap<Object, Set<LogicalValue>>();
 
 	/** Map of LValue to Set of Locations accessed by that LValue */
-	private Map accessedLocationMap = new HashMap();
+	private Map<LValue, Set<Location>> accessedLocationMap = new HashMap<LValue, Set<Location>>();
 
 	/** Map of LogicalValue to LocationValueSource source */
 	private Map addressValueSourceMap = new IdentityHashMap();
 
 	/** Map of LValue to Set of LocationValueSource sources */
-	private Map addressSourceMap = new HashMap();
+	private Map<LValue, Set<LocationValueSource>> addressSourceMap = new HashMap<LValue, Set<LocationValueSource>>();
 
 	/**
 	 * A map of Location object to a Set of objects that may produce that
@@ -217,9 +218,9 @@ public class ObjectResolver extends DataFlowVisitor {
 	 * @return the set of {@link Location Locations} potentially accessed by the
 	 *         given <code>lvalue</code>
 	 */
-	private Set getAccessedLocations(LValue lvalue) {
-		final Set set = (Set) accessedLocationMap.get(lvalue);
-		return set == null ? Collections.EMPTY_SET : Collections
+	private Set<Location> getAccessedLocations(LValue lvalue) {
+		final Set<Location> set = accessedLocationMap.get(lvalue);
+		return set == null ? Collections.<Location> emptySet() : Collections
 				.unmodifiableSet(set);
 	}
 
@@ -235,7 +236,7 @@ public class ObjectResolver extends DataFlowVisitor {
 	 *         representing the address sources for the <code>access</code>
 	 */
 	public Set<LocationValueSource> getAddressSources(LValue access) {
-		final Set set = (Set) addressSourceMap.get(access);
+		final Set<LocationValueSource> set = addressSourceMap.get(access);
 		return set == null ? Collections.EMPTY_SET : Collections
 				.unmodifiableSet(set);
 	}
@@ -247,23 +248,18 @@ public class ObjectResolver extends DataFlowVisitor {
 		this.design = design;
 		setRunForward(true);
 
-		topLevelComponents = new HashSet(design.getDesignModule()
+		topLevelComponents = new HashSet<Component>(design.getDesignModule()
 				.getComponents());
 
 		/*
 		 * Initialize the valueMap with all the known Allocations.
 		 */
-		for (Iterator iter = design.getLogicalMemories().iterator(); iter
-				.hasNext();) {
-			final LogicalMemory logicalMemory = (LogicalMemory) iter.next();
-
+		for (LogicalMemory logicalMemory : design.getLogicalMemories()) {
 			// IDM new. Clear out all accessors. We will re-find
 			// them during resolving.
 			logicalMemory.clearAccessors();
 
-			for (Iterator allocIter = logicalMemory.getAllocations().iterator(); allocIter
-					.hasNext();) {
-				final Allocation allocation = (Allocation) allocIter.next();
+			for (Allocation allocation : logicalMemory.getAllocations()) {
 				allocation.getInitialValue()
 						.accept(new Initializer(allocation));
 			}
@@ -331,11 +327,10 @@ public class ObjectResolver extends DataFlowVisitor {
 		 * Re-add all LValues to their LogicalMemories with the Locations we've
 		 * found.
 		 */
-		for (Iterator iter = accessedLocationMap.entrySet().iterator(); iter
-				.hasNext();) {
-			final Map.Entry entry = (Map.Entry) iter.next();
-			final LValue access = (LValue) entry.getKey();
-			final Set locations = (Set) entry.getValue();
+		for (Map.Entry<LValue, Set<Location>> entry : accessedLocationMap
+				.entrySet()) {
+			final LValue access = entry.getKey();
+			final Set<Location> locations = entry.getValue();
 
 			if (debug) {
 				System.out.println("Access " + access + " to " + locations);
@@ -364,8 +359,7 @@ public class ObjectResolver extends DataFlowVisitor {
 				if (debug) {
 					System.out.println("\taccess mem " + logicalMemory);
 				}
-				for (Iterator locIter = locations.iterator(); locIter.hasNext();) {
-					final Location location = (Location) locIter.next();
+				for (Location location : locations) {
 					if (debug) {
 						System.out.println("\tlocation mem "
 								+ location.getLogicalMemory());
@@ -1195,7 +1189,7 @@ public class ObjectResolver extends DataFlowVisitor {
 	 *            the set of address LogicalValues accessed by the memory access
 	 */
 	private void addAddressSources(LValue access, Set addressValues) {
-		Set sources = (Set) addressSourceMap.get(access);
+		Set sources = addressSourceMap.get(access);
 		if (sources == null) {
 			sources = new HashSet();
 			addressSourceMap.put(access, sources);
@@ -1221,7 +1215,7 @@ public class ObjectResolver extends DataFlowVisitor {
 	 *            access
 	 */
 	private void addAccessedLocations(LValue access, Set newLocations) {
-		Set locations = (Set) accessedLocationMap.get(access);
+		Set locations = accessedLocationMap.get(access);
 		if (locations == null) {
 			locations = new HashSet();
 			accessedLocationMap.put(access, locations);

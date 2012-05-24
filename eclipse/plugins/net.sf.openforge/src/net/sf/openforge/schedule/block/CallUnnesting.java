@@ -31,6 +31,7 @@ import java.util.Stack;
 
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.lim.Block;
+import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.DefaultVisitor;
 import net.sf.openforge.lim.Design;
@@ -164,8 +165,9 @@ public class CallUnnesting {
 		while (sourceIter.hasNext()) {
 			portMap.put(sourceIter.next(), targetIter.next());
 		}
-		ComponentSwapVisitor.replaceConnections(portMap, Collections.EMPTY_MAP,
-				Collections.EMPTY_MAP);
+		ComponentSwapVisitor.replaceConnections(portMap,
+				Collections.<Bus, Bus> emptyMap(),
+				Collections.<Exit, Exit> emptyMap());
 		procBody.removeExit(returnExit);
 
 		// Connect procedure block by mimicing the call connections
