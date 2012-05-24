@@ -22,64 +22,73 @@
 package net.sf.openforge.optimize.replace;
 
 import net.sf.openforge.app.OptionKey;
-import net.sf.openforge.app.project.*;
-import net.sf.openforge.lim.*;
-
+import net.sf.openforge.app.project.Configurable;
+import net.sf.openforge.app.project.Option;
+import net.sf.openforge.app.project.SearchLabel;
+import net.sf.openforge.lim.Call;
+import net.sf.openforge.lim.CodeLabel;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.DefaultVisitor;
+import net.sf.openforge.lim.Procedure;
 
 /**
- * CallScopePreferenceVisitor is created with a preference name and
- * the value that the preference should be set to for the
- * <u>entire</u> call hierarchy visited.
- *
- * <p>Created: Thu Mar 27 15:34:29 2003
- *
+ * CallScopePreferenceVisitor is created with a preference name and the value
+ * that the preference should be set to for the <u>entire</u> call hierarchy
+ * visited.
+ * 
+ * <p>
+ * Created: Thu Mar 27 15:34:29 2003
+ * 
  * @author imiller, last modified by $Author: imiller $
- * @version $Id: CallScopePreferenceVisitor.java 2 2005-06-09 20:00:48Z imiller $
+ * @version $Id: CallScopePreferenceVisitor.java 2 2005-06-09 20:00:48Z imiller
+ *          $
  */
-public class CallScopePreferenceVisitor extends DefaultVisitor 
-{
-    private static final String _RCS_ = "$Rev: 2 $";
+public class CallScopePreferenceVisitor extends DefaultVisitor {
 
-    /** The name of the preference to set. */
-    private OptionKey optionKey;
-    /** The value of the preference to set. */
-    private int value;
-    
-    /** The component from which the preferences will be copied */
-    private Configurable replaced;
+	/** The name of the preference to set. */
+	private OptionKey optionKey;
+	/** The value of the preference to set. */
+	private int value;
 
-    /**
-     * Create a new visitor which sets the specified value for the
-     * specified preference on each procedure visited.
-     *
-     * @param prefName a value of type 'String'
-     * @param value a value of type 'int'
-     * @param comp a Component used to retrieve the default
-     * preferences to apply to the replaced component.
-     */
-    public CallScopePreferenceVisitor (OptionKey optKey, int value, Component comp)
-    {
-        this.optionKey = optKey;
-        this.value = value;
-        this.replaced = comp;
-    }
+	/** The component from which the preferences will be copied */
+	private Configurable replaced;
 
-    public void visit (Call call)
-    {
-        if (call.getProcedure() != null)
-        {
-            Procedure proc = call.getProcedure();
-            ReplacedSearchLabel rsl = new ReplacedSearchLabel(proc.getSearchLabel(), replaced);
-            proc.setSearchLabel(rsl);
-            SearchLabel tag = new CodeLabel(rsl.getSearchList().get(0).toString());
-            Option op = call.getGenericJob().getOption(this.optionKey);
-            op.setValue(tag, new Integer(this.value));
-        }
+	/**
+	 * Create a new visitor which sets the specified value for the specified
+	 * preference on each procedure visited.
+	 * 
+	 * @param prefName
+	 *            a value of type 'String'
+	 * @param value
+	 *            a value of type 'int'
+	 * @param comp
+	 *            a Component used to retrieve the default preferences to apply
+	 *            to the replaced component.
+	 */
+	public CallScopePreferenceVisitor(OptionKey optKey, int value,
+			Component comp) {
+		optionKey = optKey;
+		this.value = value;
+		replaced = comp;
+	}
 
-        // Call the super so that we override the value for any sub
-        // calls as well.  Otherwise the user could create recursion
-        // via call to a call...
-        super.visit(call);
-    }
-    
+	@Override
+	public void visit(Call call) {
+		if (call.getProcedure() != null) {
+			Procedure proc = call.getProcedure();
+			ReplacedSearchLabel rsl = new ReplacedSearchLabel(
+					proc.getSearchLabel(), replaced);
+			proc.setSearchLabel(rsl);
+			SearchLabel tag = new CodeLabel(rsl.getSearchList().get(0)
+					.toString());
+			Option op = call.getGenericJob().getOption(optionKey);
+			op.setValue(tag, new Integer(value));
+		}
+
+		// Call the super so that we override the value for any sub
+		// calls as well. Otherwise the user could create recursion
+		// via call to a call...
+		super.visit(call);
+	}
+
 }// CallScopePreferenceVisitor
