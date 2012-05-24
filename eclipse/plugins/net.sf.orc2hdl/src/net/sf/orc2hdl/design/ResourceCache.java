@@ -57,7 +57,10 @@ public class ResourceCache {
 
 	private final Map<InstCall, TaskCall> taskCalls = new HashMap<InstCall, TaskCall>();
 
-	private final Map<BlockIf, List<Var>> blockIfInputs = new HashMap<BlockIf, List<Var>>();
+	/** Map of BlockIf and a List of Decision, Then, Else Input and the Phi Vars **/
+	private final Map<BlockIf, List<List<Var>>> branchIfInput = new HashMap<BlockIf, List<List<Var>>>();
+
+	private final Map<BlockIf, Map<Var, List<Var>>> branchPhi = new HashMap<BlockIf, Map<Var, List<Var>>>();
 
 	public ResourceCache() {
 	}
@@ -82,13 +85,27 @@ public class ResourceCache {
 		return ioHandlers.get(port);
 	}
 
-	public void addBlockIfInput(BlockIf blockIf, Var var) {
-		if (blockIfInputs.containsKey(blockIf)) {
-			blockIfInputs.get(blockIf).add(var);
-		} else {
-			List<Var> inputVars = new ArrayList<Var>();
-			inputVars.add(var);
-			blockIfInputs.put(blockIf, inputVars);
-		}
+	public void addBranchDecisionInput(BlockIf blockIf, Var var) {
+		List<Var> vars = new ArrayList<Var>();
+		vars.add(var);
+		List<List<Var>> listOfVars = new ArrayList<List<Var>>();
+		listOfVars.add(0, vars);
+		branchIfInput.put(blockIf, listOfVars);
+	}
+
+	public void addBranchThenInput(BlockIf blockIf, List<Var> var) {
+		List<List<Var>> listOfVars = branchIfInput.get(blockIf);
+		listOfVars.add(1, var);
+		branchIfInput.put(blockIf, listOfVars);
+	}
+
+	public void addBranchElseInput(BlockIf blockIf, List<Var> var) {
+		List<List<Var>> listOfVars = branchIfInput.get(blockIf);
+		listOfVars.add(2, var);
+		branchIfInput.put(blockIf, listOfVars);
+	}
+
+	public void addBranchPhi(BlockIf blockIf, Map<Var, List<Var>> phiMapVar) {
+		branchPhi.put(blockIf, phiMapVar);
 	}
 }

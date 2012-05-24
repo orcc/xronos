@@ -29,18 +29,27 @@
 
 package net.sf.orc2hdl.design.visitors;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import net.sf.orc2hdl.design.ResourceCache;
-import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.Def;
+import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 
+import org.eclipse.emf.ecore.EObject;
+
 /**
- * This visitor finds the Input and Output Vars of an IfBlock
+ * This visitor finds the Input and Phi Vars of an IfBlock
  * 
  * @author Endri Bezati
  * 
@@ -50,24 +59,41 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 	/** Design Resources **/
 	private final ResourceCache resources;
 
-	private Block currentIfBlock = null;
+	private BlockIf currentIfBlock = null;
 
-	private final Block currentBlock = null;
+	private BlockBasic currentBlock = null;
+
+	private List<Var> currentVars = new ArrayList<Var>();
+
+	private Map<Var, List<Var>> phiMapVar = new HashMap<Var, List<Var>>();
 
 	public BranchIOFinder(ResourceCache resources) {
+		super(true);
 		this.resources = resources;
 	}
 
 	@Override
 	public Void caseBlockIf(BlockIf blockIf) {
+		// Add decision condition Var
 		currentIfBlock = blockIf;
 		Expression condExpr = blockIf.getCondition();
 		Var condVar = ((ExprVar) condExpr).getUse().getVariable();
-		resources.addBlockIfInput(blockIf, condVar);
+		resources.addBranchDecisionInput(blockIf, condVar);
+
 		// Visit thenBlock
+		currentVars = new ArrayList<Var>();
 		doSwitch(blockIf.getThenBlocks());
+		resources.addBranchThenInput(blockIf, currentVars);
+
 		// Visit elseBlock
+		currentVars = new ArrayList<Var>();
 		doSwitch(blockIf.getElseBlocks());
+		resources.addBranchElseInput(blockIf, currentVars);
+
+		// Visit Phi
+		phiMapVar = new HashMap<Var, List<Var>>();
+		doSwitch(blockIf.getJoinBlock());
+		resources.addBranchPhi(blockIf, phiMapVar);
 		return null;
 	}
 
@@ -75,6 +101,7 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 	public Void caseBlockBasic(BlockBasic block) {
 		// Visit only the instruction of the If block
 		if (block.eContainer() == currentIfBlock) {
+			currentBlock = block;
 			super.caseBlockBasic(block);
 		}
 		return null;
@@ -82,7 +109,55 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 
 	@Override
 	public Void caseInstAssign(InstAssign assign) {
+		super.caseInstAssign(assign);
 		return null;
+	}
+
+	@Override
+	public Void caseExprBinary(ExprBinary expr) {
+		// Get e1 var and if it defined not in this visited block added as an
+		// input
+		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
+		if (definedInOtherBlock(varE1, currentBlock)) {
+			if (!currentVars.contains(varE1)) {
+				currentVars.add(varE1);
+			}
+		}
+		// Get e2 var and if it defined not in this visited block added as an
+		// input
+		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
+		if (definedInOtherBlock(varE2, currentBlock)) {
+			if (!currentVars.contains(varE2)) {
+				currentVars.add(varE2);
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public Void caseInstPhi(InstPhi phi) {
+		List<Var> phiVars = new ArrayList<Var>();
+		Var target = phi.getTarget().getVariable();
+
+		for (Expression expr : phi.getValues()) {
+			Var value = ((ExprVar) expr).getUse().getVariable();
+			phiVars.add(value);
+		}
+		phiMapVar.put(target, phiVars);
+		return null;
+	}
+
+	private Boolean definedInOtherBlock(Var var, BlockBasic block) {
+		for (Def def : var.getDefs()) {
+			EObject container = def.eContainer();
+			while (!(container instanceof BlockBasic)) {
+				container = container.eContainer();
+			}
+			if (container != block) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
