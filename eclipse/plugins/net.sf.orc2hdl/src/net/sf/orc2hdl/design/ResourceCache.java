@@ -30,6 +30,7 @@
 package net.sf.orc2hdl.design;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,37 +53,19 @@ import net.sf.orcc.ir.Var;
  */
 public class ResourceCache {
 
+	/** Map of BlockIf and a List of Decision, Then, Else Input and the Phi Vars **/
+	private final Map<BlockIf, List<List<Var>>> branchIfInput = new HashMap<BlockIf, List<List<Var>>>();
+
+	/** Map of BlockIf and its Map of Target Var and its associated Values Var **/
+	private final Map<BlockIf, Map<Var, List<Var>>> branchPhi = new HashMap<BlockIf, Map<Var, List<Var>>>();
+
 	private final Map<Port, ActionIOHandler> ioHandlers = new HashMap<Port, ActionIOHandler>();
+
 	private final Map<Var, Location> memLocations = new HashMap<Var, Location>();
 
 	private final Map<InstCall, TaskCall> taskCalls = new HashMap<InstCall, TaskCall>();
 
-	/** Map of BlockIf and a List of Decision, Then, Else Input and the Phi Vars **/
-	private final Map<BlockIf, List<List<Var>>> branchIfInput = new HashMap<BlockIf, List<List<Var>>>();
-
-	private final Map<BlockIf, Map<Var, List<Var>>> branchPhi = new HashMap<BlockIf, Map<Var, List<Var>>>();
-
 	public ResourceCache() {
-	}
-
-	public void addIOHandler(Port port, ActionIOHandler io) {
-		ioHandlers.put(port, io);
-	}
-
-	public void addLocation(Var var, Location location) {
-		memLocations.put(var, location);
-	}
-
-	public Location getLocation(Var var) {
-		return memLocations.get(var);
-	}
-
-	public void addTaskCall(InstCall instCall, TaskCall taskCall) {
-		taskCalls.put(instCall, taskCall);
-	}
-
-	public ActionIOHandler getIOHandler(Port port) {
-		return ioHandlers.get(port);
 	}
 
 	public void addBranchDecisionInput(BlockIf blockIf, Var var) {
@@ -90,12 +73,6 @@ public class ResourceCache {
 		vars.add(var);
 		List<List<Var>> listOfVars = new ArrayList<List<Var>>();
 		listOfVars.add(0, vars);
-		branchIfInput.put(blockIf, listOfVars);
-	}
-
-	public void addBranchThenInput(BlockIf blockIf, List<Var> var) {
-		List<List<Var>> listOfVars = branchIfInput.get(blockIf);
-		listOfVars.add(1, var);
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
@@ -108,4 +85,52 @@ public class ResourceCache {
 	public void addBranchPhi(BlockIf blockIf, Map<Var, List<Var>> phiMapVar) {
 		branchPhi.put(blockIf, phiMapVar);
 	}
+
+	public void addBranchThenInput(BlockIf blockIf, List<Var> var) {
+		List<List<Var>> listOfVars = branchIfInput.get(blockIf);
+		listOfVars.add(1, var);
+		branchIfInput.put(blockIf, listOfVars);
+	}
+
+	public void addIOHandler(Port port, ActionIOHandler io) {
+		ioHandlers.put(port, io);
+	}
+
+	public void addLocation(Var var, Location location) {
+		memLocations.put(var, location);
+	}
+
+	public void addTaskCall(InstCall instCall, TaskCall taskCall) {
+		taskCalls.put(instCall, taskCall);
+	}
+
+	public Var getBranchDecision(BlockIf blockIf) {
+		// The first value of the first value is always the branch decision Var
+		return branchIfInput.get(blockIf).get(0).get(0);
+	}
+
+	public List<Var> getBranchElseVars(BlockIf blockIf) {
+		if (branchIfInput.get(blockIf).get(2).isEmpty()) {
+			return Collections.emptyList();
+		} else {
+			return branchIfInput.get(blockIf).get(2);
+		}
+	}
+
+	public Map<Var, List<Var>> getBranchPhiVars(BlockIf blockIf) {
+		return branchPhi.get(blockIf);
+	}
+
+	public List<Var> getBranchThenVars(BlockIf blockIf) {
+		return branchIfInput.get(blockIf).get(1);
+	}
+
+	public ActionIOHandler getIOHandler(Port port) {
+		return ioHandlers.get(port);
+	}
+
+	public Location getLocation(Var var) {
+		return memLocations.get(var);
+	}
+
 }

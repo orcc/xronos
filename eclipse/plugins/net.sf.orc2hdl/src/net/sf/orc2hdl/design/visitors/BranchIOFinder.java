@@ -41,7 +41,6 @@ import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
@@ -56,20 +55,30 @@ import org.eclipse.emf.ecore.EObject;
  */
 public class BranchIOFinder extends AbstractIrVisitor<Void> {
 
-	/** Design Resources **/
-	private final ResourceCache resources;
+	private BlockBasic currentBlock = null;
 
 	private BlockIf currentIfBlock = null;
-
-	private BlockBasic currentBlock = null;
 
 	private List<Var> currentVars = new ArrayList<Var>();
 
 	private Map<Var, List<Var>> phiMapVar = new HashMap<Var, List<Var>>();
 
+	/** Design Resources **/
+	private final ResourceCache resources;
+
 	public BranchIOFinder(ResourceCache resources) {
 		super(true);
 		this.resources = resources;
+	}
+
+	@Override
+	public Void caseBlockBasic(BlockBasic block) {
+		// Visit only the instruction of the If block
+		if (block.eContainer() == currentIfBlock) {
+			currentBlock = block;
+			super.caseBlockBasic(block);
+		}
+		return null;
 	}
 
 	@Override
@@ -86,30 +95,16 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 		resources.addBranchThenInput(blockIf, currentVars);
 
 		// Visit elseBlock
-		currentVars = new ArrayList<Var>();
-		doSwitch(blockIf.getElseBlocks());
-		resources.addBranchElseInput(blockIf, currentVars);
+		if (!blockIf.getElseBlocks().isEmpty()) {
+			currentVars = new ArrayList<Var>();
+			doSwitch(blockIf.getElseBlocks());
+			resources.addBranchElseInput(blockIf, currentVars);
+		}
 
 		// Visit Phi
 		phiMapVar = new HashMap<Var, List<Var>>();
 		doSwitch(blockIf.getJoinBlock());
 		resources.addBranchPhi(blockIf, phiMapVar);
-		return null;
-	}
-
-	@Override
-	public Void caseBlockBasic(BlockBasic block) {
-		// Visit only the instruction of the If block
-		if (block.eContainer() == currentIfBlock) {
-			currentBlock = block;
-			super.caseBlockBasic(block);
-		}
-		return null;
-	}
-
-	@Override
-	public Void caseInstAssign(InstAssign assign) {
-		super.caseInstAssign(assign);
 		return null;
 	}
 

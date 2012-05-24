@@ -157,18 +157,43 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		@Override
 		public Object caseBlockIf(BlockIf blockIf) {
 			// Create the decision
-			// Expression condExpr = blockIf.getCondition();
-			// Var condVar = ((ExprVar) condExpr).getUse().getVariable();
-			// String condName = "decision_" + currentAction.getName() + "_"
-			// + condVar.getIndexedName();
-			// Decision decision = buildDecision(condVar, condName);
+			Var condVar = resources.getBranchDecision(blockIf);
+			String condName = "decision_" + currentAction.getName() + "_"
+					+ condVar.getIndexedName();
+			Decision decision = buildDecision(condVar, condName);
+
 			// Visit the then block
 			currentListComponent = new ArrayList<Component>();
 			doSwitch(blockIf.getThenBlocks());
+			// Get the then Input Vars
+			List<Var> thenInputs = resources.getBranchThenVars(blockIf);
+			Block thenBlock = (Block) buildModule(currentListComponent,
+					thenInputs, Collections.<Var> emptyList(), "thenBlock",
+					Exit.DONE);
 
 			// Visit the else block
-			currentListComponent = new ArrayList<Component>();
-			doSwitch(blockIf.getElseBlocks());
+			Block elseBlock = null;
+			List<Var> elseInputs = new ArrayList<Var>();
+			if (!blockIf.getElseBlocks().isEmpty()) {
+				currentListComponent = new ArrayList<Component>();
+				doSwitch(blockIf.getElseBlocks());
+			} else {
+				elseBlock = (Block) buildModule(
+						Collections.<Component> emptyList(),
+						Collections.<Var> emptyList(),
+						Collections.<Var> emptyList(), "elseBlock", Exit.DONE);
+			}
+			// Get All input Vars
+			List<Var> ifInputVars = new ArrayList<Var>();
+			ifInputVars.add(condVar);
+			ifInputVars.addAll(thenInputs);
+			ifInputVars.addAll(elseInputs);
+
+			// Get Phi taget Vars, aka branchIf Outputs
+			List<Var> ifOutputVars = new ArrayList<Var>(resources
+					.getBranchPhiVars(blockIf).keySet());
+			currentComponent = buildBranch(decision, thenBlock, elseBlock,
+					ifInputVars, ifOutputVars, "ifBLOCK", Exit.DONE);
 			return null;
 		}
 
@@ -863,7 +888,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			modulePortDependency.put(module, portDep);
 			componentPortDependency.put(module, portDep);
 		}
-		// TODO: outVars for PHI
+		if (outVars != null) {
+
+		}
 
 		// Create modules exit
 		if (module.getExit(Exit.DONE) == null) {
