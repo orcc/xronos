@@ -342,9 +342,9 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 
 			// Logical. Replace the current logical dependencies with
 			// a new dependency.
-			List logical = new ArrayList(source.getLogicalDependents());
-			for (Iterator depIter = logical.iterator(); depIter.hasNext();) {
-				Dependency dep = (Dependency) depIter.next();
+			List<Dependency> logical = new ArrayList<Dependency>(
+					source.getLogicalDependents());
+			for (Dependency dep : logical) {
 				Dependency newDep = (Dependency) dep.clone();
 				newDep.setLogicalBus(target);
 				dep.getEntry().addDependency(dep.getPort(), newDep);
@@ -352,18 +352,14 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 			}
 
 			// Physical
-			for (Iterator portIter = (new ArrayList(source.getPorts()))
-					.iterator(); portIter.hasNext();) {
-				Port port = (Port) portIter.next();
+			for (Port port : (new ArrayList<Port>(source.getPorts()))) {
 				port.setBus(target);
 			}
 		}
 
 		// Replace the given exit with the new exit as the
 		// 'drivingExit' for anything that it drives.
-		for (Iterator exitIter = exitCorrelation.keySet().iterator(); exitIter
-				.hasNext();) {
-			Exit source = (Exit) exitIter.next();
+		for (Exit source : exitCorrelation.keySet()) {
 			Exit target = exitCorrelation.get(source);
 
 			// for (Iterator entryIter = source.getDrivenEntries().iterator();
@@ -374,10 +370,9 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 
 			// A ConcurrentModificationException will be thrown if we don't
 			// obtain the driven entries first.
-			Set drivenEntries = new HashSet(source.getDrivenEntries());
-			for (Iterator entryIter = drivenEntries.iterator(); entryIter
-					.hasNext();) {
-				Entry entry = (Entry) entryIter.next();
+			Set<Entry> drivenEntries = new HashSet<Entry>(
+					source.getDrivenEntries());
+			for (Entry entry : drivenEntries) {
 				entry.setDrivingExit(target);
 			}
 
@@ -404,12 +399,13 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 				|| (targetOwner.getEntries().size() == sourceOwner.getEntries()
 						.size()) : "Source and target must have same number of entries to 'mirror'";
 
-		for (Iterator sourceEntryIter = sourceOwner.getEntries().iterator(), targetEntryIter = targetOwner
-				.getEntries().iterator(); sourceEntryIter.hasNext();) {
-			Entry sourceEntry = (Entry) sourceEntryIter.next();
+		for (Iterator<Entry> sourceEntryIter = sourceOwner.getEntries()
+				.iterator(), targetEntryIter = targetOwner.getEntries()
+				.iterator(); sourceEntryIter.hasNext();) {
+			Entry sourceEntry = sourceEntryIter.next();
 			Entry targetEntry;
 			if (targetEntryIter.hasNext())
-				targetEntry = (Entry) targetEntryIter.next();
+				targetEntry = targetEntryIter.next();
 			else
 				targetEntry = targetOwner.makeEntry(sourceEntry
 						.getDrivingExit());
@@ -450,9 +446,7 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 		 * Copy the Port's connections and dependencies to each of the Bus's
 		 * dependents.
 		 */
-		for (Iterator iter = bus.getLogicalDependents().iterator(); iter
-				.hasNext();) {
-			final Dependency dependent = (Dependency) iter.next();
+		for (Dependency dependent : bus.getLogicalDependents()) {
 			final Entry dependentEntry = dependent.getEntry();
 			copyPortConnections(port, dependent.getPort(), dependentEntry);
 		}
@@ -461,9 +455,8 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 		 * Disconnect the Port and Bus.
 		 */
 		port.disconnect();
-		for (Iterator iter = port.getOwner().getEntries().iterator(); iter
-				.hasNext();) {
-			((Entry) iter.next()).clearDependencies(port);
+		for (Entry entry : port.getOwner().getEntries()) {
+			entry.clearDependencies(port);
 		}
 		bus.disconnect();
 		bus.clearLogicalDependents();
@@ -484,12 +477,9 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 	 */
 	private static void copyPortConnections(Port sourcePort, Port targetPort,
 			Entry targetEntry) {
-		for (Iterator iter = sourcePort.getOwner().getEntries().iterator(); iter
-				.hasNext();) {
-			final Entry sourceEntry = (Entry) iter.next();
-			for (Iterator diter = sourceEntry.getDependencies(sourcePort)
-					.iterator(); diter.hasNext();) {
-				final Dependency sourceDependency = (Dependency) diter.next();
+		for (Entry sourceEntry : sourcePort.getOwner().getEntries()) {
+			for (Dependency sourceDependency : sourceEntry
+					.getDependencies(sourcePort)) {
 				final Dependency targetDependency = (Dependency) sourceDependency
 						.clone();
 				targetDependency
@@ -507,9 +497,7 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 	 */
 	private static void copyPort(Port source, Entry sourceEntry, Port target,
 			Entry targetEntry) {
-		for (Iterator iter = sourceEntry.getDependencies(source).iterator(); iter
-				.hasNext();) {
-			Dependency sourceDep = (Dependency) iter.next();
+		for (Dependency sourceDep : sourceEntry.getDependencies(source)) {
 			Dependency targetDep = (Dependency) sourceDep.clone();
 			targetDep.setLogicalBus(sourceDep.getLogicalBus());
 			targetEntry.addDependency(target, targetDep);
@@ -524,8 +512,7 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 	 *            a value of type 'Component'
 	 */
 	public static void wireControlThrough(Component c) {
-		for (Iterator exitIter = c.getExits().iterator(); exitIter.hasNext();) {
-			Exit exit = (Exit) exitIter.next();
+		for (Exit exit : c.getExits()) {
 			shortCircuit(c.getGoPort(), exit.getDoneBus());
 		}
 	}
@@ -546,20 +533,20 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 
 		// Before we remove it, make sure it won't report that
 		// it's still driving an entry....
-		for (Iterator iter = c.getExits().iterator(); iter.hasNext();) {
-			Exit exit = (Exit) iter.next();
+		for (Exit exit : c.getExits()) {
 			// assert exit.getDrivenEntries().size()==0;
-			if (_optimize.db && exit.getDrivenEntries().size() > 0) {
-				_optimize
-						.ln(_optimize.DEAD_CODE,
-								"WARNING.  Exit has "
-										+ exit.getDrivenEntries().size()
-										+ " entries that still report it as their driving exit");
+			if (_optimize.db) {
+				if (exit.getDrivenEntries().size() > 0) {
+					_optimize
+							.ln(_optimize.DEAD_CODE,
+									"WARNING.  Exit has "
+											+ exit.getDrivenEntries().size()
+											+ " entries that still report it as their driving exit");
+				}
 			}
 
-			for (Iterator entryIter = new ArrayList(exit.getDrivenEntries())
-					.iterator(); entryIter.hasNext();) {
-				((Entry) entryIter.next()).setDrivingExit(null);
+			for (Entry entry : new ArrayList<Entry>(exit.getDrivenEntries())) {
+				entry.setDrivingExit(null);
 			}
 		}
 
@@ -588,15 +575,15 @@ public class ComponentSwapVisitor extends SafeFilteredVisitor {
 		assert owner != null : "Cannot replace a component which is not contained in a module";
 
 		// map the dependencies/connections.
-		Map portCorrelation = new HashMap();
+		Map<Port, Port> portCorrelation = new HashMap<Port, Port>();
 		portCorrelation.put(comp.getClockPort(), constant.getClockPort());
 		portCorrelation.put(comp.getResetPort(), constant.getResetPort());
 		portCorrelation.put(comp.getGoPort(), constant.getGoPort());
 
 		assert comp.getExits().size() == 1 : "Only expecting one exit on node to be replaced";
 		Exit exit = comp.getExits().iterator().next();
-		Map busCorrelation = new HashMap();
-		Map exitCorrelation = new HashMap();
+		Map<Bus, Bus> busCorrelation = new HashMap<Bus, Bus>();
+		Map<Exit, Exit> exitCorrelation = new HashMap<Exit, Exit>();
 		if (!exit.getDataBuses().isEmpty()) {
 			assert exit.getDataBuses().size() == 1 : "Only expecting one data bus on component to be replaced: "
 					+ comp + " data bus count=" + exit.getDataBuses().size();
