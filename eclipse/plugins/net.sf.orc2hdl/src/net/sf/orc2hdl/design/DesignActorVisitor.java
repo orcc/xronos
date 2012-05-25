@@ -168,8 +168,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			// Get the then Input Vars
 			List<Var> thenInputs = resources.getBranchThenVars(blockIf);
 			Block thenBlock = (Block) buildModule(currentListComponent,
-					thenInputs, Collections.<Var> emptyList(), "thenBlock",
-					Exit.DONE);
+					thenInputs, null, "thenBlock", Exit.DONE);
 
 			// Visit the else block
 			Block elseBlock = null;
@@ -707,11 +706,15 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		// Give the name of the searchScope
 		module.specifySearchScope(searchScope);
-		if (exitType != Exit.RETURN) {
-			// Add done dependency on module
-			mapOutControlPort(module);
+		// The condition of emptiness on components means that the DONE exit
+		// signal should not be connected with the other dependencies of its
+		// container
+		if (!components.isEmpty()) {
+			if (exitType != Exit.RETURN) {
+				// Add done dependency on module
+				mapOutControlPort(module);
+			}
 		}
-
 		return module;
 	}
 
@@ -761,8 +764,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		}
 		// Create the task
 		String taskName = currentAction.getName();
-		currentModule = (Module) buildModule(currentListComponent,
-				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+		currentModule = (Module) buildModule(currentListComponent, null, null,
 				taskName + "Body", currentExit);
 
 		Task task = createTask(taskName, currentModule, false);

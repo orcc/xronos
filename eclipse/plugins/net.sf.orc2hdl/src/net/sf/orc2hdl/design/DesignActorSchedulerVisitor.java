@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -128,6 +127,8 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 	/** All components of the scheduler **/
 	private final List<Component> schedulerComponents = new ArrayList<Component>();
 
+	Map<Action, List<Component>> actionTests = new HashMap<Action, List<Component>>();
+
 	public DesignActorSchedulerVisitor(Instance instance, Design design,
 			Map<Action, Task> actorsTasks, ResourceCache resources,
 			Map<LogicalValue, Var> stateVars) {
@@ -163,8 +164,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 
 		currentExit = Exit.DONE;
 
-		currentModule = (Module) buildModule(currentListComponent,
-				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+		currentModule = (Module) buildModule(currentListComponent, null, null,
 				"schedulerInfiteLoop", currentExit);
 
 		// Create the decision
@@ -197,12 +197,11 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
 				"block", Exit.DONE);
 		Component branch = buildBranch(branchDecision, thenBlock, null,
-				Arrays.asList(outDecision), Collections.<Var> emptyList(),
+				Arrays.asList(outDecision), null,
 				"callTask_" + task.getIDGlobalType(), Exit.DONE);
 
 		Module module = (Module) buildModule(Arrays.asList(branch),
-				Arrays.asList(outDecision), Collections.<Var> emptyList(),
-				"taskCallBlock", Exit.DONE);
+				Arrays.asList(outDecision), null, "taskCallBlock", Exit.DONE);
 
 		return module;
 	}
@@ -269,9 +268,12 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 			schedulerComponents.addAll(outputPatternComponents.get(action));
 		}
 
-		// Create TestAction
-		Component bodyBlock = createActionTest(actor.getActions());
-		schedulerComponents.add(bodyBlock);
+		// Create TestAction Map
+		createActionTest(actor.getActions());
+		// Create the scheduler out of FSM action branch
+		Component branchBlock = createOutFsmScheduler(actor.getActions());
+
+		schedulerComponents.add(branchBlock);
 
 		// Create the testAction Module
 		Module bodyModule = (Block) buildModule(schedulerComponents,
@@ -344,67 +346,78 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		return null;
 	}
 
-	private Component createActionTest(List<Action> actions) {
-		List<Action> newActionList = actions;
+	private void createActionTest(List<Action> actions) {
+		// Component 0: Decision, Component 1:ThenBlock
+		actionTests = new HashMap<Action, List<Component>>();
+
+		for (Action action : actions) {
+			List<Component> actionTestComponent = new ArrayList<Component>();
+
+			// Create the decision
+			Var decisionVar = actionSchedulerInDecisions.get(action);
+			String varName = "decision_isSchedulable_" + action.getName();
+			currentListComponent = new ArrayList<Component>();
+			Decision decision = buildDecision(decisionVar, varName);
+			decision.setIDLogical("decision_" + action.getName());
+			actionTestComponent.add(0, decision);
+
+			// Create the "then" body
+			Task actionToBeExecuted = actorsTasks.get(action);
+			Var outDecision = actionSchedulerOutDecisions.get(action);
+			Block thenBlock = (Block) buildTaskCall(actionToBeExecuted,
+					outDecision);
+			thenBlock.setIDLogical("thenBlock_" + action.getName());
+			actionTestComponent.add(1, thenBlock);
+			actionTests.put(action, actionTestComponent);
+		}
+	}
+
+	private Branch createOutFsmScheduler(List<Action> actions) {
 		Branch branch = null;
-		List<Var> branchInputPorts = new ArrayList<Var>();
 
-		// Fill Up the branch Input Ports with its associated Vars
-		for (Action action : newActionList) {
-			if (actionSchedulerInDecisions.containsKey(action)) {
-				branchInputPorts.add(actionSchedulerInDecisions.get(action));
-			}
-			if (actionSchedulerOutDecisions.containsKey(action)) {
-				branchInputPorts.add(actionSchedulerOutDecisions.get(action));
-			}
-		}
+		List<Var> currentInputPorts = new ArrayList<Var>();
+		List<Var> previousInputPorts = new ArrayList<Var>();
 
-		for (Iterator<Action> it = actions.iterator(); it.hasNext();) {
-			Action action = it.next();
-			if (actionSchedulerInDecisions.containsKey(action)) {
-				Var decisionVar = actionSchedulerInDecisions.get(action);
-				String varName = "decision_isSchedulable_" + action.getName();
-				currentListComponent = new ArrayList<Component>();
-				Decision decision = buildDecision(decisionVar, varName);
-				// Create the "then" body
-				Task actionToBeExecuted = actorsTasks.get(action);
-				Var outDecision = actionSchedulerOutDecisions.get(action);
-				Block thenBlock = (Block) buildTaskCall(actionToBeExecuted,
-						outDecision);
+		int actionListSize = actions.size() - 1;
 
-				// Create the "else" body
-				if (it.hasNext()) {
-					newActionList.remove(action);
-					List<Var> elseInputPorts = new ArrayList<Var>();
+		for (int i = actionListSize; i >= 0; i--) {
+			// Get Action
+			Action action = actions.get(i);
+			// Get The inputs of the branch
+			currentInputPorts.add(actionSchedulerOutDecisions.get(action));
+			currentInputPorts.add(actionSchedulerInDecisions.get(action));
 
-					// Fill Up the branch Input Ports with its associated Vars
-					for (Action elseAction : newActionList) {
-						if (actionSchedulerInDecisions.containsKey(elseAction)) {
-							elseInputPorts.add(actionSchedulerInDecisions
-									.get(elseAction));
-						}
-						if (actionSchedulerOutDecisions.containsKey(elseAction)) {
-							elseInputPorts.add(actionSchedulerOutDecisions
-									.get(elseAction));
-						}
-					}
+			Block elseBlock = null;
+			if (i == actionListSize) {
+				List<Component> comps = actionTests.get(action);
+				Decision decision = (Decision) comps.get(0);
+				Block thenBlock = (Block) comps.get(1);
+				// elseBlock = (Block) buildModule(
+				// Collections.<Component> emptyList(), null, null,
+				// "emptyElseBlock", Exit.DONE);
+				branch = (Branch) buildBranch(decision, thenBlock, null,
+						currentInputPorts, null,
+						"ifBranch_" + action.getName(), null);
+				branch.setIDLogical("ifBranch_" + action.getName());
+				previousInputPorts.add(currentInputPorts.get(1));
+				previousInputPorts.add(currentInputPorts.get(0));
 
-					Component elseBlock = createActionTest(newActionList);
-					Block elseModule = (Block) buildModule(
-							Arrays.asList(elseBlock), elseInputPorts,
-							Collections.<Var> emptyList(), "block", Exit.DONE);
-					elseModule.setIDLogical("branchElse_" + action.getName());
-					branch = (Branch) buildBranch(decision, thenBlock,
-							elseModule, branchInputPorts, null,
-							"ifThenElseBlock", null);
-				} else {
-					branch = (Branch) buildBranch(decision, thenBlock, null,
-							branchInputPorts, null, "ifThenBlock", null);
-					branch.setIDLogical("branchIf_" + action.getName());
-				}
-
+			} else {
+				List<Component> comps = actionTests.get(action);
+				Decision decision = (Decision) comps.get(0);
+				Block thenBlock = (Block) comps.get(1);
+				List<Var> inPort = new ArrayList<Var>(currentInputPorts);
+				Collections.reverse(inPort);
+				elseBlock = (Block) buildModule(
+						Arrays.asList((Component) branch), previousInputPorts,
+						null, "elseBlock", Exit.DONE);
+				branch = (Branch) buildBranch(decision, thenBlock, elseBlock,
+						inPort, null, "ifBranch_" + action.getName(), null);
+				branch.setIDLogical("ifBranch_" + action.getName());
+				previousInputPorts = inPort;
 			}
 		}
+
 		return branch;
 	}
 
