@@ -171,8 +171,9 @@ public class ObjectInspector {
 			} else if (pattern.endsWith("*")) {
 				this.pattern = pattern.substring(0, pattern.length() - 1);
 				prefix = true;
-			} else
+			} else {
 				this.pattern = pattern;
+			}
 		}
 
 		/**
@@ -197,12 +198,13 @@ public class ObjectInspector {
 		 */
 		public boolean match(Class<?> clazz) {
 			String className = clazz.getName();
-			if (prefix)
+			if (prefix) {
 				return className.startsWith(pattern);
-			else if (suffix)
+			} else if (suffix) {
 				return className.endsWith(pattern);
-			else
+			} else {
 				return className.equals(pattern);
+			}
 		}
 	}
 
@@ -236,8 +238,9 @@ public class ObjectInspector {
 		 */
 		@Override
 		public boolean equals(Object obj) {
-			if (obj instanceof ObjectReference)
+			if (obj instanceof ObjectReference) {
 				return (this.obj == ((ObjectReference) obj).obj);
+			}
 			return false;
 		}
 
@@ -300,18 +303,21 @@ public class ObjectInspector {
 	private List<Field> getDeclaredFields(Class<?> clazz) {
 		String className = clazz.getName();
 		List<Field> filteredFields = fieldsCache.get(className);
-		if (filteredFields != null)
+		if (filteredFields != null) {
 			return filteredFields;
+		}
 		Field[] fields = clazz.getDeclaredFields();
 		Field.setAccessible(fields, true);
 		Set<String> fieldsSet = excludedFields.get(className);
-		if (fieldsSet == null)
+		if (fieldsSet == null) {
 			filteredFields = Arrays.asList(fields);
-		else {
+		} else {
 			filteredFields = new ArrayList<Field>();
-			for (int i = 0; i < fields.length; i++)
-				if (!fieldsSet.contains(fields[i].getName()))
+			for (int i = 0; i < fields.length; i++) {
+				if (!fieldsSet.contains(fields[i].getName())) {
 					filteredFields.add(fields[i]);
+				}
+			}
 		}
 		fieldsCache.put(className, filteredFields);
 		return filteredFields;
@@ -385,10 +391,11 @@ public class ObjectInspector {
 		StringBuffer buffer = new StringBuffer();
 		for (int i = 0; i < text.length(); i++) {
 			char c = text.charAt(i);
-			if ((c == '<') || (c == '>') || (c == '\'') || (c == '"'))
+			if ((c == '<') || (c == '>') || (c == '\'') || (c == '"')) {
 				buffer.append("&#" + (int) c + ";");
-			else
+			} else {
 				buffer.append(c);
+			}
 		}
 		return buffer.toString();
 	}
@@ -409,13 +416,15 @@ public class ObjectInspector {
 	 *         otherwise
 	 */
 	private boolean isFiltered(Class<?> clazz) {
-		if (filters.isEmpty())
+		if (filters.isEmpty()) {
 			return false;
+		}
 		Filter filter = null;
 		for (int i = filters.size() - 1; i >= 0; i--) {
 			filter = filters.get(i);
-			if (filter.match(clazz))
+			if (filter.match(clazz)) {
 				return !filter.isInclusion();
+			}
 		}
 		return filter.isInclusion();
 	}
@@ -588,8 +597,9 @@ public class ObjectInspector {
 				out.println("</TR>");
 			}
 			clazz = clazz.getSuperclass();
-			if ((clazz == null) || (isFiltered(clazz)))
+			if ((clazz == null) || (isFiltered(clazz))) {
 				break;
+			}
 		}
 		closeTable();
 	}
@@ -609,9 +619,9 @@ public class ObjectInspector {
 	private void outputValue(Object value, boolean primitive)
 			throws IOException {
 		out.print("<TD>");
-		if ((value == null) || (primitive) || (enqueue(value) == null))
+		if ((value == null) || (primitive) || (enqueue(value) == null)) {
 			out.print(HTMLEncode(String.valueOf(value)));
-		else {
+		} else {
 			// Integer ID = getObjectID(value);
 			// out.print(
 			// "<A HREF=\"#"+Integer.toHexString(ID.intValue())+"\">"+getFriendlyName(value.getClass())+"#"+Integer.toHexString(ID.intValue())+"</A>"
@@ -638,8 +648,9 @@ public class ObjectInspector {
 	private boolean shouldInspect(Object obj) {
 		Class<?> clazz = obj.getClass();
 		if ((clazz.isArray()) || (!isFiltered(clazz))
-				|| (obj instanceof Collection) || (obj instanceof Map))
+				|| (obj instanceof Collection) || (obj instanceof Map)) {
 			return true;
+		}
 		return false;
 	}
 
@@ -718,8 +729,9 @@ public class ObjectInspector {
 		String clazz = field.substring(0, index);
 		field = field.substring(index + 1);
 		Set<String> fields = excludedFields.get(clazz);
-		if (fields == null)
+		if (fields == null) {
 			fields = new HashSet<String>();
+		}
 		fields.add(field);
 		excludedFields.put(clazz, fields);
 	}
@@ -741,22 +753,24 @@ public class ObjectInspector {
 	 *             if an exception occurs while outputing an object
 	 */
 	public void output() throws IOException {
-		if (printRule)
+		if (printRule) {
 			out.println("<HR><BR>");
+		}
 		printRule = true;
 		while (!objList.isEmpty()) {
 			Object obj = objList.remove(0);
 			Class<?> clazz = obj.getClass();
-			if (clazz.isArray())
+			if (clazz.isArray()) {
 				outputArray(obj);
-			else if (!isFiltered(clazz))
+			} else if (!isFiltered(clazz)) {
 				outputObject(obj);
-			else if (obj instanceof List)
+			} else if (obj instanceof List) {
 				outputList((List) obj);
-			else if (obj instanceof Collection)
+			} else if (obj instanceof Collection) {
 				outputCollection((Collection) obj);
-			else if (obj instanceof Map)
+			} else if (obj instanceof Map) {
 				outputMap((Map) obj);
+			}
 			out.println("<BR>");
 		}
 		IDMap.clear();

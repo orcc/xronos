@@ -38,25 +38,25 @@ public interface Empty {
 	 * Empty Set object. Throws UnsupportedOperationException if an attempt is
 	 * made to modify it.
 	 */
-	public static final Set SET = Collections.EMPTY_SET;
+	public static final Set<?> SET = Collections.EMPTY_SET;
 
 	/**
 	 * Empty List object. Throws UnsupportedOperationException if an attempt is
 	 * made to modify it.
 	 */
-	public static final List LIST = Collections.EMPTY_LIST;
+	public static final List<?> LIST = Collections.EMPTY_LIST;
 
 	/**
 	 * Empty Collection object. Throws UnsupportedOperationException if an
 	 * attempt is made to modify it.
 	 */
-	public static final Collection COLLECTION = LIST;
+	public static final Collection<?> COLLECTION = LIST;
 
 	/**
 	 * Empty Map object. Throws UnsupportedOperationException if an attempt is
 	 * made to modify it.
 	 */
-	public static final Map MAP = Collections.EMPTY_MAP;
+	public static final Map<?, ?> MAP = Collections.EMPTY_MAP;
 
 	/** Empty array of booleans. */
 	public static final boolean[] BOOLEAN_ARRAY = new boolean[0];

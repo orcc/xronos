@@ -167,8 +167,10 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			doSwitch(blockIf.getThenBlocks());
 			// Get the then Input Vars
 			List<Var> thenInputs = resources.getBranchThenVars(blockIf);
+			Map<Var, List<Var>> thenOutputs = groupZeroOutput(resources
+					.getBranchThenOutputVars(blockIf));
 			Block thenBlock = (Block) buildModule(currentListComponent,
-					thenInputs, null, "thenBlock", Exit.DONE);
+					thenInputs, thenOutputs, "thenBlock", Exit.DONE, 0);
 
 			// Visit the else block
 			Block elseBlock = null;
@@ -180,7 +182,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				elseBlock = (Block) buildModule(
 						Collections.<Component> emptyList(),
 						Collections.<Var> emptyList(),
-						Collections.<Var> emptyList(), "elseBlock", Exit.DONE);
+						Collections.<Var, List<Var>> emptyMap(), "elseBlock",
+						Exit.DONE, 1);
 			}
 			// Get All input Vars
 			List<Var> ifInputVars = new ArrayList<Var>();
@@ -188,11 +191,10 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			ifInputVars.addAll(thenInputs);
 			ifInputVars.addAll(elseInputs);
 
-			// Get Phi taget Vars, aka branchIf Outputs
-			List<Var> ifOutputVars = new ArrayList<Var>(resources
-					.getBranchPhiVars(blockIf).keySet());
+			// Get Phi target Vars, aka branchIf Outputs
+			Map<Var, List<Var>> phiOuts = resources.getBranchPhiVars(blockIf);
 			currentComponent = buildBranch(decision, thenBlock, elseBlock,
-					ifInputVars, ifOutputVars, "ifBLOCK", Exit.DONE);
+					ifInputVars, phiOuts, "ifBLOCK", Exit.DONE);
 			return null;
 		}
 
@@ -280,7 +282,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				Var castedVar = procedure.newTempLocalVariable(
 						IrFactory.eINSTANCE.createTypeInt(newMaxSize),
 						"casted_" + castIndex + "_" + var.getIndexedName());
-				mapOutPorts(castedVar);
+				mapOutPorts(castedVar, 0);
 				currentListComponent.add(currentComponent);
 				newVar = castedVar;
 				castIndex++;
@@ -342,7 +344,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			super.caseInstAssign(assign);
 			if (currentComponent != null) {
 				currentListComponent.add(currentComponent);
-				mapOutPorts(assign.getTarget().getVariable());
+				mapOutPorts(assign.getTarget().getVariable(), 0);
 			}
 			// Put target to null
 			assignTarget = null;
@@ -409,7 +411,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			Var castedIndexVar = procedure.newTempLocalVariable(
 					IrFactory.eINSTANCE.createTypeInt(32), "casted_"
 							+ castIndex + "_" + loadIndexVar.getIndexedName());
-			mapOutPorts(castedIndexVar);
+			mapOutPorts(castedIndexVar, 0);
 			currentListComponent.add(currentComponent);
 			castIndex++;
 			// add the assign instruction for each index
@@ -420,7 +422,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			currentComponent = block;
 			mapInPorts(new ArrayList<Var>(Arrays.asList(indexVar)),
 					currentComponent);
-			mapOutPorts(load.getTarget().getVariable());
+			mapOutPorts(load.getTarget().getVariable(), 0);
 
 			currentListComponent.add(currentComponent);
 
@@ -483,7 +485,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			Var castedIndexVar = procedure.newTempLocalVariable(
 					IrFactory.eINSTANCE.createTypeInt(32), "casted_"
 							+ castIndex + "_" + storeIndexVar.getIndexedName());
-			mapOutPorts(castedIndexVar);
+			mapOutPorts(castedIndexVar, 0);
 			currentListComponent.add(currentComponent);
 			castIndex++;
 			// add the assign instruction for each index
@@ -494,7 +496,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			currentComponent = block;
 			mapInPorts(new ArrayList<Var>(Arrays.asList(indexVar, valueVar)),
 					currentComponent);
-			mapOutControlPort(currentComponent);
+			mapOutControlPort(currentComponent, 0);
 			currentListComponent.add(currentComponent);
 
 			return null;
@@ -558,19 +560,29 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 			return block;
 		}
+
+		private Map<Var, List<Var>> groupZeroOutput(List<Var> vars) {
+			Map<Var, List<Var>> outputs = new HashMap<Var, List<Var>>();
+			for (Var var : vars) {
+				List<Var> emptyList = Collections.<Var> emptyList();
+				outputs.put(var, emptyList);
+			}
+			return outputs;
+		}
+
 	}
 
 	/** Map of action associated to its Task **/
 	private final Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
 
 	/** Dependency between Components and Bus-Var **/
-	protected Map<Component, Map<Bus, Var>> componentBusDependency = new HashMap<Component, Map<Bus, Var>>();
+	protected Map<Component, Map<Bus, List<Var>>> componentBusDependency = new HashMap<Component, Map<Bus, List<Var>>>();
 
 	/** Action component Counter **/
 	protected Integer componentCounter;
 
 	/** Dependency between Components and Done Bus **/
-	protected Map<Component, Bus> componentDoneBusDependency = new HashMap<Component, Bus>();
+	protected Map<Component, Map<Bus, Integer>> componentDoneBusDependency = new HashMap<Component, Map<Bus, Integer>>();
 
 	/** Dependency between Components and Port-Var **/
 	protected Map<Component, Map<Port, Var>> componentPortDependency = new HashMap<Component, Map<Port, Var>>();
@@ -617,7 +629,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	}
 
 	protected Component buildBranch(Decision decision, Block thenBlock,
-			Block elseBlock, List<Var> inVars, List<Var> outVars,
+			Block elseBlock, List<Var> inVars, Map<Var, List<Var>> outVars,
 			String searchScope, Exit.Type exitType) {
 		Branch branch = null;
 		portCache.publish(decision);
@@ -637,9 +649,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		createModuleInterface(branch, inVars, outVars, exitType);
 
-		// Map In/Out port of branch
+		// Map In/Out port of branch, Branch done Group 0
 		mapInPorts(inVars, branch);
-		mapOutControlPort(branch);
+		mapOutControlPort(branch, 0);
 
 		operationDependencies(branch, branchComponents,
 				componentPortDependency, branch.getExit(Exit.DONE));
@@ -661,11 +673,12 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		doSwitch(assign);
 
 		currentModule = (Module) buildModule(Arrays.asList(currentComponent),
-				Arrays.asList(inputDecision), Collections.<Var> emptyList(),
-				"decisionBlock", Exit.DONE);
+				Arrays.asList(inputDecision),
+				Collections.<Var, List<Var>> emptyMap(), "decisionBlock",
+				Exit.DONE, 0);
 
-		// Add done dependency
-		mapOutControlPort(currentModule);
+		// Add done dependency, Decision group 0
+		mapOutControlPort(currentModule, 0);
 
 		// Create the decision
 		decision = new Decision((Block) currentModule, currentComponent);
@@ -689,8 +702,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	}
 
 	protected Component buildModule(List<Component> components,
-			List<Var> inVars, List<Var> outVars, String searchScope,
-			Exit.Type exitType) {
+			List<Var> inVars, Map<Var, List<Var>> outVars, String searchScope,
+			Exit.Type exitType, Integer group) {
 		// Create an Empty Block
 		Module module = new Block(false);
 
@@ -711,15 +724,16 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		// container
 		if (!components.isEmpty()) {
 			if (exitType != Exit.RETURN) {
-				// Add done dependency on module
-				mapOutControlPort(module);
+				// Add done dependency on module, Exit group 0 of a "normal"
+				// module
+				mapOutControlPort(module, group);
 			}
 		}
 		return module;
 	}
 
 	protected Component buildComponentModule(Component component,
-			List<Var> inVars, List<Var> outVars, String searchScope,
+			List<Var> inVars, Map<Var, List<Var>> outVars, String searchScope,
 			Exit.Type exitType) {
 		Module module = (Module) component;
 		// Add Input and Output Port for the Module
@@ -731,8 +745,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		// Give the name of the searchScope
 		module.specifySearchScope(searchScope);
 		if (exitType != Exit.RETURN) {
-			// Add done dependency on module
-			mapOutControlPort(module);
+			// Add done dependency on module, Exit group 0 of a "normal" module
+			mapOutControlPort(module, 0);
 		}
 
 		return module;
@@ -764,8 +778,10 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		}
 		// Create the task
 		String taskName = currentAction.getName();
-		currentModule = (Module) buildModule(currentListComponent, null, null,
-				taskName + "Body", currentExit);
+		currentModule = (Module) buildModule(currentListComponent,
+				Collections.<Var> emptyList(),
+				Collections.<Var, List<Var>> emptyMap(), taskName + "Body",
+				currentExit, 0);
 
 		Task task = createTask(taskName, currentModule, false);
 		actorsTasks.put(action, task);
@@ -879,8 +895,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 	}
 
 	protected void createModuleInterface(Module module, List<Var> inVars,
-			List<Var> outVars, Exit.Type exitType) {
-		if (inVars != null) {
+			Map<Var, List<Var>> outVars, Exit.Type exitType) {
+		if (!inVars.isEmpty()) {
 			Map<Port, Var> portDep = new HashMap<Port, Var>();
 			for (Var var : inVars) {
 				Port port = module.makeDataPort();
@@ -890,9 +906,6 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			modulePortDependency.put(module, portDep);
 			componentPortDependency.put(module, portDep);
 		}
-		if (outVars != null) {
-
-		}
 
 		// Create modules exit
 		if (module.getExit(Exit.DONE) == null) {
@@ -901,6 +914,21 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			} else {
 				module.makeExit(0);
 			}
+		}
+
+		if (!outVars.isEmpty()) {
+			Exit exit = module.getExit(Exit.DONE);
+			Map<Bus, List<Var>> busDep = new HashMap<Bus, List<Var>>();
+			for (Var var : outVars.keySet()) {
+				Bus dataBus = exit.makeDataBus();
+				Integer busSize = var.getType().getSizeInBits();
+				boolean isSigned = var.getType().isInt()
+						|| var.getType().isBool();
+				dataBus.setSize(busSize, isSigned);
+				dataBus.setIDLogical(var.getIndexedName());
+				busDep.put(dataBus, outVars.get(var));
+			}
+			componentBusDependency.put(module, busDep);
 		}
 	}
 
@@ -972,12 +1000,12 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		}
 	}
 
-	protected Bus getModuleComponentPortPeer(Module module, Var var) {
+	protected Bus getModuleComponentPortPeer(Module module, Var var, int group) {
 		for (Component component : module.getComponents()) {
-			Map<Bus, Var> portVar = componentBusDependency.get(component);
+			Map<Bus, List<Var>> portVar = componentBusDependency.get(component);
 			if (portVar != null) {
 				for (Bus bus : portVar.keySet()) {
-					if (var == portVar.get(bus)) {
+					if (var == portVar.get(bus).get(group)) {
 						return bus;
 					}
 				}
@@ -1131,17 +1159,18 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 						+ Integer.toString(componentCounter), currentComponent);
 		Var pinReadVar = currentAction.getInputPattern().getPortToVarMap()
 				.get(port);
-		Map<Bus, Var> busDep = new HashMap<Bus, Var>();
+		Map<Bus, List<Var>> busDep = new HashMap<Bus, List<Var>>();
 		for (Bus dataBus : currentComponent.getExit(Exit.DONE).getDataBuses()) {
 			if (dataBus.getValue() == null) {
 				dataBus.setSize(port.getType().getSizeInBits(), port.getType()
 						.isInt() || port.getType().isBool());
 				dataBus.setIDLogical(pinReadVar.getIndexedName());
 			}
-			busDep.put(dataBus, pinReadVar);
+			busDep.put(dataBus, Arrays.asList(pinReadVar));
 			componentBusDependency.put(currentComponent, busDep);
 		}
-		mapOutPorts(pinReadVar);
+		// Map out Bus , pinRead group 0
+		mapOutPorts(pinReadVar, 0);
 		componentCounter++;
 	}
 
@@ -1156,8 +1185,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		mapInPorts(new ArrayList<Var>(Arrays.asList(pinWriteVar)),
 				currentComponent);
-		// Add done dependency for this operation to the current module exit
-		mapOutControlPort(currentComponent);
+		// Add done dependency for this operation to the current module exit,
+		// pinWrite Group 0
+		mapOutControlPort(currentComponent, 0);
 		componentCounter++;
 	}
 
@@ -1197,23 +1227,26 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		componentPortDependency.put(component, portDep);
 	}
 
-	protected void mapOutControlPort(Component component) {
+	protected void mapOutControlPort(Component component, Integer group) {
 		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
-		componentDoneBusDependency.put(component, doneBus);
+		Map<Bus, Integer> busGroup = new HashMap<Bus, Integer>();
+		busGroup.put(doneBus, group);
+		componentDoneBusDependency.put(component, busGroup);
 	}
 
-	protected void mapOutPorts(Var var) {
-		Bus dataBus = currentComponent.getExit(Exit.DONE).getDataBuses().get(0);
-		Map<Bus, Var> busDep = new HashMap<Bus, Var>();
+	protected void mapOutPorts(Var var, Integer group) {
+		Bus dataBus = currentComponent.getExit(Exit.DONE).getDataBuses()
+				.get(group);
+		Map<Bus, List<Var>> busDep = new HashMap<Bus, List<Var>>();
 		if (dataBus.getValue() == null) {
 			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 		}
 		dataBus.setIDLogical(var.getIndexedName());
-		busDep.put(dataBus, var);
+		busDep.put(dataBus, Arrays.asList(var));
 		componentBusDependency.put(currentComponent, busDep);
 
-		mapOutControlPort(currentComponent);
+		mapOutControlPort(currentComponent, group);
 	}
 
 	@SuppressWarnings("unused")
@@ -1236,7 +1269,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 						Dependency dep = new DataDependency(sourceBus);
 						entry.addDependency(targetPort, dep);
 					} else {
-						Bus sourceBus = getModuleComponentPortPeer(module, var);
+						Bus sourceBus = getModuleComponentPortPeer(module, var,
+								0);
 						List<Entry> entries = port.getOwner().getEntries();
 						Entry entry = entries.get(0);
 						Dependency dep = new DataDependency(sourceBus);
@@ -1282,13 +1316,18 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 				} else {
 					// Build control Dependencies
-					Bus busDone = componentDoneBusDependency.get(component);
-					if (busDone != null) {
-						Port donePort = exit.getDoneBus().getPeer();
-						List<Entry> entries = donePort.getOwner().getEntries();
-						Entry entry = entries.get(0);
-						Dependency dep = new ControlDependency(busDone);
-						entry.addDependency(donePort, dep);
+					Map<Bus, Integer> busGroup = componentDoneBusDependency
+							.get(component);
+					if (busGroup != null) {
+						for (Bus busDone : busGroup.keySet()) {
+
+							Port donePort = exit.getDoneBus().getPeer();
+							List<Entry> entries = donePort.getOwner()
+									.getEntries();
+							Entry entry = entries.get(busGroup.get(busDone));
+							Dependency dep = new ControlDependency(busDone);
+							entry.addDependency(donePort, dep);
+						}
 					}
 				}
 

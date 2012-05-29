@@ -40,7 +40,7 @@ abstract class GVObject {
 	 * Constructs a new GVObject with no attributes specified.
 	 */
 	GVObject() {
-		this.properties = new Properties();
+		properties = new Properties();
 	}
 
 	/**
@@ -94,7 +94,7 @@ abstract class GVObject {
 	void printAttributes(PrintWriter out) {
 		if (!properties.isEmpty()) {
 			out.print("[");
-			for (Enumeration enumeration = properties.propertyNames(); enumeration
+			for (Enumeration<?> enumeration = properties.propertyNames(); enumeration
 					.hasMoreElements();) {
 				String attr = (String) enumeration.nextElement();
 				out.print(attr);

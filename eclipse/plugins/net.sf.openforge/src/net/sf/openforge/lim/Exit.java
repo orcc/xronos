@@ -408,8 +408,7 @@ public class Exit extends ID implements LatencyKey {
 	}
 
 	public void disconnect() {
-		for (Iterator biter = getBuses().iterator(); biter.hasNext();) {
-			Bus bus = (Bus) biter.next();
+		for (Bus bus : getBuses()) {
 			bus.clearDependents();
 			bus.disconnect();
 		}
@@ -421,9 +420,9 @@ public class Exit extends ID implements LatencyKey {
 		// "Disconnecting an exit that is still listed as the driving exit of something. "
 		// + this + " drives " + drivenEntries;
 
-		for (Iterator entryIter = (new LinkedList(drivenEntries)).iterator(); entryIter
-				.hasNext();) {
-			((Entry) entryIter.next()).setDrivingExit(null);
+		for (Iterator<Entry> entryIter = (new LinkedList<Entry>(drivenEntries))
+				.iterator(); entryIter.hasNext();) {
+			entryIter.next().setDrivingExit(null);
 		}
 	}
 
@@ -448,8 +447,8 @@ public class Exit extends ID implements LatencyKey {
 		doneBus = new Bus(this);
 		doneBus.setSize(1, false);
 		doneBus.setUsed(false);
-		dataBuses = new ArrayList(dataCount);
-		drivenEntries = new HashSet();
+		dataBuses = new ArrayList<Bus>(dataCount);
+		drivenEntries = new HashSet<Entry>();
 		for (int i = 0; i < dataCount; i++) {
 			Bus b = new Bus(this);
 			b.setUsed(true); // ABK - data buses should always be used
@@ -505,11 +504,11 @@ public class Exit extends ID implements LatencyKey {
 
 		doneBus.setPeer(peer.getGoPort());
 		peer.getGoPort().setPeer(doneBus);
-		Iterator busIter = dataBuses.iterator();
-		Iterator portIter = peer.getDataPorts().iterator();
+		Iterator<Bus> busIter = dataBuses.iterator();
+		Iterator<Port> portIter = peer.getDataPorts().iterator();
 		while (busIter.hasNext()) {
-			Bus bus = (Bus) busIter.next();
-			Port port = (Port) portIter.next();
+			Bus bus = busIter.next();
+			Port port = portIter.next();
 			bus.setPeer(port);
 			port.setPeer(bus);
 		}
@@ -561,12 +560,12 @@ public class Exit extends ID implements LatencyKey {
 		setLatency(exit.getLatency());
 
 		getDoneBus().copyAttributes(exit.getDoneBus());
-		Iterator exitIter = exit.getDataBuses().iterator();
-		Iterator thisIter = getDataBuses().iterator();
+		Iterator<Bus> exitIter = exit.getDataBuses().iterator();
+		Iterator<Bus> thisIter = getDataBuses().iterator();
 		while (thisIter.hasNext()) {
 			assert exitIter.hasNext();
-			final Bus thisBus = (Bus) thisIter.next();
-			final Bus exitBus = (Bus) exitIter.next();
+			final Bus thisBus = thisIter.next();
+			final Bus exitBus = exitIter.next();
 			thisBus.copyAttributes(exitBus);
 		}
 
@@ -576,8 +575,8 @@ public class Exit extends ID implements LatencyKey {
 	public static class ClearDrivingExitVisitor extends FilteredVisitor {
 		@Override
 		public void filterAny(Component c) {
-			for (Iterator it = c.getEntries().iterator(); it.hasNext();) {
-				Entry e = (Entry) it.next();
+			for (Iterator<Entry> it = c.getEntries().iterator(); it.hasNext();) {
+				Entry e = it.next();
 				e.setDrivingExit(null);
 			}
 			super.filterAny(c);

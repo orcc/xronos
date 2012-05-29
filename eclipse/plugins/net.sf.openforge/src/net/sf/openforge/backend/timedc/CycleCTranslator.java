@@ -291,12 +291,13 @@ public class CycleCTranslator {
 			final File[] inputFiles = EngineThread.getGenericJob()
 					.getTargetFiles();
 			ps.println("#ifdef FORGE_ATB");
-			if (ForgeFileTyper.isXLIMSource(inputFiles[0].getName()))
+			if (ForgeFileTyper.isXLIMSource(inputFiles[0].getName())) {
 				CycleCTestbench.writeQueueTestingMain(ps, funcName, baseName,
 						ioHandle, taskGoVars);
-			else if (ForgeFileTyper.isCSource(inputFiles[0].getName()))
+			} else if (ForgeFileTyper.isCSource(inputFiles[0].getName())) {
 				CycleCTestbench.writeVECTestingMain(ps, funcName, baseName,
 						ioHandle);
+			}
 			ps.println("#endif");
 		}
 
@@ -423,8 +424,9 @@ public class CycleCTranslator {
 					// If the bus has not been declared by now then it
 					// did not figure into the design level logic and
 					// is 'unused'
-					if (!handle.isDeclared(b, ""))
+					if (!handle.isDeclared(b, "")) {
 						continue;
+					}
 					fbBuses.add(b);
 					ps.println(handle.declare(b, "_prev"));
 				}
@@ -592,8 +594,9 @@ public class CycleCTranslator {
 					// other task calls.
 					OpHandle handle = makeOpHandle(comp);
 					for (Exit exit : comp.getExits()) {
-						for (Bus bus : exit.getBuses())
+						for (Bus bus : exit.getBuses()) {
 							preDeclare(handle, bus);
+						}
 					}
 				}
 			}
@@ -986,8 +989,9 @@ public class CycleCTranslator {
 				Port port = iter.next();
 				Bus source = port.getBus();
 				rvalue += getRValue(source);
-				if (iter.hasNext())
+				if (iter.hasNext()) {
 					rvalue += " | ";
+				}
 			}
 			Bus result = or.getExit(Exit.DONE).getDataBuses().get(0);
 			preDeclare(handle, result);
@@ -1005,8 +1009,9 @@ public class CycleCTranslator {
 						.hasNext();) {
 					Bus source = iter.next().getBus();
 					rvalue += getRValue(source);
-					if (iter.hasNext())
+					if (iter.hasNext()) {
 						rvalue += " & ";
+					}
 				}
 				Bus result = a.getExit(Exit.DONE).getDataBuses().get(0);
 				preDeclare(handle, result);

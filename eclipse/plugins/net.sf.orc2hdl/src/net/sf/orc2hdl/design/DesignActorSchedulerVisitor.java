@@ -164,8 +164,10 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 
 		currentExit = Exit.DONE;
 
-		currentModule = (Module) buildModule(currentListComponent, null, null,
-				"schedulerInfiteLoop", currentExit);
+		currentModule = (Module) buildModule(currentListComponent,
+				Collections.<Var> emptyList(),
+				Collections.<Var, List<Var>> emptyMap(), "schedulerInfiteLoop",
+				currentExit, 0);
 
 		// Create the decision
 		decision = new Decision((Block) currentModule, currentComponent);
@@ -189,19 +191,22 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		TaskCall taskCall = new TaskCall();
 		taskCall.setTarget(task);
 		// mapOut Done Port
-		mapOutControlPort(taskCall);
+		mapOutControlPort(taskCall, 0);
 
 		// Build then Block
 		Block thenBlock = (Block) buildModule(
 				Arrays.asList((Component) taskCall),
-				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
-				"block", Exit.DONE);
+				Collections.<Var> emptyList(),
+				Collections.<Var, List<Var>> emptyMap(), "block", Exit.DONE, 0);
 		Component branch = buildBranch(branchDecision, thenBlock, null,
-				Arrays.asList(outDecision), null,
+				Arrays.asList(outDecision),
+				Collections.<Var, List<Var>> emptyMap(),
 				"callTask_" + task.getIDGlobalType(), Exit.DONE);
 
 		Module module = (Module) buildModule(Arrays.asList(branch),
-				Arrays.asList(outDecision), null, "taskCallBlock", Exit.DONE);
+				Arrays.asList(outDecision),
+				Collections.<Var, List<Var>> emptyMap(), "taskCallBlock",
+				Exit.DONE, 0);
 
 		return module;
 	}
@@ -277,8 +282,9 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 
 		// Create the testAction Module
 		Module bodyModule = (Block) buildModule(schedulerComponents,
-				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
-				"schedulerBody", Exit.DONE);
+				Collections.<Var> emptyList(),
+				Collections.<Var, List<Var>> emptyMap(), "schedulerBody",
+				Exit.DONE, 0);
 		bodyModule.setIDLogical("schedulerBody");
 
 		// Create the scheduler Loop Body
@@ -287,8 +293,9 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		Loop loop = new Loop(loopBody);
 
 		Module scheduler = (Block) buildModule(Arrays.asList((Component) loop),
-				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
-				"schedulerBody", Exit.DONE);
+				Collections.<Var> emptyList(),
+				Collections.<Var, List<Var>> emptyMap(), "schedulerBody",
+				Exit.DONE, 0);
 		scheduler.makeExit(0, Exit.RETURN);
 
 		// Create scheduler task
@@ -334,7 +341,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 					// mapInPorts(varLitteralPeek);
 					mapInPorts(new ArrayList<Var>(Arrays.asList(litteralVar)),
 							currentComponent);
-					mapOutPorts(peekVar);
+					mapOutPorts(peekVar, 0);
 					currentListComponent.add(currentComponent);
 					componentCounter++;
 					IrUtil.delete(load);
@@ -396,8 +403,9 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				// Collections.<Component> emptyList(), null, null,
 				// "emptyElseBlock", Exit.DONE);
 				branch = (Branch) buildBranch(decision, thenBlock, null,
-						currentInputPorts, null,
-						"ifBranch_" + action.getName(), null);
+						currentInputPorts,
+						Collections.<Var, List<Var>> emptyMap(), "ifBranch_"
+								+ action.getName(), null);
 				branch.setIDLogical("ifBranch_" + action.getName());
 				previousInputPorts.add(currentInputPorts.get(1));
 				previousInputPorts.add(currentInputPorts.get(0));
@@ -410,7 +418,8 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				Collections.reverse(inPort);
 				elseBlock = (Block) buildModule(
 						Arrays.asList((Component) branch), previousInputPorts,
-						null, "elseBlock", Exit.DONE);
+						Collections.<Var, List<Var>> emptyMap(), "elseBlock",
+						Exit.DONE, 0);
 				branch = (Branch) buildBranch(decision, thenBlock, elseBlock,
 						inPort, null, "ifBranch_" + action.getName(), null);
 				branch.setIDLogical("ifBranch_" + action.getName());
@@ -449,7 +458,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 		// Add the pinStatusVar to pinStatusPort
 		pinStatusPort.put(port, pinStatusVar);
 
-		mapOutPorts(pinStatusVar);
+		mapOutPorts(pinStatusVar, 0);
 		currentListComponent.add(currentComponent);
 		componentCounter++;
 	}
@@ -495,7 +504,7 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
 						"isSchedulable_" + currentAction.getName() + "_"
 								+ direction + "_decision", false, 0);
-				mapOutPorts(decisionVar);
+				mapOutPorts(decisionVar, 0);
 				currentListComponent.add(currentComponent);
 				// Save the decision, used on transitions
 				if (direction.equals("in")) {

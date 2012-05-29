@@ -41,6 +41,7 @@ import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
@@ -60,6 +61,8 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 	private BlockIf currentIfBlock = null;
 
 	private List<Var> currentVars = new ArrayList<Var>();
+
+	private List<Var> outputVars = new ArrayList<Var>();
 
 	private Map<Var, List<Var>> phiMapVar = new HashMap<Var, List<Var>>();
 
@@ -89,22 +92,27 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 		Var condVar = ((ExprVar) condExpr).getUse().getVariable();
 		resources.addBranchDecisionInput(blockIf, condVar);
 
-		// Visit thenBlock
-		currentVars = new ArrayList<Var>();
-		doSwitch(blockIf.getThenBlocks());
-		resources.addBranchThenInput(blockIf, currentVars);
-
-		// Visit elseBlock
-		if (!blockIf.getElseBlocks().isEmpty()) {
-			currentVars = new ArrayList<Var>();
-			doSwitch(blockIf.getElseBlocks());
-			resources.addBranchElseInput(blockIf, currentVars);
-		}
-
 		// Visit Phi
 		phiMapVar = new HashMap<Var, List<Var>>();
 		doSwitch(blockIf.getJoinBlock());
 		resources.addBranchPhi(blockIf, phiMapVar);
+
+		// Visit thenBlock
+		currentVars = new ArrayList<Var>();
+		outputVars = new ArrayList<Var>();
+		doSwitch(blockIf.getThenBlocks());
+		resources.addBranchThenInput(blockIf, currentVars);
+		resources.addBranchThenOutput(blockIf, outputVars);
+
+		// Visit elseBlock
+		if (!blockIf.getElseBlocks().isEmpty()) {
+			currentVars = new ArrayList<Var>();
+			outputVars = new ArrayList<Var>();
+			doSwitch(blockIf.getElseBlocks());
+			resources.addBranchElseInput(blockIf, currentVars);
+			resources.addBranchElseOutput(blockIf, outputVars);
+		}
+
 		return null;
 	}
 
@@ -118,6 +126,7 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 				currentVars.add(varE1);
 			}
 		}
+
 		// Get e2 var and if it defined not in this visited block added as an
 		// input
 		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
@@ -126,6 +135,20 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 				currentVars.add(varE2);
 			}
 		}
+
+		return null;
+	}
+
+	@Override
+	public Void caseInstAssign(InstAssign assign) {
+		super.caseInstAssign(assign);
+		Var target = assign.getTarget().getVariable();
+		for (List<Var> vars : phiMapVar.values()) {
+			if (vars.contains(target)) {
+				outputVars.add(target);
+			}
+		}
+
 		return null;
 	}
 

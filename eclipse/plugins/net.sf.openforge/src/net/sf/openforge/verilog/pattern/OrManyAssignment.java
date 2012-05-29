@@ -24,12 +24,12 @@ package net.sf.openforge.verilog.pattern;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.op.OrOpMulti;
 import net.sf.openforge.verilog.model.Assign;
+import net.sf.openforge.verilog.model.Expression;
 import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.NetFactory;
 
@@ -45,27 +45,28 @@ import net.sf.openforge.verilog.model.NetFactory;
  */
 public class OrManyAssignment extends StatementBlock implements ForgePattern {
 
-	private List operands = new ArrayList();
+	private List<Expression> operands = new ArrayList<Expression>();
 	private Net resultWire;
 
 	public OrManyAssignment(OrOpMulti multi) {
-		for (Iterator iter = multi.getDataPorts().iterator(); iter.hasNext();) {
-			Port p = (Port) iter.next();
-			if (!p.isUsed()) {
+		for (Port port : multi.getDataPorts()) {
+			if (!port.isUsed()) {
 				continue;
 			}
-			operands.add(new PortWire(p));
+			operands.add(new PortWire(port));
 		}
 
-		this.resultWire = NetFactory.makeNet(multi.getResultBus());
+		resultWire = NetFactory.makeNet(multi.getResultBus());
 
-		add(new Assign.Continuous(resultWire, new OrMany(this.operands)));
+		add(new Assign.Continuous(resultWire, new OrMany(operands)));
 	}
 
+	@Override
 	public Collection getConsumedNets() {
 		return Collections.unmodifiableList(operands);
 	}
 
+	@Override
 	public Collection getProducedNets() {
 		return Collections.singleton(resultWire);
 	}

@@ -56,6 +56,9 @@ public class ResourceCache {
 	/** Map of BlockIf and a List of Decision, Then, Else Input and the Phi Vars **/
 	private final Map<BlockIf, List<List<Var>>> branchIfInput = new HashMap<BlockIf, List<List<Var>>>();
 
+	/** Map of BlockIf and a List of Then and Else Block outputs **/
+	private final Map<BlockIf, List<List<Var>>> branchIfOutput = new HashMap<BlockIf, List<List<Var>>>();
+
 	/** Map of BlockIf and its Map of Target Var and its associated Values Var **/
 	private final Map<BlockIf, Map<Var, List<Var>>> branchPhi = new HashMap<BlockIf, Map<Var, List<Var>>>();
 
@@ -82,6 +85,12 @@ public class ResourceCache {
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
+	public void addBranchElseOutput(BlockIf blockIf, List<Var> var) {
+		List<List<Var>> listOfVars = branchIfOutput.get(blockIf);
+		listOfVars.add(1, var);
+		branchIfOutput.put(blockIf, listOfVars);
+	}
+
 	public void addBranchPhi(BlockIf blockIf, Map<Var, List<Var>> phiMapVar) {
 		branchPhi.put(blockIf, phiMapVar);
 	}
@@ -90,6 +99,12 @@ public class ResourceCache {
 		List<List<Var>> listOfVars = branchIfInput.get(blockIf);
 		listOfVars.add(1, var);
 		branchIfInput.put(blockIf, listOfVars);
+	}
+
+	public void addBranchThenOutput(BlockIf blockIf, List<Var> var) {
+		List<List<Var>> listOfVars = new ArrayList<List<Var>>();
+		listOfVars.add(0, var);
+		branchIfOutput.put(blockIf, listOfVars);
 	}
 
 	public void addIOHandler(Port port, ActionIOHandler io) {
@@ -109,6 +124,10 @@ public class ResourceCache {
 		return branchIfInput.get(blockIf).get(0).get(0);
 	}
 
+	public List<Var> getBranchElseOutputVars(BlockIf blockIf) {
+		return branchIfOutput.get(blockIf).get(1);
+	}
+
 	public List<Var> getBranchElseVars(BlockIf blockIf) {
 		if (branchIfInput.get(blockIf).get(2).isEmpty()) {
 			return Collections.emptyList();
@@ -119,6 +138,10 @@ public class ResourceCache {
 
 	public Map<Var, List<Var>> getBranchPhiVars(BlockIf blockIf) {
 		return branchPhi.get(blockIf);
+	}
+
+	public List<Var> getBranchThenOutputVars(BlockIf blockIf) {
+		return branchIfOutput.get(blockIf).get(0);
 	}
 
 	public List<Var> getBranchThenVars(BlockIf blockIf) {

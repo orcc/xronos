@@ -22,7 +22,6 @@ package net.sf.openforge.util.graphviz;
 
 import java.io.PrintWriter;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -44,7 +43,7 @@ public class Graph extends GVObject {
 
 	protected static final boolean DO_GRAPH_LABEL = false;
 
-	/** 
+	/**
 	 * Constructs a new Graph of type "digraph" with a given identifier.
 	 * 
 	 * @param id
@@ -67,9 +66,11 @@ public class Graph extends GVObject {
 		this.type = type;
 	}
 
+	@Override
 	public void setLabel(String label) {
-		if (DO_GRAPH_LABEL)
+		if (DO_GRAPH_LABEL) {
 			super.setLabel(label);
+		}
 	}
 
 	/**
@@ -166,9 +167,10 @@ public class Graph extends GVObject {
 		clusters.add(subgraph);
 	}
 
+	@Override
 	void printAttributes(PrintWriter out) {
 		if (!properties.isEmpty()) {
-			for (Enumeration enumeration = properties.propertyNames(); enumeration
+			for (Enumeration<?> enumeration = properties.propertyNames(); enumeration
 					.hasMoreElements();) {
 				String attr = (String) enumeration.nextElement();
 				out.print(attr);
