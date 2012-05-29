@@ -33,13 +33,13 @@ import java.util.Map;
 public class SharedProcedureCall extends Access {
 
 	/** Map of call's Port to referent's body Port */
-	private Map portMap;
+	private Map<Port, Port> portMap;
 
 	/** Map of call's Exit to referent's body Exit */
-	private Map exitMap;
+	private Map<Exit, Exit> exitMap;
 
 	/** Map of call's Bus to referent's body Bus */
-	private Map busMap;
+	private Map<Bus, Bus> busMap;
 
 	/**
 	 * Constructs a new SharedProcedureCall.
@@ -82,11 +82,11 @@ public class SharedProcedureCall extends Access {
 		/*
 		 * Map ports to procedure body's ports.
 		 */
-		portMap = new HashMap(body.getPorts().size());
+		portMap = new HashMap<Port, Port>(body.getPorts().size());
 		portMap.put(getClockPort(), body.getClockPort());
 		portMap.put(getResetPort(), body.getResetPort());
 		portMap.put(getGoPort(), body.getGoPort());
-		for (Iterator iter = getDataPorts().iterator(), bodyIter = body
+		for (Iterator<Port> iter = getDataPorts().iterator(), bodyIter = body
 				.getDataPorts().iterator(); iter.hasNext();) {
 			portMap.put(iter.next(), bodyIter.next());
 		}
@@ -94,10 +94,11 @@ public class SharedProcedureCall extends Access {
 		/*
 		 * Map exits to procedure body's exits.
 		 */
-		exitMap = new HashMap(body.getExits().size());
-		busMap = new HashMap(body.getBuses().size());
-		for (Iterator exitIter = body.getExits().iterator(); exitIter.hasNext();) {
-			Exit bodyExit = (Exit) exitIter.next();
+		exitMap = new HashMap<Exit, Exit>(body.getExits().size());
+		busMap = new HashMap<Bus, Bus>(body.getBuses().size());
+		for (Iterator<Exit> exitIter = body.getExits().iterator(); exitIter
+				.hasNext();) {
+			Exit bodyExit = exitIter.next();
 			Exit exit = getExit(Exit.DONE);
 			if (exit == null) {
 				exit = makeExit(bodyExit.getDataBuses().size());
@@ -107,7 +108,7 @@ public class SharedProcedureCall extends Access {
 			/*
 			 * Map buses to procedure body's buses.
 			 */
-			for (Iterator bodyIter = bodyExit.getDataBuses().iterator(), iter = exit
+			for (Iterator<Bus> bodyIter = bodyExit.getDataBuses().iterator(), iter = exit
 					.getDataBuses().iterator(); bodyIter.hasNext();) {
 				busMap.put(iter.next(), bodyIter.next());
 			}
@@ -151,7 +152,7 @@ public class SharedProcedureCall extends Access {
 		if (port.getOwner() != this) {
 			throw new IllegalArgumentException("unknown port");
 		}
-		return (Port) portMap.get(port);
+		return portMap.get(port);
 	}
 
 	/**
@@ -165,7 +166,7 @@ public class SharedProcedureCall extends Access {
 		if (exit.getOwner() != this) {
 			throw new IllegalArgumentException("unknown exit");
 		}
-		return (Exit) exitMap.get(exit);
+		return exitMap.get(exit);
 	}
 
 	/**
@@ -179,7 +180,7 @@ public class SharedProcedureCall extends Access {
 		if (bus.getOwner().getOwner() != this) {
 			throw new IllegalArgumentException("unknown bus");
 		}
-		return (Bus) busMap.get(bus);
+		return busMap.get(bus);
 	}
 
 	/**
@@ -215,30 +216,30 @@ public class SharedProcedureCall extends Access {
 	public Object clone() throws CloneNotSupportedException {
 		SharedProcedureCall clone = (SharedProcedureCall) super.clone();
 
-		clone.portMap = new HashMap();
-		Iterator origPortIter = getPorts().iterator();
-		Iterator clonePortIter = clone.getPorts().iterator();
+		clone.portMap = new HashMap<Port, Port>();
+		Iterator<Port> origPortIter = getPorts().iterator();
+		Iterator<Port> clonePortIter = clone.getPorts().iterator();
 		while (origPortIter.hasNext()) {
 			// Map the clone's ports to the _same_ procedure ports as
 			// the original
-			Object bodyPort = portMap.get(origPortIter.next());
+			Port bodyPort = portMap.get(origPortIter.next());
 			clone.portMap.put(clonePortIter.next(), bodyPort);
 		}
 
-		clone.exitMap = new HashMap();
-		clone.busMap = new HashMap();
+		clone.exitMap = new HashMap<Exit, Exit>();
+		clone.busMap = new HashMap<Bus, Bus>();
 		Iterator<Exit> origExitIter = getExits().iterator();
 		Iterator<Exit> cloneExitIter = clone.getExits().iterator();
 		while (origExitIter.hasNext()) {
 			Exit origExit = origExitIter.next();
 			Exit cloneExit = cloneExitIter.next();
-			Object bodyExit = exitMap.get(origExit);
+			Exit bodyExit = exitMap.get(origExit);
 			clone.exitMap.put(cloneExit, bodyExit);
 
 			Iterator<Bus> origBusIter = origExit.getDataBuses().iterator();
 			Iterator<Bus> cloneBusIter = cloneExit.getDataBuses().iterator();
 			while (origBusIter.hasNext()) {
-				Object bodyBus = busMap.get(origBusIter.next());
+				Bus bodyBus = busMap.get(origBusIter.next());
 				clone.busMap.put(cloneBusIter.next(), bodyBus);
 			}
 		}

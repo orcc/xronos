@@ -124,7 +124,7 @@ public class Loop extends Module {
 	 *            the body of the loop
 	 */
 	public Loop(LoopBody body) {
-		this(new Block(Collections.EMPTY_LIST), body);
+		this(new Block(Collections.<Component> emptyList()), body);
 	}
 
 	@Override
@@ -216,7 +216,7 @@ public class Loop extends Module {
 	 */
 	@Override
 	public Set<Component> getFeedbackPoints() {
-		Set feedback = new HashSet();
+		Set<Component> feedback = new HashSet<Component>();
 		feedback.addAll(super.getFeedbackPoints());
 		feedback.addAll(getDataRegisters());
 		if (getControlRegister() != null) {
@@ -263,11 +263,9 @@ public class Loop extends Module {
 	@Override
 	public boolean removeComponent(Component component) {
 		// disconnect exits
-		for (Iterator iter = component.getExits().iterator(); iter.hasNext();) {
-			Exit exit = (Exit) iter.next();
-			for (Iterator entryIter = new ArrayList(exit.getDrivenEntries())
-					.iterator(); entryIter.hasNext();) {
-				((Entry) entryIter.next()).setDrivingExit(null);
+		for (Exit exit : component.getExits()) {
+			for (Entry entry : new ArrayList<Entry>(exit.getDrivenEntries())) {
+				entry.setDrivingExit(null);
 			}
 		}
 
@@ -344,10 +342,9 @@ public class Loop extends Module {
 		// added by scheduling when we are not balancing, but the only
 		// place they exist, pre-scheduling is in a loop, so we are
 		// covered.
-		Set components = new HashSet(getComponents());
+		Set<Component> components = new HashSet<Component>(getComponents());
 		components.removeAll(getDataLatches());
-		for (Iterator iter = components.iterator(); iter.hasNext();) {
-			Component comp = (Component) iter.next();
+		for (Component comp : components) {
 			if (!comp.isBalanceable()) {
 				return false;
 			}
