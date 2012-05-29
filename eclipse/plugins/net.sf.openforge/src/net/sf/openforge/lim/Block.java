@@ -24,7 +24,6 @@ package net.sf.openforge.lim;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,6 +33,7 @@ import java.util.Map;
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.app.project.Configurable;
 import net.sf.openforge.app.project.SearchLabel;
+import net.sf.openforge.lim.Exit.Tag;
 
 /**
  * A Block is a {@link Module Module} that contains a sequence of
@@ -303,7 +303,8 @@ public class Block extends Module {
 		/*
 		 * Map of Exit.Tag to Collection of Exits for all component exits.
 		 */
-		Map exitMap = new LinkedHashMap(11);
+		Map<Exit.Tag, Collection<Exit>> exitMap = new LinkedHashMap<Tag, Collection<Exit>>(
+				11);
 
 		/*
 		 * Visit each Component in the sequence.
@@ -331,11 +332,10 @@ public class Block extends Module {
 				 * First, make sure all predecessors have completed before
 				 * allowing this component to execute.
 				 */
-				final Collection doneExits = (Collection) exitMap.remove(Exit
+				final Collection<Exit> doneExits = exitMap.remove(Exit
 						.getTag(Exit.DONE));
 				if (doneExits != null) {
-					for (Iterator eiter = doneExits.iterator(); eiter.hasNext();) {
-						final Exit doneExit = (Exit) eiter.next();
+					for (Exit doneExit : doneExits) {
 						entry.addDependency(component.getGoPort(),
 								new ControlDependency(doneExit.getDoneBus()));
 					}
@@ -369,12 +369,12 @@ public class Block extends Module {
 		 * Merge the non-DONE Exits of each Tag into a single Exit at the Block
 		 * level.
 		 */
-		final Collection doneExits = (Collection) exitMap.remove(Exit
+		final Collection<Exit> doneExits = exitMap.remove(Exit
 				.getTag(Exit.DONE));
-		Collection returnExits = null;
+		Collection<Exit> returnExits = null;
 		Exit.Type mainExitType = Exit.DONE;
 		if (isProcedureBody) {
-			returnExits = (Collection) exitMap.remove(Exit.getTag(Exit.RETURN));
+			returnExits = exitMap.remove(Exit.getTag(Exit.RETURN));
 			mainExitType = Exit.RETURN;
 		}
 		mergeExits(exitMap, clockBus, resetBus);
@@ -392,8 +392,7 @@ public class Block extends Module {
 					new ClockDependency(clockBus));
 			outBufEntry.addDependency(outBuf.getResetPort(),
 					new ResetDependency(resetBus));
-			for (Iterator iter = doneExits.iterator(); iter.hasNext();) {
-				final Exit doneExit = (Exit) iter.next();
+			for (Exit doneExit : doneExits) {
 				outBufEntry.addDependency(outBuf.getGoPort(),
 						new ControlDependency(doneExit.getDoneBus()));
 			}

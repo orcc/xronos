@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +47,7 @@ import net.sf.openforge.util.naming.IDSourceInfo;
 public class Entry {
 
 	/** Map of Port to Collection of Dependency */
-	private Map portMap = new LinkedHashMap();
+	private Map<Port, Collection<Dependency>> portMap = new LinkedHashMap<Port, Collection<Dependency>>();
 
 	/** The owner of this Entry */
 	private Component owner;
@@ -90,10 +89,8 @@ public class Entry {
 	 * @return a collection of Dependency objects
 	 */
 	public Collection<Dependency> getDependencies(Port port) {
-		Collection<Dependency> deps = (Collection<Dependency>) portMap
-				.get(port);
-		return deps == null ? ((Collection<Dependency>) Collections.EMPTY_LIST)
-				: deps;
+		Collection<Dependency> deps = portMap.get(port);
+		return deps == null ? Collections.<Dependency> emptyList() : deps;
 	}
 
 	/**
@@ -107,9 +104,9 @@ public class Entry {
 	public void addDependency(Port port, Dependency dependency) {
 		assert getPorts().contains(port) : "unknown port";
 
-		Collection deps = (Collection) portMap.get(port);
+		Collection<Dependency> deps = portMap.get(port);
 		if (deps == null) {
-			deps = new HashSet(3);
+			deps = new HashSet<Dependency>(3);
 			portMap.put(port, deps);
 		}
 
@@ -137,7 +134,7 @@ public class Entry {
 	public void removeDependency(Port port, Dependency toRemove) {
 		assert portMap.containsKey(port) : "Unknown port";
 
-		Collection depsForPort = (Collection) portMap.get(port);
+		Collection<Dependency> depsForPort = portMap.get(port);
 		assert depsForPort.contains(toRemove) : "Entry doesn't contain dependency for port. Dep: "
 				+ toRemove + " deps " + depsForPort;
 		depsForPort.remove(toRemove);
@@ -149,9 +146,9 @@ public class Entry {
 	 * Buses}.
 	 */
 	public void clearDependencies(Port port) {
-		for (Iterator iter = new ArrayList(getDependencies(port)).iterator(); iter
-				.hasNext();) {
-			((Dependency) iter.next()).zap();
+		for (Dependency dependency : new ArrayList<Dependency>(
+				getDependencies(port))) {
+			dependency.zap();
 		}
 	}
 
@@ -162,9 +159,7 @@ public class Entry {
 		// First disconnect all the dependencies so that we don't have
 		// leftover references to them in the buses that used to be
 		// depended upon.
-		for (Iterator portIter = portMap.keySet().iterator(); portIter
-				.hasNext();) {
-			Port port = (Port) portIter.next();
+		for (Port port : portMap.keySet()) {
 			clearDependencies(port);
 		}
 
@@ -230,7 +225,7 @@ public class Entry {
 	 * 
 	 * @return a collection of Ports
 	 */
-	public List getDataPorts() {
+	public List<Port> getDataPorts() {
 		return getOwner().getDataPorts();
 	}
 
@@ -247,19 +242,19 @@ public class Entry {
 		String ret = "";
 		ret += "Entry " + this + " owner: " + getOwner() + " driving exit "
 				+ drivingExit + "\n";
-		for (Iterator iter = portMap.keySet().iterator(); iter.hasNext();) {
-			Port port = (Port) iter.next();
+		for (Port port : portMap.keySet()) {
 			String pname = port.toString();
-			if (port == getOwner().getClockPort())
+			if (port == getOwner().getClockPort()) {
 				pname = "Clock<" + pname + ">";
-			if (port == getOwner().getResetPort())
+			}
+			if (port == getOwner().getResetPort()) {
 				pname = "Reset<" + pname + ">";
-			if (port == getOwner().getGoPort())
+			}
+			if (port == getOwner().getGoPort()) {
 				pname = "Go<" + pname + ">";
-			for (Iterator depIter = ((Collection) portMap.get(port)).iterator(); depIter
-					.hasNext();) {
-				ret += pname + " => " + ((Dependency) depIter.next()).debug()
-						+ "\n";
+			}
+			for (Dependency dependency : portMap.get(port)) {
+				ret += pname + " => " + dependency.debug() + "\n";
 			}
 		}
 		return ret;

@@ -1252,7 +1252,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * @param cloneMap
 	 *            a map of original components to cloned components
 	 */
-	protected static Bus getBusClone(Bus bus, Map cloneMap) {
+	protected static Bus getBusClone(Bus bus, Map<Component, Component> cloneMap) {
 		final Exit exit = bus.getOwner();
 		final Exit exitClone = getExitClone(exit, cloneMap);
 		if (bus == exit.getDoneBus()) {

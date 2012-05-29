@@ -23,7 +23,6 @@ package net.sf.openforge.lim;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -162,14 +161,15 @@ public class InBuf extends Component implements Emulatable {
 	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
-			if (bus == clockBus)
+			if (bus == clockBus) {
 				clockBus = null;
-			else if (bus == resetBus)
+			} else if (bus == resetBus) {
 				resetBus = null;
-			else if (bus == goBus)
+			} else if (bus == goBus) {
 				goBus = null;
-			else if (bus == thisBus)
+			} else if (bus == thisBus) {
 				thisBus = null;
+			}
 
 			return true;
 		}
@@ -237,12 +237,10 @@ public class InBuf extends Component implements Emulatable {
 	 * @return a map of {@link Bus} to {@link SizedInteger} result value
 	 */
 	@Override
-	public Map emulate(Map portValues) {
-		final Map outputValues = new HashMap();
-		for (Iterator iter = getOwner().getDataPorts().iterator(); iter
-				.hasNext();) {
-			final Port port = (Port) iter.next();
-			final SizedInteger portValue = (SizedInteger) portValues.get(port);
+	public Map<Bus, SizedInteger> emulate(Map<Port, SizedInteger> portValues) {
+		final Map<Bus, SizedInteger> outputValues = new HashMap<Bus, SizedInteger>();
+		for (Port port : getOwner().getDataPorts()) {
+			final SizedInteger portValue = portValues.get(port);
 			if (portValue != null) {
 				outputValues.put(port.getPeer(), portValue);
 			}
@@ -276,8 +274,7 @@ public class InBuf extends Component implements Emulatable {
 	@Override
 	public boolean pushValuesForward() {
 		boolean isModified = false;
-		for (Iterator iter = getBuses().iterator(); iter.hasNext();) {
-			final Bus bus = (Bus) iter.next();
+		for (Bus bus : getBuses()) {
 			final Value pushedValue = bus.getPeer().getValue();
 			if (pushedValue != null) {
 				/*
@@ -336,8 +333,7 @@ public class InBuf extends Component implements Emulatable {
 	@Override
 	public boolean pushValuesBackward() {
 		boolean isModified = false;
-		for (Iterator iter = getBuses().iterator(); iter.hasNext();) {
-			final Bus bus = (Bus) iter.next();
+		for (Bus bus : getBuses()) {
 			final Value pushedValue = bus.getValue();
 			if (pushedValue != null) {
 				isModified |= bus.getPeer().pushValueBackward(pushedValue);

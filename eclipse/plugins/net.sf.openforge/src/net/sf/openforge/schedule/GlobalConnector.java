@@ -380,8 +380,8 @@ public class GlobalConnector extends FilteredVisitor {
 		traverse((Block) sw);
 	}
 
-	private void traverse(Collection collection) {
-		for (Iterator iter = collection.iterator(); iter.hasNext();) {
+	private void traverse(Collection<?> collection) {
+		for (Iterator<?> iter = collection.iterator(); iter.hasNext();) {
 			((Visitable) iter.next()).accept(this);
 		}
 	}
@@ -409,13 +409,15 @@ public class GlobalConnector extends FilteredVisitor {
 
 			Component regPhys = register.makePhysicalComponent(readList,
 					writeList);
-			if (register.getInputSwapper() != null)
+			if (register.getInputSwapper() != null) {
 				design.getDesignModule().addComponent(
 						register.getInputSwapper());
+			}
 			design.getDesignModule().addComponent(regPhys);
-			if (register.getOutputSwapper() != null)
+			if (register.getOutputSwapper() != null) {
 				design.getDesignModule().addComponent(
 						register.getOutputSwapper());
+			}
 
 			assert regPhys != null;
 
@@ -879,7 +881,7 @@ public class GlobalConnector extends FilteredVisitor {
 	 * A connection is a group of ports and buses which are related to a
 	 * particular {@link Resource}.
 	 */
-	private abstract class Connection {
+	public abstract class Connection {
 		Resource resource;
 		protected List<Port> ports = new ArrayList<Port>();
 		protected List<Bus> buses = new ArrayList<Bus>();

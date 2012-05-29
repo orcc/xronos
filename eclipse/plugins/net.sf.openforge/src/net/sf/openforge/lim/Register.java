@@ -35,6 +35,7 @@ import net.sf.openforge.lim.memory.EndianSwapper;
 import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.schedule.GlobalConnector;
 
 /**
  * A single register memory. The Register object is an atomic element accessed
@@ -165,8 +166,9 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 */
 	@Override
 	public int getSpacing(Referencer from, Referencer to) {
-		if (from instanceof RegisterWrite)
+		if (from instanceof RegisterWrite) {
 			return 1;
+		}
 		return 0;
 
 		/*
@@ -204,7 +206,9 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	 *            a list of the (arbitratable) writers of this register, null
 	 *            indicates a 'slot' which is not a writer but may be a reader.
 	 */
-	public Component makePhysicalComponent(List readers, List writers) {
+	public Component makePhysicalComponent(
+			List<GlobalConnector.Connection> readers,
+			List<GlobalConnector.Connection> writers) {
 		String logicalId = showIDLogical();
 		registerComponent = new Physical(readers, writers, logicalId);
 		registerComponent.setIDLogical(logicalId);
@@ -230,8 +234,9 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 	}
 
 	@Override
-	public Collection getReferences() {
-		Collection list = new ArrayList(reads.size() + writes.size());
+	public Collection<Reference> getReferences() {
+		Collection<Reference> list = new ArrayList<Reference>(reads.size()
+				+ writes.size());
 		list.addAll(reads);
 		list.addAll(writes);
 		return list;
@@ -295,11 +300,11 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 		return write;
 	}
 
-	public Collection getReadAccesses() {
+	public Collection<RegisterRead> getReadAccesses() {
 		return Collections.unmodifiableCollection(reads);
 	}
 
-	public Collection getWriteAccesses() {
+	public Collection<RegisterWrite> getWriteAccesses() {
 		return Collections.unmodifiableCollection(writes);
 	}
 
@@ -385,7 +390,8 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 		 * data). READ LOGIC must be implemented at each accessor, NOT the
 		 * global level, so that we can still allow multiple parallel reads.
 		 */
-		private Physical(List readers, List writers, String logicalId) {
+		private Physical(List<GlobalConnector.Connection> readers,
+				List<GlobalConnector.Connection> writers, String logicalId) {
 			super(0);
 
 			final boolean isLittleEndian = EngineThread
@@ -402,7 +408,8 @@ public class Register extends Storage implements StateHolder, Arbitratable {
 			getClockPort().setUsed(true);
 			setConsumesClock(true);
 
-			for (Iterator iter = writers.iterator(); iter.hasNext();) {
+			for (Iterator<GlobalConnector.Connection> iter = writers.iterator(); iter
+					.hasNext();) {
 				if (iter.next() != null) {
 					Port enablePort = makeDataPort();
 					enablePort.setUsed(true);
