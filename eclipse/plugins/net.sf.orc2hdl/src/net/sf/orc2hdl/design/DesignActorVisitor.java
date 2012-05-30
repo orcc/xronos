@@ -156,6 +156,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		@Override
 		public Object caseBlockIf(BlockIf blockIf) {
+			List<Component> oldComponents = new ArrayList<Component>(
+					currentListComponent);
 			// Create the decision
 			Var condVar = resources.getBranchDecision(blockIf);
 			String condName = "decision_" + currentAction.getName() + "_"
@@ -171,7 +173,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 					.getBranchThenOutputVars(blockIf));
 			Block thenBlock = (Block) buildModule(currentListComponent,
 					thenInputs, thenOutputs, "thenBlock", Exit.DONE, 0);
-
+			thenBlock.setIDLogical("thenBlock");
 			// Visit the else block
 			Block elseBlock = null;
 			List<Var> elseInputs = new ArrayList<Var>();
@@ -184,6 +186,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 						Collections.<Var> emptyList(),
 						Collections.<Var, List<Var>> emptyMap(), "elseBlock",
 						Exit.DONE, 1);
+				elseBlock.setIDLogical("elseBlock");
 			}
 			// Get All input Vars
 			List<Var> ifInputVars = new ArrayList<Var>();
@@ -195,6 +198,9 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			Map<Var, List<Var>> phiOuts = resources.getBranchPhiVars(blockIf);
 			currentComponent = buildBranch(decision, thenBlock, elseBlock,
 					ifInputVars, phiOuts, "ifBLOCK", Exit.DONE);
+			currentListComponent = new ArrayList<Component>();
+			currentListComponent.addAll(oldComponents);
+			currentListComponent.add(currentComponent);
 			return null;
 		}
 
@@ -722,13 +728,13 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		// The condition of emptiness on components means that the DONE exit
 		// signal should not be connected with the other dependencies of its
 		// container
-		if (!components.isEmpty()) {
-			if (exitType != Exit.RETURN) {
-				// Add done dependency on module, Exit group 0 of a "normal"
-				// module
-				mapOutControlPort(module, group);
-			}
+		// if (!components.isEmpty()) {
+		if (exitType != Exit.RETURN) {
+			// Add done dependency on module, Exit group 0 of a "normal"
+			// module
+			mapOutControlPort(module, group);
 		}
+		// }
 		return module;
 	}
 
@@ -926,7 +932,13 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 						|| var.getType().isBool();
 				dataBus.setSize(busSize, isSigned);
 				dataBus.setIDLogical(var.getIndexedName());
-				busDep.put(dataBus, outVars.get(var));
+				// Condition if the output of the module is a phi resolution or
+				// a simple output
+				if (outVars.get(var).isEmpty()) {
+					busDep.put(dataBus, Arrays.asList(var));
+				} else {
+					busDep.put(dataBus, outVars.get(var));
+				}
 			}
 			componentBusDependency.put(module, busDep);
 		}
@@ -1257,7 +1269,8 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		for (Component component : module.getComponents()) {
 			if (components.contains(component)) {
-				// Build Data dependencies
+				// Build Data dependencies with the input port of the module or
+				// intra-components
 				for (Port port : component.getDataPorts()) {
 					Var var = componentPortDependency.get(component).get(port);
 					if (dependencyOnModulePort(module, var)) {
@@ -1277,6 +1290,26 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 						entry.addDependency(port, dep);
 					}
 				}
+				// Build data dependencies with the output port of the module
+				for (Bus bus : component.getDataBuses()) {
+					for (Bus moduleBus : module.getDataBuses()) {
+						List<Var> outputVars = new ArrayList<Var>(
+								componentBusDependency.get(module).get(
+										moduleBus));
+						Var compVar = componentBusDependency.get(component)
+								.get(bus).get(0);
+						if (outputVars.contains(compVar)) {
+							Integer group = outputVars.indexOf(compVar);
+							Port targetPort = moduleBus.getPeer();
+							List<Entry> entries = targetPort.getOwner()
+									.getEntries();
+							Entry entry = entries.get(group);
+							Dependency dep = new DataDependency(bus);
+							entry.addDependency(targetPort, dep);
+						}
+					}
+				}
+
 				if (component instanceof Loop) {
 					Map<Port, Map<Port, Bus>> feedbackDeps = new HashMap<Port, Map<Port, Bus>>();
 					Map<Port, Map<Port, Bus>> initialDeps = new HashMap<Port, Map<Port, Bus>>();
@@ -1314,20 +1347,41 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 						outbufEntry.addDependency(targetPort, dep);
 					}
 
-				} else {
-					// Build control Dependencies
-					Map<Bus, Integer> busGroup = componentDoneBusDependency
-							.get(component);
-					if (busGroup != null) {
-						for (Bus busDone : busGroup.keySet()) {
+				}
+				// Build control Dependencies
+				Map<Bus, Integer> busGroup = componentDoneBusDependency
+						.get(component);
+				if (busGroup != null) {
+					for (Bus busDone : busGroup.keySet()) {
+						Port donePort = exit.getDoneBus().getPeer();
+						List<Entry> entries = donePort.getOwner().getEntries();
+						Entry entry = entries.get(busGroup.get(busDone));
+						Dependency dep = new ControlDependency(busDone);
+						entry.addDependency(donePort, dep);
+					}
+				}
 
-							Port donePort = exit.getDoneBus().getPeer();
-							List<Entry> entries = donePort.getOwner()
-									.getEntries();
-							Entry entry = entries.get(busGroup.get(busDone));
-							Dependency dep = new ControlDependency(busDone);
-							entry.addDependency(donePort, dep);
-						}
+			}
+		}
+
+		if (module instanceof Branch) {
+			for (Bus bus : module.getDataBuses()) {
+				List<Var> phiVars = new ArrayList<Var>(componentBusDependency
+						.get(module).get(bus));
+
+				// Test if the dependency may come from the Branch Input
+				// port
+				for (Port port : module.getDataPorts()) {
+					Var var = componentPortDependency.get(module).get(port);
+					if (phiVars.contains(var)) {
+						Integer group = phiVars.indexOf(var);
+						Bus sourceBus = port.getBus();
+						Port targetPort = bus.getPeer();
+						List<Entry> entries = targetPort.getOwner()
+								.getEntries();
+						Entry entry = entries.get(group);
+						Dependency dep = new DataDependency(sourceBus);
+						entry.addDependency(targetPort, dep);
 					}
 				}
 
