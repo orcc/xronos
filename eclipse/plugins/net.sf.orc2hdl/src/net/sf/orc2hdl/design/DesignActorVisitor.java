@@ -790,6 +790,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				currentExit, 0);
 
 		Task task = createTask(taskName, currentModule, false);
+		task.setIDLogical(taskName);
 		actorsTasks.put(action, task);
 		// Add it to the design
 		design.addTask(task);
@@ -858,9 +859,18 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 		for (Task task : design.getTasks()) {
 			Call call = task.getCall();
 			if (call.getExit(Exit.DONE).getDoneBus().isConnected()) {
+				// OutputPin pin = new OutputPin(call.getExit(Exit.DONE)
+				// .getDoneBus());
+				// pin.setIDLogical(task.showIDLogical() + "_done");
+				// design.addOutputPin(pin,
+				// call.getExit(Exit.DONE).getDoneBus());
 				call.getProcedure().getBody().setProducesDone(true);
 			}
 			if (call.getGoPort().isConnected()) {
+				// Bus goBus = call.getGoPort().getBus();
+				// OutputPin pin = new OutputPin(1, false);
+				// pin.setIDLogical(task.showIDLogical() + "_go");
+				// design.addOutputPin(pin, goBus);
 				call.getProcedure().getBody().setConsumesGo(true);
 			}
 		}
@@ -950,6 +960,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 
 		// create Call
 		Call call = createCall(taskName, taskModule);
+		// call.setIDLogical(taskName);
 		topLevelInit(call);
 		// Create task
 		task = new Task(call);

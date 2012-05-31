@@ -86,7 +86,9 @@ public class ForgeResource extends ListResourceBundle {
 		InputStream result = null;
 
 		try {
-			return getResourceURL(key).openStream();
+			if (getResourceURL(key) != null) {
+				return getResourceURL(key).openStream();
+			}
 		} catch (Exception ex) {
 			result = null;
 		}

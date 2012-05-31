@@ -104,13 +104,13 @@ add wave -noupdate -divider -height 20 i_<instance.simpleName>
 >>
 
 printActorInput(port) ::=<<
-add wave sim:/<network.simpleName>/i_<instance.simpleName>/<port.name>_DATA
-add wave sim:/<network.simpleName>/i_<instance.simpleName>/<port.name>_ACK  
+add wave sim:/<if(options.modelsimAnalysis)>tb_<network.simpleName>/n_<endif><network.simpleName>/i_<instance.simpleName>/<port.name>_DATA
+add wave sim:/<if(options.modelsimAnalysis)>tb_<network.simpleName>/n_<endif><network.simpleName>/i_<instance.simpleName>/<port.name>_ACK  
 >>
 
 printActorOutput(port) ::=<<
-add wave sim:/<network.simpleName>/i_<instance.simpleName>/<port.name>_DATA
-add wave sim:/<network.simpleName>/i_<instance.simpleName>/<port.name>_SEND  
+add wave sim:/<if(options.modelsimAnalysis)>tb_<network.simpleName>/n_<endif><network.simpleName>/i_<instance.simpleName>/<port.name>_DATA
+add wave sim:/<if(options.modelsimAnalysis)>tb_<network.simpleName>/n_<endif><network.simpleName>/i_<instance.simpleName>/<port.name>_SEND  
 >>
 
 

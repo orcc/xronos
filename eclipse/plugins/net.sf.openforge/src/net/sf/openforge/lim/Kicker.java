@@ -103,6 +103,10 @@ public class Kicker extends Module implements Composable {
 		// Bus resetBus =
 		getInBuf().getResetBus();
 
+		// Name the CLOCK and RESET Port
+		getInBuf().getClockBus().setIDLogical("CLK");
+		getInBuf().getResetBus().setIDLogical("RESET");
+
 		// now, construct the guts of this.
 
 		// the not1 connected to the ... reset port
