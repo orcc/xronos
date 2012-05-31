@@ -125,14 +125,22 @@ public class ResourceCache {
 	}
 
 	public List<Var> getBranchElseOutputVars(BlockIf blockIf) {
-		return branchIfOutput.get(blockIf).get(1);
+		if (!blockIf.getElseBlocks().isEmpty()) {
+			return branchIfOutput.get(blockIf).get(1);
+		} else {
+			return Collections.<Var> emptyList();
+		}
 	}
 
 	public List<Var> getBranchElseVars(BlockIf blockIf) {
-		if (branchIfInput.get(blockIf).get(2).isEmpty()) {
-			return Collections.emptyList();
+		if (!blockIf.getElseBlocks().isEmpty()) {
+			if (branchIfInput.get(blockIf).get(2).isEmpty()) {
+				return Collections.emptyList();
+			} else {
+				return branchIfInput.get(blockIf).get(2);
+			}
 		} else {
-			return branchIfInput.get(blockIf).get(2);
+			return Collections.<Var> emptyList();
 		}
 	}
 
@@ -146,6 +154,29 @@ public class ResourceCache {
 
 	public List<Var> getBranchThenVars(BlockIf blockIf) {
 		return branchIfInput.get(blockIf).get(1);
+	}
+
+	public List<Var> getBranchInputs(BlockIf blockIf) {
+		List<Var> inputs = new ArrayList<Var>();
+		inputs.add(getBranchDecision(blockIf));
+		inputs.addAll(getBranchThenVars(blockIf));
+		inputs.addAll(getBranchElseVars(blockIf));
+
+		List<Var> outputs = new ArrayList<Var>();
+		outputs.addAll(getBranchThenOutputVars(blockIf));
+		outputs.addAll(getBranchElseOutputVars(blockIf));
+
+		// Inputs on join node dependency iff the then and else output does not
+		// contain the phi value
+		for (Var var : branchPhi.get(blockIf).keySet()) {
+			List<Var> phiDep = branchPhi.get(blockIf).get(var);
+			for (Var phiVar : phiDep) {
+				if (!inputs.contains(phiVar) && !outputs.contains(phiVar)) {
+					inputs.add(phiVar);
+				}
+			}
+		}
+		return inputs;
 	}
 
 	public ActionIOHandler getIOHandler(Port port) {

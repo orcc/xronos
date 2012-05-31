@@ -176,10 +176,17 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			thenBlock.setIDLogical("thenBlock");
 			// Visit the else block
 			Block elseBlock = null;
-			List<Var> elseInputs = new ArrayList<Var>();
+
 			if (!blockIf.getElseBlocks().isEmpty()) {
 				currentListComponent = new ArrayList<Component>();
 				doSwitch(blockIf.getElseBlocks());
+
+				List<Var> elseInputs = resources.getBranchElseVars(blockIf);
+				Map<Var, List<Var>> elseOutputs = groupZeroOutput(resources
+						.getBranchElseOutputVars(blockIf));
+				elseBlock = (Block) buildModule(currentListComponent,
+						elseInputs, elseOutputs, "elseBlock", Exit.DONE, 1);
+				thenBlock.setIDLogical("elseBlock");
 			} else {
 				elseBlock = (Block) buildModule(
 						Collections.<Component> emptyList(),
@@ -189,10 +196,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 				elseBlock.setIDLogical("elseBlock");
 			}
 			// Get All input Vars
-			List<Var> ifInputVars = new ArrayList<Var>();
-			ifInputVars.add(condVar);
-			ifInputVars.addAll(thenInputs);
-			ifInputVars.addAll(elseInputs);
+			List<Var> ifInputVars = resources.getBranchInputs(blockIf);
 
 			// Get Phi target Vars, aka branchIf Outputs
 			Map<Var, List<Var>> phiOuts = resources.getBranchPhiVars(blockIf);
@@ -1028,8 +1032,13 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			Map<Bus, List<Var>> portVar = componentBusDependency.get(component);
 			if (portVar != null) {
 				for (Bus bus : portVar.keySet()) {
-					if (var == portVar.get(bus).get(group)) {
+					if (portVar.get(bus).size() > 1
+							&& bus.showIDLogical().equals(var.getIndexedName())) {
 						return bus;
+					} else {
+						if (var == portVar.get(bus).get(group)) {
+							return bus;
+						}
 					}
 				}
 			}
@@ -1386,7 +1395,7 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 					Var var = componentPortDependency.get(module).get(port);
 					if (phiVars.contains(var)) {
 						Integer group = phiVars.indexOf(var);
-						Bus sourceBus = port.getBus();
+						Bus sourceBus = port.getPeer();
 						Port targetPort = bus.getPeer();
 						List<Entry> entries = targetPort.getOwner()
 								.getEntries();

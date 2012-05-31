@@ -421,7 +421,8 @@ public class DesignActorSchedulerVisitor extends DesignActorVisitor {
 						Collections.<Var, List<Var>> emptyMap(), "elseBlock",
 						Exit.DONE, 0);
 				branch = (Branch) buildBranch(decision, thenBlock, elseBlock,
-						inPort, null, "ifBranch_" + action.getName(), null);
+						inPort, Collections.<Var, List<Var>> emptyMap(),
+						"ifBranch_" + action.getName(), null);
 				branch.setIDLogical("ifBranch_" + action.getName());
 				previousInputPorts = inPort;
 			}

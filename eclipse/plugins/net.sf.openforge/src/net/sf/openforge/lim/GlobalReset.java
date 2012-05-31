@@ -118,11 +118,11 @@ public class GlobalReset extends HiddenPin {
 			glitchReg.getClockPort().pushValueForward();
 
 			andGate = new And(2);
-			List andPorts = andGate.getDataPorts();
-			((Port) andPorts.get(0)).setBus(crossReg.getResultBus());
-			((Port) andPorts.get(0)).pushValueForward();
-			((Port) andPorts.get(1)).setBus(glitchReg.getResultBus());
-			((Port) andPorts.get(1)).pushValueForward();
+			List<Port> andPorts = andGate.getDataPorts();
+			andPorts.get(0).setBus(crossReg.getResultBus());
+			andPorts.get(0).pushValueForward();
+			andPorts.get(1).setBus(glitchReg.getResultBus());
+			andPorts.get(1).pushValueForward();
 
 			andGate.getResultBus().setIDLogical("crossAndGlitch");
 			andGate.getResultBus().setSize(1, false);
