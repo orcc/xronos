@@ -63,17 +63,17 @@ public class GlobalReset extends HiddenPin {
 
 			clock = makeDataPort();
 			clock.setUsed(true);
-			clock.setIDLogical("CLK");
+			// clock.setIDLogical("CLOCK");
 			clock.setSize(1, false);
 
 			// appropriate the reset signal (output from the pin)
 			Exit physicalExit = makeExit(0);
 			reset = physicalExit.makeOneBitBus();
 			reset.setUsed(true);
-			reset.setIDLogical("RESET");
+			// reset.setIDLogical("RESET");
 
 			Bus commonClock = clock.getPeer();
-			commonClock.setIDLogical("CLK");
+			// commonClock.setIDLogical("CLOCK");
 			commonClock.setSize(1, false);
 
 			// make the flops and wire them up
