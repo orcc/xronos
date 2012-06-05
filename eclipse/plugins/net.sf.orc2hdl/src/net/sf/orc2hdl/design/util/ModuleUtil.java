@@ -31,6 +31,7 @@ package net.sf.orc2hdl.design.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +45,7 @@ import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.ControlDependency;
 import net.sf.openforge.lim.DataDependency;
 import net.sf.openforge.lim.Decision;
+import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.InBuf;
@@ -65,8 +67,8 @@ import net.sf.orcc.ir.Var;
 
 public class ModuleUtil {
 	/**
-	 * This method creates an NoOp component used for assign that are not in the
-	 * Orcc Ir
+	 * This method creates an NoOp component used for assign that are not
+	 * include in a procedure
 	 * 
 	 * @param target
 	 *            the target variable
@@ -81,13 +83,18 @@ public class ModuleUtil {
 	 * @return
 	 */
 	public static Component assignComponent(Var target, Var source,
-			Map<Component, Map<Port, Var>> portDependency,
-			Map<Component, Map<Bus, List<Var>>> busDependency,
-			Map<Component, Map<Bus, Integer>> doneBusDependency) {
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
 		Component component = new NoOp(1, Exit.DONE);
-		PortUtil.mapInDataPorts(Arrays.asList(source), component,
-				portDependency);
-		PortUtil.mapOutDataPorts(component, target, 0, busDependency,
+		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		vars.put(source, 0);
+		PortUtil.mapInDataPorts(component, vars, portDependency,
+				portGroupDependency);
+
+		vars = new HashMap<Var, Integer>();
+		vars.put(target, 0);
+		PortUtil.mapOutDataPorts(component, vars, busDependency,
 				doneBusDependency);
 		return component;
 	}
@@ -120,11 +127,12 @@ public class ModuleUtil {
 	}
 
 	public static Component createBranch(Decision decision, Block thenBlock,
-			Block elseBlock, List<Var> inVars, Map<Var, List<Var>> outVars,
+			Block elseBlock, Map<Var, Integer> inVars,
+			Map<Var, Integer> outVars, Map<Var, List<Var>> phiOuts,
 			String searchScope, Exit.Type exitType,
-			Map<Component, Map<Port, Var>> portDependency,
-			Map<Component, Map<Bus, List<Var>>> busDependency,
-			Map<Component, Map<Bus, Integer>> doneBusDependency) {
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
 		Branch branch = null;
 		List<Component> branchComponents = new ArrayList<Component>();
 		if (elseBlock == null) {
@@ -142,11 +150,12 @@ public class ModuleUtil {
 				portDependency, busDependency);
 
 		// Map In/Out port of branch, Branch done Group 0
-		PortUtil.mapInDataPorts(inVars, branch, portDependency);
+		PortUtil.mapInDataPorts(branch, inVars, portDependency,
+				portGroupDependency);
 		PortUtil.mapOutControlPort(branch, 0, doneBusDependency);
 
-		moduleDependencies(branch, branchComponents, portDependency,
-				branch.getExit(Exit.DONE), portDependency, busDependency,
+		moduleDependencies(branch, branchComponents, branch.getExit(Exit.DONE),
+				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
 
 		// Give the name of the searchScope
@@ -170,9 +179,9 @@ public class ModuleUtil {
 	 * @return
 	 */
 	public static Decision createDecision(Var inputDecision, String resultName,
-			Map<Component, Map<Port, Var>> portDependency,
-			Map<Component, Map<Bus, List<Var>>> busDependency,
-			Map<Component, Map<Bus, Integer>> doneBusDependency) {
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
 		Decision decision = null;
 		// Create the decision variable and assign the inputDecision to it
 		Type type = IrFactory.eINSTANCE.createTypeBool();
@@ -180,11 +189,15 @@ public class ModuleUtil {
 				false, 0);
 
 		Component assignComp = assignComponent(decisionVar, inputDecision,
-				portDependency, busDependency, doneBusDependency);
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+		Map<Var, Integer> inVars = new HashMap<Var, Integer>();
+		inVars.put(inputDecision, 0);
 		Module decisionModule = (Module) createModule(
-				Arrays.asList(assignComp), Arrays.asList(inputDecision),
-				Collections.<Var, List<Var>> emptyMap(), "decisionBlock",
-				Exit.DONE, 0, portDependency, busDependency, doneBusDependency);
+				Arrays.asList(assignComp), inVars,
+				Collections.<Var, Integer> emptyMap(), "decisionBlock",
+				Exit.DONE, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
 
 		// Add done dependency, Decision group 0
 		PortUtil.mapOutControlPort(decisionModule, 0, doneBusDependency);
@@ -195,11 +208,9 @@ public class ModuleUtil {
 		// Propagate Inputs
 		decisionPropagateInputs(decision, (Block) decisionModule);
 
-		// Add to dependency, A Decision has only one Input
-		Map<Port, Var> portDep = new HashMap<Port, Var>();
+		// Add to dependency, A Decision has only one Input at group 0
 		Port port = decision.getDataPorts().get(0);
-		portDep.put(port, inputDecision);
-		portDependency.put(decision, portDep);
+		portDependency.put(port, inputDecision);
 
 		return decision;
 	}
@@ -228,11 +239,11 @@ public class ModuleUtil {
 	 * @return
 	 */
 	public static Component createModule(List<Component> components,
-			List<Var> inVars, Map<Var, List<Var>> outVars, String searchScope,
-			Exit.Type exitType, Integer group,
-			Map<Component, Map<Port, Var>> portDependency,
-			Map<Component, Map<Bus, List<Var>>> busDependency,
-			Map<Component, Map<Bus, Integer>> doneBusDependency) {
+			Map<Var, Integer> inVars, Map<Var, Integer> outVars,
+			String searchScope, Exit.Type exitType, Integer group,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
 
 		// Create an Empty Block
 		Module module = new Block(false);
@@ -240,8 +251,11 @@ public class ModuleUtil {
 		// Create the modules IO interface
 		createModuleInterface(module, inVars, outVars, exitType,
 				portDependency, busDependency);
-		// Set all dependencies
 
+		// Resolve all dependencies
+		moduleDependencies(module, components, module.getExit(exitType),
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
 		// Give the name of the searchScope
 		module.specifySearchScope(searchScope);
 
@@ -294,19 +308,17 @@ public class ModuleUtil {
 	 * @param busDependency
 	 *            the bus dependency map
 	 */
-	public static void createModuleInterface(Module module, List<Var> inVars,
-			Map<Var, List<Var>> outVars, Exit.Type exitType,
-			Map<Component, Map<Port, Var>> portDependency,
-			Map<Component, Map<Bus, List<Var>>> busDependency) {
+	public static void createModuleInterface(Module module,
+			Map<Var, Integer> inVars, Map<Var, Integer> outVars,
+			Exit.Type exitType, Map<Port, Var> portDependency,
+			Map<Bus, Var> busDependency) {
 		// Create Module Input(s) if any
 		if (!inVars.isEmpty()) {
-			Map<Port, Var> portDep = new HashMap<Port, Var>();
-			for (Var var : inVars) {
+			for (Var var : inVars.keySet()) {
 				Port port = module.makeDataPort();
 				port.setIDLogical(var.getIndexedName());
-				portDep.put(port, var);
+				portDependency.put(port, var);
 			}
-			portDependency.put(module, portDep);
 		}
 		// Create module Exit
 		moduleExit(module, exitType);
@@ -314,7 +326,6 @@ public class ModuleUtil {
 		// Create module Output(s) if any
 		if (!outVars.isEmpty()) {
 			Exit exit = module.getExit(Exit.DONE);
-			Map<Bus, List<Var>> busDep = new HashMap<Bus, List<Var>>();
 			for (Var var : outVars.keySet()) {
 				Bus dataBus = exit.makeDataBus();
 				Integer busSize = var.getType().getSizeInBits();
@@ -322,26 +333,50 @@ public class ModuleUtil {
 						|| var.getType().isBool();
 				dataBus.setSize(busSize, isSigned);
 				dataBus.setIDLogical(var.getIndexedName());
-				// Condition if the output of the module is a phi resolution or
-				// a simple output
-				if (outVars.get(var).isEmpty()) {
-					busDep.put(dataBus, Arrays.asList(var));
-				} else {
-					busDep.put(dataBus, outVars.get(var));
-				}
+
+				busDependency.put(dataBus, var);
 			}
-			busDependency.put(module, busDep);
 		}
 
 	}
 
 	public static void moduleDependencies(Module module,
-			List<Component> components,
-			Map<Component, Map<Port, Var>> dependecies, Exit exit,
-			Map<Component, Map<Port, Var>> portDependency,
-			Map<Component, Map<Bus, List<Var>>> busDependency,
-			Map<Component, Map<Bus, Integer>> doneBusDependency) {
+			List<Component> components, Exit exit,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
 
+		for (Component component : module.getComponents()) {
+			for (Bus bus : component.getDataBuses()) {
+				Var busVar = busDependency.get(bus);
+				List<Port> targetPorts = getDependencyTargetPorts(
+						module.getComponents(), busVar, portDependency);
+				for (Port port : targetPorts) {
+					int group = portGroupDependency.get(port);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(group);
+					Dependency dep = new DataDependency(bus);
+					entry.addDependency(port, dep);
+				}
+			}
+		}
+
+	}
+
+	public static List<Port> getDependencyTargetPorts(
+			Collection<Component> components, Var var,
+			Map<Port, Var> portDependency) {
+		List<Port> targetPorts = new ArrayList<Port>();
+
+		for (Component component : components) {
+			for (Port port : component.getDataPorts()) {
+				if (portDependency.get(port) == var) {
+					targetPorts.add(port);
+				}
+			}
+		}
+
+		return targetPorts;
 	}
 
 	/**

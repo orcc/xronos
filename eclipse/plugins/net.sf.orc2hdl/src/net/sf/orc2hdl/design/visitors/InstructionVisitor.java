@@ -30,7 +30,6 @@
 package net.sf.orc2hdl.design.visitors;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -95,6 +94,7 @@ import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.OpUnary;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
@@ -106,14 +106,14 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
  * @author Endri Bezati
  * 
  */
-public class InstructionVisitor extends AbstractIrVisitor<Object> {
+public class InstructionVisitor extends AbstractIrVisitor<List<Component>> {
 
 	private Def assignTarget;
 	private Integer castIndex = 0;
 	private Integer listIndexes = 0;
 
 	/** Current List Component **/
-	private List<Component> currentListComponent = new ArrayList<Component>();
+	private List<Component> componentList;
 	/** Current Component **/
 	private Component currentComponent;
 
@@ -121,97 +121,107 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 	protected ResourceCache resources;
 
 	/** Dependency between Components and Bus-Var **/
-	protected Map<Component, Map<Bus, List<Var>>> componentBusDependency = new HashMap<Component, Map<Bus, List<Var>>>();
+	protected Map<Bus, Var> busDependency;
 
 	/** Action component Counter **/
 	protected Integer componentCounter;
 
 	/** Dependency between Components and Done Bus **/
-	protected Map<Component, Map<Bus, Integer>> componentDoneBusDependency = new HashMap<Component, Map<Bus, Integer>>();
+	protected Map<Bus, Integer> doneBusDependency;
 
 	/** Dependency between Components and Port-Var **/
-	protected Map<Component, Map<Port, Var>> componentPortDependency = new HashMap<Component, Map<Port, Var>>();
+	protected Map<Port, Var> portDependency;
+
+	/** Dependency between Components and Port-Var **/
+	protected Map<Port, Integer> portGroupDependency;
 
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
 
-	public InstructionVisitor(ResourceCache resources,
-			List<Component> components) {
+	public InstructionVisitor(ResourceCache resources, List<Component> component) {
 		super(true);
 		this.resources = resources;
-		currentListComponent = components;
+		componentList = component;
 	}
 
 	@Override
-	public Object caseBlockIf(BlockIf blockIf) {
-		List<Component> oldComponents = new ArrayList<Component>(
-				currentListComponent);
-		// Create the decision
-		Var condVar = resources.getBranchDecision(blockIf);
-		String condName = "decision_" + procedure.getName() + "_"
-				+ condVar.getIndexedName();
-		Decision decision = ModuleUtil.createDecision(condVar, condName,
-				componentPortDependency, componentBusDependency,
-				componentDoneBusDependency);
+	public List<Component> caseProcedure(Procedure procedure) {
+		super.caseProcedure(procedure);
+		return componentList;
+	}
 
+	@Override
+	public List<Component> caseBlockIf(BlockIf blockIf) {
+		List<Component> oldComponents = new ArrayList<Component>(componentList);
+		// Create the decision
+		Map<Var, Integer> decisionVar = resources.getBranchDecision(blockIf);
+		Decision decision = null;
+		for (Var condVar : decisionVar.keySet()) {
+			String condName = "decision_" + procedure.getName() + "_"
+					+ condVar.getIndexedName();
+
+			decision = ModuleUtil.createDecision(condVar, condName,
+					portDependency, busDependency, portGroupDependency,
+					doneBusDependency);
+		}
 		// Visit the then block
-		currentListComponent = new ArrayList<Component>();
+		componentList = new ArrayList<Component>();
 		doSwitch(blockIf.getThenBlocks());
 		// Get the then Input Vars
-		List<Var> thenInputs = resources.getBranchThenVars(blockIf);
-		Map<Var, List<Var>> thenOutputs = groupZeroOutput(resources
-				.getBranchThenOutputVars(blockIf));
-		Block thenBlock = (Block) ModuleUtil.createModule(currentListComponent,
+		Map<Var, Integer> thenInputs = resources.getBranchThenVars(blockIf);
+		Map<Var, Integer> thenOutputs = resources
+				.getBranchThenOutputVars(blockIf);
+		Block thenBlock = (Block) ModuleUtil.createModule(componentList,
 				thenInputs, thenOutputs, "thenBlock", Exit.DONE, 0,
-				componentPortDependency, componentBusDependency,
-				componentDoneBusDependency);
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
 		thenBlock.setIDLogical("thenBlock");
 		// Visit the else block
 		Block elseBlock = null;
 
 		if (!blockIf.getElseBlocks().isEmpty()) {
-			currentListComponent = new ArrayList<Component>();
+			componentList = new ArrayList<Component>();
 			doSwitch(blockIf.getElseBlocks());
 
-			List<Var> elseInputs = resources.getBranchElseVars(blockIf);
-			Map<Var, List<Var>> elseOutputs = groupZeroOutput(resources
-					.getBranchElseOutputVars(blockIf));
-			elseBlock = (Block) ModuleUtil.createModule(currentListComponent,
+			Map<Var, Integer> elseInputs = resources.getBranchElseVars(blockIf);
+			Map<Var, Integer> elseOutputs = resources
+					.getBranchElseOutputVars(blockIf);
+			elseBlock = (Block) ModuleUtil.createModule(componentList,
 					elseInputs, elseOutputs, "elseBlock", Exit.DONE, 1,
-					componentPortDependency, componentBusDependency,
-					componentDoneBusDependency);
+					portDependency, busDependency, portGroupDependency,
+					doneBusDependency);
 			thenBlock.setIDLogical("elseBlock");
 		} else {
 			elseBlock = (Block) ModuleUtil.createModule(
 					Collections.<Component> emptyList(),
-					Collections.<Var> emptyList(),
-					Collections.<Var, List<Var>> emptyMap(), "elseBlock",
-					Exit.DONE, 1, componentPortDependency,
-					componentBusDependency, componentDoneBusDependency);
+					Collections.<Var, Integer> emptyMap(),
+					Collections.<Var, Integer> emptyMap(), "elseBlock",
+					Exit.DONE, 1, portDependency, busDependency,
+					portGroupDependency, doneBusDependency);
 			elseBlock.setIDLogical("elseBlock");
 		}
 		// Get All input Vars
-		List<Var> ifInputVars = resources.getBranchInputs(blockIf);
-
+		Map<Var, Integer> ifInputVars = resources.getBranchInputs(blockIf);
+		Map<Var, Integer> ifOutputVars = Collections.emptyMap();
 		// Get Phi target Vars, aka branchIf Outputs
 		Map<Var, List<Var>> phiOuts = resources.getBranchPhiVars(blockIf);
 		currentComponent = ModuleUtil.createBranch(decision, thenBlock,
-				elseBlock, ifInputVars, phiOuts, "ifBLOCK", Exit.DONE,
-				componentPortDependency, componentBusDependency,
-				componentDoneBusDependency);
-		currentListComponent = new ArrayList<Component>();
-		currentListComponent.addAll(oldComponents);
-		currentListComponent.add(currentComponent);
+				elseBlock, ifInputVars, ifOutputVars, phiOuts, "ifBLOCK",
+				Exit.DONE, portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+		componentList = new ArrayList<Component>();
+		componentList.addAll(oldComponents);
+		componentList.add(currentComponent);
 		return null;
 	}
 
 	@Override
-	public Object caseBlockWhile(BlockWhile blockWhile) {
+	public List<Component> caseBlockWhile(BlockWhile blockWhile) {
 		return null;
 	}
 
 	@Override
-	public Object caseExprBinary(ExprBinary expr) {
+	public List<Component> caseExprBinary(ExprBinary expr) {
 		// Get the size of the target and give it to the component
 		int sizeInBits = assignTarget.getVariable().getType().getSizeInBits();
 		Component component = null;
@@ -263,18 +273,18 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 		Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
 		Integer newMaxSize = assignTarget.getVariable().getType()
 				.getSizeInBits();
-		PortUtil.mapInDataPorts(binaryCastOp(e1, e2, newMaxSize), component,
-				componentPortDependency);
+		PortUtil.mapInDataPorts(component, binaryCastOp(e1, e2, newMaxSize),
+				portDependency, portGroupDependency);
 		currentComponent = component;
 		return null;
 	}
 
-	protected List<Var> binaryCastOp(Var e1, Var e2, Integer newMaxSize) {
+	protected Map<Var, Integer> binaryCastOp(Var e1, Var e2, Integer newMaxSize) {
 		Boolean isSigned = e1.getType().isInt() || e2.getType().isInt();
-		List<Var> newVars = new ArrayList<Var>();
-		// Add the new Casted variables
-		newVars.add(unaryCastOp(e1, newMaxSize, isSigned));
-		newVars.add(unaryCastOp(e2, newMaxSize, isSigned));
+		Map<Var, Integer> newVars = new HashMap<Var, Integer>();
+		// Add the new Casted variables, group 0 by default
+		newVars.put(unaryCastOp(e1, newMaxSize, isSigned), 0);
+		newVars.put(unaryCastOp(e2, newMaxSize, isSigned), 0);
 		return newVars;
 	}
 
@@ -284,14 +294,20 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 
 		if (sizeVar != newMaxSize) {
 			currentComponent = new CastOp(newMaxSize, isSigned);
-			PortUtil.mapInDataPorts(new ArrayList<Var>(Arrays.asList(var)),
-					currentComponent, componentPortDependency);
+			Map<Var, Integer> ioVars = new HashMap<Var, Integer>();
+			ioVars.put(var, 0);
+
+			PortUtil.mapInDataPorts(currentComponent, ioVars, portDependency,
+					portGroupDependency);
 			Var castedVar = procedure.newTempLocalVariable(
 					IrFactory.eINSTANCE.createTypeInt(newMaxSize), "casted_"
 							+ castIndex + "_" + var.getIndexedName());
-			PortUtil.mapOutDataPorts(currentComponent, castedVar, 0,
-					componentBusDependency, componentDoneBusDependency);
-			currentListComponent.add(currentComponent);
+			ioVars = new HashMap<Var, Integer>();
+			ioVars.put(castedVar, 0);
+
+			PortUtil.mapOutDataPorts(currentComponent, ioVars, busDependency,
+					doneBusDependency);
+			componentList.add(currentComponent);
 			newVar = castedVar;
 			castIndex++;
 		}
@@ -300,14 +316,14 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 	}
 
 	@Override
-	public Object caseExprBool(ExprBool expr) {
+	public List<Component> caseExprBool(ExprBool expr) {
 		final long value = expr.isValue() ? 1 : 0;
 		currentComponent = new SimpleConstant(value, 1, true);
 		return null;
 	}
 
 	@Override
-	public Object caseExprInt(ExprInt expr) {
+	public List<Component> caseExprInt(ExprInt expr) {
 		final long value = expr.getIntValue();
 		int sizeInBits = 32;
 
@@ -323,7 +339,7 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 	}
 
 	@Override
-	public Object caseExprUnary(ExprUnary expr) {
+	public List<Component> caseExprUnary(ExprUnary expr) {
 		if (expr.getOp() == OpUnary.BITNOT) {
 			currentComponent = new ComplementOp();
 		} else if (expr.getOp() == OpUnary.LOGIC_NOT) {
@@ -335,24 +351,28 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 	}
 
 	@Override
-	public Object caseExprVar(ExprVar var) {
+	public List<Component> caseExprVar(ExprVar var) {
 		currentComponent = new NoOp(1, Exit.DONE);
-		PortUtil.mapInDataPorts(
-				new ArrayList<Var>(Arrays.asList(var.getUse().getVariable())),
-				currentComponent, componentPortDependency);
+		Var useVar = var.getUse().getVariable();
+		Map<Var, Integer> inVar = new HashMap<Var, Integer>();
+		inVar.put(useVar, 0);
+
+		PortUtil.mapInDataPorts(currentComponent, inVar, portDependency,
+				portGroupDependency);
 		return null;
 	}
 
 	@Override
-	public Object caseInstAssign(InstAssign assign) {
+	public List<Component> caseInstAssign(InstAssign assign) {
 		// Get the size in bits of the target
 		assignTarget = assign.getTarget();
 		super.caseInstAssign(assign);
 		if (currentComponent != null) {
-			currentListComponent.add(currentComponent);
-			PortUtil.mapOutDataPorts(currentComponent, assign.getTarget()
-					.getVariable(), 0, componentBusDependency,
-					componentDoneBusDependency);
+			componentList.add(currentComponent);
+			Map<Var, Integer> outVar = new HashMap<Var, Integer>();
+			outVar.put(assign.getTarget().getVariable(), 0);
+			PortUtil.mapOutDataPorts(currentComponent, outVar, busDependency,
+					doneBusDependency);
 		}
 		// Put target to null
 		assignTarget = null;
@@ -360,14 +380,14 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 	}
 
 	@Override
-	public Object caseInstCall(InstCall call) {
+	public List<Component> caseInstCall(InstCall call) {
 		currentComponent = new TaskCall();
 		resources.addTaskCall(call, (TaskCall) currentComponent);
 		return null;
 	}
 
 	@Override
-	public Object caseInstLoad(InstLoad load) {
+	public List<Component> caseInstLoad(InstLoad load) {
 		Var sourceVar = load.getSource().getVariable();
 
 		// At this moment the load should have only one index
@@ -413,16 +433,22 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 				IrFactory.eINSTANCE.createTypeInt(), "index" + listIndexes);
 		listIndexes++;
 		currentComponent = new CastOp(dataSize, isSigned);
-		PortUtil.mapInDataPorts(
-				new ArrayList<Var>(Arrays.asList(loadIndexVar)),
-				currentComponent, componentPortDependency);
+
+		Map<Var, Integer> ioVars = new HashMap<Var, Integer>();
+		ioVars.put(loadIndexVar, 0);
+		PortUtil.mapInDataPorts(currentComponent, ioVars, portDependency,
+				portGroupDependency);
 		// For the moment all indexes are considered 32bits
 		Var castedIndexVar = procedure.newTempLocalVariable(
 				IrFactory.eINSTANCE.createTypeInt(32), "casted_" + castIndex
 						+ "_" + loadIndexVar.getIndexedName());
-		PortUtil.mapOutDataPorts(currentComponent, castedIndexVar, 0,
-				componentBusDependency, componentDoneBusDependency);
-		currentListComponent.add(currentComponent);
+
+		ioVars = new HashMap<Var, Integer>();
+		ioVars.put(castedIndexVar, 0);
+
+		PortUtil.mapOutDataPorts(currentComponent, ioVars, busDependency,
+				doneBusDependency);
+		componentList.add(currentComponent);
 		castIndex++;
 		// add the assign instruction for each index
 		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
@@ -430,19 +456,24 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 		doSwitch(assign);
 
 		currentComponent = block;
-		PortUtil.mapInDataPorts(new ArrayList<Var>(Arrays.asList(indexVar)),
-				currentComponent, componentPortDependency);
-		PortUtil.mapOutDataPorts(currentComponent, load.getTarget()
-				.getVariable(), 0, componentBusDependency,
-				componentDoneBusDependency);
+		ioVars = new HashMap<Var, Integer>();
+		ioVars.put(indexVar, 0);
 
-		currentListComponent.add(currentComponent);
+		PortUtil.mapInDataPorts(currentComponent, ioVars, portDependency,
+				portGroupDependency);
+
+		ioVars = new HashMap<Var, Integer>();
+		ioVars.put(load.getTarget().getVariable(), 0);
+		PortUtil.mapOutDataPorts(currentComponent, ioVars, busDependency,
+				doneBusDependency);
+
+		componentList.add(currentComponent);
 
 		return null;
 	}
 
 	@Override
-	public Object caseInstStore(InstStore store) {
+	public List<Component> caseInstStore(InstStore store) {
 		Var targetVar = store.getTarget().getVariable();
 
 		// At this moment the load should have only one index
@@ -491,15 +522,22 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 				IrFactory.eINSTANCE.createTypeInt(32), "index" + listIndexes);
 		listIndexes++;
 		currentComponent = new CastOp(32, isSigned);
-		PortUtil.mapInDataPorts(
-				new ArrayList<Var>(Arrays.asList(storeIndexVar)),
-				currentComponent, componentPortDependency);
+
+		Map<Var, Integer> ioVars = new HashMap<Var, Integer>();
+		ioVars.put(storeIndexVar, 0);
+
+		PortUtil.mapInDataPorts(currentComponent, ioVars, portDependency,
+				portGroupDependency);
 		Var castedIndexVar = procedure.newTempLocalVariable(
 				IrFactory.eINSTANCE.createTypeInt(32), "casted_" + castIndex
 						+ "_" + storeIndexVar.getIndexedName());
-		PortUtil.mapOutDataPorts(currentComponent, castedIndexVar, 0,
-				componentBusDependency, componentDoneBusDependency);
-		currentListComponent.add(currentComponent);
+
+		ioVars = new HashMap<Var, Integer>();
+		ioVars.put(castedIndexVar, 0);
+
+		PortUtil.mapOutDataPorts(currentComponent, ioVars, busDependency,
+				doneBusDependency);
+		componentList.add(currentComponent);
 		castIndex++;
 		// add the assign instruction for each index
 		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
@@ -507,31 +545,16 @@ public class InstructionVisitor extends AbstractIrVisitor<Object> {
 		doSwitch(assign);
 
 		currentComponent = block;
-		PortUtil.mapInDataPorts(
-				new ArrayList<Var>(Arrays.asList(indexVar, valueVar)),
-				currentComponent, componentPortDependency);
-		PortUtil.mapOutControlPort(currentComponent, 0,
-				componentDoneBusDependency);
-		currentListComponent.add(currentComponent);
+		ioVars = new HashMap<Var, Integer>();
+		ioVars.put(indexVar, 0);
+		ioVars.put(valueVar, 0);
+
+		PortUtil.mapInDataPorts(currentComponent, ioVars, portDependency,
+				portGroupDependency);
+		PortUtil.mapOutControlPort(currentComponent, 0, doneBusDependency);
+		componentList.add(currentComponent);
 
 		return null;
-	}
-
-	@Override
-	public Object caseVar(Var var) {
-		if (var.isGlobal()) {
-			stateVars.put(DesignUtil.makeLogicalValue(var), var);
-		}
-		return null;
-	}
-
-	private Map<Var, List<Var>> groupZeroOutput(List<Var> vars) {
-		Map<Var, List<Var>> outputs = new HashMap<Var, List<Var>>();
-		for (Var var : vars) {
-			List<Var> emptyList = Collections.<Var> emptyList();
-			outputs.put(var, emptyList);
-		}
-		return outputs;
 	}
 
 }

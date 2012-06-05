@@ -54,10 +54,10 @@ import net.sf.orcc.ir.Var;
 public class ResourceCache {
 
 	/** Map of BlockIf and a List of Decision, Then, Else Input and the Phi Vars **/
-	private final Map<BlockIf, List<List<Var>>> branchIfInput = new HashMap<BlockIf, List<List<Var>>>();
+	private final Map<BlockIf, List<Map<Var, Integer>>> branchIfInput = new HashMap<BlockIf, List<Map<Var, Integer>>>();
 
 	/** Map of BlockIf and a List of Then and Else Block outputs **/
-	private final Map<BlockIf, List<List<Var>>> branchIfOutput = new HashMap<BlockIf, List<List<Var>>>();
+	private final Map<BlockIf, List<Map<Var, Integer>>> branchIfOutput = new HashMap<BlockIf, List<Map<Var, Integer>>>();
 
 	/** Map of BlockIf and its Map of Target Var and its associated Values Var **/
 	private final Map<BlockIf, Map<Var, List<Var>>> branchPhi = new HashMap<BlockIf, Map<Var, List<Var>>>();
@@ -72,22 +72,32 @@ public class ResourceCache {
 	}
 
 	public void addBranchDecisionInput(BlockIf blockIf, Var var) {
-		List<Var> vars = new ArrayList<Var>();
-		vars.add(var);
-		List<List<Var>> listOfVars = new ArrayList<List<Var>>();
+		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		vars.put(var, 0);
+
+		List<Map<Var, Integer>> listOfVars = new ArrayList<Map<Var, Integer>>();
 		listOfVars.add(0, vars);
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
-	public void addBranchElseInput(BlockIf blockIf, List<Var> var) {
-		List<List<Var>> listOfVars = branchIfInput.get(blockIf);
-		listOfVars.add(2, var);
+	public void addBranchElseInput(BlockIf blockIf, List<Var> elseVars) {
+		List<Map<Var, Integer>> listOfVars = branchIfInput.get(blockIf);
+		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		for (Var var : elseVars) {
+			vars.put(var, 0);
+		}
+		listOfVars.add(2, vars);
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
-	public void addBranchElseOutput(BlockIf blockIf, List<Var> var) {
-		List<List<Var>> listOfVars = branchIfOutput.get(blockIf);
-		listOfVars.add(1, var);
+	public void addBranchElseOutput(BlockIf blockIf, List<Var> elseVars) {
+		List<Map<Var, Integer>> listOfVars = branchIfOutput.get(blockIf);
+		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		for (Var var : elseVars) {
+			vars.put(var, 0);
+		}
+
+		listOfVars.add(1, vars);
 		branchIfOutput.put(blockIf, listOfVars);
 	}
 
@@ -95,15 +105,26 @@ public class ResourceCache {
 		branchPhi.put(blockIf, phiMapVar);
 	}
 
-	public void addBranchThenInput(BlockIf blockIf, List<Var> var) {
-		List<List<Var>> listOfVars = branchIfInput.get(blockIf);
-		listOfVars.add(1, var);
+	public void addBranchThenInput(BlockIf blockIf, List<Var> thenVars) {
+		List<Map<Var, Integer>> listOfVars = branchIfInput.get(blockIf);
+
+		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		for (Var var : thenVars) {
+			vars.put(var, 0);
+		}
+
+		listOfVars.add(1, vars);
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
-	public void addBranchThenOutput(BlockIf blockIf, List<Var> var) {
-		List<List<Var>> listOfVars = new ArrayList<List<Var>>();
-		listOfVars.add(0, var);
+	public void addBranchThenOutput(BlockIf blockIf, List<Var> thenVars) {
+		List<Map<Var, Integer>> listOfVars = new ArrayList<Map<Var, Integer>>();
+		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		for (Var var : thenVars) {
+			vars.put(var, 0);
+		}
+
+		listOfVars.add(0, vars);
 		branchIfOutput.put(blockIf, listOfVars);
 	}
 
@@ -119,28 +140,28 @@ public class ResourceCache {
 		taskCalls.put(instCall, taskCall);
 	}
 
-	public Var getBranchDecision(BlockIf blockIf) {
+	public Map<Var, Integer> getBranchDecision(BlockIf blockIf) {
 		// The first value of the first value is always the branch decision Var
-		return branchIfInput.get(blockIf).get(0).get(0);
+		return branchIfInput.get(blockIf).get(0);
 	}
 
-	public List<Var> getBranchElseOutputVars(BlockIf blockIf) {
+	public Map<Var, Integer> getBranchElseOutputVars(BlockIf blockIf) {
 		if (!blockIf.getElseBlocks().isEmpty()) {
 			return branchIfOutput.get(blockIf).get(1);
 		} else {
-			return Collections.<Var> emptyList();
+			return Collections.emptyMap();
 		}
 	}
 
-	public List<Var> getBranchElseVars(BlockIf blockIf) {
+	public Map<Var, Integer> getBranchElseVars(BlockIf blockIf) {
 		if (!blockIf.getElseBlocks().isEmpty()) {
 			if (branchIfInput.get(blockIf).get(2).isEmpty()) {
-				return Collections.emptyList();
+				return Collections.emptyMap();
 			} else {
 				return branchIfInput.get(blockIf).get(2);
 			}
 		} else {
-			return Collections.<Var> emptyList();
+			return Collections.emptyMap();
 		}
 	}
 
@@ -148,31 +169,32 @@ public class ResourceCache {
 		return branchPhi.get(blockIf);
 	}
 
-	public List<Var> getBranchThenOutputVars(BlockIf blockIf) {
+	public Map<Var, Integer> getBranchThenOutputVars(BlockIf blockIf) {
 		return branchIfOutput.get(blockIf).get(0);
 	}
 
-	public List<Var> getBranchThenVars(BlockIf blockIf) {
+	public Map<Var, Integer> getBranchThenVars(BlockIf blockIf) {
 		return branchIfInput.get(blockIf).get(1);
 	}
 
-	public List<Var> getBranchInputs(BlockIf blockIf) {
-		List<Var> inputs = new ArrayList<Var>();
-		inputs.add(getBranchDecision(blockIf));
-		inputs.addAll(getBranchThenVars(blockIf));
-		inputs.addAll(getBranchElseVars(blockIf));
+	public Map<Var, Integer> getBranchInputs(BlockIf blockIf) {
+		Map<Var, Integer> inputs = new HashMap<Var, Integer>();
+		inputs.putAll(getBranchDecision(blockIf));
+		inputs.putAll(getBranchThenVars(blockIf));
+		inputs.putAll(getBranchElseVars(blockIf));
 
-		List<Var> outputs = new ArrayList<Var>();
-		outputs.addAll(getBranchThenOutputVars(blockIf));
-		outputs.addAll(getBranchElseOutputVars(blockIf));
+		Map<Var, Integer> outputs = new HashMap<Var, Integer>();
+		outputs.putAll(getBranchThenOutputVars(blockIf));
+		outputs.putAll(getBranchElseOutputVars(blockIf));
 
 		// Inputs on join node dependency iff the then and else output does not
 		// contain the phi value
 		for (Var var : branchPhi.get(blockIf).keySet()) {
 			List<Var> phiDep = branchPhi.get(blockIf).get(var);
 			for (Var phiVar : phiDep) {
-				if (!inputs.contains(phiVar) && !outputs.contains(phiVar)) {
-					inputs.add(phiVar);
+				if (!inputs.keySet().contains(phiVar)
+						&& !outputs.keySet().contains(phiVar)) {
+					inputs.put(phiVar, 0);
 				}
 			}
 		}

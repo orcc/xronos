@@ -29,17 +29,24 @@
 
 package net.sf.orc2hdl.design.util;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
+import net.sf.openforge.frontend.slim.builder.ActionIOHandler.FifoIOHandler;
+import net.sf.openforge.frontend.slim.builder.ActionIOHandler.NativeIOHandler;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Port;
+import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orcc.df.Action;
+import net.sf.orcc.df.Actor;
 import net.sf.orcc.ir.Var;
+
+import org.eclipse.emf.common.util.EList;
 
 /**
  * This class contains several methods for the Design Ports
@@ -49,53 +56,130 @@ import net.sf.orcc.ir.Var;
  */
 
 public class PortUtil {
+	/**
+	 * This method takes a List of an {@link Actor} I/O ports and it creates the
+	 * associated {@link Design} {@link FifoIOHandler}
+	 * 
+	 * @param design
+	 *            the design
+	 * @param ports
+	 *            list of the actor port
+	 * @param direction
+	 *            a string which indicates the direction
+	 * @param resources
+	 *            the resource cache
+	 */
+	public static void createDesignPorts(Design design,
+			EList<net.sf.orcc.df.Port> ports, String direction,
+			ResourceCache resources) {
+		for (net.sf.orcc.df.Port port : ports) {
+			if (port.isNative()) {
+				NativeIOHandler ioHandler = new ActionIOHandler.NativeIOHandler(
+						direction, port.getName(), Integer.toString(port
+								.getType().getSizeInBits()));
+				ioHandler.build(design);
+				resources.addIOHandler(port, ioHandler);
+			} else {
+				FifoIOHandler ioHandler = new ActionIOHandler.FifoIOHandler(
+						direction, port.getName(), Integer.toString(port
+								.getType().getSizeInBits()));
+				ioHandler.build(design);
+				resources.addIOHandler(port, ioHandler);
+			}
+		}
+	}
 
-	public static void mapInDataPorts(List<Var> inVars, Component component,
-			Map<Component, Map<Port, Var>> portDependency) {
+	public static Component createPinReadComponent(Action action,
+			net.sf.orcc.df.Port port, ResourceCache resources,
+			Map<Bus, Var> busDependency, Map<Bus, Integer> doneBusDependency) {
+		// Get the IOHandler of the actors port
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+
+		// Create the pinRead component
+		Component pinRead = ioHandler.getReadAccess();
+
+		// Get the Pin Read variable
+		Var pinReaVar = action.getInputPattern().getPortToVarMap().get(port);
+
+		// Map out Data Ports
+		Map<Var, Integer> outVars = new HashMap<Var, Integer>();
+		outVars.put(pinReaVar, 0);
+		mapOutDataPorts(pinRead, outVars, busDependency, doneBusDependency);
+
+		return pinRead;
+	}
+
+	public static Component createPinWriteComponent(Action action,
+			net.sf.orcc.df.Port port, ResourceCache resources,
+			Map<Port, Var> portDependency,
+			Map<Port, Integer> groupPortDependency,
+			Map<Bus, Integer> doneBusDependency) {
+		// Get the IOHandler of the actors port
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+
+		// Create the pinWrite component
+		Component pinWrite = ioHandler.getWriteAccess();
+
+		// Get the Pin Write variable
+		Var pinWriteVar = action.getOutputPattern().getPortToVarMap().get(port);
+
+		// Map in Data Ports
+		Map<Var, Integer> inVars = new HashMap<Var, Integer>();
+		inVars.put(pinWriteVar, 0);
+		mapInDataPorts(pinWrite, inVars, portDependency, groupPortDependency);
+
+		// Map out Control Port
+		mapOutControlPort(pinWrite, 0, doneBusDependency);
+
+		return pinWrite;
+	}
+
+	public static void mapInDataPorts(Component component,
+			Map<Var, Integer> inVars, Map<Port, Var> portDependency,
+			Map<Port, Integer> portGroupDependency) {
+
 		Iterator<Port> portIter = component.getDataPorts().iterator();
-		Map<Port, Var> portDep = new HashMap<Port, Var>();
-		for (Var var : inVars) {
+
+		for (Var var : inVars.keySet()) {
 			Port dataPort = portIter.next();
+			Integer groupPort = inVars.get(var);
 			dataPort.setIDLogical(var.getIndexedName());
 			dataPort.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
-			portDep.put(dataPort, var);
+			// Put Input Port dependency
+			portDependency.put(dataPort, var);
+			portGroupDependency.put(dataPort, groupPort);
 		}
-
-		// Put Input Port dependency
-		portDependency.put(component, portDep);
 	}
 
 	public static void mapOutControlPort(Component component, Integer group,
-			Map<Component, Map<Bus, Integer>> doneBusDependency) {
+			Map<Bus, Integer> doneBusDependency) {
 		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
-		Map<Bus, Integer> busGroup = new HashMap<Bus, Integer>();
-		busGroup.put(doneBus, group);
-		doneBusDependency.put(component, busGroup);
+		doneBusDependency.put(doneBus, group);
 	}
 
-	public static void mapOutDataPorts(Component component, Var var,
-			Integer group, Map<Component, Map<Bus, List<Var>>> busDependency,
-			Map<Component, Map<Bus, Integer>> doneBusDependency) {
+	public static void mapOutDataPorts(Component component,
+			Map<Var, Integer> outVars, Map<Bus, Var> busDependency,
+			Map<Bus, Integer> doneBusDependency) {
 
-		// Get the component dataBus
-		Bus dataBus = component.getExit(Exit.DONE).getDataBuses().get(group);
+		for (Var var : outVars.keySet()) {
+			Integer group = outVars.get(var);
+			// Get the component dataBus
+			Bus dataBus = component.getExit(Exit.DONE).getDataBuses()
+					.get(group);
 
-		Map<Bus, List<Var>> busDep = new HashMap<Bus, List<Var>>();
+			// Set the bus value
+			if (dataBus.getValue() == null) {
+				dataBus.setSize(var.getType().getSizeInBits(), var.getType()
+						.isInt() || var.getType().isBool());
+			}
+			// Name the dataBus
+			dataBus.setIDLogical(var.getIndexedName());
+			busDependency.put(dataBus, var);
 
-		// Set the bus value
-		if (dataBus.getValue() == null) {
-			dataBus.setSize(var.getType().getSizeInBits(), var.getType()
-					.isInt() || var.getType().isBool());
+			// Map Out done Bus
+			mapOutControlPort(component, group, doneBusDependency);
 		}
-		// Name the dataBus
-		dataBus.setIDLogical(var.getIndexedName());
-
-		busDep.put(dataBus, Arrays.asList(var));
-		busDependency.put(component, busDep);
-
-		// Map Out done Bus
-		mapOutControlPort(component, group, doneBusDependency);
 	}
 
 }

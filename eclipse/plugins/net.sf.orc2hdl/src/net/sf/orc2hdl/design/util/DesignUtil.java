@@ -28,10 +28,10 @@
  */
 package net.sf.orc2hdl.design.util;
 
-import java.lang.reflect.Array;
-import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.sf.openforge.frontend.slim.builder.SLIMConstants;
 import net.sf.openforge.lim.Block;
@@ -39,23 +39,23 @@ import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.ControlDependency;
 import net.sf.openforge.lim.DataDependency;
+import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.OffsetMemoryAccess;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.memory.AddressStridePolicy;
-import net.sf.openforge.lim.memory.AddressableUnit;
+import net.sf.openforge.lim.Task;
+import net.sf.openforge.lim.memory.Allocation;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.openforge.lim.memory.LocationConstant;
+import net.sf.openforge.lim.memory.LogicalMemory;
 import net.sf.openforge.lim.memory.LogicalValue;
-import net.sf.openforge.lim.memory.Record;
-import net.sf.openforge.lim.memory.Scalar;
 import net.sf.openforge.lim.op.AddOp;
 import net.sf.openforge.lim.op.CastOp;
-import net.sf.orcc.ir.ExprInt;
-import net.sf.orcc.ir.Type;
-import net.sf.orcc.ir.TypeList;
+import net.sf.openforge.util.naming.ID;
+import net.sf.openforge.util.naming.IDSourceInfo;
+import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orcc.ir.Var;
-import net.sf.orcc.ir.util.ValueUtil;
 
 /**
  * This class contains several methods for building branches, loops and its
@@ -65,122 +65,6 @@ import net.sf.orcc.ir.util.ValueUtil;
  * 
  */
 public class DesignUtil {
-	/**
-	 * Constructs a LogicalValue from a String value given its type
-	 * 
-	 * @param stringValue
-	 *            the numerical value
-	 * @param type
-	 *            the type of the numerical value
-	 * @return
-	 */
-	public static LogicalValue makeLogicalValue(String stringValue, Type type) {
-		LogicalValue logicalValue = null;
-		final BigInteger value;
-		Integer bitSize = type.getSizeInBits();
-		if (stringValue.trim().toUpperCase().startsWith("0X")) {
-			value = new BigInteger(stringValue.trim().substring(2), 16);
-		} else {
-			value = new BigInteger(stringValue);
-		}
-		AddressStridePolicy addrPolicy = new AddressStridePolicy(bitSize);
-		logicalValue = new Scalar(new AddressableUnit(value), addrPolicy);
-		return logicalValue;
-	}
-
-	/**
-	 * Constructs a LogicalValue from a Variable
-	 * 
-	 * @param var
-	 *            the variable
-	 * @return
-	 */
-	public static LogicalValue makeLogicalValue(Var var) {
-		LogicalValue logicalValue = null;
-		if (var.getType().isList()) {
-
-			TypeList typeList = (TypeList) var.getType();
-			Type type = typeList.getInnermostType();
-
-			List<Integer> listDimension = typeList.getDimensions();
-			Object varValue = var.getValue();
-			logicalValue = makeLogicalValueObject(varValue, listDimension, type);
-		} else {
-			Type type = var.getType();
-			if (var.isInitialized()) {
-				String valueString = Integer.toString(((ExprInt) var
-						.getInitialValue()).getIntValue());
-				logicalValue = makeLogicalValue(valueString, type);
-			} else {
-				logicalValue = makeLogicalValue("0", type);
-			}
-		}
-
-		return logicalValue;
-	}
-
-	/**
-	 * Constructs a LogicalValue from a uni or multi-dim Object Value
-	 * 
-	 * @param obj
-	 *            the object value
-	 * @param dimension
-	 *            the dimension of the object value
-	 * @param type
-	 *            the type of the object value
-	 * @return
-	 */
-	public static LogicalValue makeLogicalValueObject(Object obj,
-			List<Integer> dimension, Type type) {
-		LogicalValue logicalValue = null;
-
-		if (dimension.size() > 1) {
-			List<LogicalValue> subElements = new ArrayList<LogicalValue>(
-					dimension.get(0));
-			List<Integer> newListDimension = dimension;
-			Integer firstDim = dimension.get(0);
-			newListDimension.remove(0);
-			for (int i = 0; i < firstDim; i++) {
-				subElements.add(makeLogicalValueObject(Array.get(obj, i),
-						newListDimension, type));
-			}
-
-			logicalValue = new Record(subElements);
-		} else {
-			if (dimension.get(0).equals(1)) {
-				BigInteger value = BigInteger.valueOf(0);
-				if (type.isBool()) {
-					int boolValue = ((Boolean) ValueUtil.get(type, obj, 0)) ? 1
-							: 0;
-					value = BigInteger.valueOf(boolValue);
-				} else {
-					value = (BigInteger) ValueUtil.get(type, obj, 0);
-				}
-				String valueString = value.toString();
-				logicalValue = makeLogicalValue(valueString, type);
-			} else {
-				List<LogicalValue> subElements = new ArrayList<LogicalValue>(
-						dimension.get(0));
-				for (int i = 0; i < dimension.get(0); i++) {
-					BigInteger value = BigInteger.valueOf(0);
-					if (type.isBool()) {
-						int boolValue = ((Boolean) ValueUtil.get(type, obj, i)) ? 1
-								: 0;
-						value = BigInteger.valueOf(boolValue);
-					} else {
-						value = (BigInteger) ValueUtil.get(type, obj, i);
-					}
-
-					String valueString = value.toString();
-					subElements.add(makeLogicalValue(valueString, type));
-				}
-				logicalValue = new Record(subElements);
-			}
-
-		}
-
-		return logicalValue;
-	}
 
 	/**
 	 * This method builds the necessary AddressBlock control of a Memory access
@@ -244,16 +128,108 @@ public class DesignUtil {
 		return block;
 	}
 
+	public static Call createCall(String name, Module module) {
+		Block procedureBlock = (Block) module;
+		net.sf.openforge.lim.Procedure proc = new net.sf.openforge.lim.Procedure(
+				procedureBlock);
+		Call call = proc.makeCall();
+		proc.setIDSourceInfo(deriveIDSourceInfo(name));
+		return call;
+	}
+
+	public static Task createTask(String taskName, Module taskModule,
+			Boolean requiresKicker) {
+		Task task = null;
+
+		// create Call
+		Call call = createCall(taskName, taskModule);
+		// call.setIDLogical(taskName);
+		topLevelInitialization(call);
+		// Create task
+		task = new Task(call);
+		task.setKickerRequired(requiresKicker);
+		task.setSourceName(taskName);
+		return task;
+	}
+
+	/**
+	 * This method allocates each LogicalValue (State Variable) in a memory with
+	 * a matching address stride. This provides consistency in the memories and
+	 * allows for state vars to be co-located if area is of concern.
+	 * 
+	 * @param design
+	 * @param stateVars
+	 * @param resources
+	 */
+	public static void designAllocateMemory(Design design,
+			Map<LogicalValue, Var> stateVars, Integer maxAddressWidth,
+			ResourceCache resources) {
+		Map<Integer, LogicalMemory> memories = new HashMap<Integer, LogicalMemory>();
+		for (LogicalValue lvalue : stateVars.keySet()) {
+			int stride = lvalue.getAddressStridePolicy().getStride();
+			LogicalMemory mem = memories.get(stride);
+			if (mem == null) {
+				// 32 should be more than enough for max address
+				// width
+				mem = new LogicalMemory(maxAddressWidth);
+				mem.createLogicalMemoryPort();
+				design.addMemory(mem);
+			}
+			// Create a 'location' for the stateVar that is
+			// appropriate for its type/size.
+			Allocation location = mem.allocate(lvalue);
+			Var stateVar = stateVars.get(lvalue);
+			setAttributes(stateVar, location);
+			resources.addLocation(stateVar, location);
+		}
+	}
+
+	public static IDSourceInfo deriveIDSourceInfo(String name) {
+		String fileName = null;
+		String packageName = null;
+		String className = name;
+		String methodName = name;
+		String signature = null;
+		int line = 0;
+		int cpos = 0;
+		return new IDSourceInfo(fileName, packageName, className, methodName,
+				signature, line, cpos);
+	}
+
 	/**
 	 * This method sets the sizes of the clock,reset and go ports of a call
 	 * 
 	 * @param call
 	 *            the call
 	 */
-	public void topLevelInitialization(Call call) {
+	public static void topLevelInitialization(Call call) {
 		call.getClockPort().setSize(1, false);
 		call.getResetPort().setSize(1, false);
 		call.getGoPort().setSize(1, false);
+	}
+
+	public static void setAttributes(String tag, Component comp) {
+		setAttributes(tag, comp, false);
+	}
+
+	public static void setAttributes(String tag, Component comp,
+			Boolean Removable) {
+		comp.setSourceName(tag);
+		if (!Removable) {
+			comp.setNonRemovable();
+		}
+	}
+
+	/**
+	 * Set the name of an LIM component by the name of an Orcc variable
+	 * 
+	 * @param var
+	 *            a Orcc IR variable element
+	 * @param comp
+	 *            a LIM ID component
+	 */
+	public static void setAttributes(Var var, ID comp) {
+		comp.setSourceName(var.getName());
 	}
 
 }

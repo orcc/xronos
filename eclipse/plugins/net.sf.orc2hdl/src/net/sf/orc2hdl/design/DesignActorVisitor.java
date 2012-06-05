@@ -111,7 +111,6 @@ import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.util.DfVisitor;
-import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprBinary;
@@ -154,59 +153,45 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			super(true);
 		}
 
-		@Override
-		public Object caseBlockIf(BlockIf blockIf) {
-			List<Component> oldComponents = new ArrayList<Component>(
-					currentListComponent);
-			// Create the decision
-			Var condVar = resources.getBranchDecision(blockIf);
-			String condName = "decision_" + currentAction.getName() + "_"
-					+ condVar.getIndexedName();
-			Decision decision = buildDecision(condVar, condName);
-
-			// Visit the then block
-			currentListComponent = new ArrayList<Component>();
-			doSwitch(blockIf.getThenBlocks());
-			// Get the then Input Vars
-			List<Var> thenInputs = resources.getBranchThenVars(blockIf);
-			Map<Var, List<Var>> thenOutputs = groupZeroOutput(resources
-					.getBranchThenOutputVars(blockIf));
-			Block thenBlock = (Block) buildModule(currentListComponent,
-					thenInputs, thenOutputs, "thenBlock", Exit.DONE, 0);
-			thenBlock.setIDLogical("thenBlock");
-			// Visit the else block
-			Block elseBlock = null;
-
-			if (!blockIf.getElseBlocks().isEmpty()) {
-				currentListComponent = new ArrayList<Component>();
-				doSwitch(blockIf.getElseBlocks());
-
-				List<Var> elseInputs = resources.getBranchElseVars(blockIf);
-				Map<Var, List<Var>> elseOutputs = groupZeroOutput(resources
-						.getBranchElseOutputVars(blockIf));
-				elseBlock = (Block) buildModule(currentListComponent,
-						elseInputs, elseOutputs, "elseBlock", Exit.DONE, 1);
-				thenBlock.setIDLogical("elseBlock");
-			} else {
-				elseBlock = (Block) buildModule(
-						Collections.<Component> emptyList(),
-						Collections.<Var> emptyList(),
-						Collections.<Var, List<Var>> emptyMap(), "elseBlock",
-						Exit.DONE, 1);
-				elseBlock.setIDLogical("elseBlock");
-			}
-			// Get All input Vars
-			List<Var> ifInputVars = resources.getBranchInputs(blockIf);
-
-			// Get Phi target Vars, aka branchIf Outputs
-			Map<Var, List<Var>> phiOuts = resources.getBranchPhiVars(blockIf);
-			currentComponent = buildBranch(decision, thenBlock, elseBlock,
-					ifInputVars, phiOuts, "ifBLOCK", Exit.DONE);
-			currentListComponent = new ArrayList<Component>();
-			currentListComponent.addAll(oldComponents);
-			currentListComponent.add(currentComponent);
-			return null;
-		}
+		/*
+		 * @Override public Object caseBlockIf(BlockIf blockIf) {
+		 * List<Component> oldComponents = new ArrayList<Component>(
+		 * currentListComponent); // Create the decision Var condVar =
+		 * resources.getBranchDecision(blockIf); String condName = "decision_" +
+		 * currentAction.getName() + "_" + condVar.getIndexedName(); Decision
+		 * decision = buildDecision(condVar, condName);
+		 * 
+		 * // Visit the then block currentListComponent = new
+		 * ArrayList<Component>(); doSwitch(blockIf.getThenBlocks()); // Get the
+		 * then Input Vars List<Var> thenInputs =
+		 * resources.getBranchThenVars(blockIf); Map<Var, List<Var>> thenOutputs
+		 * = groupZeroOutput(resources .getBranchThenOutputVars(blockIf)); Block
+		 * thenBlock = (Block) buildModule(currentListComponent, thenInputs,
+		 * thenOutputs, "thenBlock", Exit.DONE, 0);
+		 * thenBlock.setIDLogical("thenBlock"); // Visit the else block Block
+		 * elseBlock = null;
+		 * 
+		 * if (!blockIf.getElseBlocks().isEmpty()) { currentListComponent = new
+		 * ArrayList<Component>(); doSwitch(blockIf.getElseBlocks());
+		 * 
+		 * List<Var> elseInputs = resources.getBranchElseVars(blockIf); Map<Var,
+		 * List<Var>> elseOutputs = groupZeroOutput(resources
+		 * .getBranchElseOutputVars(blockIf)); elseBlock = (Block)
+		 * buildModule(currentListComponent, elseInputs, elseOutputs,
+		 * "elseBlock", Exit.DONE, 1); thenBlock.setIDLogical("elseBlock"); }
+		 * else { elseBlock = (Block) buildModule( Collections.<Component>
+		 * emptyList(), Collections.<Var> emptyList(), Collections.<Var,
+		 * List<Var>> emptyMap(), "elseBlock", Exit.DONE, 1);
+		 * elseBlock.setIDLogical("elseBlock"); } // Get All input Vars
+		 * List<Var> ifInputVars = resources.getBranchInputs(blockIf);
+		 * 
+		 * // Get Phi target Vars, aka branchIf Outputs Map<Var, List<Var>>
+		 * phiOuts = resources.getBranchPhiVars(blockIf); currentComponent =
+		 * buildBranch(decision, thenBlock, elseBlock, ifInputVars, phiOuts,
+		 * "ifBLOCK", Exit.DONE); currentListComponent = new
+		 * ArrayList<Component>(); currentListComponent.addAll(oldComponents);
+		 * currentListComponent.add(currentComponent); return null; }
+		 */
 
 		@Override
 		public Object caseBlockWhile(BlockWhile blockWhile) {
@@ -571,14 +556,12 @@ public class DesignActorVisitor extends DfVisitor<Object> {
 			return block;
 		}
 
-		private Map<Var, List<Var>> groupZeroOutput(List<Var> vars) {
-			Map<Var, List<Var>> outputs = new HashMap<Var, List<Var>>();
-			for (Var var : vars) {
-				List<Var> emptyList = Collections.<Var> emptyList();
-				outputs.put(var, emptyList);
-			}
-			return outputs;
-		}
+		/*
+		 * private Map<Var, List<Var>> groupZeroOutput(List<Var> vars) {
+		 * Map<Var, List<Var>> outputs = new HashMap<Var, List<Var>>(); for (Var
+		 * var : vars) { List<Var> emptyList = Collections.<Var> emptyList();
+		 * outputs.put(var, emptyList); } return outputs; }
+		 */
 
 	}
 
