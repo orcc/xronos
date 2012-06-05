@@ -40,8 +40,8 @@ public interface CloneListener {
 	 * 
 	 * @param cloneMap
 	 *            a map of original objects to cloned objects; these include the
-	 *            cloned {@link Component Components} and their {@link Entry
-	 *            Entries}
+	 *            cloned {@link Component Components} and their
+	 *            {@link Component Components}
 	 */
-	public void setCloneMap(Map<Component, Entry> cloneMap);
+	public void setCloneMap(Map<Component, Component> cloneMap);
 }

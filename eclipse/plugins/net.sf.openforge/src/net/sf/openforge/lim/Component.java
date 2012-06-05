@@ -1283,7 +1283,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	/**
 	 * Calls {@link CloneListener#setCloneMap(Map)} on all listeners.
 	 */
-	protected void notifyCloneListeners(Map cloneMap) {
+	protected void notifyCloneListeners(Map<Component, Component> cloneMap) {
 		for (Iterator<CloneListener> iter = getCloneListeners().iterator(); iter
 				.hasNext();) {
 			iter.next().setCloneMap(cloneMap);

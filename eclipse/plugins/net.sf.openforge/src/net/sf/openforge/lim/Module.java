@@ -609,7 +609,7 @@ public abstract class Module extends Component implements Cloneable {
 		}
 
 		/* Map of original Component to cloned Component. */
-		final Map cloneMap = new HashMap();
+		final Map<Component, Component> cloneMap = new HashMap<Component, Component>();
 		cloneMap.put(this, clone);
 
 		/*
@@ -642,7 +642,7 @@ public abstract class Module extends Component implements Cloneable {
 		 */
 		clone.feedbackPoints = Collections.emptySet();
 		for (Component component : feedbackPoints) {
-			clone.addFeedbackPoint((Component) cloneMap.get(component));
+			clone.addFeedbackPoint(cloneMap.get(component));
 		}
 
 		/*
@@ -693,10 +693,10 @@ public abstract class Module extends Component implements Cloneable {
 	 * @param clone
 	 *            the clone of this module
 	 * @param cloneMap
-	 *            a map of each original {@link Component} and {@link Entry} to
-	 *            to its clone
+	 *            a map of each original {@link Component} and {@link Component}
+	 *            to to its clone
 	 */
-	protected void cloneNotify(Module clone, Map<Component, Entry> cloneMap) {
+	protected void cloneNotify(Module clone, Map<Component, Component> cloneMap) {
 	}
 
 	/**
@@ -710,10 +710,10 @@ public abstract class Module extends Component implements Cloneable {
 	 *            method will add the mapping from original entries to cloned
 	 *            entries
 	 */
-	private void cloneConnections(Module clone, Map cloneMap) {
+	private void cloneConnections(Module clone,
+			Map<Component, Component> cloneMap) {
 		for (Component component : components) {
-			final Component componentClone = (Component) cloneMap
-					.get(component);
+			final Component componentClone = cloneMap.get(component);
 
 			/*
 			 * Connect Entries and their Dependencies.
@@ -724,7 +724,7 @@ public abstract class Module extends Component implements Cloneable {
 						: getExitClone(drivingExit, cloneMap));
 				final Entry entryClone = componentClone
 						.makeEntry(drivingExitClone);
-				cloneMap.put(entry, entryClone);
+				// cloneMap.put(entry, entryClone);
 
 				for (Port port : entry.getPorts()) {
 					final Port portClone = getPortClone(port, cloneMap);
@@ -763,9 +763,10 @@ public abstract class Module extends Component implements Cloneable {
 	 * @param cloneMap
 	 *            a map of original components to cloned components
 	 */
-	protected static Port getPortClone(Port port, Map cloneMap) {
+	protected static Port getPortClone(Port port,
+			Map<Component, Component> cloneMap) {
 		final Component component = port.getOwner();
-		final Component componentClone = (Component) cloneMap.get(component);
+		final Component componentClone = cloneMap.get(component);
 		if (port == component.getClockPort()) {
 			return componentClone.getClockPort();
 		} else if (port == component.getResetPort()) {
