@@ -625,7 +625,7 @@ public class MemoryConnectionVisitor extends DefaultVisitor {
 	 * MemAccess is a class which ties together all the ports and buses related
 	 * to a single access of a given resource.
 	 */
-	private static abstract class MemAccess {
+	public static abstract class MemAccess {
 		private List<Port> ports = new ArrayList<Port>(7);
 		private List<Bus> buses = new ArrayList<Bus>(7);
 		private boolean isRead = false;

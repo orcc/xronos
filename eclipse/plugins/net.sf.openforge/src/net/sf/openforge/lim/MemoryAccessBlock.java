@@ -157,7 +157,8 @@ public abstract class MemoryAccessBlock extends Block implements LValue {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		MemoryAccessBlock clone = (MemoryAccessBlock) moduleClone;
 		clone.memoryAccess = (MemoryAccess) cloneMap.get(memoryAccess);

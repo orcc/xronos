@@ -35,6 +35,7 @@ import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Value;
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.schedule.GlobalConnector;
 
 /**
  * SimpleMemoryReferee is an implementation of the memory referee in which the
@@ -51,8 +52,9 @@ import net.sf.openforge.lim.op.SimpleConstant;
  */
 public class SimpleMemoryReferee extends MemoryReferee {
 
-	public SimpleMemoryReferee(Arbitratable resource, List readList,
-			List writeList) {
+	public SimpleMemoryReferee(Arbitratable resource,
+			List<GlobalConnector.Connection> readList,
+			List<GlobalConnector.Connection> writeList) {
 		super(resource);
 		assert readList.size() == writeList.size() : "readList must match writeList size";
 

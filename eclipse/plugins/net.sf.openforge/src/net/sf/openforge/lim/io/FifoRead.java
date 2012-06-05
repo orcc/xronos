@@ -23,7 +23,6 @@ package net.sf.openforge.lim.io;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -322,7 +321,7 @@ public class FifoRead extends FifoAccess implements Visitable {
 	}
 
 	@Override
-	protected void cloneNotify(Module clone, Map cloneMap) {
+	protected void cloneNotify(Module clone, Map<Component, Component> cloneMap) {
 		super.cloneNotify(clone, cloneMap);
 		// Re-set the feedback points to point to the correct register
 		// in the clone instead of the register in the original IFF it
@@ -330,10 +329,10 @@ public class FifoRead extends FifoAccess implements Visitable {
 		if (feedbackPoints.isEmpty()) {
 			((FifoRead) clone).feedbackPoints = Collections.emptySet();
 		} else {
-			Set cloneSet = new HashSet();
+			Set<Reg> cloneSet = new HashSet<Reg>();
 			((FifoRead) clone).feedbackPoints = cloneSet;
-			for (Iterator iter = feedbackPoints.iterator(); iter.hasNext();)
-				cloneSet.add(cloneMap.get(iter.next()));
+			for (Reg reg : feedbackPoints)
+				cloneSet.add((Reg) cloneMap.get(reg));
 			assert !cloneSet.contains(null);
 		}
 

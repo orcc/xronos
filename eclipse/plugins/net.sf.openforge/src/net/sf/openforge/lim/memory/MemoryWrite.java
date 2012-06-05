@@ -361,8 +361,8 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 		}
 
 		@Override
-		public Set getFeedbackPoints() {
-			return Collections.singleton(goRegister);
+		public Set<Component> getFeedbackPoints() {
+			return Collections.singleton((Component) goRegister);
 		}
 
 		@Override

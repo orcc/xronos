@@ -30,8 +30,6 @@ package net.sf.openforge.lim.memory;
  * @see {@link LogicalMemory#getAddress (Location location)}
  */
 public interface Location {
-	/** Revision */
-	static final String _RCS_ = "$Rev: 70 $";
 
 	/** A constant to represent any invalid location, e.g. (int *)1234. */
 	public static final Location INVALID = new Location() {

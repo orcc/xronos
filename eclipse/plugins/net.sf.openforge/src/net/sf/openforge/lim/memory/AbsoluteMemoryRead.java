@@ -259,7 +259,8 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		AbsoluteMemoryRead clone = (AbsoluteMemoryRead) moduleClone;
 		clone.resultBus = getBusClone(resultBus, cloneMap);

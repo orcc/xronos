@@ -47,6 +47,7 @@ import net.sf.openforge.lim.op.CastOp;
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.EqualsOp;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.schedule.GlobalConnector;
 import net.sf.openforge.util.naming.ID;
 
 /**
@@ -112,7 +113,9 @@ public class MemoryReferee extends Referee {
 	 */
 	// public MemoryReferee (LogicalMemoryPort memoryPort, List readList, List
 	// writeList)
-	public MemoryReferee(Arbitratable resource, List readList, List writeList) {
+	public MemoryReferee(Arbitratable resource,
+			List<GlobalConnector.Connection> readList,
+			List<GlobalConnector.Connection> writeList) {
 		// super(memoryPort);
 		this(resource);
 		assert readList.size() == writeList.size() : "readList must match writeList size";

@@ -417,12 +417,13 @@ public class Block extends Module {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final Block clone = (Block) moduleClone;
 		clone.sequence = new LinkedList<Component>();
 		for (Component component : sequence) {
-			clone.sequence.add((Component) cloneMap.get(component));
+			clone.sequence.add(cloneMap.get(component));
 		}
 	}
 

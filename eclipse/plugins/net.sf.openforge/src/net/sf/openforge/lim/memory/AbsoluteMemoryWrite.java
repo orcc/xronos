@@ -265,7 +265,8 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		AbsoluteMemoryWrite clone = (AbsoluteMemoryWrite) moduleClone;
 		clone.valuePort = getPortClone(valuePort, cloneMap);
