@@ -51,7 +51,7 @@ public class Block extends Module {
 	private Procedure procedure;
 
 	/**
-	 * Use this for deferred intialization
+	 * Use this for deferred initialization
 	 * 
 	 */
 	public Block(boolean isProcedureBody) {

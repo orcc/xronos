@@ -27,6 +27,7 @@ import java.util.List;
 import net.sf.openforge.lim.memory.MemoryReferee;
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.schedule.GlobalConnector;
 
 /**
  * RegisterReferee is a {@link Referee} which controls access to a
@@ -44,7 +45,9 @@ public class RegisterReferee extends MemoryReferee implements Cloneable {
 	 * @param writers
 	 *            the number of write accesses to the register
 	 */
-	public RegisterReferee(Register register, List readList, List writeList) {
+	public RegisterReferee(Register register,
+			List<GlobalConnector.Connection> readList,
+			List<GlobalConnector.Connection> writeList) {
 		super(register, readList, writeList);
 	}
 

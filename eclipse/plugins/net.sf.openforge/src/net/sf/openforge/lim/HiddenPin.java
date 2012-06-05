@@ -33,7 +33,8 @@ import java.util.Collections;
 public class HiddenPin extends InputPin {
 
 	private Port port;
-	private int width;
+
+	// private int width;
 
 	/**
 	 * 
@@ -56,14 +57,13 @@ public class HiddenPin extends InputPin {
 	 */
 	public HiddenPin(int width, boolean isSigned) {
 		super(width, isSigned);
-		this.width = width;
 		port = makeDataPort();
 		port.setSize(width, isSigned);
 	}
 
 	@Override
-	public Collection getPinBufs() {
-		return Collections.EMPTY_LIST;
+	public Collection<InPinBuf> getPinBufs() {
+		return Collections.emptyList();
 	}
 
 	public Port getPort() {

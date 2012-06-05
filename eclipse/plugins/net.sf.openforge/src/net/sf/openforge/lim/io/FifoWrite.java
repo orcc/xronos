@@ -272,8 +272,8 @@ public class FifoWrite extends FifoAccess implements Visitable {
 	}
 
 	@Override
-	public Set getFeedbackPoints() {
-		Set feedback = new HashSet();
+	public Set<Component> getFeedbackPoints() {
+		Set<Component> feedback = new HashSet<Component>();
 		feedback.addAll(super.getFeedbackPoints());
 		feedback.addAll(feedbackPoints);
 
