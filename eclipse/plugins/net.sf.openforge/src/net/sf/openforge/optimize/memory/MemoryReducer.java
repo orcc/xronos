@@ -182,9 +182,9 @@ public class MemoryReducer implements Optimization {
 
 		// Fix all the Pointers whose target Location resides in the
 		// modified memory.
-		for (Iterator iter = (new ArrayList(mem.getAccessingPointers()))
-				.iterator(); iter.hasNext();) {
-			fixPointer((Pointer) iter.next(), oldBaseToNewBaseMap);
+		for (Iterator<Pointer> iter = (new ArrayList<Pointer>(
+				mem.getAccessingPointers())).iterator(); iter.hasNext();) {
+			fixPointer(iter.next(), oldBaseToNewBaseMap);
 		}
 
 		// Remove original allocation

@@ -301,7 +301,7 @@ public class MemoryBuilder {
 			_memory.ln(_memory.BUILD, "impl " + impl);
 
 			StructuralMemory structMem = new StructuralMemory(bitWidth,
-					numLines, bankWidth, new ArrayList(
+					numLines, bankWidth, new ArrayList<LogicalMemoryPort>(
 							mem.getLogicalMemoryPorts()), name, impl,
 					memoryAddressStridePolicy, mem.getMaxAddressWidth());
 

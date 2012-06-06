@@ -237,8 +237,8 @@ public class ObjectResolver extends DataFlowVisitor {
 	 */
 	public Set<LocationValueSource> getAddressSources(LValue access) {
 		final Set<LocationValueSource> set = addressSourceMap.get(access);
-		return set == null ? Collections.EMPTY_SET : Collections
-				.unmodifiableSet(set);
+		return set == null ? Collections.<LocationValueSource> emptySet()
+				: Collections.unmodifiableSet(set);
 	}
 
 	/**
@@ -412,24 +412,23 @@ public class ObjectResolver extends DataFlowVisitor {
 		final Value leftValue = addOp.getLeftDataPort().getValue();
 		final Value rightValue = addOp.getRightDataPort().getValue();
 
-		final Map leftLocations = toLocationMap(leftValues);
-		final Map rightLocations = toLocationMap(rightValues);
+		final Map<LogicalValue, Location> leftLocations = toLocationMap(leftValues);
+		final Map<LogicalValue, Location> rightLocations = toLocationMap(rightValues);
 
 		if (leftLocations.isEmpty() || rightLocations.isEmpty()) {
-			final Map inputLocations = leftLocations.isEmpty() ? rightLocations
-					: leftLocations;
+			final Map<LogicalValue, Location> inputLocations = leftLocations
+					.isEmpty() ? rightLocations : leftLocations;
 			final Value testValue = leftLocations.isEmpty() ? leftValue
 					: rightValue;
 
 			// Determine if one port is a constant value.
 			final boolean isConst = testValue != null && testValue.isConstant();
 
-			final Set outputValues = new HashSet();
-			for (Iterator iter = inputLocations.entrySet().iterator(); iter
-					.hasNext();) {
-				final Map.Entry entry = (Map.Entry) iter.next();
-				final LogicalValue inputValue = (LogicalValue) entry.getKey();
-				final Location inputLocation = (Location) entry.getValue();
+			final Set<Pointer> outputValues = new HashSet<Pointer>();
+			for (Map.Entry<LogicalValue, Location> entry : inputLocations
+					.entrySet()) {
+				final LogicalValue inputValue = entry.getKey();
+				final Location inputLocation = entry.getValue();
 
 				// If one port is a constant value, then create an
 				// offset location, otherwise, punt and go with the
@@ -473,10 +472,9 @@ public class ObjectResolver extends DataFlowVisitor {
 		final Set addressValues = getNewValues(arrayRead.getBaseAddressPort());
 		addAddressSources(arrayRead, addressValues);
 
-		final Set baseLocations = toLocations(addressValues);
-		final Set readLocations = new HashSet();
-		for (Iterator iter = baseLocations.iterator(); iter.hasNext();) {
-			final Location baseLocation = (Location) iter.next();
+		final Set<Location> baseLocations = toLocations(addressValues);
+		final Set<Location> readLocations = new HashSet<Location>();
+		for (Location baseLocation : baseLocations) {
 			final Location readLocation = baseLocation.createIndex(arrayRead
 					.getAccessLocationCount());
 			defineLocationSource(readLocation, arrayRead);
@@ -485,9 +483,7 @@ public class ObjectResolver extends DataFlowVisitor {
 		addAccessedLocations(arrayRead, readLocations);
 
 		final Set readValues = new HashSet();
-		for (Iterator iter = getAccessedLocations(arrayRead).iterator(); iter
-				.hasNext();) {
-			final Location readLocation = (Location) iter.next();
+		for (Location readLocation : getAccessedLocations(arrayRead)) {
 			final Set values = getValues(readLocation);
 			readValues.addAll(values);
 		}
@@ -511,9 +507,7 @@ public class ObjectResolver extends DataFlowVisitor {
 		addAccessedLocations(arrayWrite, writeLocations);
 
 		final Set writeValues = getNewValues(arrayWrite.getValuePort());
-		for (Iterator iter = getAccessedLocations(arrayWrite).iterator(); iter
-				.hasNext();) {
-			final Location writeLocation = (Location) iter.next();
+		for (Location writeLocation : getAccessedLocations(arrayWrite)) {
 			addValues(writeLocation, writeValues);
 		}
 	}
@@ -523,13 +517,11 @@ public class ObjectResolver extends DataFlowVisitor {
 		final boolean isTopLevel = topLevelComponents.contains(call);
 
 		if (!isTopLevel) {
-			for (Iterator portIter = call.getDataPorts().iterator(); portIter
-					.hasNext();) {
+			for (Port callPort : call.getDataPorts()) {
 				/*
 				 * Explicitly set the locations of each procedure port to be the
 				 * set of locations from the corresponding call port.
 				 */
-				final Port callPort = (Port) portIter.next();
 				final Set values = getValues(callPort);
 				final Bus b = call.getProcedurePort(callPort).getPeer();
 				setValues(b, values);
@@ -539,13 +531,11 @@ public class ObjectResolver extends DataFlowVisitor {
 		super.visit(call);
 
 		if (!isTopLevel) {
-			for (Iterator busIter = call.getBuses().iterator(); busIter
-					.hasNext();) {
+			for (Bus callBus : call.getBuses()) {
 				/*
 				 * Set the locations of each call bus to be the set of locations
 				 * from the corresponding procedure bus.
 				 */
-				final Bus callBus = (Bus) busIter.next();
 				final Set values = getValues(call.getProcedureBus(callBus));
 				setValues(callBus, values);
 			}
@@ -589,10 +579,9 @@ public class ObjectResolver extends DataFlowVisitor {
 		final Set addressValues = getNewValues(heapRead.getBaseAddressPort());
 		addAddressSources(heapRead, addressValues);
 
-		final Set baseLocations = toLocations(addressValues);
-		final Set readLocations = new HashSet();
-		for (Iterator iter = baseLocations.iterator(); iter.hasNext();) {
-			final Location baseLocation = (Location) iter.next();
+		final Set<Location> baseLocations = toLocations(addressValues);
+		final Set<Location> readLocations = new HashSet<Location>();
+		for (Location baseLocation : baseLocations) {
 			final Location readLocation = baseLocation.createOffset(
 					heapRead.getAccessLocationCount(), heapRead.getOffset());
 			defineLocationSource(readLocation, heapRead);
@@ -601,9 +590,7 @@ public class ObjectResolver extends DataFlowVisitor {
 		addAccessedLocations(heapRead, readLocations);
 
 		final Set readValues = new HashSet();
-		for (Iterator iter = getAccessedLocations(heapRead).iterator(); iter
-				.hasNext();) {
-			final Location readLocation = (Location) iter.next();
+		for (Location readLocation : getAccessedLocations(heapRead)) {
 			final Set values = getValues(readLocation);
 			readValues.addAll(values);
 		}
@@ -616,10 +603,9 @@ public class ObjectResolver extends DataFlowVisitor {
 		final Set addressValues = getNewValues(heapWrite.getBaseAddressPort());
 		addAddressSources(heapWrite, addressValues);
 
-		final Set baseLocations = toLocations(addressValues);
-		final Set writeLocations = new HashSet();
-		for (Iterator iter = baseLocations.iterator(); iter.hasNext();) {
-			final Location baseLocation = (Location) iter.next();
+		final Set<Location> baseLocations = toLocations(addressValues);
+		final Set<Location> writeLocations = new HashSet<Location>();
+		for (Location baseLocation : baseLocations) {
 			final Location writeLocation = baseLocation.createOffset(
 					heapWrite.getAccessLocationCount(), heapWrite.getOffset());
 			defineLocationSource(writeLocation, heapWrite);
@@ -628,24 +614,19 @@ public class ObjectResolver extends DataFlowVisitor {
 		addAccessedLocations(heapWrite, writeLocations);
 
 		final Set writeValues = getNewValues(heapWrite.getValuePort());
-		for (Iterator iter = getAccessedLocations(heapWrite).iterator(); iter
-				.hasNext();) {
-			final Location writeLocation = (Location) iter.next();
+		for (Location writeLocation : getAccessedLocations(heapWrite)) {
 			addValues(writeLocation, writeValues);
 		}
 	}
 
 	@Override
 	public void visit(InBuf inbuf) {
-		for (Iterator iter = inbuf.getOwner().getDataPorts().iterator(); iter
-				.hasNext();) {
-			final Port port = (Port) iter.next();
+		for (Port port : inbuf.getOwner().getDataPorts()) {
 			final Set values = new HashSet();
 
-			for (Iterator eiter = inbuf.getOwner().getEntries().iterator(); eiter
-					.hasNext();) {
-				final Entry entry = (Entry) eiter.next();
-				final Collection dependencies = entry.getDependencies(port);
+			for (Entry entry : inbuf.getOwner().getEntries()) {
+				final Collection<Dependency> dependencies = entry
+						.getDependencies(port);
 
 				/*
 				 * We have to allow for Entries that have no dependencies for a
@@ -657,8 +638,8 @@ public class ObjectResolver extends DataFlowVisitor {
 							.getOwner());
 
 				if (!dependencies.isEmpty()) {
-					final Dependency dependency = (Dependency) dependencies
-							.iterator().next();
+					final Dependency dependency = dependencies.iterator()
+							.next();
 					values.addAll(getValues(dependency.getLogicalBus()));
 				}
 			}
@@ -940,7 +921,7 @@ public class ObjectResolver extends DataFlowVisitor {
 	 * @param outputBus
 	 *            the bus to which the munged address values are being added
 	 */
-	private void addDefaultValues(Set inputValues, Bus outputBus) {
+	private void addDefaultValues(Set<LogicalValue> inputValues, Bus outputBus) {
 		final Set outputValues = new HashSet();
 		for (Iterator iter = inputValues.iterator(); iter.hasNext();) {
 			final LogicalValue inputValue = (LogicalValue) iter.next();
@@ -977,10 +958,10 @@ public class ObjectResolver extends DataFlowVisitor {
 	/**
 	 * Gets all non-INVALID Locations from a given set of LogicalValues.
 	 */
-	private static Set toLocations(Collection logicalValues) {
-		final Set locations = new HashSet();
-		for (Iterator iter = logicalValues.iterator(); iter.hasNext();) {
-			final LogicalValue logicalValue = (LogicalValue) iter.next();
+	private static Set<Location> toLocations(
+			Collection<LogicalValue> logicalValues) {
+		final Set<Location> locations = new HashSet<Location>();
+		for (LogicalValue logicalValue : logicalValues) {
 			final Location location = logicalValue.toLocation();
 			if (location != Location.INVALID) {
 				locations.add(location);
@@ -993,10 +974,10 @@ public class ObjectResolver extends DataFlowVisitor {
 	 * Gets all non-INVALID Locations from a given set of LogicalValues and
 	 * returns the results as a Map of LogicalValue to Location.
 	 */
-	private static Map toLocationMap(Collection logicalValues) {
-		final Map locations = new HashMap();
-		for (Iterator iter = logicalValues.iterator(); iter.hasNext();) {
-			final LogicalValue logicalValue = (LogicalValue) iter.next();
+	private static Map<LogicalValue, Location> toLocationMap(
+			Collection<LogicalValue> logicalValues) {
+		final Map<LogicalValue, Location> locations = new HashMap<LogicalValue, Location>();
+		for (LogicalValue logicalValue : logicalValues) {
 			final Location location = logicalValue.toLocation();
 			if (location != Location.INVALID) {
 				locations.put(logicalValue, location);
@@ -1017,19 +998,19 @@ public class ObjectResolver extends DataFlowVisitor {
 		if (port.isConnected()) {
 			bus = port.getBus();
 		} else {
-			final Collection entries = port.getOwner().getEntries();
+			final Collection<Entry> entries = port.getOwner().getEntries();
 			assert entries.size() == 1 : "attempt to get single input Bus for Port with multiple Entries";
-			final Entry entry = (Entry) entries.iterator().next();
+			final Entry entry = entries.iterator().next();
 
-			final Collection dependencies = entry.getDependencies(port);
+			final Collection<Dependency> dependencies = entry
+					.getDependencies(port);
 
 			assert dependencies.size() == 1 : ("dependencies for data Port of "
 					+ port.getOwner() + " (lineage: "
 					+ port.getOwner().getLineage() + "); expected 1, was " + dependencies
 						.size());
 
-			final Dependency dependency = (Dependency) dependencies.iterator()
-					.next();
+			final Dependency dependency = dependencies.iterator().next();
 			bus = dependency.getLogicalBus();
 		}
 
