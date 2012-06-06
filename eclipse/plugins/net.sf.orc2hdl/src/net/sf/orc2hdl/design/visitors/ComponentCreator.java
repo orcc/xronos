@@ -106,7 +106,7 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
  * @author Endri Bezati
  * 
  */
-public class InstructionVisitor extends AbstractIrVisitor<List<Component>> {
+public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	private Def assignTarget;
 	private Integer castIndex = 0;
@@ -138,8 +138,16 @@ public class InstructionVisitor extends AbstractIrVisitor<List<Component>> {
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
 
-	public InstructionVisitor(ResourceCache resources, List<Component> component) {
+	public ComponentCreator(ResourceCache resources,
+			List<Component> component, Map<Port, Var> portDependency,
+			Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
 		super(true);
+		this.portDependency = portDependency;
+		this.busDependency = busDependency;
+		this.portGroupDependency = portGroupDependency;
+		this.doneBusDependency = doneBusDependency;
 		this.resources = resources;
 		componentList = component;
 	}

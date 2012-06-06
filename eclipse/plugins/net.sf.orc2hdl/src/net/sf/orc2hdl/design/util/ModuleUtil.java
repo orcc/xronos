@@ -53,7 +53,10 @@ import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.ResetDependency;
+import net.sf.openforge.lim.Task;
+import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.op.NoOp;
+import net.sf.openforge.lim.op.SimpleConstant;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
@@ -252,6 +255,9 @@ public class ModuleUtil {
 		createModuleInterface(module, inVars, outVars, exitType,
 				portDependency, busDependency);
 
+		// Populate Module
+		modulePopulate(module, components);
+
 		// Resolve all dependencies
 		moduleDependencies(module, components, module.getExit(exitType),
 				portDependency, busDependency, portGroupDependency,
@@ -270,25 +276,6 @@ public class ModuleUtil {
 		}
 
 		return module;
-	}
-
-	/**
-	 * This method propagates the input of the testBlock of the decision to its
-	 * container. Any data inputs to the decision need to be propagated from the
-	 * block to the decision. There should be no output ports to propagate. They
-	 * are inferred true/false.
-	 * 
-	 * @param decision
-	 * @param testBlock
-	 */
-	public static void decisionPropagateInputs(Decision decision,
-			Block testBlock) {
-		for (Port port : testBlock.getDataPorts()) {
-			Port decisionPort = decision.makeDataPort();
-			Entry entry = port.getOwner().getEntries().get(0);
-			entry.addDependency(port,
-					new DataDependency(decisionPort.getPeer()));
-		}
 	}
 
 	/**
@@ -340,6 +327,129 @@ public class ModuleUtil {
 
 	}
 
+	public static Component createTaskCall(Task task, Var outDecision,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+
+		String varName = "decision_outputPattern_" + task.showIDGlobal();
+		Decision decision = createDecision(outDecision, varName,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+		// Create the the TaskCall component and add the Task
+		TaskCall taskCall = new TaskCall();
+		taskCall.setTarget(task);
+
+		// Map out TaskCall Done port
+		PortUtil.mapOutControlPort(taskCall, 0, doneBusDependency);
+		Block thenBlock = (Block) createModule(
+				Arrays.asList((Component) taskCall),
+				Collections.<Var, Integer> emptyMap(),
+				Collections.<Var, Integer> emptyMap(), "taskCallThenBlock",
+				Exit.DONE, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+		Map<Var, Integer> inVars = new HashMap<Var, Integer>();
+		inVars.put(outDecision, 0);
+		Component branch = createBranch(decision, thenBlock, null, inVars,
+				Collections.<Var, Integer> emptyMap(),
+				Collections.<Var, List<Var>> emptyMap(),
+				"callTask_" + task.getIDGlobalType(), Exit.DONE,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+
+		Module module = (Module) createModule(Arrays.asList(branch), inVars,
+				Collections.<Var, Integer> emptyMap(), "taskCallBlock",
+				Exit.DONE, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+
+		return module;
+	}
+
+	public static Decision createTrueDecision(String resultName,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+		Decision decision = null;
+
+		// Create a constant of "1" and assign it to the varTrue
+		Type typeBool = IrFactory.eINSTANCE.createTypeBool();
+		Var trueVar = IrFactory.eINSTANCE.createVar(0, typeBool, "trueVar",
+				false, 0);
+
+		Component constant = new SimpleConstant(1, 1, false);
+		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		vars.put(trueVar, 0);
+		PortUtil.mapOutDataPorts(constant, vars, busDependency,
+				doneBusDependency);
+
+		// Create the decision variable and assign the inputDecision to it
+		Type type = IrFactory.eINSTANCE.createTypeBool();
+		Var decisionVar = IrFactory.eINSTANCE.createVar(0, type, resultName,
+				false, 0);
+
+		Component assignComp = assignComponent(decisionVar, trueVar,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+		Map<Var, Integer> inVars = new HashMap<Var, Integer>();
+		inVars.put(trueVar, 0);
+
+		Module decisionModule = (Module) createModule(
+				Arrays.asList(constant, assignComp), inVars,
+				Collections.<Var, Integer> emptyMap(), "decisionBlock",
+				Exit.DONE, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+
+		// Add done dependency, Decision group 0
+		PortUtil.mapOutControlPort(decisionModule, 0, doneBusDependency);
+
+		// Create the decision
+		decision = new Decision((Block) decisionModule, assignComp);
+
+		// Propagate Inputs
+		decisionPropagateInputs(decision, (Block) decisionModule);
+
+		// Add to dependency, A Decision has only one Input at group 0
+		Port port = decision.getDataPorts().get(0);
+		portDependency.put(port, trueVar);
+
+		return decision;
+	}
+
+	/**
+	 * This method propagates the input of the testBlock of the decision to its
+	 * container. Any data inputs to the decision need to be propagated from the
+	 * block to the decision. There should be no output ports to propagate. They
+	 * are inferred true/false.
+	 * 
+	 * @param decision
+	 * @param testBlock
+	 */
+	public static void decisionPropagateInputs(Decision decision,
+			Block testBlock) {
+		for (Port port : testBlock.getDataPorts()) {
+			Port decisionPort = decision.makeDataPort();
+			Entry entry = port.getOwner().getEntries().get(0);
+			entry.addDependency(port,
+					new DataDependency(decisionPort.getPeer()));
+		}
+	}
+
+	public static List<Port> getDependencyTargetPorts(
+			Collection<Component> components, Var var,
+			Map<Port, Var> portDependency) {
+		List<Port> targetPorts = new ArrayList<Port>();
+
+		for (Component component : components) {
+			for (Port port : component.getDataPorts()) {
+				if (portDependency.get(port) == var) {
+					targetPorts.add(port);
+				}
+			}
+		}
+
+		return targetPorts;
+	}
+
 	public static void moduleDependencies(Module module,
 			List<Component> components, Exit exit,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
@@ -361,22 +471,6 @@ public class ModuleUtil {
 			}
 		}
 
-	}
-
-	public static List<Port> getDependencyTargetPorts(
-			Collection<Component> components, Var var,
-			Map<Port, Var> portDependency) {
-		List<Port> targetPorts = new ArrayList<Port>();
-
-		for (Component component : components) {
-			for (Port port : component.getDataPorts()) {
-				if (portDependency.get(port) == var) {
-					targetPorts.add(port);
-				}
-			}
-		}
-
-		return targetPorts;
 	}
 
 	/**

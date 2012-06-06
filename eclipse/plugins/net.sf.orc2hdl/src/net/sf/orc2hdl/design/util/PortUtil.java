@@ -44,6 +44,8 @@ import net.sf.openforge.lim.Port;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 
 import org.eclipse.emf.common.util.EList;
@@ -107,6 +109,27 @@ public class PortUtil {
 		mapOutDataPorts(pinRead, outVars, busDependency, doneBusDependency);
 
 		return pinRead;
+	}
+
+	public static Component createPinStatusComponent(net.sf.orcc.df.Port port,
+			ResourceCache resources, Map<net.sf.orcc.df.Port, Var> pinStatus,
+			Map<Bus, Var> busDependency, Map<Bus, Integer> doneBusDependency) {
+		// Create pin Status component from the ioHandler of the Port
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+		Component pinStatusComponent = ioHandler.getStatusAccess();
+
+		Type type = IrFactory.eINSTANCE.createTypeBool();
+		Var pinStatusVar = IrFactory.eINSTANCE.createVar(0, type,
+				port.getName() + "_pinStatus", false, 0);
+		pinStatus.put(port, pinStatusVar);
+
+		// Map out pinStatusVar to pinStatusComponent
+		Map<Var, Integer> outVars = new HashMap<Var, Integer>();
+		outVars.put(pinStatusVar, 0);
+		PortUtil.mapOutDataPorts(pinStatusComponent, outVars, busDependency,
+				doneBusDependency);
+
+		return pinStatusComponent;
 	}
 
 	public static Component createPinWriteComponent(Action action,

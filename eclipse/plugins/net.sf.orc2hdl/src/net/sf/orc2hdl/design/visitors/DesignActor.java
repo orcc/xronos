@@ -70,8 +70,8 @@ public class DesignActor extends DfVisitor<Object> {
 	/** The design that is being populated **/
 	private final Design design;
 
-	/** Instruction Visitor **/
-	private final InstructionVisitor irVisitor;
+	/** Component Creator (Instruction Visitor) **/
+	private final ComponentCreator componentCreator;
 
 	/** Instruction Visitor **/
 	private final StateVarVisitor stateVarVisitor;
@@ -104,7 +104,9 @@ public class DesignActor extends DfVisitor<Object> {
 		stateVars = new HashMap<LogicalValue, Var>();
 		stateVarVisitor = new StateVarVisitor(stateVars);
 		componentsList = new ArrayList<Component>();
-		irVisitor = new InstructionVisitor(resources, componentsList);
+		componentCreator = new ComponentCreator(resources, componentsList,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
 	}
 
 	@Override
@@ -120,7 +122,9 @@ public class DesignActor extends DfVisitor<Object> {
 		}
 
 		/** Visit the action body and take all the generated components **/
-		componentsList.addAll(irVisitor.doSwitch(action.getBody()));
+		List<Component> bodyComponents = componentCreator.doSwitch(action
+				.getBody());
+		componentsList.addAll(bodyComponents);
 
 		/** Get action Output(s) **/
 		for (net.sf.orcc.df.Port port : action.getOutputPattern().getPorts()) {
@@ -149,10 +153,7 @@ public class DesignActor extends DfVisitor<Object> {
 	@Override
 	public Object caseActor(Actor actor) {
 		/** Build the Design Ports **/
-		// Create Design Input Port(s)
 		PortUtil.createDesignPorts(design, actor.getInputs(), "in", resources);
-
-		// Create Design Output Port(s)
 		PortUtil.createDesignPorts(design, actor.getOutputs(), "out", resources);
 
 		// TODO: Get the values of the parameters before visiting
@@ -164,7 +165,7 @@ public class DesignActor extends DfVisitor<Object> {
 		for (Var stateVar : actor.getStateVars()) {
 			stateVarVisitor.doSwitch(stateVar);
 		}
-
+		/** Allocate Memory for the state variables **/
 		DesignUtil.designAllocateMemory(design, stateVars,
 				Constants.MAX_ADDR_WIDTH, resources);
 
@@ -176,6 +177,9 @@ public class DesignActor extends DfVisitor<Object> {
 		}
 
 		/** Create the design scheduler **/
+		DesignScheduler designScheduler = new DesignScheduler(resources,
+				actorsTasks, componentsList, stateVars);
+		designScheduler.doSwitch(actor);
 
 		for (Task task : design.getTasks()) {
 			Call call = task.getCall();
