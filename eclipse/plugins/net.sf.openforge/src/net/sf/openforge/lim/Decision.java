@@ -22,7 +22,6 @@
 package net.sf.openforge.lim;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -187,10 +186,10 @@ public class Decision extends Module {
 	public Bus getDecisionDataBus() {
 		assert not.getEntries().size() == 1;
 		Entry notEntry = not.getEntries().get(0);
-		Collection notDeps = notEntry.getDependencies(not.getDataPort());
+		Collection<Dependency> notDeps = notEntry.getDependencies(not
+				.getDataPort());
 		assert notDeps.size() == 1;
-		Bus decisionData = ((Dependency) notDeps.iterator().next())
-				.getLogicalBus();
+		Bus decisionData = notDeps.iterator().next().getLogicalBus();
 		return decisionData;
 	}
 
@@ -205,9 +204,11 @@ public class Decision extends Module {
 		Exit noDecision = getExit(Exit.DONE, "NoDecision");
 		if (noDecision == null) {
 			noDecision = this.makeExit(0, Exit.DONE, "NoDecision");
-			Port port = noDecision.getPeer().getGoPort();
+			// Port port =
+			noDecision.getPeer().getGoPort();
 			Exit blockExit = getTestBlock().getExit(Exit.DONE);
-			InBuf inbuf = getInBuf();
+			// InBuf inbuf =
+			getInBuf();
 			addDependencies(noDecision.getPeer().makeEntry(blockExit),
 					getInBuf().getClockBus(), getInBuf().getResetBus(),
 					blockExit.getDoneBus());
@@ -226,9 +227,10 @@ public class Decision extends Module {
 			trueAnd = (And) inserted;
 		} else if (removed == getFalseAnd()) {
 			trueAnd = (And) inserted;
-		} else
+		} else {
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
+		}
 
 		boolean mod = removeComponent(removed);
 		addComponent(inserted);
@@ -326,13 +328,16 @@ public class Decision extends Module {
 	}
 
 	private void setDataDependencies() {
-		final Bus goBus = getInBuf().getGoBus();
+		// final Bus goBus =
+		getInBuf().getGoBus();
 		final Block testBlock = getTestBlock();
 		final Bus boolBus = Component.getDataBus(getTestComponent());
 		final Bus notBus = Component.getDataBus(getNot());
 		final Bus notDoneBus = getNot().getExit(Exit.DONE).getDoneBus();
-		final Bus trueAndBus = Component.getDataBus(getTrueAnd());
-		final Bus falseAndBus = Component.getDataBus(getFalseAnd());
+		// final Bus trueAndBus =
+		Component.getDataBus(getTrueAnd());
+		// final Bus falseAndBus =
+		Component.getDataBus(getFalseAnd());
 		final Exit testBlockExit = testBlock.getExit(Exit.DONE);
 		final Bus testDoneBus = testBlockExit.getDoneBus();
 		final Bus testBlockBus = testBlockExit.makeDataBus();
@@ -391,11 +396,12 @@ public class Decision extends Module {
 	 *            the reset bus for each new exit
 	 */
 	@Override
-	protected void mergeExits(Map exitMap, Bus clockBus, Bus resetBus) {
+	protected void mergeExits(Map<Exit.Tag, Collection<Exit>> exitMap,
+			Bus clockBus, Bus resetBus) {
 		exitMap.remove(getTrueExit().getTag());
 		exitMap.remove(getFalseExit().getTag());
-		final Collection doneExits = (Collection) exitMap.remove(Exit
-				.getTag(Exit.DONE));
+		// final Collection<Exit> doneExits =
+		exitMap.remove(Exit.getTag(Exit.DONE));
 		super.mergeExits(exitMap, clockBus, resetBus);
 	}
 
@@ -405,31 +411,31 @@ public class Decision extends Module {
 	 * 
 	 * @return a value of type 'List'
 	 */
-	protected List getCompsScheduleOrder() {
+	protected List<Component> getCompsScheduleOrder() {
 		/*
 		 * XXX: Traversal should be done by the scheduler in the order that it
 		 * wants -- get rid of this.
 		 */
 		assert false : "Get rid of this";
 
-		List ordered = new LinkedList();
+		List<Component> ordered = new LinkedList<Component>();
 		// Make order inbufs, <most other stuff>, NotOp, outbufs
-		Set inbufs = new LinkedHashSet();
-		Set outbufs = new LinkedHashSet();
-		for (Iterator iter = getComponents().iterator(); iter.hasNext();) {
-			Component c = (Component) iter.next();
-			if (c instanceof InBuf)
-				inbufs.add(c);
-			else if (c instanceof OutBuf)
-				outbufs.add(c);
-			else if (c == getNot())
+		Set<InBuf> inbufs = new LinkedHashSet<InBuf>();
+		Set<OutBuf> outbufs = new LinkedHashSet<OutBuf>();
+		for (Component c : getComponents()) {
+			if (c instanceof InBuf) {
+				inbufs.add((InBuf) c);
+			} else if (c instanceof OutBuf) {
+				outbufs.add((OutBuf) c);
+			} else if (c == getNot()) {
 				;
-			else if (c == getTrueAnd())
+			} else if (c == getTrueAnd()) {
 				;
-			else if (c == getFalseAnd())
+			} else if (c == getFalseAnd()) {
 				;
-			else
+			} else {
 				ordered.add(c);
+			}
 		}
 
 		ordered.addAll(0, inbufs);
@@ -456,7 +462,8 @@ public class Decision extends Module {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		/*
 		 * Update the clone fields, except for testComponent which is handled in

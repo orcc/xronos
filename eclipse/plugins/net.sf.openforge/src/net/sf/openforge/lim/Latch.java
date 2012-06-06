@@ -201,8 +201,9 @@ public class Latch extends Module implements Composable, Emulatable {
 	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
-			if (bus == resultBus)
+			if (bus == resultBus) {
 				resultBus = null;
+			}
 			return true;
 		}
 		return false;
@@ -253,7 +254,8 @@ public class Latch extends Module implements Composable, Emulatable {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		Latch clone = (Latch) moduleClone;
 		clone.reg = (Reg) cloneMap.get(reg);
@@ -282,18 +284,19 @@ public class Latch extends Module implements Composable, Emulatable {
 	public String debug() {
 		String ret = super.toString();
 		for (Port port : getPorts()) {
-			if (port == getGoPort())
+			if (port == getGoPort()) {
 				ret = ret + " go:" + port;
-			else if (port == getClockPort())
+			} else if (port == getClockPort()) {
 				ret = ret + " ck:" + port;
-			else if (port == getResetPort())
+			} else if (port == getResetPort()) {
 				ret = ret + " rs:" + port;
-			else if (port == getEnablePort())
+			} else if (port == getEnablePort()) {
 				ret = ret + " en:" + port;
-			else if (port == getDataPort())
+			} else if (port == getDataPort()) {
 				ret = ret + " dat:" + port;
-			else
+			} else {
 				ret = ret + " ??:" + port;
+			}
 		}
 		return ret;
 	}

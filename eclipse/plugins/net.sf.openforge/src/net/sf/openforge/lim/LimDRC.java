@@ -44,7 +44,7 @@ import net.sf.openforge.util.naming.ID;
 public class LimDRC extends FilteredVisitor {
 
 	private Map failures = new LinkedHashMap();
-	private Set procedureBodies = new HashSet();
+	private Set<Block> procedureBodies = new HashSet<Block>();
 
 	/**
 	 * DOCUMENT ME!
@@ -60,7 +60,7 @@ public class LimDRC extends FilteredVisitor {
 	 */
 	public void dumpFailures() {
 		if (!failures.isEmpty()) {
-			StringBuffer buf = new StringBuffer();
+			// StringBuffer buf = new StringBuffer();
 
 			EngineThread.getGenericJob().warn(
 					"internal integrity check failure:");
@@ -119,8 +119,7 @@ public class LimDRC extends FilteredVisitor {
 
 		// Ensure that all call/procedure buses and ports agree on
 		// their 'usedness'
-		for (Iterator iter = call.getPorts().iterator(); iter.hasNext();) {
-			Port port = (Port) iter.next();
+		for (Port port : call.getPorts()) {
 			Port procPort = call.getProcedurePort(port);
 			if ((port != null) && (procPort != null)
 					&& (port.isUsed() != procPort.isUsed())) {
@@ -136,8 +135,7 @@ public class LimDRC extends FilteredVisitor {
 			// "DISAGREEMENT between call interface and procedure interface";
 		}
 
-		for (Iterator iter = call.getBuses().iterator(); iter.hasNext();) {
-			Bus bus = (Bus) iter.next();
+		for (Bus bus : call.getBuses()) {
 			Bus procBus = call.getProcedureBus(bus);
 			if ((bus != null) && (procBus != null)
 					&& (bus.isUsed() != procBus.isUsed())) {
@@ -160,8 +158,7 @@ public class LimDRC extends FilteredVisitor {
 	 * the Visitor interface.
 	 */
 	public void traverseExtraModule(Module mod) {
-		for (Iterator iter = mod.getComponents().iterator(); iter.hasNext();) {
-			Component c = (Component) iter.next();
+		for (Component c : mod.getComponents()) {
 			filterAny(c);
 			if (c instanceof Module) {
 				traverseExtraModule((Module) c);
@@ -203,9 +200,8 @@ public class LimDRC extends FilteredVisitor {
 	 *            the {@link Component} to check.
 	 */
 	private void drcBuses(Component c) {
-		Collection buses = c.getBuses();
-		for (Iterator it = buses.iterator(); it.hasNext();) {
-			Bus b = (Bus) it.next();
+		Collection<Bus> buses = c.getBuses();
+		for (Bus b : buses) {
 			if (b.isUsed()) {
 				// does it have a value
 				if (b.getValue() == null) {
@@ -250,9 +246,8 @@ public class LimDRC extends FilteredVisitor {
 	 *            the{@link Component} to test
 	 */
 	private void drcPorts(Component component) {
-		List ports = component.getPorts();
-		for (Iterator it = ports.iterator(); it.hasNext();) {
-			final Port port = (Port) it.next();
+		List<Port> ports = component.getPorts();
+		for (Port port : ports) {
 
 			if (port.isUsed()) {
 				// does it have a value

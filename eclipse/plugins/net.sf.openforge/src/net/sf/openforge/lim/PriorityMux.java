@@ -144,8 +144,9 @@ public class PriorityMux extends Module implements Cloneable {
 	@Override
 	public boolean removeDataBus(Bus bus) {
 		if (super.removeDataBus(bus)) {
-			if (bus == resultBus)
+			if (bus == resultBus) {
 				resultBus = null;
+			}
 			return true;
 		}
 		return false;
@@ -157,7 +158,8 @@ public class PriorityMux extends Module implements Cloneable {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		PriorityMux clone = (PriorityMux) moduleClone;
 		clone.selectToData = new LinkedHashMap<Port, Port>();

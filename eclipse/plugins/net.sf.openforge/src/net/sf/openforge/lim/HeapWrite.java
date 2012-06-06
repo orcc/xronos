@@ -191,8 +191,9 @@ public class HeapWrite extends OffsetMemoryWrite {
 	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == offsetConstant)
+		if (component == offsetConstant) {
 			offsetConstant = null;
+		}
 		return ret;
 	}
 
@@ -225,7 +226,8 @@ public class HeapWrite extends OffsetMemoryWrite {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		((HeapWrite) moduleClone).offsetConstant = (Constant) cloneMap
 				.get(offsetConstant);

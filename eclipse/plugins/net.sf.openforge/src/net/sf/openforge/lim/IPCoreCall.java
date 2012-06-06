@@ -40,15 +40,15 @@ public class IPCoreCall extends Call {
 	private Writer hdlWriter = null;
 
 	/** Map of call's Port to referent's body Port */
-	private Map portMap;
+	private Map<Port, Port> portMap;
 
 	/** Map of call's Exit to referent's body Exit */
-	private Map exitMap;
+	private Map<Exit, Exit> exitMap;
 
 	/** Map of call's Bus to referent's body Bus */
-	private Map busMap;
+	private Map<Bus, Bus> busMap;
 
-	private List noConnectPorts = new LinkedList();
+	private List<Port> noConnectPorts = new LinkedList<Port>();
 
 	public IPCoreCall(Writer writer) {
 		super();
@@ -64,7 +64,7 @@ public class IPCoreCall extends Call {
 		noConnectPorts.add(port);
 	}
 
-	public List getNoConnectPorts() {
+	public List<Port> getNoConnectPorts() {
 		return noConnectPorts;
 	}
 
@@ -85,7 +85,7 @@ public class IPCoreCall extends Call {
 		if (port.getOwner() != this) {
 			throw new IllegalArgumentException("unknown port");
 		}
-		return (Port) portMap.get(port);
+		return portMap.get(port);
 	}
 
 	@Override
@@ -93,7 +93,7 @@ public class IPCoreCall extends Call {
 		if (bus.getOwner().getOwner() != this) {
 			throw new IllegalArgumentException("unknown bus");
 		}
-		return (Bus) busMap.get(bus);
+		return busMap.get(bus);
 	}
 
 	public void setHDLWriter(Writer writer) {
@@ -113,23 +113,22 @@ public class IPCoreCall extends Call {
 
 	private void generateMaps(Component body) {
 		// Map ports to procedure body's ports
-		portMap = new HashMap(body.getPorts().size());
+		portMap = new HashMap<Port, Port>(body.getPorts().size());
 		addPortMap(getClockPort(), body.getClockPort());
 		addPortMap(getResetPort(), body.getResetPort());
 		addPortMap(getGoPort(), body.getGoPort());
 
-		for (Iterator iter = getDataPorts().iterator(), bodyIter = body
+		for (Iterator<Port> iter = getDataPorts().iterator(), bodyIter = body
 				.getDataPorts().iterator(); iter.hasNext();) {
-			Port dp = (Port) iter.next();
-			Port bp = (Port) bodyIter.next();
+			Port dp = iter.next();
+			Port bp = bodyIter.next();
 			addPortMap(dp, bp);
 		}
 
 		// Map exits to procedure body's exits
-		exitMap = new HashMap(body.getExits().size());
-		busMap = new HashMap(body.getBuses().size());
-		for (Iterator exitIter = body.getExits().iterator(); exitIter.hasNext();) {
-			Exit bodyExit = (Exit) exitIter.next();
+		exitMap = new HashMap<Exit, Exit>(body.getExits().size());
+		busMap = new HashMap<Bus, Bus>(body.getBuses().size());
+		for (Exit bodyExit : body.getExits()) {
 			Exit.Tag tag = bodyExit.getTag();
 
 			Exit exit = getExit(convertProcedureType(tag.getType()),
@@ -142,10 +141,10 @@ public class IPCoreCall extends Call {
 			addExitMap(exit, bodyExit);
 
 			// Map buses to procedure body's buses.
-			for (Iterator bodyIter = bodyExit.getDataBuses().iterator(), iter = exit
+			for (Iterator<Bus> bodyIter = bodyExit.getDataBuses().iterator(), iter = exit
 					.getDataBuses().iterator(); bodyIter.hasNext();) {
-				Bus db = (Bus) iter.next();
-				Bus bb = (Bus) bodyIter.next();
+				Bus db = iter.next();
+				Bus bb = bodyIter.next();
 				addBusMap(db, bb);
 			}
 			addBusMap(exit.getDoneBus(), bodyExit.getDoneBus());

@@ -66,10 +66,10 @@ public class Switch extends Block {
 	}
 
 	@Override
-	protected void cloneNotify(Module module, Map cloneMap) {
+	protected void cloneNotify(Module module, Map<Component, Component> cloneMap) {
 		super.cloneNotify(module, cloneMap);
 		final Switch clone = (Switch) module;
-		clone.body = (Block) cloneMap.get(body);
+		clone.body = cloneMap.get(body);
 	}
 
 	protected void setControlDependencies() {

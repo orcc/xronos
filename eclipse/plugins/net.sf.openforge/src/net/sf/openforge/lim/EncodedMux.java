@@ -114,8 +114,8 @@ public class EncodedMux extends Primitive {
 	public Port makeMuxEntry() {
 		Port dataPort = makeDataPort();
 
-		if (inputPorts == Collections.EMPTY_LIST) {
-			inputPorts = new ArrayList(7);
+		if (inputPorts == Collections.<Port> emptyList()) {
+			inputPorts = new ArrayList<Port>(7);
 		}
 		inputPorts.add(dataPort);
 
@@ -123,8 +123,8 @@ public class EncodedMux extends Primitive {
 	}
 
 	@Override
-	public List getPorts() {
-		List ports = new ArrayList();
+	public List<Port> getPorts() {
+		List<Port> ports = new ArrayList<Port>();
 		ports.add(getClockPort());
 		ports.add(getResetPort());
 		ports.add(getGoPort());
@@ -169,8 +169,7 @@ public class EncodedMux extends Primitive {
 		 */
 		int maxSize = 0;
 		boolean isSigned = false;
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
-			final Port port = (Port) iter.next();
+		for (Port port : getDataPorts()) {
 			maxSize = Math.max(maxSize, port.getValue().getSize());
 			isSigned = isSigned || port.getValue().isSigned();
 		}
@@ -195,11 +194,11 @@ public class EncodedMux extends Primitive {
 			 * value to be pushed.
 			 */
 			for (int i = 0; i < pushedValue.getSize(); i++) {
-				final Iterator dataIter = getDataPorts().iterator();
+				final Iterator<Port> dataIter = getDataPorts().iterator();
 				assert dataIter.hasNext() : "Illegal encoded mux with no data ports";
 				Bit bit = null;
 				do {
-					final Value portValue = ((Port) dataIter.next()).getValue();
+					final Value portValue = dataIter.next().getValue();
 					final Bit padBit = portValue.isSigned() ? portValue
 							.getBit(portValue.getSize() - 1) : Bit.ZERO;
 					final Bit nextBit = i < portValue.getSize() ? portValue
@@ -217,6 +216,7 @@ public class EncodedMux extends Primitive {
 				pushedValue.setBit(i, bit);
 			}
 		}
+		@SuppressWarnings("unused")
 		Value res = getResultBus().getValue();
 		return getResultBus().pushValueForward(pushedValue);
 	}
@@ -231,8 +231,7 @@ public class EncodedMux extends Primitive {
 
 		Value resultBusValue = getResultBus().getValue();
 
-		for (Iterator iter = getDataPorts().iterator(); iter.hasNext();) {
-			Port dataPort = (Port) iter.next();
+		for (Port dataPort : getDataPorts()) {
 			Value dataPortValue = dataPort.getValue();
 			Value newValue = new Value(dataPortValue.getSize(),
 					dataPortValue.isSigned());
@@ -269,9 +268,9 @@ public class EncodedMux extends Primitive {
 		// DONT USE getDataPorts because it's overridden to return the
 		// 'inputPorts' list contained locally, which when shallow
 		// cloned is simply a list of the original nodes ports.
-		List dports = new ArrayList(clone.dataPorts);
+		List<Port> dports = new ArrayList<Port>(clone.dataPorts);
 
-		clone.selectPort = (Port) dports.remove(0);
+		clone.selectPort = dports.remove(0);
 		clone.inputPorts = dports;
 		return clone;
 	}
@@ -286,8 +285,9 @@ public class EncodedMux extends Primitive {
 	@Override
 	public boolean isPassThrough() {
 		boolean constantSelect = false;
-		if (getSelectPort().getValue() != null)
+		if (getSelectPort().getValue() != null) {
 			constantSelect = getSelectPort().getValue().isConstant();
+		}
 
 		return super.isPassThrough() || constantSelect;
 	}

@@ -23,7 +23,6 @@ package net.sf.openforge.verilog.pattern;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -61,14 +60,13 @@ public class VMux extends StatementBlock implements ForgePattern {
 	 *            the LIM mux upon which to base the verilog implementation
 	 */
 	public VMux(Mux mux) {
-		Set entries = mux.getMuxEntries();
+		Set<Map.Entry<Port, Port>> entries = mux.getMuxEntries();
 		Expression[][] pairs = new Expression[entries.size()][2];
 
 		int i = 0;
-		for (Iterator it = entries.iterator(); it.hasNext();) {
-			Map.Entry me = (Map.Entry) it.next();
-			Port select = (Port) me.getKey();
-			Port data = (Port) me.getValue();
+		for (Map.Entry<Port, Port> me : entries) {
+			Port select = me.getKey();
+			Port data = me.getValue();
 			pairs[i][0] = new PortWire(select);
 			pairs[i][1] = new PortWire(data);
 			consumed_nets.add(select);
@@ -143,7 +141,7 @@ public class VMux extends StatementBlock implements ForgePattern {
 	 * as output signals.
 	 */
 	@Override
-	public Collection getProducedNets() {
+	public Collection<Net> getProducedNets() {
 		return Collections.singleton(result);
 	}
 

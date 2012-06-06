@@ -259,7 +259,8 @@ public class UntilBody extends LoopBody implements Cloneable {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final UntilBody clone = (UntilBody) moduleClone;
 		clone.body = (Module) cloneMap.get(body);

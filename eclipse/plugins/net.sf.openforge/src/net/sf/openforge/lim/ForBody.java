@@ -71,7 +71,8 @@ public class ForBody extends LoopBody implements Cloneable {
 		final Bus goBus = getInBuf().getGoBus();
 		final Exit inbufExit = getInBuf().getExit(Exit.DONE);
 
-		final Map exitMap = new LinkedHashMap(11);
+		final Map<Exit.Tag, Collection<Exit>> exitMap = new LinkedHashMap<Exit.Tag, Collection<Exit>>(
+				11);
 
 		/*
 		 * InBuf to Decision.
@@ -120,17 +121,17 @@ public class ForBody extends LoopBody implements Cloneable {
 				final OutBuf doneOutBuf = bodyDoneExit.getPeer();
 				final OutBuf continueOutBuf = bodyContinueExit.getPeer();
 
-				for (Iterator iter = continueOutBuf.getEntries().iterator(); iter
-						.hasNext();) {
-					final Entry continueOutBufEntry = (Entry) iter.next();
+				for (Iterator<Entry> iter = continueOutBuf.getEntries()
+						.iterator(); iter.hasNext();) {
+					final Entry continueOutBufEntry = iter.next();
 					final Entry doneOutBufEntry = doneOutBuf
 							.makeEntry(continueOutBufEntry.getDrivingExit());
 					final Port continueGoPort = continueOutBuf.getGoPort();
-					final Collection continueDependencies = new ArrayList(
+					final Collection<Dependency> continueDependencies = new ArrayList<Dependency>(
 							continueOutBufEntry.getDependencies(continueGoPort));
-					for (Iterator diter = continueDependencies.iterator(); diter
-							.hasNext();) {
-						final Dependency dependency = (Dependency) diter.next();
+					for (Iterator<Dependency> diter = continueDependencies
+							.iterator(); diter.hasNext();) {
+						final Dependency dependency = diter.next();
 						continueOutBufEntry.removeDependency(continueGoPort,
 								dependency);
 						final Dependency doneDependency = (Dependency) dependency
@@ -172,10 +173,9 @@ public class ForBody extends LoopBody implements Cloneable {
 		 * Exit, if any. There may be no feedback exits if the body ends with a
 		 * break.
 		 */
-		Collection feedbackExits = (Collection) exitMap.remove(Exit
-				.getTag(Exit.DONE));
+		Collection<Exit> feedbackExits = exitMap.remove(Exit.getTag(Exit.DONE));
 		if (feedbackExits == null) {
-			feedbackExits = new LinkedList();
+			feedbackExits = new LinkedList<Exit>();
 		}
 
 		if (!feedbackExits.isEmpty()) {
@@ -186,13 +186,13 @@ public class ForBody extends LoopBody implements Cloneable {
 		 * Completion Exit is comprised of Decision false and body's BREAK Exit,
 		 * if any.
 		 */
-		Collection completeExits = (Collection) exitMap.remove(getDecision()
+		Collection<Exit> completeExits = exitMap.remove(getDecision()
 				.getFalseExit().getTag());
 		if (completeExits == null) {
-			completeExits = new LinkedList();
+			completeExits = new LinkedList<Exit>();
 		}
 
-		final Collection breakExits = (Collection) exitMap.remove(Exit
+		final Collection<Exit> breakExits = exitMap.remove(Exit
 				.getTag(Exit.BREAK));
 		if (breakExits != null) {
 			completeExits.addAll(breakExits);
@@ -264,9 +264,10 @@ public class ForBody extends LoopBody implements Cloneable {
 			body = (Module) inserted;
 		} else if (removed == getUpdate()) {
 			update = (Module) inserted;
-		} else
+		} else {
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
+		}
 
 		boolean mod = removeComponent(removed);
 		addComponent(inserted);
@@ -291,7 +292,8 @@ public class ForBody extends LoopBody implements Cloneable {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final ForBody clone = (ForBody) moduleClone;
 		clone.decision = (Decision) cloneMap.get(decision);

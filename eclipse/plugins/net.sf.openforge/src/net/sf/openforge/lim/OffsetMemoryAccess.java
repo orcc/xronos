@@ -160,7 +160,7 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 		final Bus resetBus = inBuf.getResetBus();
 		final Bus goBus = inBuf.getGoBus();
 
-		final Component firstComponent = (Component) getSequence().get(0);
+		final Component firstComponent = getSequence().get(0);
 		Exit nextExit = getInBuf().getExit(Exit.DONE);
 		Entry entry = null;
 
@@ -250,16 +250,19 @@ public abstract class OffsetMemoryAccess extends MemoryAccessBlock {
 	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == add)
+		if (component == add) {
 			add = null;
-		if (component == castOp)
+		}
+		if (component == castOp) {
 			castOp = null;
+		}
 
 		return ret;
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		OffsetMemoryAccess clone = (OffsetMemoryAccess) moduleClone;
 		clone.add = (AddOp) cloneMap.get(add);

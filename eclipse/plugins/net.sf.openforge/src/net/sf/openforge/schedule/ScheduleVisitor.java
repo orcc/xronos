@@ -359,11 +359,11 @@ public class ScheduleVisitor extends DefaultVisitor {
 					}
 				}
 				assert latencyMap.size() > 0 : "No latencies to initialize loop feedback control";
-				final Map latest = Latency.getLatest(latencyMap);
+				final Map<Object, Latency> latest = Latency
+						.getLatest(latencyMap);
 				assert latest.size() == 1 : "Loop has unknown latencies leading to body";
 				tracker.defineControlBus(loop.getControlRegister()
-						.getResultBus(), (Latency) latest.values().iterator()
-						.next());
+						.getResultBus(), latest.values().iterator().next());
 				// Now that the latency of the control register is
 				// set, set the control register to be the control bus
 				// for the data register exits.

@@ -21,167 +21,166 @@
 
 package net.sf.openforge.schedule;
 
-
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 
 import net.sf.openforge.app.Engine;
 import net.sf.openforge.app.EngineThread;
-import net.sf.openforge.lim.*;
-import net.sf.openforge.lim.memory.*;
-import net.sf.openforge.lim.op.*;
-import net.sf.openforge.optimize.constant.*;
+import net.sf.openforge.lim.ArrayRead;
+import net.sf.openforge.lim.ArrayWrite;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.DefaultVisitor;
+import net.sf.openforge.lim.HeapRead;
+import net.sf.openforge.lim.HeapWrite;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.PriorityMux;
+import net.sf.openforge.lim.Visitable;
+import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
+import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
+import net.sf.openforge.lim.memory.Location;
+import net.sf.openforge.lim.op.Constant;
+import net.sf.openforge.optimize.constant.TwoPassPartialConstant;
 
 /**
  * PostScheduleOptimize is a class which simply calls a sequence of
- * optimizations on a LIM that are used to clean up after scheduling.
- * Currently this includes:
+ * optimizations on a LIM that are used to clean up after scheduling. Currently
+ * this includes:
  * <ul>
- * <li>a visitor to turn symbolic {@link MemOffsetConstant}s into
- * actual constant values based on the position of the field in the
- * tagetted memory. </li>
- * <li>a pass of PartialConstant to correctly size everything that was
- * added during scheduling and global connections.</li>
+ * <li>a visitor to turn symbolic {@link MemOffsetConstant}s into actual
+ * constant values based on the position of the field in the tagetted memory.</li>
+ * <li>a pass of PartialConstant to correctly size everything that was added
+ * during scheduling and global connections.</li>
  * </ul>
- *
- * <p>Created: Mon Sep 23 15:49:45 2002
- *
+ * 
+ * <p>
+ * Created: Mon Sep 23 15:49:45 2002
+ * 
  * @author imiller, last modified by $Author: imiller $
  * @version $Id: PostScheduleOptimize.java 425 2007-03-07 19:17:39Z imiller $
  */
-public class PostScheduleOptimize 
-{
-    private static final String _RCS_ = "$Rev: 425 $";
+public class PostScheduleOptimize {
 
-    Engine controllingEngine;
-    
-    public PostScheduleOptimize (Engine engine)
-    {
-        this.controllingEngine = engine;
-    }
+	Engine controllingEngine;
 
-    public void optimize (Visitable target)
-    {
-        EngineThread.getGenericJob().info("running post scheduling optimizations...  MemConstantVisitor");
-        // Lock down the MemOffsetConstants
-        target.accept(new MemConstantVisitor());
+	public PostScheduleOptimize(Engine engine) {
+		controllingEngine = engine;
+	}
 
-        
-        // Run the default optimizations, but partial first to ensure
-        // everything has values.
-        EngineThread.getGenericJob().info("running post scheduling optimizations... TwoPassPartialConstant");
-        TwoPassPartialConstant.propagate(target, true);
+	public void optimize(Visitable target) {
+		EngineThread.getGenericJob().info(
+				"running post scheduling optimizations...  MemConstantVisitor");
+		// Lock down the MemOffsetConstants
+		target.accept(new MemConstantVisitor());
 
-        /*
-         * XXX FIXME. We should really run ALL the optimizations again
-         * to remove unneeded adds in the memory accesses (which now
-         * have 1 constant input) and reduce any redundant scheduling
-         * logic.
-         */
-        //System.out.println("UPDATE OPTIMIZATIONS TO WORK POST SCHEDULING");
-//         Optimizer postOpts = new Optimizer(this.controllingJob);
-//         postOpts.optimize(target);
-    }
-    
+		// Run the default optimizations, but partial first to ensure
+		// everything has values.
+		EngineThread
+				.getGenericJob()
+				.info("running post scheduling optimizations... TwoPassPartialConstant");
+		TwoPassPartialConstant.propagate(target, true);
+
+		/*
+		 * XXX FIXME. We should really run ALL the optimizations again to remove
+		 * unneeded adds in the memory accesses (which now have 1 constant
+		 * input) and reduce any redundant scheduling logic.
+		 */
+		// System.out.println("UPDATE OPTIMIZATIONS TO WORK POST SCHEDULING");
+		// Optimizer postOpts = new Optimizer(this.controllingJob);
+		// postOpts.optimize(target);
+	}
+
 }// PostScheduleOptimize
 
 /**
- * This class simply visits anything that is expected to contain a
- * symbolic {@link MemOffsetConstant} and sets the actual constant
- * value of that node.
+ * This class simply visits anything that is expected to contain a symbolic
+ * {@link MemOffsetConstant} and sets the actual constant value of that node.
  */
-class MemConstantVisitor extends DefaultVisitor
-{
-    public void visit (PriorityMux mux)
-    {
-        /*
-         * Visits the constents of the PriorityMux in an order
-         * that makes sense for constant prop, i.e. when all the
-         * input Buses to a given Component have been visited, then
-         * you can visit that Component.
-         */
-        final Set visitedBuses = new HashSet();
-        final LinkedList queue = new LinkedList(mux.getComponents());
-        while (!queue.isEmpty())
-        {
-            final Component component = (Component)queue.removeFirst();
-            boolean isReady = true;
-            for (Iterator iter = component.getPorts().iterator(); iter.hasNext();)
-            {
-                final Port port = (Port)iter.next();
-                if (port.isConnected() && !visitedBuses.contains(port.getBus()))
-                {
-                    isReady = false;
-                    break;
-                }
-            }
+class MemConstantVisitor extends DefaultVisitor {
+	@Override
+	public void visit(PriorityMux mux) {
+		/*
+		 * Visits the constents of the PriorityMux in an order that makes sense
+		 * for constant prop, i.e. when all the input Buses to a given Component
+		 * have been visited, then you can visit that Component.
+		 */
+		final Set<Bus> visitedBuses = new HashSet<Bus>();
+		final LinkedList<Component> queue = new LinkedList<Component>(
+				mux.getComponents());
+		while (!queue.isEmpty()) {
+			final Component component = queue.removeFirst();
+			boolean isReady = true;
+			for (Port port : component.getPorts()) {
+				if (port.isConnected() && !visitedBuses.contains(port.getBus())) {
+					isReady = false;
+					break;
+				}
+			}
 
-            if (isReady)
-            {
-                component.accept(this);
-                visitedBuses.addAll(component.getBuses());
-            }
-            else
-            {
-                queue.add(component);
-            }
-        }
-    }
+			if (isReady) {
+				component.accept(this);
+				visitedBuses.addAll(component.getBuses());
+			} else {
+				queue.add(component);
+			}
+		}
+	}
 
-    public void visit (HeapRead read)
-    {
-        /*
-         * XXX: In C, the offset is fixed, so a regular Constant
-         * is created for it, not a DeferredConstant.
-         */
-    }
+	@Override
+	public void visit(HeapRead read) {
+		/*
+		 * XXX: In C, the offset is fixed, so a regular Constant is created for
+		 * it, not a DeferredConstant.
+		 */
+	}
 
-    public void visit (HeapWrite write)
-    {
-        /*
-         * XXX: In C, the offset is fixed, so a regular Constant
-         * is created for it, not a DeferredConstant.
-         */
-    }
+	@Override
+	public void visit(HeapWrite write) {
+		/*
+		 * XXX: In C, the offset is fixed, so a regular Constant is created for
+		 * it, not a DeferredConstant.
+		 */
+	}
 
-    /**
-     * Resolves the abstract pointer to a {@link Location} into a
-     * concrete address at which to access the backing memory.
-     */
-    public void visit (AbsoluteMemoryRead read)
-    {
-        read.getAddressConstant().lock();
-    }
+	/**
+	 * Resolves the abstract pointer to a {@link Location} into a concrete
+	 * address at which to access the backing memory.
+	 */
+	@Override
+	public void visit(AbsoluteMemoryRead read) {
+		read.getAddressConstant().lock();
+	}
 
-    /**
-     * Resolves the abstract pointer to a {@link Location} into a
-     * concrete address at which to access the backing memory.
-     */
-    public void visit (AbsoluteMemoryWrite write)
-    {
-        write.getAddressConstant().lock();
-    }
+	/**
+	 * Resolves the abstract pointer to a {@link Location} into a concrete
+	 * address at which to access the backing memory.
+	 */
+	@Override
+	public void visit(AbsoluteMemoryWrite write) {
+		write.getAddressConstant().lock();
+	}
 
-    public void visit (ArrayRead arrayRead)
-    {
-        super.visit(arrayRead);
-    }
-    
-    public void visit (ArrayWrite arrayWrite)
-    {
-        super.visit(arrayWrite);
-    }
+	@Override
+	public void visit(ArrayRead arrayRead) {
+		super.visit(arrayRead);
+	}
 
-    public void visit (Constant constant)
-    {
-        super.visit(constant);
-        constant.lock();
-        // Some constants contain other constants.  These may be
-        // 'hidden' or virtual constants as they are not actually in
-        // the lim but are simply supporting the constant which is in
-        // the LIM.  So, we need to lock down any of those as well.
-        for (Iterator iter = constant.getContents().iterator(); iter.hasNext();)
-        {
-            ((Constant)iter.next()).lock();
-        }
-    }
+	@Override
+	public void visit(ArrayWrite arrayWrite) {
+		super.visit(arrayWrite);
+	}
+
+	@Override
+	public void visit(Constant constant) {
+		super.visit(constant);
+		constant.lock();
+		// Some constants contain other constants. These may be
+		// 'hidden' or virtual constants as they are not actually in
+		// the lim but are simply supporting the constant which is in
+		// the LIM. So, we need to lock down any of those as well.
+		for (Constant c : constant.getContents()) {
+			c.lock();
+		}
+	}
 }

@@ -105,7 +105,8 @@ public abstract class OffsetMemoryRead extends OffsetMemoryAccess {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		// XXX WARNING! This is probably never called since all the
 		// concrete subclasses override cloneNotify and do not call
 		// the super!

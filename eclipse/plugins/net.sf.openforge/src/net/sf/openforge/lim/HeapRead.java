@@ -196,8 +196,9 @@ public class HeapRead extends OffsetMemoryRead {
 	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == offsetConstant)
+		if (component == offsetConstant) {
 			offsetConstant = null;
+		}
 		return ret;
 	}
 
@@ -237,7 +238,8 @@ public class HeapRead extends OffsetMemoryRead {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		((HeapRead) moduleClone).offsetConstant = (Constant) cloneMap
 				.get(offsetConstant);

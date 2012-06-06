@@ -59,7 +59,7 @@ import net.sf.openforge.verilog.model.Keyword;
  */
 public class VerilogNaming extends FilteredVisitor {
 
-	private final Stack scope_stack = new Stack();
+	private final Stack<Set<String>> scope_stack = new Stack<Set<String>>();
 
 	private Set<String> current_scope = null;
 
@@ -94,7 +94,7 @@ public class VerilogNaming extends FilteredVisitor {
 	 * Ends the current scope, dropping back to the previous scope.
 	 */
 	private void endScope() {
-		current_scope = (Set) scope_stack.pop();
+		current_scope = scope_stack.pop();
 	}
 
 	private void recordName(ID id) {

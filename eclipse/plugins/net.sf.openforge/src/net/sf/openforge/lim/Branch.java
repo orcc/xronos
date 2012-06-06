@@ -142,9 +142,10 @@ public class Branch extends Module {
 		} else if (removed == getFalseBranch()) {
 			assert (inserted instanceof Module) : "Replacement for false must be a module";
 			falseBranch = (Module) inserted;
-		} else
+		} else {
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
+		}
 
 		boolean mod = removeComponent(removed);
 		addComponent(inserted);
@@ -186,7 +187,8 @@ public class Branch extends Module {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final Branch clone = (Branch) moduleClone;
 		clone.decision = (Decision) cloneMap.get(decision);

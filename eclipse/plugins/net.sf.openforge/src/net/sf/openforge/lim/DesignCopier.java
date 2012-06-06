@@ -130,10 +130,11 @@ public class DesignCopier {
 
 		@Override
 		public void filterAny(Component comp) {
-			if (add)
+			if (add) {
 				comp.addCloneListener(this);
-			else
+			} else {
 				comp.removeCloneListener(this);
+			}
 		}
 	}
 

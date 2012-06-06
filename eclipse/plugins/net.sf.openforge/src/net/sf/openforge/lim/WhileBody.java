@@ -218,7 +218,8 @@ public class WhileBody extends LoopBody implements Cloneable {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final WhileBody clone = (WhileBody) moduleClone;
 		clone.decision = (Decision) cloneMap.get(decision);

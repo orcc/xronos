@@ -32,13 +32,13 @@ import java.util.Map;
  */
 class DefaultCloneListener implements CloneListener {
 
-	private Map cloneMap = new HashMap();
+	private Map<Component, Component> cloneMap = new HashMap<Component, Component>();
 
 	/**
 	 * The effect of calling this method multiple times is cumulative.
 	 */
 	@Override
-	public void setCloneMap(Map cloneMap) {
+	public void setCloneMap(Map<Component, Component> cloneMap) {
 		this.cloneMap.putAll(cloneMap);
 	}
 
@@ -48,7 +48,7 @@ class DefaultCloneListener implements CloneListener {
 	 * @return a map of original {@link Component Components} and {@link Entry
 	 *         Entries} to their clones
 	 */
-	public Map getCloneMap() {
+	public Map<Component, Component> getCloneMap() {
 		return cloneMap;
 	}
 
@@ -56,13 +56,14 @@ class DefaultCloneListener implements CloneListener {
 	 * Gets the clone of a given {@link Component}.
 	 */
 	public Component getClone(Component component) {
-		return (Component) cloneMap.get(component);
+		return cloneMap.get(component);
 	}
 
 	/**
 	 * Gets the clone of a given {@link Entry}.
 	 */
-	public Entry getClone(Entry entry) {
-		return (Entry) cloneMap.get(entry);
-	}
+	/*
+	 * public Entry getClone(Entry entry) { return (Entry) cloneMap.get(entry);
+	 * }
+	 */
 }

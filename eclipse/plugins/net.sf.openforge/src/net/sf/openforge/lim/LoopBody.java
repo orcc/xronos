@@ -22,7 +22,6 @@ package net.sf.openforge.lim;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -66,8 +65,9 @@ public abstract class LoopBody extends Module {
 	 */
 	public LoopBody() {
 		super();
-		if (_lim.db)
+		if (_lim.db) {
 			_lim.ln(_lim.LOOPS, "Creating 2 exits on Loop Body");
+		}
 	}
 
 	/**
@@ -217,28 +217,27 @@ public abstract class LoopBody extends Module {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		final LoopBody clone = (LoopBody) moduleClone;
 
 		clone.portNameMap = new TwoWayMap();
-		for (Iterator iter = getPorts().iterator(); iter.hasNext();) {
-			final Port port = (Port) iter.next();
+		for (Port port : getPorts()) {
 			final Port clonePort = getPortClone(port, cloneMap);
 			clone.portNameMap.put(clonePort, portNameMap.get(port));
 		}
 
 		clone.busNameMap = new TwoWayMap();
-		for (Iterator iter = getBuses().iterator(); iter.hasNext();) {
-			final Bus bus = (Bus) iter.next();
+		for (Bus bus : getBuses()) {
 			final Bus cloneBus = getBusClone(bus, cloneMap);
 			clone.busNameMap.put(cloneBus, busNameMap.get(bus));
 		}
 	}
 
-	public List getBusesInOrder(Exit e) {
-		List data = e.getDataBuses();
-		List l = new ArrayList(data.size() + 2);
+	public List<Bus> getBusesInOrder(Exit e) {
+		List<Bus> data = e.getDataBuses();
+		List<Bus> l = new ArrayList<Bus>(data.size() + 2);
 		l.add(e.getDoneBus());
 		l.addAll(data);
 		return l;
@@ -248,13 +247,13 @@ public abstract class LoopBody extends Module {
 	public void changeExit(Exit exit, Exit.Type type) {
 		super.changeExit(exit, type);
 
-		List oldBuses = getBusesInOrder(exit);
-		List newBuses = getBusesInOrder(getExit(type));
+		List<Bus> oldBuses = getBusesInOrder(exit);
+		List<Bus> newBuses = getBusesInOrder(getExit(type));
 		assert oldBuses.size() == newBuses.size();
 
 		for (int i = 0; i < oldBuses.size(); i++) {
-			Bus oldBus = (Bus) oldBuses.get(i);
-			Bus newBus = (Bus) newBuses.get(i);
+			Bus oldBus = oldBuses.get(i);
+			Bus newBus = newBuses.get(i);
 			setBusName(newBus, getBusName(oldBus));
 		}
 	}

@@ -106,8 +106,9 @@ public class Loop extends Module {
 		/*
 		 * By default, the Loop Exit has no data buses.
 		 */
-		if (_lim.db)
+		if (_lim.db) {
 			_lim.ln(_lim.LOOPS, "Making an exit on Loop");
+		}
 		makeExit(0);
 		addComponent(this.initBlock = initBlock);
 		addComponent(this.body = body);
@@ -164,9 +165,10 @@ public class Loop extends Module {
 			int index = dataRegisters.indexOf(removed);
 			dataRegisters.add(index, inserted);
 			dataRegisters.remove(removed);
-		} else
+		} else {
 			throw new IllegalArgumentException(
 					"Cannot replace unknown component in " + getClass());
+		}
 
 		boolean mod = removeComponent(removed);
 		addComponent(inserted);

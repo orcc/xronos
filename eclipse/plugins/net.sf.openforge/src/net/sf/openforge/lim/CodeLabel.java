@@ -39,7 +39,7 @@ public class CodeLabel implements SearchLabel {
 	/** The label that is used when the user does not specify a scope */
 	public static final CodeLabel UNSCOPED = new CodeLabel() {
 		@Override
-		public List getSearchList() {
+		public List<String> getSearchList() {
 			return Collections.singletonList("UNSCOPED");
 		}
 	};
@@ -91,7 +91,7 @@ public class CodeLabel implements SearchLabel {
 	 */
 	@Override
 	public List<String> getSearchList() {
-		List sList = getSearchList(label);
+		List<String> sList = getSearchList(label);
 		return sList;
 	}
 
@@ -102,7 +102,7 @@ public class CodeLabel implements SearchLabel {
 	 */
 	@Override
 	public List<String> getSearchList(String label) {
-		List searchList = new ArrayList();
+		List<String> searchList = new ArrayList<String>();
 		if (label != null) {
 			addVariations(label, searchList);
 		}
@@ -113,14 +113,15 @@ public class CodeLabel implements SearchLabel {
 
 	@Override
 	public String toString() {
-		if (enclosingProcedure != null)
+		if (enclosingProcedure != null) {
 			return new String(
 					net.sf.openforge.util.naming.ID
 							.showDebug(enclosingProcedure)
 							+ " with label "
 							+ label);
-		else
+		} else {
 			return "null enclosing procedure with label " + label;
+		}
 	}
 
 	/**
@@ -137,7 +138,7 @@ public class CodeLabel implements SearchLabel {
 	 * <LI>label
 	 * <OL>
 	 */
-	private void addVariations(String label, List searchList) {
+	private void addVariations(String label, List<String> searchList) {
 		if (enclosingProcedure != null) {
 			IDSourceInfo sourceInfo = enclosingProcedure.getIDSourceInfo();
 			String packageName = sourceInfo.getSourcePackageName();
@@ -145,14 +146,18 @@ public class CodeLabel implements SearchLabel {
 			String methodName = sourceInfo.getMethodName();
 			String signature = sourceInfo.getSignature();
 
-			if ((packageName != null) && (packageName.equals("")))
+			if ((packageName != null) && (packageName.equals(""))) {
 				packageName = null;
-			if ((className != null) && (className.equals("")))
+			}
+			if ((className != null) && (className.equals(""))) {
 				className = null;
-			if ((methodName != null) && (methodName.equals("")))
+			}
+			if ((methodName != null) && (methodName.equals(""))) {
 				methodName = null;
-			if ((signature != null) && (signature.equals("")))
+			}
+			if ((signature != null) && (signature.equals(""))) {
 				signature = null;
+			}
 
 			// package.class.method(signature)#label
 			searchList.add(((packageName != null) ? packageName + "." : "")

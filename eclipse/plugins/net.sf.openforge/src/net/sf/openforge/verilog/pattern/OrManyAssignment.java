@@ -67,7 +67,7 @@ public class OrManyAssignment extends StatementBlock implements ForgePattern {
 	}
 
 	@Override
-	public Collection getProducedNets() {
+	public Collection<Net> getProducedNets() {
 		return Collections.singleton(resultWire);
 	}
 

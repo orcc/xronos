@@ -120,8 +120,9 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(Design design) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Design: " + design.toString());
+		}
 
 		// Cannot just visit the internals of the design module... we
 		// will miss the visit (Task).
@@ -130,43 +131,50 @@ public class DefaultVisitor implements Visitor {
 		// visitGenericModule(design.getDesignModule());
 
 		// for (Iterator it = design.getTasks().iterator(); it.hasNext();)
-		for (Iterator it = getIterator(design.getTasks()); it.hasNext();) {
-			if (_lim.db)
+		for (Task task : design.getTasks()) {
+			if (_lim.db) {
 				writer.inc();
-			Task task = (Task) it.next();
+			}
 			task.accept(this);
-			if (_lim.db)
+			if (_lim.db) {
 				writer.decrease();
+			}
 		}
 	}
 
 	@Override
 	public void visit(Task task) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Task: " + task.toString());
+		}
 
 		if (task.getCall() != null) {
-			if (_lim.db)
+			if (_lim.db) {
 				writer.inc();
+			}
 			task.getCall().accept(this);
-			if (_lim.db)
+			if (_lim.db) {
 				writer.decrease();
+			}
 		}
 	}
 
 	@Override
 	public void visit(Call call) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Call: " + call.toString());
+		}
 
 		if (call.getProcedure() != null) {
-			if (_lim.db)
+			if (_lim.db) {
 				writer.inc();
+			}
 
 			call.getProcedure().accept(this);
 
-			if (_lim.db)
+			if (_lim.db) {
 				writer.decrease();
+			}
 		}
 	}
 
@@ -176,68 +184,79 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(Procedure procedure) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Procedure: " + procedure.toString());
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.inc();
+		}
 
 		procedure.getBody().accept(this);
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.decrease();
+		}
 	}
 
 	@Override
 	public void visit(Block block) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Block: " + block.toString());
+		}
 		genericBlockVisit(block);
 	}
 
 	@Override
 	public void visit(HeapRead heapRead) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("HeapRead: " + heapRead.toString());
+		}
 		genericBlockVisit(heapRead);
 	}
 
 	@Override
 	public void visit(HeapWrite heapWrite) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("HeapWrite: " + heapWrite.toString());
+		}
 		genericBlockVisit(heapWrite);
 	}
 
 	@Override
 	public void visit(ArrayRead arrayRead) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Arrayread: " + arrayRead.toString());
+		}
 		genericBlockVisit(arrayRead);
 	}
 
 	@Override
 	public void visit(ArrayWrite arrayWrite) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("ArrayWrite: " + arrayWrite.toString());
+		}
 		genericBlockVisit(arrayWrite);
 	}
 
 	@Override
 	public void visit(AbsoluteMemoryRead read) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("AbsoluteMemoryRead: " + read.toString());
+		}
 		genericBlockVisit(read);
 	}
 
 	@Override
 	public void visit(AbsoluteMemoryWrite write) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("AbsoluteMemoryWrite: " + write.toString());
+		}
 		genericBlockVisit(write);
 	}
 
 	private void genericBlockVisit(Block block) {
-		Set otherComponents = new LinkedHashSet(block.getComponents());
+		Set<Component> otherComponents = new LinkedHashSet<Component>(
+				block.getComponents());
 		otherComponents.removeAll(block.getSequence());
 		otherComponents.remove(block.getInBuf());
 		otherComponents.removeAll(block.getOutBufs());
@@ -245,13 +264,15 @@ public class DefaultVisitor implements Visitor {
 		block.getInBuf().accept(this);
 
 		for (Iterator it = getIterator(block.getSequence()); it.hasNext();) {
-			if (_lim.db)
+			if (_lim.db) {
 				writer.inc();
+			}
 
 			((Visitable) it.next()).accept(this);
 
-			if (_lim.db)
+			if (_lim.db) {
 				writer.decrease();
+			}
 		}
 
 		visit(otherComponents);
@@ -260,10 +281,12 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(Loop loop) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Loop: " + loop.toString());
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.inc();
+		}
 
 		loop.getInBuf().accept(this);
 		loop.getInitBlock().accept(this);
@@ -271,7 +294,8 @@ public class DefaultVisitor implements Visitor {
 			loop.getBody().accept(this);
 		}
 
-		Collection components = new LinkedHashSet(loop.getComponents());
+		Collection<Component> components = new LinkedHashSet<Component>(
+				loop.getComponents());
 
 		components.remove(loop.getInBuf());
 		components.removeAll(loop.getOutBufs());
@@ -283,17 +307,20 @@ public class DefaultVisitor implements Visitor {
 		visit(components);
 		visit(loop.getOutBufs());
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.dec();
+		}
 	}
 
 	@Override
 	public void visit(WhileBody whileBody) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("While Body");
+		}
 
 		whileBody.getInBuf().accept(this);
-		Collection components = new LinkedHashSet(whileBody.getComponents());
+		Collection<Component> components = new LinkedHashSet<Component>(
+				whileBody.getComponents());
 		components.remove(whileBody.getInBuf());
 		components.removeAll(whileBody.getOutBufs());
 		visit(components);
@@ -302,11 +329,13 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(UntilBody untilBody) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Until Body");
+		}
 
 		untilBody.getInBuf().accept(this);
-		Collection components = new LinkedHashSet(untilBody.getComponents());
+		Collection<Component> components = new LinkedHashSet<Component>(
+				untilBody.getComponents());
 		components.remove(untilBody.getInBuf());
 		components.removeAll(untilBody.getOutBufs());
 		visit(components);
@@ -315,11 +344,13 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(ForBody forBody) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("For Body");
+		}
 
 		forBody.getInBuf().accept(this);
-		Collection components = new LinkedHashSet(forBody.getComponents());
+		Collection<Component> components = new LinkedHashSet<Component>(
+				forBody.getComponents());
 		components.remove(forBody.getInBuf());
 		components.removeAll(forBody.getOutBufs());
 		visit(components);
@@ -328,10 +359,12 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(Decision decision) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Decision: " + decision.toString());
+		}
 
-		Set otherComponents = new LinkedHashSet(decision.getComponents());
+		Set<Component> otherComponents = new LinkedHashSet<Component>(
+				decision.getComponents());
 		otherComponents.remove(decision.getTestBlock());
 		otherComponents.remove(decision.getInBuf());
 		otherComponents.removeAll(decision.getOutBufs());
@@ -350,14 +383,18 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(Branch branch) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Branch: " + branch.toString());
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.inc();
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.inc();
+		}
 
-		Set otherComponents = new LinkedHashSet(branch.getComponents());
+		Set<Component> otherComponents = new LinkedHashSet<Component>(
+				branch.getComponents());
 		otherComponents.remove(branch.getInBuf());
 		otherComponents.remove(branch.getDecision());
 		otherComponents.remove(branch.getTrueBranch());
@@ -367,334 +404,398 @@ public class DefaultVisitor implements Visitor {
 		branch.getInBuf().accept(this);
 		branch.getDecision().accept(this);
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.decrease();
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writeln("True: ");
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.inc();
+		}
 
 		branch.getTrueBranch().accept(this);
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.decrease();
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writeln("False: ");
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.inc();
+		}
 
 		if (branch.getFalseBranch() != null) {
 			branch.getFalseBranch().accept(this);
 		} else {
-			if (_lim.db)
+			if (_lim.db) {
 				writeln("null");
+			}
 		}
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.decrease();
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writeln("Selector: ");
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.inc();
+		}
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.decrease();
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writeln("Others: ");
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.inc();
+		}
 
 		visit(otherComponents);
 		visit(branch.getOutBufs());
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.decrease();
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.decrease();
+		}
 	}
 
 	@Override
 	public void visit(AddOp add) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + add.toString());
+		}
 	}
 
 	@Override
 	public void visit(AndOp and) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + and.toString());
+		}
 	}
 
 	@Override
 	public void visit(NumericPromotionOp numericPromotion) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + numericPromotion.toString());
+		}
 	}
 
 	@Override
 	public void visit(CastOp cast) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + cast.toString());
+		}
 	}
 
 	@Override
 	public void visit(ComplementOp complement) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + complement.toString());
+		}
 	}
 
 	@Override
 	public void visit(ConditionalAndOp conditionalAnd) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + conditionalAnd.toString());
+		}
 	}
 
 	@Override
 	public void visit(ConditionalOrOp conditionalOr) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + conditionalOr.toString());
+		}
 	}
 
 	@Override
 	public void visit(Constant constant) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + constant.toString());
+		}
 	}
 
 	@Override
 	public void visit(DivideOp divide) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + divide.toString());
+		}
 	}
 
 	@Override
 	public void visit(EqualsOp equals) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + equals.toString());
+		}
 	}
 
 	@Override
 	public void visit(GreaterThanEqualToOp greaterThanEqualTo) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + greaterThanEqualTo.toString());
+		}
 	}
 
 	@Override
 	public void visit(GreaterThanOp greaterThan) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + greaterThan.toString());
+		}
 	}
 
 	@Override
 	public void visit(LeftShiftOp leftShift) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + leftShift.toString());
+		}
 	}
 
 	@Override
 	public void visit(LessThanEqualToOp lessThanEqualTo) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + lessThanEqualTo.toString());
+		}
 	}
 
 	@Override
 	public void visit(LessThanOp lessThan) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + lessThan.toString());
+		}
 	}
 
 	@Override
 	public void visit(LocationConstant loc) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Location Constant Operation: " + loc.toString());
+		}
 		visit((Constant) loc);
 	}
 
 	@Override
 	public void visit(MinusOp minus) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + minus.toString());
+		}
 	}
 
 	@Override
 	public void visit(ModuloOp modulo) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + modulo.toString());
+		}
 	}
 
 	@Override
 	public void visit(MultiplyOp multiply) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + multiply.toString());
+		}
 	}
 
 	@Override
 	public void visit(NotEqualsOp notEquals) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + notEquals.toString());
+		}
 	}
 
 	@Override
 	public void visit(NotOp not) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + not.toString());
+		}
 	}
 
 	@Override
 	public void visit(OrOp or) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + or.toString());
+		}
 	}
 
 	@Override
 	public void visit(PlusOp plus) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + plus.toString());
+		}
 	}
 
 	@Override
 	public void visit(ReductionOrOp reductionOr) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + reductionOr.toString());
+		}
 	}
 
 	@Override
 	public void visit(RightShiftOp rightShift) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + rightShift.toString());
+		}
 	}
 
 	@Override
 	public void visit(RightShiftUnsignedOp rightShiftUnsigned) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + rightShiftUnsigned.toString());
+		}
 	}
 
 	@Override
 	public void visit(ShortcutIfElseOp shortcutIfElse) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + shortcutIfElse.toString());
+		}
 	}
 
 	@Override
 	public void visit(SubtractOp subtract) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + subtract.toString());
+		}
 	}
 
 	@Override
 	public void visit(XorOp xor) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Operation: " + xor.toString());
+		}
 	}
 
 	@Override
 	public void visit(InBuf ib) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("InBuf: " + ib);
+		}
 	}
 
 	@Override
 	public void visit(OutBuf ob) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("OutBuf: " + ob);
+		}
 	}
 
 	@Override
 	public void visit(Reg reg) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Reg: " + reg);
+		}
 	}
 
 	@Override
 	public void visit(SRL16 srl16) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("SRL16: " + srl16);
+		}
 	}
 
 	@Override
 	public void visit(Mux m) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Mux: " + m);
+		}
 	}
 
 	@Override
 	public void visit(EncodedMux m) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("EnabledMux: " + m);
+		}
 	}
 
 	@Override
 	public void visit(PriorityMux pmux) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("PriorityMux: " + pmux);
-		if (_lim.db)
+		}
+		if (_lim.db) {
 			writer.inc();
+		}
 
 		pmux.getInBuf().accept(this);
 
-		Collection components = new LinkedList(pmux.getComponents());
+		Collection<Component> components = new LinkedList<Component>(
+				pmux.getComponents());
 		components.remove(pmux.getInBuf());
 		components.removeAll(pmux.getOutBufs());
 
 		// for (Iterator it = components.iterator(); it.hasNext();)
-		for (Iterator it = getIterator(components); it.hasNext();) {
-			if (_lim.db)
+		for (Component component : components) {
+			if (_lim.db) {
 				writer.inc();
+			}
 
-			((Visitable) it.next()).accept(this);
+			((Visitable) component).accept(this);
 
-			if (_lim.db)
+			if (_lim.db) {
 				writer.decrease();
+			}
 		}
 
 		visit(pmux.getOutBufs());
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.dec();
+		}
 	}
 
 	@Override
 	public void visit(And a) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("And: " + a);
+		}
 	}
 
 	@Override
 	public void visit(Not n) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Not: " + n);
+		}
 	}
 
 	@Override
 	public void visit(Or o) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Or: " + o);
+		}
 	}
 
 	@Override
 	public void visit(TriBuf tbuf) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("TriBuf: " + tbuf);
+		}
 	}
 
 	@Override
 	public void visit(Scoreboard scoreboard) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Scoreboard: " + scoreboard);
+		}
 		if (traverseComposable) {
 			scoreboard.getInBuf().accept(this);
-			List components = new LinkedList(scoreboard.getComponents());
+			List<Component> components = new LinkedList<Component>(
+					scoreboard.getComponents());
 			components.remove(scoreboard.getInBuf());
 			components.remove(scoreboard.getOutBufs());
-			for (Iterator it = getIterator(components); it.hasNext();) {
-				if (_lim.db)
+			for (Component component : components) {
+				if (_lim.db) {
 					writer.inc();
+				}
 
-				((Visitable) it.next()).accept(this);
+				((Visitable) component).accept(this);
 
-				if (_lim.db)
+				if (_lim.db) {
 					writer.decrease();
+				}
 			}
 
 			visit(scoreboard.getOutBufs());
@@ -703,21 +804,25 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(Latch latch) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Latch: " + latch);
+		}
 		if (traverseComposable) {
 			latch.getInBuf().accept(this);
-			List components = new LinkedList(latch.getComponents());
+			List<Component> components = new LinkedList<Component>(
+					latch.getComponents());
 			components.remove(latch.getInBuf());
 			components.remove(latch.getOutBufs());
-			for (Iterator it = getIterator(components); it.hasNext();) {
-				if (_lim.db)
+			for (Component component : components) {
+				if (_lim.db) {
 					writer.inc();
+				}
 
-				((Visitable) it.next()).accept(this);
+				((Visitable) component).accept(this);
 
-				if (_lim.db)
+				if (_lim.db) {
 					writer.decrease();
+				}
 			}
 
 			visit(latch.getOutBufs());
@@ -726,21 +831,25 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(Kicker kicker) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Kicker: " + kicker);
+		}
 		if (traverseComposable) {
 			kicker.getInBuf().accept(this);
-			List components = new LinkedList(kicker.getComponents());
+			List<Component> components = new LinkedList<Component>(
+					kicker.getComponents());
 			components.remove(kicker.getInBuf());
 			components.remove(kicker.getOutBufs());
-			for (Iterator it = getIterator(components); it.hasNext();) {
-				if (_lim.db)
+			for (Component component : components) {
+				if (_lim.db) {
 					writer.inc();
+				}
 
-				((Visitable) it.next()).accept(this);
+				((Visitable) component).accept(this);
 
-				if (_lim.db)
+				if (_lim.db) {
 					writer.decrease();
+				}
 			}
 
 			visit(kicker.getOutBufs());
@@ -749,34 +858,40 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(NoOp nop) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("NoOp: " + nop);
+		}
 	}
 
 	@Override
 	public void visit(TimingOp timingOp) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("TimingOp: " + timingOp);
+		}
 	}
 
 	@Override
 	public void visit(RegisterRead regRead) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("RegisterRead: " + regRead);
+		}
 	}
 
 	@Override
 	public void visit(RegisterWrite regWrite) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("RegisterWrite: " + regWrite);
+		}
 	}
 
 	@Override
 	public void visit(RegisterGateway gw) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("RegisterGateway: " + gw.toString());
+		}
 
-		Set otherComponents = new LinkedHashSet(gw.getComponents());
+		Set<Component> otherComponents = new LinkedHashSet<Component>(
+				gw.getComponents());
 		otherComponents.remove(gw.getInBuf());
 		otherComponents.removeAll(gw.getOutBufs());
 
@@ -788,12 +903,15 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(RegisterReferee regReferee) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("RegisterReferee: " + regReferee);
+		}
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.inc();
-		Collection comps = new LinkedHashSet(regReferee.getComponents());
+		}
+		Collection<Component> comps = new LinkedHashSet<Component>(
+				regReferee.getComponents());
 		comps.remove(regReferee.getInBuf());
 		comps.removeAll(regReferee.getOutBufs());
 
@@ -813,19 +931,23 @@ public class DefaultVisitor implements Visitor {
 
 		// visit(regReferee.getOutBufs());
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.dec();
+		}
 	}
 
 	@Override
 	public void visit(MemoryReferee memReferee) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("MemoryReferee: " + memReferee);
+		}
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.inc();
+		}
 
-		Collection comps = new LinkedHashSet(memReferee.getComponents());
+		Collection<Component> comps = new LinkedHashSet<Component>(
+				memReferee.getComponents());
 		comps.remove(memReferee.getInBuf());
 		comps.removeAll(memReferee.getOutBufs());
 
@@ -838,14 +960,16 @@ public class DefaultVisitor implements Visitor {
 
 		visit(memReferee.getOutBufs());
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.dec();
+		}
 	}
 
 	@Override
 	public void visit(MemoryBank memBank) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("MemoryBank: " + memBank);
+		}
 	}
 
 	/**
@@ -854,8 +978,9 @@ public class DefaultVisitor implements Visitor {
 	 */
 	@Override
 	public void visit(MemoryRead memRead) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("MemoryRead: " + memRead);
+		}
 
 		if (memRead.getPhysicalComponent() != null) {
 			visitGenericModule(memRead.getPhysicalComponent());
@@ -868,8 +993,9 @@ public class DefaultVisitor implements Visitor {
 	 */
 	@Override
 	public void visit(MemoryWrite memWrite) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("Memorywrite: " + memWrite);
+		}
 
 		if (memWrite.getPhysicalComponent() != null) {
 			visitGenericModule(memWrite.getPhysicalComponent());
@@ -878,10 +1004,12 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(MemoryGateway mg) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("MemoryGateway: " + mg.toString());
+		}
 
-		Set otherComponents = new LinkedHashSet(mg.getComponents());
+		Set<Component> otherComponents = new LinkedHashSet<Component>(
+				mg.getComponents());
 		otherComponents.remove(mg.getInBuf());
 		otherComponents.removeAll(mg.getOutBufs());
 
@@ -893,8 +1021,9 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(PinRead pinRead) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("PinRead: " + pinRead);
+		}
 
 		if (pinRead.getPhysicalComponent() != null) {
 			visitGenericModule(pinRead.getPhysicalComponent());
@@ -907,8 +1036,9 @@ public class DefaultVisitor implements Visitor {
 	 */
 	@Override
 	public void visit(PinWrite pinWrite) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("PinWrite: " + pinWrite);
+		}
 
 		if (pinWrite.getPhysicalComponent() != null) {
 			visitGenericModule(pinWrite.getPhysicalComponent());
@@ -921,8 +1051,9 @@ public class DefaultVisitor implements Visitor {
 	 */
 	@Override
 	public void visit(PinStateChange pinChange) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("PinStateChange: " + pinChange);
+		}
 
 		if (pinChange.getPhysicalComponent() != null) {
 			visitGenericModule(pinChange.getPhysicalComponent());
@@ -931,13 +1062,16 @@ public class DefaultVisitor implements Visitor {
 
 	@Override
 	public void visit(PinReferee pinReferee) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("PinReferee: " + pinReferee);
+		}
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.inc();
+		}
 
-		Collection comps = new LinkedHashSet(pinReferee.getComponents());
+		Collection<Component> comps = new LinkedHashSet<Component>(
+				pinReferee.getComponents());
 		comps.remove(pinReferee.getInBuf());
 		comps.removeAll(pinReferee.getOutBufs());
 
@@ -947,67 +1081,77 @@ public class DefaultVisitor implements Visitor {
 
 		visit(pinReferee.getOutBufs());
 
-		if (_lim.db)
+		if (_lim.db) {
 			writer.dec();
+		}
 	}
 
 	@Override
 	public void visit(SimplePin comp) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("SimplePin: " + comp);
+		}
 	}
 
 	@Override
 	public void visit(TaskCall mod) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("TaskCall: " + mod);
+		}
 		visitGenericModule(mod);
 	}
 
 	@Override
 	public void visit(SimplePinAccess mod) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("SimplePinAccess: " + mod);
+		}
 		visitGenericModule(mod);
 	}
 
 	@Override
 	public void visit(SimplePinRead comp) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("SimplePinRead: " + comp);
+		}
 	}
 
 	@Override
 	public void visit(SimplePinWrite comp) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("SimplePinWrite: " + comp);
+		}
 	}
 
 	@Override
 	public void visit(FifoAccess mod) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("FifoAccess: " + mod);
+		}
 		visitGenericModule(mod);
 	}
 
 	@Override
 	public void visit(FifoRead mod) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("FifoRead: " + mod);
+		}
 		visitGenericModule(mod);
 	}
 
 	@Override
 	public void visit(FifoWrite mod) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("FifoWrite: " + mod);
+		}
 		visitGenericModule(mod);
 	}
 
 	@Override
 	public void visit(EndianSwapper mod) {
-		if (_lim.db)
+		if (_lim.db) {
 			writeln("EndianSwapper: " + mod);
+		}
 		visitGenericModule(mod);
 	}
 
@@ -1026,7 +1170,8 @@ public class DefaultVisitor implements Visitor {
 	}
 
 	protected void visitGenericModule(Module m) {
-		Collection comps = new LinkedHashSet(m.getComponents());
+		Collection<Component> comps = new LinkedHashSet<Component>(
+				m.getComponents());
 		comps.remove(m.getInBuf());
 		comps.removeAll(m.getOutBufs());
 		m.getInBuf().accept(this);

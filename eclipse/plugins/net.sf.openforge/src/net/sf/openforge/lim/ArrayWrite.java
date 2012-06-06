@@ -166,8 +166,9 @@ public class ArrayWrite extends OffsetMemoryWrite implements ArrayAccess {
 	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == skipConstant)
+		if (component == skipConstant) {
 			skipConstant = null;
+		}
 		return ret;
 	}
 
@@ -205,7 +206,8 @@ public class ArrayWrite extends OffsetMemoryWrite implements ArrayAccess {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		((ArrayWrite) moduleClone).skipConstant = (Constant) cloneMap
 				.get(skipConstant);

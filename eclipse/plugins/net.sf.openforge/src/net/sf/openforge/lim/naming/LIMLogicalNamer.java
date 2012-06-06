@@ -180,6 +180,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Design)
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	public void visit(Design design) {
 		// Make the TOP_MODULE_NAME setting the absolute name
@@ -381,6 +382,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Call)
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	public void visit(Call call) {
 		// all call naming is based on the procedure, so name that first.
@@ -412,6 +414,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/**
 	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Procedure)
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	public void visit(Procedure procedure) {
 

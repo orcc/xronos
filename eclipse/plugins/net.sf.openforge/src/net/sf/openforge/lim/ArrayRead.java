@@ -178,8 +178,9 @@ public class ArrayRead extends OffsetMemoryRead implements ArrayAccess {
 	@Override
 	public boolean removeComponent(Component component) {
 		boolean ret = super.removeComponent(component);
-		if (component == skipConstant)
+		if (component == skipConstant) {
 			skipConstant = null;
+		}
 		return ret;
 	}
 
@@ -217,7 +218,8 @@ public class ArrayRead extends OffsetMemoryRead implements ArrayAccess {
 	}
 
 	@Override
-	protected void cloneNotify(Module moduleClone, Map cloneMap) {
+	protected void cloneNotify(Module moduleClone,
+			Map<Component, Component> cloneMap) {
 		super.cloneNotify(moduleClone, cloneMap);
 		((ArrayRead) moduleClone).skipConstant = (Constant) cloneMap
 				.get(skipConstant);
