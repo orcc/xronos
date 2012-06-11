@@ -461,7 +461,7 @@ public class ModuleUtil {
 			Map<Bus, Integer> doneBusDependency) {
 
 		for (Component component : module.getComponents()) {
-
+			// Build Data Dependencies
 			if (component instanceof Loop) {
 				loopDependecies(component);
 			} else {
@@ -478,7 +478,18 @@ public class ModuleUtil {
 					}
 				}
 			}
-
+			// Build control Dependencies
+			if (!(component instanceof InBuf) && !(component instanceof OutBuf)
+					&& !(component instanceof Decision)
+					&& !(module instanceof Branch)
+					&& !(component instanceof Loop)) {
+				Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
+				Port donePort = exit.getDoneBus().getPeer();
+				List<Entry> entries = donePort.getOwner().getEntries();
+				Entry entry = entries.get(doneBusDependency.get(doneBus));
+				Dependency dep = new ControlDependency(doneBus);
+				entry.addDependency(donePort, dep);
+			}
 		}
 
 	}

@@ -88,8 +88,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 	private class InnerComponentCreator extends ComponentCreator {
 
 		public InnerComponentCreator(ResourceCache resources,
-				List<Component> component, Map<Port, Var> portDependency,
-				Map<Bus, Var> busDependency,
+				Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 				Map<Port, Integer> portGroupDependency,
 				Map<Bus, Integer> doneBusDependency) {
 			super(resources, portDependency, busDependency,
@@ -175,11 +174,9 @@ public class DesignScheduler extends DfVisitor<Task> {
 	private List<Component> schedulerComponents;
 
 	public DesignScheduler(ResourceCache resources,
-			Map<Action, Task> actorsTasks, List<Component> componentsList,
-			Map<LogicalValue, Var> stateVars) {
+			Map<Action, Task> actorsTasks, Map<LogicalValue, Var> stateVars) {
 		this.resources = resources;
 		this.actorsTasks = actorsTasks;
-		this.componentsList = componentsList;
 		componentCounter = 0;
 		schedulerComponents = new ArrayList<Component>();
 		isSchedulableComponents = new HashMap<Action, List<Component>>();
@@ -196,8 +193,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 		portDependency = new HashMap<Port, Var>();
 		// this.stateVars = stateVars;
 		innerComponentCreator = new InnerComponentCreator(resources,
-				componentsList, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
 	}
 
 	@Override

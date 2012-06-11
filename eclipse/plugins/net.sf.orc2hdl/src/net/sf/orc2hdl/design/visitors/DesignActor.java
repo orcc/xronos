@@ -156,7 +156,7 @@ public class DesignActor extends DfVisitor<Object> {
 		PortUtil.createDesignPorts(design, actor.getInputs(), "in", resources);
 		PortUtil.createDesignPorts(design, actor.getOutputs(), "out", resources);
 
-		// TODO: Get the values of the parameters before visiting
+		/** Get the values of the parameters before visiting **/
 		for (Var parameter : actor.getParameters()) {
 			irVisitor.doSwitch(parameter);
 		}
@@ -178,7 +178,7 @@ public class DesignActor extends DfVisitor<Object> {
 
 		/** Create the design scheduler **/
 		DesignScheduler designScheduler = new DesignScheduler(resources,
-				actorsTasks, componentsList, stateVars);
+				actorsTasks, stateVars);
 
 		/** Add scheduler task to the design **/
 		Task scheduler = designScheduler.doSwitch(actor);
