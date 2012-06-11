@@ -29,8 +29,8 @@
 
 package net.sf.orc2hdl.design.util;
 
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
@@ -104,9 +104,10 @@ public class PortUtil {
 		Var pinReaVar = action.getInputPattern().getPortToVarMap().get(port);
 
 		// Map out Data Ports
-		Map<Var, Integer> outVars = new HashMap<Var, Integer>();
-		outVars.put(pinReaVar, 0);
-		mapOutDataPorts(pinRead, outVars, busDependency, doneBusDependency);
+
+		GroupedVar outVars = new GroupedVar(pinReaVar, 0);
+		mapOutDataPorts(pinRead, outVars.getAsList(), busDependency,
+				doneBusDependency);
 
 		return pinRead;
 	}
@@ -124,10 +125,10 @@ public class PortUtil {
 		pinStatus.put(port, pinStatusVar);
 
 		// Map out pinStatusVar to pinStatusComponent
-		Map<Var, Integer> outVars = new HashMap<Var, Integer>();
-		outVars.put(pinStatusVar, 0);
-		PortUtil.mapOutDataPorts(pinStatusComponent, outVars, busDependency,
-				doneBusDependency);
+
+		GroupedVar outVars = new GroupedVar(pinStatusVar, 0);
+		PortUtil.mapOutDataPorts(pinStatusComponent, outVars.getAsList(),
+				busDependency, doneBusDependency);
 
 		return pinStatusComponent;
 	}
@@ -147,9 +148,10 @@ public class PortUtil {
 		Var pinWriteVar = action.getOutputPattern().getPortToVarMap().get(port);
 
 		// Map in Data Ports
-		Map<Var, Integer> inVars = new HashMap<Var, Integer>();
-		inVars.put(pinWriteVar, 0);
-		mapInDataPorts(pinWrite, inVars, portDependency, groupPortDependency);
+
+		GroupedVar inVars = new GroupedVar(pinWriteVar, 0);
+		mapInDataPorts(pinWrite, inVars.getAsList(), portDependency,
+				groupPortDependency);
 
 		// Map out Control Port
 		mapOutControlPort(pinWrite, 0, doneBusDependency);
@@ -158,14 +160,15 @@ public class PortUtil {
 	}
 
 	public static void mapInDataPorts(Component component,
-			Map<Var, Integer> inVars, Map<Port, Var> portDependency,
+			List<GroupedVar> inVars, Map<Port, Var> portDependency,
 			Map<Port, Integer> portGroupDependency) {
 
 		Iterator<Port> portIter = component.getDataPorts().iterator();
 
-		for (Var var : inVars.keySet()) {
+		for (GroupedVar groupedVar : inVars) {
+			Var var = groupedVar.getVar();
+			Integer groupPort = groupedVar.getGroup();
 			Port dataPort = portIter.next();
-			Integer groupPort = inVars.get(var);
 			dataPort.setIDLogical(var.getIndexedName());
 			dataPort.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
@@ -182,11 +185,12 @@ public class PortUtil {
 	}
 
 	public static void mapOutDataPorts(Component component,
-			Map<Var, Integer> outVars, Map<Bus, Var> busDependency,
+			List<GroupedVar> outVars, Map<Bus, Var> busDependency,
 			Map<Bus, Integer> doneBusDependency) {
 
-		for (Var var : outVars.keySet()) {
-			Integer group = outVars.get(var);
+		for (GroupedVar groupedVar : outVars) {
+			Var var = groupedVar.getVar();
+			Integer group = groupedVar.getGroup();
 			// Get the component dataBus
 			Bus dataBus = component.getExit(Exit.DONE).getDataBuses()
 					.get(group);

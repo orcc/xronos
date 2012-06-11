@@ -45,6 +45,7 @@ import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.util.DesignUtil;
+import net.sf.orc2hdl.design.util.GroupedVar;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
 import net.sf.orc2hdl.preference.Constants;
@@ -104,9 +105,8 @@ public class DesignActor extends DfVisitor<Object> {
 		stateVars = new HashMap<LogicalValue, Var>();
 		stateVarVisitor = new StateVarVisitor(stateVars);
 		componentsList = new ArrayList<Component>();
-		componentCreator = new ComponentCreator(resources, componentsList,
-				portDependency, busDependency, portGroupDependency,
-				doneBusDependency);
+		componentCreator = new ComponentCreator(resources, portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
 	}
 
 	@Override
@@ -139,8 +139,8 @@ public class DesignActor extends DfVisitor<Object> {
 
 		/** Build the Task Module which contains all the components **/
 		Module taskModule = (Module) ModuleUtil.createModule(componentsList,
-				Collections.<Var, Integer> emptyMap(),
-				Collections.<Var, Integer> emptyMap(), taskName + "Body",
+				Collections.<GroupedVar> emptyList(),
+				Collections.<GroupedVar> emptyList(), taskName + "Body",
 				Exit.RETURN, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 		/** Create the task **/
@@ -179,7 +179,10 @@ public class DesignActor extends DfVisitor<Object> {
 		/** Create the design scheduler **/
 		DesignScheduler designScheduler = new DesignScheduler(resources,
 				actorsTasks, componentsList, stateVars);
-		designScheduler.doSwitch(actor);
+
+		/** Add scheduler task to the design **/
+		Task scheduler = designScheduler.doSwitch(actor);
+		design.addTask(scheduler);
 
 		for (Task task : design.getTasks()) {
 			Call call = task.getCall();

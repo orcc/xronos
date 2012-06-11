@@ -38,6 +38,7 @@ import java.util.Map;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.Location;
+import net.sf.orc2hdl.design.util.GroupedVar;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.InstCall;
@@ -54,10 +55,10 @@ import net.sf.orcc.ir.Var;
 public class ResourceCache {
 
 	/** Map of BlockIf and a List of Decision, Then, Else Input and the Phi Vars **/
-	private final Map<BlockIf, List<Map<Var, Integer>>> branchIfInput = new HashMap<BlockIf, List<Map<Var, Integer>>>();
+	private final Map<BlockIf, List<List<GroupedVar>>> branchIfInput = new HashMap<BlockIf, List<List<GroupedVar>>>();
 
 	/** Map of BlockIf and a List of Then and Else Block outputs **/
-	private final Map<BlockIf, List<Map<Var, Integer>>> branchIfOutput = new HashMap<BlockIf, List<Map<Var, Integer>>>();
+	private final Map<BlockIf, List<List<GroupedVar>>> branchIfOutput = new HashMap<BlockIf, List<List<GroupedVar>>>();
 
 	/** Map of BlockIf and its Map of Target Var and its associated Values Var **/
 	private final Map<BlockIf, Map<Var, List<Var>>> branchPhi = new HashMap<BlockIf, Map<Var, List<Var>>>();
@@ -72,29 +73,27 @@ public class ResourceCache {
 	}
 
 	public void addBranchDecisionInput(BlockIf blockIf, Var var) {
-		Map<Var, Integer> vars = new HashMap<Var, Integer>();
-		vars.put(var, 0);
-
-		List<Map<Var, Integer>> listOfVars = new ArrayList<Map<Var, Integer>>();
-		listOfVars.add(0, vars);
+		GroupedVar groupedVar = new GroupedVar(var, 0);
+		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
+		listOfVars.add(0, groupedVar.getAsList());
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
 	public void addBranchElseInput(BlockIf blockIf, List<Var> elseVars) {
-		List<Map<Var, Integer>> listOfVars = branchIfInput.get(blockIf);
-		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : elseVars) {
-			vars.put(var, 0);
+			vars.add(new GroupedVar(var, 0));
 		}
 		listOfVars.add(2, vars);
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
 	public void addBranchElseOutput(BlockIf blockIf, List<Var> elseVars) {
-		List<Map<Var, Integer>> listOfVars = branchIfOutput.get(blockIf);
-		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : elseVars) {
-			vars.put(var, 0);
+			vars.add(new GroupedVar(var, 0));
 		}
 
 		listOfVars.add(1, vars);
@@ -106,11 +105,10 @@ public class ResourceCache {
 	}
 
 	public void addBranchThenInput(BlockIf blockIf, List<Var> thenVars) {
-		List<Map<Var, Integer>> listOfVars = branchIfInput.get(blockIf);
-
-		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : thenVars) {
-			vars.put(var, 0);
+			vars.add(new GroupedVar(var, 0));
 		}
 
 		listOfVars.add(1, vars);
@@ -118,10 +116,10 @@ public class ResourceCache {
 	}
 
 	public void addBranchThenOutput(BlockIf blockIf, List<Var> thenVars) {
-		List<Map<Var, Integer>> listOfVars = new ArrayList<Map<Var, Integer>>();
-		Map<Var, Integer> vars = new HashMap<Var, Integer>();
+		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : thenVars) {
-			vars.put(var, 0);
+			vars.add(new GroupedVar(var, 0));
 		}
 
 		listOfVars.add(0, vars);
@@ -140,28 +138,28 @@ public class ResourceCache {
 		taskCalls.put(instCall, taskCall);
 	}
 
-	public Map<Var, Integer> getBranchDecision(BlockIf blockIf) {
+	public GroupedVar getBranchDecision(BlockIf blockIf) {
 		// The first value of the first value is always the branch decision Var
-		return branchIfInput.get(blockIf).get(0);
+		return branchIfInput.get(blockIf).get(0).get(0);
 	}
 
-	public Map<Var, Integer> getBranchElseOutputVars(BlockIf blockIf) {
+	public List<GroupedVar> getBranchElseOutputVars(BlockIf blockIf) {
 		if (!blockIf.getElseBlocks().isEmpty()) {
 			return branchIfOutput.get(blockIf).get(1);
 		} else {
-			return Collections.emptyMap();
+			return Collections.<GroupedVar> emptyList();
 		}
 	}
 
-	public Map<Var, Integer> getBranchElseVars(BlockIf blockIf) {
+	public List<GroupedVar> getBranchElseVars(BlockIf blockIf) {
 		if (!blockIf.getElseBlocks().isEmpty()) {
 			if (branchIfInput.get(blockIf).get(2).isEmpty()) {
-				return Collections.emptyMap();
+				return Collections.<GroupedVar> emptyList();
 			} else {
 				return branchIfInput.get(blockIf).get(2);
 			}
 		} else {
-			return Collections.emptyMap();
+			return Collections.<GroupedVar> emptyList();
 		}
 	}
 
@@ -169,32 +167,32 @@ public class ResourceCache {
 		return branchPhi.get(blockIf);
 	}
 
-	public Map<Var, Integer> getBranchThenOutputVars(BlockIf blockIf) {
+	public List<GroupedVar> getBranchThenOutputVars(BlockIf blockIf) {
 		return branchIfOutput.get(blockIf).get(0);
 	}
 
-	public Map<Var, Integer> getBranchThenVars(BlockIf blockIf) {
+	public List<GroupedVar> getBranchThenVars(BlockIf blockIf) {
 		return branchIfInput.get(blockIf).get(1);
 	}
 
-	public Map<Var, Integer> getBranchInputs(BlockIf blockIf) {
-		Map<Var, Integer> inputs = new HashMap<Var, Integer>();
-		inputs.putAll(getBranchDecision(blockIf));
-		inputs.putAll(getBranchThenVars(blockIf));
-		inputs.putAll(getBranchElseVars(blockIf));
+	public List<GroupedVar> getBranchInputs(BlockIf blockIf) {
+		List<GroupedVar> inputs = new ArrayList<GroupedVar>();
+		inputs.add(getBranchDecision(blockIf));
+		inputs.addAll(getBranchThenVars(blockIf));
+		inputs.addAll(getBranchElseVars(blockIf));
 
-		Map<Var, Integer> outputs = new HashMap<Var, Integer>();
-		outputs.putAll(getBranchThenOutputVars(blockIf));
-		outputs.putAll(getBranchElseOutputVars(blockIf));
+		List<GroupedVar> outputs = new ArrayList<GroupedVar>();
+		outputs.addAll(getBranchThenOutputVars(blockIf));
+		outputs.addAll(getBranchElseOutputVars(blockIf));
 
 		// Inputs on join node dependency iff the then and else output does not
 		// contain the phi value
 		for (Var var : branchPhi.get(blockIf).keySet()) {
 			List<Var> phiDep = branchPhi.get(blockIf).get(var);
 			for (Var phiVar : phiDep) {
-				if (!inputs.keySet().contains(phiVar)
-						&& !outputs.keySet().contains(phiVar)) {
-					inputs.put(phiVar, 0);
+				if (!GroupedVar.VarContainedInList(inputs, phiVar)
+						&& !GroupedVar.VarContainedInList(outputs, phiVar)) {
+					inputs.add(new GroupedVar(phiVar, 0));
 				}
 			}
 		}

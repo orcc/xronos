@@ -29,28 +29,51 @@
 package net.sf.orc2hdl.design.visitors;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
+import net.sf.openforge.lim.And;
+import net.sf.openforge.lim.Block;
+import net.sf.openforge.lim.Branch;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Decision;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Loop;
+import net.sf.openforge.lim.LoopBody;
+import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Task;
+import net.sf.openforge.lim.WhileBody;
 import net.sf.openforge.lim.memory.LogicalValue;
+import net.sf.openforge.lim.op.SimpleConstant;
 import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orc2hdl.design.util.DesignUtil;
+import net.sf.orc2hdl.design.util.GroupedVar;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.util.util.EcoreHelper;
+
+import org.eclipse.emf.ecore.util.EcoreUtil;
 
 /**
  * 
@@ -69,7 +92,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Map<Bus, Var> busDependency,
 				Map<Port, Integer> portGroupDependency,
 				Map<Bus, Integer> doneBusDependency) {
-			super(resources, component, portDependency, busDependency,
+			super(resources, portDependency, busDependency,
 					portGroupDependency, doneBusDependency);
 		}
 
@@ -87,18 +110,24 @@ public class DesignScheduler extends DfVisitor<Task> {
 						schedulerReturn,
 						IrFactory.eINSTANCE.createExprVar(returnVar));
 				doSwitch(noop);
-				schedulerReturnVar.put(currentAction, schedulerReturn);
+				actionSchedulerReturnVar.put(currentAction, schedulerReturn);
 			}
 			return null;
 		}
 
 	}
 
-	/** Map of action associated to its Task **/
-	private final Map<Action, Task> actorsTasks;
+	/** All inputPattern Variable decisions **/
+	private Map<Action, Var> actionInDecisions;
 
-	/** Dependency between Components and Bus-Var **/
-	private final Map<Bus, Var> busDependency;
+	/** All outputPattern Variable decisions **/
+	private Map<Action, Var> actionOutDecisions;
+
+	/** Map of action associated to its Task **/
+	private Map<Action, Task> actorsTasks;
+
+	/** Dependency between Components and Bus-Variable **/
+	private Map<Bus, Var> busDependency;
 
 	/** All components of the scheduler **/
 	private List<Component> componentsList;
@@ -107,10 +136,10 @@ public class DesignScheduler extends DfVisitor<Task> {
 	private Action currentAction;
 
 	/** Dependency between Components and Done Bus **/
-	private final Map<Bus, Integer> doneBusDependency;
+	private Map<Bus, Integer> doneBusDependency;
 
 	/** Component Creator (Instruction Visitor) **/
-	private final InnerComponentCreator innerComponentCreator;
+	private InnerComponentCreator innerComponentCreator;
 
 	/** The inputPattern Test components **/
 	private Map<Action, List<Component>> inputPatternComponents;
@@ -122,22 +151,28 @@ public class DesignScheduler extends DfVisitor<Task> {
 	private Map<Action, List<Component>> outputPatternComponents;
 
 	/** The actors ports association with pinStatus Var **/
-	private final Map<net.sf.orcc.df.Port, Var> pinStatus;
+	private Map<net.sf.orcc.df.Port, Var> pinStatus;
 
 	/** Dependency between Components and Port-Var **/
-	private final Map<Port, Var> portDependency;
+	private Map<Port, Var> portDependency;
 
 	/** Dependency between Components and Done Bus **/
-	private final Map<Port, Integer> portGroupDependency;
+	private Map<Port, Integer> portGroupDependency;
 
 	/** The resource Cache **/
-	private final ResourceCache resources;
+	private ResourceCache resources;
 
 	/** All Return Vars given by the action scheduler **/
-	private final Map<Action, Var> schedulerReturnVar;
+	private Map<Action, Var> actionSchedulerReturnVar;
 
 	/** Design stateVars **/
-	private final Map<LogicalValue, Var> stateVars;
+	// private Map<LogicalValue, Var> stateVars;
+
+	private Map<Action, List<Component>> actionTests;
+
+	private Integer componentCounter;
+
+	private List<Component> schedulerComponents;
 
 	public DesignScheduler(ResourceCache resources,
 			Map<Action, Task> actorsTasks, List<Component> componentsList,
@@ -145,13 +180,21 @@ public class DesignScheduler extends DfVisitor<Task> {
 		this.resources = resources;
 		this.actorsTasks = actorsTasks;
 		this.componentsList = componentsList;
-		this.stateVars = stateVars;
+		componentCounter = 0;
+		schedulerComponents = new ArrayList<Component>();
+		isSchedulableComponents = new HashMap<Action, List<Component>>();
+		inputPatternComponents = new HashMap<Action, List<Component>>();
+		outputPatternComponents = new HashMap<Action, List<Component>>();
+		actionInDecisions = new HashMap<Action, Var>();
+		actionOutDecisions = new HashMap<Action, Var>();
+
+		pinStatus = new HashMap<net.sf.orcc.df.Port, Var>();
+		portGroupDependency = new HashMap<Port, Integer>();
+		actionSchedulerReturnVar = new HashMap<Action, Var>();
 		busDependency = new HashMap<Bus, Var>();
 		doneBusDependency = new HashMap<Bus, Integer>();
 		portDependency = new HashMap<Port, Var>();
-		pinStatus = new HashMap<net.sf.orcc.df.Port, Var>();
-		portGroupDependency = new HashMap<Port, Integer>();
-		schedulerReturnVar = new HashMap<Action, Var>();
+		// this.stateVars = stateVars;
 		innerComponentCreator = new InnerComponentCreator(resources,
 				componentsList, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
@@ -161,31 +204,39 @@ public class DesignScheduler extends DfVisitor<Task> {
 	public Task caseAction(Action action) {
 		currentAction = action;
 		componentsList = new ArrayList<Component>();
+
+		/** Get the Pin Peek components **/
+		doSwitch(action.getPeekPattern());
+
+		/** Get the action scheduler components **/
+		List<Component> visitedComponents = innerComponentCreator
+				.doSwitch(action.getScheduler());
+
+		/** Save the isSchedulable expressions **/
+		isSchedulableComponents.put(action, visitedComponents);
+
+		/** Build the inputPattern test components **/
+		List<Component> inputPatternTestComponents = createPatternTest(action,
+				action.getInputPattern(), "in");
+		inputPatternComponents.put(action, inputPatternTestComponents);
+
+		/** Build the outputPattern test components **/
+		List<Component> outputPatternTestComponents = createPatternTest(action,
+				action.getOutputPattern(), "out");
+		outputPatternComponents.put(action, outputPatternTestComponents);
+
 		return null;
 	}
 
 	@Override
 	public Task caseActor(Actor actor) {
-		Task task = null;
-		/** Initialize fields **/
-		componentsList = new ArrayList<Component>();
-		isSchedulableComponents = new HashMap<Action, List<Component>>();
-		inputPatternComponents = new HashMap<Action, List<Component>>();
-		outputPatternComponents = new HashMap<Action, List<Component>>();
-
-		/** Build the Loop Decision **/
-
-		Decision loopDecision = ModuleUtil.createTrueDecision(
-				"var_" + actor.getName() + "_loop", portDependency,
-				busDependency, portGroupDependency, doneBusDependency);
-
 		/** Get the actor Pin Status from actors Ports **/
 		for (net.sf.orcc.df.Port port : actor.getInputs()) {
 			if (!port.isNative()) {
 				Component pinStatusComponent = PortUtil
 						.createPinStatusComponent(port, resources, pinStatus,
 								busDependency, doneBusDependency);
-				componentsList.add(pinStatusComponent);
+				schedulerComponents.add(pinStatusComponent);
 			}
 		}
 
@@ -194,7 +245,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Component pinStatusComponent = PortUtil
 						.createPinStatusComponent(port, resources, pinStatus,
 								busDependency, doneBusDependency);
-				componentsList.add(pinStatusComponent);
+				schedulerComponents.add(pinStatusComponent);
 			}
 		}
 
@@ -202,11 +253,281 @@ public class DesignScheduler extends DfVisitor<Task> {
 		for (Action action : actor.getActions()) {
 			doSwitch(action);
 			// Add all the components to componentsList
-			componentsList.addAll(isSchedulableComponents.get(action));
-			componentsList.addAll(inputPatternComponents.get(action));
-			componentsList.addAll(outputPatternComponents.get(action));
+			if (isSchedulableComponents.get(action) != null) {
+				schedulerComponents.addAll(isSchedulableComponents.get(action));
+			}
+			if (inputPatternComponents.get(action) != null) {
+				schedulerComponents.addAll(inputPatternComponents.get(action));
+			}
+			if (outputPatternComponents.get(action) != null) {
+				schedulerComponents.addAll(outputPatternComponents.get(action));
+			}
 		}
+
+		/** Create the action Test for all actions in the actor **/
+		createActionTest(actor.getActions());
+		/** Construct the scheduler if body **/
+		Component branchBlock = null;
+		if (actor.getFsm() == null) {
+			branchBlock = createOutFsmScheduler(actor.getActionsOutsideFsm());
+		}
+
+		/** Add the scheduler branch block to the scheduler Components **/
+		schedulerComponents.add(branchBlock);
+
+		/** Create the WhileBody which the components **/
+		Module whileBodyModule = (Block) ModuleUtil.createModule(
+				schedulerComponents, Collections.<GroupedVar> emptyList(),
+				Collections.<GroupedVar> emptyList(), "schedulerBody",
+				Exit.DONE, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+
+		/** Build the infinite Loop of the scheduler **/
+		Decision loopDecision = ModuleUtil.createTrueDecision(
+				"var_" + actor.getName() + "_loop", portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
+
+		/** Create the scheduler Loop Body **/
+		LoopBody loopBody = new WhileBody(loopDecision, whileBodyModule);
+
+		/** Create the scheduler Loop **/
+		Loop loop = new Loop(loopBody);
+
+		/** Module of the scheduler **/
+		Module scheduler = (Block) ModuleUtil.createModule(
+				Arrays.asList((Component) loop),
+				Collections.<GroupedVar> emptyList(),
+				Collections.<GroupedVar> emptyList(), "schedulerBody",
+				Exit.RETURN, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+
+		/** Create scheduler Task **/
+		Task task = DesignUtil.createTask("scheduler", scheduler, true);
 
 		return task;
 	}
+
+	@Override
+	public Task casePattern(Pattern pattern) {
+		for (net.sf.orcc.df.Port port : pattern.getPorts()) {
+			Var oldTarget = pattern.getVariable(port);
+			List<Use> uses = new ArrayList<Use>(oldTarget.getUses());
+			for (Use use : uses) {
+				// Create a custom peek for each load of this variable
+				InstLoad load = EcoreHelper.getContainerOfType(use,
+						InstLoad.class);
+
+				// Get the index value
+				Expression indexExpr = load.getIndexes().get(0);
+
+				if (indexExpr.isExprVar()) {
+					ExprVar literalExpr = (ExprVar) indexExpr;
+					Var litteralVar = literalExpr.getUse().getVariable();
+					Def varDef = litteralVar.getDefs().get(0);
+					InstAssign assign = EcoreHelper.getContainerOfType(varDef,
+							InstAssign.class);
+					doSwitch(assign);
+
+					// Get the variable
+					Var peekVar = load.getTarget().getVariable();
+
+					// Create the pinPeek Component
+					ActionIOHandler ioHandler = resources.getIOHandler(port);
+					Component peekComponent = ioHandler.getTokenPeekAccess();
+
+					GroupedVar inVars = new GroupedVar(litteralVar, 0);
+					PortUtil.mapInDataPorts(peekComponent, inVars.getAsList(),
+							portDependency, portGroupDependency);
+
+					GroupedVar outVars = new GroupedVar(peekVar, 0);
+					PortUtil.mapOutDataPorts(peekComponent,
+							outVars.getAsList(), busDependency,
+							doneBusDependency);
+
+					componentsList.add(peekComponent);
+					componentCounter++;
+					IrUtil.delete(load);
+				}
+				EcoreUtil.delete(oldTarget);
+			}
+		}
+
+		return null;
+	}
+
+	private void createActionTest(List<Action> actions) {
+		// Component 0: Decision, Component 1:ThenBlock
+		actionTests = new HashMap<Action, List<Component>>();
+
+		for (Action action : actions) {
+			List<Component> actionTestComponent = new ArrayList<Component>();
+
+			// Create the decision
+			Var decisionVar = actionInDecisions.get(action);
+			String varName = "decision_isSchedulable_" + action.getName();
+			componentsList = new ArrayList<Component>();
+			Decision decision = ModuleUtil.createDecision(decisionVar, varName,
+					portDependency, busDependency, portGroupDependency,
+					doneBusDependency);
+
+			decision.setIDLogical("decision_" + action.getName());
+			actionTestComponent.add(0, decision);
+
+			// Create the "then" body
+			Task actionToBeExecuted = actorsTasks.get(action);
+			Var outDecision = actionOutDecisions.get(action);
+			Block thenBlock = (Block) ModuleUtil.createTaskCall(
+					actionToBeExecuted, outDecision, portDependency,
+					busDependency, portGroupDependency, doneBusDependency);
+
+			thenBlock.setIDLogical("thenBlock_" + action.getName());
+			actionTestComponent.add(1, thenBlock);
+			actionTests.put(action, actionTestComponent);
+		}
+	}
+
+	private Branch createOutFsmScheduler(List<Action> actions) {
+		Branch branch = null;
+
+		List<Var> currentInputPorts = new ArrayList<Var>();
+		List<Var> previousInputPorts = new ArrayList<Var>();
+
+		int actionListSize = actions.size() - 1;
+
+		for (int i = actionListSize; i >= 0; i--) {
+			// Get Action
+			Action action = actions.get(i);
+			// Get The inputs of the branch
+			currentInputPorts.add(actionOutDecisions.get(action));
+			currentInputPorts.add(actionInDecisions.get(action));
+
+			if (i == actionListSize) {
+				List<Component> comps = actionTests.get(action);
+				Decision decision = (Decision) comps.get(0);
+				Block thenBlock = (Block) comps.get(1);
+
+				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
+						currentInputPorts, 0);
+				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
+						null, inVars, Collections.<GroupedVar> emptyList(),
+						null, "ifBranch_" + action.getName(), null,
+						portDependency, busDependency, portGroupDependency,
+						doneBusDependency);
+
+				branch.setIDLogical("ifBranch_" + action.getName());
+				previousInputPorts.add(currentInputPorts.get(1));
+				previousInputPorts.add(currentInputPorts.get(0));
+
+			} else {
+				List<Component> comps = actionTests.get(action);
+				Decision decision = (Decision) comps.get(0);
+				Block thenBlock = (Block) comps.get(1);
+				List<Var> inPort = new ArrayList<Var>(currentInputPorts);
+				Collections.reverse(inPort);
+
+				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
+						previousInputPorts, 0);
+				Block elseBlock = (Block) ModuleUtil.createModule(
+						Arrays.asList((Component) branch), inVars,
+						Collections.<GroupedVar> emptyList(), "elseBlock",
+						Exit.DONE, 0, portDependency, busDependency,
+						portGroupDependency, doneBusDependency);
+
+				inVars = GroupedVar.ListGroupedVar(inPort, 0);
+				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
+						elseBlock, inVars,
+						Collections.<GroupedVar> emptyList(), null, "ifBranch_"
+								+ action.getName(), null, portDependency,
+						busDependency, portGroupDependency, doneBusDependency);
+				branch.setIDLogical("ifBranch_" + action.getName());
+				previousInputPorts = inPort;
+			}
+		}
+
+		return branch;
+	}
+
+	private List<Component> createPatternTest(Action action, Pattern pattern,
+			String direction) {
+		List<Component> patternComponents = new ArrayList<Component>();
+		if (!pattern.isEmpty()) {
+			List<Var> patternVars = new ArrayList<Var>();
+			for (net.sf.orcc.df.Port port : pattern.getPorts()) {
+				if (pinStatus.containsKey(port)) {
+					Var pinStatusVar = pinStatus.get(port);
+					Type type = IrFactory.eINSTANCE.createTypeBool();
+					Var patternPort = IrFactory.eINSTANCE.createVar(0, type,
+							direction + "putPattern_" + currentAction.getName()
+									+ "_" + port.getName(), false, 0);
+
+					Component assign = ModuleUtil.assignComponent(patternPort,
+							pinStatusVar, portDependency, busDependency,
+							portGroupDependency, doneBusDependency);
+					patternComponents.add(assign);
+					patternVars.add(patternPort);
+				}
+				// Create the Go Decision
+				// Put the return Variable to the inputPattern if "in"
+				if (direction.equals("in")) {
+					patternVars
+							.add(actionSchedulerReturnVar.get(currentAction));
+				} else {
+					Type type = IrFactory.eINSTANCE.createTypeBool();
+					Var resVar = IrFactory.eINSTANCE
+							.createVar(0, type, "outputPattern_"
+									+ currentAction.getName() + "_res", false,
+									0);
+					GroupedVar outVars = new GroupedVar(resVar, 0);
+					Component constant = new SimpleConstant(1, 1, false);
+					PortUtil.mapOutDataPorts(constant, outVars.getAsList(),
+							busDependency, doneBusDependency);
+					patternComponents.add(constant);
+					patternVars.add(resVar);
+				}
+
+				Component andComponent = new And(patternVars.size());
+
+				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
+						patternVars, 0);
+				PortUtil.mapInDataPorts(andComponent, inVars, portDependency,
+						portGroupDependency);
+				// Create Decision Variable
+				Type type = IrFactory.eINSTANCE.createTypeBool();
+				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
+						"isSchedulable_" + currentAction.getName() + "_"
+								+ direction + "_decision", false, 0);
+				GroupedVar outVars = new GroupedVar(decisionVar, 0);
+				PortUtil.mapOutDataPorts(andComponent, outVars.getAsList(),
+						busDependency, doneBusDependency);
+				patternComponents.add(andComponent);
+				// Save the decision, used on transitions
+				if (direction.equals("in")) {
+					actionInDecisions.put(currentAction, decisionVar);
+				} else {
+					actionOutDecisions.put(currentAction, decisionVar);
+				}
+
+			}
+
+		} else {
+			// Give True to the Decision
+			Type type = IrFactory.eINSTANCE.createTypeBool();
+			Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
+					"isSchedulable_" + currentAction.getName() + "_"
+							+ direction + "_decision", false, 0);
+
+			Component constant = new SimpleConstant(1, 1, false);
+			GroupedVar outVars = new GroupedVar(decisionVar, 0);
+			PortUtil.mapOutDataPorts(constant, outVars.getAsList(),
+					busDependency, doneBusDependency);
+			patternComponents.add(constant);
+			if (direction.equals("in")) {
+				actionInDecisions.put(currentAction, decisionVar);
+			} else {
+				actionOutDecisions.put(currentAction, decisionVar);
+			}
+		}
+		return patternComponents;
+	}
+
 }

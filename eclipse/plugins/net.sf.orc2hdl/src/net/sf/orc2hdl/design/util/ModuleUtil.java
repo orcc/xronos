@@ -49,6 +49,8 @@ import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.InBuf;
+import net.sf.openforge.lim.Loop;
+import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
@@ -90,14 +92,13 @@ public class ModuleUtil {
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 		Component component = new NoOp(1, Exit.DONE);
-		Map<Var, Integer> vars = new HashMap<Var, Integer>();
-		vars.put(source, 0);
-		PortUtil.mapInDataPorts(component, vars, portDependency,
+
+		GroupedVar inVar = new GroupedVar(source, 0);
+		PortUtil.mapInDataPorts(component, inVar.getAsList(), portDependency,
 				portGroupDependency);
 
-		vars = new HashMap<Var, Integer>();
-		vars.put(target, 0);
-		PortUtil.mapOutDataPorts(component, vars, busDependency,
+		GroupedVar outVar = new GroupedVar(target, 0);
+		PortUtil.mapOutDataPorts(component, outVar.getAsList(), busDependency,
 				doneBusDependency);
 		return component;
 	}
@@ -130,10 +131,10 @@ public class ModuleUtil {
 	}
 
 	public static Component createBranch(Decision decision, Block thenBlock,
-			Block elseBlock, Map<Var, Integer> inVars,
-			Map<Var, Integer> outVars, Map<Var, List<Var>> phiOuts,
-			String searchScope, Exit.Type exitType,
-			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Block elseBlock, List<GroupedVar> inVars, List<GroupedVar> outVars,
+			Map<Var, List<Var>> phiOuts, String searchScope,
+			Exit.Type exitType, Map<Port, Var> portDependency,
+			Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 		Branch branch = null;
@@ -150,7 +151,7 @@ public class ModuleUtil {
 		}
 
 		createModuleInterface(branch, inVars, outVars, exitType,
-				portDependency, busDependency);
+				portDependency, portGroupDependency, busDependency);
 
 		// Map In/Out port of branch, Branch done Group 0
 		PortUtil.mapInDataPorts(branch, inVars, portDependency,
@@ -194,11 +195,11 @@ public class ModuleUtil {
 		Component assignComp = assignComponent(decisionVar, inputDecision,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
-		Map<Var, Integer> inVars = new HashMap<Var, Integer>();
-		inVars.put(inputDecision, 0);
+
+		GroupedVar inVars = new GroupedVar(inputDecision, 0);
 		Module decisionModule = (Module) createModule(
-				Arrays.asList(assignComp), inVars,
-				Collections.<Var, Integer> emptyMap(), "decisionBlock",
+				Arrays.asList(assignComp), inVars.getAsList(),
+				Collections.<GroupedVar> emptyList(), "decisionBlock",
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
@@ -213,7 +214,9 @@ public class ModuleUtil {
 
 		// Add to dependency, A Decision has only one Input at group 0
 		Port port = decision.getDataPorts().get(0);
+		port.setIDLogical(inputDecision.getIndexedName());
 		portDependency.put(port, inputDecision);
+		portGroupDependency.put(port, 0);
 
 		return decision;
 	}
@@ -242,7 +245,7 @@ public class ModuleUtil {
 	 * @return
 	 */
 	public static Component createModule(List<Component> components,
-			Map<Var, Integer> inVars, Map<Var, Integer> outVars,
+			List<GroupedVar> inVars, List<GroupedVar> outVars,
 			String searchScope, Exit.Type exitType, Integer group,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
@@ -253,7 +256,7 @@ public class ModuleUtil {
 
 		// Create the modules IO interface
 		createModuleInterface(module, inVars, outVars, exitType,
-				portDependency, busDependency);
+				portDependency, portGroupDependency, busDependency);
 
 		// Populate Module
 		modulePopulate(module, components);
@@ -296,15 +299,18 @@ public class ModuleUtil {
 	 *            the bus dependency map
 	 */
 	public static void createModuleInterface(Module module,
-			Map<Var, Integer> inVars, Map<Var, Integer> outVars,
+			List<GroupedVar> inVars, List<GroupedVar> outVars,
 			Exit.Type exitType, Map<Port, Var> portDependency,
-			Map<Bus, Var> busDependency) {
+			Map<Port, Integer> portGroupDependency, Map<Bus, Var> busDependency) {
 		// Create Module Input(s) if any
 		if (!inVars.isEmpty()) {
-			for (Var var : inVars.keySet()) {
+			for (GroupedVar groupedVar : inVars) {
+				Var var = groupedVar.getVar();
 				Port port = module.makeDataPort();
 				port.setIDLogical(var.getIndexedName());
 				portDependency.put(port, var);
+				portGroupDependency.put(port, groupedVar.getGroup());
+				busDependency.put(port.getPeer(), var);
 			}
 		}
 		// Create module Exit
@@ -313,7 +319,8 @@ public class ModuleUtil {
 		// Create module Output(s) if any
 		if (!outVars.isEmpty()) {
 			Exit exit = module.getExit(Exit.DONE);
-			for (Var var : outVars.keySet()) {
+			for (GroupedVar groupedVar : outVars) {
+				Var var = groupedVar.getVar();
 				Bus dataBus = exit.makeDataBus();
 				Integer busSize = var.getType().getSizeInBits();
 				boolean isSigned = var.getType().isInt()
@@ -321,6 +328,9 @@ public class ModuleUtil {
 				dataBus.setSize(busSize, isSigned);
 				dataBus.setIDLogical(var.getIndexedName());
 
+				portDependency.put(dataBus.getPeer(), var);
+				portGroupDependency.put(dataBus.getPeer(),
+						groupedVar.getGroup());
 				busDependency.put(dataBus, var);
 			}
 		}
@@ -344,22 +354,21 @@ public class ModuleUtil {
 		PortUtil.mapOutControlPort(taskCall, 0, doneBusDependency);
 		Block thenBlock = (Block) createModule(
 				Arrays.asList((Component) taskCall),
-				Collections.<Var, Integer> emptyMap(),
-				Collections.<Var, Integer> emptyMap(), "taskCallThenBlock",
+				Collections.<GroupedVar> emptyList(),
+				Collections.<GroupedVar> emptyList(), "taskCallThenBlock",
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
-		Map<Var, Integer> inVars = new HashMap<Var, Integer>();
-		inVars.put(outDecision, 0);
-		Component branch = createBranch(decision, thenBlock, null, inVars,
-				Collections.<Var, Integer> emptyMap(),
+		GroupedVar inVars = new GroupedVar(outDecision, 0);
+		Component branch = createBranch(decision, thenBlock, null,
+				inVars.getAsList(), Collections.<GroupedVar> emptyList(),
 				Collections.<Var, List<Var>> emptyMap(),
 				"callTask_" + task.getIDGlobalType(), Exit.DONE,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
 
-		Module module = (Module) createModule(Arrays.asList(branch), inVars,
-				Collections.<Var, Integer> emptyMap(), "taskCallBlock",
-				Exit.DONE, 0, portDependency, busDependency,
+		Module module = (Module) createModule(Arrays.asList(branch),
+				inVars.getAsList(), Collections.<GroupedVar> emptyList(),
+				"taskCallBlock", Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
 		return module;
@@ -377,9 +386,9 @@ public class ModuleUtil {
 				false, 0);
 
 		Component constant = new SimpleConstant(1, 1, false);
-		Map<Var, Integer> vars = new HashMap<Var, Integer>();
-		vars.put(trueVar, 0);
-		PortUtil.mapOutDataPorts(constant, vars, busDependency,
+
+		GroupedVar vars = new GroupedVar(trueVar, 0);
+		PortUtil.mapOutDataPorts(constant, vars.getAsList(), busDependency,
 				doneBusDependency);
 
 		// Create the decision variable and assign the inputDecision to it
@@ -390,12 +399,11 @@ public class ModuleUtil {
 		Component assignComp = assignComponent(decisionVar, trueVar,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
-		Map<Var, Integer> inVars = new HashMap<Var, Integer>();
-		inVars.put(trueVar, 0);
 
+		GroupedVar inVars = new GroupedVar(trueVar, 0);
 		Module decisionModule = (Module) createModule(
-				Arrays.asList(constant, assignComp), inVars,
-				Collections.<Var, Integer> emptyMap(), "decisionBlock",
+				Arrays.asList(constant, assignComp), inVars.getAsList(),
+				Collections.<GroupedVar> emptyList(), "decisionBlock",
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
@@ -411,6 +419,7 @@ public class ModuleUtil {
 		// Add to dependency, A Decision has only one Input at group 0
 		Port port = decision.getDataPorts().get(0);
 		portDependency.put(port, trueVar);
+		portGroupDependency.put(port, 0);
 
 		return decision;
 	}
@@ -457,18 +466,24 @@ public class ModuleUtil {
 			Map<Bus, Integer> doneBusDependency) {
 
 		for (Component component : module.getComponents()) {
-			for (Bus bus : component.getDataBuses()) {
-				Var busVar = busDependency.get(bus);
-				List<Port> targetPorts = getDependencyTargetPorts(
-						module.getComponents(), busVar, portDependency);
-				for (Port port : targetPorts) {
-					int group = portGroupDependency.get(port);
-					List<Entry> entries = port.getOwner().getEntries();
-					Entry entry = entries.get(group);
-					Dependency dep = new DataDependency(bus);
-					entry.addDependency(port, dep);
+
+			if (component instanceof Loop) {
+				loopDependecies(component);
+			} else {
+				for (Bus bus : component.getDataBuses()) {
+					Var busVar = busDependency.get(bus);
+					List<Port> targetPorts = getDependencyTargetPorts(
+							components, busVar, portDependency);
+					for (Port port : targetPorts) {
+						int group = portGroupDependency.get(port);
+						List<Entry> entries = port.getOwner().getEntries();
+						Entry entry = entries.get(group);
+						Dependency dep = new DataDependency(bus);
+						entry.addDependency(port, dep);
+					}
 				}
 			}
+
 		}
 
 	}
@@ -529,4 +544,40 @@ public class ModuleUtil {
 			componentAddEntry(outbuf, drivingExit, clockBus, resetBus, goBus);
 		}
 	}
+
+	@SuppressWarnings("unused")
+	public static void loopDependecies(Component component) {
+		Map<Port, Map<Port, Bus>> feedbackDeps = new HashMap<Port, Map<Port, Bus>>();
+		Map<Port, Map<Port, Bus>> initialDeps = new HashMap<Port, Map<Port, Bus>>();
+		Map<Port, Map<Port, Bus>> outputDeps = new HashMap<Port, Map<Port, Bus>>();
+
+		LoopBody loopBody = ((Loop) component).getBody();
+		Exit fbExit = loopBody.getFeedbackExit();
+		Exit doneExit = loopBody.getLoopCompleteExit();
+		Exit initExit = ((Loop) component).getInBuf().getExit(Exit.DONE);
+
+		// Populate outputDeps with Done Exit
+		Map<Port, Bus> doneMap = new HashMap<Port, Bus>();
+		Bus doneBus = loopBody.getExit(Exit.DONE).getDoneBus();
+		Port donePort = component.getExit(Exit.DONE).getDoneBus().getPeer();
+		doneMap.put(donePort, doneBus);
+		outputDeps.put(donePort, doneMap);
+
+		Entry initEntry = ((Loop) component).getBodyInitEntry();
+		Entry fbEntry = ((Loop) component).getBodyFeedbackEntry();
+		Collection<Dependency> goInitDeps = initEntry.getDependencies(loopBody
+				.getGoPort());
+		Bus initDoneBus = goInitDeps.iterator().next().getLogicalBus();
+		// Build the output dependencies
+		Entry outbufEntry = ((Loop) component).getExit(Exit.DONE).getPeer()
+				.getEntries().get(0);
+		for (Port port : outputDeps.keySet()) {
+			Port targetPort = port;
+			Bus sourceBus = outputDeps.get(port).get(port);
+			Dependency dep = (targetPort == targetPort.getOwner().getGoPort()) ? new ControlDependency(
+					sourceBus) : new DataDependency(sourceBus);
+			outbufEntry.addDependency(targetPort, dep);
+		}
+	}
+
 }
