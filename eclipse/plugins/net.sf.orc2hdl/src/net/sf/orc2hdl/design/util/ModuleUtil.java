@@ -400,9 +400,9 @@ public class ModuleUtil {
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
 
-		GroupedVar inVars = new GroupedVar(trueVar, 0);
 		Module decisionModule = (Module) createModule(
-				Arrays.asList(constant, assignComp), inVars.getAsList(),
+				Arrays.asList(constant, assignComp),
+				Collections.<GroupedVar> emptyList(),
 				Collections.<GroupedVar> emptyList(), "decisionBlock",
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
@@ -415,11 +415,6 @@ public class ModuleUtil {
 
 		// Propagate Inputs
 		decisionPropagateInputs(decision, (Block) decisionModule);
-
-		// Add to dependency, A Decision has only one Input at group 0
-		Port port = decision.getDataPorts().get(0);
-		portDependency.put(port, trueVar);
-		portGroupDependency.put(port, 0);
 
 		return decision;
 	}

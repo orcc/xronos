@@ -284,7 +284,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 		/** Build the infinite Loop of the scheduler **/
 		Decision loopDecision = ModuleUtil.createTrueDecision(
-				"var_" + actor.getName() + "_loop", portDependency,
+				"var_" + actor.getSimpleName() + "_loop", portDependency,
 				busDependency, portGroupDependency, doneBusDependency);
 
 		/** Create the scheduler Loop Body **/
