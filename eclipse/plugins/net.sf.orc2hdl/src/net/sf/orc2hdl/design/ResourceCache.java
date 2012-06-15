@@ -96,12 +96,20 @@ public class ResourceCache {
 			vars.add(new GroupedVar(var, 0));
 		}
 
-		listOfVars.add(1, vars);
+		listOfVars.add(2, vars);
 		branchIfOutput.put(blockIf, listOfVars);
 	}
 
 	public void addBranchPhi(BlockIf blockIf, Map<Var, List<Var>> phiMapVar) {
 		branchPhi.put(blockIf, phiMapVar);
+		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
+		for (Var var : phiMapVar.keySet()) {
+			vars.add(new GroupedVar(var, 0));
+		}
+
+		listOfVars.add(0, vars);
+		branchIfOutput.put(blockIf, listOfVars);
 	}
 
 	public void addBranchThenInput(BlockIf blockIf, List<Var> thenVars) {
@@ -116,13 +124,13 @@ public class ResourceCache {
 	}
 
 	public void addBranchThenOutput(BlockIf blockIf, List<Var> thenVars) {
-		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
+		List<List<GroupedVar>> listOfVars = branchIfOutput.get(blockIf);
 		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : thenVars) {
 			vars.add(new GroupedVar(var, 0));
 		}
 
-		listOfVars.add(0, vars);
+		listOfVars.add(1, vars);
 		branchIfOutput.put(blockIf, listOfVars);
 	}
 
@@ -145,7 +153,7 @@ public class ResourceCache {
 
 	public List<GroupedVar> getBranchElseOutputVars(BlockIf blockIf) {
 		if (!blockIf.getElseBlocks().isEmpty()) {
-			return branchIfOutput.get(blockIf).get(1);
+			return branchIfOutput.get(blockIf).get(2);
 		} else {
 			return Collections.<GroupedVar> emptyList();
 		}
@@ -168,7 +176,7 @@ public class ResourceCache {
 	}
 
 	public List<GroupedVar> getBranchThenOutputVars(BlockIf blockIf) {
-		return branchIfOutput.get(blockIf).get(0);
+		return branchIfOutput.get(blockIf).get(1);
 	}
 
 	public List<GroupedVar> getBranchThenVars(BlockIf blockIf) {
@@ -197,6 +205,10 @@ public class ResourceCache {
 			}
 		}
 		return inputs;
+	}
+	
+	public List<GroupedVar> getBranchOutputs(BlockIf blockIf){
+		return branchIfOutput.get(blockIf).get(0);
 	}
 
 	public ActionIOHandler getIOHandler(Port port) {

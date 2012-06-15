@@ -158,8 +158,13 @@ public class ModuleUtil {
 				portGroupDependency);
 		PortUtil.mapOutControlPort(branch, 0, doneBusDependency);
 
-		moduleDependencies(branch, branchComponents, branch.getExit(Exit.DONE),
-				portDependency, busDependency, portGroupDependency,
+		// moduleDependencies(branch, branchComponents,
+		// branch.getExit(Exit.DONE),
+		// portDependency, busDependency, portGroupDependency,
+		// doneBusDependency);
+
+		branchDependencies(branch, decision, thenBlock, elseBlock,
+				portDependency, busDependency, phiOuts, portGroupDependency,
 				doneBusDependency);
 
 		// Give the name of the searchScope
@@ -490,6 +495,119 @@ public class ModuleUtil {
 				Dependency dep = new ControlDependency(doneBus);
 				entry.addDependency(donePort, dep);
 			}
+		}
+
+	}
+
+	public static void branchDependencies(Branch branch, Decision decision,
+			Block thenBlock, Block elseBlock, Map<Port, Var> portDependency,
+			Map<Bus, Var> busDependency, Map<Var, List<Var>> phiOuts,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+
+		/** Input Dependencies **/
+		InBuf inBuf = branch.getInBuf();
+		for (Bus bus : inBuf.getDataBuses()) {
+			Var busVar = busDependency.get(bus);
+			// Decision
+			for (Port port : decision.getDataPorts()) {
+				if (portDependency.get(port) == busVar) {
+					int group = portGroupDependency.get(port);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(group);
+					Dependency dep = new DataDependency(bus);
+					entry.addDependency(port, dep);
+				}
+			}
+			// Then Block
+			for (Port port : thenBlock.getDataPorts()) {
+				if (portDependency.get(port) == busVar) {
+					int group = portGroupDependency.get(port);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(group);
+					Dependency dep = new DataDependency(bus);
+					entry.addDependency(port, dep);
+				}
+			}
+			if (elseBlock != null) {
+				// Else Block
+				for (Port port : elseBlock.getDataPorts()) {
+					if (portDependency.get(port) == busVar) {
+						int group = portGroupDependency.get(port);
+						List<Entry> entries = port.getOwner().getEntries();
+						Entry entry = entries.get(group);
+						Dependency dep = new DataDependency(bus);
+						entry.addDependency(port, dep);
+					}
+				}
+			}
+
+			// Check if there is any dependency from input to output (Group 1)
+			for (Bus outBus : branch.getDataBuses()) {
+				Port port = outBus.getPeer();
+				Var var = portDependency.get(port);
+				if (phiOuts.keySet().contains(var)) {
+					List<Var> joinVars = phiOuts.get(var);
+					if (joinVars.get(1) == busVar) {
+						List<Entry> entries = port.getOwner().getEntries();
+						Entry entry = entries.get(1);
+						Dependency dep = new DataDependency(bus);
+						entry.addDependency(port, dep);
+					}
+				}
+			}
+		}
+
+		/** Then and Else Output block Dependencies **/
+		for (Bus bus : thenBlock.getDataBuses()) {
+			Var busVar = busDependency.get(bus);
+			for (Bus outBus : branch.getDataBuses()) {
+				Port port = outBus.getPeer();
+				Var var = portDependency.get(port);
+				if (phiOuts.keySet().contains(var)) {
+					List<Var> joinVars = phiOuts.get(var);
+					if (joinVars.get(0) == busVar) {
+						List<Entry> entries = port.getOwner().getEntries();
+						Entry entry = entries.get(0);
+						Dependency dep = new DataDependency(bus);
+						entry.addDependency(port, dep);
+					}
+				}
+			}
+		}
+
+		// Control Dependency
+		Bus doneBus = thenBlock.getExit(Exit.DONE).getDoneBus();
+		Port donePort = branch.getExit(Exit.DONE).getDoneBus().getPeer();
+		List<Entry> entries = donePort.getOwner().getEntries();
+		Entry entry = entries.get(0);
+		Dependency dep = new ControlDependency(doneBus);
+		entry.addDependency(donePort, dep);
+		
+		if (elseBlock != null) {
+			for (Bus bus : elseBlock.getDataBuses()) {
+				Var busVar = busDependency.get(bus);
+				for (Bus outBus : branch.getDataBuses()) {
+					Port port = outBus.getPeer();
+					Var var = portDependency.get(port);
+					if (phiOuts.keySet().contains(var)) {
+						List<Var> joinVars = phiOuts.get(var);
+						if (joinVars.get(1) == busVar) {
+							entries = port.getOwner().getEntries();
+							entry = entries.get(1);
+							dep = new DataDependency(bus);
+							entry.addDependency(port, dep);
+						}
+					}
+				}
+			}
+			
+			doneBus = elseBlock.getExit(Exit.DONE).getDoneBus();
+			donePort = branch.getExit(Exit.DONE).getDoneBus().getPeer();
+			entries = donePort.getOwner().getEntries();
+			entry = entries.get(1);
+			dep = new ControlDependency(doneBus);
+			entry.addDependency(donePort, dep);
 		}
 
 	}

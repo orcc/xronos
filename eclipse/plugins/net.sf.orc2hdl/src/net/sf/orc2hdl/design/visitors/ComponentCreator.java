@@ -211,7 +211,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		}
 		// Get All input Vars
 		List<GroupedVar> ifInputVars = resources.getBranchInputs(blockIf);
-		List<GroupedVar> ifOutputVars = Collections.<GroupedVar> emptyList();
+		List<GroupedVar> ifOutputVars = resources.getBranchOutputs(blockIf);
 		// Get Phi target Vars, aka branchIf Outputs
 		Map<Var, List<Var>> phiOuts = resources.getBranchPhiVars(blockIf);
 		currentComponent = ModuleUtil.createBranch(decision, thenBlock,
