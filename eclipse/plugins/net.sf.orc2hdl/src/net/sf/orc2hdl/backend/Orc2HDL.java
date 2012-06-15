@@ -173,80 +173,18 @@ public class Orc2HDL extends AbstractBackend {
 		}
 	}
 
-	private void copySystemActorsLib() {
-		// Copy systemBuilder library to the output folder
-		String systemBuilderPath = path + File.separator + "lib"
-				+ File.separator + "systemActors";
-		new File(systemBuilderPath).mkdir();
-		new File(systemBuilderPath + File.separator + "io").mkdir();
-		new File(systemBuilderPath + File.separator + "types").mkdir();
-		// Get the current folder
-		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
-				"/HdlLibraries/systemActors");
+	@Override
+	public boolean exportRuntimeLibrary() throws OrccException {
 
-		try {
-			List<String> systemActorsFileList = Arrays.asList(
-					"types/sa_types.vhd", "io/Source.vhd");
-			String hdlLibrariesPath = new File(FileLocator.resolve(
-					hdlLibrariesURL).getFile()).getAbsolutePath();
-			IFileSystem fileSystem = EFS.getLocalFileSystem();
+		String libPath = path + File.separator + "lib";
+		boolean result = true;
 
-			for (String files : systemActorsFileList) {
-				String path = hdlLibrariesPath + File.separator + files;
-				URI uri = new File(path).toURI();
-				IFileStore pluginDir = fileSystem.getStore(uri);
+		result &= copyFolderToFileSystem("/HdlLibraries/systemBuilder/vhdl",
+				libPath + File.separator + "systemBuilder");
+		result &= copyFolderToFileSystem("/HdlLibraries/systemActors", libPath
+				+ File.separator + "systemActors");
 
-				path = systemBuilderPath + File.separator + files;
-				uri = new File(path).toURI();
-				IFileStore copyDir = fileSystem.getStore(uri);
-
-				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	private void copySystemBuilderLib() {
-		// Copy systemBuilder library to the output folder
-		String systemBuilderPath = path + File.separator + "lib"
-				+ File.separator + "systemBuilder";
-		new File(systemBuilderPath).mkdir();
-
-		// Get the current folder
-		URL hdlLibrariesURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
-				"/HdlLibraries/systemBuilder/vhdl");
-
-		try {
-			List<String> systemBuilderFifo = Arrays.asList("sbtypes.vhdl",
-					"sbfifo_behavioral.vhdl", "sbfifo.vhdl");
-			String hdlLibrariesPath = new File(FileLocator.resolve(
-					hdlLibrariesURL).getFile()).getAbsolutePath();
-			IFileSystem fileSystem = EFS.getLocalFileSystem();
-
-			for (String files : systemBuilderFifo) {
-
-				String path = hdlLibrariesPath + File.separator + files;
-				URI uri = new File(path).toURI();
-				IFileStore pluginDir = fileSystem.getStore(uri);
-
-				path = systemBuilderPath + File.separator + files;
-				uri = new File(path).toURI();
-				IFileStore copyDir = fileSystem.getStore(uri);
-
-				pluginDir.copy(copyDir, EFS.OVERWRITE, null);
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-
+		return result;
 	}
 
 	@Override
@@ -431,11 +369,6 @@ public class Orc2HDL extends AbstractBackend {
 		// the "do file"
 
 		printSimDoFile(network);
-		// Create the lib folder
-		new File(path + File.separator + "lib").mkdir();
-		// Copy the systemBuilder and the systemActor libs into lib
-		copySystemBuilderLib();
-		copySystemActorsLib();
 
 		// Print the xlim files
 		printInstances(network);
