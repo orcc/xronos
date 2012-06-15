@@ -109,31 +109,31 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	private Def assignTarget;
-	private Integer castIndex = 0;
-	private Integer listIndexes = 0;
-
-	/** Current List Component **/
-	private List<Component> componentList;
-	/** Current Component **/
-	private Component currentComponent;
-
-	/** Design Resources **/
-	protected ResourceCache resources;
-
 	/** Dependency between Components and Bus-Var **/
 	protected Map<Bus, Var> busDependency;
+	private Integer castIndex = 0;
 
 	/** Action component Counter **/
 	protected Integer componentCounter;
+	/** Current List Component **/
+	private List<Component> componentList;
+
+	/** Current Component **/
+	private Component currentComponent;
 
 	/** Dependency between Components and Done Bus **/
 	protected Map<Bus, Integer> doneBusDependency;
+
+	private Integer listIndexes = 0;
 
 	/** Dependency between Components and Port-Var **/
 	protected Map<Port, Var> portDependency;
 
 	/** Dependency between Components and Port-Var **/
 	protected Map<Port, Integer> portGroupDependency;
+
+	/** Design Resources **/
+	protected ResourceCache resources;
 
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
@@ -151,11 +151,13 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		componentList = new ArrayList<Component>();
 	}
 
-	@Override
-	public List<Component> caseProcedure(Procedure procedure) {
-		componentList = new ArrayList<Component>();
-		super.caseProcedure(procedure);
-		return componentList;
+	protected List<GroupedVar> binaryCastOp(Var e1, Var e2, Integer newMaxSize) {
+		Boolean isSigned = e1.getType().isInt() || e2.getType().isInt();
+		List<GroupedVar> newVars = new ArrayList<GroupedVar>();
+		// Add the new Casted variables, group 0 by default
+		newVars.add(new GroupedVar(unaryCastOp(e1, newMaxSize, isSigned), 0));
+		newVars.add(new GroupedVar(unaryCastOp(e2, newMaxSize, isSigned), 0));
+		return newVars;
 	}
 
 	@Override
@@ -284,41 +286,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				portDependency, portGroupDependency);
 		currentComponent = component;
 		return null;
-	}
-
-	protected List<GroupedVar> binaryCastOp(Var e1, Var e2, Integer newMaxSize) {
-		Boolean isSigned = e1.getType().isInt() || e2.getType().isInt();
-		List<GroupedVar> newVars = new ArrayList<GroupedVar>();
-		// Add the new Casted variables, group 0 by default
-		newVars.add(new GroupedVar(unaryCastOp(e1, newMaxSize, isSigned), 0));
-		newVars.add(new GroupedVar(unaryCastOp(e2, newMaxSize, isSigned), 0));
-		return newVars;
-	}
-
-	protected Var unaryCastOp(Var var, Integer newMaxSize, Boolean isSigned) {
-		Var newVar = var;
-		Integer sizeVar = var.getType().getSizeInBits();
-
-		if (sizeVar != newMaxSize) {
-			currentComponent = new CastOp(newMaxSize, isSigned);
-
-			GroupedVar inVar = new GroupedVar(var, 0);
-
-			PortUtil.mapInDataPorts(currentComponent, inVar.getAsList(),
-					portDependency, portGroupDependency);
-			Var castedVar = procedure.newTempLocalVariable(
-					IrFactory.eINSTANCE.createTypeInt(newMaxSize), "casted_"
-							+ castIndex + "_" + var.getIndexedName());
-			GroupedVar outVar = new GroupedVar(castedVar, 0);
-
-			PortUtil.mapOutDataPorts(currentComponent, outVar.getAsList(),
-					busDependency, doneBusDependency);
-			componentList.add(currentComponent);
-			newVar = castedVar;
-			castIndex++;
-		}
-
-		return newVar;
 	}
 
 	@Override
@@ -475,81 +442,124 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseInstStore(InstStore store) {
 		Var targetVar = store.getTarget().getVariable();
 
-		// At this moment the load should have only one index
-		Var storeIndexVar = null;
-		List<Expression> indexes = store.getIndexes();
-		for (Expression expr : new ArrayList<Expression>(indexes)) {
-			storeIndexVar = ((ExprVar) expr).getUse().getVariable();
+		if (targetVar.isGlobal()) {
+
+			// At this moment the load should have only one index
+			Var storeIndexVar = null;
+			List<Expression> indexes = store.getIndexes();
+			for (Expression expr : new ArrayList<Expression>(indexes)) {
+				storeIndexVar = ((ExprVar) expr).getUse().getVariable();
+			}
+
+			// Get store Value Var, after TAC the expression is a ExprVar
+			ExprVar value = (ExprVar) store.getValue();
+			Var valueVar = value.getUse().getVariable();
+
+			// Get the inner type of the list
+			Type type = null;
+			if (targetVar.getType().isList()) {
+				TypeList typeList = (TypeList) targetVar.getType();
+				type = typeList.getInnermostType();
+			} else {
+				type = targetVar.getType();
+			}
+
+			// Get Location form resources
+			Location targetLocation = resources.getLocation(targetVar);
+			LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
+			AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
+					.getInitialValue().getAddressStridePolicy();
+
+			int dataSize = type.getSizeInBits();
+			Boolean isSigned = type.isInt();
+
+			HeapWrite heapWrite = new HeapWrite(dataSize
+					/ addrPolicy.getStride(), 32, // max address width
+					0, // fixed offset
+					isSigned, // is signed?
+					addrPolicy); // addressing policy
+
+			Block block = DesignUtil.buildAddressedBlock(heapWrite,
+					targetLocation, Collections.<Component> emptyList());
+			Port data = block.makeDataPort();
+			heapWrite
+					.getEntries()
+					.get(0)
+					.addDependency(heapWrite.getValuePort(),
+							new DataDependency(data.getPeer()));
+
+			memPort.addAccess(heapWrite, targetLocation);
+
+			Var indexVar = procedure.newTempLocalVariable(
+					IrFactory.eINSTANCE.createTypeInt(32), "index"
+							+ listIndexes);
+			listIndexes++;
+			currentComponent = new CastOp(32, isSigned);
+
+			GroupedVar ioVar = new GroupedVar(storeIndexVar, 0);
+
+			PortUtil.mapInDataPorts(currentComponent, ioVar.getAsList(),
+					portDependency, portGroupDependency);
+			Var castedIndexVar = procedure.newTempLocalVariable(
+					IrFactory.eINSTANCE.createTypeInt(32), "casted_"
+							+ castIndex + "_" + storeIndexVar.getIndexedName());
+
+			ioVar = new GroupedVar(castedIndexVar, 0);
+			PortUtil.mapOutDataPorts(currentComponent, ioVar.getAsList(),
+					busDependency, doneBusDependency);
+			componentList.add(currentComponent);
+			castIndex++;
+			// add the assign instruction for each index
+			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
+					castedIndexVar);
+			doSwitch(assign);
+
+			currentComponent = block;
+			List<GroupedVar> inVars = new ArrayList<GroupedVar>();
+			inVars.add(new GroupedVar(indexVar, 0));
+			inVars.add(new GroupedVar(valueVar, 0));
+			PortUtil.mapInDataPorts(currentComponent, inVars, portDependency,
+					portGroupDependency);
+			PortUtil.mapOutControlPort(currentComponent, 0, doneBusDependency);
+			componentList.add(currentComponent);
+		} else {
+
+		}
+		return null;
+	}
+
+	@Override
+	public List<Component> caseProcedure(Procedure procedure) {
+		componentList = new ArrayList<Component>();
+		super.caseProcedure(procedure);
+		return componentList;
+	}
+
+	protected Var unaryCastOp(Var var, Integer newMaxSize, Boolean isSigned) {
+		Var newVar = var;
+		Integer sizeVar = var.getType().getSizeInBits();
+
+		if (sizeVar != newMaxSize) {
+			currentComponent = new CastOp(newMaxSize, isSigned);
+
+			GroupedVar inVar = new GroupedVar(var, 0);
+
+			PortUtil.mapInDataPorts(currentComponent, inVar.getAsList(),
+					portDependency, portGroupDependency);
+			Var castedVar = procedure.newTempLocalVariable(
+					IrFactory.eINSTANCE.createTypeInt(newMaxSize), "casted_"
+							+ castIndex + "_" + var.getIndexedName());
+			GroupedVar outVar = new GroupedVar(castedVar, 0);
+
+			PortUtil.mapOutDataPorts(currentComponent, outVar.getAsList(),
+					busDependency, doneBusDependency);
+			componentList.add(currentComponent);
+			newVar = castedVar;
+			castIndex++;
 		}
 
-		// Get store Value Var, after TAC the expression is a ExprVar
-		ExprVar value = (ExprVar) store.getValue();
-		Var valueVar = value.getUse().getVariable();
-
-		// Get the inner type of the list
-		TypeList typeList = (TypeList) targetVar.getType();
-		Type type = typeList.getInnermostType();
-
-		// Get Location form resources
-		Location targetLocation = resources.getLocation(targetVar);
-		LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
-				.getLogicalMemoryPorts().iterator().next();
-		AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
-				.getInitialValue().getAddressStridePolicy();
-
-		int dataSize = type.getSizeInBits();
-		Boolean isSigned = type.isInt();
-
-		HeapWrite heapWrite = new HeapWrite(dataSize / addrPolicy.getStride(),
-				32, // max address width
-				0, // fixed offset
-				isSigned, // is signed?
-				addrPolicy); // addressing policy
-
-		Block block = DesignUtil.buildAddressedBlock(heapWrite, targetLocation,
-				Collections.<Component> emptyList());
-		Port data = block.makeDataPort();
-		heapWrite
-				.getEntries()
-				.get(0)
-				.addDependency(heapWrite.getValuePort(),
-						new DataDependency(data.getPeer()));
-
-		memPort.addAccess(heapWrite, targetLocation);
-
-		Var indexVar = procedure.newTempLocalVariable(
-				IrFactory.eINSTANCE.createTypeInt(32), "index" + listIndexes);
-		listIndexes++;
-		currentComponent = new CastOp(32, isSigned);
-
-		GroupedVar ioVar = new GroupedVar(storeIndexVar, 0);
-
-		PortUtil.mapInDataPorts(currentComponent, ioVar.getAsList(),
-				portDependency, portGroupDependency);
-		Var castedIndexVar = procedure.newTempLocalVariable(
-				IrFactory.eINSTANCE.createTypeInt(32), "casted_" + castIndex
-						+ "_" + storeIndexVar.getIndexedName());
-
-		ioVar = new GroupedVar(castedIndexVar, 0);
-		PortUtil.mapOutDataPorts(currentComponent, ioVar.getAsList(),
-				busDependency, doneBusDependency);
-		componentList.add(currentComponent);
-		castIndex++;
-		// add the assign instruction for each index
-		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
-				castedIndexVar);
-		doSwitch(assign);
-
-		currentComponent = block;
-		List<GroupedVar> inVars = new ArrayList<GroupedVar>();
-		inVars.add(new GroupedVar(indexVar, 0));
-		inVars.add(new GroupedVar(valueVar, 0));
-		PortUtil.mapInDataPorts(currentComponent, inVars, portDependency,
-				portGroupDependency);
-		PortUtil.mapOutControlPort(currentComponent, 0, doneBusDependency);
-		componentList.add(currentComponent);
-
-		return null;
+		return newVar;
 	}
 
 }

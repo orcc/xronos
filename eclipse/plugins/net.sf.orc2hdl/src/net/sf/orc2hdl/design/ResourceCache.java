@@ -90,7 +90,7 @@ public class ResourceCache {
 	}
 
 	public void addBranchElseOutput(BlockIf blockIf, List<Var> elseVars) {
-		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
+		List<List<GroupedVar>> listOfVars = branchIfOutput.get(blockIf);
 		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : elseVars) {
 			vars.add(new GroupedVar(var, 0));
@@ -116,7 +116,7 @@ public class ResourceCache {
 	}
 
 	public void addBranchThenOutput(BlockIf blockIf, List<Var> thenVars) {
-		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
+		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
 		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : thenVars) {
 			vars.add(new GroupedVar(var, 0));

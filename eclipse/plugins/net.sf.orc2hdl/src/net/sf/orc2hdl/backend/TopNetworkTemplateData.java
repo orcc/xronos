@@ -38,6 +38,7 @@ import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.Port;
+import net.sf.orcc.graph.Vertex;
 
 /**
  * This class is giving the necessary information for the XLIM Network
@@ -85,12 +86,15 @@ public class TopNetworkTemplateData {
 	 * @param network
 	 */
 	public void computeActorOutputPortFanout(Network network) {
-		for (Instance instance : network.getInstances()) {
-			Map<Port, List<Connection>> map = instance.getOutgoingPortMap();
-			for (List<Connection> values : map.values()) {
-				int cp = 0;
-				for (Connection connection : values) {
-					networkPortConnectionFanout.put(connection, cp++);
+		for (Vertex vertex : network.getVertices()) {
+			if (vertex instanceof Instance) {
+				Instance instance = (Instance) vertex;
+				Map<Port, List<Connection>> map = instance.getOutgoingPortMap();
+				for (List<Connection> values : map.values()) {
+					int cp = 0;
+					for (Connection connection : values) {
+						networkPortConnectionFanout.put(connection, cp++);
+					}
 				}
 			}
 		}
@@ -128,58 +132,34 @@ public class TopNetworkTemplateData {
 			}
 		}
 
-		for (Instance instance : network.getInstances()) {
-			if (!clockDomains.isEmpty()) {
-				if (clockDomains.keySet().contains(
-						instance.getHierarchicalName())) {
-					if (!clockDomains.get(instance.getHierarchicalName())
-							.isEmpty()) {
+		for (Vertex vertex : network.getVertices()) {
+			if (vertex instanceof Instance) {
+				Instance instance = (Instance) vertex;
+				if (!clockDomains.isEmpty()) {
+					if (clockDomains.keySet().contains(
+							instance.getHierarchicalName())) {
+						if (!clockDomains.get(instance.getHierarchicalName())
+								.isEmpty()) {
 
-						instanceClockDomain.put(instance, clockDomains
-								.get(instance.getHierarchicalName()));
+							instanceClockDomain.put(instance, clockDomains
+									.get(instance.getHierarchicalName()));
+						}
+					} else {
+						instanceClockDomain.put(instance, DEFAULT_CLOCK_DOMAIN);
 					}
 				} else {
 					instanceClockDomain.put(instance, DEFAULT_CLOCK_DOMAIN);
 				}
-			} else {
-				instanceClockDomain.put(instance, DEFAULT_CLOCK_DOMAIN);
+
 			}
 
-		}
-
-		if (clockDomainsIndex.size() > 1) {
-			connectionsClockDomain = new HashMap<Connection, List<Integer>>();
-			for (Connection connection : network.getConnections()) {
-				if (connection.getSource() instanceof Port ) {
-					List<Integer> sourceTarget = new ArrayList<Integer>();
-					int srcIndex = clockDomainsIndex.get(portClockDomain
-							.get(connection.getSource()));
-					int tgtIndex = clockDomainsIndex.get(instanceClockDomain
-							.get(connection.getTarget()));
-					if (srcIndex != tgtIndex) {
-						sourceTarget.add(0, srcIndex);
-						sourceTarget.add(1, tgtIndex);
-						connectionsClockDomain.put(connection, sourceTarget);
-					}
-				} else {
-					if (connection.getTarget() instanceof Port ) {
+			if (clockDomainsIndex.size() > 1) {
+				connectionsClockDomain = new HashMap<Connection, List<Integer>>();
+				for (Connection connection : network.getConnections()) {
+					if (connection.getSource() instanceof Port) {
 						List<Integer> sourceTarget = new ArrayList<Integer>();
-						int srcIndex = clockDomainsIndex
-								.get(instanceClockDomain.get(connection
-										.getSource()));
-						int tgtIndex = clockDomainsIndex.get(portClockDomain
-								.get(connection.getTarget()));
-						if (srcIndex != tgtIndex) {
-							sourceTarget.add(0, srcIndex);
-							sourceTarget.add(1, tgtIndex);
-							connectionsClockDomain
-									.put(connection, sourceTarget);
-						}
-					} else {
-						List<Integer> sourceTarget = new ArrayList<Integer>();
-						int srcIndex = clockDomainsIndex
-								.get(instanceClockDomain.get(connection
-										.getSource()));
+						int srcIndex = clockDomainsIndex.get(portClockDomain
+								.get(connection.getSource()));
 						int tgtIndex = clockDomainsIndex
 								.get(instanceClockDomain.get(connection
 										.getTarget()));
@@ -189,8 +169,38 @@ public class TopNetworkTemplateData {
 							connectionsClockDomain
 									.put(connection, sourceTarget);
 						}
-					}
+					} else {
+						if (connection.getTarget() instanceof Port) {
+							List<Integer> sourceTarget = new ArrayList<Integer>();
+							int srcIndex = clockDomainsIndex
+									.get(instanceClockDomain.get(connection
+											.getSource()));
+							int tgtIndex = clockDomainsIndex
+									.get(portClockDomain.get(connection
+											.getTarget()));
+							if (srcIndex != tgtIndex) {
+								sourceTarget.add(0, srcIndex);
+								sourceTarget.add(1, tgtIndex);
+								connectionsClockDomain.put(connection,
+										sourceTarget);
+							}
+						} else {
+							List<Integer> sourceTarget = new ArrayList<Integer>();
+							int srcIndex = clockDomainsIndex
+									.get(instanceClockDomain.get(connection
+											.getSource()));
+							int tgtIndex = clockDomainsIndex
+									.get(instanceClockDomain.get(connection
+											.getTarget()));
+							if (srcIndex != tgtIndex) {
+								sourceTarget.add(0, srcIndex);
+								sourceTarget.add(1, tgtIndex);
+								connectionsClockDomain.put(connection,
+										sourceTarget);
+							}
+						}
 
+					}
 				}
 			}
 		}

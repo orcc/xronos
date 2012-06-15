@@ -287,17 +287,20 @@ public class Orc2HDL extends AbstractBackend {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
 		if (instanceToDesign) {
-			DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
-					new DfVisitor<Void>(new SSATransformation()),
-					new GlobalArrayInitializer(true), new UnaryListRemoval(),
-					new DfVisitor<Void>(new DeadCodeElimination()),
-					new DfVisitor<Void>(new XlimDeadVariableRemoval()),
-					new DfVisitor<Expression>(new LiteralIntegersAdder()),
-					new DfVisitor<Void>(new IndexFlattener()),
-					new DfVisitor<Expression>(new TacTransformation()),
-					new DfVisitor<CfgNode>(new CfgBuilder()),
-					new DfVisitor<Expression>(new LiteralIntegersAdder()) };
-
+			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
+			transformations.add(new UnaryListRemoval());
+			transformations.add(new StoreOnceTransformation());
+			transformations.add(new DfVisitor<Void>(new SSATransformation()));
+			transformations.add(new GlobalArrayInitializer(true));
+			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
+			transformations.add(new DfVisitor<Void>(new XlimDeadVariableRemoval()));
+			transformations.add(new DfVisitor<Expression>(new LiteralIntegersAdder()));
+			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
+			transformations.add(new DfVisitor<Expression>(new TacTransformation()));
+			transformations.add(new DfVisitor<CfgNode>(new CfgBuilder()));
+			transformations.add(new DfVisitor<Expression>(new LiteralIntegersAdder()));
+			
+			
 			for (DfSwitch<?> transformation : transformations) {
 				transformation.doSwitch(actor);
 				ResourceSet set = new ResourceSetImpl();
