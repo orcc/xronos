@@ -99,7 +99,7 @@ import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.transform.BlockCombine;
-import net.sf.orcc.ir.transform.CfgBuilder;
+import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 import net.sf.orcc.ir.transform.DeadCodeElimination;
 import net.sf.orcc.ir.transform.DeadGlobalElimination;
 import net.sf.orcc.ir.transform.SSATransformation;
@@ -293,14 +293,18 @@ public class Orc2HDL extends AbstractBackend {
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
-			transformations.add(new DfVisitor<Void>(new XlimDeadVariableRemoval()));
-			transformations.add(new DfVisitor<Expression>(new LiteralIntegersAdder()));
+			transformations.add(new DfVisitor<Void>(
+					new XlimDeadVariableRemoval()));
+			transformations.add(new DfVisitor<Expression>(
+					new LiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
-			transformations.add(new DfVisitor<Expression>(new TacTransformation()));
-			transformations.add(new DfVisitor<CfgNode>(new CfgBuilder()));
-			transformations.add(new DfVisitor<Expression>(new LiteralIntegersAdder()));
-			
-			
+			transformations.add(new DfVisitor<Expression>(
+					new TacTransformation()));
+			transformations.add(new DfVisitor<CfgNode>(
+					new ControlFlowAnalyzer()));
+			transformations.add(new DfVisitor<Expression>(
+					new LiteralIntegersAdder()));
+
 			for (DfSwitch<?> transformation : transformations) {
 				transformation.doSwitch(actor);
 				ResourceSet set = new ResourceSetImpl();
@@ -326,7 +330,7 @@ public class Orc2HDL extends AbstractBackend {
 					new DfVisitor<Void>(new XlimDeadVariableRemoval()),
 					new DfVisitor<Void>(new ListFlattener()),
 					new DfVisitor<Expression>(new TacTransformation()),
-					new DfVisitor<CfgNode>(new CfgBuilder()),
+					new DfVisitor<CfgNode>(new ControlFlowAnalyzer()),
 					new DfVisitor<Void>(new InstPhiTransformation()),
 					new DfVisitor<Expression>(new LiteralIntegersAdder()),
 					new DfVisitor<Expression>(new CastAdder(true)),
@@ -355,7 +359,7 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected void doXdfCodeGeneration(Network network) throws OrccException {
 		// instantiate and flattens network
-		new Instantiator(false,1).doSwitch(network);
+		new Instantiator(false, 1).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
 
 		transformActors(network.getAllActors());
