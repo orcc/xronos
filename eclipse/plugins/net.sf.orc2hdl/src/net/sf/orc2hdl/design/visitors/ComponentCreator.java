@@ -524,7 +524,11 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			PortUtil.mapOutControlPort(currentComponent, 0, doneBusDependency);
 			componentList.add(currentComponent);
 		} else {
-
+			if (store.getValue().isExprVar()){
+				Var sourceVar = ((ExprVar)store.getValue()).getUse().getVariable();
+				Component assign = ModuleUtil.assignComponent(targetVar, sourceVar, portDependency, busDependency, portGroupDependency, doneBusDependency);
+				componentList.add(assign);
+			}
 		}
 		return null;
 	}
