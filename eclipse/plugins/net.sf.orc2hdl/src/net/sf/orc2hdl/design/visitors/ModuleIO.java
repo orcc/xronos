@@ -31,12 +31,15 @@ package net.sf.orc2hdl.design.visitors;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprVar;
@@ -48,36 +51,44 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 
 import org.eclipse.emf.ecore.EObject;
 
-/**
- * This visitor finds the Input and Phi Vars of an IfBlock
- * 
- * @author Endri Bezati
- * 
- */
-public class BranchIOFinder extends AbstractIrVisitor<Void> {
+public class ModuleIO extends AbstractIrVisitor<Void> {
 
+	/** The current visited Block **/
 	private BlockBasic currentBlock = null;
 
-	private BlockIf currentIfBlock = null;
+	/** The current visited If Block **/
+	private BlockIf currentBlockIf = null;
 
-	private List<Var> currentVars = new ArrayList<Var>();
-
-	private List<Var> outputVars = new ArrayList<Var>();
-
-	private Map<Var, List<Var>> phiMapVar = new HashMap<Var, List<Var>>();
+	/** The current visited While Block **/
+	private BlockWhile currentBlockWhile = null;
 
 	/** Design Resources **/
 	private final ResourceCache resources;
 
-	public BranchIOFinder(ResourceCache resources) {
+	/** Set of Final Input Variables **/
+	private Set<Var> blockFinalInputVars;
+
+	/** Set of Input Variables **/
+	private Set<Var> blockInputVars;
+
+	/** Set of Output Variables **/
+	private Set<Var> blockOutputVars;
+
+	/** Map containing the join node **/
+	private Map<Var, List<Var>> joinVarMap = new HashMap<Var, List<Var>>();
+
+	public ModuleIO(ResourceCache resources) {
 		super(true);
+		blockInputVars = new HashSet<Var>();
+		blockFinalInputVars = new HashSet<Var>();
 		this.resources = resources;
 	}
 
 	@Override
 	public Void caseBlockBasic(BlockBasic block) {
 		// Visit only the instruction of the If block
-		if (block.eContainer() == currentIfBlock) {
+		if ((block.eContainer() == currentBlockIf)
+				|| (block.eContainer() == currentBlockWhile)) {
 			currentBlock = block;
 			super.caseBlockBasic(block);
 		}
@@ -85,34 +96,48 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 	}
 
 	@Override
-	public Void caseBlockIf(BlockIf blockIf) {
-		// Add decision condition Var
-		currentIfBlock = blockIf;
-		Expression condExpr = blockIf.getCondition();
+	public Void caseBlockIf(BlockIf nodeIf) {
+
+		currentBlockIf = nodeIf;
+
+		blockFinalInputVars = blockInputVars;
+
+		blockInputVars = new HashSet<Var>();
+		blockOutputVars = new HashSet<Var>();
+
+		/** Get Condition **/
+		Expression condExpr = nodeIf.getCondition();
 		Var condVar = ((ExprVar) condExpr).getUse().getVariable();
-		resources.addBranchDecisionInput(blockIf, condVar);
+		resources.addBranchDecisionInput(nodeIf, condVar);
 
-		// Visit Phi
-		phiMapVar = new HashMap<Var, List<Var>>();
-		doSwitch(blockIf.getJoinBlock());
-		resources.addBranchPhi(blockIf, phiMapVar);
+		/** Visit Join Block **/
+		doSwitch(nodeIf.getJoinBlock());
+		resources.addBranchPhi(nodeIf, joinVarMap);
 
-		// Visit thenBlock
-		currentVars = new ArrayList<Var>();
-		outputVars = new ArrayList<Var>();
-		doSwitch(blockIf.getThenBlocks());
-		resources.addBranchThenInput(blockIf, currentVars);
-		resources.addBranchThenOutput(blockIf, outputVars);
+		/** Visit Then Block **/
 
-		// Visit elseBlock
-		if (!blockIf.getElseBlocks().isEmpty()) {
-			currentVars = new ArrayList<Var>();
-			outputVars = new ArrayList<Var>();
-			doSwitch(blockIf.getElseBlocks());
-			resources.addBranchElseInput(blockIf, currentVars);
-			resources.addBranchElseOutput(blockIf, outputVars);
+		doSwitch(nodeIf.getThenBlocks());
+		resources.addBranchThenInput(nodeIf, blockInputVars);
+		resources.addBranchThenOutput(nodeIf, blockOutputVars);
+		blockInputVars.addAll(blockFinalInputVars);
+
+		/** Visit Else Block **/
+		if (!nodeIf.getElseBlocks().isEmpty()) {
+			Set<Var> oldBlockInpoutSet = blockInputVars;
+			blockInputVars = new HashSet<Var>();
+			blockOutputVars = new HashSet<Var>();
+			doSwitch(nodeIf.getElseBlocks());
+			resources.addBranchElseInput(nodeIf, blockInputVars);
+			resources.addBranchElseOutput(nodeIf, blockOutputVars);
+			blockInputVars.addAll(blockFinalInputVars);
+			blockInputVars.addAll(oldBlockInpoutSet);
 		}
+		return null;
+	}
 
+	@Override
+	public Void caseBlockWhile(BlockWhile nodeWhile) {
+		currentBlockWhile = nodeWhile;
 		return null;
 	}
 
@@ -122,20 +147,15 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 		// input
 		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
 		if (definedInOtherBlock(varE1, currentBlock)) {
-			if (!currentVars.contains(varE1)) {
-				currentVars.add(varE1);
-			}
+			blockInputVars.add(varE1);
 		}
 
 		// Get e2 var and if it defined not in this visited block added as an
 		// input
 		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
 		if (definedInOtherBlock(varE2, currentBlock)) {
-			if (!currentVars.contains(varE2)) {
-				currentVars.add(varE2);
-			}
+			blockInputVars.add(varE2);
 		}
-
 		return null;
 	}
 
@@ -143,9 +163,9 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 	public Void caseInstAssign(InstAssign assign) {
 		super.caseInstAssign(assign);
 		Var target = assign.getTarget().getVariable();
-		for (List<Var> vars : phiMapVar.values()) {
+		for (List<Var> vars : joinVarMap.values()) {
 			if (vars.contains(target)) {
-				outputVars.add(target);
+				blockOutputVars.add(target);
 			}
 		}
 
@@ -161,7 +181,7 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 			Var value = ((ExprVar) expr).getUse().getVariable();
 			phiVars.add(value);
 		}
-		phiMapVar.put(target, phiVars);
+		joinVarMap.put(target, phiVars);
 		return null;
 	}
 
@@ -171,7 +191,7 @@ public class BranchIOFinder extends AbstractIrVisitor<Void> {
 			while (!(container instanceof BlockBasic)) {
 				container = container.eContainer();
 			}
-			if (container != block) {
+			if (container != block && container.eContainer() != currentBlockIf) {
 				return true;
 			}
 		}

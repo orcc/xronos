@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.TaskCall;
@@ -79,7 +80,7 @@ public class ResourceCache {
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
-	public void addBranchElseInput(BlockIf blockIf, List<Var> elseVars) {
+	public void addBranchElseInput(BlockIf blockIf, Set<Var> elseVars) {
 		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
 		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : elseVars) {
@@ -89,7 +90,7 @@ public class ResourceCache {
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
-	public void addBranchElseOutput(BlockIf blockIf, List<Var> elseVars) {
+	public void addBranchElseOutput(BlockIf blockIf, Set<Var> elseVars) {
 		List<List<GroupedVar>> listOfVars = branchIfOutput.get(blockIf);
 		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : elseVars) {
@@ -112,7 +113,7 @@ public class ResourceCache {
 		branchIfOutput.put(blockIf, listOfVars);
 	}
 
-	public void addBranchThenInput(BlockIf blockIf, List<Var> thenVars) {
+	public void addBranchThenInput(BlockIf blockIf, Set<Var> thenVars) {
 		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
 		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : thenVars) {
@@ -123,7 +124,7 @@ public class ResourceCache {
 		branchIfInput.put(blockIf, listOfVars);
 	}
 
-	public void addBranchThenOutput(BlockIf blockIf, List<Var> thenVars) {
+	public void addBranchThenOutput(BlockIf blockIf, Set<Var> thenVars) {
 		List<List<GroupedVar>> listOfVars = branchIfOutput.get(blockIf);
 		List<GroupedVar> vars = new ArrayList<GroupedVar>();
 		for (Var var : thenVars) {
@@ -206,8 +207,8 @@ public class ResourceCache {
 		}
 		return inputs;
 	}
-	
-	public List<GroupedVar> getBranchOutputs(BlockIf blockIf){
+
+	public List<GroupedVar> getBranchOutputs(BlockIf blockIf) {
 		return branchIfOutput.get(blockIf).get(0);
 	}
 
