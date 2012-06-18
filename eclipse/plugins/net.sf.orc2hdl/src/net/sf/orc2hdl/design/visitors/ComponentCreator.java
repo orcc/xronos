@@ -325,11 +325,19 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	@Override
 	public List<Component> caseExprVar(ExprVar var) {
-		currentComponent = new NoOp(1, Exit.DONE);
+		Component noop = new NoOp(1, Exit.DONE);
 		Var useVar = var.getUse().getVariable();
 		GroupedVar inVar = new GroupedVar(useVar, 0);
-		PortUtil.mapInDataPorts(currentComponent, inVar.getAsList(),
+		/** Cast if necessary **/
+		Integer newMaxSize = assignTarget.getVariable().getType().getSizeInBits();
+		if (newMaxSize != var.getType().getSizeInBits()){
+			Boolean isSigned = assignTarget.getVariable().getType().isInt();
+			Var castedVar = unaryCastOp(var.getUse().getVariable(), newMaxSize, isSigned);
+			inVar = new GroupedVar(castedVar,0);
+		}
+		PortUtil.mapInDataPorts(noop, inVar.getAsList(),
 				portDependency, portGroupDependency);
+		currentComponent = noop;
 		return null;
 	}
 
@@ -526,8 +534,9 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		} else {
 			if (store.getValue().isExprVar()){
 				Var sourceVar = ((ExprVar)store.getValue()).getUse().getVariable();
-				Component assign = ModuleUtil.assignComponent(targetVar, sourceVar, portDependency, busDependency, portGroupDependency, doneBusDependency);
-				componentList.add(assign);
+				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(targetVar,
+						sourceVar);
+				doSwitch(assign);
 			}
 		}
 		return null;

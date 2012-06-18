@@ -473,7 +473,7 @@ public class ModuleUtil {
 				for (Bus bus : component.getDataBuses()) {
 					Var busVar = busDependency.get(bus);
 					List<Port> targetPorts = getDependencyTargetPorts(
-							components, busVar, portDependency);
+							module.getComponents(), busVar, portDependency);
 					for (Port port : targetPorts) {
 						int group = portGroupDependency.get(port);
 						List<Entry> entries = port.getOwner().getEntries();
