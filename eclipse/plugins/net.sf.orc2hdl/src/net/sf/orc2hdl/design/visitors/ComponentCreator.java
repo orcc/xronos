@@ -151,13 +151,39 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		componentList = new ArrayList<Component>();
 	}
 
-	protected List<GroupedVar> binaryCastOp(Var e1, Var e2, Integer newMaxSize) {
+	private List<GroupedVar> binaryCastOp(Var e1, Var e2, Integer newMaxSize) {
 		Boolean isSigned = e1.getType().isInt() || e2.getType().isInt();
 		List<GroupedVar> newVars = new ArrayList<GroupedVar>();
 		// Add the new Casted variables, group 0 by default
 		newVars.add(new GroupedVar(unaryCastOp(e1, newMaxSize, isSigned), 0));
 		newVars.add(new GroupedVar(unaryCastOp(e2, newMaxSize, isSigned), 0));
 		return newVars;
+	}
+
+	private Component binaryMapInCast(Component component, ExprBinary expr) {
+		Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
+		Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
+		Integer newMaxSize = assignTarget.getVariable().getType()
+				.getSizeInBits();
+		PortUtil.mapInDataPorts(component, binaryCastOp(e1, e2, newMaxSize),
+				portDependency, portGroupDependency);
+		return component;
+	}
+
+	private Component binaryMapInLogic(Component component, ExprBinary expr) {
+		Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
+		Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
+
+		Integer maxSize = Math.max(e1.getType().getSizeInBits(), e2.getType()
+				.getSizeInBits());
+		List<GroupedVar> inVars = new ArrayList<GroupedVar>();
+		inVars.add(new GroupedVar(
+				unaryCastOp(e1, maxSize, e1.getType().isInt()), 0));
+		inVars.add(new GroupedVar(
+				unaryCastOp(e2, maxSize, e2.getType().isInt()), 0));
+		PortUtil.mapInDataPorts(component, inVars, portDependency,
+				portGroupDependency);
+		return component;
 	}
 
 	@Override
@@ -236,55 +262,64 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		Component component = null;
 		if (expr.getOp() == OpBinary.BITAND) {
 			component = new AndOp();
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.BITOR) {
 			component = new OrOp();
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.BITXOR) {
 			component = new XorOp();
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.DIV) {
 			component = new DivideOp(sizeInBits);
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.DIV_INT) {
 			component = new DivideOp(sizeInBits);
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.EQ) {
 			component = new EqualsOp();
+			currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.GE) {
 			component = new GreaterThanEqualToOp();
+			currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.GT) {
 			component = new GreaterThanOp();
+			currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.LE) {
 			component = new LessThanEqualToOp();
+			currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.LOGIC_AND) {
 			component = new And(2);
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.LOGIC_OR) {
 			component = new Or(2);
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.LT) {
 			component = new LessThanOp();
+			currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.MINUS) {
 			component = new SubtractOp();
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.MOD) {
 			component = new ModuloOp();
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.NE) {
 			component = new NotEqualsOp();
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.PLUS) {
 			component = new AddOp();
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.SHIFT_LEFT) {
 			int log2N = MathStuff.log2(sizeInBits);
 			component = new LeftShiftOp(log2N);
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.SHIFT_RIGHT) {
 			int log2N = MathStuff.log2(sizeInBits);
 			component = new RightShiftOp(log2N);
+			currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.TIMES) {
 			component = new MultiplyOp(expr.getType().getSizeInBits());
+			currentComponent = binaryMapInCast(component, expr);
 		}
-		// Three address code obligated, a binary expression
-		// can not contain another binary expression
-		// Get variables for E1 and E2
-		Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
-		Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-		Integer newMaxSize = assignTarget.getVariable().getType()
-				.getSizeInBits();
-		PortUtil.mapInDataPorts(component, binaryCastOp(e1, e2, newMaxSize),
-				portDependency, portGroupDependency);
-		currentComponent = component;
 		return null;
 	}
 
@@ -329,14 +364,16 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		Var useVar = var.getUse().getVariable();
 		GroupedVar inVar = new GroupedVar(useVar, 0);
 		/** Cast if necessary **/
-		Integer newMaxSize = assignTarget.getVariable().getType().getSizeInBits();
-		if (newMaxSize != var.getType().getSizeInBits()){
+		Integer newMaxSize = assignTarget.getVariable().getType()
+				.getSizeInBits();
+		if (newMaxSize != var.getType().getSizeInBits()) {
 			Boolean isSigned = assignTarget.getVariable().getType().isInt();
-			Var castedVar = unaryCastOp(var.getUse().getVariable(), newMaxSize, isSigned);
-			inVar = new GroupedVar(castedVar,0);
+			Var castedVar = unaryCastOp(var.getUse().getVariable(), newMaxSize,
+					isSigned);
+			inVar = new GroupedVar(castedVar, 0);
 		}
-		PortUtil.mapInDataPorts(noop, inVar.getAsList(),
-				portDependency, portGroupDependency);
+		PortUtil.mapInDataPorts(noop, inVar.getAsList(), portDependency,
+				portGroupDependency);
 		currentComponent = noop;
 		return null;
 	}
@@ -532,10 +569,11 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			PortUtil.mapOutControlPort(currentComponent, 0, doneBusDependency);
 			componentList.add(currentComponent);
 		} else {
-			if (store.getValue().isExprVar()){
-				Var sourceVar = ((ExprVar)store.getValue()).getUse().getVariable();
-				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(targetVar,
-						sourceVar);
+			if (store.getValue().isExprVar()) {
+				Var sourceVar = ((ExprVar) store.getValue()).getUse()
+						.getVariable();
+				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+						targetVar, sourceVar);
 				doSwitch(assign);
 			}
 		}
@@ -554,20 +592,20 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		Integer sizeVar = var.getType().getSizeInBits();
 
 		if (sizeVar != newMaxSize) {
-			currentComponent = new CastOp(newMaxSize, isSigned);
+			Component castOp = new CastOp(newMaxSize, isSigned);
 
 			GroupedVar inVar = new GroupedVar(var, 0);
 
-			PortUtil.mapInDataPorts(currentComponent, inVar.getAsList(),
-					portDependency, portGroupDependency);
+			PortUtil.mapInDataPorts(castOp, inVar.getAsList(), portDependency,
+					portGroupDependency);
 			Var castedVar = procedure.newTempLocalVariable(
 					IrFactory.eINSTANCE.createTypeInt(newMaxSize), "casted_"
 							+ castIndex + "_" + var.getIndexedName());
 			GroupedVar outVar = new GroupedVar(castedVar, 0);
 
-			PortUtil.mapOutDataPorts(currentComponent, outVar.getAsList(),
-					busDependency, doneBusDependency);
-			componentList.add(currentComponent);
+			PortUtil.mapOutDataPorts(castOp, outVar.getAsList(), busDependency,
+					doneBusDependency);
+			componentList.add(castOp);
 			newVar = castedVar;
 			castIndex++;
 		}
