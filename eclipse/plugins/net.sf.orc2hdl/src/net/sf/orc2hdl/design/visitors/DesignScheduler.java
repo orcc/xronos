@@ -208,7 +208,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 		/** Get the action scheduler components **/
 		List<Component> visitedComponents = innerComponentCreator
 				.doSwitch(action.getScheduler());
-
+		visitedComponents.addAll(componentsList);
 		/** Save the isSchedulable expressions **/
 		isSchedulableComponents.put(action, visitedComponents);
 
@@ -280,9 +280,9 @@ public class DesignScheduler extends DfVisitor<Task> {
 				portGroupDependency, doneBusDependency);
 
 		/** Build the infinite Loop of the scheduler **/
-		Decision loopDecision = ModuleUtil.createTrueDecision(
-				"var_" + "_loop", portDependency,
-				busDependency, portGroupDependency, doneBusDependency);
+		Decision loopDecision = ModuleUtil.createTrueDecision("var_" + "_loop",
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
 
 		/** Create the scheduler Loop Body **/
 		LoopBody loopBody = new WhileBody(loopDecision, whileBodyModule);
@@ -327,7 +327,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 					// Get the variable
 					Var peekVar = load.getTarget().getVariable();
-
+					peekVar.setName("peek_" + currentAction.getName() + "_"
+							+ peekVar.getIndexedName());
 					// Create the pinPeek Component
 					ActionIOHandler ioHandler = resources.getIOHandler(port);
 					Component peekComponent = ioHandler.getTokenPeekAccess();
@@ -447,8 +448,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 	private List<Component> createPatternTest(Action action, Pattern pattern,
 			String direction) {
 		List<Component> patternComponents = new ArrayList<Component>();
+		List<Var> patternVars = new ArrayList<Var>();
 		if (!pattern.isEmpty()) {
-			List<Var> patternVars = new ArrayList<Var>();
 			for (net.sf.orcc.df.Port port : pattern.getPorts()) {
 				if (pinStatus.containsKey(port)) {
 					Var pinStatusVar = pinStatus.get(port);
@@ -503,24 +504,51 @@ public class DesignScheduler extends DfVisitor<Task> {
 				} else {
 					actionOutDecisions.put(currentAction, decisionVar);
 				}
-
 			}
-
 		} else {
-			// Give True to the Decision
-			Type type = IrFactory.eINSTANCE.createTypeBool();
-			Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
-					"isSchedulable_" + currentAction.getName() + "_"
-							+ direction + "_decision", false, 0);
-
-			Component constant = new SimpleConstant(1, 1, false);
-			GroupedVar outVars = new GroupedVar(decisionVar, 0);
-			PortUtil.mapOutDataPorts(constant, outVars.getAsList(),
-					busDependency, doneBusDependency);
-			patternComponents.add(constant);
 			if (direction.equals("in")) {
+				/** Create a True Pattern Port **/
+				Type type = IrFactory.eINSTANCE.createTypeBool();
+				Var patternPort = IrFactory.eINSTANCE.createVar(0, type,
+						direction + "putPattern_" + currentAction.getName(),
+						false, 0);
+				GroupedVar outVars = new GroupedVar(patternPort, 0);
+				Component constant = new SimpleConstant(1, 1, false);
+				PortUtil.mapOutDataPorts(constant, outVars.getAsList(),
+						busDependency, doneBusDependency);
+				patternComponents.add(constant);
+				patternVars.add(patternPort);
+
+				/** Get the return of the scheduler **/
+				patternVars.add(actionSchedulerReturnVar.get(currentAction));
+
+				Component andComponent = new And(patternVars.size());
+
+				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
+						patternVars, 0);
+				PortUtil.mapInDataPorts(andComponent, inVars, portDependency,
+						portGroupDependency);
+				// Create Decision Variable
+				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
+						"isSchedulable_" + currentAction.getName() + "_"
+								+ direction + "_decision", false, 0);
+				outVars = new GroupedVar(decisionVar, 0);
+				PortUtil.mapOutDataPorts(andComponent, outVars.getAsList(),
+						busDependency, doneBusDependency);
+				patternComponents.add(andComponent);
+
 				actionInDecisions.put(currentAction, decisionVar);
 			} else {
+				Type type = IrFactory.eINSTANCE.createTypeBool();
+				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
+						"isSchedulable_" + currentAction.getName() + "_"
+								+ direction + "_decision", false, 0);
+
+				Component constant = new SimpleConstant(1, 1, false);
+				GroupedVar outVars = new GroupedVar(decisionVar, 0);
+				PortUtil.mapOutDataPorts(constant, outVars.getAsList(),
+						busDependency, doneBusDependency);
+				patternComponents.add(constant);
 				actionOutDecisions.put(currentAction, decisionVar);
 			}
 		}

@@ -188,9 +188,10 @@ public class PortUtil {
 			List<GroupedVar> outVars, Map<Bus, Var> busDependency,
 			Map<Bus, Integer> doneBusDependency) {
 
+		Integer group = 0;
 		for (GroupedVar groupedVar : outVars) {
 			Var var = groupedVar.getVar();
-			Integer group = groupedVar.getGroup();
+			group = groupedVar.getGroup();
 			// Get the component dataBus
 			Bus dataBus = component.getExit(Exit.DONE).getDataBuses()
 					.get(group);
@@ -203,10 +204,9 @@ public class PortUtil {
 			// Name the dataBus
 			dataBus.setIDLogical(var.getIndexedName());
 			busDependency.put(dataBus, var);
-
-			// Map Out done Bus
-			mapOutControlPort(component, group, doneBusDependency);
 		}
+		// Map Out done Bus
+		mapOutControlPort(component, group, doneBusDependency);
 	}
 
 }
