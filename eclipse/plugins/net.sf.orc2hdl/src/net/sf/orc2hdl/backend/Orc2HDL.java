@@ -65,7 +65,6 @@ import net.sf.orc2hdl.design.DesignEngine;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
-import net.sf.orcc.backends.CustomPrinter;
 import net.sf.orcc.backends.StandardPrinter;
 import net.sf.orcc.backends.transform.CastAdder;
 import net.sf.orcc.backends.transform.DivisionSubstitution;
@@ -88,7 +87,6 @@ import net.sf.orcc.backends.xlim.transform.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.transform.XlimVariableRenamer;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.DfFactory;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.Instantiator;
@@ -125,33 +123,37 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
  */
 public class Orc2HDL extends AbstractBackend {
 
+	private Map<String, String> clkDomains;
+
 	private boolean debugMode;
-
-	private boolean instanceToDesign;
-
-	private boolean goDoneSignal;
-
-	private boolean modelsimAnalysis;
-
-	private String simTime;
-
-	private String fpgaName;
-
-	private List<String> forgeFlags;
-
-	// private boolean haveSystemActors;
 
 	private List<String> entities;
 
 	private HashSet<String> entitySet;
 
-	private Map<String, String> clkDomains;
+	private List<String> forgeFlags;
+
+	private String fpgaName;
+
+	private boolean goDoneSignal;
+
+	// private boolean haveSystemActors;
+
+	private boolean instanceToDesign;
+
+	private boolean modelsimAnalysis;
 
 	private String simPath;
 
-	private String srcPath;
+	private String simTime;
 
 	private String srcGoDonePath;
+
+	private String srcPath;
+
+	private String tbPath;
+
+	private String tracePath;
 
 	private void computeEntityList(Instance instance) {
 		if (instance.isActor()) {
@@ -174,20 +176,6 @@ public class Orc2HDL extends AbstractBackend {
 	}
 
 	@Override
-	public boolean exportRuntimeLibrary() throws OrccException {
-
-		String libPath = path + File.separator + "lib";
-		boolean result = true;
-
-		result &= copyFolderToFileSystem("/HdlLibraries/systemBuilder/vhdl",
-				libPath + File.separator + "systemBuilder");
-		result &= copyFolderToFileSystem("/HdlLibraries/systemActors", libPath
-				+ File.separator + "systemActors");
-
-		return result;
-	}
-
-	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
 		instanceToDesign = getAttribute("net.sf.orc2hdl.instanceDesign", false);
@@ -195,16 +183,32 @@ public class Orc2HDL extends AbstractBackend {
 		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis",
 				false);
 		simTime = getAttribute("net.sf.orc2hdl.simTime", "5000");
+
+		// The source Path
 		srcPath = path + File.separator + "src";
 		new File(srcPath).mkdir();
 
+		// The source Path with the Go and Done signal
 		srcGoDonePath = path + File.separator + "srcGoDone";
 		if (goDoneSignal) {
 			new File(srcGoDonePath).mkdir();
 		}
 
+		// The simualtion path
 		simPath = path + File.separator + "sim";
 		new File(simPath).mkdir();
+
+		// The Testbench Path and Folder
+		tbPath = simPath + File.separator + "Testbench";
+		File tbFolder = new File(tbPath);
+		if (!tbFolder.exists()) {
+			tbFolder.mkdir();
+		}
+
+		// Testbench VHDs and Traces path
+		tracePath = tbPath + File.separator + "traces";
+		new File(tracePath).mkdir();
+		new File(tbPath + File.separator + "vhd").mkdir();
 
 		if (modelsimAnalysis) {
 			goDoneSignal = true;
@@ -409,25 +413,20 @@ public class Orc2HDL extends AbstractBackend {
 		}
 	}
 
-	public void runModelSim(String modelSim, Network network) {
-		try {
-			String line;
-			File fPath = new File(simPath);
+	@Override
+	public boolean exportRuntimeLibrary() throws OrccException {
 
-			String arg = " -c -do sim_tb_" + network.getSimpleName() + ".do";
-			String cmd = modelSim + arg;
-			write("Launching Modelsim\n");
+		String libPath = path + File.separator + "lib";
+		boolean result = true;
 
-			Process p = Runtime.getRuntime().exec(cmd, null, fPath);
+		result &= copyFolderToFileSystem("/HdlLibraries/systemBuilder/vhdl",
+				libPath + File.separator + "systemBuilder");
+		result &= copyFolderToFileSystem("/HdlLibraries/systemActors", libPath
+				+ File.separator + "systemActors");
+		result &= copyFolderToFileSystem("/HdlLibraries/simPackage", libPath
+				+ File.separator + "simPackage");
 
-			BufferedReader bri = new BufferedReader(new InputStreamReader(
-					p.getInputStream()));
-			while ((line = bri.readLine()) != null) {
-				write("Orc2HDL: " + line + "\n");
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		return result;
 	}
 
 	@Override
@@ -446,6 +445,12 @@ public class Orc2HDL extends AbstractBackend {
 		Boolean printOK = true;
 		// Test if instance is Native
 		if (!instance.getActor().isNative()) {
+
+			// Print TestBench
+			printTestbench(instance);
+			// Print TestBench tcl script
+			printTCL(instance);
+
 			printOK = printer.print(instance.getName() + ".xlim", xlimPath,
 					instance);
 			if (!printOK) {
@@ -489,6 +494,7 @@ public class Orc2HDL extends AbstractBackend {
 				}
 			}
 		}
+
 		return printOK;
 	}
 
@@ -498,17 +504,6 @@ public class Orc2HDL extends AbstractBackend {
 		Date date = new Date();
 
 		String currentTime = dateFormat.format(date);
-		// generate instances test bench
-		File folder = new File(path + File.separator + "Testbench");
-		if (!folder.exists()) {
-			folder.mkdir();
-		}
-		StandardPrinter instancePrinter = new StandardPrinter(
-				"net/sf/orcc/backends/xlim/hw/ModelSim_Testbench.stg");
-		Instance instance = DfFactory.eINSTANCE.createInstance(
-				network.getName(), network);
-		printTestbench(instancePrinter, instance);
-		printTCL(instance);
 
 		Orc2HDLPrinter printer;
 		String file = network.getSimpleName();
@@ -606,27 +601,18 @@ public class Orc2HDL extends AbstractBackend {
 	}
 
 	private void printTCL(Instance instance) {
-		CustomPrinter printer = new CustomPrinter(
-				"net/sf/orcc/backends/xlim/hw/ModelSim_Script.stg");
-
-		entities = new ArrayList<String>();
-		entitySet = new HashSet<String>();
-		computeEntityList(instance);
-
-		printer.print("TCLLists.tcl", path, "TCLLists", "name", instance
-				.getNetwork().getName(), "entities", entities);
+		Orc2HDLPrinter printer = new Orc2HDLPrinter(
+				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
+		printer.print("tcl_" + instance.getSimpleName() + ".tcl", tbPath,
+				instance);
 	}
 
-	private void printTestbench(StandardPrinter printer, Instance instance) {
-		printer.print(instance.getName() + "_tb.vhd", path + File.separator
-				+ "Testbench", instance);
-
-		if (instance.isNetwork()) {
-			Network network = instance.getNetwork();
-			for (Instance subInstance : network.getInstances()) {
-				printTestbench(printer, subInstance);
-			}
-		}
+	private void printTestbench(Instance instance) {
+		Orc2HDLPrinter tbPrinter = new Orc2HDLPrinter(
+				"net/sf/orc2hdl/templates/ModelSim_Testbench.stg");
+		tbPrinter.getOptions().put("tracePath", tracePath);
+		tbPrinter.print(instance.getSimpleName() + "_tb.vhd", tbPath
+				+ File.separator + "vhd", instance);
 	}
 
 	private boolean runForge(String[] args, Instance instance) {
@@ -651,5 +637,26 @@ public class Orc2HDL extends AbstractBackend {
 		}
 
 		return !error;
+	}
+
+	public void runModelSim(String modelSim, Network network) {
+		try {
+			String line;
+			File fPath = new File(simPath);
+
+			String arg = " -c -do sim_tb_" + network.getSimpleName() + ".do";
+			String cmd = modelSim + arg;
+			write("Launching Modelsim\n");
+
+			Process p = Runtime.getRuntime().exec(cmd, null, fPath);
+
+			BufferedReader bri = new BufferedReader(new InputStreamReader(
+					p.getInputStream()));
+			while ((line = bri.readLine()) != null) {
+				write("Orc2HDL: " + line + "\n");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

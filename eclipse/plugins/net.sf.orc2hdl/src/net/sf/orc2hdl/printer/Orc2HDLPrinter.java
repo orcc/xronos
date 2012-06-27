@@ -190,7 +190,7 @@ public class Orc2HDLPrinter extends AbstractPrinter {
 				}
 			}
 
-			ST template = group.getInstanceOf("instance");
+			ST template = group.getInstanceOf("printInstance");
 			template.add("instance", instance);
 			template.add("options", options);
 			printTemplate(template, file);
