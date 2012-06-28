@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
@@ -60,47 +61,36 @@ import org.eclipse.emf.ecore.EObject;
 public class ModuleIO extends AbstractIrVisitor<Void> {
 
 	/** The current visited Block **/
-	private BlockBasic currentBlock = null;
+	private BlockBasic currentBlockBasic = null;
 
 	/** The current visited If Block **/
-	private BlockIf currentBlockIf = null;
-
-	/** The current visited While Block **/
-	private BlockWhile currentBlockWhile = null;
+	private Block currentBlock = null;
 
 	/** Design Resources **/
 	private final ResourceCache resources;
 
 	/** Set of Final Input Variables **/
-	private Set<Var> blockFinalInputVars;
+	private Map<Block, Set<Var>> blkInputVars;
 
-	private Set<Var> blockFinalOutputVars;
-
-	/** Set of Input Variables **/
-	private Set<Var> blockInputVars;
-
-	/** Set of Output Variables **/
-	private Set<Var> blockOutputVars;
+	/** Map of Final Output Variables **/
+	private Map<Block, Set<Var>> blkOutputVars;
 
 	/** Map containing the join node **/
-	private Map<Var, List<Var>> joinVarMap = new HashMap<Var, List<Var>>();
-
-	private Map<Var, List<Var>> oldJoinVarMap = new HashMap<Var, List<Var>>();
+	private Map<Block, Map<Var, List<Var>>> joinVarMap;
 
 	public ModuleIO(ResourceCache resources) {
 		super(true);
-		blockInputVars = new HashSet<Var>();
-		oldJoinVarMap = new HashMap<Var, List<Var>>();
-		blockFinalInputVars = new HashSet<Var>();
+		blkInputVars = new HashMap<Block, Set<Var>>();
+		blkOutputVars = new HashMap<Block, Set<Var>>();
+		joinVarMap = new HashMap<Block, Map<Var, List<Var>>>();
 		this.resources = resources;
 	}
 
 	@Override
 	public Void caseBlockBasic(BlockBasic block) {
 		// Visit only the instruction of the If block
-		if ((block.eContainer() == currentBlockIf)
-				|| (block.eContainer() == currentBlockWhile)) {
-			currentBlock = block;
+		if (block.eContainer() == currentBlock) {
+			currentBlockBasic = block;
 			super.caseBlockBasic(block);
 		}
 		return null;
@@ -108,15 +98,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 
 	@Override
 	public Void caseBlockIf(BlockIf nodeIf) {
-
-		currentBlockIf = nodeIf;
-
-		blockFinalInputVars = blockInputVars;
-		blockFinalOutputVars = blockOutputVars;
-		oldJoinVarMap = joinVarMap;
-
-		blockInputVars = new HashSet<Var>();
-		blockOutputVars = new HashSet<Var>();
+		currentBlock = nodeIf;
 
 		/** Get Condition **/
 		Expression condExpr = nodeIf.getCondition();
@@ -124,34 +106,25 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		resources.addBranchDecisionInput(nodeIf, condVar);
 
 		/** Visit Join Block **/
-		joinVarMap = new HashMap<Var, List<Var>>();
+		joinVarMap.put(nodeIf, new HashMap<Var, List<Var>>());
 		doSwitch(nodeIf.getJoinBlock());
-		resources.addBranchPhi(nodeIf, joinVarMap);
+		resources.addBranchPhi(nodeIf, joinVarMap.get(nodeIf));
 
 		/** Visit Then Block **/
-
+		blkInputVars.put(nodeIf, new HashSet<Var>());
+		blkOutputVars.put(nodeIf, new HashSet<Var>());
 		doSwitch(nodeIf.getThenBlocks());
-		resources.addBranchThenInput(nodeIf, blockInputVars);
-		resources.addBranchThenOutput(nodeIf, blockOutputVars);
-		// blockInputVars.addAll(blockFinalInputVars);
-		blockInputVars = blockFinalInputVars;
-		blockOutputVars = blockFinalOutputVars;
+		resources.addBranchThenInput(nodeIf, blkInputVars.get(nodeIf));
+		resources.addBranchThenOutput(nodeIf, blkOutputVars.get(nodeIf));
 
 		/** Visit Else Block **/
-		currentBlockIf = nodeIf;
-		joinVarMap = oldJoinVarMap;
+		currentBlock = nodeIf;
 		if (!nodeIf.getElseBlocks().isEmpty()) {
-			Set<Var> oldBlockInpoutSet = blockInputVars;
-			Set<Var> oldBlockOutpoutSet = blockOutputVars;
-			blockInputVars = new HashSet<Var>();
-			blockOutputVars = new HashSet<Var>();
+			blkInputVars.put(nodeIf, new HashSet<Var>());
+			blkOutputVars.put(nodeIf, new HashSet<Var>());
 			doSwitch(nodeIf.getElseBlocks());
-			resources.addBranchElseInput(nodeIf, blockInputVars);
-			resources.addBranchElseOutput(nodeIf, blockOutputVars);
-			oldBlockInpoutSet.addAll(blockInputVars);
-			blockOutputVars.addAll(blockOutputVars);
-			blockInputVars = oldBlockInpoutSet;
-			blockOutputVars = oldBlockOutpoutSet;
+			resources.addBranchElseInput(nodeIf, blkInputVars.get(nodeIf));
+			resources.addBranchElseOutput(nodeIf, blkOutputVars.get(nodeIf));
 		}
 		return null;
 	}
@@ -159,7 +132,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseBlockWhile(BlockWhile nodeWhile) {
 		// TODO: Add support for while loops
-		currentBlockWhile = nodeWhile;
+		currentBlock = nodeWhile;
 		return null;
 	}
 
@@ -168,15 +141,15 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		// Get e1 var and if it defined not in this visited block added as an
 		// input
 		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
-		if (definedInOtherBlock(varE1, currentBlock)) {
-			blockInputVars.add(varE1);
+		if (definedInOtherBlock(varE1, currentBlockBasic)) {
+			blkInputVars.get(currentBlock).add(varE1);
 		}
 
 		// Get e2 var and if it defined not in this visited block added as an
 		// input
 		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-		if (definedInOtherBlock(varE2, currentBlock)) {
-			blockInputVars.add(varE2);
+		if (definedInOtherBlock(varE2, currentBlockBasic)) {
+			blkInputVars.get(currentBlock).add(varE2);
 		}
 		return null;
 	}
@@ -185,9 +158,9 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	public Void caseInstAssign(InstAssign assign) {
 		super.caseInstAssign(assign);
 		Var target = assign.getTarget().getVariable();
-		for (List<Var> vars : joinVarMap.values()) {
+		for (List<Var> vars : joinVarMap.get(currentBlock).values()) {
 			if (vars.contains(target)) {
-				blockOutputVars.add(target);
+				blkOutputVars.get(currentBlock).add(target);
 			}
 		}
 
@@ -203,7 +176,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 			Var value = ((ExprVar) expr).getUse().getVariable();
 			phiVars.add(value);
 		}
-		joinVarMap.put(target, phiVars);
+		joinVarMap.get(currentBlock).put(target, phiVars);
 		return null;
 	}
 
@@ -213,7 +186,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 			while (!(container instanceof BlockBasic)) {
 				container = container.eContainer();
 			}
-			if (container != block && container.eContainer() != currentBlockIf) {
+			if (container != block && container.eContainer() != currentBlock) {
 				return true;
 			}
 		}
