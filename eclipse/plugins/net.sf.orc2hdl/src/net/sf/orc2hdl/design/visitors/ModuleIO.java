@@ -69,11 +69,17 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	/** Design Resources **/
 	private final ResourceCache resources;
 
-	/** Set of Final Input Variables **/
+	/** Map of a Block Input Variables **/
 	private Map<Block, Set<Var>> blkInputVars;
 
-	/** Map of Final Output Variables **/
+	/** Map of a Block Output Variables **/
 	private Map<Block, Set<Var>> blkOutputVars;
+
+	/** Map of a Module Input Variables **/
+	private Map<Block, Set<Var>> moduleInputVars;
+
+	/** Map of a Module Output Variables **/
+	private Map<Block, Set<Var>> moduleOutputVars;
 
 	/** Map containing the join node **/
 	private Map<Block, Map<Var, List<Var>>> joinVarMap;
@@ -82,6 +88,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		super(true);
 		blkInputVars = new HashMap<Block, Set<Var>>();
 		blkOutputVars = new HashMap<Block, Set<Var>>();
+		moduleInputVars = new HashMap<Block, Set<Var>>();
+		moduleOutputVars = new HashMap<Block, Set<Var>>();
 		joinVarMap = new HashMap<Block, Map<Var, List<Var>>>();
 		this.resources = resources;
 	}
@@ -99,6 +107,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseBlockIf(BlockIf nodeIf) {
 		currentBlock = nodeIf;
+		moduleInputVars.put(nodeIf, new HashSet<Var>());
+		moduleOutputVars.put(nodeIf, new HashSet<Var>());
 
 		/** Get Condition **/
 		Expression condExpr = nodeIf.getCondition();
@@ -114,6 +124,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		blkInputVars.put(nodeIf, new HashSet<Var>());
 		blkOutputVars.put(nodeIf, new HashSet<Var>());
 		doSwitch(nodeIf.getThenBlocks());
+		moduleInputVars.get(nodeIf).addAll(blkInputVars.get(nodeIf));
+		moduleOutputVars.get(nodeIf).addAll(blkOutputVars.get(nodeIf));
 		resources.addBranchThenInput(nodeIf, blkInputVars.get(nodeIf));
 		resources.addBranchThenOutput(nodeIf, blkOutputVars.get(nodeIf));
 
@@ -123,6 +135,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 			blkInputVars.put(nodeIf, new HashSet<Var>());
 			blkOutputVars.put(nodeIf, new HashSet<Var>());
 			doSwitch(nodeIf.getElseBlocks());
+			moduleInputVars.get(nodeIf).addAll(blkInputVars.get(nodeIf));
+			moduleOutputVars.get(nodeIf).addAll(blkOutputVars.get(nodeIf));
 			resources.addBranchElseInput(nodeIf, blkInputVars.get(nodeIf));
 			resources.addBranchElseOutput(nodeIf, blkOutputVars.get(nodeIf));
 		}
