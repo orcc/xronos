@@ -332,7 +332,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 					// Create the pinPeek Component
 					ActionIOHandler ioHandler = resources.getIOHandler(port);
 					Component peekComponent = ioHandler.getTokenPeekAccess();
-
+					peekComponent.setNonRemovable();
 					GroupedVar inVars = new GroupedVar(litteralVar, 0);
 					PortUtil.mapInDataPorts(peekComponent, inVars.getAsList(),
 							portDependency, portGroupDependency);

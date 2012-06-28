@@ -51,6 +51,12 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 
 import org.eclipse.emf.ecore.EObject;
 
+/**
+ * This class finds the inputs and ouputs of an If and While block
+ * 
+ * @author Endri Bezati
+ * 
+ */
 public class ModuleIO extends AbstractIrVisitor<Void> {
 
 	/** The current visited Block **/
@@ -68,6 +74,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	/** Set of Final Input Variables **/
 	private Set<Var> blockFinalInputVars;
 
+	private Set<Var> blockFinalOutputVars;
+
 	/** Set of Input Variables **/
 	private Set<Var> blockInputVars;
 
@@ -77,9 +85,12 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	/** Map containing the join node **/
 	private Map<Var, List<Var>> joinVarMap = new HashMap<Var, List<Var>>();
 
+	private Map<Var, List<Var>> oldJoinVarMap = new HashMap<Var, List<Var>>();
+
 	public ModuleIO(ResourceCache resources) {
 		super(true);
 		blockInputVars = new HashSet<Var>();
+		oldJoinVarMap = new HashMap<Var, List<Var>>();
 		blockFinalInputVars = new HashSet<Var>();
 		this.resources = resources;
 	}
@@ -101,6 +112,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		currentBlockIf = nodeIf;
 
 		blockFinalInputVars = blockInputVars;
+		blockFinalOutputVars = blockOutputVars;
+		oldJoinVarMap = joinVarMap;
 
 		blockInputVars = new HashSet<Var>();
 		blockOutputVars = new HashSet<Var>();
@@ -111,6 +124,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		resources.addBranchDecisionInput(nodeIf, condVar);
 
 		/** Visit Join Block **/
+		joinVarMap = new HashMap<Var, List<Var>>();
 		doSwitch(nodeIf.getJoinBlock());
 		resources.addBranchPhi(nodeIf, joinVarMap);
 
@@ -119,24 +133,32 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		doSwitch(nodeIf.getThenBlocks());
 		resources.addBranchThenInput(nodeIf, blockInputVars);
 		resources.addBranchThenOutput(nodeIf, blockOutputVars);
-		blockInputVars.addAll(blockFinalInputVars);
+		// blockInputVars.addAll(blockFinalInputVars);
+		blockInputVars = blockFinalInputVars;
+		blockOutputVars = blockFinalOutputVars;
 
 		/** Visit Else Block **/
+		currentBlockIf = nodeIf;
+		joinVarMap = oldJoinVarMap;
 		if (!nodeIf.getElseBlocks().isEmpty()) {
 			Set<Var> oldBlockInpoutSet = blockInputVars;
+			Set<Var> oldBlockOutpoutSet = blockOutputVars;
 			blockInputVars = new HashSet<Var>();
 			blockOutputVars = new HashSet<Var>();
 			doSwitch(nodeIf.getElseBlocks());
 			resources.addBranchElseInput(nodeIf, blockInputVars);
 			resources.addBranchElseOutput(nodeIf, blockOutputVars);
-			blockInputVars.addAll(blockFinalInputVars);
-			blockInputVars.addAll(oldBlockInpoutSet);
+			oldBlockInpoutSet.addAll(blockInputVars);
+			blockOutputVars.addAll(blockOutputVars);
+			blockInputVars = oldBlockInpoutSet;
+			blockOutputVars = oldBlockOutpoutSet;
 		}
 		return null;
 	}
 
 	@Override
 	public Void caseBlockWhile(BlockWhile nodeWhile) {
+		// TODO: Add support for while loops
 		currentBlockWhile = nodeWhile;
 		return null;
 	}
