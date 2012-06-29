@@ -188,7 +188,17 @@ public class ResourceCache {
 		List<GroupedVar> inputs = new ArrayList<GroupedVar>();
 		inputs.add(getBranchDecision(blockIf));
 		inputs.addAll(getBranchThenVars(blockIf));
-		inputs.addAll(getBranchElseVars(blockIf));
+
+		List<Var> vars = new ArrayList<Var>();
+		for (GroupedVar inVar : inputs) {
+			vars.add(inVar.getVar());
+		}
+
+		for (GroupedVar gVar : getBranchElseVars(blockIf)) {
+			if (!vars.contains(gVar.getVar())) {
+				inputs.add(gVar);
+			}
+		}
 
 		List<GroupedVar> outputs = new ArrayList<GroupedVar>();
 		outputs.addAll(getBranchThenOutputVars(blockIf));

@@ -47,6 +47,7 @@ import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstPhi;
+import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 
@@ -65,6 +66,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 
 	/** The current visited If Block **/
 	private Block currentBlock = null;
+
+	private Block previousBlock = null;
 
 	/** Design Resources **/
 	private final ResourceCache resources;
@@ -124,23 +127,121 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		blkInputVars.put(nodeIf, new HashSet<Var>());
 		blkOutputVars.put(nodeIf, new HashSet<Var>());
 		doSwitch(nodeIf.getThenBlocks());
+		thenBlockOtherIO(currentBlock, nodeIf);
 		moduleInputVars.get(nodeIf).addAll(blkInputVars.get(nodeIf));
-		moduleOutputVars.get(nodeIf).addAll(blkOutputVars.get(nodeIf));
 		resources.addBranchThenInput(nodeIf, blkInputVars.get(nodeIf));
 		resources.addBranchThenOutput(nodeIf, blkOutputVars.get(nodeIf));
 
 		/** Visit Else Block **/
+		previousBlock = currentBlock;
 		currentBlock = nodeIf;
 		if (!nodeIf.getElseBlocks().isEmpty()) {
 			blkInputVars.put(nodeIf, new HashSet<Var>());
 			blkOutputVars.put(nodeIf, new HashSet<Var>());
 			doSwitch(nodeIf.getElseBlocks());
+			elseBlockOtherIO(previousBlock, nodeIf);
 			moduleInputVars.get(nodeIf).addAll(blkInputVars.get(nodeIf));
-			moduleOutputVars.get(nodeIf).addAll(blkOutputVars.get(nodeIf));
 			resources.addBranchElseInput(nodeIf, blkInputVars.get(nodeIf));
 			resources.addBranchElseOutput(nodeIf, blkOutputVars.get(nodeIf));
 		}
 		return null;
+	}
+
+	/**
+	 * This functions finds helps to connect the ports of nested if with its
+	 * Parent if
+	 * 
+	 * @param previousIf
+	 * @param currentIf
+	 */
+	private void thenBlockOtherIO(Block previousIf, BlockIf currentIf) {
+		if (currentIf.getThenBlocks().contains(previousIf)) {
+			for (Var thenInputVar : moduleInputVars.get(previousIf)) {
+				List<Var> assignTargets = new ArrayList<Var>();
+				for (Block block : currentIf.getThenBlocks()) {
+					if (block.isBlockBasic()) {
+						for (Instruction inst : ((BlockBasic) block)
+								.getInstructions()) {
+							if (inst.isInstAssign()) {
+								Var target = ((InstAssign) inst).getTarget()
+										.getVariable();
+								assignTargets.add(target);
+							}
+						}
+
+					}
+				}
+				if (!assignTargets.contains(thenInputVar)) {
+					blkInputVars.get(currentIf).add(thenInputVar);
+				}
+			}
+
+			for (Var thenOutputVar : moduleOutputVars.get(previousIf)) {
+				List<Var> assignTargets = new ArrayList<Var>();
+				for (Block block : currentIf.getThenBlocks()) {
+					if (block.isBlockBasic()) {
+						for (Instruction inst : ((BlockBasic) block)
+								.getInstructions()) {
+							if (inst.isInstAssign()) {
+								Var target = ((InstAssign) inst).getTarget()
+										.getVariable();
+								assignTargets.add(target);
+							}
+						}
+
+					}
+				}
+				if (!assignTargets.contains(thenOutputVar)) {
+					blkOutputVars.get(currentIf).add(thenOutputVar);
+				}
+			}
+
+		}
+	}
+
+	private void elseBlockOtherIO(Block previousIf, BlockIf currentIf) {
+		if (currentIf.getElseBlocks().contains(previousIf)) {
+			for (Var thenInputVar : moduleInputVars.get(previousIf)) {
+				List<Var> assignTargets = new ArrayList<Var>();
+				for (Block block : currentIf.getElseBlocks()) {
+					if (block.isBlockBasic()) {
+						for (Instruction inst : ((BlockBasic) block)
+								.getInstructions()) {
+							if (inst.isInstAssign()) {
+								Var target = ((InstAssign) inst).getTarget()
+										.getVariable();
+								assignTargets.add(target);
+							}
+						}
+
+					}
+				}
+				if (!assignTargets.contains(thenInputVar)) {
+					blkInputVars.get(currentIf).add(thenInputVar);
+				}
+			}
+
+			for (Var thenOutputVar : moduleOutputVars.get(previousIf)) {
+				List<Var> assignTargets = new ArrayList<Var>();
+				for (Block block : currentIf.getElseBlocks()) {
+					if (block.isBlockBasic()) {
+						for (Instruction inst : ((BlockBasic) block)
+								.getInstructions()) {
+							if (inst.isInstAssign()) {
+								Var target = ((InstAssign) inst).getTarget()
+										.getVariable();
+								assignTargets.add(target);
+							}
+						}
+
+					}
+				}
+				if (!assignTargets.contains(thenOutputVar)) {
+					blkOutputVars.get(currentIf).add(thenOutputVar);
+				}
+			}
+
+		}
 	}
 
 	@Override
@@ -185,6 +286,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	public Void caseInstPhi(InstPhi phi) {
 		List<Var> phiVars = new ArrayList<Var>();
 		Var target = phi.getTarget().getVariable();
+		// Add to the Block output
+		moduleOutputVars.get(currentBlock).add(target);
 
 		for (Expression expr : phi.getValues()) {
 			Var value = ((ExprVar) expr).getUse().getVariable();
