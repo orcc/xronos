@@ -52,6 +52,7 @@ import net.sf.orc2hdl.preference.Constants;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Var;
 
 /**
@@ -160,11 +161,21 @@ public class DesignActor extends DfVisitor<Object> {
 		for (Var parameter : actor.getParameters()) {
 			irVisitor.doSwitch(parameter);
 		}
+		Var currentState = null;
+		// Add currentState stateVariable if the actor has an FSM
+		if (actor.getFsm() != null) {
+			currentState = IrFactory.eINSTANCE.createVarInt("currentState", 32,
+					true, 0);
+			currentState.setGlobal(true);
+			currentState.setValue(0);
+			actor.getStateVars().add(currentState);
+		}
 
 		/** Visit the State Variables **/
 		for (Var stateVar : actor.getStateVars()) {
 			stateVarVisitor.doSwitch(stateVar);
 		}
+
 		/** Allocate Memory for the state variables **/
 		DesignUtil.designAllocateMemory(design, stateVars,
 				Constants.MAX_ADDR_WIDTH, resources);
@@ -178,7 +189,7 @@ public class DesignActor extends DfVisitor<Object> {
 
 		/** Create the design scheduler **/
 		DesignScheduler designScheduler = new DesignScheduler(resources,
-				actorsTasks, stateVars);
+				actorsTasks, currentState);
 
 		/** Add scheduler task to the design **/
 		Task scheduler = designScheduler.doSwitch(actor);

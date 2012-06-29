@@ -49,7 +49,6 @@ import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.WhileBody;
-import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.openforge.lim.op.SimpleConstant;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.util.DesignUtil;
@@ -58,6 +57,7 @@ import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.FSM;
 import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Def;
@@ -174,8 +174,11 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 	private List<Component> schedulerComponents;
 
+	/** The scheduler current state Variable **/
+	private Var currentState;
+
 	public DesignScheduler(ResourceCache resources,
-			Map<Action, Task> actorsTasks, Map<LogicalValue, Var> stateVars) {
+			Map<Action, Task> actorsTasks, Var currentState) {
 		this.resources = resources;
 		this.actorsTasks = actorsTasks;
 		componentCounter = 0;
@@ -192,7 +195,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 		busDependency = new HashMap<Bus, Var>();
 		doneBusDependency = new HashMap<Bus, Integer>();
 		portDependency = new HashMap<Port, Var>();
-		// this.stateVars = stateVars;
+		this.currentState = currentState;
 		innerComponentCreator = new InnerComponentCreator(resources,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
@@ -270,7 +273,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 		if (actor.getFsm() == null) {
 			branchBlock = createOutFsmScheduler(actor.getActionsOutsideFsm());
 		} else {
-
+			createActionTransition(actor.getFsm());
 		}
 
 		/** Add the scheduler branch block to the scheduler Components **/
@@ -406,6 +409,10 @@ public class DesignScheduler extends DfVisitor<Task> {
 			actionTestComponent.add(1, thenBlock);
 			actionTests.put(action, actionTestComponent);
 		}
+	}
+
+	private void createActionTransition(FSM fsm) {
+
 	}
 
 	private Branch createOutFsmScheduler(List<Action> actions) {

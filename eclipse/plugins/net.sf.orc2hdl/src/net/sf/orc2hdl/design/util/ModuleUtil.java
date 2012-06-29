@@ -57,8 +57,12 @@ import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.ResetDependency;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
+import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
+import net.sf.openforge.lim.memory.Location;
 import net.sf.openforge.lim.op.NoOp;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orc2hdl.preference.Constants;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
@@ -71,6 +75,39 @@ import net.sf.orcc.ir.Var;
  */
 
 public class ModuleUtil {
+	/**
+	 * This method creates an AbsoluteMemoryWrite Component which is an absolute
+	 * memory write access.
+	 * 
+	 * @param stateVar
+	 *            the stateVar to be modifier
+	 * @param value
+	 *            the variable that contains the value
+	 * @param resourceCache
+	 *            the resource cache
+	 * @param portDependency
+	 *            the port dependency map
+	 * @param portGroupDependency
+	 *            the port group dependency map
+	 * @param doneBusDependency
+	 *            the done bus dependency map
+	 * @return
+	 */
+	public static Component absoluteMemoryWrite(Var stateVar, Var value,
+			ResourceCache resourceCache, Map<Port, Var> portDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+		Location targetLocation = resourceCache.getLocation(stateVar);
+
+		Component absoluteMemWrite = new AbsoluteMemoryWrite(targetLocation,
+				Constants.MAX_ADDR_WIDTH, stateVar.getType().isInt());
+		GroupedVar inVar = new GroupedVar(value, 0);
+		PortUtil.mapInDataPorts(absoluteMemWrite, inVar.getAsList(),
+				portDependency, portGroupDependency);
+		PortUtil.mapOutControlPort(absoluteMemWrite, 0, doneBusDependency);
+		return absoluteMemWrite;
+	}
+
 	/**
 	 * This method creates an NoOp component used for assign that are not
 	 * include in a procedure
@@ -583,7 +620,7 @@ public class ModuleUtil {
 		Entry entry = entries.get(0);
 		Dependency dep = new ControlDependency(doneBus);
 		entry.addDependency(donePort, dep);
-		
+
 		if (elseBlock != null) {
 			for (Bus bus : elseBlock.getDataBuses()) {
 				Var busVar = busDependency.get(bus);
@@ -601,7 +638,7 @@ public class ModuleUtil {
 					}
 				}
 			}
-			
+
 			doneBus = elseBlock.getExit(Exit.DONE).getDoneBus();
 			donePort = branch.getExit(Exit.DONE).getDoneBus().getPeer();
 			entries = donePort.getOwner().getEntries();
