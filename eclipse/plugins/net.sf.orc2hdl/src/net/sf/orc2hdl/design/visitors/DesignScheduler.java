@@ -61,6 +61,7 @@ import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Def;
+import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
@@ -208,9 +209,10 @@ public class DesignScheduler extends DfVisitor<Task> {
 		/** Get the action scheduler components **/
 		List<Component> visitedComponents = innerComponentCreator
 				.doSwitch(action.getScheduler());
-		visitedComponents.addAll(componentsList);
+		componentsList.addAll(visitedComponents);
 		/** Save the isSchedulable expressions **/
-		isSchedulableComponents.put(action, visitedComponents);
+
+		isSchedulableComponents.put(action, componentsList);
 
 		/** Build the inputPattern test components **/
 		List<Component> inputPatternTestComponents = createPatternTest(action,
@@ -267,6 +269,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 		Component branchBlock = null;
 		if (actor.getFsm() == null) {
 			branchBlock = createOutFsmScheduler(actor.getActionsOutsideFsm());
+		} else {
+
 		}
 
 		/** Add the scheduler branch block to the scheduler Components **/
@@ -321,9 +325,29 @@ public class DesignScheduler extends DfVisitor<Task> {
 					ExprVar literalExpr = (ExprVar) indexExpr;
 					Var litteralVar = literalExpr.getUse().getVariable();
 					Def varDef = litteralVar.getDefs().get(0);
-					InstAssign assign = EcoreHelper.getContainerOfType(varDef,
-							InstAssign.class);
-					doSwitch(assign);
+					InstAssign instAssign = EcoreHelper.getContainerOfType(
+							varDef, InstAssign.class);
+					litteralVar.setType(IrFactory.eINSTANCE.createTypeInt(32));
+					Integer value = ((ExprInt) instAssign.getValue())
+							.getIntValue();
+
+					Component constant = new SimpleConstant(value, 32,
+							((ExprInt) instAssign.getValue()).getType().isInt());
+					GroupedVar inOutVars = new GroupedVar(litteralVar, 0);
+					PortUtil.mapOutDataPorts(constant, inOutVars.getAsList(),
+							busDependency, doneBusDependency);
+					componentsList.add(constant);
+					componentCounter++;
+
+					Var peekedToken = IrFactory.eINSTANCE.createVar(
+							IrFactory.eINSTANCE.createTypeInt(32),
+							"peekedToken", true, 0);
+					Component assign = ModuleUtil.assignComponent(peekedToken,
+							litteralVar, portDependency, busDependency,
+							portGroupDependency, doneBusDependency);
+
+					componentsList.add(assign);
+					componentCounter++;
 
 					// Get the variable
 					Var peekVar = load.getTarget().getVariable();
@@ -333,7 +357,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 					ActionIOHandler ioHandler = resources.getIOHandler(port);
 					Component peekComponent = ioHandler.getTokenPeekAccess();
 					peekComponent.setNonRemovable();
-					GroupedVar inVars = new GroupedVar(litteralVar, 0);
+					GroupedVar inVars = new GroupedVar(peekedToken, 0);
 					PortUtil.mapInDataPorts(peekComponent, inVars.getAsList(),
 							portDependency, portGroupDependency);
 

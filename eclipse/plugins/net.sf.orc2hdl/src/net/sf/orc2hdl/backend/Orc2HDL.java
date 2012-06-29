@@ -296,6 +296,7 @@ public class Orc2HDL extends AbstractBackend {
 			transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
 			transformations.add(new GlobalArrayInitializer(true));
+			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
 			transformations.add(new DfVisitor<Void>(
 					new XlimDeadVariableRemoval()));
