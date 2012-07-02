@@ -57,6 +57,7 @@ import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.ResetDependency;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
+import net.sf.openforge.lim.WhileBody;
 import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.openforge.lim.op.NoOp;
@@ -377,6 +378,56 @@ public class ModuleUtil {
 			}
 		}
 
+	}
+
+	public static Component createLoop(Decision decision, Module bodyModule,
+			List<GroupedVar> inVars, List<GroupedVar> outVars,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+
+		/** Create the scheduler Loop Body **/
+		LoopBody loopBody = new WhileBody(decision, bodyModule);
+
+		/** Create Loop Interface **/
+		createModuleInterface(loopBody, inVars, outVars, null, portDependency,
+				portGroupDependency, busDependency);
+
+		/** Decision Input dependency **/
+		for (Bus bus : loopBody.getInBuf().getDataBuses()) {
+			/** Decision Input Dependency **/
+			Var busVar = busDependency.get(bus);
+			// Decision
+			for (Port port : decision.getDataPorts()) {
+				if (portDependency.get(port) == busVar) {
+					int group = portGroupDependency.get(port);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(group);
+					Dependency dep = new DataDependency(bus);
+					entry.addDependency(port, dep);
+				}
+			}
+			// Body Module
+			for (Port port : bodyModule.getDataPorts()) {
+				if (portDependency.get(port) == busVar) {
+					int group = portGroupDependency.get(port);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(group);
+					Dependency dep = new DataDependency(bus);
+					entry.addDependency(port, dep);
+				}
+			}
+
+		}
+
+		/** Create Loop **/
+		Loop loop = new Loop(loopBody);
+
+		/** Create Loop Interface **/
+		createModuleInterface(loop, inVars, outVars, null, portDependency,
+				portGroupDependency, busDependency);
+
+		return loop;
 	}
 
 	public static Component createTaskCall(Task task, Var outDecision,

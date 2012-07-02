@@ -44,11 +44,9 @@ import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Decision;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Loop;
-import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Task;
-import net.sf.openforge.lim.WhileBody;
 import net.sf.openforge.lim.op.SimpleConstant;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.util.DesignUtil;
@@ -59,6 +57,7 @@ import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.FSM;
 import net.sf.orcc.df.Pattern;
+import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprInt;
@@ -172,17 +171,21 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 	private Integer componentCounter;
 
-	private List<Component> schedulerComponents;
+	private List<Component> schedulerLoopComponents;
 
 	/** The scheduler current state Variable **/
 	private Var currentState;
+
+	private Map<State, Integer> stateToIndexMap;
+
+	private Map<State, Var> stateToVar;
 
 	public DesignScheduler(ResourceCache resources,
 			Map<Action, Task> actorsTasks, Var currentState) {
 		this.resources = resources;
 		this.actorsTasks = actorsTasks;
 		componentCounter = 0;
-		schedulerComponents = new ArrayList<Component>();
+		schedulerLoopComponents = new ArrayList<Component>();
 		isSchedulableComponents = new HashMap<Action, List<Component>>();
 		inputPatternComponents = new HashMap<Action, List<Component>>();
 		outputPatternComponents = new HashMap<Action, List<Component>>();
@@ -232,13 +235,14 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 	@Override
 	public Task caseActor(Actor actor) {
+		List<Component> schedulerComponents = new ArrayList<Component>();
 		/** Get the actor Pin Status from actors Ports **/
 		for (net.sf.orcc.df.Port port : actor.getInputs()) {
 			if (!port.isNative()) {
 				Component pinStatusComponent = PortUtil
 						.createPinStatusComponent(port, resources, pinStatus,
 								busDependency, doneBusDependency);
-				schedulerComponents.add(pinStatusComponent);
+				schedulerLoopComponents.add(pinStatusComponent);
 			}
 		}
 
@@ -247,7 +251,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Component pinStatusComponent = PortUtil
 						.createPinStatusComponent(port, resources, pinStatus,
 								busDependency, doneBusDependency);
-				schedulerComponents.add(pinStatusComponent);
+				schedulerLoopComponents.add(pinStatusComponent);
 			}
 		}
 
@@ -256,50 +260,91 @@ public class DesignScheduler extends DfVisitor<Task> {
 			doSwitch(action);
 			// Add all the components to componentsList
 			if (isSchedulableComponents.get(action) != null) {
-				schedulerComponents.addAll(isSchedulableComponents.get(action));
+				schedulerLoopComponents.addAll(isSchedulableComponents
+						.get(action));
 			}
 			if (inputPatternComponents.get(action) != null) {
-				schedulerComponents.addAll(inputPatternComponents.get(action));
+				schedulerLoopComponents.addAll(inputPatternComponents
+						.get(action));
 			}
 			if (outputPatternComponents.get(action) != null) {
-				schedulerComponents.addAll(outputPatternComponents.get(action));
+				schedulerLoopComponents.addAll(outputPatternComponents
+						.get(action));
 			}
 		}
 
 		/** Create the action Test for all actions in the actor **/
 		createActionTest(actor.getActions());
+
 		/** Construct the scheduler if body **/
 		Component branchBlock = null;
 		if (actor.getFsm() == null) {
 			branchBlock = createOutFsmScheduler(actor.getActionsOutsideFsm());
 		} else {
+			/** Fill up the state index and var maps **/
+			stateToIndexMap = new HashMap<State, Integer>();
+			stateToVar = new HashMap<State, Var>();
+			int i = 0;
+			for (State state : actor.getFsm().getStates()) {
+				stateToIndexMap.put(state, i);
+				stateToVar.put(
+						state,
+						IrFactory.eINSTANCE.createVar(
+								IrFactory.eINSTANCE.createTypeInt(32), "s_"
+										+ state.getName(), true, 0));
+				i++;
+			}
+			/** Create literal components for each state **/
+			for (State state : actor.getFsm().getStates()) {
+				Component literal = new SimpleConstant(
+						stateToIndexMap.get(state), 32, false);
+				GroupedVar outVar = new GroupedVar(stateToVar.get(state), 0);
+				PortUtil.mapOutDataPorts(literal, outVar.getAsList(),
+						busDependency, doneBusDependency);
+				schedulerComponents.add(literal);
+			}
+			/** Create the action transition **/
 			createActionTransition(actor.getFsm());
+
 		}
 
 		/** Add the scheduler branch block to the scheduler Components **/
-		schedulerComponents.add(branchBlock);
+		schedulerLoopComponents.add(branchBlock);
 
-		/** Create the WhileBody which the components **/
-		Module whileBodyModule = (Block) ModuleUtil.createModule(
-				schedulerComponents, Collections.<GroupedVar> emptyList(),
-				Collections.<GroupedVar> emptyList(), "schedulerBody",
-				Exit.DONE, 0, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
+		/** Build the Loop infinite true constant **/
+		Var varActorSched = IrFactory.eINSTANCE.createVar(
+				IrFactory.eINSTANCE.createTypeBool(),
+				"var_" + actor.getSimpleName() + "_sched", true, 0);
+		Component trueLoop = new SimpleConstant(1, 1, false);
+		GroupedVar gVarActorSched = new GroupedVar(varActorSched, 0);
+		PortUtil.mapOutDataPorts(trueLoop, gVarActorSched.getAsList(),
+				busDependency, doneBusDependency);
 
-		/** Build the infinite Loop of the scheduler **/
-		Decision loopDecision = ModuleUtil.createTrueDecision("var_" + "_loop",
+		/** Add the constant to the scheduler components **/
+		schedulerComponents.add(trueLoop);
+		/** Create the infinite Loop **/
+		Decision loopDecision = ModuleUtil.createDecision(varActorSched, "var_"
+				+ actor.getSimpleName() + "_loop", portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
+
+		/** Create the While body **/
+		Module bodyModule = (Module) ModuleUtil.createModule(
+				schedulerLoopComponents, Collections.<GroupedVar> emptyList(),
+				Collections.<GroupedVar> emptyList(), "loopBody", Exit.DONE, 0,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
 
-		/** Create the scheduler Loop Body **/
-		LoopBody loopBody = new WhileBody(loopDecision, whileBodyModule);
+		/** Create the infinite loop **/
+		Loop loop = (Loop) ModuleUtil.createLoop(loopDecision, bodyModule,
+				gVarActorSched.getAsList(),
+				Collections.<GroupedVar> emptyList(), portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
 
-		/** Create the scheduler Loop **/
-		Loop loop = new Loop(loopBody);
+		/** Add the loop to the scheduler components **/
+		schedulerComponents.add(loop);
 
 		/** Module of the scheduler **/
-		Module scheduler = (Block) ModuleUtil.createModule(
-				Arrays.asList((Component) loop),
+		Module scheduler = (Block) ModuleUtil.createModule(schedulerComponents,
 				Collections.<GroupedVar> emptyList(),
 				Collections.<GroupedVar> emptyList(), "schedulerBody",
 				Exit.RETURN, 0, portDependency, busDependency,
