@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.graph.Vertex;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
@@ -42,103 +43,116 @@ public class ExecutionChart {
 		TaskSeries taskSeries = new TaskSeries("Action Execution");
 		TaskSeriesCollection collection = new TaskSeriesCollection();
 
-		for (Instance instance : network.getInstances()) {
-			Map<Action, TimeGoDone> actionsGoDone = execution.get(instance);
-			for (Action action : instance.getActor().getActions()) {
-				TimeGoDone timeGoDone = actionsGoDone.get(action);
-				Map<Integer, List<Integer>> actionExecution = new TreeMap<Integer, List<Integer>>();
-				int idx = 0;
+		for (Vertex vertex : network.getVertices()) {
+			if (vertex instanceof Instance) {
+				Instance instance = (Instance) vertex;
+				Map<Action, TimeGoDone> actionsGoDone = execution.get(instance);
+				for (Action action : instance.getActor().getActions()) {
+					TimeGoDone timeGoDone = actionsGoDone.get(action);
+					Map<Integer, List<Integer>> actionExecution = new TreeMap<Integer, List<Integer>>();
+					int idx = 0;
 
-				ArrayList<Integer> previousGoDone = timeGoDone.get(0);
-				Integer start = 0;
-				Integer stop = 0;
-				for (int i = 0; i < timeGoDone.size(); i++) {
-					Integer timeBy100 = i * 100;
-					ArrayList<Integer> goDone = timeGoDone.get(timeBy100);
+					ArrayList<Integer> previousGoDone = timeGoDone.get(0);
+					Integer start = 0;
+					Integer stop = 0;
+					for (int i = 0; i < timeGoDone.size(); i++) {
+						Integer timeBy100 = i * 100;
+						ArrayList<Integer> goDone = timeGoDone.get(timeBy100);
 
-					Integer state = actionState(previousGoDone, goDone);
+						Integer state = actionState(previousGoDone, goDone);
 
-					switch (state) {
-					case 0:
-						break;
-					case 1:
-						stop = timeBy100;
-						actionExecution.put(idx, Arrays.asList(start, stop));
-						idx++;
-						break;
-					case 2:
-						start = timeBy100;
-						break;
-					case 3:
-						start = timeBy100;
-						break;
-					case 4:
-						stop = timeBy100;
-						actionExecution.put(idx, Arrays.asList(start, stop));
-						idx++;
-						break;
-					case 5:
-						stop = timeBy100;
-						actionExecution.put(idx, Arrays.asList(start, stop));
-						idx++;
-						break;
-					case 6:
-						stop = timeBy100;
-						actionExecution.put(idx, Arrays.asList(start, stop));
-						idx++;
-						break;
-					case 7:
-						stop = timeBy100;
-						actionExecution.put(idx, Arrays.asList(start, stop));
-						idx++;
-						start = stop;
-						break;
-					case 8:
-						stop = timeBy100;
-						actionExecution.put(idx, Arrays.asList(start, stop));
-						idx++;
-						break;
-					case 9:
-						stop = timeBy100;
-						actionExecution.put(idx, Arrays.asList(start, stop));
-						idx++;
-						start = stop;
-						break;
-					case 10:
-						stop = timeBy100;
-						actionExecution.put(idx, Arrays.asList(start, stop));
-						idx++;
-						start = stop;
-						break;
-					default:
-						break;
+						switch (state) {
+						case 0:
+							break;
+						case 1:
+							stop = timeBy100;
+							actionExecution
+									.put(idx, Arrays.asList(start, stop));
+							idx++;
+							break;
+						case 2:
+							start = timeBy100;
+							break;
+						case 3:
+							start = timeBy100;
+							break;
+						case 4:
+							stop = timeBy100;
+							actionExecution
+									.put(idx, Arrays.asList(start, stop));
+							idx++;
+							break;
+						case 5:
+							stop = timeBy100;
+							actionExecution
+									.put(idx, Arrays.asList(start, stop));
+							idx++;
+							break;
+						case 6:
+							stop = timeBy100;
+							actionExecution
+									.put(idx, Arrays.asList(start, stop));
+							idx++;
+							break;
+						case 7:
+							stop = timeBy100;
+							actionExecution
+									.put(idx, Arrays.asList(start, stop));
+							idx++;
+							start = stop;
+							break;
+						case 8:
+							stop = timeBy100;
+							actionExecution
+									.put(idx, Arrays.asList(start, stop));
+							idx++;
+							break;
+						case 9:
+							stop = timeBy100;
+							actionExecution
+									.put(idx, Arrays.asList(start, stop));
+							idx++;
+							start = stop;
+							break;
+						case 10:
+							stop = timeBy100;
+							actionExecution
+									.put(idx, Arrays.asList(start, stop));
+							idx++;
+							start = stop;
+							break;
+						default:
+							break;
+						}
+
+						previousGoDone = goDone;
+
 					}
+					if (!actionExecution.isEmpty()) {
+						long str = actionExecution.get(0).get(0);
+						long stp = actionExecution.get(0).get(1);
 
-					previousGoDone = goDone;
-
-				}
-				if (!actionExecution.isEmpty()) {
-					long str = (long) actionExecution.get(0).get(0);
-					long stp = (long) actionExecution.get(0).get(1);
-
-					Task task = new Task(instance.getSimpleName() + "_"
-							+ action.getName(), new SimpleTimePeriod(new Date(
-							str), new Date(stp)));
-
-					for (int j = 1; j < actionExecution.size(); j++) {
-						str = (long) actionExecution.get(j).get(0);
-						stp = (long) actionExecution.get(j).get(1);
-
-						task.addSubtask(new Task(instance.getSimpleName() + "_"
+						Task task = new Task(instance.getSimpleName() + "_"
 								+ action.getName(), new SimpleTimePeriod(
-								new Date(str), new Date(stp))));
+								new Date(str), new Date(stp)));
 
+						for (int j = 1; j < actionExecution.size(); j++) {
+							str = actionExecution.get(j).get(0);
+							stp = actionExecution.get(j).get(1);
+
+							task.addSubtask(new Task(instance.getSimpleName()
+									+ "_" + action.getName(),
+									new SimpleTimePeriod(new Date(str),
+											new Date(stp))));
+
+						}
+						taskSeries.add(task);
 					}
-					taskSeries.add(task);
+
 				}
 			}
-
 		}
+
 		collection.add(taskSeries);
 		return collection;
 	}

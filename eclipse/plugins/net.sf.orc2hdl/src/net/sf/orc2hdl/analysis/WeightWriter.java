@@ -9,6 +9,7 @@ import java.util.Map;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.graph.Vertex;
 import ch.epfl.stimm.yaceb.protobuffer.weight.ProtoExecutionWeight.ActionWeight;
 
 public class WeightWriter {
@@ -29,113 +30,119 @@ public class WeightWriter {
 		try {
 			FileOutputStream out = new FileOutputStream(protoFile);
 
-			for (Instance instance : network.getInstances()) {
-				Map<Action, TimeGoDone> actionsGoDone = execution.get(instance);
-				for (Action action : instance.getActor().getActions()) {
-					TimeGoDone timeGoDone = actionsGoDone.get(action);
+			for (Vertex vertex : network.getVertices()) {
+				if (vertex instanceof Instance) {
+					Instance instance = (Instance) vertex;
+					Map<Action, TimeGoDone> actionsGoDone = execution
+							.get(instance);
+					for (Action action : instance.getActor().getActions()) {
+						TimeGoDone timeGoDone = actionsGoDone.get(action);
 
-					ArrayList<Integer> previousGoDone = timeGoDone.get(0);
-					Integer start = 0;
-					Integer stop = 0;
-					for (int i = 0; i < timeGoDone.size(); i++) {
-						Integer timeBy100 = i * 100;
-						ArrayList<Integer> goDone = timeGoDone.get(timeBy100);
-						ActionWeight.Builder actionWeight = ActionWeight
-								.newBuilder();
+						ArrayList<Integer> previousGoDone = timeGoDone.get(0);
+						Integer start = 0;
+						Integer stop = 0;
+						for (int i = 0; i < timeGoDone.size(); i++) {
+							Integer timeBy100 = i * 100;
+							ArrayList<Integer> goDone = timeGoDone
+									.get(timeBy100);
+							ActionWeight.Builder actionWeight = ActionWeight
+									.newBuilder();
 
-						Integer state = actionState(previousGoDone, goDone);
+							Integer state = actionState(previousGoDone, goDone);
 
-						switch (state) {
-						case 0:
-							break;
-						case 1:
-							stop = timeBy100;
-							actionWeight
-									.setInstanceName(instance.getSimpleName())
-									.setActionName(action.getName())
-									.setNumClock(stop - start);
-							actionWeight.build().writeDelimitedTo(out);
-							break;
-						case 2:
-							start = timeBy100;
-							break;
-						case 3:
-							start = timeBy100;
-							break;
-						case 4:
-							stop = timeBy100;
-							actionWeight
-									.setInstanceName(
-											instance.getSimpleName())
-									.setActionName(action.getName())
-									.setNumClock(stop - start);
-							actionWeight.build().writeDelimitedTo(out);
-							break;
-						case 5:
-							stop = timeBy100;
-							actionWeight
-									.setInstanceName(
-											instance.getSimpleName())
-									.setActionName(action.getName())
-									.setNumClock(stop - start);
-							actionWeight.build().writeDelimitedTo(out);
-							break;
-						case 6:
-							stop = timeBy100;
-							actionWeight
-									.setInstanceName(
-											instance.getSimpleName())
-									.setActionName(action.getName())
-									.setNumClock(stop - start);
-							actionWeight.build().writeDelimitedTo(out);
-							break;
-						case 7:
-							stop = timeBy100;
-							actionWeight
-									.setInstanceName(
-											instance.getSimpleName())
-									.setActionName(action.getName())
-									.setNumClock(stop - start);
-							actionWeight.build().writeDelimitedTo(out);
-							start = stop;
-							break;
-						case 8:
-							stop = timeBy100;
-							actionWeight
-									.setInstanceName(
-											instance.getSimpleName())
-									.setActionName(action.getName())
-									.setNumClock(stop - start);
-							actionWeight.build().writeDelimitedTo(out);
-							break;
-						case 9:
-							stop = timeBy100;
-							actionWeight
-									.setInstanceName(
-											instance.getSimpleName())
-									.setActionName(action.getName())
-									.setNumClock(stop - start);
-							actionWeight.build().writeDelimitedTo(out);
-							start = stop;
-							break;
-						case 10:
-							stop = timeBy100;
-							actionWeight
-									.setInstanceName(
-											instance.getSimpleName())
-									.setActionName(action.getName())
-									.setNumClock(stop - start);
-							actionWeight.build().writeDelimitedTo(out);
-							start = stop;
-							break;
-						default:
-							break;
+							switch (state) {
+							case 0:
+								break;
+							case 1:
+								stop = timeBy100;
+								actionWeight
+										.setInstanceName(
+												instance.getSimpleName())
+										.setActionName(action.getName())
+										.setNumClock(stop - start);
+								actionWeight.build().writeDelimitedTo(out);
+								break;
+							case 2:
+								start = timeBy100;
+								break;
+							case 3:
+								start = timeBy100;
+								break;
+							case 4:
+								stop = timeBy100;
+								actionWeight
+										.setInstanceName(
+												instance.getSimpleName())
+										.setActionName(action.getName())
+										.setNumClock(stop - start);
+								actionWeight.build().writeDelimitedTo(out);
+								break;
+							case 5:
+								stop = timeBy100;
+								actionWeight
+										.setInstanceName(
+												instance.getSimpleName())
+										.setActionName(action.getName())
+										.setNumClock(stop - start);
+								actionWeight.build().writeDelimitedTo(out);
+								break;
+							case 6:
+								stop = timeBy100;
+								actionWeight
+										.setInstanceName(
+												instance.getSimpleName())
+										.setActionName(action.getName())
+										.setNumClock(stop - start);
+								actionWeight.build().writeDelimitedTo(out);
+								break;
+							case 7:
+								stop = timeBy100;
+								actionWeight
+										.setInstanceName(
+												instance.getSimpleName())
+										.setActionName(action.getName())
+										.setNumClock(stop - start);
+								actionWeight.build().writeDelimitedTo(out);
+								start = stop;
+								break;
+							case 8:
+								stop = timeBy100;
+								actionWeight
+										.setInstanceName(
+												instance.getSimpleName())
+										.setActionName(action.getName())
+										.setNumClock(stop - start);
+								actionWeight.build().writeDelimitedTo(out);
+								break;
+							case 9:
+								stop = timeBy100;
+								actionWeight
+										.setInstanceName(
+												instance.getSimpleName())
+										.setActionName(action.getName())
+										.setNumClock(stop - start);
+								actionWeight.build().writeDelimitedTo(out);
+								start = stop;
+								break;
+							case 10:
+								stop = timeBy100;
+								actionWeight
+										.setInstanceName(
+												instance.getSimpleName())
+										.setActionName(action.getName())
+										.setNumClock(stop - start);
+								actionWeight.build().writeDelimitedTo(out);
+								start = stop;
+								break;
+							default:
+								break;
+							}
+
+							previousGoDone = goDone;
+
 						}
 
-						previousGoDone = goDone;
-
 					}
-
 				}
 			}
 			// Close the file

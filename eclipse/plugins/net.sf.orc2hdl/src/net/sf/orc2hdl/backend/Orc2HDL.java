@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -127,10 +126,6 @@ public class Orc2HDL extends AbstractBackend {
 
 	private boolean debugMode;
 
-	private List<String> entities;
-
-	private HashSet<String> entitySet;
-
 	private List<String> forgeFlags;
 
 	private String fpgaName;
@@ -154,26 +149,6 @@ public class Orc2HDL extends AbstractBackend {
 	private String tbPath;
 
 	private String tracePath;
-
-	private void computeEntityList(Instance instance) {
-		if (instance.isActor()) {
-			String name = instance.getName();
-			if (!entitySet.contains(name)) {
-				entitySet.add(name);
-				entities.add(name);
-			}
-		} else if (instance.isNetwork()) {
-			String name = instance.getName();
-			Network network = instance.getNetwork();
-			if (!entitySet.contains(name)) {
-				for (Instance subInstance : network.getInstances()) {
-					computeEntityList(subInstance);
-				}
-
-				entitySet.add(name);
-			}
-		}
-	}
 
 	@Override
 	protected void doInitializeOptions() {

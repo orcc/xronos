@@ -40,6 +40,7 @@ import java.util.Map;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.graph.Vertex;
 
 public class SimParser {
 
@@ -55,41 +56,45 @@ public class SimParser {
 	}
 
 	public void createMaps() {
-		
-		for (Instance instance : network.getInstances()) {
-			Map<Action, TimeGoDone> actionsGoDone = new HashMap<Action, TimeGoDone>();
 
-			for (Action action : instance.getActor().getActions()) {
-				TimeGoDone timeGoDone = new TimeGoDone();
+		for (Vertex vertex : network.getVertices()) {
+			if (vertex instanceof Instance) {
+				Instance instance = (Instance) vertex;
+				Map<Action, TimeGoDone> actionsGoDone = new HashMap<Action, TimeGoDone>();
 
-				File actionFile = new File(path + File.separator
-						+ instance.getSimpleName() + "_" + action.getName()
-						+ ".txt");
-				try {
-					FileInputStream iStream = new FileInputStream(actionFile);
-					BufferedReader iBuffer = new BufferedReader(
-							new InputStreamReader(iStream));
-					String str;
-					while ((str = iBuffer.readLine()) != null) {
-						String Time;
-						String Go;
-						String Done;
-						int fIdx = str.indexOf(';', 0);
-						Time = str.substring(0, fIdx);
-						int sIdx = str.indexOf(';', fIdx + 1);
-						Go = str.substring(fIdx + 1, sIdx);
-						int tIdx = str.indexOf(';', sIdx + 1);
-						Done = str.substring(sIdx + 1, tIdx);
-						timeGoDone.put(Integer.decode(Time),
-								Integer.decode(Go), Integer.decode(Done));
+				for (Action action : instance.getActor().getActions()) {
+					TimeGoDone timeGoDone = new TimeGoDone();
+
+					File actionFile = new File(path + File.separator
+							+ instance.getSimpleName() + "_" + action.getName()
+							+ ".txt");
+					try {
+						FileInputStream iStream = new FileInputStream(
+								actionFile);
+						BufferedReader iBuffer = new BufferedReader(
+								new InputStreamReader(iStream));
+						String str;
+						while ((str = iBuffer.readLine()) != null) {
+							String Time;
+							String Go;
+							String Done;
+							int fIdx = str.indexOf(';', 0);
+							Time = str.substring(0, fIdx);
+							int sIdx = str.indexOf(';', fIdx + 1);
+							Go = str.substring(fIdx + 1, sIdx);
+							int tIdx = str.indexOf(';', sIdx + 1);
+							Done = str.substring(sIdx + 1, tIdx);
+							timeGoDone.put(Integer.decode(Time),
+									Integer.decode(Go), Integer.decode(Done));
+						}
+						iBuffer.close();
+						actionsGoDone.put(action, timeGoDone);
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
-					iBuffer.close();
-					actionsGoDone.put(action, timeGoDone);
-				} catch (IOException e) {
-					e.printStackTrace();
 				}
+				execution.put(instance, actionsGoDone);
 			}
-			execution.put(instance, actionsGoDone);
 		}
 	}
 
