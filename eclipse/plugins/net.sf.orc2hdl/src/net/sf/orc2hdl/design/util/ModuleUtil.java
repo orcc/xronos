@@ -427,6 +427,19 @@ public class ModuleUtil {
 		createModuleInterface(loop, inVars, outVars, null, portDependency,
 				portGroupDependency, busDependency);
 
+		for (Bus bus : loop.getInBuf().getDataBuses()) {
+			Var busVar = busDependency.get(bus);
+			for (Port port : loopBody.getDataPorts()) {
+				if (portDependency.get(port) == busVar) {
+					int group = portGroupDependency.get(port);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(group);
+					Dependency dep = new DataDependency(bus);
+					entry.addDependency(port, dep);
+				}
+			}
+		}
+
 		return loop;
 	}
 
