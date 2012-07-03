@@ -61,7 +61,6 @@ import net.sf.openforge.lim.WhileBody;
 import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.openforge.lim.op.NoOp;
-import net.sf.openforge.lim.op.SimpleConstant;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.preference.Constants;
 import net.sf.orcc.ir.IrFactory;
@@ -426,7 +425,7 @@ public class ModuleUtil {
 		/** Create Loop Interface **/
 		createModuleInterface(loop, inVars, outVars, null, portDependency,
 				portGroupDependency, busDependency);
-
+		/** LoopBody Input dependency **/
 		for (Bus bus : loop.getInBuf().getDataBuses()) {
 			Var busVar = busDependency.get(bus);
 			for (Port port : loopBody.getDataPorts()) {
@@ -478,51 +477,6 @@ public class ModuleUtil {
 				portGroupDependency, doneBusDependency);
 
 		return module;
-	}
-
-	public static Decision createTrueDecision(String resultName,
-			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
-			Map<Port, Integer> portGroupDependency,
-			Map<Bus, Integer> doneBusDependency) {
-		Decision decision = null;
-
-		// Create a constant of "1" and assign it to the varTrue
-		Type typeBool = IrFactory.eINSTANCE.createTypeBool();
-		Var trueVar = IrFactory.eINSTANCE.createVar(0, typeBool, "trueVar",
-				false, 0);
-
-		Component constant = new SimpleConstant(1, 1, false);
-
-		GroupedVar vars = new GroupedVar(trueVar, 0);
-		PortUtil.mapOutDataPorts(constant, vars.getAsList(), busDependency,
-				doneBusDependency);
-
-		// Create the decision variable and assign the inputDecision to it
-		Type type = IrFactory.eINSTANCE.createTypeBool();
-		Var decisionVar = IrFactory.eINSTANCE.createVar(0, type, resultName,
-				false, 0);
-
-		Component assignComp = assignComponent(decisionVar, trueVar,
-				portDependency, busDependency, portGroupDependency,
-				doneBusDependency);
-
-		Module decisionModule = (Module) createModule(
-				Arrays.asList(constant, assignComp),
-				Collections.<GroupedVar> emptyList(),
-				Collections.<GroupedVar> emptyList(), "decisionBlock",
-				Exit.DONE, 0, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
-
-		// Add done dependency, Decision group 0
-		PortUtil.mapOutControlPort(decisionModule, 0, doneBusDependency);
-
-		// Create the decision
-		decision = new Decision((Block) decisionModule, assignComp);
-
-		// Propagate Inputs
-		decisionPropagateInputs(decision, (Block) decisionModule);
-
-		return decision;
 	}
 
 	/**
