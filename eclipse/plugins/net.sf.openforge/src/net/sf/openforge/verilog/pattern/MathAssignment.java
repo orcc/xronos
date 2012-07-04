@@ -137,8 +137,8 @@ public abstract class MathAssignment extends BinaryOpAssignment {
 
 			// Leave the operands the same so that we report the
 			// correct 'consumed nets'
-			left_operand = new PortWire(l_port, true);
-			right_operand = new PortWire(r_port, true);
+			left_operand = new PortWire(l_port, false);
+			right_operand = new PortWire(r_port, false);
 
 			result_wire = NetFactory.makeNet(mul.getResultBus());
 			String baseName = ID.toVerilogIdentifier(ID.showLogical(mul

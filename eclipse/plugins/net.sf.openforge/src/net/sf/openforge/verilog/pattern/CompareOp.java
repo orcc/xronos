@@ -78,8 +78,8 @@ public abstract class CompareOp extends StatementBlock implements ForgePattern {
 		assert (r_port.isUsed()) : "Right operand port in compare operation is set to unused.";
 		assert (r_port.getValue() != null) : "Right operand port in compare operation does not have a value.";
 
-		left_operand = new PortWire(l_port, true);
-		right_operand = new PortWire(r_port, true);
+		left_operand = new PortWire(l_port, false);
+		right_operand = new PortWire(r_port, false);
 
 		String baseName = ID.toVerilogIdentifier(ID.showLogical(bo
 				.getResultBus()));
