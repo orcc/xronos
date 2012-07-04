@@ -74,13 +74,13 @@ public abstract class ActionIOHandler {
 			super();
 			assert portNode.getNodeType() == Node.ELEMENT_NODE;
 			// this.portNode = (Element) portNode;
-			this.direction = ((Element) portNode)
+			direction = ((Element) portNode)
 					.getAttribute(SLIMConstants.PORT_DIRECTION);
 
-			this.portName = ((Element) portNode)
+			portName = ((Element) portNode)
 					.getAttribute(SLIMConstants.PORT_NAME);
 
-			this.portSize = ((Element) portNode)
+			portSize = ((Element) portNode)
 					.getAttribute(SLIMConstants.PORT_SIZE);
 
 		}
@@ -114,18 +114,20 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getReadAccess() {
-			if (!resource.isInput())
+		public Component getReadAccess(Boolean blocking) {
+			if (!resource.isInput()) {
 				throw new UnsupportedOperationException(
 						"Cannot read from an output interface");
+			}
 			return resource.getAccess(false);
 		}
 
 		@Override
 		public Component getReadAccess(Element accElement) {
-			if (!resource.isInput())
+			if (!resource.isInput()) {
 				throw new UnsupportedOperationException(
 						"Cannot read from an output interface");
+			}
 			return resource.getAccess(getBlockingState(accElement));
 		}
 
@@ -145,9 +147,10 @@ public abstract class ActionIOHandler {
 
 		@Override
 		public Component getTokenCountAccess() {
-			if (!resource.isInput())
+			if (!resource.isInput()) {
 				throw new UnsupportedOperationException(
 						"Cannot get the token count from an output interface");
+			}
 			return resource.getCountAccess();
 		}
 
@@ -157,18 +160,20 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getWriteAccess() {
-			if (resource.isInput())
+		public Component getWriteAccess(Boolean blocking) {
+			if (resource.isInput()) {
 				throw new UnsupportedOperationException(
 						"Cannot write to an input interface");
-			return resource.getAccess(false);
+			}
+			return resource.getAccess(blocking);
 		}
 
 		@Override
 		public Component getWriteAccess(Element accElement) {
-			if (resource.isInput())
+			if (resource.isInput()) {
 				throw new UnsupportedOperationException(
 						"Cannot write to an input interface");
+			}
 			return resource.getAccess(getBlockingState(accElement));
 		}
 	}
@@ -194,7 +199,7 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getReadAccess() {
+		public Component getReadAccess(Boolean blocking) {
 			return new SimplePinRead(pin);
 		}
 
@@ -227,7 +232,7 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getWriteAccess() {
+		public Component getWriteAccess(Boolean blocking) {
 			return new SimplePinWrite(pin);
 		}
 
@@ -263,13 +268,13 @@ public abstract class ActionIOHandler {
 		public NativeIOHandler(Node portNode) {
 			super();
 			assert portNode.getNodeType() == Node.ELEMENT_NODE;
-			this.direction = ((Element) portNode)
+			direction = ((Element) portNode)
 					.getAttribute(SLIMConstants.PORT_DIRECTION);
 
-			this.portName = ((Element) portNode)
+			portName = ((Element) portNode)
 					.getAttribute(SLIMConstants.PORT_NAME);
 
-			this.portSize = ((Element) portNode)
+			portSize = ((Element) portNode)
 					.getAttribute(SLIMConstants.PORT_SIZE);
 
 		}
@@ -301,18 +306,20 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getReadAccess() {
-			if (!resource.isInput())
+		public Component getReadAccess(Boolean blocking) {
+			if (!resource.isInput()) {
 				throw new UnsupportedOperationException(
 						"Cannot read from an output interface");
+			}
 			return resource.getAccess(false);
 		}
 
 		@Override
 		public Component getReadAccess(Element element) {
-			if (!resource.isInput())
+			if (!resource.isInput()) {
 				throw new UnsupportedOperationException(
 						"Cannot read from an output interface");
+			}
 			return resource.getAccess(getBlockingState(element));
 		}
 
@@ -339,18 +346,20 @@ public abstract class ActionIOHandler {
 		}
 
 		@Override
-		public Component getWriteAccess() {
-			if (resource.isInput())
+		public Component getWriteAccess(Boolean blocking) {
+			if (resource.isInput()) {
 				throw new UnsupportedOperationException(
 						"Cannot write to an input interface");
-			return resource.getAccess(false);
+			}
+			return resource.getAccess(blocking);
 		}
 
 		@Override
 		public Component getWriteAccess(Element element) {
-			if (resource.isInput())
+			if (resource.isInput()) {
 				throw new UnsupportedOperationException(
 						"Cannot write to an input interface");
+			}
 			return resource.getAccess(getBlockingState(element));
 		}
 
@@ -376,7 +385,7 @@ public abstract class ActionIOHandler {
 	 * 
 	 * @return a non-null Component
 	 */
-	public abstract Component getReadAccess();
+	public abstract Component getReadAccess(Boolean blocking);
 
 	/**
 	 * A unique read access to the input/output resource for this IO handler is
@@ -424,7 +433,7 @@ public abstract class ActionIOHandler {
 	 * 
 	 * @return a non-null Component
 	 */
-	public abstract Component getWriteAccess();
+	public abstract Component getWriteAccess(Boolean blocking);
 
 	/**
 	 * A unique write access to the input/output resource for this IO handler is

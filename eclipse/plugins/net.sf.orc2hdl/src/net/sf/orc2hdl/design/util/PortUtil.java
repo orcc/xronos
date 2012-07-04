@@ -98,7 +98,7 @@ public class PortUtil {
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 
 		// Create the pinRead component
-		Component pinRead = ioHandler.getReadAccess();
+		Component pinRead = ioHandler.getReadAccess(false);
 		pinRead.setNonRemovable();
 		// Get the Pin Read variable
 		Var pinReaVar = action.getInputPattern().getPortToVarMap().get(port);
@@ -142,7 +142,7 @@ public class PortUtil {
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 
 		// Create the pinWrite component
-		Component pinWrite = ioHandler.getWriteAccess();
+		Component pinWrite = ioHandler.getWriteAccess(false);
 		pinWrite.setNonRemovable();
 		// Get the Pin Write variable
 		Var pinWriteVar = action.getOutputPattern().getPortToVarMap().get(port);

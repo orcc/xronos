@@ -382,19 +382,10 @@ public class DesignScheduler extends DfVisitor<Task> {
 					Component constant = new SimpleConstant(value, 32,
 							((ExprInt) instAssign.getValue()).getType().isInt());
 					GroupedVar inOutVars = new GroupedVar(litteralVar, 0);
+					constant.setNonRemovable();
 					PortUtil.mapOutDataPorts(constant, inOutVars.getAsList(),
 							busDependency, doneBusDependency);
 					componentsList.add(constant);
-					componentCounter++;
-
-					Var peekedToken = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeInt(32),
-							"peekedToken", true, 0);
-					Component assign = ModuleUtil.assignComponent(peekedToken,
-							litteralVar, portDependency, busDependency,
-							portGroupDependency, doneBusDependency);
-
-					componentsList.add(assign);
 					componentCounter++;
 
 					// Get the variable
@@ -405,9 +396,9 @@ public class DesignScheduler extends DfVisitor<Task> {
 					ActionIOHandler ioHandler = resources.getIOHandler(port);
 					Component peekComponent = ioHandler.getTokenPeekAccess();
 					peekComponent.setNonRemovable();
-					GroupedVar inVars = new GroupedVar(peekedToken, 0);
-					PortUtil.mapInDataPorts(peekComponent, inVars.getAsList(),
-							portDependency, portGroupDependency);
+					PortUtil.mapInDataPorts(peekComponent,
+							inOutVars.getAsList(), portDependency,
+							portGroupDependency);
 
 					GroupedVar outVars = new GroupedVar(peekVar, 0);
 					PortUtil.mapOutDataPorts(peekComponent,
