@@ -60,6 +60,7 @@ import net.sf.orc2hdl.analysis.SimParser;
 import net.sf.orc2hdl.analysis.TimeGoDone;
 import net.sf.orc2hdl.analysis.WeightWriter;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
+import net.sf.orc2hdl.backend.transform.RepeatPattern;
 import net.sf.orc2hdl.design.DesignEngine;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.OrccException;
@@ -278,6 +279,7 @@ public class Orc2HDL extends AbstractBackend {
 			transformations.add(new DfVisitor<Expression>(
 					new LiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
+			transformations.add((new RepeatPattern()));
 			transformations.add(new DfVisitor<Expression>(
 					new TacTransformation()));
 			transformations.add(new DfVisitor<CfgNode>(
