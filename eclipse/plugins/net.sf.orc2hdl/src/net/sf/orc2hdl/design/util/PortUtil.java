@@ -29,6 +29,7 @@
 
 package net.sf.orc2hdl.design.util;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -91,25 +92,45 @@ public class PortUtil {
 		}
 	}
 
-	public static Component createPinReadComponent(Action action,
+	public static List<Component> createPinReadComponent(Action action,
 			net.sf.orcc.df.Port port, ResourceCache resources,
 			Map<Bus, Var> busDependency, Map<Bus, Integer> doneBusDependency) {
+		List<Component> pinReadList = new ArrayList<Component>();
 		// Get the IOHandler of the actors port
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 
-		// Create the pinRead component
-		Component pinRead = ioHandler.getReadAccess(false);
-		pinRead.setNonRemovable();
-		// Get the Pin Read variable
-		Var pinReaVar = action.getInputPattern().getPortToVarMap().get(port);
+		Integer repeatPattern = action.getInputPattern().getNumTokensMap()
+				.get(port);
+		if (repeatPattern == 1) {
+			// Create the pinRead component
+			Component pinRead = ioHandler.getReadAccess(false);
+			pinRead.setNonRemovable();
+			// Get the Pin Read variable
+			Var pinReadVar = action.getInputPattern().getPortToVarMap()
+					.get(port);
+			// Map out Data Ports
+			GroupedVar outVars = new GroupedVar(pinReadVar, 0);
+			mapOutDataPorts(pinRead, outVars.getAsList(), busDependency,
+					doneBusDependency);
+			pinReadList.add(pinRead);
+		} else {
+			Var inputReadVar = action.getInputPattern().getPortToVarMap()
+					.get(port);
+			for (int i = 0; i < repeatPattern; i++) {
+				Var pinReadVar = action.getBody().getLocal(
+						"pinRead_" + inputReadVar.getName() + "_" + i);
+				// Create the pinRead component
+				Component pinRead = ioHandler.getReadAccess(false);
+				pinRead.setNonRemovable();
+				// Map out Data Ports
+				GroupedVar outVars = new GroupedVar(pinReadVar, 0);
+				mapOutDataPorts(pinRead, outVars.getAsList(), busDependency,
+						doneBusDependency);
+				pinReadList.add(pinRead);
+			}
+		}
 
-		// Map out Data Ports
-
-		GroupedVar outVars = new GroupedVar(pinReaVar, 0);
-		mapOutDataPorts(pinRead, outVars.getAsList(), busDependency,
-				doneBusDependency);
-
-		return pinRead;
+		return pinReadList;
 	}
 
 	public static Component createPinStatusComponent(net.sf.orcc.df.Port port,
@@ -133,30 +154,54 @@ public class PortUtil {
 		return pinStatusComponent;
 	}
 
-	public static Component createPinWriteComponent(Action action,
+	public static List<Component> createPinWriteComponent(Action action,
 			net.sf.orcc.df.Port port, ResourceCache resources,
 			Map<Port, Var> portDependency,
 			Map<Port, Integer> groupPortDependency,
 			Map<Bus, Integer> doneBusDependency) {
+		List<Component> pinWriteList = new ArrayList<Component>();
 		// Get the IOHandler of the actors port
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 
-		// Create the pinWrite component
-		Component pinWrite = ioHandler.getWriteAccess(false);
-		pinWrite.setNonRemovable();
-		// Get the Pin Write variable
-		Var pinWriteVar = action.getOutputPattern().getPortToVarMap().get(port);
+		Integer repeatPattern = action.getOutputPattern().getNumTokensMap()
+				.get(port);
+		if (repeatPattern == 1) {
+			// Create the pinWrite component
+			Component pinWrite = ioHandler.getWriteAccess(false);
+			pinWrite.setNonRemovable();
+			// Get the Pin Write variable
+			Var pinWriteVar = action.getOutputPattern().getPortToVarMap()
+					.get(port);
 
-		// Map in Data Ports
+			// Map in Data Ports
+			GroupedVar inVars = new GroupedVar(pinWriteVar, 0);
+			mapInDataPorts(pinWrite, inVars.getAsList(), portDependency,
+					groupPortDependency);
 
-		GroupedVar inVars = new GroupedVar(pinWriteVar, 0);
-		mapInDataPorts(pinWrite, inVars.getAsList(), portDependency,
-				groupPortDependency);
+			// Map out Control Port
+			mapOutControlPort(pinWrite, 0, doneBusDependency);
+			pinWriteList.add(pinWrite);
+		} else {
+			Var outputWriteVar = action.getOutputPattern().getPortToVarMap()
+					.get(port);
+			for (int i = 0; i < repeatPattern; i++) {
+				Var pinWriteVar = action.getBody().getLocal(
+						"pinWrite_" + outputWriteVar.getName() + "_" + i);
+				// Create the pinWrite component
+				Component pinWrite = ioHandler.getWriteAccess(false);
+				pinWrite.setNonRemovable();
+				// Map in Data Ports
+				GroupedVar inVars = new GroupedVar(pinWriteVar, 0);
+				mapInDataPorts(pinWrite, inVars.getAsList(), portDependency,
+						groupPortDependency);
 
-		// Map out Control Port
-		mapOutControlPort(pinWrite, 0, doneBusDependency);
+				// Map out Control Port
+				mapOutControlPort(pinWrite, 0, doneBusDependency);
+				pinWriteList.add(pinWrite);
+			}
 
-		return pinWrite;
+		}
+		return pinWriteList;
 	}
 
 	public static void mapInDataPorts(Component component,

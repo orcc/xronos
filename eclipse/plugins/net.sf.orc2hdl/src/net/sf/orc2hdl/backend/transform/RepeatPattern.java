@@ -38,10 +38,15 @@ import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
+import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.AbstractIrVisitor;
 
 /**
  * 
@@ -56,8 +61,34 @@ import net.sf.orcc.ir.Var;
  */
 public class RepeatPattern extends DfVisitor<Void> {
 
+	private class InnerVisitor extends AbstractIrVisitor<Object> {
+
+		@Override
+		public Object caseInstLoad(InstLoad load) {
+			Var sourceVar = load.getSource().getVariable();
+			if (oldInputMap.containsKey(sourceVar)) {
+				Port port = oldInputMap.get(sourceVar);
+				Var newSourceVar = inputMap.get(port);
+				Use newUse = IrFactory.eINSTANCE.createUse(newSourceVar);
+				load.setSource(newUse);
+			}
+			return null;
+		}
+
+		@Override
+		public Object caseInstStore(InstStore store) {
+			return null;
+		}
+
+	}
+
 	private Map<Port, Var> inputMap = new HashMap<Port, Var>();
 	private Map<Port, Var> outputMap = new HashMap<Port, Var>();
+
+	private Map<Var, Port> oldInputMap = new HashMap<Var, Port>();
+	private Map<Var, Port> oldOutputMap = new HashMap<Var, Port>();
+
+	private InnerVisitor innerVisitor = new InnerVisitor();
 
 	@Override
 	public Void caseAction(Action action) {
@@ -65,12 +96,12 @@ public class RepeatPattern extends DfVisitor<Void> {
 		for (Port port : action.getInputPattern().getPorts()) {
 			Var pinReadVar = action.getInputPattern().getPortToVarMap()
 					.get(port);
-
+			oldInputMap.put(pinReadVar, port);
 			for (Entry<Port, Integer> repeatPattern : action.getInputPattern()
 					.getNumTokensMap().entrySet()) {
 				findBiggestRepeatPattern(pinReadVar, port, repeatPattern,
 						inputMap);
-				addLocals(action, pinReadVar, "pinRead",
+				addLocals(action, port, pinReadVar, "pinRead",
 						repeatPattern.getValue());
 			}
 		}
@@ -78,26 +109,31 @@ public class RepeatPattern extends DfVisitor<Void> {
 		for (Port port : action.getOutputPattern().getPorts()) {
 			Var pinWriteVar = action.getOutputPattern().getPortToVarMap()
 					.get(port);
-			for (Entry<Port, Integer> repeatPattern : action.getInputPattern()
+			oldOutputMap.put(pinWriteVar, port);
+			for (Entry<Port, Integer> repeatPattern : action.getOutputPattern()
 					.getNumTokensMap().entrySet()) {
 				findBiggestRepeatPattern(pinWriteVar, port, repeatPattern,
 						outputMap);
-				addLocals(action, pinWriteVar, "pinWrite",
+				addLocals(action, port, pinWriteVar, "pinWrite",
 						repeatPattern.getValue());
 			}
 		}
-
+		innerVisitor.doSwitch(action.getBody().getBlocks());
 		return null;
 	}
 
-	private void addLocals(Action action, Var var, String prefix,
+	private void addLocals(Action action, Port port, Var var, String prefix,
 			Integer repeatValue) {
 		if (repeatValue > 1) {
+			BlockBasic bodyNode = action.getBody().getFirst();
 			for (int i = 0; i < repeatValue; i++) {
 				Type type = ((TypeList) var.getType()).getInnermostType();
 				Var localReadVar = IrFactory.eINSTANCE.createVar(type, prefix
 						+ "_" + var.getName() + "_" + i, true, 0);
 				action.getBody().getLocals().add(localReadVar);
+				Var targetVar = inputMap.get(port);
+				bodyNode.add(i, IrFactory.eINSTANCE.createInstStore(targetVar,
+						i, localReadVar));
 			}
 		}
 	}

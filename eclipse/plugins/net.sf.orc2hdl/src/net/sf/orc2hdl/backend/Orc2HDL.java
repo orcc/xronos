@@ -271,12 +271,10 @@ public class Orc2HDL extends AbstractBackend {
 			transformations.add(new UnaryListRemoval());
 			transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
-			transformations.add((new RepeatPattern()));
+			transformations.add(new RepeatPattern());
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
-			transformations.add(new DfVisitor<Void>(
-					new XlimDeadVariableRemoval()));
 			transformations.add(new DfVisitor<Expression>(
 					new LiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));

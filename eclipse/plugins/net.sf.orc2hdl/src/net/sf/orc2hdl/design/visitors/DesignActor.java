@@ -117,9 +117,9 @@ public class DesignActor extends DfVisitor<Object> {
 
 		/** Get action Input(s) **/
 		for (net.sf.orcc.df.Port port : action.getInputPattern().getPorts()) {
-			Component pinRead = PortUtil.createPinReadComponent(action, port,
-					resources, busDependency, doneBusDependency);
-			componentsList.add(pinRead);
+			List<Component> pinRead = PortUtil.createPinReadComponent(action,
+					port, resources, busDependency, doneBusDependency);
+			componentsList.addAll(pinRead);
 		}
 
 		/** Visit the action body and take all the generated components **/
@@ -129,10 +129,10 @@ public class DesignActor extends DfVisitor<Object> {
 
 		/** Get action Output(s) **/
 		for (net.sf.orcc.df.Port port : action.getOutputPattern().getPorts()) {
-			Component pinWrite = PortUtil.createPinWriteComponent(action, port,
-					resources, portDependency, portGroupDependency,
+			List<Component> pinWrite = PortUtil.createPinWriteComponent(action,
+					port, resources, portDependency, portGroupDependency,
 					doneBusDependency);
-			componentsList.add(pinWrite);
+			componentsList.addAll(pinWrite);
 		}
 
 		/** Create the Design Task of the Action **/
