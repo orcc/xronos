@@ -39,6 +39,7 @@ import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
@@ -77,6 +78,13 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 		@Override
 		public Object caseInstStore(InstStore store) {
+			Var targetVar = store.getTarget().getVariable();
+			if (oldOutputMap.containsKey(targetVar)) {
+				Port port = oldOutputMap.get(targetVar);
+				Var newTargetVar = outputMap.get(port);
+				Def newDef = IrFactory.eINSTANCE.createDef(newTargetVar);
+				store.setTarget(newDef);
+			}
 			return null;
 		}
 
@@ -101,7 +109,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 					.getNumTokensMap().entrySet()) {
 				findBiggestRepeatPattern(pinReadVar, port, repeatPattern,
 						inputMap);
-				addLocals(action, port, pinReadVar, "pinRead",
+				addLocalsAndStore(action, port, pinReadVar, "pinRead",
 						repeatPattern.getValue());
 			}
 		}
@@ -114,7 +122,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 					.getNumTokensMap().entrySet()) {
 				findBiggestRepeatPattern(pinWriteVar, port, repeatPattern,
 						outputMap);
-				addLocals(action, port, pinWriteVar, "pinWrite",
+				addLocalsAndLoad(action, port, pinWriteVar, "pinWrite",
 						repeatPattern.getValue());
 			}
 		}
@@ -122,8 +130,8 @@ public class RepeatPattern extends DfVisitor<Void> {
 		return null;
 	}
 
-	private void addLocals(Action action, Port port, Var var, String prefix,
-			Integer repeatValue) {
+	private void addLocalsAndStore(Action action, Port port, Var var,
+			String prefix, Integer repeatValue) {
 		if (repeatValue > 1) {
 			BlockBasic bodyNode = action.getBody().getFirst();
 			for (int i = 0; i < repeatValue; i++) {
@@ -134,6 +142,22 @@ public class RepeatPattern extends DfVisitor<Void> {
 				Var targetVar = inputMap.get(port);
 				bodyNode.add(i, IrFactory.eINSTANCE.createInstStore(targetVar,
 						i, localReadVar));
+			}
+		}
+	}
+
+	private void addLocalsAndLoad(Action action, Port port, Var var,
+			String prefix, Integer repeatValue) {
+		if (repeatValue > 1) {
+			BlockBasic bodyNode = action.getBody().getLast();
+			for (int i = 0; i < repeatValue; i++) {
+				Type type = ((TypeList) var.getType()).getInnermostType();
+				Var localWriteVar = IrFactory.eINSTANCE.createVar(type, prefix
+						+ "_" + var.getName() + "_" + i, true, 0);
+				action.getBody().getLocals().add(localWriteVar);
+				Var sourceVar = outputMap.get(port);
+				bodyNode.add(i, IrFactory.eINSTANCE.createInstLoad(
+						localWriteVar, sourceVar, i));
 			}
 		}
 	}
