@@ -110,7 +110,7 @@ public class InferredRegVariant extends StatementBlock implements ForgePattern,
 		}
 
 		resultWire = NetFactory.makeNet(reg.getResultBus());
-		dataWire = new PortWire(reg.getDataPort(), false);
+		dataWire = new PortWire(reg.getDataPort(), true);
 		clockWire = new PortWire(reg.getClockPort());
 
 		producedNets = new LinkedHashSet<Net>();
