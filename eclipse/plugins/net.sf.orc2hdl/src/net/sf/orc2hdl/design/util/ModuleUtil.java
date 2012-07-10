@@ -254,13 +254,45 @@ public class ModuleUtil {
 		// Propagate Inputs
 		decisionPropagateInputs(decision, (Block) decisionModule);
 
-		// Add to dependency, A Decision has only one Input at group 0
+		// Add to dependency, This type of decision has only one Input at
+		// group 0
 		Port port = decision.getDataPorts().get(0);
 		port.setIDLogical(inputDecision.getIndexedName());
 		portDependency.put(port, inputDecision);
 		portGroupDependency.put(port, 0);
 
 		return decision;
+	}
+
+	public static Decision createDecision(Module decisionModule,
+			Component decisionComponent, Map<Port, Var> portDependency,
+			Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+		Decision decision = null;
+
+		// Create the decision
+		decision = new Decision((Block) decisionModule, decisionComponent);
+
+		// Propagate Inputs
+		decisionPropagateInputs(decision, (Block) decisionModule);
+
+		return decision;
+	}
+
+	public static Component findDecisionComponent(List<Component> components,
+			Var decisionVar, Map<Bus, Var> busDependency) {
+		Component decisionComponent = null;
+		for (Component component : components) {
+			Exit exit = component.getExit(Exit.DONE);
+			for (Bus bus : exit.getBuses()) {
+				Var var = busDependency.get(bus);
+				if (var == decisionVar) {
+					decisionComponent = component;
+				}
+			}
+		}
+		return decisionComponent;
 	}
 
 	/**

@@ -90,6 +90,7 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
@@ -252,6 +253,16 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	@Override
 	public List<Component> caseBlockWhile(BlockWhile blockWhile) {
+		List<Component> oldComponents = new ArrayList<Component>(componentList);
+		componentList = new ArrayList<Component>();
+		doSwitch(blockWhile.getJoinBlock());
+		Var decisionVar = ((ExprVar) blockWhile.getCondition()).getUse()
+				.getVariable();
+		Component decisionComponent = ModuleUtil.findDecisionComponent(
+				componentList, decisionVar, busDependency);
+
+		componentList.addAll(oldComponents);
+
 		return null;
 	}
 
@@ -480,6 +491,12 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 		componentList.add(currentComponent);
 
+		return null;
+	}
+
+	@Override
+	public List<Component> caseInstPhi(InstPhi phi) {
+		// Do nothing
 		return null;
 	}
 
