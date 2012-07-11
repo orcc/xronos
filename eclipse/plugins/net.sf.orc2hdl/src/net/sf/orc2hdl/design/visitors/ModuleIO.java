@@ -70,8 +70,9 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	private Block previousBlock = null;
 
 	/** Design Resources **/
-	private final ResourceCache resources;
+	private ResourceCache resources;
 
+	/** Map of a Decision Input Variables **/
 	private Map<Block, Set<Var>> decisionInputVars;
 
 	/** Map of a Block Input Variables **/
@@ -313,6 +314,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		decisionInputVars.put(nodeWhile, new HashSet<Var>());
 		phiVisit = true;
 		doSwitch(nodeWhile.getJoinBlock());
+		resources.addDecisionInput(nodeWhile, decisionInputVars.get(nodeWhile));
 		resources.addLoopPhi(nodeWhile, joinVarMap.get(nodeWhile));
 		phiVisit = false;
 		/** Visit Then Block **/
@@ -333,11 +335,15 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		// Get e1 var and if it defined not in this visited block added as an
 		// input
 		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
-		if (definedInOtherBlock(varE1, currentBlockBasic)) {
-			if (phiVisit) {
-				decisionInputVars.get(currentBlock).add(varE1);
 
-			} else {
+		if (phiVisit) {
+			if (definedInOtherBlock(varE1, currentBlockBasic)
+					|| joinVarMap.get(currentBlock).containsKey(varE1)) {
+				decisionInputVars.get(currentBlock).add(varE1);
+			}
+
+		} else {
+			if (definedInOtherBlock(varE1, currentBlockBasic)) {
 				blkInputVars.get(currentBlock).add(varE1);
 			}
 
@@ -346,13 +352,17 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		// Get e2 var and if it defined not in this visited block added as an
 		// input
 		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-		if (definedInOtherBlock(varE2, currentBlockBasic)) {
-			if (phiVisit) {
+		if (phiVisit) {
+			if (definedInOtherBlock(varE2, currentBlockBasic)
+					|| joinVarMap.get(currentBlock).containsKey(varE2)) {
 				decisionInputVars.get(currentBlock).add(varE2);
-			} else {
-				blkInputVars.get(currentBlock).add(varE2);
-
 			}
+
+		} else {
+			if (definedInOtherBlock(varE2, currentBlockBasic)) {
+				blkInputVars.get(currentBlock).add(varE2);
+			}
+
 		}
 		return null;
 	}

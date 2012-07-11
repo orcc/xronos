@@ -274,7 +274,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		List<Component> bodyComponents = new ArrayList<Component>(componentList);
 
 		/** Create the Loop **/
-		List<GroupedVar> decisionInVars = null;
+		List<GroupedVar> decisionInVars = resources.getDecisionInput(blockWhile);
 		List<GroupedVar> loopInVars = null;
 		List<GroupedVar> loopOutVars = null;
 		List<GroupedVar> loopBodyInVars = null;

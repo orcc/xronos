@@ -41,6 +41,7 @@ import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.orc2hdl.design.util.GroupedVar;
 import net.sf.orcc.df.Port;
+import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.InstCall;
@@ -78,8 +79,11 @@ public class ResourceCache {
 	/**
 	 * Map of BlockWhile and its Map of Target Var and its associated Values Var
 	 **/
-	private final Map<BlockWhile, Map<Var, List<Var>>> loopPhi = new HashMap<BlockWhile, Map<Var, List<Var>>>();
+	private  Map<BlockWhile, Map<Var, List<Var>>> loopPhi = new HashMap<BlockWhile, Map<Var, List<Var>>>();
 
+	/** Map of Block and its decision Input **/
+	private Map<Block,List<GroupedVar>> decisionInput = new HashMap<Block, List<GroupedVar>>();
+	
 	public ResourceCache() {
 	}
 
@@ -162,6 +166,21 @@ public class ResourceCache {
 
 		listOfVars.add(1, vars);
 		branchIfOutput.put(blockIf, listOfVars);
+	}
+	
+	public void addDecisionInput(Block block, Set<Var> vars){
+		List<GroupedVar> listOfVars = new ArrayList<GroupedVar>();
+		for (Var var : vars) {
+			listOfVars.add(new GroupedVar(var, 0));
+		}
+		decisionInput.put(block, listOfVars);
+	}
+	
+	public List<GroupedVar> getDecisionInput(Block block){
+		if (decisionInput.containsKey(block)){
+			return decisionInput.get(block);
+		}
+		return null;
 	}
 
 	public void addLoopOtherInputs(BlockWhile blockWhile, Set<Var> blockVars) {
