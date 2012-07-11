@@ -43,6 +43,7 @@ import net.sf.openforge.lim.Decision;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.HeapRead;
 import net.sf.openforge.lim.HeapWrite;
+import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.TaskCall;
@@ -255,14 +256,41 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseBlockWhile(BlockWhile blockWhile) {
 		List<Component> oldComponents = new ArrayList<Component>(componentList);
 		componentList = new ArrayList<Component>();
+
+		/** Get Decision Components **/
 		doSwitch(blockWhile.getJoinBlock());
 		Var decisionVar = ((ExprVar) blockWhile.getCondition()).getUse()
 				.getVariable();
 		Component decisionComponent = ModuleUtil.findDecisionComponent(
 				componentList, decisionVar, busDependency);
 
-		componentList.addAll(oldComponents);
+		List<Component> decisionBodyComponents = new ArrayList<Component>(
+				componentList);
 
+		componentList = new ArrayList<Component>();
+
+		/** Get Loop Body Components **/
+		doSwitch(blockWhile.getBlocks());
+		List<Component> bodyComponents = new ArrayList<Component>(componentList);
+
+		/** Create the Loop **/
+		List<GroupedVar> decisionInVars = null;
+		List<GroupedVar> loopInVars = null;
+		List<GroupedVar> loopOutVars = null;
+		List<GroupedVar> loopBodyInVars = null;
+		List<GroupedVar> loopBodyOutVars = null;
+
+		Loop loop = (Loop) ModuleUtil.createLoop(decisionComponent,
+				decisionBodyComponents, decisionInVars, bodyComponents,
+				loopInVars, loopOutVars, loopBodyInVars, loopBodyOutVars,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+
+		/** Clean componentList **/
+		componentList = new ArrayList<Component>();
+		/** Put back all previous components and add the loop **/
+		componentList.addAll(oldComponents);
+		componentList.add(loop);
 		return null;
 	}
 

@@ -474,6 +474,18 @@ public class ModuleUtil {
 		return loop;
 	}
 
+	public static Component createLoop(Component decisionComponent,
+			List<Component> decisionBody, List<GroupedVar> decisionInVars,
+			List<Component> bodyComponents, List<GroupedVar> loopInVars,
+			List<GroupedVar> loopOutVars, List<GroupedVar> loopBodyInVars,
+			List<GroupedVar> loopBodyOutVars, Map<Port, Var> portDependency,
+			Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+
+		return null;
+	}
+
 	public static Component createTaskCall(Task task, Var outDecision,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,

@@ -72,6 +72,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	/** Design Resources **/
 	private final ResourceCache resources;
 
+	private Map<Block, Set<Var>> decisionInputVars;
+
 	/** Map of a Block Input Variables **/
 	private Map<Block, Set<Var>> blkInputVars;
 
@@ -87,8 +89,11 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	/** Map containing the join node **/
 	private Map<Block, Map<Var, List<Var>>> joinVarMap;
 
+	private Boolean phiVisit;
+
 	public ModuleIO(ResourceCache resources) {
 		super(true);
+		decisionInputVars = new HashMap<Block, Set<Var>>();
 		blkInputVars = new HashMap<Block, Set<Var>>();
 		blkOutputVars = new HashMap<Block, Set<Var>>();
 		moduleInputVars = new HashMap<Block, Set<Var>>();
@@ -120,8 +125,10 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 
 		/** Visit Join Block **/
 		joinVarMap.put(nodeIf, new HashMap<Var, List<Var>>());
+		phiVisit = true;
 		doSwitch(nodeIf.getJoinBlock());
 		resources.addBranchPhi(nodeIf, joinVarMap.get(nodeIf));
+		phiVisit = false;
 
 		/** Visit Then Block **/
 		blkInputVars.put(nodeIf, new HashSet<Var>());
@@ -201,7 +208,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 
 	private void elseBlockOtherIO(Block previousIf, BlockIf currentIf) {
 		if (currentIf.getElseBlocks().contains(previousIf)) {
-			for (Var thenInputVar : moduleInputVars.get(previousIf)) {
+			for (Var elseInputVar : moduleInputVars.get(previousIf)) {
 				List<Var> assignTargets = new ArrayList<Var>();
 				for (Block block : currentIf.getElseBlocks()) {
 					if (block.isBlockBasic()) {
@@ -216,8 +223,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 
 					}
 				}
-				if (!assignTargets.contains(thenInputVar)) {
-					blkInputVars.get(currentIf).add(thenInputVar);
+				if (!assignTargets.contains(elseInputVar)) {
+					blkInputVars.get(currentIf).add(elseInputVar);
 				}
 			}
 
@@ -244,10 +251,80 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		}
 	}
 
+	private void loopBodyBlockOtherIO(Block previousWhile,
+			BlockWhile currentWhile) {
+		if (currentWhile.getBlocks().contains(previousWhile)) {
+			for (Var blockInputVar : moduleInputVars.get(previousWhile)) {
+				List<Var> assignTargets = new ArrayList<Var>();
+				for (Block block : currentWhile.getBlocks()) {
+					if (block.isBlockBasic()) {
+						for (Instruction inst : ((BlockBasic) block)
+								.getInstructions()) {
+							if (inst.isInstAssign()) {
+								Var target = ((InstAssign) inst).getTarget()
+										.getVariable();
+								assignTargets.add(target);
+							}
+						}
+
+					}
+				}
+				if (!assignTargets.contains(blockInputVar)) {
+					blkInputVars.get(currentWhile).add(blockInputVar);
+				}
+			}
+
+			for (Var thenOutputVar : moduleOutputVars.get(previousWhile)) {
+				List<Var> assignTargets = new ArrayList<Var>();
+				for (Block block : currentWhile.getBlocks()) {
+					if (block.isBlockBasic()) {
+						for (Instruction inst : ((BlockBasic) block)
+								.getInstructions()) {
+							if (inst.isInstAssign()) {
+								Var target = ((InstAssign) inst).getTarget()
+										.getVariable();
+								assignTargets.add(target);
+							}
+						}
+
+					}
+				}
+				if (!assignTargets.contains(thenOutputVar)) {
+					blkOutputVars.get(currentWhile).add(thenOutputVar);
+				}
+			}
+
+		}
+	}
+
 	@Override
 	public Void caseBlockWhile(BlockWhile nodeWhile) {
 		// TODO: Add support for while loops
 		currentBlock = nodeWhile;
+		moduleInputVars.put(nodeWhile, new HashSet<Var>());
+		moduleOutputVars.put(nodeWhile, new HashSet<Var>());
+
+		// Get condition
+		Expression condExpr = nodeWhile.getCondition();
+		Var condVar = ((ExprVar) condExpr).getUse().getVariable();
+		resources.addLoopDecisionInput(nodeWhile, condVar);
+
+		joinVarMap.put(nodeWhile, new HashMap<Var, List<Var>>());
+		decisionInputVars.put(nodeWhile, new HashSet<Var>());
+		phiVisit = true;
+		doSwitch(nodeWhile.getJoinBlock());
+		resources.addLoopPhi(nodeWhile, joinVarMap.get(nodeWhile));
+		phiVisit = false;
+		/** Visit Then Block **/
+		blkInputVars.put(nodeWhile, new HashSet<Var>());
+		blkOutputVars.put(nodeWhile, new HashSet<Var>());
+		doSwitch(nodeWhile.getBlocks());
+		loopBodyBlockOtherIO(currentBlock, nodeWhile);
+		moduleInputVars.get(nodeWhile).addAll(blkInputVars.get(nodeWhile));
+		resources.addLoopOtherInputs(nodeWhile, blkInputVars.get(nodeWhile));
+		// resources.addLoopOutput(nodeWhile, blkOutputVars.get(nodeWhile));
+
+		previousBlock = currentBlock;
 		return null;
 	}
 
@@ -257,14 +334,25 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		// input
 		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
 		if (definedInOtherBlock(varE1, currentBlockBasic)) {
-			blkInputVars.get(currentBlock).add(varE1);
+			if (phiVisit) {
+				decisionInputVars.get(currentBlock).add(varE1);
+
+			} else {
+				blkInputVars.get(currentBlock).add(varE1);
+			}
+
 		}
 
 		// Get e2 var and if it defined not in this visited block added as an
 		// input
 		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
 		if (definedInOtherBlock(varE2, currentBlockBasic)) {
-			blkInputVars.get(currentBlock).add(varE2);
+			if (phiVisit) {
+				decisionInputVars.get(currentBlock).add(varE2);
+			} else {
+				blkInputVars.get(currentBlock).add(varE2);
+
+			}
 		}
 		return null;
 	}

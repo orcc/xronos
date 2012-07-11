@@ -67,7 +67,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 		@Override
 		public Object caseInstLoad(InstLoad load) {
 			Var sourceVar = load.getSource().getVariable();
-			if (oldInputMap.containsKey(sourceVar)) {
+			if (oldInputMap.containsKey(sourceVar) && !inputMap.isEmpty()) {
 				Port port = oldInputMap.get(sourceVar);
 				Var newSourceVar = inputMap.get(port);
 				Use newUse = IrFactory.eINSTANCE.createUse(newSourceVar);
@@ -79,7 +79,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 		@Override
 		public Object caseInstStore(InstStore store) {
 			Var targetVar = store.getTarget().getVariable();
-			if (oldOutputMap.containsKey(targetVar)) {
+			if (oldOutputMap.containsKey(targetVar) && !outputMap.isEmpty()) {
 				Port port = oldOutputMap.get(targetVar);
 				Var newTargetVar = outputMap.get(port);
 				Def newDef = IrFactory.eINSTANCE.createDef(newTargetVar);

@@ -42,6 +42,7 @@ import net.sf.openforge.lim.memory.Location;
 import net.sf.orc2hdl.design.util.GroupedVar;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.Var;
 
@@ -70,6 +71,15 @@ public class ResourceCache {
 
 	private final Map<InstCall, TaskCall> taskCalls = new HashMap<InstCall, TaskCall>();
 
+	private Map<BlockWhile, List<List<GroupedVar>>> loopInput = new HashMap<BlockWhile, List<List<GroupedVar>>>();
+
+	private Map<BlockWhile, List<List<GroupedVar>>> loopOutput = new HashMap<BlockWhile, List<List<GroupedVar>>>();
+
+	/**
+	 * Map of BlockWhile and its Map of Target Var and its associated Values Var
+	 **/
+	private final Map<BlockWhile, Map<Var, List<Var>>> loopPhi = new HashMap<BlockWhile, Map<Var, List<Var>>>();
+
 	public ResourceCache() {
 	}
 
@@ -78,6 +88,13 @@ public class ResourceCache {
 		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
 		listOfVars.add(0, groupedVar.getAsList());
 		branchIfInput.put(blockIf, listOfVars);
+	}
+
+	public void addLoopDecisionInput(BlockWhile blockWhile, Var var) {
+		GroupedVar groupedVar = new GroupedVar(var, 0);
+		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
+		listOfVars.add(0, groupedVar.getAsList());
+		loopInput.put(blockWhile, listOfVars);
 	}
 
 	public void addBranchElseInput(BlockIf blockIf, Set<Var> elseVars) {
@@ -113,6 +130,18 @@ public class ResourceCache {
 		branchIfOutput.put(blockIf, listOfVars);
 	}
 
+	public void addLoopPhi(BlockWhile blockWhile, Map<Var, List<Var>> phiMapVar) {
+		loopPhi.put(blockWhile, phiMapVar);
+		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
+		for (Var var : phiMapVar.keySet()) {
+			vars.add(new GroupedVar(var, 0));
+		}
+
+		listOfVars.add(0, vars);
+		loopOutput.put(blockWhile, listOfVars);
+	}
+
 	public void addBranchThenInput(BlockIf blockIf, Set<Var> thenVars) {
 		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
 		List<GroupedVar> vars = new ArrayList<GroupedVar>();
@@ -133,6 +162,28 @@ public class ResourceCache {
 
 		listOfVars.add(1, vars);
 		branchIfOutput.put(blockIf, listOfVars);
+	}
+
+	public void addLoopOtherInputs(BlockWhile blockWhile, Set<Var> blockVars) {
+		List<List<GroupedVar>> listOfVars = loopInput.get(blockWhile);
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
+		for (Var var : blockVars) {
+			vars.add(new GroupedVar(var, 0));
+		}
+
+		listOfVars.add(1, vars);
+		loopInput.put(blockWhile, listOfVars);
+	}
+
+	public void addLoopOutput(BlockWhile blockWhile, Set<Var> blockVars) {
+		List<List<GroupedVar>> listOfVars = loopOutput.get(blockWhile);
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
+		for (Var var : blockVars) {
+			vars.add(new GroupedVar(var, 0));
+		}
+
+		listOfVars.add(1, vars);
+		loopOutput.put(blockWhile, listOfVars);
 	}
 
 	public void addIOHandler(Port port, ActionIOHandler io) {
