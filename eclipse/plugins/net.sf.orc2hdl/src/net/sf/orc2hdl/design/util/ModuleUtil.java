@@ -264,12 +264,17 @@ public class ModuleUtil {
 		return decision;
 	}
 
-	public static Decision createDecision(Module decisionModule,
-			Component decisionComponent, Map<Port, Var> portDependency,
-			Map<Bus, Var> busDependency,
+	public static Decision createDecision(List<Component> bodyComponents,
+			Component decisionComponent, List<GroupedVar> inVars,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 		Decision decision = null;
+
+		Module decisionModule = (Module) createModule(bodyComponents, inVars,
+				Collections.<GroupedVar> emptyList(), "decisionBlock",
+				Exit.DONE, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
 
 		// Create the decision
 		decision = new Decision((Block) decisionModule, decisionComponent);
@@ -277,6 +282,9 @@ public class ModuleUtil {
 		// Propagate Inputs
 		decisionPropagateInputs(decision, (Block) decisionModule);
 
+		// Map in parts
+		PortUtil.mapInDataPorts(decision, inVars, portDependency,
+				portGroupDependency);
 		return decision;
 	}
 
@@ -417,14 +425,14 @@ public class ModuleUtil {
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 
-		/** Create the scheduler Loop Body **/
+		/** Create a While Loop Body **/
 		LoopBody loopBody = new WhileBody(decision, bodyModule);
 
 		/** Create Loop Interface **/
 		createModuleInterface(loopBody, inVars, outVars, null, portDependency,
 				portGroupDependency, busDependency);
 
-		/** Decision Input dependency **/
+		/** LoopBody Input dependency **/
 		for (Bus bus : loopBody.getInBuf().getDataBuses()) {
 			/** Decision Input Dependency **/
 			Var busVar = busDependency.get(bus);
@@ -475,15 +483,188 @@ public class ModuleUtil {
 	}
 
 	public static Component createLoop(Component decisionComponent,
-			List<Component> decisionBody, List<GroupedVar> decisionInVars,
-			List<Component> bodyComponents, List<GroupedVar> loopInVars,
+			List<Component> decisionComponents,
+			List<GroupedVar> decisionInVars, List<Component> bodyComponents,
+			Map<Var, List<Var>> loopPhi, List<GroupedVar> loopInVars,
 			List<GroupedVar> loopOutVars, List<GroupedVar> loopBodyInVars,
 			List<GroupedVar> loopBodyOutVars, Map<Port, Var> portDependency,
 			Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 
-		return null;
+		Decision decision = createDecision(bodyComponents, decisionComponent,
+				decisionInVars, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+
+		Module body = (Module) createModule(bodyComponents, loopBodyInVars,
+				loopBodyOutVars, "loopBody", Exit.DONE, 0, portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
+
+		/** Create a While Loop Body **/
+		LoopBody loopBody = new WhileBody(decision, body);
+
+		createLoopBodyInterface(loopBody, loopBodyInVars, loopBodyOutVars,
+				loopOutVars, portDependency, portGroupDependency,
+				busDependency, doneBusDependency);
+
+		/** LoopBody to body module dependency **/
+		for (Bus bus : loopBody.getInBuf().getDataBuses()) {
+			/** Decision Input Dependency **/
+			Var busVar = busDependency.get(bus);
+			// Decision
+			for (Port port : decision.getDataPorts()) {
+				if (portDependency.get(port) == busVar) {
+					dataDependencies(port, bus, portGroupDependency);
+				}
+			}
+			// Body Module Input
+			for (Port port : body.getDataPorts()) {
+				if (portDependency.get(port) == busVar) {
+					dataDependencies(port, bus, portGroupDependency);
+				}
+			}
+			// Add a dependency through the input to the Done Exit
+			for (Bus outBus : loopBody.getLoopCompleteExit().getDataBuses()) {
+				Var src = busDependency.get(bus);
+				Var tgt = busDependency.get(outBus);
+				if (src == tgt) {
+					// Create a Data Dependency
+					Port port = outBus.getPeer();
+					dataDependencies(port, bus, portGroupDependency);
+				}
+			}
+		}
+
+		/** Body Module Feedback dependency **/
+		for (Bus bus : body.getExit(Exit.DONE).getDataBuses()) {
+			for (Bus fbBus : loopBody.getFeedbackExit().getDataBuses()) {
+				Var src = busDependency.get(bus);
+				Var tgt = busDependency.get(fbBus);
+				if (src == tgt) {
+					// Create a Data Dependency
+					Port port = fbBus.getPeer();
+					dataDependencies(port, fbBus, portGroupDependency);
+				}
+			}
+		}
+
+		/** Create Loop **/
+		Loop loop = new Loop(loopBody);
+
+		/** Create Loop Interface **/
+		createModuleInterface(loop, loopInVars, loopOutVars, null,
+				portDependency, portGroupDependency, busDependency);
+
+		for (Bus lBus : loop.getInBuf().getDataBuses()) {
+			for (Bus lbBus : loopBody.getInBuf().getDataBuses()) {
+				Var src = busDependency.get(lBus);
+				Var tgt = busDependency.get(lbBus);
+				if (loopPhi.keySet().contains(tgt)) {
+					if (src == loopPhi.get(tgt).get(0)) {
+						// Phi Dependencies
+						if (loopPhi.keySet().contains(tgt)) {
+							// Group 0
+							Port port = lbBus.getPeer();
+							dataDependencies(port, lBus, portGroupDependency);
+							// Group 1
+							for (Bus outBus : loopBody.getFeedbackExit()
+									.getDataBuses()) {
+								Var fbVar = busDependency.get(outBus);
+								if (fbVar == loopPhi.get(tgt).get(1)) {
+									Port fbPort = lbBus.getPeer();
+									List<Entry> entries = fbPort.getOwner()
+											.getEntries();
+									Entry entry = entries.get(1);
+									Dependency dep = new DataDependency(outBus);
+									entry.addDependency(fbPort, dep);
+								}
+							}
+						}
+					}
+				} else if (src == tgt) {
+					Port port = lbBus.getPeer();
+					dataDependencies(port, lBus, portGroupDependency);
+				}
+
+			}
+		}
+
+		for (Bus lbBus : loopBody.getLoopCompleteExit().getDataBuses()) {
+			for (Bus lBus : loop.getDataBuses()) {
+				Var src = busDependency.get(lbBus);
+				Var tgt = busDependency.get(lBus);
+				if (src == tgt) {
+					Port port = lBus.getPeer();
+					dataDependencies(port, lbBus, portGroupDependency);
+				}
+			}
+		}
+
+		return loop;
+	}
+
+	public static void dataDependencies(Port port, Bus bus,
+			Map<Port, Integer> portGroupDependency) {
+		int group = portGroupDependency.get(port);
+		List<Entry> entries = port.getOwner().getEntries();
+		Entry entry = entries.get(group);
+		Dependency dep = new DataDependency(bus);
+		entry.addDependency(port, dep);
+	}
+
+	public static void createLoopBodyInterface(LoopBody loopBody,
+			List<GroupedVar> inVars, List<GroupedVar> feedbackVars,
+			List<GroupedVar> doneVars, Map<Port, Var> portDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Var> busDependency, Map<Bus, Integer> doneBusDependency) {
+		/** Create LoopBody Inputs **/
+		if (!inVars.isEmpty()) {
+			for (GroupedVar groupedVar : inVars) {
+				Var var = groupedVar.getVar();
+				Port port = loopBody.makeDataPort();
+				port.setIDLogical(var.getIndexedName());
+				portDependency.put(port, var);
+				portGroupDependency.put(port, groupedVar.getGroup());
+				busDependency.put(port.getPeer(), var);
+			}
+		}
+
+		/** Create LoopBody Feedback Exit **/
+		Exit fExit = loopBody.getFeedbackExit();
+		populateExit(fExit, feedbackVars, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+
+		/** Create LoopBody Complete-Done Exit **/
+		Exit cExit = loopBody.getLoopCompleteExit();
+		populateExit(cExit, doneVars, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+
+	}
+
+	public static void populateExit(Exit exit, List<GroupedVar> outVars,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+		if (!outVars.isEmpty()) {
+			for (GroupedVar groupedVar : outVars) {
+				Var var = groupedVar.getVar();
+				Bus dataBus = exit.makeDataBus();
+				Integer busSize = var.getType().getSizeInBits();
+				boolean isSigned = var.getType().isInt()
+						|| var.getType().isBool();
+				dataBus.setSize(busSize, isSigned);
+				dataBus.setIDLogical(var.getIndexedName());
+
+				portDependency.put(dataBus.getPeer(), var);
+				portGroupDependency.put(dataBus.getPeer(),
+						groupedVar.getGroup());
+				busDependency.put(dataBus, var);
+			}
+		}
+
+		/** Get the Done Bus **/
+		Bus bus = exit.getDoneBus();
+		doneBusDependency.put(bus, 0);
 	}
 
 	public static Component createTaskCall(Task task, Var outDecision,

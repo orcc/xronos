@@ -66,24 +66,26 @@ public class ResourceCache {
 	/** Map of BlockIf and its Map of Target Var and its associated Values Var **/
 	private final Map<BlockIf, Map<Var, List<Var>>> branchPhi = new HashMap<BlockIf, Map<Var, List<Var>>>();
 
+	/** Map of Block and its decision Input **/
+	private Map<Block, List<GroupedVar>> decisionInput = new HashMap<Block, List<GroupedVar>>();
+
 	private final Map<Port, ActionIOHandler> ioHandlers = new HashMap<Port, ActionIOHandler>();
+
+	private Map<BlockWhile, List<GroupedVar>> loopInput = new HashMap<BlockWhile, List<GroupedVar>>();
+
+	private Map<BlockWhile, List<GroupedVar>> loopOtherInput = new HashMap<BlockWhile, List<GroupedVar>>();
+
+	private Map<BlockWhile, List<GroupedVar>> loopOutput = new HashMap<BlockWhile, List<GroupedVar>>();
+
+	/**
+	 * Map of BlockWhile and its Map of Target Var and its associated Values Var
+	 **/
+	private Map<BlockWhile, Map<Var, List<Var>>> loopPhi = new HashMap<BlockWhile, Map<Var, List<Var>>>();
 
 	private final Map<Var, Location> memLocations = new HashMap<Var, Location>();
 
 	private final Map<InstCall, TaskCall> taskCalls = new HashMap<InstCall, TaskCall>();
 
-	private Map<BlockWhile, List<List<GroupedVar>>> loopInput = new HashMap<BlockWhile, List<List<GroupedVar>>>();
-
-	private Map<BlockWhile, List<List<GroupedVar>>> loopOutput = new HashMap<BlockWhile, List<List<GroupedVar>>>();
-
-	/**
-	 * Map of BlockWhile and its Map of Target Var and its associated Values Var
-	 **/
-	private  Map<BlockWhile, Map<Var, List<Var>>> loopPhi = new HashMap<BlockWhile, Map<Var, List<Var>>>();
-
-	/** Map of Block and its decision Input **/
-	private Map<Block,List<GroupedVar>> decisionInput = new HashMap<Block, List<GroupedVar>>();
-	
 	public ResourceCache() {
 	}
 
@@ -92,13 +94,6 @@ public class ResourceCache {
 		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
 		listOfVars.add(0, groupedVar.getAsList());
 		branchIfInput.put(blockIf, listOfVars);
-	}
-
-	public void addLoopDecisionInput(BlockWhile blockWhile, Var var) {
-		GroupedVar groupedVar = new GroupedVar(var, 0);
-		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
-		listOfVars.add(0, groupedVar.getAsList());
-		loopInput.put(blockWhile, listOfVars);
 	}
 
 	public void addBranchElseInput(BlockIf blockIf, Set<Var> elseVars) {
@@ -134,18 +129,6 @@ public class ResourceCache {
 		branchIfOutput.put(blockIf, listOfVars);
 	}
 
-	public void addLoopPhi(BlockWhile blockWhile, Map<Var, List<Var>> phiMapVar) {
-		loopPhi.put(blockWhile, phiMapVar);
-		List<List<GroupedVar>> listOfVars = new ArrayList<List<GroupedVar>>();
-		List<GroupedVar> vars = new ArrayList<GroupedVar>();
-		for (Var var : phiMapVar.keySet()) {
-			vars.add(new GroupedVar(var, 0));
-		}
-
-		listOfVars.add(0, vars);
-		loopOutput.put(blockWhile, listOfVars);
-	}
-
 	public void addBranchThenInput(BlockIf blockIf, Set<Var> thenVars) {
 		List<List<GroupedVar>> listOfVars = branchIfInput.get(blockIf);
 		List<GroupedVar> vars = new ArrayList<GroupedVar>();
@@ -167,42 +150,13 @@ public class ResourceCache {
 		listOfVars.add(1, vars);
 		branchIfOutput.put(blockIf, listOfVars);
 	}
-	
-	public void addDecisionInput(Block block, Set<Var> vars){
+
+	public void addDecisionInput(Block block, Set<Var> vars) {
 		List<GroupedVar> listOfVars = new ArrayList<GroupedVar>();
 		for (Var var : vars) {
 			listOfVars.add(new GroupedVar(var, 0));
 		}
 		decisionInput.put(block, listOfVars);
-	}
-	
-	public List<GroupedVar> getDecisionInput(Block block){
-		if (decisionInput.containsKey(block)){
-			return decisionInput.get(block);
-		}
-		return null;
-	}
-
-	public void addLoopOtherInputs(BlockWhile blockWhile, Set<Var> blockVars) {
-		List<List<GroupedVar>> listOfVars = loopInput.get(blockWhile);
-		List<GroupedVar> vars = new ArrayList<GroupedVar>();
-		for (Var var : blockVars) {
-			vars.add(new GroupedVar(var, 0));
-		}
-
-		listOfVars.add(1, vars);
-		loopInput.put(blockWhile, listOfVars);
-	}
-
-	public void addLoopOutput(BlockWhile blockWhile, Set<Var> blockVars) {
-		List<List<GroupedVar>> listOfVars = loopOutput.get(blockWhile);
-		List<GroupedVar> vars = new ArrayList<GroupedVar>();
-		for (Var var : blockVars) {
-			vars.add(new GroupedVar(var, 0));
-		}
-
-		listOfVars.add(1, vars);
-		loopOutput.put(blockWhile, listOfVars);
 	}
 
 	public void addIOHandler(Port port, ActionIOHandler io) {
@@ -211,6 +165,26 @@ public class ResourceCache {
 
 	public void addLocation(Var var, Location location) {
 		memLocations.put(var, location);
+	}
+
+	public void addLoopOtherInputs(BlockWhile blockWhile, Set<Var> blockVars) {
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
+		for (Var var : blockVars) {
+			vars.add(new GroupedVar(var, 0));
+		}
+		loopOtherInput.put(blockWhile, vars);
+	}
+
+	public void addLoopOutput(BlockWhile blockWhile, Set<Var> blockVars) {
+		List<GroupedVar> vars = new ArrayList<GroupedVar>();
+		for (Var var : blockVars) {
+			vars.add(new GroupedVar(var, 0));
+		}
+		loopOutput.put(blockWhile, vars);
+	}
+
+	public void addLoopPhi(BlockWhile blockWhile, Map<Var, List<Var>> phiMapVar) {
+		loopPhi.put(blockWhile, phiMapVar);
 	}
 
 	public void addTaskCall(InstCall instCall, TaskCall taskCall) {
@@ -240,18 +214,6 @@ public class ResourceCache {
 		} else {
 			return Collections.<GroupedVar> emptyList();
 		}
-	}
-
-	public Map<Var, List<Var>> getBranchPhiVars(BlockIf blockIf) {
-		return branchPhi.get(blockIf);
-	}
-
-	public List<GroupedVar> getBranchThenOutputVars(BlockIf blockIf) {
-		return branchIfOutput.get(blockIf).get(1);
-	}
-
-	public List<GroupedVar> getBranchThenVars(BlockIf blockIf) {
-		return branchIfInput.get(blockIf).get(1);
 	}
 
 	public List<GroupedVar> getBranchInputs(BlockIf blockIf) {
@@ -292,12 +254,81 @@ public class ResourceCache {
 		return branchIfOutput.get(blockIf).get(0);
 	}
 
+	public Map<Var, List<Var>> getBranchPhiVars(BlockIf blockIf) {
+		return branchPhi.get(blockIf);
+	}
+
+	public List<GroupedVar> getBranchThenOutputVars(BlockIf blockIf) {
+		return branchIfOutput.get(blockIf).get(1);
+	}
+
+	public List<GroupedVar> getBranchThenVars(BlockIf blockIf) {
+		return branchIfInput.get(blockIf).get(1);
+	}
+
+	public List<GroupedVar> getDecisionInput(Block block) {
+		if (decisionInput.containsKey(block)) {
+			return decisionInput.get(block);
+		}
+		return null;
+	}
+
 	public ActionIOHandler getIOHandler(Port port) {
 		return ioHandlers.get(port);
 	}
 
 	public Location getLocation(Var var) {
 		return memLocations.get(var);
+	}
+
+	public List<GroupedVar> getLoopBodyInput(Block block) {
+		List<GroupedVar> listOfVars = new ArrayList<GroupedVar>();
+		for (Var var : loopPhi.get(block).keySet()) {
+			GroupedVar gVar = new GroupedVar(var, 0);
+			listOfVars.add(gVar);
+		}
+		if (loopOtherInput.containsKey(block)) {
+			listOfVars.addAll(loopOtherInput.get(block));
+		}
+		return listOfVars;
+	}
+
+	public List<GroupedVar> getLoopBodyOutput(Block block) {
+		List<GroupedVar> listOfVars = new ArrayList<GroupedVar>();
+		for (Var var : loopPhi.get(block).keySet()) {
+			// The Var at the index 1 is the output of the loopBody
+			List<Var> out = loopPhi.get(block).get(var);
+			GroupedVar gVar = new GroupedVar(out.get(1), 0);
+			listOfVars.add(gVar);
+		}
+		return listOfVars;
+	}
+
+	public List<GroupedVar> getLoopIntput(Block block) {
+		List<GroupedVar> listOfVars = new ArrayList<GroupedVar>();
+
+		if (loopInput.containsKey(block)) {
+			listOfVars = loopInput.get(block);
+		}
+
+		for (Var var : loopPhi.get(block).keySet()) {
+			// The Var at the index 0 is the output of the loopBody
+			List<Var> out = loopPhi.get(block).get(var);
+			GroupedVar gVar = new GroupedVar(out.get(0), 0);
+			listOfVars.add(gVar);
+		}
+		if (loopOtherInput.containsKey(block)) {
+			listOfVars.addAll(loopOtherInput.get(block));
+		}
+		return listOfVars;
+	}
+
+	public List<GroupedVar> getLoopOutput(Block block) {
+		return getLoopBodyInput(block);
+	}
+
+	public Map<Var, List<Var>> getLoopPhi(BlockWhile blockWhile) {
+		return loopPhi.get(blockWhile);
 	}
 
 }

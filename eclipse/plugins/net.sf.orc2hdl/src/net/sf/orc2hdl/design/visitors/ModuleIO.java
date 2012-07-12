@@ -305,11 +305,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		moduleInputVars.put(nodeWhile, new HashSet<Var>());
 		moduleOutputVars.put(nodeWhile, new HashSet<Var>());
 
-		// Get condition
-		Expression condExpr = nodeWhile.getCondition();
-		Var condVar = ((ExprVar) condExpr).getUse().getVariable();
-		resources.addLoopDecisionInput(nodeWhile, condVar);
-
+		/** Visit the Join Block **/
 		joinVarMap.put(nodeWhile, new HashMap<Var, List<Var>>());
 		decisionInputVars.put(nodeWhile, new HashSet<Var>());
 		phiVisit = true;

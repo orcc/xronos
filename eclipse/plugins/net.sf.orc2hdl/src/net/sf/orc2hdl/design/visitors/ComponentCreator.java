@@ -274,17 +274,22 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		List<Component> bodyComponents = new ArrayList<Component>(componentList);
 
 		/** Create the Loop **/
-		List<GroupedVar> decisionInVars = resources.getDecisionInput(blockWhile);
-		List<GroupedVar> loopInVars = null;
-		List<GroupedVar> loopOutVars = null;
-		List<GroupedVar> loopBodyInVars = null;
-		List<GroupedVar> loopBodyOutVars = null;
+		List<GroupedVar> decisionInVars = resources
+				.getDecisionInput(blockWhile);
+		List<GroupedVar> loopInVars = resources.getLoopIntput(blockWhile);
+		List<GroupedVar> loopOutVars = resources.getLoopOutput(blockWhile);
+		List<GroupedVar> loopBodyInVars = resources
+				.getLoopBodyInput(blockWhile);
+		List<GroupedVar> loopBodyOutVars = resources
+				.getLoopBodyOutput(blockWhile);
+
+		Map<Var, List<Var>> loopPhi = resources.getLoopPhi(blockWhile);
 
 		Loop loop = (Loop) ModuleUtil.createLoop(decisionComponent,
 				decisionBodyComponents, decisionInVars, bodyComponents,
-				loopInVars, loopOutVars, loopBodyInVars, loopBodyOutVars,
-				portDependency, busDependency, portGroupDependency,
-				doneBusDependency);
+				loopPhi, loopInVars, loopOutVars, loopBodyInVars,
+				loopBodyOutVars, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
 
 		/** Clean componentList **/
 		componentList = new ArrayList<Component>();
