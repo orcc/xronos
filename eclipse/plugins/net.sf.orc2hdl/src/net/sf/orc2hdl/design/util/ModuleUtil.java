@@ -49,11 +49,13 @@ import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.InBuf;
+import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.ResetDependency;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
@@ -554,7 +556,11 @@ public class ModuleUtil {
 		/** Create Loop Interface **/
 		createModuleInterface(loop, loopInVars, loopOutVars, null,
 				portDependency, portGroupDependency, busDependency);
-
+		
+		/** Initialization and Feedback Entry **/
+		Entry initEntry = loop.getBodyInitEntry();
+		Entry fbEntry = loop.getBodyFeedbackEntry();
+		
 		for (Bus lBus : loop.getInBuf().getDataBuses()) {
 			for (Bus lbBus : loopBody.getInBuf().getDataBuses()) {
 				Var src = busDependency.get(lBus);
@@ -563,26 +569,45 @@ public class ModuleUtil {
 					if (src == loopPhi.get(tgt).get(0)) {
 						// Phi Dependencies
 						if (loopPhi.keySet().contains(tgt)) {
-							// Group 0
-							Port port = lbBus.getPeer();
-							dataDependencies(port, lBus, portGroupDependency);
-							// Group 1
+							// Group 0 - Init Dependency
+							Port targetPort = lbBus.getPeer();
+							Bus sourceBus = lbBus;
+							Dependency dep = (targetPort == targetPort.getOwner().getGoPort()) ? new ControlDependency(
+									sourceBus) : new DataDependency(sourceBus);
+							initEntry.addDependency(targetPort, dep);
+							// Group 1 - Feedback Dependency
 							for (Bus outBus : loopBody.getFeedbackExit()
 									.getDataBuses()) {
 								Var fbVar = busDependency.get(outBus);
 								if (fbVar == loopPhi.get(tgt).get(1)) {
-									Port fbPort = lbBus.getPeer();
-									List<Entry> entries = fbPort.getOwner()
-											.getEntries();
-									Entry entry = entries.get(1);
-									Dependency dep = new DataDependency(outBus);
-									entry.addDependency(fbPort, dep);
+									Exit fbExit = loop.getBody().getFeedbackExit();
+									targetPort = lbBus.getPeer();
+									sourceBus = outBus;
+									Reg fbReg = loop.createDataRegister();
+									Entry entry = fbReg.makeEntry(fbExit);
+									entry.addDependency(fbReg.getDataPort(), new DataDependency(
+											sourceBus));
+									fbEntry.addDependency(targetPort,
+											new DataDependency(fbReg.getResultBus()));
 								}
 							}
 						}
 					}
 				} else if (src == tgt) {
 					Port port = lbBus.getPeer();
+					Bus sourceBus = lBus;
+					Collection<Dependency> goInitDeps = initEntry
+							.getDependencies(loop.getBody().getGoPort());
+					Bus initDoneBus = goInitDeps.iterator().next().getLogicalBus();
+					Latch latch = loop.createDataLatch();
+					Entry latchEntry = latch.makeEntry(initDoneBus.getOwner());
+					latchEntry.addDependency(latch.getEnablePort(),
+							new ControlDependency(initDoneBus));
+					latchEntry.addDependency(latch.getDataPort(),
+							new DataDependency(sourceBus));
+					sourceBus = latch.getResultBus();
+					
+					
 					dataDependencies(port, lBus, portGroupDependency);
 				}
 
@@ -600,6 +625,14 @@ public class ModuleUtil {
 			}
 		}
 
+		/** Done Dependency **/
+		Entry outbufEntry = loop.getExit(Exit.DONE).getPeer().getEntries()
+				.get(0);
+		Port loopBodyDonePort = loopBody.getLoopCompleteExit().getDoneBus().getPeer();
+		Bus loopDoneBus = loop.getExit(Exit.DONE).getDoneBus();
+		Dependency dep = new ControlDependency(loopDoneBus);
+		outbufEntry.addDependency(loopBodyDonePort, dep);
+		
 		return loop;
 	}
 
