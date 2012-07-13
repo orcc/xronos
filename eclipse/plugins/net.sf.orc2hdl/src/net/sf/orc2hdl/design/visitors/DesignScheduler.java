@@ -315,27 +315,28 @@ public class DesignScheduler extends DfVisitor<Task> {
 		Var varActorSched = IrFactory.eINSTANCE.createVar(
 				IrFactory.eINSTANCE.createTypeBool(),
 				"var_" + actor.getSimpleName() + "_sched", true, 0);
-		Component trueLoop = new SimpleConstant(1, 1, false);
+		Component trueConstant = new SimpleConstant(1, 1, false);
 		GroupedVar gVarActorSched = new GroupedVar(varActorSched, 0);
-		PortUtil.mapOutDataPorts(trueLoop, gVarActorSched.getAsList(),
+		PortUtil.mapOutDataPorts(trueConstant, gVarActorSched.getAsList(),
 				busDependency, doneBusDependency);
 
 		/** Add the constant to the scheduler components **/
-		schedulerComponents.add(trueLoop);
-		/** Create the infinite Loop **/
-		Decision loopDecision = ModuleUtil.createDecision(varActorSched, "var_"
-				+ actor.getSimpleName() + "_loop", portDependency,
-				busDependency, portGroupDependency, doneBusDependency);
+		schedulerComponents.add(trueConstant);
 
-		/** Create the While body **/
-		Module bodyModule = (Module) ModuleUtil.createModule(
-				schedulerLoopComponents, Collections.<GroupedVar> emptyList(),
-				Collections.<GroupedVar> emptyList(), "loopBody", Exit.DONE, 0,
-				portDependency, busDependency, portGroupDependency,
-				doneBusDependency);
+		/** Create the decision component **/
+		Var decisionVar = IrFactory.eINSTANCE.createVar(0,
+				IrFactory.eINSTANCE.createTypeBool(),
+				"var_" + actor.getSimpleName() + "_sched", false, 0);
+		Component decisionComponent = ModuleUtil.assignComponent(decisionVar,
+				varActorSched, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
 
-		/** Create the infinite loop **/
-		Loop loop = (Loop) ModuleUtil.createLoop(loopDecision, bodyModule,
+		Loop loop = (Loop) ModuleUtil.createLoop(decisionComponent,
+				Arrays.asList(decisionComponent), gVarActorSched.getAsList(),
+				schedulerLoopComponents,
+				Collections.<Var, List<Var>> emptyMap(),
+				gVarActorSched.getAsList(),
+				Collections.<GroupedVar> emptyList(),
 				gVarActorSched.getAsList(),
 				Collections.<GroupedVar> emptyList(), portDependency,
 				busDependency, portGroupDependency, doneBusDependency);

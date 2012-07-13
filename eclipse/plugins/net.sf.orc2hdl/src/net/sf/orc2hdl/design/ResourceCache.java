@@ -324,7 +324,13 @@ public class ResourceCache {
 	}
 
 	public List<GroupedVar> getLoopOutput(Block block) {
-		return getLoopBodyInput(block);
+		List<GroupedVar> listOfVars = new ArrayList<GroupedVar>();
+		for (Var var : loopPhi.get(block).keySet()) {
+			GroupedVar gVar = new GroupedVar(var, 0);
+			listOfVars.add(gVar);
+
+		}
+		return listOfVars;
 	}
 
 	public Map<Var, List<Var>> getLoopPhi(BlockWhile blockWhile) {

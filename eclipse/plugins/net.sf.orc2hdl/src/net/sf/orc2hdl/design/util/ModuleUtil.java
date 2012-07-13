@@ -480,7 +480,8 @@ public class ModuleUtil {
 				}
 			}
 		}
-
+		Bus doneBus = loop.getExit(Exit.DONE).getDoneBus();
+		doneBusDependency.put(doneBus, 0);
 		return loop;
 	}
 
@@ -494,9 +495,9 @@ public class ModuleUtil {
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 
-		Decision decision = createDecision(bodyComponents, decisionComponent,
-				decisionInVars, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
+		Decision decision = createDecision(decisionComponents,
+				decisionComponent, decisionInVars, portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
 
 		Module body = (Module) createModule(bodyComponents, loopBodyInVars,
 				loopBodyOutVars, "loopBody", Exit.DONE, 0, portDependency,
@@ -556,11 +557,14 @@ public class ModuleUtil {
 		/** Create Loop Interface **/
 		createModuleInterface(loop, loopInVars, loopOutVars, null,
 				portDependency, portGroupDependency, busDependency);
-		
+
 		/** Initialization and Feedback Entry **/
 		Entry initEntry = loop.getBodyInitEntry();
 		Entry fbEntry = loop.getBodyFeedbackEntry();
-		
+		Collection<Dependency> goInitDeps = initEntry.getDependencies(loop
+				.getBody().getGoPort());
+		Bus initDoneBus = goInitDeps.iterator().next().getLogicalBus();
+
 		for (Bus lBus : loop.getInBuf().getDataBuses()) {
 			for (Bus lbBus : loopBody.getInBuf().getDataBuses()) {
 				Var src = busDependency.get(lBus);
@@ -572,7 +576,8 @@ public class ModuleUtil {
 							// Group 0 - Init Dependency
 							Port targetPort = lbBus.getPeer();
 							Bus sourceBus = lbBus;
-							Dependency dep = (targetPort == targetPort.getOwner().getGoPort()) ? new ControlDependency(
+							Dependency dep = (targetPort == targetPort
+									.getOwner().getGoPort()) ? new ControlDependency(
 									sourceBus) : new DataDependency(sourceBus);
 							initEntry.addDependency(targetPort, dep);
 							// Group 1 - Feedback Dependency
@@ -580,15 +585,18 @@ public class ModuleUtil {
 									.getDataBuses()) {
 								Var fbVar = busDependency.get(outBus);
 								if (fbVar == loopPhi.get(tgt).get(1)) {
-									Exit fbExit = loop.getBody().getFeedbackExit();
+									Exit fbExit = loop.getBody()
+											.getFeedbackExit();
 									targetPort = lbBus.getPeer();
 									sourceBus = outBus;
 									Reg fbReg = loop.createDataRegister();
 									Entry entry = fbReg.makeEntry(fbExit);
-									entry.addDependency(fbReg.getDataPort(), new DataDependency(
-											sourceBus));
-									fbEntry.addDependency(targetPort,
-											new DataDependency(fbReg.getResultBus()));
+									entry.addDependency(fbReg.getDataPort(),
+											new DataDependency(sourceBus));
+									fbEntry.addDependency(
+											targetPort,
+											new DataDependency(fbReg
+													.getResultBus()));
 								}
 							}
 						}
@@ -596,9 +604,6 @@ public class ModuleUtil {
 				} else if (src == tgt) {
 					Port port = lbBus.getPeer();
 					Bus sourceBus = lBus;
-					Collection<Dependency> goInitDeps = initEntry
-							.getDependencies(loop.getBody().getGoPort());
-					Bus initDoneBus = goInitDeps.iterator().next().getLogicalBus();
 					Latch latch = loop.createDataLatch();
 					Entry latchEntry = latch.makeEntry(initDoneBus.getOwner());
 					latchEntry.addDependency(latch.getEnablePort(),
@@ -606,16 +611,16 @@ public class ModuleUtil {
 					latchEntry.addDependency(latch.getDataPort(),
 							new DataDependency(sourceBus));
 					sourceBus = latch.getResultBus();
-					
-					
-					dataDependencies(port, lBus, portGroupDependency);
+
+					Dependency dep = new DataDependency(sourceBus);
+					fbEntry.addDependency(port, dep);
 				}
 
 			}
 		}
 
 		for (Bus lbBus : loopBody.getLoopCompleteExit().getDataBuses()) {
-			for (Bus lBus : loop.getDataBuses()) {
+			for (Bus lBus : loop.getExit(Exit.DONE).getDataBuses()) {
 				Var src = busDependency.get(lbBus);
 				Var tgt = busDependency.get(lBus);
 				if (src == tgt) {
@@ -628,11 +633,13 @@ public class ModuleUtil {
 		/** Done Dependency **/
 		Entry outbufEntry = loop.getExit(Exit.DONE).getPeer().getEntries()
 				.get(0);
-		Port loopBodyDonePort = loopBody.getLoopCompleteExit().getDoneBus().getPeer();
+		Port loopBodyDonePort = loopBody.getLoopCompleteExit().getDoneBus()
+				.getPeer();
 		Bus loopDoneBus = loop.getExit(Exit.DONE).getDoneBus();
+		doneBusDependency.put(loopDoneBus, 0);
 		Dependency dep = new ControlDependency(loopDoneBus);
 		outbufEntry.addDependency(loopBodyDonePort, dep);
-		
+
 		return loop;
 	}
 
@@ -780,27 +787,23 @@ public class ModuleUtil {
 
 		for (Component component : module.getComponents()) {
 			// Build Data Dependencies
-			if (component instanceof Loop) {
-				loopDependecies(component);
-			} else {
-				for (Bus bus : component.getDataBuses()) {
-					Var busVar = busDependency.get(bus);
-					List<Port> targetPorts = getDependencyTargetPorts(
-							module.getComponents(), busVar, portDependency);
-					for (Port port : targetPorts) {
-						int group = portGroupDependency.get(port);
-						List<Entry> entries = port.getOwner().getEntries();
-						Entry entry = entries.get(group);
-						Dependency dep = new DataDependency(bus);
-						entry.addDependency(port, dep);
-					}
+			for (Bus bus : component.getDataBuses()) {
+				Var busVar = busDependency.get(bus);
+				List<Port> targetPorts = getDependencyTargetPorts(
+						module.getComponents(), busVar, portDependency);
+				for (Port port : targetPorts) {
+					int group = portGroupDependency.get(port);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(group);
+					Dependency dep = new DataDependency(bus);
+					entry.addDependency(port, dep);
 				}
 			}
+
 			// Build control Dependencies
 			if (!(component instanceof InBuf) && !(component instanceof OutBuf)
 					&& !(component instanceof Decision)
-					&& !(module instanceof Branch)
-					&& !(component instanceof Loop)) {
+					&& !(module instanceof Branch)) {
 				Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
 				Port donePort = exit.getDoneBus().getPeer();
 				List<Entry> entries = donePort.getOwner().getEntries();
