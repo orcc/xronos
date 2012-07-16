@@ -61,25 +61,23 @@ import org.eclipse.emf.ecore.EObject;
  */
 public class ModuleIO extends AbstractIrVisitor<Void> {
 
-	/** The current visited Block **/
-	private BlockBasic currentBlockBasic = null;
-
-	/** The current visited If Block **/
-	private Block currentBlock = null;
-
-	private Block previousBlock = null;
-
-	/** Design Resources **/
-	private ResourceCache resources;
-
-	/** Map of a Decision Input Variables **/
-	private Map<Block, Set<Var>> decisionInputVars;
-
 	/** Map of a Block Input Variables **/
 	private Map<Block, Set<Var>> blkInputVars;
 
 	/** Map of a Block Output Variables **/
 	private Map<Block, Set<Var>> blkOutputVars;
+
+	/** The current visited If Block **/
+	private Block currentBlock = null;
+
+	/** The current visited Block **/
+	private BlockBasic currentBlockBasic = null;
+
+	/** Map of a Decision Input Variables **/
+	private Map<Block, Set<Var>> decisionInputVars;
+
+	/** Map containing the join node **/
+	private Map<Block, Map<Var, List<Var>>> joinVarMap;
 
 	/** Map of a Module Input Variables **/
 	private Map<Block, Set<Var>> moduleInputVars;
@@ -87,10 +85,12 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	/** Map of a Module Output Variables **/
 	private Map<Block, Set<Var>> moduleOutputVars;
 
-	/** Map containing the join node **/
-	private Map<Block, Map<Var, List<Var>>> joinVarMap;
-
 	private Boolean phiVisit;
+
+	private Block previousBlock = null;
+
+	/** Design Resources **/
+	private ResourceCache resources;
 
 	public ModuleIO(ResourceCache resources) {
 		super(true);
@@ -135,7 +135,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		blkInputVars.put(nodeIf, new HashSet<Var>());
 		blkOutputVars.put(nodeIf, new HashSet<Var>());
 		doSwitch(nodeIf.getThenBlocks());
-		thenBlockOtherIO(currentBlock, nodeIf);
+		otherBlockIO(currentBlock, nodeIf, nodeIf.getThenBlocks());
 		moduleInputVars.get(nodeIf).addAll(blkInputVars.get(nodeIf));
 		resources.addBranchThenInput(nodeIf, blkInputVars.get(nodeIf));
 		resources.addBranchThenOutput(nodeIf, blkOutputVars.get(nodeIf));
@@ -147,7 +147,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 			blkInputVars.put(nodeIf, new HashSet<Var>());
 			blkOutputVars.put(nodeIf, new HashSet<Var>());
 			doSwitch(nodeIf.getElseBlocks());
-			elseBlockOtherIO(previousBlock, nodeIf);
+			otherBlockIO(previousBlock, nodeIf, nodeIf.getElseBlocks());
 			moduleInputVars.get(nodeIf).addAll(blkInputVars.get(nodeIf));
 			resources.addBranchElseInput(nodeIf, blkInputVars.get(nodeIf));
 			resources.addBranchElseOutput(nodeIf, blkOutputVars.get(nodeIf));
@@ -155,152 +155,8 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
-	/**
-	 * This functions finds helps to connect the ports of nested if with its
-	 * Parent if
-	 * 
-	 * @param previousIf
-	 * @param currentIf
-	 */
-	private void thenBlockOtherIO(Block previousIf, BlockIf currentIf) {
-		if (currentIf.getThenBlocks().contains(previousIf)) {
-			for (Var thenInputVar : moduleInputVars.get(previousIf)) {
-				List<Var> assignTargets = new ArrayList<Var>();
-				for (Block block : currentIf.getThenBlocks()) {
-					if (block.isBlockBasic()) {
-						for (Instruction inst : ((BlockBasic) block)
-								.getInstructions()) {
-							if (inst.isInstAssign()) {
-								Var target = ((InstAssign) inst).getTarget()
-										.getVariable();
-								assignTargets.add(target);
-							}
-						}
-
-					}
-				}
-				if (!assignTargets.contains(thenInputVar)) {
-					blkInputVars.get(currentIf).add(thenInputVar);
-				}
-			}
-
-			for (Var thenOutputVar : moduleOutputVars.get(previousIf)) {
-				List<Var> assignTargets = new ArrayList<Var>();
-				for (Block block : currentIf.getThenBlocks()) {
-					if (block.isBlockBasic()) {
-						for (Instruction inst : ((BlockBasic) block)
-								.getInstructions()) {
-							if (inst.isInstAssign()) {
-								Var target = ((InstAssign) inst).getTarget()
-										.getVariable();
-								assignTargets.add(target);
-							}
-						}
-
-					}
-				}
-				if (!assignTargets.contains(thenOutputVar)) {
-					blkOutputVars.get(currentIf).add(thenOutputVar);
-				}
-			}
-
-		}
-	}
-
-	private void elseBlockOtherIO(Block previousIf, BlockIf currentIf) {
-		if (currentIf.getElseBlocks().contains(previousIf)) {
-			for (Var elseInputVar : moduleInputVars.get(previousIf)) {
-				List<Var> assignTargets = new ArrayList<Var>();
-				for (Block block : currentIf.getElseBlocks()) {
-					if (block.isBlockBasic()) {
-						for (Instruction inst : ((BlockBasic) block)
-								.getInstructions()) {
-							if (inst.isInstAssign()) {
-								Var target = ((InstAssign) inst).getTarget()
-										.getVariable();
-								assignTargets.add(target);
-							}
-						}
-
-					}
-				}
-				if (!assignTargets.contains(elseInputVar)) {
-					blkInputVars.get(currentIf).add(elseInputVar);
-				}
-			}
-
-			for (Var thenOutputVar : moduleOutputVars.get(previousIf)) {
-				List<Var> assignTargets = new ArrayList<Var>();
-				for (Block block : currentIf.getElseBlocks()) {
-					if (block.isBlockBasic()) {
-						for (Instruction inst : ((BlockBasic) block)
-								.getInstructions()) {
-							if (inst.isInstAssign()) {
-								Var target = ((InstAssign) inst).getTarget()
-										.getVariable();
-								assignTargets.add(target);
-							}
-						}
-
-					}
-				}
-				if (!assignTargets.contains(thenOutputVar)) {
-					blkOutputVars.get(currentIf).add(thenOutputVar);
-				}
-			}
-
-		}
-	}
-
-	private void loopBodyBlockOtherIO(Block previousWhile,
-			BlockWhile currentWhile) {
-		if (currentWhile.getBlocks().contains(previousWhile)) {
-			for (Var blockInputVar : moduleInputVars.get(previousWhile)) {
-				List<Var> assignTargets = new ArrayList<Var>();
-				for (Block block : currentWhile.getBlocks()) {
-					if (block.isBlockBasic()) {
-						for (Instruction inst : ((BlockBasic) block)
-								.getInstructions()) {
-							if (inst.isInstAssign()) {
-								Var target = ((InstAssign) inst).getTarget()
-										.getVariable();
-								assignTargets.add(target);
-							}
-						}
-
-					}
-				}
-				if (!assignTargets.contains(blockInputVar)) {
-					blkInputVars.get(currentWhile).add(blockInputVar);
-				}
-			}
-
-			for (Var thenOutputVar : moduleOutputVars.get(previousWhile)) {
-				List<Var> assignTargets = new ArrayList<Var>();
-				for (Block block : currentWhile.getBlocks()) {
-					if (block.isBlockBasic()) {
-						for (Instruction inst : ((BlockBasic) block)
-								.getInstructions()) {
-							if (inst.isInstAssign()) {
-								Var target = ((InstAssign) inst).getTarget()
-										.getVariable();
-								assignTargets.add(target);
-							}
-						}
-
-					}
-				}
-				if (!assignTargets.contains(thenOutputVar)) {
-					blkOutputVars.get(currentWhile).add(thenOutputVar);
-				}
-			}
-
-		}
-	}
-
 	@Override
 	public Void caseBlockWhile(BlockWhile nodeWhile) {
-		// TODO: Add support for while loops
 		currentBlock = nodeWhile;
 		moduleInputVars.put(nodeWhile, new HashSet<Var>());
 		moduleOutputVars.put(nodeWhile, new HashSet<Var>());
@@ -313,14 +169,14 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		resources.addDecisionInput(nodeWhile, decisionInputVars.get(nodeWhile));
 		resources.addLoopPhi(nodeWhile, joinVarMap.get(nodeWhile));
 		phiVisit = false;
+
 		/** Visit Then Block **/
 		blkInputVars.put(nodeWhile, new HashSet<Var>());
 		blkOutputVars.put(nodeWhile, new HashSet<Var>());
 		doSwitch(nodeWhile.getBlocks());
-		loopBodyBlockOtherIO(currentBlock, nodeWhile);
+		// otherBlockIO(currentBlock, nodeWhile, nodeWhile.getBlocks());
 		moduleInputVars.get(nodeWhile).addAll(blkInputVars.get(nodeWhile));
 		resources.addLoopOtherInputs(nodeWhile, blkInputVars.get(nodeWhile));
-		// resources.addLoopOutput(nodeWhile, blkOutputVars.get(nodeWhile));
 
 		previousBlock = currentBlock;
 		return null;
@@ -402,6 +258,52 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 			}
 		}
 		return false;
+	}
+
+	private void otherBlockIO(Block previousBlock, Block currentBlock,
+			List<Block> currentBlocks) {
+		if (currentBlocks.contains(previousBlock)) {
+			for (Var previousInputVar : moduleInputVars.get(previousBlock)) {
+				List<Var> assignTargets = new ArrayList<Var>();
+				for (Block block : currentBlocks) {
+					if (block.isBlockBasic()) {
+						for (Instruction inst : ((BlockBasic) block)
+								.getInstructions()) {
+							if (inst.isInstAssign()) {
+								Var target = ((InstAssign) inst).getTarget()
+										.getVariable();
+								assignTargets.add(target);
+							}
+						}
+
+					}
+				}
+				if (!assignTargets.contains(previousInputVar)) {
+					blkInputVars.get(currentBlock).add(previousInputVar);
+				}
+			}
+
+			for (Var thenOutputVar : moduleOutputVars.get(previousBlock)) {
+				List<Var> assignTargets = new ArrayList<Var>();
+				for (Block block : currentBlocks) {
+					if (block.isBlockBasic()) {
+						for (Instruction inst : ((BlockBasic) block)
+								.getInstructions()) {
+							if (inst.isInstAssign()) {
+								Var target = ((InstAssign) inst).getTarget()
+										.getVariable();
+								assignTargets.add(target);
+							}
+						}
+
+					}
+				}
+				if (!assignTargets.contains(thenOutputVar)) {
+					blkOutputVars.get(currentBlock).add(thenOutputVar);
+				}
+			}
+
+		}
 	}
 
 }
