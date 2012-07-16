@@ -59,6 +59,7 @@ import net.sf.openforge.lim.ResetDependency;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.WhileBody;
+import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
 import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.openforge.lim.op.NoOp;
@@ -94,7 +95,7 @@ public class ModuleUtil {
 	 *            the done bus dependency map
 	 * @return
 	 */
-	public static Component absoluteMemoryWrite(Var stateVar, Var value,
+	public static Component absoluteMemoryWrite(Var stateVar, Var writeValue,
 			ResourceCache resourceCache, Map<Port, Var> portDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
@@ -102,11 +103,24 @@ public class ModuleUtil {
 
 		Component absoluteMemWrite = new AbsoluteMemoryWrite(targetLocation,
 				Constants.MAX_ADDR_WIDTH, stateVar.getType().isInt());
-		GroupedVar inVar = new GroupedVar(value, 0);
+		GroupedVar inVar = new GroupedVar(writeValue, 0);
 		PortUtil.mapInDataPorts(absoluteMemWrite, inVar.getAsList(),
 				portDependency, portGroupDependency);
 		PortUtil.mapOutControlPort(absoluteMemWrite, 0, doneBusDependency);
 		return absoluteMemWrite;
+	}
+
+	public static Component absoluteMemoryRead(Var stateVar, Var readValue,
+			ResourceCache resourceCache, Map<Bus, Var> busDependency,
+			Map<Bus, Integer> doneBusDependency) {
+		Location targetLocation = resourceCache.getLocation(stateVar);
+
+		Component absoluteMemRead = new AbsoluteMemoryRead(targetLocation,
+				Constants.MAX_ADDR_WIDTH, stateVar.getType().isInt());
+		GroupedVar outVar = new GroupedVar(readValue, 0);
+		PortUtil.mapOutDataPorts(absoluteMemRead, outVar.getAsList(),
+				busDependency, doneBusDependency);
+		return absoluteMemRead;
 	}
 
 	/**
@@ -725,6 +739,50 @@ public class ModuleUtil {
 		PortUtil.mapOutControlPort(taskCall, 0, doneBusDependency);
 		Block thenBlock = (Block) createModule(
 				Arrays.asList((Component) taskCall),
+				Collections.<GroupedVar> emptyList(),
+				Collections.<GroupedVar> emptyList(), "taskCallThenBlock",
+				Exit.DONE, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+		GroupedVar inVars = new GroupedVar(outDecision, 0);
+		Component branch = createBranch(decision, thenBlock, null,
+				inVars.getAsList(), Collections.<GroupedVar> emptyList(),
+				Collections.<Var, List<Var>> emptyMap(),
+				"callTask_" + task.getIDGlobalType(), Exit.DONE,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+
+		Module module = (Module) createModule(Arrays.asList(branch),
+				inVars.getAsList(), Collections.<GroupedVar> emptyList(),
+				"taskCallBlock", Exit.DONE, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+
+		return module;
+	}
+
+	public static Component createTaskCallSaveState(Task task, Var outDecision,
+			Var stateVar, Var value, ResourceCache resourceCache,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+
+		String varName = "decision_outputPattern_" + task.showIDGlobal();
+		Decision decision = createDecision(outDecision, varName,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+		List<Component> moduleComponents = new ArrayList<Component>();
+		// Create the the TaskCall component and add the Task
+		TaskCall taskCall = new TaskCall();
+		taskCall.setTarget(task);
+		moduleComponents.add(taskCall);
+
+		Component saveState = absoluteMemoryWrite(stateVar, value,
+				resourceCache, portDependency, portGroupDependency,
+				doneBusDependency);
+		moduleComponents.add(saveState);
+
+		// Map out TaskCall Done port
+		PortUtil.mapOutControlPort(taskCall, 0, doneBusDependency);
+		Block thenBlock = (Block) createModule(moduleComponents,
 				Collections.<GroupedVar> emptyList(),
 				Collections.<GroupedVar> emptyList(), "taskCallThenBlock",
 				Exit.DONE, 0, portDependency, busDependency,
