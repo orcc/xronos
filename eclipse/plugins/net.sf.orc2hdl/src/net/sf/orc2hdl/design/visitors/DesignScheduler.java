@@ -625,8 +625,9 @@ public class DesignScheduler extends DfVisitor<Task> {
 					inPort.add(var);
 				}
 			}
+			inVars = GroupedVar.ListGroupedVar(inPort, 0);
 			branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-					elseBlock, GroupedVar.ListGroupedVar(inPort, 0),
+					elseBlock, inVars,
 					Collections.<GroupedVar> emptyList(), null, "ifBranch_"
 							+ action.getName(), null, portDependency,
 					busDependency, portGroupDependency, doneBusDependency);
