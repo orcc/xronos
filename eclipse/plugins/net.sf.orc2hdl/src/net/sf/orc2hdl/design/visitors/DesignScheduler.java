@@ -551,7 +551,19 @@ public class DesignScheduler extends DfVisitor<Task> {
 					Collections.<GroupedVar> emptyList(), "elseBlock", false,
 					Exit.DONE, 0, portDependency, busDependency,
 					portGroupDependency, doneBusDependency);
-			inVars.add(new GroupedVar(stateToVar.get(state), 0));
+
+			List<Var> inPort = new ArrayList<Var>();
+			for (GroupedVar gVar : inVars) {
+				Var var = gVar.getVar();
+				if (!inPort.contains(var)) {
+					inPort.add(var);
+				}
+			}
+			Var sourceState = stateToVar.get(state);
+			if (!inPort.contains(sourceState)) {
+				inPort.add(sourceState);
+			}
+			inVars = GroupedVar.ListGroupedVar(inPort, 0);
 			Branch stateBranch = (Branch) ModuleUtil.createBranch(decision,
 					thenBlock, null, inVars,
 					Collections.<GroupedVar> emptyList(), null, "ifBranch_"
@@ -595,7 +607,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Block thenBlock = (Block) comps.get(1);
 
 				List<Var> inPort = new ArrayList<Var>(branchInputPorts);
-				inPort.add(stateToVar.get(transition.getSource()));
+				inPort.add(stateToVar.get(transition.getTarget()));
 				Branch elseBranch = createActionTransitionBranch(oldEdges);
 
 				List<GroupedVar> inVars = branchInVars.get(elseBranch);
@@ -604,10 +616,15 @@ public class DesignScheduler extends DfVisitor<Task> {
 						Collections.<GroupedVar> emptyList(), "elseBlock",
 						false, Exit.DONE, 0, portDependency, busDependency,
 						portGroupDependency, doneBusDependency);
-
-				inVars.addAll(GroupedVar.ListGroupedVar(inPort, 0));
+				// Hack GroupedVar class will be deleted
+				for (GroupedVar gVar : inVars) {
+					Var var = gVar.getVar();
+					if (!inPort.contains(var)) {
+						inPort.add(var);
+					}
+				}
 				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-						elseBlock, inVars,
+						elseBlock, GroupedVar.ListGroupedVar(inPort, 0),
 						Collections.<GroupedVar> emptyList(), null, "ifBranch_"
 								+ action.getName(), null, portDependency,
 						busDependency, portGroupDependency, doneBusDependency);
