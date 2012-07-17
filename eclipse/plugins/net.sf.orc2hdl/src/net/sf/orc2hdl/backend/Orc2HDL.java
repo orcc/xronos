@@ -267,6 +267,7 @@ public class Orc2HDL extends AbstractBackend {
 		actor.setTemplateData(data);
 		if (instanceToDesign) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
+			transformations.add(new UnitImporter());
 			transformations.add(new UnaryListRemoval());
 			transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));

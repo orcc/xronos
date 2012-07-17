@@ -500,8 +500,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				portDependency, portGroupDependency);
 		// For the moment all indexes are considered 32bits
 		Var castedIndexVar = procedure.newTempLocalVariable(
-				IrFactory.eINSTANCE.createTypeInt(32), "casted_" + castIndex
-						+ "_" + loadIndexVar.getIndexedName());
+				IrFactory.eINSTANCE.createTypeInt(dataSize), "casted_"
+						+ castIndex + "_" + loadIndexVar.getIndexedName());
 
 		GroupedVar outVar = new GroupedVar(castedIndexVar, 0);
 		PortUtil.mapOutDataPorts(currentComponent, outVar.getAsList(),

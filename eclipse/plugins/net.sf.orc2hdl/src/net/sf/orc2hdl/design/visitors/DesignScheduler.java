@@ -590,69 +590,70 @@ public class DesignScheduler extends DfVisitor<Task> {
 		Branch branch = null;
 		List<Edge> oldEdges = new ArrayList<Edge>(transitions);
 
-		for (Iterator<Edge> iter = oldEdges.iterator(); iter.hasNext();) {
-			Edge edge = iter.next();
-			Transition transition = (Transition) edge;
-			Action action = transition.getAction();
-			// Get The inputs of the branch
-			List<Var> branchInputPorts = new ArrayList<Var>();
-			branchInputPorts.add(actionOutDecisions.get(action));
-			branchInputPorts.add(actionInDecisions.get(action));
-			if (iter.hasNext()) {
-				// Update Old edges
-				oldEdges.remove(edge);
+		// for (Iterator<Edge> iter = oldEdges.iterator(); iter.hasNext();) {
 
-				List<Component> comps = actionTransitions.get(transition);
-				Decision decision = (Decision) comps.get(0);
-				Block thenBlock = (Block) comps.get(1);
+		Iterator<Edge> iter = oldEdges.iterator();
+		Edge edge = iter.next();
+		Transition transition = (Transition) edge;
+		Action action = transition.getAction();
+		// Get The inputs of the branch
+		List<Var> branchInputPorts = new ArrayList<Var>();
+		branchInputPorts.add(actionOutDecisions.get(action));
+		branchInputPorts.add(actionInDecisions.get(action));
+		if (iter.hasNext()) {
+			// Update Old edges
+			oldEdges.remove(edge);
 
-				List<Var> inPort = new ArrayList<Var>(branchInputPorts);
-				inPort.add(stateToVar.get(transition.getTarget()));
-				Branch elseBranch = createActionTransitionBranch(oldEdges);
+			List<Component> comps = actionTransitions.get(transition);
+			Decision decision = (Decision) comps.get(0);
+			Block thenBlock = (Block) comps.get(1);
 
-				List<GroupedVar> inVars = branchInVars.get(elseBranch);
-				Block elseBlock = (Block) ModuleUtil.createModule(
-						Arrays.asList((Component) elseBranch), inVars,
-						Collections.<GroupedVar> emptyList(), "elseBlock",
-						false, Exit.DONE, 0, portDependency, busDependency,
-						portGroupDependency, doneBusDependency);
-				// Hack GroupedVar class will be deleted
-				for (GroupedVar gVar : inVars) {
-					Var var = gVar.getVar();
-					if (!inPort.contains(var)) {
-						inPort.add(var);
-					}
+			List<Var> inPort = new ArrayList<Var>(branchInputPorts);
+			inPort.add(stateToVar.get(transition.getTarget()));
+			Branch elseBranch = createActionTransitionBranch(oldEdges);
+
+			List<GroupedVar> inVars = branchInVars.get(elseBranch);
+			Block elseBlock = (Block) ModuleUtil.createModule(
+					Arrays.asList((Component) elseBranch), inVars,
+					Collections.<GroupedVar> emptyList(), "elseBlock", false,
+					Exit.DONE, 0, portDependency, busDependency,
+					portGroupDependency, doneBusDependency);
+			// Hack GroupedVar class will be deleted
+			for (GroupedVar gVar : inVars) {
+				Var var = gVar.getVar();
+				if (!inPort.contains(var)) {
+					inPort.add(var);
 				}
-				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-						elseBlock, GroupedVar.ListGroupedVar(inPort, 0),
-						Collections.<GroupedVar> emptyList(), null, "ifBranch_"
-								+ action.getName(), null, portDependency,
-						busDependency, portGroupDependency, doneBusDependency);
-				branch.setIDLogical("ifBranch_" + action.getName());
-				branchInVars.put(branch, inVars);
-			} else {
-				// Branch state Target Input Ports
-				Var targetStateVar = stateToVar.get(transition.getTarget());
-				branchInputPorts.add(targetStateVar);
-
-				List<Component> comps = actionTransitions.get(transition);
-				Decision decision = (Decision) comps.get(0);
-
-				Block thenBlock = (Block) comps.get(1);
-
-				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
-						branchInputPorts, 0);
-
-				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-						null, inVars, Collections.<GroupedVar> emptyList(),
-						null, "ifBranch_" + action.getName(), null,
-						portDependency, busDependency, portGroupDependency,
-						doneBusDependency);
-
-				branchInVars.put(branch, inVars);
-				branch.setIDLogical("ifBranch_" + action.getName());
 			}
+			branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
+					elseBlock, GroupedVar.ListGroupedVar(inPort, 0),
+					Collections.<GroupedVar> emptyList(), null, "ifBranch_"
+							+ action.getName(), null, portDependency,
+					busDependency, portGroupDependency, doneBusDependency);
+			branch.setIDLogical("ifBranch_" + action.getName());
+			branchInVars.put(branch, inVars);
+		} else {
+			// Branch state Target Input Ports
+			Var targetStateVar = stateToVar.get(transition.getTarget());
+			branchInputPorts.add(targetStateVar);
+
+			List<Component> comps = actionTransitions.get(transition);
+			Decision decision = (Decision) comps.get(0);
+
+			Block thenBlock = (Block) comps.get(1);
+
+			List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
+					branchInputPorts, 0);
+
+			branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
+					null, inVars, Collections.<GroupedVar> emptyList(), null,
+					"ifBranch_" + action.getName(), null, portDependency,
+					busDependency, portGroupDependency, doneBusDependency);
+
+			branchInVars.put(branch, inVars);
+			branch.setIDLogical("ifBranch_" + action.getName());
 		}
+		// }
 
 		return branch;
 	}
