@@ -26,7 +26,7 @@
             defaultValue="false"
             description="Generate directly the verilog file without using the XLIM backend."
             id="net.sf.orc2hdl.instanceDesign"
-            name="Do not use XLIM IR (Experimental)">
+            name="Do not use XLIM IR (Alpha)">
          <checkBox></checkBox>
       </option>
       <option

@@ -52,6 +52,7 @@ import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.MutexBlock;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Reg;
@@ -61,7 +62,9 @@ import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.WhileBody;
 import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
 import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
+import net.sf.openforge.lim.memory.LValue;
 import net.sf.openforge.lim.memory.Location;
+import net.sf.openforge.lim.memory.LogicalMemoryPort;
 import net.sf.openforge.lim.op.NoOp;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.preference.Constants;
@@ -100,9 +103,12 @@ public class ModuleUtil {
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 		Location targetLocation = resourceCache.getLocation(stateVar);
+		LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+				.getLogicalMemoryPorts().iterator().next();
 
 		Component absoluteMemWrite = new AbsoluteMemoryWrite(targetLocation,
 				Constants.MAX_ADDR_WIDTH, stateVar.getType().isInt());
+		memPort.addAccess((LValue) absoluteMemWrite, targetLocation);
 		GroupedVar inVar = new GroupedVar(writeValue, 0);
 		PortUtil.mapInDataPorts(absoluteMemWrite, inVar.getAsList(),
 				portDependency, portGroupDependency);
@@ -115,8 +121,12 @@ public class ModuleUtil {
 			Map<Bus, Integer> doneBusDependency) {
 		Location targetLocation = resourceCache.getLocation(stateVar);
 
+		LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+				.getLogicalMemoryPorts().iterator().next();
+
 		Component absoluteMemRead = new AbsoluteMemoryRead(targetLocation,
 				Constants.MAX_ADDR_WIDTH, stateVar.getType().isInt());
+		memPort.addAccess((LValue) absoluteMemRead, targetLocation);
 		GroupedVar outVar = new GroupedVar(readValue, 0);
 		PortUtil.mapOutDataPorts(absoluteMemRead, outVar.getAsList(),
 				busDependency, doneBusDependency);
@@ -345,7 +355,7 @@ public class ModuleUtil {
 		Decision decision = null;
 
 		Module decisionModule = (Module) createModule(bodyComponents, inVars,
-				Collections.<GroupedVar> emptyList(), "decisionBlock",
+				Collections.<GroupedVar> emptyList(), "decisionBlock", false,
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
@@ -393,7 +403,7 @@ public class ModuleUtil {
 		GroupedVar inVars = new GroupedVar(inputDecision, 0);
 		Module decisionModule = (Module) createModule(
 				Arrays.asList(assignComp), inVars.getAsList(),
-				Collections.<GroupedVar> emptyList(), "decisionBlock",
+				Collections.<GroupedVar> emptyList(), "decisionBlock", false,
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
@@ -431,8 +441,9 @@ public class ModuleUtil {
 				busDependency, portGroupDependency, doneBusDependency);
 
 		Module body = (Module) createModule(bodyComponents, loopBodyInVars,
-				loopBodyOutVars, "loopBody", Exit.DONE, 0, portDependency,
-				busDependency, portGroupDependency, doneBusDependency);
+				loopBodyOutVars, "loopBody", false, Exit.DONE, 0,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
 
 		/** Create a While Loop Body **/
 		LoopBody loopBody = new WhileBody(decision, body);
@@ -631,13 +642,14 @@ public class ModuleUtil {
 	 */
 	public static Component createModule(List<Component> components,
 			List<GroupedVar> inVars, List<GroupedVar> outVars,
-			String searchScope, Exit.Type exitType, Integer group,
-			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			String searchScope, Boolean isMutex, Exit.Type exitType,
+			Integer group, Map<Port, Var> portDependency,
+			Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 
 		// Create an Empty Block
-		Module module = new Block(false);
+		Module module = isMutex ? new MutexBlock(false) : new Block(false);
 
 		// Create the modules IO interface
 		createModuleInterface(module, inVars, outVars, exitType,
@@ -741,7 +753,7 @@ public class ModuleUtil {
 				Arrays.asList((Component) taskCall),
 				Collections.<GroupedVar> emptyList(),
 				Collections.<GroupedVar> emptyList(), "taskCallThenBlock",
-				Exit.DONE, 0, portDependency, busDependency,
+				false, Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 		GroupedVar inVars = new GroupedVar(outDecision, 0);
 		Component branch = createBranch(decision, thenBlock, null,
@@ -753,8 +765,8 @@ public class ModuleUtil {
 
 		Module module = (Module) createModule(Arrays.asList(branch),
 				inVars.getAsList(), Collections.<GroupedVar> emptyList(),
-				"taskCallBlock", Exit.DONE, 0, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
+				"taskCallBlock", false, Exit.DONE, 0, portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
 
 		return module;
 	}
@@ -782,22 +794,25 @@ public class ModuleUtil {
 
 		// Map out TaskCall Done port
 		PortUtil.mapOutControlPort(taskCall, 0, doneBusDependency);
-		Block thenBlock = (Block) createModule(moduleComponents,
-				Collections.<GroupedVar> emptyList(),
+		List<GroupedVar> inVars = new ArrayList<GroupedVar>();
+		inVars.add(new GroupedVar(value, 0));
+		Block thenBlock = (Block) createModule(moduleComponents, inVars,
 				Collections.<GroupedVar> emptyList(), "taskCallThenBlock",
-				Exit.DONE, 0, portDependency, busDependency,
+				false, Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
-		GroupedVar inVars = new GroupedVar(outDecision, 0);
-		Component branch = createBranch(decision, thenBlock, null,
-				inVars.getAsList(), Collections.<GroupedVar> emptyList(),
+
+		inVars.add(new GroupedVar(outDecision, 0));
+
+		Component branch = createBranch(decision, thenBlock, null, inVars,
+				Collections.<GroupedVar> emptyList(),
 				Collections.<Var, List<Var>> emptyMap(),
 				"callTask_" + task.getIDGlobalType(), Exit.DONE,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
 
-		Module module = (Module) createModule(Arrays.asList(branch),
-				inVars.getAsList(), Collections.<GroupedVar> emptyList(),
-				"taskCallBlock", Exit.DONE, 0, portDependency, busDependency,
+		Module module = (Module) createModule(Arrays.asList(branch), inVars,
+				Collections.<GroupedVar> emptyList(), "taskCallBlock", false,
+				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
 		return module;

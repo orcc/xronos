@@ -209,7 +209,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		List<GroupedVar> thenOutputs = resources
 				.getBranchThenOutputVars(blockIf);
 		Block thenBlock = (Block) ModuleUtil.createModule(componentList,
-				thenInputs, thenOutputs, "thenBlock", Exit.DONE, 0,
+				thenInputs, thenOutputs, "thenBlock", false, Exit.DONE, 0,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
 		thenBlock.setIDLogical("thenBlock");
@@ -224,7 +224,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			List<GroupedVar> elseOutputs = resources
 					.getBranchElseOutputVars(blockIf);
 			elseBlock = (Block) ModuleUtil.createModule(componentList,
-					elseInputs, elseOutputs, "elseBlock", Exit.DONE, 1,
+					elseInputs, elseOutputs, "elseBlock", false, Exit.DONE, 1,
 					portDependency, busDependency, portGroupDependency,
 					doneBusDependency);
 			thenBlock.setIDLogical("elseBlock");
@@ -232,7 +232,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			elseBlock = (Block) ModuleUtil.createModule(
 					Collections.<Component> emptyList(),
 					Collections.<GroupedVar> emptyList(),
-					Collections.<GroupedVar> emptyList(), "elseBlock",
+					Collections.<GroupedVar> emptyList(), "elseBlock", false,
 					Exit.DONE, 1, portDependency, busDependency,
 					portGroupDependency, doneBusDependency);
 			elseBlock.setIDLogical("elseBlock");

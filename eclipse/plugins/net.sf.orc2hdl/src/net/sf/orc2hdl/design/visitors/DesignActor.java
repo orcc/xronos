@@ -141,7 +141,7 @@ public class DesignActor extends DfVisitor<Object> {
 		/** Build the Task Module which contains all the components **/
 		Module taskModule = (Module) ModuleUtil.createModule(componentsList,
 				Collections.<GroupedVar> emptyList(),
-				Collections.<GroupedVar> emptyList(), taskName + "Body",
+				Collections.<GroupedVar> emptyList(), taskName + "Body", false,
 				Exit.RETURN, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 		/** Create the task **/

@@ -31,6 +31,7 @@ package net.sf.orc2hdl.design.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import net.sf.orcc.ir.Var;
 
@@ -72,6 +73,15 @@ public class GroupedVar {
 		return listGroupVar;
 	}
 
+	public static List<GroupedVar> ListGroupedVar(Set<Var> vars, Integer group) {
+		List<GroupedVar> listGroupVar = new ArrayList<GroupedVar>();
+
+		for (Var var : vars) {
+			listGroupVar.add(new GroupedVar(var, group));
+		}
+		return listGroupVar;
+	}
+
 	public static Boolean VarContainedInList(List<GroupedVar> groupedVarList,
 			Var var) {
 		for (GroupedVar groupedVar : groupedVarList) {
@@ -85,7 +95,7 @@ public class GroupedVar {
 
 	@Override
 	public String toString() {
-		return "["+var.getIndexedName() + ", " + group + "]";
+		return "[" + var.getIndexedName() + ", " + group + "]";
 	}
-	
+
 }

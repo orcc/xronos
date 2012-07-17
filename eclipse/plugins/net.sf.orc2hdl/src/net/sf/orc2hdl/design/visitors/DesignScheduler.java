@@ -32,9 +32,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.And;
@@ -187,6 +189,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 	private Map<State, Var> stateToVar;
 
+	private Map<Branch, List<GroupedVar>> branchInVars;
+
 	public DesignScheduler(ResourceCache resources,
 			Map<Action, Task> actorsTasks, Var currentState) {
 		this.resources = resources;
@@ -199,6 +203,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 		actionInDecisions = new HashMap<Action, Var>();
 		actionOutDecisions = new HashMap<Action, Var>();
 		actionTransitions = new HashMap<Transition, List<Component>>();
+		branchInVars = new HashMap<Branch, List<GroupedVar>>();
 		stateDecision = new HashMap<State, Decision>();
 		pinStatus = new HashMap<net.sf.orcc.df.Port, Var>();
 		portGroupDependency = new HashMap<Port, Integer>();
@@ -283,6 +288,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 		/** Construct the scheduler if body **/
 		Component branchBlock = null;
+		List<GroupedVar> loopInputVar = new ArrayList<GroupedVar>();
 		if (actor.getFsm() == null) {
 			/** Create the action Test for all actions outside the FSM **/
 			createActionTest(actor.getActions());
@@ -295,12 +301,11 @@ public class DesignScheduler extends DfVisitor<Task> {
 			int i = 0;
 			for (State state : actor.getFsm().getStates()) {
 				stateToIndexMap.put(state, i);
-				stateToVar.put(
-						state,
-						IrFactory.eINSTANCE.createVar(
-								IrFactory.eINSTANCE.createTypeInt(32), "s_"
-										+ state.getName(), true, 0));
-
+				Var stateVar = IrFactory.eINSTANCE.createVar(
+						IrFactory.eINSTANCE.createTypeInt(32),
+						"s_" + state.getName(), true, 0);
+				stateToVar.put(state, stateVar);
+				loopInputVar.add(new GroupedVar(stateVar, 0));
 				// Create literal components for each state
 				Component literal = new SimpleConstant(
 						stateToIndexMap.get(state), 32, false);
@@ -335,7 +340,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 		GroupedVar gVarActorSched = new GroupedVar(varActorSched, 0);
 		PortUtil.mapOutDataPorts(trueConstant, gVarActorSched.getAsList(),
 				busDependency, doneBusDependency);
-
+		loopInputVar.add(gVarActorSched);
 		/** Add the constant to the scheduler components **/
 		schedulerComponents.add(trueConstant);
 
@@ -350,10 +355,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 		Loop loop = (Loop) ModuleUtil.createLoop(decisionComponent,
 				Arrays.asList(decisionComponent), gVarActorSched.getAsList(),
 				schedulerLoopComponents,
-				Collections.<Var, List<Var>> emptyMap(),
-				gVarActorSched.getAsList(),
-				Collections.<GroupedVar> emptyList(),
-				gVarActorSched.getAsList(),
+				Collections.<Var, List<Var>> emptyMap(), loopInputVar,
+				Collections.<GroupedVar> emptyList(), loopInputVar,
 				Collections.<GroupedVar> emptyList(), portDependency,
 				busDependency, portGroupDependency, doneBusDependency);
 
@@ -363,7 +366,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 		/** Module of the scheduler **/
 		Module scheduler = (Block) ModuleUtil.createModule(schedulerComponents,
 				Collections.<GroupedVar> emptyList(),
-				Collections.<GroupedVar> emptyList(), "schedulerBody",
+				Collections.<GroupedVar> emptyList(), "schedulerBody", false,
 				Exit.RETURN, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
@@ -534,115 +537,103 @@ public class DesignScheduler extends DfVisitor<Task> {
 		stateDecision.put(state, enableDecision);
 	}
 
-	private Branch createActorFsmBranch(List<State> states) {
-		Branch branch = null;
-		List<State> oldStates = new ArrayList<State>(states);
-
-		for (Iterator<State> iter = oldStates.iterator(); iter.hasNext();) {
-			State state = iter.next();
+	private Module createActorFsmBranch(List<State> states) {
+		List<Component> moduleComponents = new ArrayList<Component>();
+		List<GroupedVar> inVars = new ArrayList<GroupedVar>();
+		Set<Var> mutexVars = new HashSet<Var>();
+		for (State state : states) {
 			Decision decision = stateDecision.get(state);
-			if (iter.hasNext()) {
-				oldStates.remove(state);
-				Branch thenBranch = createActorFsmBranch(oldStates);
-
-				Block thenBlock = (Block) ModuleUtil.createModule(
-						Arrays.asList((Component) thenBranch),
-						Collections.<GroupedVar> emptyList(),
-						Collections.<GroupedVar> emptyList(), "thenBlock",
-						Exit.DONE, 1, portDependency, busDependency,
-						portGroupDependency, doneBusDependency);
-
-				Block elseBlock = (Block) ModuleUtil.createModule(
-						Arrays.asList((Component) branch),
-						Collections.<GroupedVar> emptyList(),
-						Collections.<GroupedVar> emptyList(), "thenBlock",
-						Exit.DONE, 1, portDependency, busDependency,
-						portGroupDependency, doneBusDependency);
-
-				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-						elseBlock, Collections.<GroupedVar> emptyList(),
-						Collections.<GroupedVar> emptyList(), null, "branch",
-						Exit.DONE, portDependency, busDependency,
-						portGroupDependency, doneBusDependency);
-
-			} else {
-				Branch tBranch = createActionTransitionBranch(state
-						.getOutgoing());
-				Block thenBlock = (Block) ModuleUtil.createModule(
-						Arrays.asList((Component) tBranch),
-						Collections.<GroupedVar> emptyList(),
-						Collections.<GroupedVar> emptyList(), "thenBlock",
-						Exit.DONE, 0, portDependency, busDependency,
-						portGroupDependency, doneBusDependency);
-
-				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-						null, Collections.<GroupedVar> emptyList(),
-						Collections.<GroupedVar> emptyList(), null, "branch",
-						Exit.DONE, portDependency, busDependency,
-						portGroupDependency, doneBusDependency);
-
+			Branch thenBranch = createActionTransitionBranch(state
+					.getOutgoing());
+			inVars = branchInVars.get(thenBranch);
+			Block thenBlock = (Block) ModuleUtil.createModule(
+					Arrays.asList((Component) thenBranch), inVars,
+					Collections.<GroupedVar> emptyList(), "elseBlock", false,
+					Exit.DONE, 0, portDependency, busDependency,
+					portGroupDependency, doneBusDependency);
+			inVars.add(new GroupedVar(stateToVar.get(state), 0));
+			Branch stateBranch = (Branch) ModuleUtil.createBranch(decision,
+					thenBlock, null, inVars,
+					Collections.<GroupedVar> emptyList(), null, "ifBranch_"
+							+ state.getName(), null, portDependency,
+					busDependency, portGroupDependency, doneBusDependency);
+			moduleComponents.add(stateBranch);
+			for (GroupedVar gVar : inVars) {
+				Var var = gVar.getVar();
+				mutexVars.add(var);
 			}
 		}
+		List<GroupedVar> mutexBlockInVars = GroupedVar.ListGroupedVar(
+				mutexVars, 0);
+		Module mutexFsmBlock = (Module) ModuleUtil.createModule(
+				moduleComponents, mutexBlockInVars,
+				Collections.<GroupedVar> emptyList(), "mutexFSM_Block", true,
+				Exit.DONE, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
 
-		return branch;
+		return mutexFsmBlock;
 	}
 
 	private Branch createActionTransitionBranch(List<Edge> transitions) {
 		Branch branch = null;
 		List<Edge> oldEdges = new ArrayList<Edge>(transitions);
-		List<Var> currentInputPorts = new ArrayList<Var>();
-		List<Var> previousInputPorts = new ArrayList<Var>();
 
-		for (Iterator<Edge> iter = transitions.iterator(); iter.hasNext();) {
-			Transition transition = (Transition) iter.next();
+		for (Iterator<Edge> iter = oldEdges.iterator(); iter.hasNext();) {
+			Edge edge = iter.next();
+			Transition transition = (Transition) edge;
 			Action action = transition.getAction();
 			// Get The inputs of the branch
-			currentInputPorts.add(actionOutDecisions.get(action));
-			currentInputPorts.add(actionInDecisions.get(action));
+			List<Var> branchInputPorts = new ArrayList<Var>();
+			branchInputPorts.add(actionOutDecisions.get(action));
+			branchInputPorts.add(actionInDecisions.get(action));
 			if (iter.hasNext()) {
-				oldEdges.remove(iter.next());
+				// Update Old edges
+				oldEdges.remove(edge);
 
 				List<Component> comps = actionTransitions.get(transition);
 				Decision decision = (Decision) comps.get(0);
 				Block thenBlock = (Block) comps.get(1);
-				List<Var> inPort = new ArrayList<Var>(currentInputPorts);
-				Collections.reverse(inPort);
 
+				List<Var> inPort = new ArrayList<Var>(branchInputPorts);
+				inPort.add(stateToVar.get(transition.getSource()));
 				Branch elseBranch = createActionTransitionBranch(oldEdges);
-				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
-						previousInputPorts, 0);
+
+				List<GroupedVar> inVars = branchInVars.get(elseBranch);
 				Block elseBlock = (Block) ModuleUtil.createModule(
 						Arrays.asList((Component) elseBranch), inVars,
 						Collections.<GroupedVar> emptyList(), "elseBlock",
-						Exit.DONE, 0, portDependency, busDependency,
+						false, Exit.DONE, 0, portDependency, busDependency,
 						portGroupDependency, doneBusDependency);
 
-				inVars = GroupedVar.ListGroupedVar(inPort, 0);
+				inVars.addAll(GroupedVar.ListGroupedVar(inPort, 0));
 				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
 						elseBlock, inVars,
 						Collections.<GroupedVar> emptyList(), null, "ifBranch_"
 								+ action.getName(), null, portDependency,
 						busDependency, portGroupDependency, doneBusDependency);
 				branch.setIDLogical("ifBranch_" + action.getName());
-				previousInputPorts = inPort;
-
+				branchInVars.put(branch, inVars);
 			} else {
+				// Branch state Target Input Ports
+				Var targetStateVar = stateToVar.get(transition.getTarget());
+				branchInputPorts.add(targetStateVar);
+
 				List<Component> comps = actionTransitions.get(transition);
 				Decision decision = (Decision) comps.get(0);
 
 				Block thenBlock = (Block) comps.get(1);
 
 				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
-						currentInputPorts, 0);
+						branchInputPorts, 0);
+
 				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
 						null, inVars, Collections.<GroupedVar> emptyList(),
 						null, "ifBranch_" + action.getName(), null,
 						portDependency, busDependency, portGroupDependency,
 						doneBusDependency);
 
+				branchInVars.put(branch, inVars);
 				branch.setIDLogical("ifBranch_" + action.getName());
-				previousInputPorts.add(currentInputPorts.get(1));
-				previousInputPorts.add(currentInputPorts.get(0));
 			}
 		}
 
@@ -693,7 +684,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Block elseBlock = (Block) ModuleUtil.createModule(
 						Arrays.asList((Component) branch), inVars,
 						Collections.<GroupedVar> emptyList(), "elseBlock",
-						Exit.DONE, 0, portDependency, busDependency,
+						false, Exit.DONE, 0, portDependency, busDependency,
 						portGroupDependency, doneBusDependency);
 
 				inVars = GroupedVar.ListGroupedVar(inPort, 0);
