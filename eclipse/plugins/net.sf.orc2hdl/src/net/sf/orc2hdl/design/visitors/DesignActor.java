@@ -51,6 +51,7 @@ import net.sf.orc2hdl.design.util.PortUtil;
 import net.sf.orc2hdl.preference.Constants;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Var;
@@ -167,7 +168,13 @@ public class DesignActor extends DfVisitor<Object> {
 			currentState = IrFactory.eINSTANCE.createVarInt("currentState", 32,
 					true, 0);
 			currentState.setGlobal(true);
-			currentState.setValue(0);
+			int i = 0;
+			Map<State,Integer> stateIndex = new HashMap<State,Integer>();
+			for(State state: actor.getFsm().getStates()){
+				stateIndex.put(state, i);
+				i++;
+			}
+			currentState.setValue(stateIndex.get(actor.getFsm().getInitialState()));
 			actor.getStateVars().add(currentState);
 		}
 
