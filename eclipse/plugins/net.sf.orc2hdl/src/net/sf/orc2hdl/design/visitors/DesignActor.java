@@ -174,7 +174,9 @@ public class DesignActor extends DfVisitor<Object> {
 				stateIndex.put(state, i);
 				i++;
 			}
-			currentState.setValue(stateIndex.get(actor.getFsm().getInitialState()));
+			int index = stateIndex.get(actor.getFsm().getInitialState());
+			currentState.setInitialValue(IrFactory.eINSTANCE.createExprInt(index));
+			currentState.setValue(index);
 			actor.getStateVars().add(currentState);
 		}
 
