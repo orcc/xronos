@@ -532,6 +532,10 @@ public class ModuleUtil {
 									targetPort = lbBus.getPeer();
 									sourceBus = outBus;
 									Reg fbReg = loop.createDataRegister();
+									fbReg.getDataPort().setIDLogical(
+											src.getIndexedName());
+									fbReg.getResultBus().setIDLogical(
+											tgt.getIndexedName());
 									Entry entry = fbReg.makeEntry(fbExit);
 									entry.addDependency(fbReg.getDataPort(),
 											new DataDependency(sourceBus));
@@ -548,11 +552,13 @@ public class ModuleUtil {
 					Bus sourceBus = lBus;
 					Latch latch = loop.createDataLatch();
 					Entry latchEntry = latch.makeEntry(initDoneBus.getOwner());
+					latch.getDataPort().setIDLogical(src.getIndexedName());
 					latchEntry.addDependency(latch.getEnablePort(),
 							new ControlDependency(initDoneBus));
 					latchEntry.addDependency(latch.getDataPort(),
 							new DataDependency(sourceBus));
 					sourceBus = latch.getResultBus();
+					sourceBus.setIDLogical(src.getIndexedName());
 
 					Dependency dep = new DataDependency(sourceBus);
 					fbEntry.addDependency(port, dep);
