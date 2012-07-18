@@ -503,7 +503,37 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		PortUtil.mapInDataPorts(block, inVar.getAsList(), portDependency,
 				portGroupDependency);
 
-		GroupedVar outVar = new GroupedVar(load.getTarget().getVariable(), 0);
+		// Check if the load target should be casted
+
+		Var target = load.getTarget().getVariable();
+		int targetSize = target.getType().getSizeInBits();
+
+		if (targetSize > dataSize) {
+			// NOTE: OpenForge does not accept a cast here
+			if (target.getType().isInt()) {
+				target.setType(IrFactory.eINSTANCE.createTypeInt(dataSize));
+			} else if (target.getType().isUint()) {
+				target.setType(IrFactory.eINSTANCE.createTypeUint(dataSize));
+			}
+
+			// Component castComp = new CastOp(targetSize, target.getType()
+			// .isInt());
+			// target = procedure.newTempLocalVariable(
+			// IrFactory.eINSTANCE.createTypeInt(dataSize), "casted_"
+			// + target.getIndexedName() + listIndexes);
+			//
+			// PortUtil.mapInDataPorts(castComp,
+			// (new GroupedVar(target, 0)).getAsList(), portDependency,
+			// portGroupDependency);
+			// PortUtil.mapOutDataPorts(castComp, (new
+			// GroupedVar(load.getTarget()
+			// .getVariable(), 0)).getAsList(), busDependency,
+			// doneBusDependency);
+			// componentList.add(castComp);
+
+		}
+
+		GroupedVar outVar = new GroupedVar(target, 0);
 		PortUtil.mapOutDataPorts(block, outVar.getAsList(), busDependency,
 				doneBusDependency);
 
