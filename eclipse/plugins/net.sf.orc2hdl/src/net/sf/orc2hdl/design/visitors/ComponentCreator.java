@@ -491,38 +491,23 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		memPort.addAccess(read, targetLocation);
 
 		Var indexVar = procedure.newTempLocalVariable(
-				IrFactory.eINSTANCE.createTypeInt(), "index" + listIndexes);
+				IrFactory.eINSTANCE.createTypeInt(dataSize), "index"
+						+ listIndexes);
 		listIndexes++;
-		currentComponent = new CastOp(dataSize, isSigned);
 
-		GroupedVar inVar = new GroupedVar(loadIndexVar, 0);
-		PortUtil.mapInDataPorts(currentComponent, inVar.getAsList(),
-				portDependency, portGroupDependency);
-		// For the moment all indexes are considered 32bits
-		Var castedIndexVar = procedure.newTempLocalVariable(
-				IrFactory.eINSTANCE.createTypeInt(dataSize), "casted_"
-						+ castIndex + "_" + loadIndexVar.getIndexedName());
-
-		GroupedVar outVar = new GroupedVar(castedIndexVar, 0);
-		PortUtil.mapOutDataPorts(currentComponent, outVar.getAsList(),
-				busDependency, doneBusDependency);
-		componentList.add(currentComponent);
-		castIndex++;
-		// add the assign instruction for each index
 		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
-				castedIndexVar);
+				loadIndexVar);
 		doSwitch(assign);
 
-		currentComponent = block;
-		inVar = new GroupedVar(indexVar, 0);
-		PortUtil.mapInDataPorts(currentComponent, inVar.getAsList(),
-				portDependency, portGroupDependency);
+		GroupedVar inVar = new GroupedVar(indexVar, 0);
+		PortUtil.mapInDataPorts(block, inVar.getAsList(), portDependency,
+				portGroupDependency);
 
-		outVar = new GroupedVar(load.getTarget().getVariable(), 0);
-		PortUtil.mapOutDataPorts(currentComponent, outVar.getAsList(),
-				busDependency, doneBusDependency);
+		GroupedVar outVar = new GroupedVar(load.getTarget().getVariable(), 0);
+		PortUtil.mapOutDataPorts(block, outVar.getAsList(), busDependency,
+				doneBusDependency);
 
-		componentList.add(currentComponent);
+		componentList.add(block);
 
 		return null;
 	}

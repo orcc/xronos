@@ -270,6 +270,7 @@ public class Orc2HDL extends AbstractBackend {
 			transformations.add(new UnitImporter());
 			transformations.add(new UnaryListRemoval());
 			transformations.add(new StoreOnceTransformation());
+			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
 			transformations.add(new RepeatPattern());
 			transformations.add(new GlobalArrayInitializer(true));

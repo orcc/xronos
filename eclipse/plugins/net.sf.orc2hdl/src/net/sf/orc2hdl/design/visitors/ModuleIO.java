@@ -46,6 +46,7 @@ import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.Var;
@@ -229,6 +230,19 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 			}
 		}
 
+		return null;
+	}
+
+	@Override
+	public Void caseInstLoad(InstLoad load) {
+		Var loadIndexVar = null;
+		List<Expression> indexes = load.getIndexes();
+		for (Expression expr : new ArrayList<Expression>(indexes)) {
+			loadIndexVar = ((ExprVar) expr).getUse().getVariable();
+		}
+		if (definedInOtherBlock(loadIndexVar, currentBlockBasic)) {
+			blkInputVars.get(currentBlock).add(loadIndexVar);
+		}
 		return null;
 	}
 
