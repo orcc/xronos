@@ -22,7 +22,7 @@
 package net.sf.openforge.lim.graph;
 
 import net.sf.openforge.lim.Loop;
-import net.sf.openforge.lim.Reg;
+import net.sf.openforge.lim.primitive.Reg;
 
 /**
  * In a {@link LXGraph}, FeedbackRegSourceNode is one of the two nodes that are

@@ -29,7 +29,7 @@ import java.util.Map.Entry;
 
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Loop;
-import net.sf.openforge.lim.Reg;
+import net.sf.openforge.lim.primitive.Reg;
 
 /**
  * A sub-graph for a {@link Loop} in an {@link LXGraph}. This specialization] of

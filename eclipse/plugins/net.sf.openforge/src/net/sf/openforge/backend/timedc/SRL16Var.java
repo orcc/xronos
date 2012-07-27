@@ -23,7 +23,7 @@ package net.sf.openforge.backend.timedc;
 
 import java.io.PrintStream;
 
-import net.sf.openforge.lim.SRL16;
+import net.sf.openforge.lim.primitive.SRL16;
 
 /**
  * SRL16Var maintains the stateful variables for an SRL16. This includes an

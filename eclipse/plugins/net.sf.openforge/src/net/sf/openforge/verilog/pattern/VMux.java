@@ -26,10 +26,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import net.sf.openforge.lim.EncodedMux;
-import net.sf.openforge.lim.Mux;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.op.ShortcutIfElseOp;
+import net.sf.openforge.lim.primitive.EncodedMux;
+import net.sf.openforge.lim.primitive.Mux;
 import net.sf.openforge.verilog.model.Expression;
 import net.sf.openforge.verilog.model.Net;
 import net.sf.openforge.verilog.model.NetFactory;

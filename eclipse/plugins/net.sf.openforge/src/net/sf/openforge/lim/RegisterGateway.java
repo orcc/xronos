@@ -23,6 +23,9 @@ package net.sf.openforge.lim;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Or;
+
 /**
  * Acts as a gateway for register read/writes into and out of a procedure.
  * 

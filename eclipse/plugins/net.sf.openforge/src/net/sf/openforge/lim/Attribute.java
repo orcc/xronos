@@ -21,6 +21,8 @@
 
 package net.sf.openforge.lim;
 
+import net.sf.openforge.lim.primitive.Reg;
+
 /**
  * Attribute is a class which ties together the correct syntax for Attributes to
  * be applied to components directly instantiated in the output Verilog.

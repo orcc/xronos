@@ -38,10 +38,10 @@ import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Latency;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.ResourceDependency;
 import net.sf.openforge.lim.Scoreboard;
 import net.sf.openforge.lim.Stallboard;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.schedule.block.ProcessTracker;
 import net.sf.openforge.schedule.block._block;
 

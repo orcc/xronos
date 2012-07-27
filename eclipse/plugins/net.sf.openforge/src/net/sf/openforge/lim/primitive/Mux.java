@@ -18,7 +18,7 @@
  *
  * 
  */
-package net.sf.openforge.lim;
+package net.sf.openforge.lim.primitive;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,6 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitor;
 import net.sf.openforge.report.FPGAResource;
 
 /**

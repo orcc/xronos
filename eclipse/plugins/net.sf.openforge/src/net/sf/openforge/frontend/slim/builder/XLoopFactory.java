@@ -35,8 +35,8 @@ import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.WhileBody;
+import net.sf.openforge.lim.primitive.Reg;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;

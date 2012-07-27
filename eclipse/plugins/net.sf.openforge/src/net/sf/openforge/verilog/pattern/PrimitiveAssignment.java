@@ -48,7 +48,7 @@ public abstract class PrimitiveAssignment extends ExpressionAssignment {
 	//
 
 	public static final class And extends PrimitiveAssignment {
-		public And(net.sf.openforge.lim.And and) {
+		public And(net.sf.openforge.lim.primitive.And and) {
 			super(and);
 		}
 
@@ -64,7 +64,7 @@ public abstract class PrimitiveAssignment extends ExpressionAssignment {
 	} // class And
 
 	public static final class Or extends PrimitiveAssignment {
-		public Or(net.sf.openforge.lim.Or or) {
+		public Or(net.sf.openforge.lim.primitive.Or or) {
 			super(or);
 		}
 
@@ -80,7 +80,7 @@ public abstract class PrimitiveAssignment extends ExpressionAssignment {
 	} // class Or
 
 	public static final class Not extends PrimitiveAssignment {
-		public Not(net.sf.openforge.lim.Not not) {
+		public Not(net.sf.openforge.lim.primitive.Not not) {
 			super(not);
 		}
 

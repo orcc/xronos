@@ -31,159 +31,54 @@ import java.util.Set;
 
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.lim.memory.LogicalMemory;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.naming.ID;
 
 /**
  * LimDRC does Design-Rule-Checking for a lim prior to Scheduling...
  * 
  * @author cschanck
+ * @author Endri Bezati
  * @version $Id: LimDRC.java 2 2005-06-09 20:00:48Z imiller $
  * 
  * @see Visitable
  */
 public class LimDRC extends FilteredVisitor {
 
-	private Map failures = new LinkedHashMap();
+	
+	private Map<Bus,String> busFailures = new LinkedHashMap<Bus,String>();
+	private Map<Port,String> portFailures = new LinkedHashMap<Port,String>();
+	
+	/**
+	 * This is a big FIXME. Synchronous set/reset Regs are often created with
+	 * the internalResetPort or setPort marked "isUsed", but unconnected.
+	 * 
+	 * @param port
+	 *            any port
+	 * 
+	 * @return true if the port is the set port or internal reset port of a Reg
+	 */
+	private static boolean isWeirdRegPort(Port port) {
+		if (port.getOwner() instanceof Reg) {
+			final Reg reg = (Reg) port.getOwner();
+			return (port == reg.getInternalResetPort())
+					|| (port == reg.getSetPort());
+		} else if (port.getOwner() instanceof Latch) {
+			final Latch latch = (Latch) port.getOwner();
+			// Go port of a latch needs no connection and really is
+			// not used, but gets set to 'used' during scheduling
+			// because we say it consumes a GO.
+			return (port == latch.getGoPort());
+		}
+
+		return false;
+	}
+	
+
+
+	
 	private Set<Block> procedureBodies = new HashSet<Block>();
-
-	/**
-	 * DOCUMENT ME!
-	 * 
-	 * @return DOCUMENT ME!
-	 */
-	public Map getFailures() {
-		return failures;
-	}
-
-	/**
-	 * DOCUMENT ME!
-	 */
-	public void dumpFailures() {
-		if (!failures.isEmpty()) {
-			// StringBuffer buf = new StringBuffer();
-
-			EngineThread.getGenericJob().warn(
-					"internal integrity check failure:");
-			EngineThread.getGenericJob().inc();
-			for (Iterator it = failures.values().iterator(); it.hasNext();) {
-				EngineThread.getGenericJob().info((String) it.next());
-			}
-
-			EngineThread.getGenericJob().dec();
-		}
-	}
-
-	/**
-	 * DOCUMENT ME!
-	 * 
-	 * @param design
-	 *            DOCUMENT ME!
-	 */
-	@Override
-	public void visit(Design design) {
-		for (Iterator iter = design.getLogicalMemories().iterator(); iter
-				.hasNext();) {
-			LogicalMemory logicalMem = (LogicalMemory) iter.next();
-			filterAny(logicalMem.getStructuralMemory());
-			traverseExtraModule(logicalMem.getStructuralMemory());
-		}
-
-		for (Iterator iter = design.getPins().iterator(); iter.hasNext();) {
-			filterAny((Pin) iter.next());
-		}
-
-		super.visit(design);
-	}
-
-	/**
-	 * DOCUMENT ME!
-	 * 
-	 * @param proc
-	 *            DOCUMENT ME!
-	 */
-	@Override
-	public void visit(Procedure proc) {
-		procedureBodies.add(proc.getBody());
-		super.visit(proc);
-	}
-
-	/**
-	 * DOCUMENT ME!
-	 * 
-	 * @param call
-	 *            DOCUMENT ME!
-	 */
-	@Override
-	public void visit(Call call) {
-		super.visit(call);
-
-		// Ensure that all call/procedure buses and ports agree on
-		// their 'usedness'
-		for (Port port : call.getPorts()) {
-			Port procPort = call.getProcedurePort(port);
-			if ((port != null) && (procPort != null)
-					&& (port.isUsed() != procPort.isUsed())) {
-				failures.put(port,
-						"Call port and procedure port disagree on used-ness.  Auto Fixing.");
-				port.setUsed(true);
-				procPort.setUsed(true);
-			}
-
-			// XXX FIXME. Why is there disagreement???? I commented
-			// this out for now, but it should probably be fixed anyway!!!
-			// assert (port != null && procPort != null) :
-			// "DISAGREEMENT between call interface and procedure interface";
-		}
-
-		for (Bus bus : call.getBuses()) {
-			Bus procBus = call.getProcedureBus(bus);
-			if ((bus != null) && (procBus != null)
-					&& (bus.isUsed() != procBus.isUsed())) {
-				failures.put(bus,
-						"Call bus and procedure bus disagree on used-ness.  Auto Fixing.");
-				bus.setUsed(true);
-				procBus.setUsed(true);
-			}
-
-			// XXX FIXME. Why is there disagreement???? I commented
-			// this out for now, but it should probably be fixed anyway!!!
-			// assert (bus != null && procBus != null) :
-			// "DISAGREEMENT between call interface and procedure interface";
-		}
-	}
-
-	/**
-	 * Recursively calls filterAny on all components of the given Module. Meant
-	 * to be used for Modules contained in the design which are not defined in
-	 * the Visitor interface.
-	 */
-	public void traverseExtraModule(Module mod) {
-		for (Component c : mod.getComponents()) {
-			filterAny(c);
-			if (c instanceof Module) {
-				traverseExtraModule((Module) c);
-			}
-		}
-	}
-
-	/**
-	 * DOCUMENT ME!
-	 * 
-	 * @param c
-	 *            DOCUMENT ME!
-	 */
-	@Override
-	public void filterAny(Component c) {
-		// Job.info("DRC Checking: "+ID.showLogical(c));
-		if (_lim.db) {
-			_lim.ln(_lim.DRC, "DRC Checking: " + ID.showLogical(c));
-		}
-
-		drcBuses(c);
-		drcPorts(c);
-		super.filterAny(c);
-	}
-
+	
 	/**
 	 * Apply design rule checks to the Bus' of the given {@link Component}.
 	 * Current checks include:
@@ -205,7 +100,7 @@ public class LimDRC extends FilteredVisitor {
 			if (b.isUsed()) {
 				// does it have a value
 				if (b.getValue() == null) {
-					failures.put(b, "Bus " + ID.showLogical(b)
+					busFailures.put(b, "Bus " + ID.showLogical(b)
 							+ " belonging to " + ID.showLogical(c)
 							+ " Lacks Value");
 					if (_lim.db) {
@@ -253,7 +148,7 @@ public class LimDRC extends FilteredVisitor {
 				// does it have a value
 				final boolean portHasValue = (port.getValue() != null);
 				if (!portHasValue && !isWeirdRegPort(port)) {
-					failures.put(port, "Port " + ID.showLogical(port)
+					portFailures.put(port, "Port " + ID.showLogical(port)
 							+ " belonging to " + ID.showLogical(component)
 							+ " Lacks Value");
 					if (_lim.db) {
@@ -280,7 +175,7 @@ public class LimDRC extends FilteredVisitor {
 																		// ports
 				{
 					if (!isWeirdRegPort(port)) {
-						failures.put(port, "Port " + ID.showLogical(port)
+						portFailures.put(port, "Port " + ID.showLogical(port)
 								+ " belonging to " + ID.showLogical(component)
 								+ " Has No Bus");
 						if (_lim.db) {
@@ -311,7 +206,7 @@ public class LimDRC extends FilteredVisitor {
 							// bit. All should come from real buses by this
 							// point.
 							if (bit == Bit.CARE) {
-								failures.put(port, "Bit " + i + " of Port "
+								portFailures.put(port, "Bit " + i + " of Port "
 										+ ID.showLogical(port)
 										+ " is the generic care bit");
 								if (_lim.db) {
@@ -327,7 +222,7 @@ public class LimDRC extends FilteredVisitor {
 								int position = bit.getPosition();
 								if (position >= bit.getOwner().getValue()
 										.getSize()) {
-									failures.put(
+									portFailures.put(
 											port,
 											"Bit "
 													+ i
@@ -357,27 +252,152 @@ public class LimDRC extends FilteredVisitor {
 	}
 
 	/**
-	 * This is a big FIXME. Synchronous set/reset Regs are often created with
-	 * the internalResetPort or setPort marked "isUsed", but unconnected.
-	 * 
-	 * @param port
-	 *            any port
-	 * 
-	 * @return true if the port is the set port or internal reset port of a Reg
+	 * DOCUMENT ME!
 	 */
-	private static boolean isWeirdRegPort(Port port) {
-		if (port.getOwner() instanceof Reg) {
-			final Reg reg = (Reg) port.getOwner();
-			return (port == reg.getInternalResetPort())
-					|| (port == reg.getSetPort());
-		} else if (port.getOwner() instanceof Latch) {
-			final Latch latch = (Latch) port.getOwner();
-			// Go port of a latch needs no connection and really is
-			// not used, but gets set to 'used' during scheduling
-			// because we say it consumes a GO.
-			return (port == latch.getGoPort());
+	public void dumpFailures() {
+		if (!busFailures.isEmpty()) {
+			// StringBuffer buf = new StringBuffer();
+
+			EngineThread.getGenericJob().warn(
+					"internal integrity check failure:");
+			EngineThread.getGenericJob().inc();
+			for (Iterator<String> it = busFailures.values().iterator(); it.hasNext();) {
+				EngineThread.getGenericJob().info((String) it.next());
+			}
+
+			EngineThread.getGenericJob().dec();
+		}
+		
+		if (!portFailures.isEmpty()) {
+			// StringBuffer buf = new StringBuffer();
+
+			EngineThread.getGenericJob().warn(
+					"internal integrity check failure:");
+			EngineThread.getGenericJob().inc();
+			for (Iterator<String> it = portFailures.values().iterator(); it.hasNext();) {
+				EngineThread.getGenericJob().info((String) it.next());
+			}
+
+			EngineThread.getGenericJob().dec();
+		}
+	}
+
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param c
+	 *            DOCUMENT ME!
+	 */
+	@Override
+	public void filterAny(Component c) {
+		// Job.info("DRC Checking: "+ID.showLogical(c));
+		if (_lim.db) {
+			_lim.ln(_lim.DRC, "DRC Checking: " + ID.showLogical(c));
 		}
 
-		return false;
+		drcBuses(c);
+		drcPorts(c);
+		super.filterAny(c);
+	}
+
+	public Map<Bus,String> getBusFailures() {
+		return busFailures;
+	}
+
+	public Map<Port,String> getPortFailures() {
+		return portFailures;
+	}
+
+	/**
+	 * Recursively calls filterAny on all components of the given Module. Meant
+	 * to be used for Modules contained in the design which are not defined in
+	 * the Visitor interface.
+	 */
+	public void traverseExtraModule(Module mod) {
+		for (Component c : mod.getComponents()) {
+			filterAny(c);
+			if (c instanceof Module) {
+				traverseExtraModule((Module) c);
+			}
+		}
+	}
+
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param call
+	 *            DOCUMENT ME!
+	 */
+	@Override
+	public void visit(Call call) {
+		super.visit(call);
+
+		// Ensure that all call/procedure buses and ports agree on
+		// their 'usedness'
+		for (Port port : call.getPorts()) {
+			Port procPort = call.getProcedurePort(port);
+			if ((port != null) && (procPort != null)
+					&& (port.isUsed() != procPort.isUsed())) {
+				portFailures.put(port,
+						"Call port and procedure port disagree on used-ness.  Auto Fixing.");
+				port.setUsed(true);
+				procPort.setUsed(true);
+			}
+
+			// XXX FIXME. Why is there disagreement???? I commented
+			// this out for now, but it should probably be fixed anyway!!!
+			// assert (port != null && procPort != null) :
+			// "DISAGREEMENT between call interface and procedure interface";
+		}
+
+		for (Bus bus : call.getBuses()) {
+			Bus procBus = call.getProcedureBus(bus);
+			if ((bus != null) && (procBus != null)
+					&& (bus.isUsed() != procBus.isUsed())) {
+				busFailures.put(bus,
+						"Call bus and procedure bus disagree on used-ness.  Auto Fixing.");
+				bus.setUsed(true);
+				procBus.setUsed(true);
+			}
+
+			// XXX FIXME. Why is there disagreement???? I commented
+			// this out for now, but it should probably be fixed anyway!!!
+			// assert (bus != null && procBus != null) :
+			// "DISAGREEMENT between call interface and procedure interface";
+		}
+	}
+
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param design
+	 *            DOCUMENT ME!
+	 */
+	@Override
+	public void visit(Design design) {
+		for (Iterator<LogicalMemory> iter = design.getLogicalMemories().iterator(); iter
+				.hasNext();) {
+			LogicalMemory logicalMem = (LogicalMemory) iter.next();
+			filterAny(logicalMem.getStructuralMemory());
+			traverseExtraModule(logicalMem.getStructuralMemory());
+		}
+
+		for (Iterator<Pin> iter = design.getPins().iterator(); iter.hasNext();) {
+			filterAny((Pin) iter.next());
+		}
+
+		super.visit(design);
+	}
+
+	/**
+	 * DOCUMENT ME!
+	 * 
+	 * @param proc
+	 *            DOCUMENT ME!
+	 */
+	@Override
+	public void visit(Procedure proc) {
+		procedureBodies.add(proc.getBody());
+		super.visit(proc);
 	}
 }

@@ -33,14 +33,14 @@ import net.sf.openforge.lim.DefaultVisitor;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.GlobalReset;
 import net.sf.openforge.lim.Referenceable;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Register;
 import net.sf.openforge.lim.RegisterWrite;
-import net.sf.openforge.lim.SRL16;
 import net.sf.openforge.lim.UnexpectedVisitationException;
 import net.sf.openforge.lim.Visitable;
 import net.sf.openforge.lim.memory.MemoryRead;
 import net.sf.openforge.lim.memory.MemoryWrite;
+import net.sf.openforge.lim.primitive.Reg;
+import net.sf.openforge.lim.primitive.SRL16;
 
 /**
  * This class is responsible for finding all the nodes in the LIM which maintain

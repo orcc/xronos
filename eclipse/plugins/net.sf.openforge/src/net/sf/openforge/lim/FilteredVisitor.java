@@ -66,6 +66,14 @@ import net.sf.openforge.lim.op.ShortcutIfElseOp;
 import net.sf.openforge.lim.op.SubtractOp;
 import net.sf.openforge.lim.op.TimingOp;
 import net.sf.openforge.lim.op.XorOp;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.EncodedMux;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Primitive;
+import net.sf.openforge.lim.primitive.Reg;
+import net.sf.openforge.lim.primitive.SRL16;
 
 /**
  * * ContainmentVisitor provides an implementation of the Visitor interface

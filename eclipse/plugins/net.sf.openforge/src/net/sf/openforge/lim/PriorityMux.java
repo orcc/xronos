@@ -28,6 +28,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.lim.primitive.EncodedMux;
+import net.sf.openforge.lim.primitive.Or;
+
 /**
  * PriorityMux is a {@link Module} composed of a tree of 2-1 {@link EncodedMux
  * EncodedMuxes}, which protects against any problems resulting from multiple

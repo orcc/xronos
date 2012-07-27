@@ -46,10 +46,8 @@ import net.sf.openforge.lim.HeapRead;
 import net.sf.openforge.lim.HeapWrite;
 import net.sf.openforge.lim.InBuf;
 import net.sf.openforge.lim.Latch;
-import net.sf.openforge.lim.Mux;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Register;
 import net.sf.openforge.lim.RegisterRead;
 import net.sf.openforge.lim.RegisterWrite;
@@ -92,6 +90,8 @@ import net.sf.openforge.lim.op.RightShiftUnsignedOp;
 import net.sf.openforge.lim.op.SubtractOp;
 import net.sf.openforge.lim.op.UnaryOp;
 import net.sf.openforge.lim.op.XorOp;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Reg;
 
 /**
  * <code>ObjectResolver</code> maps out the potential flow of pointer values

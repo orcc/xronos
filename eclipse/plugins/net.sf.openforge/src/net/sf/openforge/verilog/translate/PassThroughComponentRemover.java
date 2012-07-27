@@ -40,7 +40,6 @@ import net.sf.openforge.lim.PinRead;
 import net.sf.openforge.lim.PinReferee;
 import net.sf.openforge.lim.PinStateChange;
 import net.sf.openforge.lim.PinWrite;
-import net.sf.openforge.lim.Primitive;
 import net.sf.openforge.lim.Procedure;
 import net.sf.openforge.lim.Scoreboard;
 import net.sf.openforge.lim.UnexpectedVisitationException;
@@ -48,6 +47,7 @@ import net.sf.openforge.lim.Visitable;
 import net.sf.openforge.lim.io.SimplePinRead;
 import net.sf.openforge.lim.memory.MemoryRead;
 import net.sf.openforge.lim.memory.MemoryWrite;
+import net.sf.openforge.lim.primitive.Primitive;
 
 /**
  * PassThroughComponentRemover visits a physically connected LIM. It eliminates

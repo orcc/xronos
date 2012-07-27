@@ -16,7 +16,7 @@
 
 package net.sf.openforge.lim.graph;
 
-import net.sf.openforge.lim.Reg;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.graphviz.Record;
 
 /**

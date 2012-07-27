@@ -18,12 +18,18 @@
  *
  * 
  */
-package net.sf.openforge.lim;
+package net.sf.openforge.lim.primitive;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitor;
 
 /**
  * An Encoded Mux accepts n data signals and a select signal which is m bits

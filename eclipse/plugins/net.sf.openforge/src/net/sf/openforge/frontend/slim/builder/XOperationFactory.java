@@ -23,7 +23,6 @@ import java.util.List;
 
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.app.GenericJob;
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
@@ -33,7 +32,6 @@ import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.HeapRead;
 import net.sf.openforge.lim.HeapWrite;
 import net.sf.openforge.lim.OffsetMemoryAccess;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
@@ -65,6 +63,8 @@ import net.sf.openforge.lim.op.RightShiftUnsignedOp;
 import net.sf.openforge.lim.op.SimpleConstant;
 import net.sf.openforge.lim.op.SubtractOp;
 import net.sf.openforge.lim.op.XorOp;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Or;
 import net.sf.openforge.util.MathStuff;
 
 import org.w3c.dom.Element;

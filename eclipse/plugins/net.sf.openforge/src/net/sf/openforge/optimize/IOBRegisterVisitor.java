@@ -40,14 +40,14 @@ import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.OutputPin;
 import net.sf.openforge.lim.Pin;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Primitive;
-import net.sf.openforge.lim.Reg;
-import net.sf.openforge.lim.SRL16;
 import net.sf.openforge.lim.Switch;
 import net.sf.openforge.lim.UntilBody;
 import net.sf.openforge.lim.WhileBody;
 import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
 import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
+import net.sf.openforge.lim.primitive.Primitive;
+import net.sf.openforge.lim.primitive.Reg;
+import net.sf.openforge.lim.primitive.SRL16;
 import net.sf.openforge.util.naming.ID;
 
 /**

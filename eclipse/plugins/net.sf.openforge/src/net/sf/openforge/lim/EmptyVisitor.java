@@ -67,10 +67,17 @@ import net.sf.openforge.lim.op.ShortcutIfElseOp;
 import net.sf.openforge.lim.op.SubtractOp;
 import net.sf.openforge.lim.op.TimingOp;
 import net.sf.openforge.lim.op.XorOp;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.EncodedMux;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
+import net.sf.openforge.lim.primitive.SRL16;
 
 /**
- * This class is a visitor class which does nothing for every vistable method.
- * It is useful for everriding certain elements for double-dispatch analysis.
+ * This class is a visitor class which does nothing for every visitable method.
+ * It is useful for overriding certain elements for double-dispatch analysis.
  * {@link Visitable Visitable}
  * 
  * 
@@ -80,7 +87,6 @@ import net.sf.openforge.lim.op.XorOp;
  * @see Visitable
  */
 public class EmptyVisitor implements Visitor {
-	static final String _RCS_ = "$Rev: 88 $";
 
 	@Override
 	public void visit(Design design) {

@@ -24,17 +24,17 @@ package net.sf.openforge.lim.memory;
 import java.util.Iterator;
 import java.util.List;
 
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Arbitratable;
 import net.sf.openforge.lim.Bus;
-import net.sf.openforge.lim.Mux;
-import net.sf.openforge.lim.Not;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Value;
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.schedule.GlobalConnector;
 
 /**

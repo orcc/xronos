@@ -27,7 +27,7 @@ import java.util.Set;
 
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.app.GenericJob;
-import net.sf.openforge.lim.SRL16;
+import net.sf.openforge.lim.primitive.SRL16;
 import net.sf.openforge.util.naming.ID;
 import net.sf.openforge.verilog.mapping.MappedModule;
 import net.sf.openforge.verilog.mapping.MappingName;

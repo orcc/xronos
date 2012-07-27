@@ -18,7 +18,14 @@
  *
  * 
  */
-package net.sf.openforge.lim;
+package net.sf.openforge.lim.primitive;
+
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Component;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
 
 /**
  * A Primitive is a low level component that performs a simple logic function.

@@ -28,6 +28,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.naming.ID;
 
 /**

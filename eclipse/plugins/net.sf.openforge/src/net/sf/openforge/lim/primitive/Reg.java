@@ -19,13 +19,22 @@
  * 
  */
 
-package net.sf.openforge.lim;
+package net.sf.openforge.lim.primitive;
 
 import java.util.Collections;
 import java.util.Map;
 
 import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.app.project.OptionBoolean;
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Emulatable;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Latency;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitable;
+import net.sf.openforge.lim.Visitor;
 import net.sf.openforge.report.FPGAResource;
 import net.sf.openforge.util.SizedInteger;
 

@@ -29,11 +29,11 @@ import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Gateway;
 import net.sf.openforge.lim.Latency;
-import net.sf.openforge.lim.Mux;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Visitor;
 import net.sf.openforge.lim.op.CastOp;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Or;
 import net.sf.openforge.util.naming.ID;
 
 /**

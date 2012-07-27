@@ -36,11 +36,11 @@ import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Latency;
 import net.sf.openforge.lim.Module;
-import net.sf.openforge.lim.Mux;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Or;
 
 /**
  * EntrySchedule derives the scheduled {@link Bus} for each {@link Port}

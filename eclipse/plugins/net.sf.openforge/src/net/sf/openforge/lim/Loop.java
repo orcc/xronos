@@ -39,6 +39,7 @@ import net.sf.openforge.app.project.OptionInt;
 import net.sf.openforge.lim.memory.AbsoluteMemoryRead;
 import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
 import net.sf.openforge.lim.memory.LocationConstant;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.naming.IDSourceInfo;
 
 /**

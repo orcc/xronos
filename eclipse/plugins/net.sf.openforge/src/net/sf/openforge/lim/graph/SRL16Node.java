@@ -16,7 +16,7 @@
 
 package net.sf.openforge.lim.graph;
 
-import net.sf.openforge.lim.SRL16;
+import net.sf.openforge.lim.primitive.SRL16;
 
 /**
  * SRL16Node.java

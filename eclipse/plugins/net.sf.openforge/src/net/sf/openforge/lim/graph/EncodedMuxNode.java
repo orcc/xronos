@@ -17,7 +17,7 @@
 package net.sf.openforge.lim.graph;
 
 import net.sf.openforge.lim.Component;
-import net.sf.openforge.lim.EncodedMux;
+import net.sf.openforge.lim.primitive.EncodedMux;
 import net.sf.openforge.util.graphviz.Record;
 
 /**

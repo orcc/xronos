@@ -35,6 +35,9 @@ import net.sf.openforge.lim.memory.EndianSwapper;
 import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.schedule.GlobalConnector;
 
 /**

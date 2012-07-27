@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Branch;
 import net.sf.openforge.lim.Bus;
@@ -52,6 +51,7 @@ import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.op.EqualsOp;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.lim.primitive.And;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.GroupedVar;

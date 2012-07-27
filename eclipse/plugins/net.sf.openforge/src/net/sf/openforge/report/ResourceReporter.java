@@ -24,6 +24,7 @@ import java.util.*;
 
 import net.sf.openforge.lim.*;
 import net.sf.openforge.lim.memory.*;
+import net.sf.openforge.lim.primitive.Primitive;
 
 /**
  * A visitor that travserses through a Design and stores resources it discovers

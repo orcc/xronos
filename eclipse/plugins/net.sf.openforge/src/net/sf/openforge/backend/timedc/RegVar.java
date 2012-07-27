@@ -23,7 +23,7 @@ package net.sf.openforge.backend.timedc;
 
 import java.io.PrintStream;
 
-import net.sf.openforge.lim.Reg;
+import net.sf.openforge.lim.primitive.Reg;
 
 /**
  * RegVar maintains all the stateful variables for a simple flip-flop. The

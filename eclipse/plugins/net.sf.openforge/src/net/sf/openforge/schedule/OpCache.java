@@ -28,15 +28,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Latch;
-import net.sf.openforge.lim.Mux;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Scoreboard;
 import net.sf.openforge.lim.Stallboard;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.optimize.constant.TwoPassPartialConstant;
 
 /**

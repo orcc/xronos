@@ -20,6 +20,7 @@
  */
 package net.sf.openforge.lim;
 
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.naming.ID;
 
 /**

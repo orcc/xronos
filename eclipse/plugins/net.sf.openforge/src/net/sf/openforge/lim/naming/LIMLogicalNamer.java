@@ -32,7 +32,6 @@ import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.app.project.Option;
 import net.sf.openforge.app.project.OptionBoolean;
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.ArrayRead;
 import net.sf.openforge.lim.ArrayWrite;
 import net.sf.openforge.lim.Block;
@@ -43,7 +42,6 @@ import net.sf.openforge.lim.CodeLabel;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Decision;
 import net.sf.openforge.lim.Design;
-import net.sf.openforge.lim.EncodedMux;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.FilteredVisitor;
 import net.sf.openforge.lim.ForBody;
@@ -54,9 +52,6 @@ import net.sf.openforge.lim.Kicker;
 import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.Module;
-import net.sf.openforge.lim.Mux;
-import net.sf.openforge.lim.Not;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Pin;
 import net.sf.openforge.lim.PinRead;
@@ -66,13 +61,11 @@ import net.sf.openforge.lim.PinWrite;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.PriorityMux;
 import net.sf.openforge.lim.Procedure;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Register;
 import net.sf.openforge.lim.RegisterGateway;
 import net.sf.openforge.lim.RegisterRead;
 import net.sf.openforge.lim.RegisterReferee;
 import net.sf.openforge.lim.RegisterWrite;
-import net.sf.openforge.lim.SRL16;
 import net.sf.openforge.lim.Scoreboard;
 import net.sf.openforge.lim.Switch;
 import net.sf.openforge.lim.Task;
@@ -130,6 +123,13 @@ import net.sf.openforge.lim.op.ShortcutIfElseOp;
 import net.sf.openforge.lim.op.SubtractOp;
 import net.sf.openforge.lim.op.TimingOp;
 import net.sf.openforge.lim.op.XorOp;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.EncodedMux;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
+import net.sf.openforge.lim.primitive.SRL16;
 import net.sf.openforge.util.naming.ID;
 import net.sf.openforge.util.naming.IDDb;
 import net.sf.openforge.util.naming.IDSourceInfo;
@@ -1166,7 +1166,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	}
 
 	/**
-	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Reg)
+	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.primitive.Reg)
 	 */
 	@Override
 	public void visit(Reg reg) {
@@ -1192,7 +1192,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	}
 
 	/**
-	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Mux)
+	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.primitive.Mux)
 	 */
 	@Override
 	public void visit(Mux m) {
@@ -1207,7 +1207,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	}
 
 	/**
-	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.EncodedMux)
+	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.primitive.EncodedMux)
 	 */
 	@Override
 	public void visit(EncodedMux m) {
@@ -1237,7 +1237,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	}
 
 	/**
-	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.And)
+	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.primitive.And)
 	 */
 	@Override
 	public void visit(And a) {
@@ -1252,7 +1252,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	}
 
 	/**
-	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Not)
+	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.primitive.Not)
 	 */
 	@Override
 	public void visit(Not n) {
@@ -1267,7 +1267,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	}
 
 	/**
-	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.Or)
+	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.primitive.Or)
 	 */
 	@Override
 	public void visit(Or o) {
@@ -1597,7 +1597,7 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	}
 
 	/**
-	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.SRL16)
+	 * @see net.sf.openforge.lim.Visitor#visit(net.sf.openforge.lim.primitive.SRL16)
 	 */
 	@Override
 	public void visit(SRL16 srl16) {

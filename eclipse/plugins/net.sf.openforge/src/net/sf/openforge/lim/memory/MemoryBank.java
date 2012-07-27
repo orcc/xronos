@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Exit;
@@ -41,6 +40,7 @@ import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.LeftShiftOp;
 import net.sf.openforge.lim.op.RightShiftUnsignedOp;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.lim.primitive.And;
 
 /**
  * MemoryBank is an atomic memory element and may be single or dual ported. This

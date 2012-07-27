@@ -27,6 +27,7 @@ import java.util.List;
 import net.sf.openforge.lim.memory.MemoryReferee;
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.schedule.GlobalConnector;
 
 /**

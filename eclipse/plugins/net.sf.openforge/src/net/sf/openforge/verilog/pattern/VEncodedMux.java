@@ -25,7 +25,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import net.sf.openforge.lim.EncodedMux;
+import net.sf.openforge.lim.primitive.EncodedMux;
 import net.sf.openforge.verilog.model.Assign;
 import net.sf.openforge.verilog.model.BinaryNumber;
 import net.sf.openforge.verilog.model.CaseBlock;

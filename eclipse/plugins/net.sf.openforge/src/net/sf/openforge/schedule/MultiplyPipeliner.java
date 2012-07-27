@@ -35,9 +35,9 @@ import net.sf.openforge.lim.Dependency;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Exit;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.ResetDependency;
 import net.sf.openforge.lim.op.MultiplyOp;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.naming.ID;
 
 /**

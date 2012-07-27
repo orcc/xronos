@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import net.sf.openforge.lim.Reg;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.verilog.mapping.MappedModule;
 import net.sf.openforge.verilog.model.Always;
 import net.sf.openforge.verilog.model.Assign;

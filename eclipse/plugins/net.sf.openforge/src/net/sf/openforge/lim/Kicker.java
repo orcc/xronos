@@ -21,6 +21,10 @@
 
 package net.sf.openforge.lim;
 
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.naming.ID;
 
 /**

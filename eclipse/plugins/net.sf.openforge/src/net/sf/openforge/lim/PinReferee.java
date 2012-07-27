@@ -24,6 +24,7 @@ import java.util.Map;
 
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.lim.primitive.Or;
 import net.sf.openforge.util.naming.ID;
 
 /**

@@ -34,8 +34,8 @@ import net.sf.openforge.lim.Entry;
 import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.SizedInteger;
 import net.sf.openforge.util.naming.ID;
 

@@ -23,6 +23,8 @@ package net.sf.openforge.lim;
 
 import java.util.Collection;
 
+import net.sf.openforge.lim.primitive.And;
+
 /**
  * Stallboard is a Scoreboard with additional 'stall' inputs. These inputs
  * function like a regular Scoreboard input in that the output will not go high

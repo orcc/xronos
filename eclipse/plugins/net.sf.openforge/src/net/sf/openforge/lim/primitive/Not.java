@@ -18,9 +18,16 @@
  *
  * 
  */
-package net.sf.openforge.lim;
+package net.sf.openforge.lim.primitive;
 
 import java.util.List;
+
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitor;
 
 /**
  * An Not accepts a single 1-bit input and generates a 1-bit result which is the

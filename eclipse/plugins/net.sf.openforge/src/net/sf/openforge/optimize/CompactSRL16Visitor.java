@@ -37,8 +37,8 @@ import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.DefaultVisitor;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
-import net.sf.openforge.lim.SRL16;
+import net.sf.openforge.lim.primitive.Reg;
+import net.sf.openforge.lim.primitive.SRL16;
 
 /**
  * CompactSRL16Visitor identifies the Reg chains in the entire design and

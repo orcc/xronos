@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Not;
+
 /**
  * Decision is a refinement of {@link Module} for components that produce a
  * truth value. It defines two {@link Exit Exits}, one whose done {@link Bus}

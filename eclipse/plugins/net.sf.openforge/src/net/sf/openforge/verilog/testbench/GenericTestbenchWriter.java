@@ -117,10 +117,11 @@ public class GenericTestbenchWriter {
 
 		final IndentWriter pw;
 		try {
-			// pw = new IndentWriter(new PrintWriter(new FileWriter(simRoot +
-			// "_atb.v")));
-			pw = new IndentWriter(new PrintWriter(new FileWriter(
-					fileHandler.getFile(TestBenchEngine.ATB))));
+			 pw = new IndentWriter(new PrintWriter(new FileWriter("/tmp/"+designVerilogIdentifier +
+			 "_atb.v")));
+			//pw = new IndentWriter(new PrintWriter(new FileWriter(
+			//		fileHandler.getFile(TestBenchEngine.ATB))));
+			 
 		} catch (IOException ioe) {
 			gj.warn(" Could not create atb file " + ioe);
 			return;
@@ -142,9 +143,9 @@ public class GenericTestbenchWriter {
 
 		pw.println("`timescale 1ns/1ps");
 		pw.println("`define legacy_model // Some simulators cannot handle the syntax of the new memory models.  This define uses a simpler syntax for the memory models in the unisims library");
-		final String simFile = fileHandler.getFile(
-				VerilogTranslateEngine.SIMINCL).getAbsolutePath();
-		pw.println("`include \"" + simFile + "\"");
+		//final String simFile = fileHandler.getFile(
+		//		VerilogTranslateEngine.SIMINCL).getAbsolutePath();
+		//pw.println("`include \"" + simFile + "\"");
 		pw.println("`timescale 1ns/1ps");
 		pw.println("");
 		pw.println("module fixture();");
@@ -205,10 +206,10 @@ public class GenericTestbenchWriter {
 		pw.println("hangTimer <= 0;");
 		pw.println("startSimulation <= 0;");
 		pw.println("run <= 0;");
-		final String simResults = fileHandler.getFile(TestBenchEngine.RESULTS)
-				.getAbsolutePath();
-		final String simState = fileHandler.getFile(
-				TestBenchEngine.GenericTBEngine.STATE).getAbsolutePath();
+		final String simResults = "simResult"; 
+				//fileHandler.getFile(TestBenchEngine.RESULTS).getAbsolutePath();
+		final String simState = "simState";
+				//fileHandler.getFile(TestBenchEngine.GenericTBEngine.STATE).getAbsolutePath();
 		pw.println("resultFile <= $fopen(\"" + simResults + "\");");
 		pw.println("stateDumpFile <= $fopen(\"" + simState + "\");");
 		pw.println("clockCount <= 0;");

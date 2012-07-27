@@ -46,8 +46,8 @@ import net.sf.openforge.lim.LoopBody;
 import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.SizedInteger;
 
 /**

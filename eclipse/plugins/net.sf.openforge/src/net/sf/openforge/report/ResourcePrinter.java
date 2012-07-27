@@ -28,19 +28,12 @@ import java.util.Set;
 
 import net.sf.openforge.app.EngineThread;
 import net.sf.openforge.app.OptionRegistry;
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.CodeLabel;
 import net.sf.openforge.lim.Component;
-import net.sf.openforge.lim.EncodedMux;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Latch;
-import net.sf.openforge.lim.Mux;
-import net.sf.openforge.lim.Not;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
-import net.sf.openforge.lim.SRL16;
 import net.sf.openforge.lim.memory.MemoryRead;
 import net.sf.openforge.lim.op.AddOp;
 import net.sf.openforge.lim.op.AndOp;
@@ -66,6 +59,13 @@ import net.sf.openforge.lim.op.RightShiftOp;
 import net.sf.openforge.lim.op.RightShiftUnsignedOp;
 import net.sf.openforge.lim.op.SubtractOp;
 import net.sf.openforge.lim.op.XorOp;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.EncodedMux;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
+import net.sf.openforge.lim.primitive.SRL16;
 import net.sf.openforge.util.IndentWriter;
 
 /**

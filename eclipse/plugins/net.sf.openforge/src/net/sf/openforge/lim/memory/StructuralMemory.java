@@ -28,16 +28,11 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.openforge.app.OptionRegistry;
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
-import net.sf.openforge.lim.EncodedMux;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Module;
-import net.sf.openforge.lim.Not;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.UnexpectedVisitationException;
 import net.sf.openforge.lim.Visitor;
 import net.sf.openforge.lim.op.Constant;
@@ -47,6 +42,11 @@ import net.sf.openforge.lim.op.OrOpMulti;
 import net.sf.openforge.lim.op.RightShiftUnsignedOp;
 import net.sf.openforge.lim.op.SimpleConstant;
 import net.sf.openforge.lim.op.SubtractOp;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.EncodedMux;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 
 /**
  * StructuralMemory is a Module which contains a structural representation of a

@@ -21,13 +21,13 @@
 
 package net.sf.openforge.lim.io;
 
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Latency;
-import net.sf.openforge.lim.Not;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Referenceable;
-import net.sf.openforge.lim.Reg;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 
 /**
  * SimplePinStall is a LIM module that provides the ability to stall the LIM

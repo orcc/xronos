@@ -52,7 +52,6 @@ import net.sf.openforge.lim.Kicker;
 import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.Module;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.PinReferee;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.PriorityMux;
@@ -77,6 +76,7 @@ import net.sf.openforge.lim.memory.AbsoluteMemoryWrite;
 import net.sf.openforge.lim.memory.MemoryGateway;
 import net.sf.openforge.lim.memory.MemoryReferee;
 import net.sf.openforge.lim.op.OrOpMulti;
+import net.sf.openforge.lim.primitive.Or;
 import net.sf.openforge.util.naming.ID;
 
 /**

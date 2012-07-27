@@ -27,6 +27,7 @@
 package net.sf.openforge.app;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -62,6 +63,8 @@ import net.sf.openforge.report.SimpleResourceReporter;
 import net.sf.openforge.report.XmlResourcePrinter;
 import net.sf.openforge.report.throughput.ThroughputAnalyzer;
 import net.sf.openforge.schedule.Scheduler;
+import net.sf.openforge.verilog.testbench.CycleSimTestBench;
+import net.sf.openforge.verilog.testbench.GenericTestbenchWriter;
 import net.sf.openforge.verilog.translate.PassThroughComponentRemover;
 
 /**
@@ -175,11 +178,11 @@ public class LIMCompiler {
 			Engine.breathe();
 		}
 
-		// CWU - Removes the pass through components to aviod
+		// CWU - Removes the pass through components to avoid
 		// generating unnecessary wire declarations and wire
 		// assignment statements.
 		// Moved here from the translate method so that reporting
-		// correctly ignores these pass throughs.
+		// correctly ignores these pass through.
 		design.accept(new PassThroughComponentRemover());
 
 		if (gj.getUnscopedBooleanOptionValue(OptionRegistry.REPORT)) {
@@ -207,7 +210,10 @@ public class LIMCompiler {
 			xflow(design);
 			Engine.breathe();
 		}
-
+		
+		//LXGraph.graphTo(design, "/tmp/" +design.showIDGlobal()+"_graph.dot");
+		GenericTestbenchWriter test = new GenericTestbenchWriter(design);
+		test.genTestbench();
 		clearAPIRuntime();
 
 		return design;

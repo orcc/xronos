@@ -20,6 +20,13 @@ import net.sf.openforge.lim.*;
 import net.sf.openforge.lim.io.*;
 import net.sf.openforge.lim.memory.*;
 import net.sf.openforge.lim.op.*;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.EncodedMux;
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
+import net.sf.openforge.lim.primitive.SRL16;
 
 /**
  * Describe class SimpleResourceReporter here.

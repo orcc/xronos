@@ -26,17 +26,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Latency;
-import net.sf.openforge.lim.Not;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Referencer;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Value;
 import net.sf.openforge.lim.io.FifoAccess;
 import net.sf.openforge.lim.io.FifoID;
@@ -50,6 +46,10 @@ import net.sf.openforge.lim.io.SimplePinWrite;
 import net.sf.openforge.lim.op.CastOp;
 import net.sf.openforge.lim.op.Constant;
 import net.sf.openforge.lim.op.SimpleConstant;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 
 /**
  * ActorScalarOutput is a specialized fifo output interface which contains the

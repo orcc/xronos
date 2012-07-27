@@ -18,38 +18,37 @@
  *
  * 
  */
-package net.sf.openforge.lim;
+package net.sf.openforge.lim.primitive;
 
 import java.util.Iterator;
 
-import net.sf.openforge.lim.op.OrOp;
+import net.sf.openforge.lim.Bit;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.Value;
+import net.sf.openforge.lim.Visitor;
+import net.sf.openforge.lim.op.AndOp;
 import net.sf.openforge.report.FPGAResource;
 
 /**
- * An Or accepts multiple 1-bit signals, or'ing them together to generate a
- * 1-bit result. The go port and done bus of an Or are unused.
+ * An And accepts multiple 1-bit signals, and'ing them together to generate a
+ * 1-bit result. The go port and done bus of an And are unused.
  * 
  * Created: April 25, 2002
  * 
  * @author <a href="mailto:andreas.kollegger@xilinx.com">Andreas Kollegger</a>
- * @version $Id: Or.java 2 2005-06-09 20:00:48Z imiller $
+ * @version $Id: And.java 2 2005-06-09 20:00:48Z imiller $
  */
-public class Or extends Primitive {
+public class And extends Primitive {
 
 	/**
-	 * Constructor for the Or object
+	 * Constructor for the And object
 	 * 
 	 * @param goCount
-	 *            The number of data inputs to be or'd
+	 *            The number of data inputs to be and'd
 	 */
-	public Or(int goCount) {
+	public And(int goCount) {
 		super(goCount);
-		assert (goCount > 1) : "A one-input Or? What for?";
-	}
-
-	@Override
-	public void accept(Visitor v) {
-		v.visit(this);
 	}
 
 	/**
@@ -92,24 +91,18 @@ public class Or extends Primitive {
 		return hwResource;
 	}
 
+	@Override
+	public void accept(Visitor v) {
+		v.visit(this);
+	}
+
 	/*
 	 * =================================================== Begin new constant
 	 * prop rules implementation.
 	 */
 
 	/**
-	 * Pushes size, care, and constant information forward through this OrOp
-	 * according to these rules:
-	 * 
-	 * <pre>
-	 * x | * = x
-	 * 0 | c = c
-	 * * | 1 = 1
-	 * 0 | 0 = 0
-	 * Result size is input size
-	 * </pre>
-	 * 
-	 * @return a value of type 'boolean'
+	 * Defers to {@link AndOp#pushValueForwardAnd} for rules.
 	 */
 	@Override
 	public boolean pushValuesForward() {
@@ -118,23 +111,19 @@ public class Or extends Primitive {
 		assert getDataPorts().size() > 0;
 
 		Iterator<Port> dpIter = getDataPorts().iterator();
-		Value orValue = dpIter.next().getValue();
+		Value andValue = dpIter.next().getValue();
 		while (dpIter.hasNext()) {
 			Value nextValue = dpIter.next().getValue();
-			orValue = OrOp.pushValuesForwardOr(orValue, nextValue);
+			andValue = AndOp.pushValuesForwardAnd(andValue, nextValue);
 		}
-
-		mod |= getResultBus().pushValueForward(orValue);
-
+		mod |= getResultBus().pushValueForward(andValue);
 		return mod;
 	}
 
 	/**
-	 * Reverse constant prop on an Or simply propagates the consumed value back
-	 * to the Ports. Any constant/dc bits in the output produce don't care bits
-	 * on the inputs.
-	 * 
-	 * @return a value of type 'boolean'
+	 * Reverse constant prop on an AndOp simply propagates the consumed value
+	 * back to the Ports. Any constant/dc bits in the output produce don't care
+	 * bits on the inputs.
 	 */
 	@Override
 	public boolean pushValuesBackward() {
@@ -159,10 +148,5 @@ public class Or extends Primitive {
 		return mod;
 	}
 
-	/*
-	 * End new constant prop rules implementation.
-	 * =================================================
-	 */
-
-} // class Or
+} // class And
 

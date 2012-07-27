@@ -23,22 +23,22 @@ package net.sf.openforge.lim.memory;
 import java.util.HashSet;
 import java.util.Set;
 
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Latency;
 import net.sf.openforge.lim.Module;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.PhysicalImplementationModule;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Referenceable;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.StateAccessor;
 import net.sf.openforge.lim.StateHolder;
 import net.sf.openforge.lim.Value;
 import net.sf.openforge.lim.Visitor;
 import net.sf.openforge.lim.op.CastOp;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.naming.ID;
 
 /**

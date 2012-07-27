@@ -22,6 +22,8 @@ package net.sf.openforge.lim;
 
 import java.util.List;
 
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.naming.ID;
 
 /**

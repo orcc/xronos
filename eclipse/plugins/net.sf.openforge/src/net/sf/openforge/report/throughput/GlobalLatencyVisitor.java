@@ -36,7 +36,6 @@ import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.InBuf;
 import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Latency;
-import net.sf.openforge.lim.Mux;
 import net.sf.openforge.lim.OutBuf;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Scoreboard;
@@ -44,6 +43,7 @@ import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.Visitor;
 import net.sf.openforge.lim.memory.MemoryRead;
 import net.sf.openforge.lim.memory.MemoryWrite;
+import net.sf.openforge.lim.primitive.Mux;
 
 /**
  * GlobalLatencyVisitor will calculate the latency of every component in the LIM

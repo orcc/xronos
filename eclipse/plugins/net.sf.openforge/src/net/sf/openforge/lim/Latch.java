@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.lim.primitive.Mux;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.util.SizedInteger;
 import net.sf.openforge.util.naming.ID;
 

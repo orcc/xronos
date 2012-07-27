@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.lim.primitive.Reg;
+
 /**
  * LoopBody characterizes the body of a {@link Loop}.
  * <P>

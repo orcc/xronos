@@ -28,7 +28,7 @@ import java.util.Map;
 
 import net.sf.openforge.lim.Loop;
 import net.sf.openforge.lim.Port;
-import net.sf.openforge.lim.Reg;
+import net.sf.openforge.lim.primitive.Reg;
 import net.sf.openforge.lim.util.LoopEmulator;
 import net.sf.openforge.lim.util.UnEmulatableLoopException;
 import net.sf.openforge.util.SizedInteger;

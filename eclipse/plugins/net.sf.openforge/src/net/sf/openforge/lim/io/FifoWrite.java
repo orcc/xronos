@@ -26,22 +26,22 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import net.sf.openforge.lim.And;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Latch;
 import net.sf.openforge.lim.Latency;
 import net.sf.openforge.lim.Module;
-import net.sf.openforge.lim.Not;
-import net.sf.openforge.lim.Or;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Referenceable;
-import net.sf.openforge.lim.Reg;
 import net.sf.openforge.lim.Value;
 import net.sf.openforge.lim.Visitable;
 import net.sf.openforge.lim.Visitor;
 import net.sf.openforge.lim.op.CastOp;
+import net.sf.openforge.lim.primitive.And;
+import net.sf.openforge.lim.primitive.Not;
+import net.sf.openforge.lim.primitive.Or;
+import net.sf.openforge.lim.primitive.Reg;
 
 /**
  * FifoWrite is an atomic access to a given {@link FifoIF} which sends a single
