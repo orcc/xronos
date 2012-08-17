@@ -32,11 +32,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.Block;
@@ -54,7 +52,6 @@ import net.sf.openforge.lim.op.SimpleConstant;
 import net.sf.openforge.lim.primitive.And;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.util.DesignUtil;
-import net.sf.orc2hdl.design.util.GroupedVar;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
 import net.sf.orcc.df.Action;
@@ -189,7 +186,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 	private Map<State, Var> stateToVar;
 
-	private Map<Branch, List<GroupedVar>> branchInVars;
+	private Map<Branch, List<Var>> branchInVars;
 
 	public DesignScheduler(ResourceCache resources,
 			Map<Action, Task> actorsTasks, Var currentState) {
@@ -203,7 +200,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 		actionInDecisions = new HashMap<Action, Var>();
 		actionOutDecisions = new HashMap<Action, Var>();
 		actionTransitions = new HashMap<Transition, List<Component>>();
-		branchInVars = new HashMap<Branch, List<GroupedVar>>();
+		branchInVars = new HashMap<Branch, List<Var>>();
 		stateDecision = new HashMap<State, Decision>();
 		pinStatus = new HashMap<net.sf.orcc.df.Port, Var>();
 		portGroupDependency = new HashMap<Port, Integer>();
@@ -288,7 +285,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 		/** Construct the scheduler if body **/
 		Component branchBlock = null;
-		List<GroupedVar> loopInputVar = new ArrayList<GroupedVar>();
+		List<Var> loopInputVar = new ArrayList<Var>();
 		if (actor.getFsm() == null) {
 			/** Create the action Test for all actions outside the FSM **/
 			createActionTest(actor.getActions());
@@ -305,12 +302,11 @@ public class DesignScheduler extends DfVisitor<Task> {
 						IrFactory.eINSTANCE.createTypeInt(32),
 						"s_" + state.getName(), true, 0);
 				stateToVar.put(state, stateVar);
-				loopInputVar.add(new GroupedVar(stateVar, 0));
+				loopInputVar.add(stateVar);
 				// Create literal components for each state
 				Component literal = new SimpleConstant(
 						stateToIndexMap.get(state), 32, false);
-				GroupedVar outVar = new GroupedVar(stateToVar.get(state), 0);
-				PortUtil.mapOutDataPorts(literal, outVar.getAsList(),
+				PortUtil.mapOutDataPorts(literal, stateToVar.get(state),
 						busDependency, doneBusDependency);
 				schedulerComponents.add(literal);
 				// Create the decision State
@@ -337,10 +333,9 @@ public class DesignScheduler extends DfVisitor<Task> {
 				IrFactory.eINSTANCE.createTypeBool(),
 				"var_" + actor.getSimpleName() + "_sched", true, 0);
 		Component trueConstant = new SimpleConstant(1, 1, false);
-		GroupedVar gVarActorSched = new GroupedVar(varActorSched, 0);
-		PortUtil.mapOutDataPorts(trueConstant, gVarActorSched.getAsList(),
-				busDependency, doneBusDependency);
-		loopInputVar.add(gVarActorSched);
+		PortUtil.mapOutDataPorts(trueConstant, varActorSched, busDependency,
+				doneBusDependency);
+		loopInputVar.add(varActorSched);
 		/** Add the constant to the scheduler components **/
 		schedulerComponents.add(trueConstant);
 
@@ -353,22 +348,21 @@ public class DesignScheduler extends DfVisitor<Task> {
 				portGroupDependency, doneBusDependency);
 
 		Loop loop = (Loop) ModuleUtil.createLoop(decisionComponent,
-				Arrays.asList(decisionComponent), gVarActorSched.getAsList(),
+				Arrays.asList(decisionComponent), Arrays.asList(varActorSched),
 				schedulerLoopComponents,
 				Collections.<Var, List<Var>> emptyMap(), loopInputVar,
-				Collections.<GroupedVar> emptyList(), loopInputVar,
-				Collections.<GroupedVar> emptyList(), portDependency,
-				busDependency, portGroupDependency, doneBusDependency);
+				Collections.<Var> emptyList(), loopInputVar,
+				Collections.<Var> emptyList(), portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
 
 		/** Add the loop to the scheduler components **/
 		schedulerComponents.add(loop);
 
 		/** Module of the scheduler **/
 		Module scheduler = (Block) ModuleUtil.createModule(schedulerComponents,
-				Collections.<GroupedVar> emptyList(),
-				Collections.<GroupedVar> emptyList(), "schedulerBody", false,
-				Exit.RETURN, 0, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				"schedulerBody", false, Exit.RETURN, 0, portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
 
 		/** Create scheduler Task **/
 		Task task = DesignUtil.createTask("scheduler", scheduler, true);
@@ -401,9 +395,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 					Component constant = new SimpleConstant(value, 32,
 							((ExprInt) instAssign.getValue()).getType().isInt());
-					GroupedVar inOutVars = new GroupedVar(litteralVar, 0);
 					constant.setNonRemovable();
-					PortUtil.mapOutDataPorts(constant, inOutVars.getAsList(),
+					PortUtil.mapOutDataPorts(constant, litteralVar,
 							busDependency, doneBusDependency);
 					componentsList.add(constant);
 					componentCounter++;
@@ -421,10 +414,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 					// inOutVars.getAsList(), portDependency,
 					// portGroupDependency);
 
-					GroupedVar outVars = new GroupedVar(peekVar, 0);
-					PortUtil.mapOutDataPorts(peekComponent,
-							outVars.getAsList(), busDependency,
-							doneBusDependency);
+					PortUtil.mapOutDataPorts(peekComponent, peekVar,
+							busDependency, doneBusDependency);
 
 					componentsList.add(peekComponent);
 					componentCounter++;
@@ -500,19 +491,19 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 	private void createStateDecision(State state) {
 
-		List<GroupedVar> eqInVars = new ArrayList<GroupedVar>();
+		List<Var> eqInVars = new ArrayList<Var>();
 		List<Component> decisionComponents = new ArrayList<Component>();
 		// Read the value of the current state
 		Var readState = IrFactory.eINSTANCE.createVar(
 				IrFactory.eINSTANCE.createTypeInt(32),
 				"readState_for_" + state.getName(), true, 0);
-		eqInVars.add(new GroupedVar(readState, 0));
+		eqInVars.add(readState);
 		Component eqDecision = ModuleUtil.absoluteMemoryRead(currentState,
 				readState, resources, busDependency, doneBusDependency);
 		decisionComponents.add(eqDecision);
 
 		Var sourceStateVar = stateToVar.get(state);
-		eqInVars.add(new GroupedVar(sourceStateVar, 0));
+		eqInVars.add(sourceStateVar);
 
 		Var enableVar = IrFactory.eINSTANCE.createVar(
 				IrFactory.eINSTANCE.createTypeBool(), "s_" + state.getName()
@@ -522,16 +513,14 @@ public class DesignScheduler extends DfVisitor<Task> {
 		Component eqComponent = new EqualsOp();
 		PortUtil.mapInDataPorts(eqComponent, eqInVars, portDependency,
 				portGroupDependency);
-		PortUtil.mapOutDataPorts(eqComponent,
-				(new GroupedVar(enableVar, 0)).getAsList(), busDependency,
+		PortUtil.mapOutDataPorts(eqComponent, enableVar, busDependency,
 				doneBusDependency);
 		decisionComponents.add(eqComponent);
 
 		// Create the enable decision
 		Decision enableDecision = ModuleUtil.createDecision(decisionComponents,
-				eqComponent, (new GroupedVar(sourceStateVar, 0)).getAsList(),
-				portDependency, busDependency, portGroupDependency,
-				doneBusDependency);
+				eqComponent, Arrays.asList(sourceStateVar), portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
 
 		enableDecision.setIDLogical("decision_" + state.getName());
 		stateDecision.put(state, enableDecision);
@@ -539,8 +528,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 	private Module createActorFsmBranch(List<State> states) {
 		List<Component> moduleComponents = new ArrayList<Component>();
-		List<GroupedVar> inVars = new ArrayList<GroupedVar>();
-		Set<Var> mutexVars = new HashSet<Var>();
+		List<Var> inVars = new ArrayList<Var>();
+		List<Var> mutexVars = new ArrayList<Var>();
 		for (State state : states) {
 			Decision decision = stateDecision.get(state);
 			Branch thenBranch = createActionTransitionBranch(state
@@ -548,13 +537,12 @@ public class DesignScheduler extends DfVisitor<Task> {
 			inVars = branchInVars.get(thenBranch);
 			Block thenBlock = (Block) ModuleUtil.createModule(
 					Arrays.asList((Component) thenBranch), inVars,
-					Collections.<GroupedVar> emptyList(), "elseBlock", false,
+					Collections.<Var> emptyList(), "elseBlock", false,
 					Exit.DONE, 0, portDependency, busDependency,
 					portGroupDependency, doneBusDependency);
 
 			List<Var> inPort = new ArrayList<Var>();
-			for (GroupedVar gVar : inVars) {
-				Var var = gVar.getVar();
+			for (Var var : inVars) {
 				if (!inPort.contains(var)) {
 					inPort.add(var);
 				}
@@ -563,23 +551,21 @@ public class DesignScheduler extends DfVisitor<Task> {
 			if (!inPort.contains(sourceState)) {
 				inPort.add(sourceState);
 			}
-			inVars = GroupedVar.ListGroupedVar(inPort, 0);
+			inVars = inPort;
 			Branch stateBranch = (Branch) ModuleUtil.createBranch(decision,
-					thenBlock, null, inVars,
-					Collections.<GroupedVar> emptyList(), null, "ifBranch_"
-							+ state.getName(), null, portDependency,
+					thenBlock, null, inVars, Collections.<Var> emptyList(),
+					null, "ifBranch_" + state.getName(), null, portDependency,
 					busDependency, portGroupDependency, doneBusDependency);
 			moduleComponents.add(stateBranch);
-			for (GroupedVar gVar : inVars) {
-				Var var = gVar.getVar();
-				mutexVars.add(var);
+			for (Var var : inVars) {
+				if (!mutexVars.contains(var))
+					mutexVars.add(var);
 			}
 		}
-		List<GroupedVar> mutexBlockInVars = GroupedVar.ListGroupedVar(
-				mutexVars, 0);
+		List<Var> mutexBlockInVars = mutexVars;
 		Module mutexFsmBlock = (Module) ModuleUtil.createModule(
 				moduleComponents, mutexBlockInVars,
-				Collections.<GroupedVar> emptyList(), "mutexFSM_Block", true,
+				Collections.<Var> emptyList(), "mutexFSM_Block", true,
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
@@ -612,24 +598,22 @@ public class DesignScheduler extends DfVisitor<Task> {
 			inPort.add(stateToVar.get(transition.getTarget()));
 			Branch elseBranch = createActionTransitionBranch(oldEdges);
 
-			List<GroupedVar> inVars = branchInVars.get(elseBranch);
+			List<Var> inVars = branchInVars.get(elseBranch);
 			Block elseBlock = (Block) ModuleUtil.createModule(
 					Arrays.asList((Component) elseBranch), inVars,
-					Collections.<GroupedVar> emptyList(), "elseBlock", false,
+					Collections.<Var> emptyList(), "elseBlock", false,
 					Exit.DONE, 0, portDependency, busDependency,
 					portGroupDependency, doneBusDependency);
 			// Hack GroupedVar class will be deleted
-			for (GroupedVar gVar : inVars) {
-				Var var = gVar.getVar();
+			for (Var var : inVars) {
 				if (!inPort.contains(var)) {
 					inPort.add(var);
 				}
 			}
-			inVars = GroupedVar.ListGroupedVar(inPort, 0);
+			inVars = inPort;
 			branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-					elseBlock, inVars,
-					Collections.<GroupedVar> emptyList(), null, "ifBranch_"
-							+ action.getName(), null, portDependency,
+					elseBlock, inVars, Collections.<Var> emptyList(), null,
+					"ifBranch_" + action.getName(), null, portDependency,
 					busDependency, portGroupDependency, doneBusDependency);
 			branch.setIDLogical("ifBranch_" + action.getName());
 			branchInVars.put(branch, inVars);
@@ -643,11 +627,10 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 			Block thenBlock = (Block) comps.get(1);
 
-			List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
-					branchInputPorts, 0);
+			List<Var> inVars = branchInputPorts;
 
 			branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-					null, inVars, Collections.<GroupedVar> emptyList(), null,
+					null, inVars, Collections.<Var> emptyList(), null,
 					"ifBranch_" + action.getName(), null, portDependency,
 					busDependency, portGroupDependency, doneBusDependency);
 
@@ -679,13 +662,11 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Decision decision = (Decision) comps.get(0);
 				Block thenBlock = (Block) comps.get(1);
 
-				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
-						currentInputPorts, 0);
+				List<Var> inVars = currentInputPorts;
 				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-						null, inVars, Collections.<GroupedVar> emptyList(),
-						null, "ifBranch_" + action.getName(), null,
-						portDependency, busDependency, portGroupDependency,
-						doneBusDependency);
+						null, inVars, Collections.<Var> emptyList(), null,
+						"ifBranch_" + action.getName(), null, portDependency,
+						busDependency, portGroupDependency, doneBusDependency);
 
 				branch.setIDLogical("ifBranch_" + action.getName());
 				previousInputPorts.add(currentInputPorts.get(1));
@@ -698,19 +679,17 @@ public class DesignScheduler extends DfVisitor<Task> {
 				List<Var> inPort = new ArrayList<Var>(currentInputPorts);
 				Collections.reverse(inPort);
 
-				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
-						previousInputPorts, 0);
+				List<Var> inVars = previousInputPorts;
 				Block elseBlock = (Block) ModuleUtil.createModule(
 						Arrays.asList((Component) branch), inVars,
-						Collections.<GroupedVar> emptyList(), "elseBlock",
-						false, Exit.DONE, 0, portDependency, busDependency,
+						Collections.<Var> emptyList(), "elseBlock", false,
+						Exit.DONE, 0, portDependency, busDependency,
 						portGroupDependency, doneBusDependency);
 
-				inVars = GroupedVar.ListGroupedVar(inPort, 0);
+				inVars = inPort;
 				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-						elseBlock, inVars,
-						Collections.<GroupedVar> emptyList(), null, "ifBranch_"
-								+ action.getName(), null, portDependency,
+						elseBlock, inVars, Collections.<Var> emptyList(), null,
+						"ifBranch_" + action.getName(), null, portDependency,
 						busDependency, portGroupDependency, doneBusDependency);
 				branch.setIDLogical("ifBranch_" + action.getName());
 				previousInputPorts = inPort;
@@ -750,18 +729,16 @@ public class DesignScheduler extends DfVisitor<Task> {
 							.createVar(0, type, "outputPattern_"
 									+ currentAction.getName() + "_res", false,
 									0);
-					GroupedVar outVars = new GroupedVar(resVar, 0);
 					Component constant = new SimpleConstant(1, 1, false);
-					PortUtil.mapOutDataPorts(constant, outVars.getAsList(),
-							busDependency, doneBusDependency);
+					PortUtil.mapOutDataPorts(constant, resVar, busDependency,
+							doneBusDependency);
 					patternComponents.add(constant);
 					patternVars.add(resVar);
 				}
 
 				Component andComponent = new And(patternVars.size());
 
-				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
-						patternVars, 0);
+				List<Var> inVars = patternVars;
 				PortUtil.mapInDataPorts(andComponent, inVars, portDependency,
 						portGroupDependency);
 				// Create Decision Variable
@@ -769,8 +746,7 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
 						"isSchedulable_" + currentAction.getName() + "_"
 								+ direction + "_decision", false, 0);
-				GroupedVar outVars = new GroupedVar(decisionVar, 0);
-				PortUtil.mapOutDataPorts(andComponent, outVars.getAsList(),
+				PortUtil.mapOutDataPorts(andComponent, decisionVar,
 						busDependency, doneBusDependency);
 				patternComponents.add(andComponent);
 				// Save the decision, used on transitions
@@ -787,10 +763,9 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Var patternPort = IrFactory.eINSTANCE.createVar(0, type,
 						direction + "putPattern_" + currentAction.getName(),
 						false, 0);
-				GroupedVar outVars = new GroupedVar(patternPort, 0);
 				Component constant = new SimpleConstant(1, 1, false);
-				PortUtil.mapOutDataPorts(constant, outVars.getAsList(),
-						busDependency, doneBusDependency);
+				PortUtil.mapOutDataPorts(constant, patternPort, busDependency,
+						doneBusDependency);
 				patternComponents.add(constant);
 				patternVars.add(patternPort);
 
@@ -799,16 +774,13 @@ public class DesignScheduler extends DfVisitor<Task> {
 
 				Component andComponent = new And(patternVars.size());
 
-				List<GroupedVar> inVars = GroupedVar.ListGroupedVar(
-						patternVars, 0);
-				PortUtil.mapInDataPorts(andComponent, inVars, portDependency,
-						portGroupDependency);
+				PortUtil.mapInDataPorts(andComponent, patternVars,
+						portDependency, portGroupDependency);
 				// Create Decision Variable
 				Var decisionVar = IrFactory.eINSTANCE.createVar(0, type,
 						"isSchedulable_" + currentAction.getName() + "_"
 								+ direction + "_decision", false, 0);
-				outVars = new GroupedVar(decisionVar, 0);
-				PortUtil.mapOutDataPorts(andComponent, outVars.getAsList(),
+				PortUtil.mapOutDataPorts(andComponent, decisionVar,
 						busDependency, doneBusDependency);
 				patternComponents.add(andComponent);
 
@@ -820,9 +792,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 								+ direction + "_decision", false, 0);
 
 				Component constant = new SimpleConstant(1, 1, false);
-				GroupedVar outVars = new GroupedVar(decisionVar, 0);
-				PortUtil.mapOutDataPorts(constant, outVars.getAsList(),
-						busDependency, doneBusDependency);
+				PortUtil.mapOutDataPorts(constant, decisionVar, busDependency,
+						doneBusDependency);
 				patternComponents.add(constant);
 				actionOutDecisions.put(currentAction, decisionVar);
 			}

@@ -109,8 +109,7 @@ public class PortUtil {
 			Var pinReadVar = action.getInputPattern().getPortToVarMap()
 					.get(port);
 			// Map out Data Ports
-			GroupedVar outVars = new GroupedVar(pinReadVar, 0);
-			mapOutDataPorts(pinRead, outVars.getAsList(), busDependency,
+			mapOutDataPorts(pinRead, pinReadVar, busDependency,
 					doneBusDependency);
 			pinReadList.add(pinRead);
 		} else {
@@ -123,8 +122,7 @@ public class PortUtil {
 				Component pinRead = ioHandler.getReadAccess(false);
 				pinRead.setNonRemovable();
 				// Map out Data Ports
-				GroupedVar outVars = new GroupedVar(pinReadVar, 0);
-				mapOutDataPorts(pinRead, outVars.getAsList(), busDependency,
+				mapOutDataPorts(pinRead, pinReadVar, busDependency,
 						doneBusDependency);
 				pinReadList.add(pinRead);
 			}
@@ -147,8 +145,7 @@ public class PortUtil {
 
 		// Map out pinStatusVar to pinStatusComponent
 
-		GroupedVar outVars = new GroupedVar(pinStatusVar, 0);
-		PortUtil.mapOutDataPorts(pinStatusComponent, outVars.getAsList(),
+		PortUtil.mapOutDataPorts(pinStatusComponent, pinStatusVar,
 				busDependency, doneBusDependency);
 
 		return pinStatusComponent;
@@ -174,8 +171,7 @@ public class PortUtil {
 					.get(port);
 
 			// Map in Data Ports
-			GroupedVar inVars = new GroupedVar(pinWriteVar, 0);
-			mapInDataPorts(pinWrite, inVars.getAsList(), portDependency,
+			mapInDataPorts(pinWrite, pinWriteVar, portDependency,
 					groupPortDependency);
 
 			// Map out Control Port
@@ -191,8 +187,7 @@ public class PortUtil {
 				Component pinWrite = ioHandler.getWriteAccess(false);
 				pinWrite.setNonRemovable();
 				// Map in Data Ports
-				GroupedVar inVars = new GroupedVar(pinWriteVar, 0);
-				mapInDataPorts(pinWrite, inVars.getAsList(), portDependency,
+				mapInDataPorts(pinWrite, pinWriteVar, portDependency,
 						groupPortDependency);
 
 				// Map out Control Port
@@ -204,22 +199,37 @@ public class PortUtil {
 		return pinWriteList;
 	}
 
-	public static void mapInDataPorts(Component component,
-			List<GroupedVar> inVars, Map<Port, Var> portDependency,
+	public static void mapInDataPorts(Component component, Var inVar,
+			Map<Port, Var> portDependency,
 			Map<Port, Integer> portGroupDependency) {
 
 		Iterator<Port> portIter = component.getDataPorts().iterator();
 
-		for (GroupedVar groupedVar : inVars) {
-			Var var = groupedVar.getVar();
-			Integer groupPort = groupedVar.getGroup();
+		Integer group = 0; // By default the group is zero
+		Port dataPort = portIter.next();
+		dataPort.setIDLogical(inVar.getIndexedName());
+		dataPort.setSize(inVar.getType().getSizeInBits(), inVar.getType()
+				.isInt() || inVar.getType().isBool());
+		// Put Input Port dependency
+		portDependency.put(dataPort, inVar);
+		portGroupDependency.put(dataPort, group);
+	}
+
+	public static void mapInDataPorts(Component component, List<Var> inVars,
+			Map<Port, Var> portDependency,
+			Map<Port, Integer> portGroupDependency) {
+
+		Iterator<Port> portIter = component.getDataPorts().iterator();
+
+		Integer group = 0; // By default the group is zero
+		for (Var var : inVars) {
 			Port dataPort = portIter.next();
 			dataPort.setIDLogical(var.getIndexedName());
 			dataPort.setSize(var.getType().getSizeInBits(), var.getType()
 					.isInt() || var.getType().isBool());
 			// Put Input Port dependency
 			portDependency.put(dataPort, var);
-			portGroupDependency.put(dataPort, groupPort);
+			portGroupDependency.put(dataPort, group);
 		}
 	}
 
@@ -229,14 +239,31 @@ public class PortUtil {
 		doneBusDependency.put(doneBus, group);
 	}
 
-	public static void mapOutDataPorts(Component component,
-			List<GroupedVar> outVars, Map<Bus, Var> busDependency,
-			Map<Bus, Integer> doneBusDependency) {
+	public static void mapOutDataPorts(Component component, Var outVar,
+			Map<Bus, Var> busDependency, Map<Bus, Integer> doneBusDependency) {
 
-		Integer group = 0;
-		for (GroupedVar groupedVar : outVars) {
-			Var var = groupedVar.getVar();
-			group = groupedVar.getGroup();
+		Integer group = 0; // By default the group is zero
+		Bus dataBus = component.getExit(Exit.DONE).getDataBuses().get(group);
+
+		// Set the bus value
+		if (dataBus.getValue() == null) {
+			dataBus.setSize(outVar.getType().getSizeInBits(), outVar.getType()
+					.isInt() || outVar.getType().isBool());
+		}
+		// Name the dataBus
+		dataBus.setIDLogical(outVar.getIndexedName());
+		busDependency.put(dataBus, outVar);
+
+		// Map Out done Bus
+		mapOutControlPort(component, group, doneBusDependency);
+
+	}
+
+	public static void mapOutDataPorts(Component component, List<Var> outVars,
+			Map<Bus, Var> busDependency, Map<Bus, Integer> doneBusDependency) {
+
+		Integer group = 0; // By default the group is zero
+		for (Var var : outVars) {
 			// Get the component dataBus
 			Bus dataBus = component.getExit(Exit.DONE).getDataBuses()
 					.get(group);

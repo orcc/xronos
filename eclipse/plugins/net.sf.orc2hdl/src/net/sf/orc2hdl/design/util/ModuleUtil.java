@@ -109,9 +109,8 @@ public class ModuleUtil {
 		Component absoluteMemWrite = new AbsoluteMemoryWrite(targetLocation,
 				Constants.MAX_ADDR_WIDTH, stateVar.getType().isInt());
 		memPort.addAccess((LValue) absoluteMemWrite, targetLocation);
-		GroupedVar inVar = new GroupedVar(writeValue, 0);
-		PortUtil.mapInDataPorts(absoluteMemWrite, inVar.getAsList(),
-				portDependency, portGroupDependency);
+		PortUtil.mapInDataPorts(absoluteMemWrite, writeValue, portDependency,
+				portGroupDependency);
 		PortUtil.mapOutControlPort(absoluteMemWrite, 0, doneBusDependency);
 		return absoluteMemWrite;
 	}
@@ -127,9 +126,8 @@ public class ModuleUtil {
 		Component absoluteMemRead = new AbsoluteMemoryRead(targetLocation,
 				Constants.MAX_ADDR_WIDTH, stateVar.getType().isInt());
 		memPort.addAccess((LValue) absoluteMemRead, targetLocation);
-		GroupedVar outVar = new GroupedVar(readValue, 0);
-		PortUtil.mapOutDataPorts(absoluteMemRead, outVar.getAsList(),
-				busDependency, doneBusDependency);
+		PortUtil.mapOutDataPorts(absoluteMemRead, readValue, busDependency,
+				doneBusDependency);
 		return absoluteMemRead;
 	}
 
@@ -155,12 +153,10 @@ public class ModuleUtil {
 			Map<Bus, Integer> doneBusDependency) {
 		Component component = new NoOp(1, Exit.DONE);
 
-		GroupedVar inVar = new GroupedVar(source, 0);
-		PortUtil.mapInDataPorts(component, inVar.getAsList(), portDependency,
+		PortUtil.mapInDataPorts(component, source, portDependency,
 				portGroupDependency);
 
-		GroupedVar outVar = new GroupedVar(target, 0);
-		PortUtil.mapOutDataPorts(component, outVar.getAsList(), busDependency,
+		PortUtil.mapOutDataPorts(component, target, busDependency,
 				doneBusDependency);
 		return component;
 	}
@@ -306,7 +302,7 @@ public class ModuleUtil {
 	}
 
 	public static Component createBranch(Decision decision, Block thenBlock,
-			Block elseBlock, List<GroupedVar> inVars, List<GroupedVar> outVars,
+			Block elseBlock, List<Var> inVars, List<Var> outVars,
 			Map<Var, List<Var>> phiOuts, String searchScope,
 			Exit.Type exitType, Map<Port, Var> portDependency,
 			Map<Bus, Var> busDependency,
@@ -348,14 +344,14 @@ public class ModuleUtil {
 	}
 
 	public static Decision createDecision(List<Component> bodyComponents,
-			Component decisionComponent, List<GroupedVar> inVars,
+			Component decisionComponent, List<Var> inVars,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 		Decision decision = null;
 
 		Module decisionModule = (Module) createModule(bodyComponents, inVars,
-				Collections.<GroupedVar> emptyList(), "decisionBlock", false,
+				Collections.<Var> emptyList(), "decisionBlock", false,
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
@@ -400,10 +396,9 @@ public class ModuleUtil {
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
 
-		GroupedVar inVars = new GroupedVar(inputDecision, 0);
 		Module decisionModule = (Module) createModule(
-				Arrays.asList(assignComp), inVars.getAsList(),
-				Collections.<GroupedVar> emptyList(), "decisionBlock", false,
+				Arrays.asList(assignComp), Arrays.asList(inputDecision),
+				Collections.<Var> emptyList(), "decisionBlock", false,
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
@@ -427,12 +422,11 @@ public class ModuleUtil {
 	}
 
 	public static Component createLoop(Component decisionComponent,
-			List<Component> decisionComponents,
-			List<GroupedVar> decisionInVars, List<Component> bodyComponents,
-			Map<Var, List<Var>> loopPhi, List<GroupedVar> loopInVars,
-			List<GroupedVar> loopOutVars, List<GroupedVar> loopBodyInVars,
-			List<GroupedVar> loopBodyOutVars, Map<Port, Var> portDependency,
-			Map<Bus, Var> busDependency,
+			List<Component> decisionComponents, List<Var> decisionInVars,
+			List<Component> bodyComponents, Map<Var, List<Var>> loopPhi,
+			List<Var> loopInVars, List<Var> loopOutVars,
+			List<Var> loopBodyInVars, List<Var> loopBodyOutVars,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 
@@ -595,18 +589,17 @@ public class ModuleUtil {
 	}
 
 	public static void createLoopBodyInterface(LoopBody loopBody,
-			List<GroupedVar> inVars, List<GroupedVar> feedbackVars,
-			List<GroupedVar> doneVars, Map<Port, Var> portDependency,
+			List<Var> inVars, List<Var> feedbackVars, List<Var> doneVars,
+			Map<Port, Var> portDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Var> busDependency, Map<Bus, Integer> doneBusDependency) {
 		/** Create LoopBody Inputs **/
 		if (!inVars.isEmpty()) {
-			for (GroupedVar groupedVar : inVars) {
-				Var var = groupedVar.getVar();
+			for (Var var : inVars) {
 				Port port = loopBody.makeDataPort();
 				port.setIDLogical(var.getIndexedName());
 				portDependency.put(port, var);
-				portGroupDependency.put(port, groupedVar.getGroup());
+				portGroupDependency.put(port, 0);
 				busDependency.put(port.getPeer(), var);
 			}
 		}
@@ -647,10 +640,9 @@ public class ModuleUtil {
 	 * @return
 	 */
 	public static Component createModule(List<Component> components,
-			List<GroupedVar> inVars, List<GroupedVar> outVars,
-			String searchScope, Boolean isMutex, Exit.Type exitType,
-			Integer group, Map<Port, Var> portDependency,
-			Map<Bus, Var> busDependency,
+			List<Var> inVars, List<Var> outVars, String searchScope,
+			Boolean isMutex, Exit.Type exitType, Integer group,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 
@@ -701,18 +693,17 @@ public class ModuleUtil {
 	 * @param busDependency
 	 *            the bus dependency map
 	 */
-	public static void createModuleInterface(Module module,
-			List<GroupedVar> inVars, List<GroupedVar> outVars,
-			Exit.Type exitType, Map<Port, Var> portDependency,
+	public static void createModuleInterface(Module module, List<Var> inVars,
+			List<Var> outVars, Exit.Type exitType,
+			Map<Port, Var> portDependency,
 			Map<Port, Integer> portGroupDependency, Map<Bus, Var> busDependency) {
 		// Create Module Input(s) if any
 		if (!inVars.isEmpty()) {
-			for (GroupedVar groupedVar : inVars) {
-				Var var = groupedVar.getVar();
+			for (Var var : inVars) {
 				Port port = module.makeDataPort();
 				port.setIDLogical(var.getIndexedName());
 				portDependency.put(port, var);
-				portGroupDependency.put(port, groupedVar.getGroup());
+				portGroupDependency.put(port, 0);
 				busDependency.put(port.getPeer(), var);
 			}
 		}
@@ -722,8 +713,7 @@ public class ModuleUtil {
 		// Create module Output(s) if any
 		if (!outVars.isEmpty()) {
 			Exit exit = module.getExit(Exit.DONE);
-			for (GroupedVar groupedVar : outVars) {
-				Var var = groupedVar.getVar();
+			for (Var var : outVars) {
 				Bus dataBus = exit.makeDataBus();
 				Integer busSize = var.getType().getSizeInBits();
 				boolean isSigned = var.getType().isInt()
@@ -732,8 +722,7 @@ public class ModuleUtil {
 				dataBus.setIDLogical(var.getIndexedName());
 
 				portDependency.put(dataBus.getPeer(), var);
-				portGroupDependency.put(dataBus.getPeer(),
-						groupedVar.getGroup());
+				portGroupDependency.put(dataBus.getPeer(), 0);
 				busDependency.put(dataBus, var);
 			}
 		}
@@ -757,20 +746,18 @@ public class ModuleUtil {
 		PortUtil.mapOutControlPort(taskCall, 0, doneBusDependency);
 		Block thenBlock = (Block) createModule(
 				Arrays.asList((Component) taskCall),
-				Collections.<GroupedVar> emptyList(),
-				Collections.<GroupedVar> emptyList(), "taskCallThenBlock",
-				false, Exit.DONE, 0, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
-		GroupedVar inVars = new GroupedVar(outDecision, 0);
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				"taskCallThenBlock", false, Exit.DONE, 0, portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
 		Component branch = createBranch(decision, thenBlock, null,
-				inVars.getAsList(), Collections.<GroupedVar> emptyList(),
+				Arrays.asList(outDecision), Collections.<Var> emptyList(),
 				Collections.<Var, List<Var>> emptyMap(),
 				"callTask_" + task.getIDGlobalType(), Exit.DONE,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
 
 		Module module = (Module) createModule(Arrays.asList(branch),
-				inVars.getAsList(), Collections.<GroupedVar> emptyList(),
+				Arrays.asList(outDecision), Collections.<Var> emptyList(),
 				"taskCallBlock", false, Exit.DONE, 0, portDependency,
 				busDependency, portGroupDependency, doneBusDependency);
 
@@ -800,24 +787,24 @@ public class ModuleUtil {
 
 		// Map out TaskCall Done port
 		PortUtil.mapOutControlPort(taskCall, 0, doneBusDependency);
-		List<GroupedVar> inVars = new ArrayList<GroupedVar>();
-		inVars.add(new GroupedVar(value, 0));
+		List<Var> inVars = new ArrayList<Var>();
+		inVars.add(value);
 		Block thenBlock = (Block) createModule(moduleComponents, inVars,
-				Collections.<GroupedVar> emptyList(), "taskCallThenBlock",
-				false, Exit.DONE, 0, portDependency, busDependency,
+				Collections.<Var> emptyList(), "taskCallThenBlock", false,
+				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
-		inVars.add(new GroupedVar(outDecision, 0));
+		inVars.add(outDecision);
 
 		Component branch = createBranch(decision, thenBlock, null, inVars,
-				Collections.<GroupedVar> emptyList(),
+				Collections.<Var> emptyList(),
 				Collections.<Var, List<Var>> emptyMap(),
 				"callTask_" + task.getIDGlobalType(), Exit.DONE,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
 
 		Module module = (Module) createModule(Arrays.asList(branch), inVars,
-				Collections.<GroupedVar> emptyList(), "taskCallBlock", false,
+				Collections.<Var> emptyList(), "taskCallBlock", false,
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
 
@@ -976,13 +963,12 @@ public class ModuleUtil {
 		}
 	}
 
-	public static void populateExit(Exit exit, List<GroupedVar> outVars,
+	public static void populateExit(Exit exit, List<Var> outVars,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 		if (!outVars.isEmpty()) {
-			for (GroupedVar groupedVar : outVars) {
-				Var var = groupedVar.getVar();
+			for (Var var : outVars) {
 				Bus dataBus = exit.makeDataBus();
 				Integer busSize = var.getType().getSizeInBits();
 				boolean isSigned = var.getType().isInt()
@@ -991,8 +977,7 @@ public class ModuleUtil {
 				dataBus.setIDLogical(var.getIndexedName());
 
 				portDependency.put(dataBus.getPeer(), var);
-				portGroupDependency.put(dataBus.getPeer(),
-						groupedVar.getGroup());
+				portGroupDependency.put(dataBus.getPeer(), 0);
 				busDependency.put(dataBus, var);
 			}
 		}

@@ -45,7 +45,6 @@ import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.util.DesignUtil;
-import net.sf.orc2hdl.design.util.GroupedVar;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
 import net.sf.orc2hdl.preference.Constants;
@@ -141,10 +140,9 @@ public class DesignActor extends DfVisitor<Object> {
 
 		/** Build the Task Module which contains all the components **/
 		Module taskModule = (Module) ModuleUtil.createModule(componentsList,
-				Collections.<GroupedVar> emptyList(),
-				Collections.<GroupedVar> emptyList(), taskName + "Body", false,
-				Exit.RETURN, 0, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
+				Collections.<Var> emptyList(), Collections.<Var> emptyList(),
+				taskName + "Body", false, Exit.RETURN, 0, portDependency,
+				busDependency, portGroupDependency, doneBusDependency);
 		/** Create the task **/
 		Task task = DesignUtil.createTask(taskName, taskModule, false);
 		task.setIDLogical(taskName);
@@ -169,13 +167,14 @@ public class DesignActor extends DfVisitor<Object> {
 					true, 0);
 			currentState.setGlobal(true);
 			int i = 0;
-			Map<State,Integer> stateIndex = new HashMap<State,Integer>();
-			for(State state: actor.getFsm().getStates()){
+			Map<State, Integer> stateIndex = new HashMap<State, Integer>();
+			for (State state : actor.getFsm().getStates()) {
 				stateIndex.put(state, i);
 				i++;
 			}
 			int index = stateIndex.get(actor.getFsm().getInitialState());
-			currentState.setInitialValue(IrFactory.eINSTANCE.createExprInt(index));
+			currentState.setInitialValue(IrFactory.eINSTANCE
+					.createExprInt(index));
 			currentState.setValue(index);
 			actor.getStateVars().add(currentState);
 		}
