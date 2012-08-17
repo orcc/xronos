@@ -97,7 +97,7 @@ public class CastOp extends UnaryOp implements Emulatable {
 	}
 
 	/**
-	 * Performes a high level numerical emulation of this component.
+	 * Performs a high level numerical emulation of this component.
 	 * 
 	 * @param portValues
 	 *            a map of owner {@link Port} to {@link SizedInteger} input

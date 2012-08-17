@@ -40,7 +40,7 @@ public abstract class UnaryOp extends Operation {
 	private Bus result_bus;
 
 	/**
-	 * Constructs a unary opeation. By default, the done Bus of a UnaryOp is set
+	 * Constructs a unary operation. By default, the done Bus of a UnaryOp is set
 	 * to unused.
 	 */
 	public UnaryOp() {
@@ -100,4 +100,9 @@ public abstract class UnaryOp extends Operation {
 		return clone;
 	}
 
+	@Override
+	public String toString() {
+		return  result_bus.showIDLogical() + " = " + this.getIDGlobalType() + "("
+				+ getDataPort().showIDLogical() + ")";
+	}
 }

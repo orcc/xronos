@@ -175,4 +175,11 @@ public abstract class BinaryOp extends Operation {
 		return (leftSig && rightSig);
 	}
 
+	@Override
+	public String toString() {
+		return  result_bus.showIDLogical() + " = " + this.getIDGlobalType() + "("
+				+ getLeftDataPort().showIDLogical() + ", "
+				+ getRightDataPort().showIDLogical() + ")";
+	}
+
 }
