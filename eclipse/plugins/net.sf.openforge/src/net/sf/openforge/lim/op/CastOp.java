@@ -503,4 +503,10 @@ public class CastOp extends UnaryOp implements Emulatable {
 
 	}
 
+	@Override
+	public String toString() {
+		return getResultBus().showIDLogical() + " = " + this.getIDGlobalType()
+				+ "(" + getDataPort().showIDLogical() + ", " + castSize + ")";
+	}
+
 }

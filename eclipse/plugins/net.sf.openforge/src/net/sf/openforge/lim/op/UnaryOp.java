@@ -102,7 +102,7 @@ public abstract class UnaryOp extends Operation {
 
 	@Override
 	public String toString() {
-		return  result_bus.showIDLogical() + " = " + this.getIDGlobalType() + "("
+		return  getResultBus().showIDLogical() + " = " + this.getIDGlobalType() + "("
 				+ getDataPort().showIDLogical() + ")";
 	}
 }
