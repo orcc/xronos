@@ -845,6 +845,31 @@ public abstract class Module extends Component implements Cloneable {
 		}
 	}
 
+	@Override
+	public String toString() {
+		String dataPorts = "";
+		String dataBuses = "";
+
+		for (Iterator<Port> iter = getDataPorts().iterator(); iter.hasNext();) {
+			Port port = iter.next();
+			dataPorts = port.showIDLogical();
+			if (iter.hasNext()) {
+				dataPorts = dataPorts + ",";
+			}
+		}
+
+		for (Iterator<Bus> iter = getDataBuses().iterator(); iter.hasNext();) {
+			Bus bus = iter.next();
+			dataBuses = bus.showIDLogical();
+			if (iter.hasNext()) {
+				dataBuses = dataBuses + ",";
+			}
+		}
+
+		return this.getIDGlobalType() + "([" + dataPorts + "],[" + dataBuses
+				+ "])";
+	}
+	
 	private class BlockSearchLabel implements SearchLabel {
 		private String localLabel;
 

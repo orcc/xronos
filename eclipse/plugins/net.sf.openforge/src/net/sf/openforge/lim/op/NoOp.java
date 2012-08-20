@@ -299,8 +299,46 @@ public class NoOp extends Operation implements Emulatable {
 		return mod;
 	}
 
+	@Override
+	public String toString() {
+
+		String busAndType = getResultBus().showIDLogical() + " = "
+				+ this.getIDGlobalType() + "(";
+
+		String strReason = "";
+
+		int reason = getReason();
+
+		switch (reason) {
+		case LOCAL_READ:
+			strReason = "LOCAL_READ";
+		case LOCAL_WRITE:
+			strReason = "LOCAL_WRITE";
+		case RETURN:
+			strReason = "RETURN";
+		case PAREN:
+			strReason = "PAREN";
+		case FILLER:
+			strReason = "FILLER";
+		}
+
+		String ports = "";
+
+		for (Iterator<Port> iter = getDataPorts().iterator(); iter.hasNext();) {
+			Port port = iter.next();
+			ports = port.showIDLogical();
+			if (iter.hasNext()) {
+				ports = ports + ",";
+			}
+		}
+
+		return busAndType + strReason + "," + ports + ")";
+
+	}
+
 	/*
 	 * End new constant prop rules implementation.
 	 * =================================================
 	 */
+
 }

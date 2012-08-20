@@ -24,6 +24,7 @@ package net.sf.openforge.lim;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -425,6 +426,32 @@ public class Block extends Module {
 		for (Component component : sequence) {
 			clone.sequence.add(cloneMap.get(component));
 		}
+
+	}
+
+	@Override
+	public String toString() {
+		String dataPorts = "";
+		String dataBuses = "";
+
+		for (Iterator<Port> iter = getDataPorts().iterator(); iter.hasNext();) {
+			Port port = iter.next();
+			dataPorts = port.showIDLogical();
+			if (iter.hasNext()) {
+				dataPorts = dataPorts + ",";
+			}
+		}
+
+		for (Iterator<Bus> iter = getDataBuses().iterator(); iter.hasNext();) {
+			Bus bus = iter.next();
+			dataBuses = bus.showIDLogical();
+			if (iter.hasNext()) {
+				dataBuses = dataBuses + ",";
+			}
+		}
+
+		return this.getIDGlobalType() + "([" + dataPorts + "],[" + dataBuses
+				+ "])";
 	}
 
 }

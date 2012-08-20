@@ -194,7 +194,9 @@ public abstract class Constant extends ValueOp implements Emulatable {
 
 	@Override
 	public String toString() {
-		String ret = super.toString();
+		String ret = getValueBus().showIDLogical() + " = "
+				+ this.getIDGlobalType() + "(" + this.getValueBus().getSize()
+				+ ",";
 		if (getValueBus() != null && getValueBus().getValue() != null) {
 			long valueBits = getValueBus().getValue().getConstantMask()
 					& getValueBus().getValue().getValueMask();
@@ -202,7 +204,7 @@ public abstract class Constant extends ValueOp implements Emulatable {
 		} else {
 			ret += "<value=NULL>";
 		}
-		return ret;
+		return ret + ")";
 	}
 
 	/**
