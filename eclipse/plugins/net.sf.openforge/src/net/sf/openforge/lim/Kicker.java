@@ -52,7 +52,7 @@ public class Kicker extends Module implements Composable {
 
 		// make an exit
 		Exit exit = makeExit(0);
-		// Assuming it has a latency of 2 -- I believe this is irrelevent
+		// Assuming it has a latency of 2 -- I believe this is irrelevant
 		exit.setLatency(Latency.get(2));
 
 		// create the objects
@@ -206,7 +206,7 @@ public class Kicker extends Module implements Composable {
 
 	/**
 	 * Indicates that this module will be instantiated as its own module in HDL,
-	 * ie signal names cannot propagate across its boundry.
+	 * ie signal names cannot propagate across its boundary.
 	 * 
 	 * @return a value of type 'boolean'
 	 */

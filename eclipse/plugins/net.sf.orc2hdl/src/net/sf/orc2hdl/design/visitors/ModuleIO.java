@@ -221,6 +221,17 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 	}
 
 	@Override
+	public Void caseExprVar(ExprVar exprVar) {
+		Var var = exprVar.getUse().getVariable();
+		if (!phiVisit) {
+			if (definedInOtherBlock(var, currentBlockBasic)) {
+				blkInputVars.get(currentBlock).add(var);
+			}
+		}
+		return null;
+	}
+
+	@Override
 	public Void caseInstAssign(InstAssign assign) {
 		super.caseInstAssign(assign);
 		Var target = assign.getTarget().getVariable();

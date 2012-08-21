@@ -29,7 +29,7 @@ import net.sf.openforge.lim.Visitor;
 import net.sf.openforge.report.FPGAResource;
 
 /**
- * An or reductiono peration in a form of |.
+ * An or reduction operation in a form of |.
  * 
  * Created: Mon May 19 16:39:34 2003
  * 
