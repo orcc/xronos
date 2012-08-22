@@ -66,6 +66,7 @@ import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.StandardPrinter;
+import net.sf.orcc.backends.transform.CastAdder;
 import net.sf.orcc.backends.transform.DivisionSubstitution;
 import net.sf.orcc.backends.transform.EmptyBlockRemover;
 import net.sf.orcc.backends.transform.Inliner;
@@ -305,8 +306,7 @@ public class Orc2HDL extends AbstractBackend {
 					new GlobalArrayInitializer(true),
 					new DfVisitor<Void>(new Inliner(true, true)),
 					new DfVisitor<Void>(new InstTernaryAdder()),
-					new UnaryListRemoval(),
-					new CustomPeekAdder(),
+					new UnaryListRemoval(), new CustomPeekAdder(),
 					new DeadGlobalElimination(),
 					new DfVisitor<Void>(new DeadCodeElimination()),
 					new DfVisitor<Void>(new XlimDeadVariableRemoval()),
@@ -315,7 +315,7 @@ public class Orc2HDL extends AbstractBackend {
 					new DfVisitor<CfgNode>(new ControlFlowAnalyzer()),
 					new DfVisitor<Void>(new InstPhiTransformation()),
 					new DfVisitor<Expression>(new LiteralIntegersAdder()),
-					// new DfVisitor<Expression>(new CastAdder(true)),
+					new DfVisitor<Expression>(new CastAdder(true)),
 					new XlimVariableRenamer(),
 					new DfVisitor<Void>(new EmptyBlockRemover()),
 					new DfVisitor<Void>(new BlockCombine()) };

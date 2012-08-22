@@ -167,6 +167,11 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		decisionInputVars.put(nodeWhile, new HashSet<Var>());
 		phiVisit = true;
 		doSwitch(nodeWhile.getJoinBlock());
+		if (decisionInputVars.get(nodeWhile).isEmpty()) {
+			Var whileCondition = ((ExprVar) nodeWhile.getCondition()).getUse()
+					.getVariable();
+			decisionInputVars.get(nodeWhile).add(whileCondition);
+		}
 		resources.addDecisionInput(nodeWhile, decisionInputVars.get(nodeWhile));
 		resources.addLoopPhi(nodeWhile, joinVarMap.get(nodeWhile));
 		phiVisit = false;

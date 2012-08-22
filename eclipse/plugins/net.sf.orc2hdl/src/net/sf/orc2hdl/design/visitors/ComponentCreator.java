@@ -261,7 +261,13 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				componentList, decisionVar, busDependency);
 
 		if (decisionComponent == null) {
-			throw new NullPointerException("Fuck off and die!");
+			Var target = IrFactory.eINSTANCE.createVar(decisionVar.getType(),
+					"decisionVar_" + decisionVar.getIndexedName(), true,
+					decisionVar.getIndex());
+			decisionComponent = ModuleUtil.assignComponent(target, decisionVar,
+					portDependency, busDependency, portGroupDependency,
+					doneBusDependency);
+			componentList.add(decisionComponent);
 		}
 
 		List<Component> decisionBodyComponents = new ArrayList<Component>(
