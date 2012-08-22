@@ -175,7 +175,7 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 		blkInputVars.put(nodeWhile, new HashSet<Var>());
 		blkOutputVars.put(nodeWhile, new HashSet<Var>());
 		doSwitch(nodeWhile.getBlocks());
-		// otherBlockIO(currentBlock, nodeWhile, nodeWhile.getBlocks());
+		otherLoopIO(currentBlock, nodeWhile, nodeWhile.getBlocks());
 		moduleInputVars.get(nodeWhile).addAll(blkInputVars.get(nodeWhile));
 		resources.addLoopOtherInputs(nodeWhile, blkInputVars.get(nodeWhile));
 
@@ -283,6 +283,31 @@ public class ModuleIO extends AbstractIrVisitor<Void> {
 			}
 		}
 		return false;
+	}
+
+	private void otherLoopIO(Block previousBlock, Block currentBlock,
+			List<Block> currentBlocks) {
+		if (currentBlocks.contains(previousBlock)) {
+			for (Var previousInputVar : moduleInputVars.get(previousBlock)) {
+				List<Var> assignTargets = new ArrayList<Var>();
+				for (Block block : currentBlocks) {
+					if (block.isBlockBasic()) {
+						for (Instruction inst : ((BlockBasic) block)
+								.getInstructions()) {
+							if (inst.isInstAssign()) {
+								Var target = ((InstAssign) inst).getTarget()
+										.getVariable();
+								assignTargets.add(target);
+							}
+						}
+
+					}
+				}
+				if (!assignTargets.contains(previousInputVar) && !joinVarMap.get(currentBlock).containsKey(previousInputVar)) {
+					blkInputVars.get(currentBlock).add(previousInputVar);
+				}
+			}
+		}
 	}
 
 	private void otherBlockIO(Block previousBlock, Block currentBlock,

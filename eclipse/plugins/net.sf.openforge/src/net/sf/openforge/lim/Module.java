@@ -51,7 +51,7 @@ public abstract class Module extends Component implements Cloneable {
 
 	/** Collection of Component */
 	private Collection<Component> components = new ArrayList<Component>();
-	//private Collection<Component> components = new HashSet<Component>();
+	// private Collection<Component> components = new HashSet<Component>();
 
 	/** True iff this module needs a go signal */
 	private boolean consumesGo = false;
@@ -853,24 +853,32 @@ public abstract class Module extends Component implements Cloneable {
 
 		for (Iterator<Port> iter = getDataPorts().iterator(); iter.hasNext();) {
 			Port port = iter.next();
-			dataPorts = port.showIDLogical();
+			String portName = port.showIDLogical();
 			if (iter.hasNext()) {
-				dataPorts = dataPorts + ",";
+				if (dataPorts.equals("")) {
+					dataPorts = portName;
+				} else {
+					dataPorts = dataPorts + "," + portName;
+				}
 			}
 		}
 
 		for (Iterator<Bus> iter = getDataBuses().iterator(); iter.hasNext();) {
 			Bus bus = iter.next();
-			dataBuses = bus.showIDLogical();
+			String busName = bus.showIDLogical();
 			if (iter.hasNext()) {
-				dataBuses = dataBuses + ",";
+				if (dataBuses.equals("")) {
+					dataBuses = busName;
+				} else {
+					dataBuses = dataBuses + "," + busName;
+				}
 			}
 		}
 
 		return this.getIDGlobalType() + "([" + dataPorts + "],[" + dataBuses
 				+ "])";
 	}
-	
+
 	private class BlockSearchLabel implements SearchLabel {
 		private String localLabel;
 
