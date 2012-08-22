@@ -256,8 +256,13 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		doSwitch(blockWhile.getJoinBlock());
 		Var decisionVar = ((ExprVar) blockWhile.getCondition()).getUse()
 				.getVariable();
+
 		Component decisionComponent = ModuleUtil.findDecisionComponent(
 				componentList, decisionVar, busDependency);
+
+		if (decisionComponent == null) {
+			throw new NullPointerException("Fuck off and die!");
+		}
 
 		List<Component> decisionBodyComponents = new ArrayList<Component>(
 				componentList);

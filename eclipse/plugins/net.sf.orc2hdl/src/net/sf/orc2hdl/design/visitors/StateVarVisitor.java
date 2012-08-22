@@ -144,12 +144,12 @@ public class StateVarVisitor extends AbstractIrVisitor<Object> {
 			List<LogicalValue> subElements = new ArrayList<LogicalValue>(
 					dimension.get(0));
 			List<Integer> newListDimension = dimension;
-			Integer firstDim = dimension.get(0);
+			// Integer firstDim = dimension.get(0);
 			newListDimension.remove(0);
-			for (int i = 0; i < firstDim; i++) {
-				subElements.add(makeLogicalValueObject(Array.get(obj, i),
-						newListDimension, type));
-			}
+			// for (int i = 0; i < firstDim; i++) {
+			subElements.add(makeLogicalValueObject(Array.get(obj, 0),
+					newListDimension, type));
+			// }
 
 			logicalValue = new Record(subElements);
 		} else {
