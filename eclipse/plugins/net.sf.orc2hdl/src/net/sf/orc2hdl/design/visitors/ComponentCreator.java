@@ -74,6 +74,7 @@ import net.sf.openforge.lim.op.XorOp;
 import net.sf.openforge.lim.primitive.And;
 import net.sf.openforge.lim.primitive.Or;
 import net.sf.openforge.util.MathStuff;
+import net.sf.openforge.util.naming.IDSourceInfo;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.ModuleUtil;
@@ -241,6 +242,11 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				elseBlock, ifInputVars, ifOutputVars, phiOuts, "ifBLOCK",
 				Exit.DONE, portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
+		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+				blockIf.getLineNumber());
+
+		currentComponent.setIDSourceInfo(sinfo);
+
 		componentList = new ArrayList<Component>();
 		componentList.addAll(oldComponents);
 		componentList.add(currentComponent);
@@ -293,6 +299,11 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				loopPhi, loopInVars, loopOutVars, loopBodyInVars,
 				loopBodyOutVars, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
+
+		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+				blockWhile.getLineNumber());
+
+		loop.setIDSourceInfo(sinfo);
 
 		/** Clean componentList **/
 		componentList = new ArrayList<Component>();
@@ -431,6 +442,9 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		assignTarget = assign.getTarget();
 		super.caseInstAssign(assign);
 		if (currentComponent != null) {
+			IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+					assign.getLineNumber());
+			currentComponent.setIDSourceInfo(sinfo);
 			componentList.add(currentComponent);
 
 			Var outVar = assign.getTarget().getVariable();
@@ -445,6 +459,9 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	@Override
 	public List<Component> caseInstCall(InstCall call) {
 		currentComponent = new TaskCall();
+		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+				call.getLineNumber());
+		currentComponent.setIDSourceInfo(sinfo);
 		resources.addTaskCall(call, (TaskCall) currentComponent);
 		return null;
 	}
@@ -536,7 +553,9 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 		PortUtil.mapOutDataPorts(block, target, busDependency,
 				doneBusDependency);
-
+		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+				load.getLineNumber());
+		block.setIDSourceInfo(sinfo);
 		componentList.add(block);
 
 		return null;
@@ -621,6 +640,10 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
 					castedIndexVar);
 			doSwitch(assign);
+
+			IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+					store.getLineNumber());
+			block.setIDSourceInfo(sinfo);
 
 			currentComponent = block;
 			List<Var> inVars = new ArrayList<Var>();
