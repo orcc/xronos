@@ -68,7 +68,7 @@ public class ActionTokenPeek extends FifoAccess {
 		/*
 		 * We only support token peeks to the head of the queue. If we leave
 		 * this pin write here then resource sequencing will enforce that 2
-		 * peeks are in different clock cyles due to their index port writes.
+		 * peeks are in different clock cycles due to their index port writes.
 		 * final SimplePinWrite indexWrite = new SimplePinWrite(indexPin);
 		 * indexWrite.getDataPort().setBus(index.getPeer());
 		 * indexWrite.getGoPort().setBus(getGoPort().getPeer());

@@ -55,7 +55,7 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import org.eclipse.emf.ecore.EObject;
 
 /**
- * This class finds the inputs and ouputs of an If and While block
+ * This class finds the inputs and outputs of an If and While block
  * 
  * @author Endri Bezati
  * 

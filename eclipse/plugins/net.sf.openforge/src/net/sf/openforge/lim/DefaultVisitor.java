@@ -22,6 +22,7 @@
 package net.sf.openforge.lim;
 
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -270,12 +271,13 @@ public class DefaultVisitor implements Visitor {
 
 		block.getInBuf().accept(this);
 
-		for (Iterator it = getIterator(block.getSequence()); it.hasNext();) {
+		for (Component component : (new ArrayList<Component>(
+				block.getSequence()))) {
 			if (_lim.db) {
 				writer.inc();
 			}
 
-			((Visitable) it.next()).accept(this);
+			((Visitable) component).accept(this);
 
 			if (_lim.db) {
 				writer.decrease();

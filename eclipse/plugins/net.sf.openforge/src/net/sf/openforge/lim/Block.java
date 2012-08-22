@@ -436,17 +436,23 @@ public class Block extends Module {
 
 		for (Iterator<Port> iter = getDataPorts().iterator(); iter.hasNext();) {
 			Port port = iter.next();
-			dataPorts = port.showIDLogical();
-			if (iter.hasNext()) {
-				dataPorts = dataPorts + ",";
+			String portName = port.showIDLogical();
+
+			if (dataPorts.equals("")) {
+				dataPorts = portName;
+			} else {
+				dataPorts = dataPorts + "," + portName;
 			}
+
 		}
 
 		for (Iterator<Bus> iter = getDataBuses().iterator(); iter.hasNext();) {
 			Bus bus = iter.next();
-			dataBuses = bus.showIDLogical();
-			if (iter.hasNext()) {
-				dataBuses = dataBuses + ",";
+			String busName = bus.showIDLogical();
+			if (dataBuses.equals("")) {
+				dataBuses = busName;
+			} else {
+				dataBuses = dataBuses + "," + busName;
 			}
 		}
 

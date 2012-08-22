@@ -24,6 +24,7 @@ package net.sf.openforge.lim;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import net.sf.openforge.util.SizedInteger;
@@ -272,6 +273,22 @@ public class OutBuf extends Component implements Emulatable {
 	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException("attempt to clone OutBuf");
+	}
+
+	@Override
+	public String toString() {
+		String dataBuses = "";
+		for (Iterator<Bus> iter = getDataBuses().iterator(); iter.hasNext();) {
+			Bus bus = iter.next();
+			String busName = bus.showIDLogical();
+			if (dataBuses.equals("")) {
+				dataBuses = busName;
+			} else {
+				dataBuses = dataBuses + "," + bus;
+			}
+		}
+
+		return this.getIDGlobalType() + "([" + dataBuses + "])";
 	}
 
 }

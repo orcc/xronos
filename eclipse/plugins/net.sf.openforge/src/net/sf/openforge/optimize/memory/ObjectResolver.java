@@ -1046,24 +1046,24 @@ public class ObjectResolver extends DataFlowVisitor {
 	 *            a non-null Port
 	 * @return a Set of {@link LogicalValue} objects
 	 */
-	private Set getValues(Port port) {
-		final Set set = valueMap.get(port);
+	private Set<LogicalValue> getValues(Port port) {
+		final Set<LogicalValue> set = valueMap.get(port);
 		return set == null ? getValues(getInputBus(port)) : set;
 	}
 
-	private Set getValues(Bus bus) {
+	private Set<LogicalValue> getValues(Bus bus) {
 		return getValuesForObject(bus);
 	}
 
-	private Set getValues(Location location) {
+	private Set<LogicalValue> getValues(Location location) {
 		return getValuesForObject(location);
 	}
 
-	private Set getValues(Resource reg) {
+	private Set<LogicalValue> getValues(Resource reg) {
 		return getValuesForObject(reg);
 	}
 
-	private Set getValuesForObject(Object key) {
+	private Set<LogicalValue> getValuesForObject(Object key) {
 		final Set set = valueMap.get(key);
 		return set == null ? Collections.EMPTY_SET : set;
 	}

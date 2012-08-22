@@ -854,24 +854,22 @@ public abstract class Module extends Component implements Cloneable {
 		for (Iterator<Port> iter = getDataPorts().iterator(); iter.hasNext();) {
 			Port port = iter.next();
 			String portName = port.showIDLogical();
-			if (iter.hasNext()) {
-				if (dataPorts.equals("")) {
-					dataPorts = portName;
-				} else {
-					dataPorts = dataPorts + "," + portName;
-				}
+
+			if (dataPorts.equals("")) {
+				dataPorts = portName;
+			} else {
+				dataPorts = dataPorts + "," + portName;
 			}
+
 		}
 
 		for (Iterator<Bus> iter = getDataBuses().iterator(); iter.hasNext();) {
 			Bus bus = iter.next();
 			String busName = bus.showIDLogical();
-			if (iter.hasNext()) {
-				if (dataBuses.equals("")) {
-					dataBuses = busName;
-				} else {
-					dataBuses = dataBuses + "," + busName;
-				}
+			if (dataBuses.equals("")) {
+				dataBuses = busName;
+			} else {
+				dataBuses = dataBuses + "," + busName;
 			}
 		}
 

@@ -23,6 +23,7 @@ package net.sf.openforge.lim;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -357,6 +358,22 @@ public class InBuf extends Component implements Emulatable {
 	@Override
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException("attempt to clone InBuf");
+	}
+
+	@Override
+	public String toString() {
+		String dataBuses = "";
+		for (Iterator<Bus> iter = getDataBuses().iterator(); iter.hasNext();) {
+			Bus bus = iter.next();
+			String busName = bus.showIDLogical();
+			if (dataBuses.equals("")) {
+				dataBuses = busName;
+			} else {
+				dataBuses = dataBuses + "," + bus;
+			}
+		}
+
+		return this.getIDGlobalType() + "([" + dataBuses + "])";
 	}
 
 } // class InBuf

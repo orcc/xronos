@@ -242,11 +242,12 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				elseBlock, ifInputVars, ifOutputVars, phiOuts, "ifBLOCK",
 				Exit.DONE, portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
+		
 		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 				blockIf.getLineNumber());
 
 		currentComponent.setIDSourceInfo(sinfo);
-
+		
 		componentList = new ArrayList<Component>();
 		componentList.addAll(oldComponents);
 		componentList.add(currentComponent);

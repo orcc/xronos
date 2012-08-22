@@ -702,6 +702,7 @@ public class ModuleUtil {
 			for (Var var : inVars) {
 				Port port = module.makeDataPort();
 				port.setIDLogical(var.getIndexedName());
+				port.getPeer().setIDLogical(var.getIndexedName());
 				portDependency.put(port, var);
 				portGroupDependency.put(port, 0);
 				busDependency.put(port.getPeer(), var);
