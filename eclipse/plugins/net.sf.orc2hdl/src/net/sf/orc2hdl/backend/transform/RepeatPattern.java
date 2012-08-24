@@ -197,13 +197,11 @@ public class RepeatPattern extends DfVisitor<Void> {
 		/** Add the I/O List for the repeat pattern **/
 		for (Port port : inputMap.keySet()) {
 			Var inVar = inputMap.get(port);
-			inVar.setGlobal(true);
 			actor.getStateVars().add(inVar);
 		}
 
 		for (Port port : outputMap.keySet()) {
 			Var inVar = outputMap.get(port);
-			inVar.setGlobal(true);
 			actor.getStateVars().add(inVar);
 		}
 		return null;

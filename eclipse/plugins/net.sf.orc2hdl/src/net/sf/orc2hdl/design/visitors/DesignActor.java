@@ -165,7 +165,6 @@ public class DesignActor extends DfVisitor<Object> {
 		if (actor.getFsm() != null) {
 			currentState = IrFactory.eINSTANCE.createVarInt("currentState", 32,
 					true, 0);
-			currentState.setGlobal(true);
 			int i = 0;
 			Map<State, Integer> stateIndex = new HashMap<State, Integer>();
 			for (State state : actor.getFsm().getStates()) {
