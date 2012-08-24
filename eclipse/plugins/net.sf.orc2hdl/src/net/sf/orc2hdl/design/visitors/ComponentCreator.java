@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.openforge.lim.Block;
+import net.sf.openforge.lim.Branch;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.DataDependency;
@@ -190,7 +191,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseBlockIf(BlockIf blockIf) {
 		List<Component> oldComponents = new ArrayList<Component>(componentList);
 		// Create the decision
-		Var decisionVar = resources.getBranchDecision(blockIf);
+		Var decisionVar = resources.getBlockDecisionInput(blockIf).get(0);
 		Decision decision = null;
 		String condName = "decision_" + procedure.getName() + "_"
 				+ decisionVar.getIndexedName();
@@ -203,8 +204,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		componentList = new ArrayList<Component>();
 		doSwitch(blockIf.getThenBlocks());
 		// Get the then Input Vars
-		List<Var> thenInputs = resources.getBranchThenVars(blockIf);
-		List<Var> thenOutputs = resources.getBranchThenOutputVars(blockIf);
+		List<Var> thenInputs = resources.getBranchThenInput(blockIf);
+		List<Var> thenOutputs = resources.getBranchThenOutput(blockIf);
 		Block thenBlock = (Block) ModuleUtil.createModule(componentList,
 				thenInputs, thenOutputs, "thenBlock", false, Exit.DONE, 0,
 				portDependency, busDependency, portGroupDependency,
@@ -217,8 +218,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			componentList = new ArrayList<Component>();
 			doSwitch(blockIf.getElseBlocks());
 
-			List<Var> elseInputs = resources.getBranchElseVars(blockIf);
-			List<Var> elseOutputs = resources.getBranchElseOutputVars(blockIf);
+			List<Var> elseInputs = resources.getBranchElseInput(blockIf);
+			List<Var> elseOutputs = resources.getBranchElseOutput(blockIf);
 			elseBlock = (Block) ModuleUtil.createModule(componentList,
 					elseInputs, elseOutputs, "elseBlock", false, Exit.DONE, 1,
 					portDependency, busDependency, portGroupDependency,
@@ -234,20 +235,20 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			elseBlock.setIDLogical("elseBlock");
 		}
 		// Get All input Vars
-		List<Var> ifInputVars = resources.getBranchInputs(blockIf);
-		List<Var> ifOutputVars = resources.getBranchOutputs(blockIf);
+		List<Var> ifInputVars = resources.getBlockInput(blockIf);
+		List<Var> ifOutputVars = resources.getBlockOutput(blockIf);
 		// Get Phi target Vars, aka branchIf Outputs
-		Map<Var, List<Var>> phiOuts = resources.getBranchPhiVars(blockIf);
-		currentComponent = ModuleUtil.createBranch(decision, thenBlock,
+		Map<Var, List<Var>> phiOuts = resources.getBlockPhi(blockIf);
+		Branch branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
 				elseBlock, ifInputVars, ifOutputVars, phiOuts, "ifBLOCK",
 				Exit.DONE, portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
-		
+
 		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 				blockIf.getLineNumber());
 
-		currentComponent.setIDSourceInfo(sinfo);
-		
+		branch.setIDSourceInfo(sinfo);
+		currentComponent = branch;
 		componentList = new ArrayList<Component>();
 		componentList.addAll(oldComponents);
 		componentList.add(currentComponent);
@@ -287,13 +288,13 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		List<Component> bodyComponents = new ArrayList<Component>(componentList);
 
 		/** Create the Loop **/
-		List<Var> decisionInVars = resources.getDecisionInput(blockWhile);
-		List<Var> loopInVars = resources.getLoopIntput(blockWhile);
-		List<Var> loopOutVars = resources.getLoopOutput(blockWhile);
+		List<Var> decisionInVars = resources.getBlockDecisionInput(blockWhile);
+		List<Var> loopInVars = resources.getBlockInput(blockWhile);
+		List<Var> loopOutVars = resources.getBlockOutput(blockWhile);
 		List<Var> loopBodyInVars = resources.getLoopBodyInput(blockWhile);
 		List<Var> loopBodyOutVars = resources.getLoopBodyOutput(blockWhile);
 
-		Map<Var, List<Var>> loopPhi = resources.getLoopPhi(blockWhile);
+		Map<Var, List<Var>> loopPhi = resources.getBlockPhi(blockWhile);
 
 		Loop loop = (Loop) ModuleUtil.createLoop(decisionComponent,
 				decisionBodyComponents, decisionInVars, bodyComponents,

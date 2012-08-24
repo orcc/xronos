@@ -30,20 +30,15 @@
 package net.sf.orc2hdl.design;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.Block;
-import net.sf.orcc.ir.BlockIf;
-import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.Var;
 
@@ -57,105 +52,80 @@ import net.sf.orcc.ir.Var;
  */
 public class ResourceCache {
 
-	/** Map of BlockIf and a List of Decision, Then, Else Input and the Phi Vars **/
-	private final Map<BlockIf, List<List<Var>>> branchIfInput = new HashMap<BlockIf, List<List<Var>>>();
+	/** Map of a Branch Else Block Input Variables **/
+	private Map<Block, List<Var>> elseInputs = new HashMap<Block, List<Var>>();
 
-	/** Map of BlockIf and a List of Then and Else Block outputs **/
-	private final Map<BlockIf, List<List<Var>>> branchIfOutput = new HashMap<BlockIf, List<List<Var>>>();
-
-	/** Map of BlockIf and its Map of Target Var and its associated Values Var **/
-	private final Map<BlockIf, Map<Var, List<Var>>> branchPhi = new HashMap<BlockIf, Map<Var, List<Var>>>();
-
-	/** Map of Block and its decision Input **/
-	private Map<Block, List<Var>> decisionInput = new HashMap<Block, List<Var>>();
+	/** Map of a Branch Else Block Output Variables **/
+	private Map<Block, List<Var>> elseOutputs = new HashMap<Block, List<Var>>();
 
 	private final Map<Port, ActionIOHandler> ioHandlers = new HashMap<Port, ActionIOHandler>();
 
-	private Map<BlockWhile, List<Var>> loopInput = new HashMap<BlockWhile, List<Var>>();
+	/** Map containing the join node **/
+	private Map<Block, Map<Var, List<Var>>> joinVarMap = new HashMap<Block, Map<Var, List<Var>>>();
 
-	private Map<BlockWhile, List<Var>> loopOtherInput = new HashMap<BlockWhile, List<Var>>();
+	/** Map of a LoopBody Block Input Variables **/
+	private Map<Block, List<Var>> loopBodyInputs = new HashMap<Block, List<Var>>();
 
-	private Map<BlockWhile, List<Var>> loopOutput = new HashMap<BlockWhile, List<Var>>();
-
-	/**
-	 * Map of BlockWhile and its Map of Target Var and its associated Values Var
-	 **/
-	private Map<BlockWhile, Map<Var, List<Var>>> loopPhi = new HashMap<BlockWhile, Map<Var, List<Var>>>();
+	/** Map of a LoopBody Block Output Variables **/
+	private Map<Block, List<Var>> loopBodyOutputs = new HashMap<Block, List<Var>>();
 
 	private final Map<Var, Location> memLocations = new HashMap<Var, Location>();
 
+	/** Map of a Decision Module Input Variables **/
+	private Map<Block, List<Var>> stmDecision = new HashMap<Block, List<Var>>();
+
+	/** Map of a Loop Module Input Variables **/
+	private Map<Block, List<Var>> stmInputs = new HashMap<Block, List<Var>>();
+
+	/** Map of a Loop Module Output Variables **/
+	private Map<Block, List<Var>> stmOutputs = new HashMap<Block, List<Var>>();
+
 	private final Map<InstCall, TaskCall> taskCalls = new HashMap<InstCall, TaskCall>();
+
+	/** Map of a Branch Then Block Input Variables **/
+	private Map<Block, List<Var>> thenInputs = new HashMap<Block, List<Var>>();
+
+	/** Map of a Branch Then Block Output Variables **/
+	private Map<Block, List<Var>> thenOutputs = new HashMap<Block, List<Var>>();
 
 	public ResourceCache() {
 	}
 
-	public void addBranchDecisionInput(BlockIf blockIf, Var var) {
-		List<List<Var>> listOfVars = new ArrayList<List<Var>>();
-		listOfVars.add(0, Arrays.asList(var));
-		branchIfInput.put(blockIf, listOfVars);
-	}
+	public void addBranch(Block block, Map<Block, List<Var>> stmDecision,
+			Map<Block, List<Var>> stmInputs, Map<Block, List<Var>> stmOutputs,
+			Map<Block, List<Var>> thenInputs,
+			Map<Block, List<Var>> thenOutputs,
+			Map<Block, List<Var>> elseInputs,
+			Map<Block, List<Var>> elseOutputs,
+			Map<Block, Map<Var, List<Var>>> joinVarMap) {
+		// Initialize
+		this.stmDecision.put(block, new ArrayList<Var>());
+		this.stmInputs.put(block, new ArrayList<Var>());
+		this.stmOutputs.put(block, new ArrayList<Var>());
+		this.thenInputs.put(block, new ArrayList<Var>());
+		this.thenOutputs.put(block, new ArrayList<Var>());
+		this.elseInputs.put(block, new ArrayList<Var>());
+		this.elseOutputs.put(block, new ArrayList<Var>());
 
-	public void addBranchElseInput(BlockIf blockIf, Set<Var> elseVars) {
-		List<List<Var>> listOfVars = branchIfInput.get(blockIf);
-		List<Var> vars = new ArrayList<Var>();
-		for (Var var : elseVars) {
-			vars.add(var);
+		// Copy Vars
+		copyVars(block, this.stmDecision, stmDecision);
+		copyVars(block, this.stmInputs, stmInputs);
+		copyVars(block, this.stmOutputs, stmOutputs);
+		copyVars(block, this.thenInputs, thenInputs);
+		copyVars(block, this.thenOutputs, thenOutputs);
+		copyVars(block, this.elseInputs, elseInputs);
+		copyVars(block, this.elseOutputs, elseOutputs);
+
+		// Copy JoinVarMap
+		Map<Var, List<Var>> copyMap = new HashMap<Var, List<Var>>();
+		for (Var var : joinVarMap.get(block).keySet()) {
+			List<Var> listVars = new ArrayList<Var>();
+			for (Var groupVar : joinVarMap.get(block).get(var)) {
+				listVars.add(groupVar);
+			}
+			copyMap.put(var, listVars);
 		}
-		listOfVars.add(2, vars);
-		branchIfInput.put(blockIf, listOfVars);
-	}
-
-	public void addBranchElseOutput(BlockIf blockIf, Set<Var> elseVars) {
-		List<List<Var>> listOfVars = branchIfOutput.get(blockIf);
-		List<Var> vars = new ArrayList<Var>();
-		for (Var var : elseVars) {
-			vars.add(var);
-		}
-
-		listOfVars.add(2, vars);
-		branchIfOutput.put(blockIf, listOfVars);
-	}
-
-	public void addBranchPhi(BlockIf blockIf, Map<Var, List<Var>> phiMapVar) {
-		branchPhi.put(blockIf, phiMapVar);
-		List<List<Var>> listOfVars = new ArrayList<List<Var>>();
-		List<Var> vars = new ArrayList<Var>();
-		for (Var var : phiMapVar.keySet()) {
-			vars.add(var);
-		}
-
-		listOfVars.add(0, vars);
-		branchIfOutput.put(blockIf, listOfVars);
-	}
-
-	public void addBranchThenInput(BlockIf blockIf, Set<Var> thenVars) {
-		List<List<Var>> listOfVars = branchIfInput.get(blockIf);
-		List<Var> vars = new ArrayList<Var>();
-		for (Var var : thenVars) {
-			vars.add(var);
-		}
-
-		listOfVars.add(1, vars);
-		branchIfInput.put(blockIf, listOfVars);
-	}
-
-	public void addBranchThenOutput(BlockIf blockIf, Set<Var> thenVars) {
-		List<List<Var>> listOfVars = branchIfOutput.get(blockIf);
-		List<Var> vars = new ArrayList<Var>();
-		for (Var var : thenVars) {
-			vars.add(var);
-		}
-
-		listOfVars.add(1, vars);
-		branchIfOutput.put(blockIf, listOfVars);
-	}
-
-	public void addDecisionInput(Block block, Set<Var> vars) {
-		List<Var> listOfVars = new ArrayList<Var>();
-		for (Var var : vars) {
-			listOfVars.add(var);
-		}
-		decisionInput.put(block, listOfVars);
+		this.joinVarMap.put(block, copyMap);
 	}
 
 	public void addIOHandler(Port port, ActionIOHandler io) {
@@ -166,106 +136,82 @@ public class ResourceCache {
 		memLocations.put(var, location);
 	}
 
-	public void addLoopOtherInputs(BlockWhile blockWhile, Set<Var> blockVars) {
-		List<Var> vars = new ArrayList<Var>();
-		for (Var var : blockVars) {
-			vars.add(var);
-		}
-		loopOtherInput.put(blockWhile, vars);
-	}
+	public void addLoop(Block block, Map<Block, List<Var>> stmDecision,
+			Map<Block, List<Var>> stmInputs, Map<Block, List<Var>> stmOutputs,
+			Map<Block, List<Var>> loopBodyInputs,
+			Map<Block, List<Var>> loopBodyOutputs,
+			Map<Block, Map<Var, List<Var>>> joinVarMap) {
 
-	public void addLoopOutput(BlockWhile blockWhile, Set<Var> blockVars) {
-		List<Var> vars = new ArrayList<Var>();
-		for (Var var : blockVars) {
-			vars.add(var);
-		}
-		loopOutput.put(blockWhile, vars);
-	}
+		// Initialize
+		this.stmDecision.put(block, new ArrayList<Var>());
+		this.stmInputs.put(block, new ArrayList<Var>());
+		this.stmOutputs.put(block, new ArrayList<Var>());
+		this.loopBodyInputs.put(block, new ArrayList<Var>());
+		this.loopBodyOutputs.put(block, new ArrayList<Var>());
+		this.joinVarMap = new HashMap<Block, Map<Var, List<Var>>>();
 
-	public void addLoopPhi(BlockWhile blockWhile, Map<Var, List<Var>> phiMapVar) {
-		loopPhi.put(blockWhile, phiMapVar);
+		// Copy Vars
+		copyVars(block, this.stmDecision, stmDecision);
+		copyVars(block, this.stmInputs, stmInputs);
+		copyVars(block, this.stmOutputs, stmOutputs);
+		copyVars(block, this.loopBodyInputs, loopBodyInputs);
+		copyVars(block, this.loopBodyOutputs, loopBodyOutputs);
+
+		// Copy JoinVarMap
+		Map<Var, List<Var>> copyMap = new HashMap<Var, List<Var>>();
+		for (Var var : joinVarMap.get(block).keySet()) {
+			List<Var> listVars = new ArrayList<Var>();
+			for (Var groupVar : joinVarMap.get(block).get(var)) {
+				listVars.add(groupVar);
+			}
+			copyMap.put(var, listVars);
+		}
+		this.joinVarMap.put(block, copyMap);
 	}
 
 	public void addTaskCall(InstCall instCall, TaskCall taskCall) {
 		taskCalls.put(instCall, taskCall);
 	}
 
-	public Var getBranchDecision(BlockIf blockIf) {
-		// The first value of the first value is always the branch decision Var
-		return branchIfInput.get(blockIf).get(0).get(0);
-	}
-
-	public List<Var> getBranchElseOutputVars(BlockIf blockIf) {
-		if (!blockIf.getElseBlocks().isEmpty()) {
-			return branchIfOutput.get(blockIf).get(2);
-		} else {
-			return Collections.<Var> emptyList();
-		}
-	}
-
-	public List<Var> getBranchElseVars(BlockIf blockIf) {
-		if (!blockIf.getElseBlocks().isEmpty()) {
-			if (branchIfInput.get(blockIf).get(2).isEmpty()) {
-				return Collections.<Var> emptyList();
-			} else {
-				return branchIfInput.get(blockIf).get(2);
-			}
-		} else {
-			return Collections.<Var> emptyList();
-		}
-	}
-
-	public List<Var> getBranchInputs(BlockIf blockIf) {
-		List<Var> inputs = new ArrayList<Var>();
-		inputs.add(getBranchDecision(blockIf));
-		inputs.addAll(getBranchThenVars(blockIf));
-
-		List<Var> vars = inputs;
-
-		for (Var gVar : getBranchElseVars(blockIf)) {
-			if (!vars.contains(gVar)) {
-				inputs.add(gVar);
+	public void copyVars(Block block, Map<Block, List<Var>> target,
+			Map<Block, List<Var>> source) {
+		for (Var var : source.get(block)) {
+			if (!target.get(block).contains(var)) {
+				target.get(block).add(var);
 			}
 		}
-
-		List<Var> outputs = new ArrayList<Var>();
-		outputs.addAll(getBranchThenOutputVars(blockIf));
-		outputs.addAll(getBranchElseOutputVars(blockIf));
-
-		// Inputs on join node dependency iff the then and else output does not
-		// contain the phi value
-		for (Var var : branchPhi.get(blockIf).keySet()) {
-			List<Var> phiDep = branchPhi.get(blockIf).get(var);
-			for (Var phiVar : phiDep) {
-				if (!inputs.contains(phiVar) && !outputs.contains(phiVar)) {
-					inputs.add(phiVar);
-				}
-			}
-		}
-		return inputs;
 	}
 
-	public List<Var> getBranchOutputs(BlockIf blockIf) {
-		return branchIfOutput.get(blockIf).get(0);
+	public List<Var> getBlockDecisionInput(Block block) {
+		return stmDecision.get(block);
 	}
 
-	public Map<Var, List<Var>> getBranchPhiVars(BlockIf blockIf) {
-		return branchPhi.get(blockIf);
+	public List<Var> getBlockInput(Block block) {
+		return stmInputs.get(block);
 	}
 
-	public List<Var> getBranchThenOutputVars(BlockIf blockIf) {
-		return branchIfOutput.get(blockIf).get(1);
+	public List<Var> getBlockOutput(Block block) {
+		return stmOutputs.get(block);
 	}
 
-	public List<Var> getBranchThenVars(BlockIf blockIf) {
-		return branchIfInput.get(blockIf).get(1);
+	public Map<Var, List<Var>> getBlockPhi(Block block) {
+		return joinVarMap.get(block);
 	}
 
-	public List<Var> getDecisionInput(Block block) {
-		if (decisionInput.containsKey(block)) {
-			return decisionInput.get(block);
-		}
-		return null;
+	public List<Var> getBranchElseInput(Block block) {
+		return elseInputs.get(block);
+	}
+
+	public List<Var> getBranchElseOutput(Block block) {
+		return elseOutputs.get(block);
+	}
+
+	public List<Var> getBranchThenInput(Block block) {
+		return thenInputs.get(block);
+	}
+
+	public List<Var> getBranchThenOutput(Block block) {
+		return thenOutputs.get(block);
 	}
 
 	public ActionIOHandler getIOHandler(Port port) {
@@ -277,54 +223,10 @@ public class ResourceCache {
 	}
 
 	public List<Var> getLoopBodyInput(Block block) {
-		List<Var> listOfVars = new ArrayList<Var>();
-		for (Var var : loopPhi.get(block).keySet()) {
-			listOfVars.add(var);
-		}
-		if (loopOtherInput.containsKey(block)) {
-			listOfVars.addAll(loopOtherInput.get(block));
-		}
-		return listOfVars;
+		return loopBodyInputs.get(block);
 	}
 
 	public List<Var> getLoopBodyOutput(Block block) {
-		List<Var> listOfVars = new ArrayList<Var>();
-		for (Var var : loopPhi.get(block).keySet()) {
-			// The Var at the index 1 is the output of the loopBody
-			List<Var> out = loopPhi.get(block).get(var);
-			listOfVars.add(out.get(1));
-		}
-		return listOfVars;
+		return loopBodyOutputs.get(block);
 	}
-
-	public List<Var> getLoopIntput(Block block) {
-		List<Var> listOfVars = new ArrayList<Var>();
-
-		if (loopInput.containsKey(block)) {
-			listOfVars = loopInput.get(block);
-		}
-
-		for (Var var : loopPhi.get(block).keySet()) {
-			// The Var at the index 0 is the output of the loopBody
-			List<Var> out = loopPhi.get(block).get(var);
-			listOfVars.add(out.get(0));
-		}
-		if (loopOtherInput.containsKey(block)) {
-			listOfVars.addAll(loopOtherInput.get(block));
-		}
-		return listOfVars;
-	}
-
-	public List<Var> getLoopOutput(Block block) {
-		List<Var> listOfVars = new ArrayList<Var>();
-		for (Var var : loopPhi.get(block).keySet()) {
-			listOfVars.add(var);
-		}
-		return listOfVars;
-	}
-
-	public Map<Var, List<Var>> getLoopPhi(BlockWhile blockWhile) {
-		return loopPhi.get(blockWhile);
-	}
-
 }

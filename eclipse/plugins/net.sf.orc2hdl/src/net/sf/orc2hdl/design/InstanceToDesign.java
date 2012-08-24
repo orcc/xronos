@@ -34,7 +34,7 @@ import net.sf.openforge.app.GenericJob;
 import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.lim.Design;
 import net.sf.orc2hdl.design.visitors.DesignActor;
-import net.sf.orc2hdl.design.visitors.ModuleIO;
+import net.sf.orc2hdl.design.visitors.StatementIO;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.df.util.DfVisitor;
@@ -64,7 +64,7 @@ public class InstanceToDesign {
 
 		ResourceCache resources = new ResourceCache();
 
-		DfSwitch<Void> branchIOFinder = new DfVisitor<Void>(new ModuleIO(
+		DfSwitch<Void> branchIOFinder = new DfVisitor<Void>(new StatementIO(
 				resources));
 		branchIOFinder.doSwitch(instance.getActor());
 

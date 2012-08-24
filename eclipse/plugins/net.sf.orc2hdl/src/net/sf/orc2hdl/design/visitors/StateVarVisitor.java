@@ -39,6 +39,7 @@ import net.sf.openforge.lim.memory.AddressableUnit;
 import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.openforge.lim.memory.Record;
 import net.sf.openforge.lim.memory.Scalar;
+import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
@@ -114,9 +115,18 @@ public class StateVarVisitor extends AbstractIrVisitor<Object> {
 		} else {
 			Type type = var.getType();
 			if (var.isInitialized()) {
-				String valueString = Integer.toString(((ExprInt) var
-						.getInitialValue()).getIntValue());
-				logicalValue = makeLogicalValue(valueString, type);
+				if (type.isBool()) {
+					Integer value = ((ExprBool) var.getInitialValue())
+							.isValue() ? 1 : 0;
+					String valueString = Integer.toString(value);
+					logicalValue = makeLogicalValue(valueString, type);
+				} else if (type.isInt() || type.isUint()) {
+					String valueString = Integer.toString(((ExprInt) var
+							.getInitialValue()).getIntValue());
+					logicalValue = makeLogicalValue(valueString, type);
+				} else {
+					logicalValue = makeLogicalValue("0", type);
+				}
 			} else {
 				logicalValue = makeLogicalValue("0", type);
 			}
