@@ -217,10 +217,11 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		phiVisit = true;
 		doSwitch(nodeWhile.getJoinBlock());
 		if (stmDecision.get(nodeWhile).isEmpty()) {
-			Var whileCondition = ((ExprVar) nodeWhile.getCondition()).getUse()
+			Var condVar = ((ExprVar) nodeWhile.getCondition()).getUse()
 					.getVariable();
-			stmDecision.get(nodeWhile).add(whileCondition);
+			stmDecision.get(nodeWhile).add(condVar);
 		}
+
 		phiVisit = false;
 		blkInputs.put(nodeWhile, new ArrayList<Var>());
 		blkOutputs.put(nodeWhile, new ArrayList<Var>());
@@ -248,7 +249,12 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 		} else {
 			if (definedInOtherBlock(varE1, currentBlockBasic)) {
-				blkInputs.get(currentBlock).add(varE1);
+				if (currentBlock.isBlockIf()) {
+					blkInputs.get(currentBlock).add(varE1);
+				} else if (currentBlock.isBlockWhile()) {
+					loopBodyInputs.get(currentBlock).add(varE1);
+					stmInputs.get(currentBlock).add(varE1);
+				}
 			}
 
 		}
@@ -264,7 +270,12 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 		} else {
 			if (definedInOtherBlock(varE2, currentBlockBasic)) {
-				blkInputs.get(currentBlock).add(varE2);
+				if (currentBlock.isBlockIf()) {
+					blkInputs.get(currentBlock).add(varE2);
+				} else if (currentBlock.isBlockWhile()) {
+					loopBodyInputs.get(currentBlock).add(varE2);
+					stmInputs.get(currentBlock).add(varE2);
+				}
 			}
 
 		}
@@ -391,31 +402,33 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 						blkInputs.get(currentBlock).add(var);
 					} else if (currentBlock.isBlockWhile()) {
 						loopBodyInputs.get(currentBlock).add(var);
-						stmInputs.get(currentBlock).add(var);
+						if (!stmOutputs.get(currentBlock).contains(var)) {
+							stmInputs.get(currentBlock).add(var);
+						}
 					}
 				}
 			}
 
 			// Now the outputs
-			Set<Var> nestedBlockOutputs = new HashSet<Var>();
-			for (Block block : blockToProcess) {
-				if (stmOutputs.get(block) != null) {
-					for (Var var : stmOutputs.get(block)) {
-						nestedBlockOutputs.add(var);
-					}
-				}
-			}
-
-			for (Var var : nestedBlockOutputs) {
-				if (!assignTargets.contains(var)) {
-					if (currentBlock.isBlockIf()) {
-						blkOutputs.get(currentBlock).add(var);
-					} else if (currentBlock.isBlockWhile()) {
-						loopBodyOutputs.get(currentBlock).add(var);
-						stmOutputs.get(currentBlock).add(var);
-					}
-				}
-			}
+			// Set<Var> nestedBlockOutputs = new HashSet<Var>();
+			// for (Block block : blockToProcess) {
+			// if (stmOutputs.get(block) != null) {
+			// for (Var var : stmOutputs.get(block)) {
+			// nestedBlockOutputs.add(var);
+			// }
+			// }
+			// }
+			//
+			// for (Var var : nestedBlockOutputs) {
+			// if (!assignTargets.contains(var)) {
+			// if (currentBlock.isBlockIf()) {
+			// blkOutputs.get(currentBlock).add(var);
+			// } else if (currentBlock.isBlockWhile()) {
+			// loopBodyOutputs.get(currentBlock).add(var);
+			// stmOutputs.get(currentBlock).add(var);
+			// }
+			// }
+			// }
 
 		}
 

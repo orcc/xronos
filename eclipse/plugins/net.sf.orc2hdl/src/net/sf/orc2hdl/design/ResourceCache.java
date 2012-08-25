@@ -148,7 +148,6 @@ public class ResourceCache {
 		this.stmOutputs.put(block, new ArrayList<Var>());
 		this.loopBodyInputs.put(block, new ArrayList<Var>());
 		this.loopBodyOutputs.put(block, new ArrayList<Var>());
-		this.joinVarMap = new HashMap<Block, Map<Var, List<Var>>>();
 
 		// Copy Vars
 		copyVars(block, this.stmDecision, stmDecision);
