@@ -32,6 +32,7 @@ package net.sf.orc2hdl.design.visitors;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -83,6 +84,11 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 	/** Map of a Branch Else Block Output Variables **/
 	private Map<Block, List<Var>> elseOutputs;
 
+	private Map<Block, List<Var>> probableThenOutputs;
+
+	/** Map of a Branch Else Block Output Variables **/
+	private Map<Block, List<Var>> probableElseOutputs;
+
 	/** Map containing the join node **/
 	private Map<Block, Map<Var, List<Var>>> joinVarMap;
 
@@ -111,6 +117,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 	private Set<Block> visitedBlocks;
 
+	private LinkedList<Block> nestedBlock;
+
 	public StatementIO(ResourceCache cache) {
 		super(true);
 		this.cache = cache;
@@ -119,6 +127,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		thenOutputs = new HashMap<Block, List<Var>>();
 		elseInputs = new HashMap<Block, List<Var>>();
 		elseOutputs = new HashMap<Block, List<Var>>();
+		probableThenOutputs = new HashMap<Block, List<Var>>();
+		probableElseOutputs = new HashMap<Block, List<Var>>();
 		loopBodyInputs = new HashMap<Block, List<Var>>();
 		loopBodyOutputs = new HashMap<Block, List<Var>>();
 		stmDecision = new HashMap<Block, List<Var>>();
@@ -128,6 +138,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		blkOutputs = new HashMap<Block, List<Var>>();
 		joinVarMap = new HashMap<Block, Map<Var, List<Var>>>();
 		visitedBlocks = new HashSet<Block>();
+		nestedBlock = new LinkedList<Block>();
 	}
 
 	@Override
@@ -143,6 +154,11 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseBlockIf(BlockIf nodeIf) {
 		currentBlock = nodeIf;
+		if (nestedBlock.isEmpty()) {
+			nestedBlock.addFirst(nodeIf);
+		} else {
+			nestedBlock.add(nodeIf);
+		}
 
 		// Initialize the maps
 		stmDecision.put(nodeIf, new ArrayList<Var>());
@@ -150,6 +166,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		thenOutputs.put(nodeIf, new ArrayList<Var>());
 		elseInputs.put(nodeIf, new ArrayList<Var>());
 		elseOutputs.put(nodeIf, new ArrayList<Var>());
+		probableThenOutputs.put(nodeIf, new ArrayList<Var>());
+		probableElseOutputs.put(nodeIf, new ArrayList<Var>());
 		stmInputs.put(nodeIf, new ArrayList<Var>());
 		stmOutputs.put(nodeIf, new ArrayList<Var>());
 
@@ -162,6 +180,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		// Visit Join Block, get the Branch the Output
 		joinVarMap.put(nodeIf, new HashMap<Var, List<Var>>());
 		phiVisit = true;
+
 		doSwitch(nodeIf.getJoinBlock());
 		phiVisit = false;
 
@@ -172,7 +191,9 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		// Visit the Then Block
 		doSwitch(nodeIf.getThenBlocks());
 		otherStmIO(visitedBlocks, nodeIf, nodeIf.getThenBlocks());
+
 		stmAddVars(nodeIf, thenInputs, blkInputs);
+		stmProbableAddVars(nodeIf, thenOutputs, blkOutputs, probableThenOutputs);
 		stmAddVars(nodeIf, thenOutputs, blkOutputs);
 
 		// Visit the Else Block
@@ -187,6 +208,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 			doSwitch(nodeIf.getElseBlocks());
 			otherStmIO(visitedBlocks, nodeIf, nodeIf.getElseBlocks());
 			stmAddVars(nodeIf, elseInputs, blkInputs);
+			stmProbableAddVars(nodeIf, elseOutputs, blkOutputs,
+					probableElseOutputs);
 			stmAddVars(nodeIf, elseOutputs, blkOutputs);
 		}
 
@@ -199,12 +222,26 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		cache.addBranch(nodeIf, stmDecision, stmInputs, stmOutputs, thenInputs,
 				thenOutputs, elseInputs, elseOutputs, joinVarMap);
 		visitedBlocks.add(nodeIf);
+
+		// Fix currentBlock
+		int indexOfLastBlock = nestedBlock.lastIndexOf(nodeIf);
+		if (indexOfLastBlock != 0) {
+			if (nestedBlock.get(indexOfLastBlock - 1) == nodeIf.eContainer()) {
+				currentBlock = nestedBlock.get(indexOfLastBlock - 1);
+			}
+		}
+		nestedBlock.remove(nodeIf);
 		return null;
 	}
 
 	@Override
 	public Void caseBlockWhile(BlockWhile nodeWhile) {
 		currentBlock = nodeWhile;
+		if (nestedBlock.isEmpty()) {
+			nestedBlock.addFirst(nodeWhile);
+		} else {
+			nestedBlock.add(nodeWhile);
+		}
 		// Initialize the maps
 		stmDecision.put(nodeWhile, new ArrayList<Var>());
 		stmInputs.put(nodeWhile, new ArrayList<Var>());
@@ -232,6 +269,15 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		cache.addLoop(nodeWhile, stmDecision, stmInputs, stmOutputs,
 				loopBodyInputs, loopBodyOutputs, joinVarMap);
 		visitedBlocks.add(nodeWhile);
+
+		// Fix currentBlock
+		int indexOfLastBlock = nestedBlock.lastIndexOf(nodeWhile);
+		if (indexOfLastBlock != 0) {
+			if (nestedBlock.get(indexOfLastBlock - 1) == nodeWhile.eContainer()) {
+				currentBlock = nestedBlock.get(indexOfLastBlock - 1);
+			}
+		}
+		nestedBlock.remove(nodeWhile);
 		return null;
 	}
 
@@ -294,6 +340,16 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 	}
 
 	@Override
+	public Void caseInstAssign(InstAssign assign) {
+		super.caseInstAssign(assign);
+		Var target = assign.getTarget().getVariable();
+		if (!currentBlock.isBlockWhile() && !phiVisit) {
+			blkOutputs.get(currentBlock).add(target);
+		}
+		return null;
+	}
+
+	@Override
 	public Void caseInstLoad(InstLoad load) {
 		Var loadIndexVar = null;
 		List<Expression> indexes = load.getIndexes();
@@ -323,12 +379,17 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		// If currentBlock is Block If, then find the output of the then and
 		// else outputs
 		if (currentBlock.isBlockIf()) {
-			thenOutputs.get(currentBlock).add(phiVars.get(0));
+			if (((BlockIf) currentBlock).getElseBlocks().isEmpty()) {
+				stmInputs.get(currentBlock).add(phiVars.get(0));
+			} else {
+				probableThenOutputs.get(currentBlock).add(phiVars.get(0));
+			}
+
 			// If the Else Block is empty then Group 1 comes from the Input
 			if (((BlockIf) currentBlock).getElseBlocks().isEmpty()) {
 				stmInputs.get(currentBlock).add(phiVars.get(1));
 			} else {
-				elseOutputs.get(currentBlock).add(phiVars.get(1));
+				probableElseOutputs.get(currentBlock).add(phiVars.get(1));
 			}
 		} else if (currentBlock.isBlockWhile()) {
 			// The loopBody Input is the same as the Loop output, phi resolution
@@ -439,6 +500,17 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		for (Var var : source.get(block)) {
 			if (!target.get(block).contains(var)) {
 				target.get(block).add(var);
+			}
+		}
+	}
+
+	private void stmProbableAddVars(Block block, Map<Block, List<Var>> target,
+			Map<Block, List<Var>> source, Map<Block, List<Var>> probableSource) {
+		for (Var var : source.get(block)) {
+			if (probableSource.get(block).contains(var)) {
+				if (!target.get(block).contains(var)) {
+					target.get(block).add(var);
+				}
 			}
 		}
 	}
