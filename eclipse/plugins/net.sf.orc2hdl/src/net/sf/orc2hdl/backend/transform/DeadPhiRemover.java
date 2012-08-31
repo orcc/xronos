@@ -50,6 +50,7 @@ import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.ir.util.IrUtil;
 
 /**
  * 
@@ -74,6 +75,19 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		}
 
 		@Override
+		public Set<Var> caseBlockIf(BlockIf nodeIf) {
+			doSwitch(nodeIf.getThenBlocks());
+			doSwitch(nodeIf.getElseBlocks());
+			return blockBasicVars;
+		}
+
+		@Override
+		public Set<Var> caseBlockWhile(BlockWhile nodeWhile) {
+			doSwitch(nodeWhile.getBlocks());
+			return blockBasicVars;
+		}
+
+		@Override
 		public Set<Var> caseExprBinary(ExprBinary expr) {
 			Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
 			blockBasicVars.add(varE1);
@@ -83,17 +97,9 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		}
 
 		@Override
-		public Set<Var> caseInstAssign(InstAssign assign) {
-			// Take the target
-			Var target = assign.getTarget().getVariable();
-			blockBasicVars.add(target);
-			// Now visit the rest
-			super.caseInstAssign(assign);
-			return null;
-		}
-
-		@Override
 		public Set<Var> caseInstLoad(InstLoad load) {
+			Var target = load.getTarget().getVariable();
+			blockBasicVars.add(target);
 			Var loadIndexVar = null;
 			List<Expression> indexes = load.getIndexes();
 			for (Expression expr : new ArrayList<Expression>(indexes)) {
@@ -105,12 +111,8 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 
 		@Override
 		public Set<Var> caseInstStore(InstStore store) {
-			Var loadIndexVar = null;
-			List<Expression> indexes = store.getIndexes();
-			for (Expression expr : new ArrayList<Expression>(indexes)) {
-				loadIndexVar = ((ExprVar) expr).getUse().getVariable();
-				blockBasicVars.add(loadIndexVar);
-			}
+			Var value = ((ExprVar) store.getValue()).getUse().getVariable();
+			blockBasicVars.add(value);
 			return null;
 		}
 
@@ -225,6 +227,11 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 				}
 			}
 		}
+		// See if it used by his children
+		for (Block block : nodeWhile.getBlocks()) {
+			BlockBasicVars vis = new BlockBasicVars();
+			blockWhileUsedVars.get(nodeWhile).addAll(vis.doSwitch(block));
+		}
 
 		// Visit JoinBlock
 		doSwitch(nodeWhile.getJoinBlock());
@@ -243,9 +250,7 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		nestedBlock.remove(nodeWhile);
 		// Remove the instructions
 		for (InstPhi instPhi : phiToBeRemoved.get(nodeWhile)) {
-			if (nodeWhile.getJoinBlock().getInstructions().contains(instPhi)) {
-				nodeWhile.getJoinBlock().getInstructions().remove(instPhi);
-			}
+			IrUtil.delete(instPhi);
 		}
 
 		return null;

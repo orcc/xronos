@@ -351,6 +351,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 	@Override
 	public Void caseInstLoad(InstLoad load) {
+		Var target = load.getTarget().getVariable();
 		Var loadIndexVar = null;
 		List<Expression> indexes = load.getIndexes();
 		for (Expression expr : new ArrayList<Expression>(indexes)) {
@@ -358,6 +359,9 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		}
 		if (definedInOtherBlock(loadIndexVar, currentBlockBasic)) {
 			blkInputs.get(currentBlock).add(loadIndexVar);
+		}
+		if (!currentBlock.isBlockWhile() && !phiVisit) {
+			blkOutputs.get(currentBlock).add(target);
 		}
 		return null;
 	}
@@ -439,6 +443,10 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 							Var target = ((InstAssign) inst).getTarget()
 									.getVariable();
 							assignTargets.add(target);
+						} else if (inst.isInstLoad()) {
+							Var target = ((InstLoad) inst).getTarget()
+									.getVariable();
+							assignTargets.add(target);
 						}
 					}
 
@@ -471,25 +479,25 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 			}
 
 			// Now the outputs
-			// Set<Var> nestedBlockOutputs = new HashSet<Var>();
-			// for (Block block : blockToProcess) {
-			// if (stmOutputs.get(block) != null) {
-			// for (Var var : stmOutputs.get(block)) {
-			// nestedBlockOutputs.add(var);
-			// }
-			// }
-			// }
-			//
-			// for (Var var : nestedBlockOutputs) {
-			// if (!assignTargets.contains(var)) {
-			// if (currentBlock.isBlockIf()) {
-			// blkOutputs.get(currentBlock).add(var);
-			// } else if (currentBlock.isBlockWhile()) {
-			// loopBodyOutputs.get(currentBlock).add(var);
-			// stmOutputs.get(currentBlock).add(var);
-			// }
-			// }
-			// }
+			Set<Var> nestedBlockOutputs = new HashSet<Var>();
+			for (Block block : blockToProcess) {
+				if (stmOutputs.get(block) != null) {
+					for (Var var : stmOutputs.get(block)) {
+						nestedBlockOutputs.add(var);
+					}
+				}
+			}
+
+			for (Var var : nestedBlockOutputs) {
+				if (!assignTargets.contains(var)) {
+					if (currentBlock.isBlockIf()) {
+						blkOutputs.get(currentBlock).add(var);
+					} else if (currentBlock.isBlockWhile()) {
+						loopBodyOutputs.get(currentBlock).add(var);
+						stmOutputs.get(currentBlock).add(var);
+					}
+				}
+			}
 
 		}
 
