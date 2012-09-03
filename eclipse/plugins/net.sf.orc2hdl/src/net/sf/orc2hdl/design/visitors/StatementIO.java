@@ -42,8 +42,6 @@ import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
-import net.sf.orcc.ir.Def;
-import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
@@ -53,8 +51,6 @@ import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 
-import org.eclipse.emf.ecore.EObject;
-
 /**
  * This class finds the inputs and outputs of an If and While block
  * 
@@ -63,20 +59,11 @@ import org.eclipse.emf.ecore.EObject;
  */
 public class StatementIO extends AbstractIrVisitor<Void> {
 
-	/** The current block Inputs **/
-	private Map<Block, List<Var>> blkInputs;
-
-	/** The current block Outputs **/
-	private Map<Block, List<Var>> blkOutputs;
-
 	/** Design Resources **/
 	private ResourceCache cache;
 
 	/** The current visited If Block **/
 	private Block currentBlock;
-
-	/** The current visited Block **/
-	private BlockBasic currentBlockBasic;
 
 	/** Map of a Branch Else Block Input Variables **/
 	private Map<Block, List<Var>> elseInputs;
@@ -98,8 +85,6 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 	/** Map of a LoopBody Block Output Variables **/
 	private Map<Block, List<Var>> loopBodyOutputs;
 
-	private Boolean phiVisit;
-
 	/** Map of a Decision Module Input Variables **/
 	private Map<Block, List<Var>> stmDecision;
 
@@ -119,6 +104,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 	private LinkedList<Block> nestedBlock;
 
+	private Boolean thenVisit;
+
 	public StatementIO(ResourceCache cache) {
 		super(true);
 		this.cache = cache;
@@ -134,21 +121,9 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		stmDecision = new HashMap<Block, List<Var>>();
 		stmInputs = new HashMap<Block, List<Var>>();
 		stmOutputs = new HashMap<Block, List<Var>>();
-		blkInputs = new HashMap<Block, List<Var>>();
-		blkOutputs = new HashMap<Block, List<Var>>();
 		joinVarMap = new HashMap<Block, Map<Var, List<Var>>>();
 		visitedBlocks = new HashSet<Block>();
 		nestedBlock = new LinkedList<Block>();
-	}
-
-	@Override
-	public Void caseBlockBasic(BlockBasic block) {
-		// Visit only the instruction of the If block
-		if (block.eContainer() == currentBlock) {
-			currentBlockBasic = block;
-			super.caseBlockBasic(block);
-		}
-		return null;
 	}
 
 	@Override
@@ -179,44 +154,39 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 		// Visit Join Block, get the Branch the Output
 		joinVarMap.put(nodeIf, new HashMap<Var, List<Var>>());
-		phiVisit = true;
 
 		doSwitch(nodeIf.getJoinBlock());
-		phiVisit = false;
-
-		// Initialize the other IO of this If Block
-		blkInputs.put(nodeIf, new ArrayList<Var>());
-		blkOutputs.put(nodeIf, new ArrayList<Var>());
 
 		// Visit the Then Block
+		thenInputs.get(nodeIf).addAll(
+				getVars(true, false, nodeIf.getThenBlocks()));
+		thenOutputs.get(nodeIf).addAll(
+				getVars(false, false, nodeIf.getThenBlocks()));
+		thenVisit = true;
 		doSwitch(nodeIf.getThenBlocks());
 		otherStmIO(visitedBlocks, nodeIf, nodeIf.getThenBlocks());
-
-		stmAddVars(nodeIf, thenInputs, blkInputs);
-		stmProbableAddVars(nodeIf, thenOutputs, blkOutputs, probableThenOutputs);
-		stmAddVars(nodeIf, thenOutputs, blkOutputs);
 
 		// Visit the Else Block
 		/** Visit Else Block **/
 		currentBlock = nodeIf;
 		if (!nodeIf.getElseBlocks().isEmpty()) {
-			// Initialize the other IO of this If Block
-			blkInputs.put(nodeIf, new ArrayList<Var>());
-			blkOutputs.put(nodeIf, new ArrayList<Var>());
-
 			// Visit the Then Block
+			elseInputs.get(nodeIf).addAll(
+					getVars(true, false, nodeIf.getElseBlocks()));
+			elseOutputs.get(nodeIf).addAll(
+					getVars(false, false, nodeIf.getElseBlocks()));
+			thenVisit = false;
 			doSwitch(nodeIf.getElseBlocks());
 			otherStmIO(visitedBlocks, nodeIf, nodeIf.getElseBlocks());
-			stmAddVars(nodeIf, elseInputs, blkInputs);
-			stmProbableAddVars(nodeIf, elseOutputs, blkOutputs,
-					probableElseOutputs);
-			stmAddVars(nodeIf, elseOutputs, blkOutputs);
 		}
 
 		// Add the Input vars of the Input of then and else blocks, iff they are
 		// not already included
 		stmAddVars(nodeIf, stmInputs, thenInputs);
 		stmAddVars(nodeIf, stmInputs, elseInputs);
+
+		stmOutputs.get(nodeIf).addAll(
+				ifOutputStm(nodeIf, joinVarMap, thenOutputs, elseOutputs));
 
 		// Add to cache
 		cache.addBranch(nodeIf, stmDecision, stmInputs, stmOutputs, thenInputs,
@@ -242,6 +212,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		} else {
 			nestedBlock.add(nodeWhile);
 		}
+
 		// Initialize the maps
 		stmDecision.put(nodeWhile, new ArrayList<Var>());
 		stmInputs.put(nodeWhile, new ArrayList<Var>());
@@ -251,7 +222,6 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 		/** Visit the Join Block **/
 		joinVarMap.put(nodeWhile, new HashMap<Var, List<Var>>());
-		phiVisit = true;
 		doSwitch(nodeWhile.getJoinBlock());
 		if (stmDecision.get(nodeWhile).isEmpty()) {
 			Var condVar = ((ExprVar) nodeWhile.getCondition()).getUse()
@@ -259,9 +229,10 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 			stmDecision.get(nodeWhile).add(condVar);
 		}
 
-		phiVisit = false;
-		blkInputs.put(nodeWhile, new ArrayList<Var>());
-		blkOutputs.put(nodeWhile, new ArrayList<Var>());
+		List<Var> blkInputs = getVars(true, false, nodeWhile.getBlocks());
+		List<Var> blkOutputs = getVars(false, false, nodeWhile.getBlocks());
+		resolveWhileIO(nodeWhile, blkInputs, blkOutputs, joinVarMap,
+				loopBodyInputs, loopBodyOutputs, stmInputs, stmOutputs);
 		doSwitch(nodeWhile.getBlocks());
 		otherStmIO(visitedBlocks, nodeWhile, nodeWhile.getBlocks());
 
@@ -282,97 +253,9 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 	}
 
 	@Override
-	public Void caseExprBinary(ExprBinary expr) {
-		// Get e1 var and if it defined not in this visited block added as an
-		// input
-		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
-
-		if (phiVisit) {
-			if (definedInOtherBlock(varE1, currentBlockBasic)
-					|| joinVarMap.get(currentBlock).containsKey(varE1)) {
-				stmDecision.get(currentBlock).add(varE1);
-			}
-
-		} else {
-			if (definedInOtherBlock(varE1, currentBlockBasic)) {
-				if (currentBlock.isBlockIf()) {
-					blkInputs.get(currentBlock).add(varE1);
-				} else if (currentBlock.isBlockWhile()) {
-					loopBodyInputs.get(currentBlock).add(varE1);
-					stmInputs.get(currentBlock).add(varE1);
-				}
-			}
-
-		}
-
-		// Get e2 var and if it defined not in this visited block added as an
-		// input
-		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-		if (phiVisit) {
-			if (definedInOtherBlock(varE2, currentBlockBasic)
-					|| joinVarMap.get(currentBlock).containsKey(varE2)) {
-				stmDecision.get(currentBlock).add(varE2);
-			}
-
-		} else {
-			if (definedInOtherBlock(varE2, currentBlockBasic)) {
-				if (currentBlock.isBlockIf()) {
-					blkInputs.get(currentBlock).add(varE2);
-				} else if (currentBlock.isBlockWhile()) {
-					loopBodyInputs.get(currentBlock).add(varE2);
-					stmInputs.get(currentBlock).add(varE2);
-				}
-			}
-
-		}
-		return null;
-	}
-
-	@Override
-	public Void caseExprVar(ExprVar exprVar) {
-		Var var = exprVar.getUse().getVariable();
-		if (!phiVisit) {
-			if (definedInOtherBlock(var, currentBlockBasic)) {
-				blkInputs.get(currentBlock).add(var);
-			}
-		}
-		return null;
-	}
-
-	@Override
-	public Void caseInstAssign(InstAssign assign) {
-		super.caseInstAssign(assign);
-		Var target = assign.getTarget().getVariable();
-		if (!currentBlock.isBlockWhile() && !phiVisit) {
-			blkOutputs.get(currentBlock).add(target);
-		}
-		return null;
-	}
-
-	@Override
-	public Void caseInstLoad(InstLoad load) {
-		Var target = load.getTarget().getVariable();
-		Var loadIndexVar = null;
-		List<Expression> indexes = load.getIndexes();
-		for (Expression expr : new ArrayList<Expression>(indexes)) {
-			loadIndexVar = ((ExprVar) expr).getUse().getVariable();
-		}
-		if (definedInOtherBlock(loadIndexVar, currentBlockBasic)) {
-			blkInputs.get(currentBlock).add(loadIndexVar);
-		}
-		if (!currentBlock.isBlockWhile() && !phiVisit) {
-			blkOutputs.get(currentBlock).add(target);
-		}
-		return null;
-	}
-
-	@Override
 	public Void caseInstPhi(InstPhi phi) {
 		List<Var> phiVars = new ArrayList<Var>();
 		Var target = phi.getTarget().getVariable();
-
-		// Add to the Block output
-		stmOutputs.get(currentBlock).add(target);
 
 		// Get the Phi Vars, First Value Group 0, Second Value Group 1
 		for (Expression expr : phi.getValues()) {
@@ -380,46 +263,9 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 			phiVars.add(value);
 		}
 
-		// If currentBlock is Block If, then find the output of the then and
-		// else outputs
-		if (currentBlock.isBlockIf()) {
-			if (((BlockIf) currentBlock).getElseBlocks().isEmpty()) {
-				stmInputs.get(currentBlock).add(phiVars.get(0));
-			} else {
-				probableThenOutputs.get(currentBlock).add(phiVars.get(0));
-			}
-
-			// If the Else Block is empty then Group 1 comes from the Input
-			if (((BlockIf) currentBlock).getElseBlocks().isEmpty()) {
-				stmInputs.get(currentBlock).add(phiVars.get(1));
-			} else {
-				probableElseOutputs.get(currentBlock).add(phiVars.get(1));
-			}
-		} else if (currentBlock.isBlockWhile()) {
-			// The loopBody Input is the same as the Loop output, phi resolution
-			loopBodyInputs.get(currentBlock).add(target);
-			// The loopBody Output is the Group 1 of the phi
-			loopBodyOutputs.get(currentBlock).add(phiVars.get(1));
-			// The Loop input is the the Group 0 of the phi
-			stmInputs.get(currentBlock).add(phiVars.get(0));
-		}
-
 		// Fill up the JoinVar Map
 		joinVarMap.get(currentBlock).put(target, phiVars);
 		return null;
-	}
-
-	private Boolean definedInOtherBlock(Var var, BlockBasic block) {
-		for (Def def : var.getDefs()) {
-			EObject container = def.eContainer();
-			while (!(container instanceof BlockBasic)) {
-				container = container.eContainer();
-			}
-			if (container != block && container.eContainer() != currentBlock) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private void otherStmIO(Set<Block> visitedBlocks, Block currentBlock,
@@ -468,7 +314,12 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 			for (Var var : nestedBlockInputs) {
 				if (!assignTargets.contains(var)) {
 					if (currentBlock.isBlockIf()) {
-						blkInputs.get(currentBlock).add(var);
+						stmInputs.get(currentBlock).add(var);
+						if (thenVisit) {
+							thenInputs.get(currentBlock).add(var);
+						} else {
+							elseInputs.get(currentBlock).add(var);
+						}
 					} else if (currentBlock.isBlockWhile()) {
 						loopBodyInputs.get(currentBlock).add(var);
 						if (!stmOutputs.get(currentBlock).contains(var)) {
@@ -477,28 +328,79 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 					}
 				}
 			}
+		}
 
-			// Now the outputs
-			Set<Var> nestedBlockOutputs = new HashSet<Var>();
-			for (Block block : blockToProcess) {
-				if (stmOutputs.get(block) != null) {
-					for (Var var : stmOutputs.get(block)) {
-						nestedBlockOutputs.add(var);
-					}
+	}
+
+	private List<Var> ifOutputStm(Block block,
+			Map<Block, Map<Var, List<Var>>> phi,
+			Map<Block, List<Var>> thenOutput, Map<Block, List<Var>> elseOutput) {
+		Set<Var> outputVars = new HashSet<Var>();
+		for (Var kVar : phi.get(block).keySet()) {
+			List<Var> values = phi.get(block).get(kVar);
+
+			for (Var tVar : thenOutput.get(block)) {
+				if (values.contains(tVar)) {
+					outputVars.add(kVar);
 				}
 			}
 
-			for (Var var : nestedBlockOutputs) {
-				if (!assignTargets.contains(var)) {
-					if (currentBlock.isBlockIf()) {
-						blkOutputs.get(currentBlock).add(var);
-					} else if (currentBlock.isBlockWhile()) {
-						loopBodyOutputs.get(currentBlock).add(var);
-						stmOutputs.get(currentBlock).add(var);
-					}
+			for (Var eVar : elseOutput.get(block)) {
+				if (values.contains(eVar)) {
+					outputVars.add(kVar);
 				}
 			}
+		}
 
+		List<Var> vars = new ArrayList<Var>();
+		for (Var var : outputVars) {
+			vars.add(var);
+		}
+
+		return vars;
+	}
+
+	private void resolveWhileIO(Block block, List<Var> blkInputs,
+			List<Var> blkOutputs, Map<Block, Map<Var, List<Var>>> phi,
+			Map<Block, List<Var>> loopBodyInputs,
+			Map<Block, List<Var>> loopBodyOutputs,
+			Map<Block, List<Var>> stmInputs, Map<Block, List<Var>> stmOutputs) {
+
+		List<Var> resolvedInputs = new ArrayList<Var>(blkInputs);
+		// First resolve blkInput
+		for (Var iVar : blkInputs) {
+			if (phi.get(block).keySet().contains(iVar)) {
+				// This is a LoopBody input and a Loop output
+				loopBodyInputs.get(block).add(iVar);
+				stmOutputs.get(block).add(iVar);
+				// Get the Group 0 Input
+				stmInputs.get(block).add(phi.get(block).get(iVar).get(0));
+				resolvedInputs.remove(iVar);
+			}
+		}
+
+		// The input that has been left should just be latched, so add a direct
+		// connection
+		for (Var dVar : resolvedInputs) {
+			loopBodyInputs.get(block).add(dVar);
+			stmInputs.get(block).add(dVar);
+		}
+
+		// Now resolve blkOutput
+		for (Var oVar : blkOutputs) {
+			for (Var kVar : phi.get(block).keySet()) {
+				List<Var> values = phi.get(block).get(kVar);
+				// Add the Feedback Output
+				if (values.get(1) == oVar) {
+					if (!stmInputs.get(block).contains(values.get(0))) {
+						stmInputs.get(block).add(values.get(0));
+					}
+					if (!stmOutputs.get(block).contains(kVar)) {
+						stmOutputs.get(block).add(kVar);
+					}
+					loopBodyOutputs.get(block).add(oVar);
+				}
+			}
 		}
 
 	}
@@ -512,14 +414,20 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		}
 	}
 
-	private void stmProbableAddVars(Block block, Map<Block, List<Var>> target,
-			Map<Block, List<Var>> source, Map<Block, List<Var>> probableSource) {
-		for (Var var : source.get(block)) {
-			if (probableSource.get(block).contains(var)) {
-				if (!target.get(block).contains(var)) {
-					target.get(block).add(var);
+	private List<Var> getVars(Boolean input, Boolean deepSearch,
+			List<Block> blocks) {
+		List<Var> vars = new ArrayList<Var>();
+		if (!blocks.isEmpty()) {
+			for (Block block : blocks) {
+				Set<Var> blkVars = new BlockVars(input, deepSearch)
+						.doSwitch(block);
+				for (Var var : blkVars) {
+					if (!vars.contains(var)) {
+						vars.add(var);
+					}
 				}
 			}
 		}
+		return vars;
 	}
 }

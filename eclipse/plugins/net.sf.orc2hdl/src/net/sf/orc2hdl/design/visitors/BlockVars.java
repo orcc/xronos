@@ -1,0 +1,196 @@
+/*
+ * Copyright (c) 2012, Ecole Polytechnique Fédérale de Lausanne
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *   * Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ *   * Neither the name of the Ecole Polytechnique Fédérale de Lausanne nor the names of its
+ *     contributors may be used to endorse or promote products derived from this
+ *     software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+ * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+package net.sf.orc2hdl.design.visitors;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import net.sf.orcc.ir.Block;
+import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.Def;
+import net.sf.orcc.ir.ExprBinary;
+import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstStore;
+import net.sf.orcc.ir.Use;
+import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.AbstractIrVisitor;
+
+import org.eclipse.emf.ecore.EObject;
+
+/**
+ * 
+ * @author Endri Bezati
+ * 
+ */
+public class BlockVars extends AbstractIrVisitor<Set<Var>> {
+	private Set<Var> blockVars;
+	private Boolean inputVars;
+	private Boolean deepSearch;
+
+	private Block currentBlock;
+
+	public BlockVars(Boolean inputVars, Boolean deepSearch) {
+		super(true);
+		this.inputVars = inputVars;
+		this.deepSearch = deepSearch;
+	}
+
+	@Override
+	public Set<Var> caseBlockBasic(BlockBasic block) {
+		blockVars = new HashSet<Var>();
+		currentBlock = block;
+		super.caseBlockBasic(block);
+		return blockVars;
+	}
+
+	@Override
+	public Set<Var> caseBlockIf(BlockIf nodeIf) {
+		if (deepSearch) {
+			doSwitch(nodeIf.getThenBlocks());
+			doSwitch(nodeIf.getElseBlocks());
+			return blockVars;
+		} else {
+			return new HashSet<Var>();
+		}
+	}
+
+	@Override
+	public Set<Var> caseBlockWhile(BlockWhile nodeWhile) {
+		if (deepSearch) {
+			doSwitch(nodeWhile.getBlocks());
+			return blockVars;
+		} else {
+			return new HashSet<Var>();
+		}
+	}
+
+	@Override
+	public Set<Var> caseExprBinary(ExprBinary expr) {
+		if (inputVars) {
+			Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
+			Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
+
+			if (definedInOtherBlock(varE1)) {
+				blockVars.add(varE1);
+			}
+
+			if (definedInOtherBlock(varE2)) {
+				blockVars.add(varE2);
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public Set<Var> caseInstLoad(InstLoad load) {
+		if (!inputVars) {
+			Var target = load.getTarget().getVariable();
+			if (usedInOtherBlock(target)) {
+				blockVars.add(target);
+			}
+		} else {
+			Var loadIndexVar = null;
+			List<Expression> indexes = load.getIndexes();
+			for (Expression expr : new ArrayList<Expression>(indexes)) {
+				loadIndexVar = ((ExprVar) expr).getUse().getVariable();
+				blockVars.add(loadIndexVar);
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public Set<Var> caseInstStore(InstStore store) {
+		if (!inputVars) {
+			Var target = store.getTarget().getVariable();
+			if (usedInOtherBlock(target)) {
+				blockVars.add(target);
+			}
+		} else {
+			Var value = ((ExprVar) store.getValue()).getUse().getVariable();
+			blockVars.add(value);
+		}
+		return null;
+	}
+
+	@Override
+	public Set<Var> caseInstAssign(InstAssign assign) {
+		if (!inputVars) {
+			Var target = assign.getTarget().getVariable();
+			if (usedInOtherBlock(target)) {
+				blockVars.add(target);
+			}
+		}
+		super.caseInstAssign(assign);
+		return null;
+	}
+
+	private Boolean definedInOtherBlock(Var var) {
+		for (Def def : var.getDefs()) {
+			EObject container = def.eContainer();
+			// Get the BlockBasic container
+			while (!(container instanceof BlockBasic)) {
+				container = container.eContainer();
+				if (container == null) {
+					return false;
+				}
+			}
+			if (container != currentBlock) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private Boolean usedInOtherBlock(Var var) {
+		for (Use use : var.getUses()) {
+			EObject container = use.eContainer();
+			// Get the BlockBasic container
+			while (!(container instanceof BlockBasic)) {
+				container = container.eContainer();
+				if (container == null) {
+					return false;
+				}
+			}
+			if (container != currentBlock) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+}
