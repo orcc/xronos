@@ -48,6 +48,7 @@ import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Instruction;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 
@@ -231,15 +232,28 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 			stmDecision.get(nodeWhile).add(condVar);
 		}
 		// Get Other Decision inputs
-		stmDecision.get(nodeWhile).addAll(
-				otherStmDecisionVars(nodeWhile.getJoinBlock()));
+		List<Var> otherDecisionVars = otherStmDecisionVars(nodeWhile
+				.getJoinBlock());
+		stmDecision.get(nodeWhile).addAll(otherDecisionVars);
 
+		// Visit other Blocks
+		doSwitch(nodeWhile.getBlocks());
+
+		// Now Find its Inputs and Outputs
 		List<Var> blkInputs = getVars(true, false, nodeWhile.getBlocks());
 		List<Var> blkOutputs = getVars(false, false, nodeWhile.getBlocks());
+		resovleStmIO(nodeWhile, blkInputs, blkOutputs);
 		resolveWhileIO(nodeWhile, blkInputs, blkOutputs, joinVarMap,
 				loopBodyInputs, loopBodyOutputs, stmInputs, stmOutputs);
-		doSwitch(nodeWhile.getBlocks());
-		otherStmIO(visitedBlocks, nodeWhile, nodeWhile.getBlocks());
+
+		// Check if the Decision variables are external
+		for (Var var : otherDecisionVars) {
+			if (!stmInputs.get(nodeWhile).contains(var)
+					&& !loopBodyInputs.get(nodeWhile).contains(var)) {
+				stmInputs.get(nodeWhile).add(var);
+				loopBodyInputs.get(nodeWhile).add(var);
+			}
+		}
 
 		// Add to cache
 		cache.addLoop(nodeWhile, stmDecision, stmInputs, stmOutputs,
@@ -449,5 +463,83 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		}
 
 		return vars;
+	}
+
+	private void resovleStmIO(Block block, List<Var> blkInputs,
+			List<Var> blkOutputs) {
+		if (block instanceof BlockWhile) {
+			// Get only BlockWhile and BlockIf childrens
+			for (Block cBlock : ((BlockWhile) block).getBlocks()) {
+				if ((cBlock instanceof BlockWhile)
+						|| (cBlock instanceof BlockIf)) {
+					// Firstly Get the input/output of this Block
+					List<Var> childBlockInputs = stmInputs.get(cBlock);
+					List<Var> childBlockOutputs = stmOutputs.get(cBlock);
+
+					// Check if the container is Procedure or Stm Block
+					if (block.eContainer() instanceof Procedure) {
+						Procedure cProcedure = (Procedure) block.eContainer();
+						List<Block> pBlocks = new ArrayList<Block>(
+								cProcedure.getBlocks());
+						for (Block rBlock : cProcedure.getBlocks()) {
+							if (block == rBlock) {
+								break;
+							}
+							pBlocks.remove(rBlock);
+						}
+						// Get the used Variables
+						List<Var> usedVars = getVars(true, false, pBlocks);
+
+						// Resolve the needs of the Parent
+						for (Var var : usedVars) {
+							if (childBlockInputs.contains(var)) {
+								Var target = var;
+								Var groupZero = joinVarMap.get(block).get(var)
+										.get(0);
+								Var groupOne = joinVarMap.get(block).get(var)
+										.get(1);
+								loopBodyInputs.get(block).add(target);
+								loopBodyOutputs.get(block).add(groupOne);
+								stmInputs.get(block).add(groupZero);
+								stmOutputs.get(block).add(target);
+								childBlockInputs.remove(target);
+								childBlockOutputs.remove(groupOne);
+							}
+
+						}
+
+						// Resolve the needs of the children
+						for (Var var : childBlockInputs) {
+							// The var is defined inside this block so deleted
+							if (blkOutputs.contains(var)) {
+								blkOutputs.remove(var);
+							} else if (blkInputs.contains(var)) {
+								Var target = var;
+								Var groupZero = joinVarMap.get(block).get(var)
+										.get(0);
+								Var groupOne = joinVarMap.get(block).get(var)
+										.get(1);
+								loopBodyInputs.get(block).add(target);
+								loopBodyOutputs.get(block).add(groupOne);
+								stmInputs.get(block).add(groupZero);
+								stmOutputs.get(block).add(target);
+								blkInputs.remove(target);
+								blkOutputs.remove(groupOne);
+							} else {
+								// The var is defined in this block, make input
+								loopBodyInputs.get(block).add(var);
+								stmInputs.get(block).add(var);
+							}
+						}
+
+					} else if ((block.eContainer() instanceof BlockWhile)
+							|| (block.eContainer() instanceof BlockIf)) {
+					}
+				}
+			}
+
+		} else if (block instanceof BlockIf) {
+
+		}
 	}
 }
