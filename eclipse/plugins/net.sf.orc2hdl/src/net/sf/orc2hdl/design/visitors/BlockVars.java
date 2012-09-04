@@ -45,6 +45,7 @@ import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
@@ -155,8 +156,11 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 			Var loadIndexVar = null;
 			List<Expression> indexes = load.getIndexes();
 			for (Expression expr : new ArrayList<Expression>(indexes)) {
+
 				loadIndexVar = ((ExprVar) expr).getUse().getVariable();
-				blockVars.add(loadIndexVar);
+				if (definedInOtherBlock(loadIndexVar)) {
+					blockVars.add(loadIndexVar);
+				}
 			}
 		}
 		return null;
@@ -215,9 +219,14 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 				if (container == null) {
 					return false;
 				}
+				if (container instanceof InstPhi) {
+					break;
+				}
 			}
-			if (container != currentBlock) {
-				return true;
+			if (!(container instanceof InstPhi)) {
+				if (container != currentBlock) {
+					return true;
+				}
 			}
 		}
 		return false;

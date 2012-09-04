@@ -468,7 +468,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 	private void resovleStmIO(Block block, List<Var> blkInputs,
 			List<Var> blkOutputs) {
 		if (block instanceof BlockWhile) {
-			// Get only BlockWhile and BlockIf childrens
+			// Get only BlockWhile and BlockIf children
 			for (Block cBlock : ((BlockWhile) block).getBlocks()) {
 				if ((cBlock instanceof BlockWhile)
 						|| (cBlock instanceof BlockIf)) {
@@ -476,12 +476,28 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 					List<Var> childBlockInputs = stmInputs.get(cBlock);
 					List<Var> childBlockOutputs = stmOutputs.get(cBlock);
 
+					List<Block> pBlocks = new ArrayList<Block>();
 					// Check if the container is Procedure or Stm Block
 					if (block.eContainer() instanceof Procedure) {
 						Procedure cProcedure = (Procedure) block.eContainer();
-						List<Block> pBlocks = new ArrayList<Block>(
-								cProcedure.getBlocks());
-						for (Block rBlock : cProcedure.getBlocks()) {
+						pBlocks = new ArrayList<Block>(cProcedure.getBlocks());
+					} else if (block.eContainer() instanceof BlockWhile) {
+						BlockWhile blockWhile = (BlockWhile) block.eContainer();
+						pBlocks = new ArrayList<Block>(blockWhile.getBlocks());
+					} else if ((block.eContainer() instanceof BlockIf)) {
+						BlockIf blockIf = (BlockIf) block.eContainer();
+						if (thenVisit) {
+							pBlocks = new ArrayList<Block>(
+									blockIf.getThenBlocks());
+						} else {
+							pBlocks = new ArrayList<Block>(
+									blockIf.getElseBlocks());
+						}
+
+					}
+
+					if (!pBlocks.isEmpty()) {
+						for (Block rBlock : new ArrayList<Block>(pBlocks)) {
 							if (block == rBlock) {
 								break;
 							}
@@ -493,17 +509,19 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 						// Resolve the needs of the Parent
 						for (Var var : usedVars) {
 							if (childBlockInputs.contains(var)) {
-								Var target = var;
-								Var groupZero = joinVarMap.get(block).get(var)
-										.get(0);
-								Var groupOne = joinVarMap.get(block).get(var)
-										.get(1);
-								loopBodyInputs.get(block).add(target);
-								loopBodyOutputs.get(block).add(groupOne);
-								stmInputs.get(block).add(groupZero);
-								stmOutputs.get(block).add(target);
-								childBlockInputs.remove(target);
-								childBlockOutputs.remove(groupOne);
+								if (joinVarMap.get(block).containsKey(var)) {
+									Var target = var;
+									Var groupZero = joinVarMap.get(block)
+											.get(var).get(0);
+									Var groupOne = joinVarMap.get(block)
+											.get(var).get(1);
+									loopBodyInputs.get(block).add(target);
+									loopBodyOutputs.get(block).add(groupOne);
+									stmInputs.get(block).add(groupZero);
+									stmOutputs.get(block).add(target);
+									childBlockInputs.remove(target);
+									childBlockOutputs.remove(groupOne);
+								}
 							}
 
 						}
@@ -513,7 +531,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 							// The var is defined inside this block so deleted
 							if (blkOutputs.contains(var)) {
 								blkOutputs.remove(var);
-							} else if (blkInputs.contains(var)) {
+							} else if (blkInputs.contains(var)
+									|| joinVarMap.get(block).containsKey(var)) {
 								Var target = var;
 								Var groupZero = joinVarMap.get(block).get(var)
 										.get(0);
@@ -531,10 +550,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 								stmInputs.get(block).add(var);
 							}
 						}
-
-					} else if ((block.eContainer() instanceof BlockWhile)
-							|| (block.eContainer() instanceof BlockIf)) {
 					}
+
 				}
 			}
 
