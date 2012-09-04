@@ -32,6 +32,7 @@ package net.sf.orc2hdl.design.visitors;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import net.sf.orcc.ir.Block;
@@ -57,16 +58,35 @@ import org.eclipse.emf.ecore.EObject;
  * 
  */
 public class BlockVars extends AbstractIrVisitor<Set<Var>> {
+
 	private Set<Var> blockVars;
+
 	private Boolean inputVars;
+
 	private Boolean deepSearch;
 
+	private Boolean phiVisit;
+
 	private Block currentBlock;
+
+	private Block stmBlock;
+
+	private Map<Block, Map<Var, List<Var>>> phi;
 
 	public BlockVars(Boolean inputVars, Boolean deepSearch) {
 		super(true);
 		this.inputVars = inputVars;
 		this.deepSearch = deepSearch;
+		this.phiVisit = false;
+	}
+
+	public BlockVars(Block stmBlock, Map<Block, Map<Var, List<Var>>> phi) {
+		super(true);
+		this.inputVars = false;
+		this.deepSearch = false;
+		this.phiVisit = true;
+		this.stmBlock = stmBlock;
+		this.phi = phi;
 	}
 
 	@Override
@@ -100,15 +120,24 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
 	@Override
 	public Set<Var> caseExprBinary(ExprBinary expr) {
+		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
+		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
 		if (inputVars) {
-			Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
-			Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-
 			if (definedInOtherBlock(varE1)) {
 				blockVars.add(varE1);
 			}
-
 			if (definedInOtherBlock(varE2)) {
+				blockVars.add(varE2);
+			}
+		}
+
+		if (phiVisit) {
+			if (definedInOtherBlock(varE1)
+					|| phi.get(stmBlock).containsKey(varE1)) {
+				blockVars.add(varE1);
+			}
+			if (definedInOtherBlock(varE2)
+					|| phi.get(stmBlock).containsKey(varE2)) {
 				blockVars.add(varE2);
 			}
 		}
@@ -169,6 +198,7 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 					return false;
 				}
 			}
+
 			if (container != currentBlock) {
 				return true;
 			}

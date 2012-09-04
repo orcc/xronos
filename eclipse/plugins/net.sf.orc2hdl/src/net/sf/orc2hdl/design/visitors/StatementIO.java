@@ -222,12 +222,17 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 		/** Visit the Join Block **/
 		joinVarMap.put(nodeWhile, new HashMap<Var, List<Var>>());
+
 		doSwitch(nodeWhile.getJoinBlock());
+		// Get decision inputs
 		if (stmDecision.get(nodeWhile).isEmpty()) {
 			Var condVar = ((ExprVar) nodeWhile.getCondition()).getUse()
 					.getVariable();
 			stmDecision.get(nodeWhile).add(condVar);
 		}
+		// Get Other Decision inputs
+		stmDecision.get(nodeWhile).addAll(
+				otherStmDecisionVars(nodeWhile.getJoinBlock()));
 
 		List<Var> blkInputs = getVars(true, false, nodeWhile.getBlocks());
 		List<Var> blkOutputs = getVars(false, false, nodeWhile.getBlocks());
@@ -398,6 +403,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 					if (!stmOutputs.get(block).contains(kVar)) {
 						stmOutputs.get(block).add(kVar);
 					}
+					loopBodyInputs.get(block).add(kVar);
 					loopBodyOutputs.get(block).add(oVar);
 				}
 			}
@@ -428,6 +434,20 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 				}
 			}
 		}
+		return vars;
+	}
+
+	private List<Var> otherStmDecisionVars(Block block) {
+		List<Var> vars = new ArrayList<Var>();
+
+		Set<Var> blkVars = new BlockVars(currentBlock, joinVarMap)
+				.doSwitch(block);
+		for (Var var : blkVars) {
+			if (!vars.contains(var)) {
+				vars.add(var);
+			}
+		}
+
 		return vars;
 	}
 }
