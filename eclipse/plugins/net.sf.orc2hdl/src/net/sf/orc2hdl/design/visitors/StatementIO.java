@@ -165,7 +165,9 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 				getVars(false, false, nodeIf.getThenBlocks()));
 		thenVisit = true;
 		doSwitch(nodeIf.getThenBlocks());
-		otherStmIO(visitedBlocks, nodeIf, nodeIf.getThenBlocks());
+		List<Var> blkInputs = getVars(true, false, nodeIf.getThenBlocks());
+		List<Var> blkOutputs = getVars(false, false, nodeIf.getThenBlocks());
+		resovleStmIO(nodeIf, blkInputs, blkOutputs);
 
 		// Visit the Else Block
 		/** Visit Else Block **/
@@ -179,6 +181,9 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 			thenVisit = false;
 			doSwitch(nodeIf.getElseBlocks());
 			otherStmIO(visitedBlocks, nodeIf, nodeIf.getElseBlocks());
+			blkInputs = getVars(true, false, nodeIf.getElseBlocks());
+			blkOutputs = getVars(false, false, nodeIf.getElseBlocks());
+			resovleStmIO(nodeIf, blkInputs, blkOutputs);
 		}
 
 		// Add the Input vars of the Input of then and else blocks, iff they are
@@ -439,7 +444,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		List<Var> vars = new ArrayList<Var>();
 		if (!blocks.isEmpty()) {
 			for (Block block : blocks) {
-				Set<Var> blkVars = new BlockVars(input, deepSearch)
+				Set<Var> blkVars = new BlockVars(input, deepSearch, blocks)
 						.doSwitch(block);
 				for (Var var : blkVars) {
 					if (!vars.contains(var)) {
@@ -477,11 +482,15 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 					List<Var> childBlockOutputs = stmOutputs.get(cBlock);
 
 					List<Block> pBlocks = new ArrayList<Block>();
+					List<Block> previousChildBlocks = new ArrayList<Block>();
 					// Check if the container is Procedure or Stm Block
 					if (block.eContainer() instanceof Procedure) {
 						Procedure cProcedure = (Procedure) block.eContainer();
 						pBlocks = new ArrayList<Block>(cProcedure.getBlocks());
+						// Get its child blocks
+
 					} else if (block.eContainer() instanceof BlockWhile) {
+						// Get its container blocks
 						BlockWhile blockWhile = (BlockWhile) block.eContainer();
 						pBlocks = new ArrayList<Block>(blockWhile.getBlocks());
 					} else if ((block.eContainer() instanceof BlockIf)) {
@@ -493,7 +502,14 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 							pBlocks = new ArrayList<Block>(
 									blockIf.getElseBlocks());
 						}
+					}
 
+					// Get its child blocks
+					for (Block blk : ((BlockWhile) block).getBlocks()) {
+						if (blk == cBlock) {
+							break;
+						}
+						previousChildBlocks.add(blk);
 					}
 
 					if (!pBlocks.isEmpty()) {
@@ -526,6 +542,9 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 						}
 
+						Set<Var> definedVar = new BlockVars(true)
+								.doSwitch(previousChildBlocks);
+
 						// Resolve the needs of the children
 						for (Var var : childBlockInputs) {
 							// The var is defined inside this block so deleted
@@ -544,7 +563,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 								stmOutputs.get(block).add(target);
 								blkInputs.remove(target);
 								blkOutputs.remove(groupOne);
-							} else {
+							} else if (!definedVar.contains(var)) {
 								// The var is defined in this block, make input
 								loopBodyInputs.get(block).add(var);
 								stmInputs.get(block).add(var);
@@ -556,7 +575,41 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 			}
 
 		} else if (block instanceof BlockIf) {
+			// Get its container Blocks
+			List<Block> parentBlocks = new ArrayList<Block>();
+			if (block.eContainer() instanceof Procedure) {
+				Procedure cProcedure = (Procedure) block.eContainer();
+				parentBlocks = new ArrayList<Block>(cProcedure.getBlocks());
+			} else if (block.eContainer() instanceof BlockWhile) {
+				BlockWhile blockWhile = (BlockWhile) block.eContainer();
+				parentBlocks = new ArrayList<Block>(blockWhile.getBlocks());
+			} else if (block.eContainer() instanceof BlockIf) {
+				BlockIf blockIf = (BlockIf) block.eContainer();
+				if (thenVisit) {
+					parentBlocks = new ArrayList<Block>(blockIf.getThenBlocks());
+				} else {
+					parentBlocks = new ArrayList<Block>(blockIf.getElseBlocks());
+				}
+			}
 
+			// Get the Blocks after the current Block
+			for (Block previousBlock : new ArrayList<Block>(parentBlocks)) {
+				if (block == previousBlock) {
+					break;
+				}
+				parentBlocks.remove(previousBlock);
+			}
+
+			List<Block> childrenBlocks = new ArrayList<Block>();
+			List<Block> previousChildrenBlocks = new ArrayList<Block>();
+			if (thenVisit) {
+				childrenBlocks = ((BlockIf) block).getThenBlocks();
+			} else {
+				childrenBlocks = ((BlockIf) block).getElseBlocks();
+			}
+			for (Block cBlock : childrenBlocks) {
+
+			}
 		}
 	}
 }

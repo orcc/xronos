@@ -68,17 +68,24 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
 	private Boolean phiVisit;
 
+	private Boolean getDefinedVar;
+
 	private Block currentBlock;
 
 	private Block stmBlock;
 
 	private Map<Block, Map<Var, List<Var>>> phi;
 
-	public BlockVars(Boolean inputVars, Boolean deepSearch) {
+	private List<Block> blocksContainer;
+
+	public BlockVars(Boolean inputVars, Boolean deepSearch,
+			List<Block> blocksContainer) {
 		super(true);
 		this.inputVars = inputVars;
 		this.deepSearch = deepSearch;
 		this.phiVisit = false;
+		this.blocksContainer = blocksContainer;
+		this.getDefinedVar = false;
 	}
 
 	public BlockVars(Block stmBlock, Map<Block, Map<Var, List<Var>>> phi) {
@@ -88,6 +95,17 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		this.phiVisit = true;
 		this.stmBlock = stmBlock;
 		this.phi = phi;
+		this.blocksContainer = new ArrayList<Block>();
+		this.blocksContainer.add(stmBlock);
+		this.getDefinedVar = false;
+	}
+
+	public BlockVars(Boolean getDefinedVar) {
+		super(true);
+		this.inputVars = false;
+		this.deepSearch = false;
+		this.phiVisit = false;
+		this.getDefinedVar = getDefinedVar;
 	}
 
 	@Override
@@ -147,46 +165,58 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
 	@Override
 	public Set<Var> caseInstLoad(InstLoad load) {
-		if (!inputVars) {
-			Var target = load.getTarget().getVariable();
-			if (usedInOtherBlock(target)) {
-				blockVars.add(target);
-			}
-		} else {
-			Var loadIndexVar = null;
-			List<Expression> indexes = load.getIndexes();
-			for (Expression expr : new ArrayList<Expression>(indexes)) {
+		Var target = load.getTarget().getVariable();
+		if (!getDefinedVar) {
+			if (!inputVars) {
+				if (usedInOtherBlock(target)) {
+					blockVars.add(target);
+				}
+			} else {
+				Var loadIndexVar = null;
+				List<Expression> indexes = load.getIndexes();
+				for (Expression expr : new ArrayList<Expression>(indexes)) {
 
-				loadIndexVar = ((ExprVar) expr).getUse().getVariable();
-				if (definedInOtherBlock(loadIndexVar)) {
-					blockVars.add(loadIndexVar);
+					loadIndexVar = ((ExprVar) expr).getUse().getVariable();
+					if (definedInOtherBlock(loadIndexVar)) {
+						blockVars.add(loadIndexVar);
+					}
 				}
 			}
+		} else {
+			blockVars.add(target);
 		}
 		return null;
 	}
 
 	@Override
 	public Set<Var> caseInstStore(InstStore store) {
+		Var target = store.getTarget().getVariable();
 		if (!inputVars) {
-			Var target = store.getTarget().getVariable();
-			if (usedInOtherBlock(target)) {
-				blockVars.add(target);
+			if (!target.getType().isList()) {
+				if (usedInOtherBlock(target)) {
+					blockVars.add(target);
+				}
 			}
 		} else {
 			Var value = ((ExprVar) store.getValue()).getUse().getVariable();
-			blockVars.add(value);
+			if (definedInOtherBlock(value)) {
+				blockVars.add(value);
+			}
 		}
 		return null;
 	}
 
 	@Override
 	public Set<Var> caseInstAssign(InstAssign assign) {
-		if (!inputVars) {
-			Var target = assign.getTarget().getVariable();
-			if (usedInOtherBlock(target)) {
-				blockVars.add(target);
+		Var target = assign.getTarget().getVariable();
+		if (!getDefinedVar) {
+			if (!inputVars) {
+				if (usedInOtherBlock(target)) {
+					blockVars.add(target);
+				}
 			}
+		} else {
+			blockVars.add(target);
 		}
 		super.caseInstAssign(assign);
 		return null;
@@ -202,9 +232,10 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 					return false;
 				}
 			}
-
-			if (container != currentBlock) {
-				return true;
+			if (!phiVisit) {
+				if (!blocksContainer.contains(container)) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -224,12 +255,24 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 				}
 			}
 			if (!(container instanceof InstPhi)) {
-				if (container != currentBlock) {
+				if (!blocksContainer.contains(container)
+						&& container != currentBlock) {
 					return true;
 				}
+			} else {
+				if (!phiVisit) {
+					InstPhi instPhi = (InstPhi) container;
+					List<Var> values = new ArrayList<Var>();
+					for (Expression expr : instPhi.getValues()) {
+						values.add(((ExprVar) expr).getUse().getVariable());
+					}
+					if (values.contains(var)) {
+						return true;
+					}
+				}
+
 			}
 		}
 		return false;
 	}
-
 }
