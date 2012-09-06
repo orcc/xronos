@@ -167,7 +167,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		doSwitch(nodeIf.getThenBlocks());
 		List<Var> blkInputs = getVars(true, false, nodeIf.getThenBlocks());
 		List<Var> blkOutputs = getVars(false, false, nodeIf.getThenBlocks());
-		resovleStmIO(nodeIf, blkInputs, blkOutputs);
+		resovleStmIO(nodeIf, blkInputs, blkOutputs, 0);
 
 		// Visit the Else Block
 		/** Visit Else Block **/
@@ -183,7 +183,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 			otherStmIO(visitedBlocks, nodeIf, nodeIf.getElseBlocks());
 			blkInputs = getVars(true, false, nodeIf.getElseBlocks());
 			blkOutputs = getVars(false, false, nodeIf.getElseBlocks());
-			resovleStmIO(nodeIf, blkInputs, blkOutputs);
+			resovleStmIO(nodeIf, blkInputs, blkOutputs, 1);
 		}
 
 		// Add the Input vars of the Input of then and else blocks, iff they are
@@ -191,8 +191,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		stmAddVars(nodeIf, stmInputs, thenInputs);
 		stmAddVars(nodeIf, stmInputs, elseInputs);
 
-		stmOutputs.get(nodeIf).addAll(
-				ifOutputStm(nodeIf, joinVarMap, thenOutputs, elseOutputs));
+		// stmOutputs.get(nodeIf).addAll(
+		// ifOutputStm(nodeIf, joinVarMap, thenOutputs, elseOutputs));
 
 		// Add to cache
 		cache.addBranch(nodeIf, stmDecision, stmInputs, stmOutputs, thenInputs,
@@ -247,7 +247,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		// Now Find its Inputs and Outputs
 		List<Var> blkInputs = getVars(true, false, nodeWhile.getBlocks());
 		List<Var> blkOutputs = getVars(false, false, nodeWhile.getBlocks());
-		resovleStmIO(nodeWhile, blkInputs, blkOutputs);
+		resovleStmIO(nodeWhile, blkInputs, blkOutputs, 2);
 		resolveWhileIO(nodeWhile, blkInputs, blkOutputs, joinVarMap,
 				loopBodyInputs, loopBodyOutputs, stmInputs, stmOutputs);
 
@@ -356,34 +356,6 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 	}
 
-	private List<Var> ifOutputStm(Block block,
-			Map<Block, Map<Var, List<Var>>> phi,
-			Map<Block, List<Var>> thenOutput, Map<Block, List<Var>> elseOutput) {
-		Set<Var> outputVars = new HashSet<Var>();
-		for (Var kVar : phi.get(block).keySet()) {
-			List<Var> values = phi.get(block).get(kVar);
-
-			for (Var tVar : thenOutput.get(block)) {
-				if (values.contains(tVar)) {
-					outputVars.add(kVar);
-				}
-			}
-
-			for (Var eVar : elseOutput.get(block)) {
-				if (values.contains(eVar)) {
-					outputVars.add(kVar);
-				}
-			}
-		}
-
-		List<Var> vars = new ArrayList<Var>();
-		for (Var var : outputVars) {
-			vars.add(var);
-		}
-
-		return vars;
-	}
-
 	private void resolveWhileIO(Block block, List<Var> blkInputs,
 			List<Var> blkOutputs, Map<Block, Map<Var, List<Var>>> phi,
 			Map<Block, List<Var>> loopBodyInputs,
@@ -456,6 +428,21 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		return vars;
 	}
 
+	private List<Var> getVars(Boolean definedVar, List<Block> blocks) {
+		List<Var> vars = new ArrayList<Var>();
+		if (!blocks.isEmpty()) {
+			for (Block block : blocks) {
+				Set<Var> blkVars = new BlockVars(definedVar).doSwitch(block);
+				for (Var var : blkVars) {
+					if (!vars.contains(var)) {
+						vars.add(var);
+					}
+				}
+			}
+		}
+		return vars;
+	}
+
 	private List<Var> otherStmDecisionVars(Block block) {
 		List<Var> vars = new ArrayList<Var>();
 
@@ -471,8 +458,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 	}
 
 	private void resovleStmIO(Block block, List<Var> blkInputs,
-			List<Var> blkOutputs) {
-		if (block instanceof BlockWhile) {
+			List<Var> blkOutputs, Integer type) {
+		if (type == 2) {
 			// Get only BlockWhile and BlockIf children
 			for (Block cBlock : ((BlockWhile) block).getBlocks()) {
 				if ((cBlock instanceof BlockWhile)
@@ -574,7 +561,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 				}
 			}
 
-		} else if (block instanceof BlockIf) {
+		} else if (type == 0 || type == 1) {
 			// Get its container Blocks
 			List<Block> parentBlocks = new ArrayList<Block>();
 			if (block.eContainer() instanceof Procedure) {
@@ -585,31 +572,134 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 				parentBlocks = new ArrayList<Block>(blockWhile.getBlocks());
 			} else if (block.eContainer() instanceof BlockIf) {
 				BlockIf blockIf = (BlockIf) block.eContainer();
-				if (thenVisit) {
+				if (type == 0) {
 					parentBlocks = new ArrayList<Block>(blockIf.getThenBlocks());
 				} else {
 					parentBlocks = new ArrayList<Block>(blockIf.getElseBlocks());
 				}
 			}
 
-			// Get the Blocks after the current Block
-			for (Block previousBlock : new ArrayList<Block>(parentBlocks)) {
-				if (block == previousBlock) {
-					break;
+			// Get the Blocks after the current Block and the ones after
+			List<Block> definedBlock = new ArrayList<Block>();
+			List<Block> usedBlock = new ArrayList<Block>();
+			Boolean found = false;
+			for (Block blk : new ArrayList<Block>(parentBlocks)) {
+				if (block == blk) {
+					found = true;
 				}
-				parentBlocks.remove(previousBlock);
+				if (found) {
+					if (block != blk) {
+						usedBlock.add(blk);
+					}
+				} else {
+					definedBlock.add(blk);
+				}
+			}
+
+			// Resolves the needs from his Parent
+			List<Var> definedVars = getVars(true, definedBlock);
+			for (Var var : new ArrayList<Var>(blkInputs)) {
+				if (!definedVars.contains(var)) {
+					if (type == 0) {
+						thenInputs.get(block).add(var);
+					} else if (type == 1) {
+						elseInputs.get(block).add(var);
+					}
+					blkInputs.remove(var);
+				}
+			}
+
+			List<Var> usedVars = getVars(true, usedBlock);
+			for (Var var : new ArrayList<Var>(blkOutputs)) {
+				if (usedVars.contains(var)
+						|| containsPhiValue(var, joinVarMap.get(block))) {
+					Var target = getPhiTarget(var, joinVarMap.get(block));
+					if (type == 0) {
+						thenOutputs.get(block).add(var);
+					} else if (type == 1) {
+						elseOutputs.get(block).add(var);
+					}
+					if (!stmOutputs.get(block).contains(target)) {
+						stmOutputs.get(block).add(target);
+					}
+					blkOutputs.remove(var);
+				}
 			}
 
 			List<Block> childrenBlocks = new ArrayList<Block>();
 			List<Block> previousChildrenBlocks = new ArrayList<Block>();
-			if (thenVisit) {
+			if (type == 0) {
 				childrenBlocks = ((BlockIf) block).getThenBlocks();
-			} else {
+			} else if (type == 1) {
 				childrenBlocks = ((BlockIf) block).getElseBlocks();
 			}
-			for (Block cBlock : childrenBlocks) {
 
+			for (Block cBlock : childrenBlocks) {
+				if ((cBlock instanceof BlockWhile)
+						|| (cBlock instanceof BlockIf)) {
+					for (Block blk : childrenBlocks) {
+						if (blk == cBlock) {
+							break;
+						}
+						previousChildrenBlocks.add(blk);
+					}
+
+					definedVars = getVars(true, previousChildrenBlocks);
+
+					// Firstly Get the input/output of this child Block
+					List<Var> childBlockInputs = stmInputs.get(cBlock);
+					List<Var> childBlockOutputs = stmOutputs.get(cBlock);
+
+					// Resolve the needs of the Parent
+					// Get the used Variables
+					usedVars = getVars(true, false, usedBlock);
+
+					for (Var var : usedVars) {
+						if (joinVarMap.get(block).containsKey(var)) {
+							Var target = var;
+							Var groupZero = joinVarMap.get(block).get(var)
+									.get(0);
+							Var groupOne = joinVarMap.get(block).get(var)
+									.get(1);
+							if (type == 0) {
+								thenOutputs.get(block).add(groupZero);
+								if (!stmOutputs.get(block).contains(target)) {
+									stmOutputs.get(block).add(target);
+								}
+							} else if (type == 1) {
+								elseOutputs.get(block).add(groupOne);
+								if (!stmOutputs.get(block).contains(target)) {
+									stmOutputs.get(block).add(target);
+								}
+							} else if (type == 2) {
+
+							}
+
+						}
+
+					}
+
+				}
 			}
 		}
+	}
+
+	private Var getPhiTarget(Var var, Map<Var, List<Var>> phiMap) {
+		for (Var key : phiMap.keySet()) {
+			if (phiMap.get(key).contains(var)) {
+				return key;
+			}
+		}
+		return null;
+	}
+
+	private Boolean containsPhiValue(Var var, Map<Var, List<Var>> phiMap) {
+		for (Var key : phiMap.keySet()) {
+			List<Var> values = phiMap.get(key);
+			if (values.contains(var)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
