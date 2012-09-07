@@ -225,6 +225,24 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		return null;
 	}
 
+	@Override
+	public Set<Var> caseExprVar(ExprVar expr) {
+		Var var = expr.getUse().getVariable();
+		if (inputVars) {
+			if (definedInOtherBlock(var)) {
+				blockVars.add(var);
+			}
+		}
+
+		if (phiVisit) {
+			if (definedInOtherBlock(var) || phi.get(stmBlock).containsKey(var)) {
+				blockVars.add(var);
+			}
+		}
+
+		return null;
+	}
+
 	private Boolean definedInOtherBlock(Var var) {
 		Map<Def, Boolean> defMap = new HashMap<Def, Boolean>();
 		for (Def def : var.getDefs()) {
@@ -240,6 +258,11 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 				if (container == blockPhi) {
 					defMap.put(def, true);
 				} else if (!blocksContainer.contains(container)
+						&& container != currentBlock) {
+					defMap.put(def, true);
+				}
+			} else {
+				if (!blocksContainer.contains(container)
 						&& container != currentBlock) {
 					defMap.put(def, true);
 				}
@@ -266,10 +289,16 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 			}
 			if (blockPhi != null) {
 				if (container == blockPhi) {
-					useMap.put(use, false);
+					if (container.eContainer() instanceof BlockIf) {
+						useMap.put(use, true);
+					} else {
+						useMap.put(use, false);
+					}
 				} else if (!blocksContainer.contains(container)
 						&& container != currentBlock) {
 					useMap.put(use, true);
+				} else {
+					return false;
 				}
 			}
 		}
