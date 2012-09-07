@@ -160,13 +160,13 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 		// Visit the Then Block
 		thenInputs.get(nodeIf).addAll(
-				getVars(true, false, nodeIf.getThenBlocks()));
+				getVars(true, false, nodeIf.getThenBlocks(),nodeIf.getJoinBlock()));
 		thenOutputs.get(nodeIf).addAll(
-				getVars(false, false, nodeIf.getThenBlocks()));
+				getVars(false, false, nodeIf.getThenBlocks(),nodeIf.getJoinBlock()));
 		thenVisit = true;
 		doSwitch(nodeIf.getThenBlocks());
-		List<Var> blkInputs = getVars(true, false, nodeIf.getThenBlocks());
-		List<Var> blkOutputs = getVars(false, false, nodeIf.getThenBlocks());
+		List<Var> blkInputs = getVars(true, false, nodeIf.getThenBlocks(),nodeIf.getJoinBlock());
+		List<Var> blkOutputs = getVars(false, false, nodeIf.getThenBlocks(),nodeIf.getJoinBlock());
 		resovleStmIO(nodeIf, blkInputs, blkOutputs, 0);
 
 		// Visit the Else Block
@@ -175,14 +175,14 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		if (!nodeIf.getElseBlocks().isEmpty()) {
 			// Visit the Then Block
 			elseInputs.get(nodeIf).addAll(
-					getVars(true, false, nodeIf.getElseBlocks()));
+					getVars(true, false, nodeIf.getElseBlocks(),nodeIf.getJoinBlock()));
 			elseOutputs.get(nodeIf).addAll(
-					getVars(false, false, nodeIf.getElseBlocks()));
+					getVars(false, false, nodeIf.getElseBlocks(),nodeIf.getJoinBlock()));
 			thenVisit = false;
 			doSwitch(nodeIf.getElseBlocks());
 			otherStmIO(visitedBlocks, nodeIf, nodeIf.getElseBlocks());
-			blkInputs = getVars(true, false, nodeIf.getElseBlocks());
-			blkOutputs = getVars(false, false, nodeIf.getElseBlocks());
+			blkInputs = getVars(true, false, nodeIf.getElseBlocks(),nodeIf.getJoinBlock());
+			blkOutputs = getVars(false, false, nodeIf.getElseBlocks(),nodeIf.getJoinBlock());
 			resovleStmIO(nodeIf, blkInputs, blkOutputs, 1);
 		}
 
@@ -245,8 +245,8 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 		doSwitch(nodeWhile.getBlocks());
 
 		// Now Find its Inputs and Outputs
-		List<Var> blkInputs = getVars(true, false, nodeWhile.getBlocks());
-		List<Var> blkOutputs = getVars(false, false, nodeWhile.getBlocks());
+		List<Var> blkInputs = getVars(true, false, nodeWhile.getBlocks(),nodeWhile.getJoinBlock());
+		List<Var> blkOutputs = getVars(false, false, nodeWhile.getBlocks(),nodeWhile.getJoinBlock());
 		resovleStmIO(nodeWhile, blkInputs, blkOutputs, 2);
 		resolveWhileIO(nodeWhile, blkInputs, blkOutputs, joinVarMap,
 				loopBodyInputs, loopBodyOutputs, stmInputs, stmOutputs);
@@ -371,6 +371,9 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 				stmOutputs.get(block).add(iVar);
 				// Get the Group 0 Input
 				stmInputs.get(block).add(phi.get(block).get(iVar).get(0));
+				if(!loopBodyOutputs.get(block).contains(phi.get(block).get(iVar).get(1))){
+					loopBodyOutputs.get(block).add(phi.get(block).get(iVar).get(1));
+				}
 				resolvedInputs.remove(iVar);
 			}
 		}
@@ -412,11 +415,11 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 	}
 
 	private List<Var> getVars(Boolean input, Boolean deepSearch,
-			List<Block> blocks) {
+			List<Block> blocks, Block phiBlock) {
 		List<Var> vars = new ArrayList<Var>();
 		if (!blocks.isEmpty()) {
 			for (Block block : blocks) {
-				Set<Var> blkVars = new BlockVars(input, deepSearch, blocks)
+				Set<Var> blkVars = new BlockVars(input, deepSearch, blocks,phiBlock)
 						.doSwitch(block);
 				for (Var var : blkVars) {
 					if (!vars.contains(var)) {
@@ -507,7 +510,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 							pBlocks.remove(rBlock);
 						}
 						// Get the used Variables
-						List<Var> usedVars = getVars(true, false, pBlocks);
+						List<Var> usedVars = getVars(true, false, pBlocks,null);
 
 						// Resolve the needs of the Parent
 						for (Var var : usedVars) {
@@ -652,7 +655,7 @@ public class StatementIO extends AbstractIrVisitor<Void> {
 
 					// Resolve the needs of the Parent
 					// Get the used Variables
-					usedVars = getVars(true, false, usedBlock);
+					usedVars = getVars(true, false, usedBlock,null);
 
 					for (Var var : usedVars) {
 						if (joinVarMap.get(block).containsKey(var)) {

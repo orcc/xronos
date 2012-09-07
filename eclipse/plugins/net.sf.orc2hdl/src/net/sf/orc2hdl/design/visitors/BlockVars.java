@@ -30,6 +30,7 @@
 package net.sf.orc2hdl.design.visitors;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +46,6 @@ import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
-import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
@@ -78,14 +78,17 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
 	private List<Block> blocksContainer;
 
+	private Block blockPhi;
+
 	public BlockVars(Boolean inputVars, Boolean deepSearch,
-			List<Block> blocksContainer) {
+			List<Block> blocksContainer, Block blockPhi) {
 		super(true);
 		this.inputVars = inputVars;
 		this.deepSearch = deepSearch;
 		this.phiVisit = false;
 		this.blocksContainer = blocksContainer;
 		this.getDefinedVar = false;
+		this.blockPhi = blockPhi;
 	}
 
 	public BlockVars(Block stmBlock, Map<Block, Map<Var, List<Var>>> phi) {
@@ -223,6 +226,7 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 	}
 
 	private Boolean definedInOtherBlock(Var var) {
+		Map<Def, Boolean> defMap = new HashMap<Def, Boolean>();
 		for (Def def : var.getDefs()) {
 			EObject container = def.eContainer();
 			// Get the BlockBasic container
@@ -232,16 +236,25 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 					return false;
 				}
 			}
-			if (!phiVisit) {
-				if (!blocksContainer.contains(container)) {
-					return true;
+			if (blockPhi != null) {
+				if (container == blockPhi) {
+					defMap.put(def, true);
+				} else if (!blocksContainer.contains(container)
+						&& container != currentBlock) {
+					defMap.put(def, true);
 				}
 			}
 		}
-		return false;
+
+		if (defMap.containsValue(true)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	private Boolean usedInOtherBlock(Var var) {
+		Map<Use, Boolean> useMap = new HashMap<Use, Boolean>();
 		for (Use use : var.getUses()) {
 			EObject container = use.eContainer();
 			// Get the BlockBasic container
@@ -250,29 +263,21 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 				if (container == null) {
 					return false;
 				}
-				if (container instanceof InstPhi) {
-					break;
-				}
 			}
-			if (!(container instanceof InstPhi)) {
-				if (!blocksContainer.contains(container)
+			if (blockPhi != null) {
+				if (container == blockPhi) {
+					useMap.put(use, false);
+				} else if (!blocksContainer.contains(container)
 						&& container != currentBlock) {
-					return true;
+					useMap.put(use, true);
 				}
-			} else {
-				if (!phiVisit) {
-					InstPhi instPhi = (InstPhi) container;
-					List<Var> values = new ArrayList<Var>();
-					for (Expression expr : instPhi.getValues()) {
-						values.add(((ExprVar) expr).getUse().getVariable());
-					}
-					if (values.contains(var)) {
-						return true;
-					}
-				}
-
 			}
 		}
-		return false;
+
+		if (useMap.containsValue(true)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
