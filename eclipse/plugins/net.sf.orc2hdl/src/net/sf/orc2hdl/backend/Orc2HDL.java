@@ -59,6 +59,7 @@ import net.sf.orc2hdl.analysis.ExecutionChart;
 import net.sf.orc2hdl.analysis.SimParser;
 import net.sf.orc2hdl.analysis.TimeGoDone;
 import net.sf.orc2hdl.analysis.WeightWriter;
+import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
 import net.sf.orc2hdl.backend.transform.RepeatPattern;
 import net.sf.orc2hdl.design.DesignEngine;
@@ -288,7 +289,7 @@ public class Orc2HDL extends AbstractBackend {
 					new ControlFlowAnalyzer()));
 			transformations.add(new DfVisitor<Expression>(
 					new LiteralIntegersAdder()));
-			// transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
+			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
 			for (DfSwitch<?> transformation : transformations) {
 				transformation.doSwitch(actor);
