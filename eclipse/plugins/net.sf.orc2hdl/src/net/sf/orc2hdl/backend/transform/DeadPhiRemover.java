@@ -21,6 +21,12 @@ import net.sf.orcc.ir.util.IrUtil;
 
 import org.eclipse.emf.ecore.EObject;
 
+/**
+ * This visitor finds and deletes the unused Phis on Block While
+ * 
+ * @author Endri Bezati
+ * 
+ */
 public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 
 	Block currentBlock;
@@ -34,6 +40,13 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		usedVariables = new HashMap<Block, List<Var>>();
 		nestedBlock = new LinkedList<Block>();
 		return super.caseProcedure(procedure);
+	}
+
+	@Override
+	public Void caseBlockIf(BlockIf nodeIf) {
+		doSwitch(nodeIf.getThenBlocks());
+		doSwitch(nodeIf.getElseBlocks());
+		return null;
 	}
 
 	@Override
