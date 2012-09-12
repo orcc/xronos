@@ -49,7 +49,7 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 /**
  * This visitor figures out the Input and Output of a Branch or a While for an
  * actor in a SSA form. As for the inputs it is using the BlockVars Visitor and
- * for the outputs it is using the PH
+ * for the outputs it is using the PHI.
  * 
  * @author Endri Bezati
  * 
@@ -158,10 +158,10 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			// Visit the Then Block
 			doSwitch(nodeIf.getElseBlocks());
 			elseInputs.get(nodeIf).addAll(
-					getVars(true, false, nodeIf.getThenBlocks(),
+					getVars(true, false, nodeIf.getElseBlocks(),
 							nodeIf.getJoinBlock()));
 			elseOutputs.get(nodeIf).addAll(
-					getVars(false, false, nodeIf.getThenBlocks(),
+					getVars(false, false, nodeIf.getElseBlocks(),
 							nodeIf.getJoinBlock()));
 		}
 

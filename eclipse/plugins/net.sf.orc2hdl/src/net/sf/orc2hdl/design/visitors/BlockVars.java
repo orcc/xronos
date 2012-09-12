@@ -46,6 +46,7 @@ import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
@@ -167,6 +168,12 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 	}
 
 	@Override
+	public Set<Var> caseInstPhi(InstPhi phi) {
+		// Do not visit PHI
+		return null;
+	}
+
+	@Override
 	public Set<Var> caseInstLoad(InstLoad load) {
 		Var target = load.getTarget().getVariable();
 		if (!getDefinedVar) {
@@ -256,7 +263,7 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 			}
 			if (blockPhi != null) {
 				if (container == blockPhi) {
-					defMap.put(def, true);
+					defMap.put(def, false);
 				} else if (!blocksContainer.contains(container)
 						&& container != currentBlock) {
 					defMap.put(def, true);
