@@ -272,14 +272,10 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		if (currentBlock instanceof BlockIf) {
 			if (((BlockIf) currentBlock).getThenBlocks().isEmpty()) {
 				stmInputs.get(currentBlock).add(valueZero);
-			} else {
-				thenOutputs.get(currentBlock).add(valueZero);
 			}
 
 			if (((BlockIf) currentBlock).getElseBlocks().isEmpty()) {
 				stmInputs.get(currentBlock).add(valueOne);
-			} else {
-				elseOutputs.get(currentBlock).add(valueOne);
 			}
 
 		} else if (currentBlock instanceof BlockWhile) {
