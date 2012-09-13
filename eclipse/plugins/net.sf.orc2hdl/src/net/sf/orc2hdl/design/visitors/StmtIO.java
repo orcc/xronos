@@ -165,7 +165,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 							nodeIf.getJoinBlock()));
 		}
 
-		resovleStmIO(nodeIf);
+		resovleStmIO(nodeIf, null);
 		// Add to Stm input
 		stmAddVars(nodeIf, stmInputs, thenInputs);
 		stmAddVars(nodeIf, stmInputs, elseInputs);
@@ -224,7 +224,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 				nodeWhile.getJoinBlock());
 		List<Var> blkOutputs = getVars(false, false, nodeWhile.getBlocks(),
 				nodeWhile.getJoinBlock());
-		resovleStmIO(nodeWhile);
+		resovleStmIO(nodeWhile, blkInputs);
 		resolveWhileIO(nodeWhile, blkInputs, blkOutputs, joinVarMap,
 				loopBodyInputs, loopBodyOutputs, stmInputs, stmOutputs);
 
@@ -321,7 +321,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		return vars;
 	}
 
-	private void resovleStmIO(Block block) {
+	private void resovleStmIO(Block block, List<Var> blkInputs) {
 		if (block instanceof BlockIf) {
 			BlockIf blockIf = (BlockIf) block;
 
@@ -361,11 +361,20 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			List<Var> definedVar = getVars(true, definedBlocks);
 			for (Block childBlock : blockWhile.getBlocks()) {
 				if (childBlock.isBlockIf() || childBlock.isBlockWhile()) {
+					// Resolve the child Inputs
 					List<Var> childInputs = stmInputs.get(childBlock);
 					for (Var var : childInputs) {
-						if (!definedVar.contains(var)) {
+						if (!definedVar.contains(var)
+								&& !stmOutputs.get(block).contains(var)) {
 							loopBodyInputs.get(block).add(var);
 							stmInputs.get(block).add(var);
+						}
+					}
+					// Fix the parent inputs by using the child output
+					List<Var> childOutputs = stmOutputs.get(childBlock);
+					for (Var var : childOutputs) {
+						if (blkInputs.contains(var)) {
+							blkInputs.remove(var);
 						}
 					}
 				}
