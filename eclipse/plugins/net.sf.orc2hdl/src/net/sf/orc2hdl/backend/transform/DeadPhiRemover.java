@@ -40,6 +40,7 @@ import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Use;
@@ -59,6 +60,7 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 
 	Block currentBlock;
 	Map<Block, List<Var>> usedVariables;
+	Map<Block, List<Var>> defVariables;
 	Map<Block, List<InstPhi>> phiToBeRemoved;
 	private LinkedList<Block> nestedBlock;
 
@@ -66,6 +68,7 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 	public Void caseProcedure(Procedure procedure) {
 		phiToBeRemoved = new HashMap<Block, List<InstPhi>>();
 		usedVariables = new HashMap<Block, List<Var>>();
+		defVariables = new HashMap<Block, List<Var>>();
 		nestedBlock = new LinkedList<Block>();
 		return super.caseProcedure(procedure);
 	}
@@ -116,8 +119,9 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		// Remove all blocks before the nodeWhile
 		List<Block> usedBlocks = parentBlocks.subList(lastIndexOf + 1,
 				parentBlocks.size());
-
+		List<Block> defBlocks = parentBlocks.subList(0, lastIndexOf);
 		usedVariables.put(nodeWhile, getVars(true, false, usedBlocks, null));
+		defVariables.put(nodeWhile, getVars(true, defBlocks));
 
 		super.caseBlockWhile(nodeWhile);
 
@@ -140,12 +144,21 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseInstPhi(InstPhi phi) {
 		Var target = phi.getTarget().getVariable();
-		if (target.getUses().isEmpty()) {
+
+		// Get the Phi Vars, First Value Group 0, Second Value Group 1
+		Var valueZero = ((ExprVar) phi.getValues().get(0)).getUse()
+				.getVariable();
+		Var valueOne = ((ExprVar) phi.getValues().get(0)).getUse()
+				.getVariable();
+
+		if (target.getUses().isEmpty() || valueZero.getDefs().isEmpty()
+				|| valueOne.getDefs().isEmpty()) {
 			// This target is not used anywhere it should be deleted
 			phiToBeRemoved.get(currentBlock).add(phi);
 		} else {
 			if (!usedVariables.get(currentBlock).contains(target)) {
-				if (usedOnlyInPhi(target)) {
+				if (usedOnlyInPhi(target)
+						&& !defVariables.get(currentBlock).contains(valueZero)) {
 					phiToBeRemoved.get(currentBlock).add(phi);
 				}
 			}
@@ -171,12 +184,27 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		return vars;
 	}
 
+	private List<Var> getVars(Boolean definedVar, List<Block> blocks) {
+		List<Var> vars = new ArrayList<Var>();
+		if (!blocks.isEmpty()) {
+			for (Block block : blocks) {
+				Set<Var> blkVars = new BlockVars(definedVar).doSwitch(block);
+				for (Var var : blkVars) {
+					if (!vars.contains(var)) {
+						vars.add(var);
+					}
+				}
+			}
+		}
+		return vars;
+	}
+
 	private Boolean usedOnlyInPhi(Var var) {
 		Map<Use, Boolean> useMap = new HashMap<Use, Boolean>();
 		for (Use use : var.getUses()) {
 			EObject container = use.eContainer();
 			// Get the BlockBasic container
-			while (!(container instanceof BlockBasic)) {
+			while (!(container instanceof Block)) {
 				container = container.eContainer();
 				if (container instanceof InstPhi) {
 					useMap.put(use, true);
@@ -184,6 +212,13 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 				}
 			}
 			if (container instanceof BlockBasic) {
+				useMap.put(use, false);
+			}
+
+			if (container instanceof BlockIf) {
+				useMap.put(use, false);
+			}
+			if (container instanceof BlockWhile) {
 				useMap.put(use, false);
 			}
 		}
