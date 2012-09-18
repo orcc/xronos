@@ -447,11 +447,12 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 					assign.getLineNumber());
 			currentComponent.setIDSourceInfo(sinfo);
-			componentList.add(currentComponent);
 
 			Var outVar = assign.getTarget().getVariable();
 			PortUtil.mapOutDataPorts(currentComponent, outVar, busDependency,
 					doneBusDependency);
+
+			componentList.add(currentComponent);
 		}
 		// Put target to null
 		assignTarget = null;

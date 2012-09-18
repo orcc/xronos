@@ -331,12 +331,24 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			for (Block childBlock : blockIf.getThenBlocks()) {
 				if (childBlock.isBlockIf() || childBlock.isBlockWhile()) {
 					List<Var> childInputs = stmInputs.get(childBlock);
+					List<Var> childOutputs = stmOutputs.get(childBlock);
 					for (Var var : childInputs) {
 						if (!definedThenVar.contains(var)) {
 							thenInputs.get(block).add(var);
 							stmInputs.get(block).add(var);
 						}
 					}
+					// Case that the output of the child is directly connected
+					// to the Phi of the parent
+					for (Var var : childOutputs) {
+						for (Var kVar : joinVarMap.get(block).keySet()) {
+							List<Var> values = joinVarMap.get(block).get(kVar);
+							if (values.contains(var)) {
+								thenOutputs.get(block).add(var);
+							}
+						}
+					}
+
 				}
 			}
 
@@ -346,10 +358,21 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			for (Block childBlock : blockIf.getElseBlocks()) {
 				if (childBlock.isBlockIf() || childBlock.isBlockWhile()) {
 					List<Var> childInputs = stmInputs.get(childBlock);
+					List<Var> childOutputs = stmOutputs.get(childBlock);
 					for (Var var : childInputs) {
 						if (!definedElseVar.contains(var)) {
 							elseInputs.get(block).add(var);
 							stmInputs.get(block).add(var);
+						}
+					}
+					// Case that the output of the child is directly connected
+					// to the Phi of the parent
+					for (Var var : childOutputs) {
+						for (Var kVar : joinVarMap.get(block).keySet()) {
+							List<Var> values = joinVarMap.get(block).get(kVar);
+							if (values.contains(var)) {
+								elseOutputs.get(block).add(var);
+							}
 						}
 					}
 				}
