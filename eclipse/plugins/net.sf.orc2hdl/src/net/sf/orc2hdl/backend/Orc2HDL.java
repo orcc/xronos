@@ -61,6 +61,7 @@ import net.sf.orc2hdl.analysis.TimeGoDone;
 import net.sf.orc2hdl.analysis.WeightWriter;
 import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
+import net.sf.orc2hdl.backend.transform.LocalVarInitializer;
 import net.sf.orc2hdl.backend.transform.RepeatPattern;
 import net.sf.orc2hdl.design.DesignEngine;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
@@ -276,6 +277,7 @@ public class Orc2HDL extends AbstractBackend {
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
 			transformations.add(new RepeatPattern());
 			transformations.add(new GlobalArrayInitializer(true));
+			transformations.add(new DfVisitor<Void>(new LocalVarInitializer()));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			// transformations.add(new DfVisitor<Void>(new
 			// DeadVariableRemoval()));
