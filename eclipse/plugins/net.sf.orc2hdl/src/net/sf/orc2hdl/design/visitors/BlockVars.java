@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
@@ -47,6 +48,7 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstPhi;
+import net.sf.orcc.ir.InstSpecific;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
@@ -229,6 +231,19 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 			blockVars.add(target);
 		}
 		super.caseInstAssign(assign);
+		return null;
+	}
+
+	@Override
+	public Set<Var> caseInstSpecific(InstSpecific object) {
+		if (object instanceof InstCast) {
+			Var source = ((InstCast) object).getSource().getVariable();
+			if (inputVars) {
+				if (definedInOtherBlock(source)) {
+					blockVars.add(source);
+				}
+			}
+		}
 		return null;
 	}
 

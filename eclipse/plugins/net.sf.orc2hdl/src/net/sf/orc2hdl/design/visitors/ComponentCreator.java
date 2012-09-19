@@ -80,6 +80,7 @@ import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
+import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
@@ -93,6 +94,7 @@ import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstPhi;
+import net.sf.orcc.ir.InstSpecific;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
@@ -319,67 +321,75 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseExprBinary(ExprBinary expr) {
 		// Get the size of the target and give it to the component
 		int sizeInBits = assignTarget.getVariable().getType().getSizeInBits();
-		Component component = null;
+		// Get the Variables
+		Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
+		Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
+		List<Var> inVars = new ArrayList<Var>();
+		inVars.add(e1);
+		inVars.add(e2);
+		// Component component = null;
 		if (expr.getOp() == OpBinary.BITAND) {
-			component = new AndOp();
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new AndOp();
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.BITOR) {
-			component = new OrOp();
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new OrOp();
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.BITXOR) {
-			component = new XorOp();
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new XorOp();
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.DIV) {
-			component = new DivideOp(sizeInBits);
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new DivideOp(sizeInBits);
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.DIV_INT) {
-			component = new DivideOp(sizeInBits);
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new DivideOp(sizeInBits);
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.EQ) {
-			component = new EqualsOp();
-			currentComponent = binaryMapInLogic(component, expr);
+			currentComponent = new EqualsOp();
+			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.GE) {
-			component = new GreaterThanEqualToOp();
-			currentComponent = binaryMapInLogic(component, expr);
+			currentComponent = new GreaterThanEqualToOp();
+			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.GT) {
-			component = new GreaterThanOp();
-			currentComponent = binaryMapInLogic(component, expr);
+			currentComponent = new GreaterThanOp();
+			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.LE) {
-			component = new LessThanEqualToOp();
-			currentComponent = binaryMapInLogic(component, expr);
+			currentComponent = new LessThanEqualToOp();
+			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.LOGIC_AND) {
-			component = new And(2);
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new And(2);
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.LOGIC_OR) {
-			component = new Or(2);
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new Or(2);
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.LT) {
-			component = new LessThanOp();
-			currentComponent = binaryMapInLogic(component, expr);
+			currentComponent = new LessThanOp();
+			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.MINUS) {
-			component = new SubtractOp();
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new SubtractOp();
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.MOD) {
-			component = new ModuloOp();
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new ModuloOp();
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.NE) {
-			component = new NotEqualsOp();
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new NotEqualsOp();
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.PLUS) {
-			component = new AddOp();
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new AddOp();
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.SHIFT_LEFT) {
 			int log2N = MathStuff.log2(sizeInBits);
-			component = new LeftShiftOp(log2N);
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new LeftShiftOp(log2N);
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.SHIFT_RIGHT) {
 			int log2N = MathStuff.log2(sizeInBits);
-			component = new RightShiftOp(log2N);
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new RightShiftOp(log2N);
+			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.TIMES) {
-			component = new MultiplyOp(expr.getType().getSizeInBits());
-			currentComponent = binaryMapInCast(component, expr);
+			currentComponent = new MultiplyOp(expr.getType().getSizeInBits());
+			// currentComponent = binaryMapInCast(component, expr);
 		}
+		PortUtil.mapInDataPorts(currentComponent, inVars, portDependency,
+				portGroupDependency);
 		return null;
 	}
 
@@ -466,6 +476,24 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				call.getLineNumber());
 		currentComponent.setIDSourceInfo(sinfo);
 		resources.addTaskCall(call, (TaskCall) currentComponent);
+		return null;
+	}
+
+	@Override
+	public List<Component> caseInstSpecific(InstSpecific object) {
+		if (object instanceof InstCast) {
+			InstCast cast = (InstCast) object;
+			Var target = cast.getTarget().getVariable();
+			Var source = cast.getSource().getVariable();
+			Integer castedSize = target.getType().getSizeInBits();
+
+			Component castOp = new CastOp(castedSize, target.getType().isInt());
+			PortUtil.mapInDataPorts(castOp, source, portDependency,
+					portGroupDependency);
+			PortUtil.mapOutDataPorts(castOp, target, busDependency,
+					doneBusDependency);
+			componentList.add(castOp);
+		}
 		return null;
 	}
 

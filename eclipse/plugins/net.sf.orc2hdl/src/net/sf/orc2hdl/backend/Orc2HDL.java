@@ -61,7 +61,6 @@ import net.sf.orc2hdl.analysis.TimeGoDone;
 import net.sf.orc2hdl.analysis.WeightWriter;
 import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
-import net.sf.orc2hdl.backend.transform.LocalVarInitializer;
 import net.sf.orc2hdl.backend.transform.RepeatPattern;
 import net.sf.orc2hdl.design.DesignEngine;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
@@ -270,7 +269,8 @@ public class Orc2HDL extends AbstractBackend {
 		actor.setTemplateData(data);
 		if (instanceToDesign) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
-			transformations.add(new DfVisitor<Void>(new LocalVarInitializer()));
+			// transformations.add(new DfVisitor<Void>(new
+			// LocalVarInitializer()));
 			transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
@@ -284,6 +284,8 @@ public class Orc2HDL extends AbstractBackend {
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
 			transformations.add(new DfVisitor<Expression>(
 					new LiteralIntegersAdder()));
+			transformations
+					.add(new DfVisitor<Expression>(new CastAdder(false)));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 			transformations.add(new DfVisitor<Expression>(
 					new TacTransformation()));
@@ -416,7 +418,7 @@ public class Orc2HDL extends AbstractBackend {
 	@Override
 	protected boolean printInstance(Instance instance) {
 		StandardPrinter printer = new StandardPrinter(
-				"net/sf/orcc/backends/xlim/hw/Actor.stg");
+				"net/sf/orcc/backends/xlim/hw/Actor.stg", !debugMode);
 
 		printer.getOptions().put("fpgaType", fpgaName);
 
