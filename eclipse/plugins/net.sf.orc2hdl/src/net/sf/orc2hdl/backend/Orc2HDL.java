@@ -270,6 +270,7 @@ public class Orc2HDL extends AbstractBackend {
 		actor.setTemplateData(data);
 		if (instanceToDesign) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
+			transformations.add(new DfVisitor<Void>(new LocalVarInitializer()));
 			transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
@@ -277,7 +278,6 @@ public class Orc2HDL extends AbstractBackend {
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
 			transformations.add(new RepeatPattern());
 			transformations.add(new GlobalArrayInitializer(true));
-			transformations.add(new DfVisitor<Void>(new LocalVarInitializer()));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			// transformations.add(new DfVisitor<Void>(new
 			// DeadVariableRemoval()));

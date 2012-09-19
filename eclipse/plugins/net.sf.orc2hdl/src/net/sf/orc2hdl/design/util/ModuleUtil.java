@@ -454,12 +454,14 @@ public class ModuleUtil {
 			for (Port port : decision.getDataPorts()) {
 				if (portDependency.get(port) == busVar) {
 					dataDependencies(port, bus, portGroupDependency);
+					break;
 				}
 			}
 			// Body Module Input
 			for (Port port : body.getDataPorts()) {
 				if (portDependency.get(port) == busVar) {
 					dataDependencies(port, bus, portGroupDependency);
+					break;
 				}
 			}
 			// Add a dependency through the input to the Done Exit
@@ -470,6 +472,7 @@ public class ModuleUtil {
 					// Create a Data Dependency
 					Port port = outBus.getPeer();
 					dataDependencies(port, bus, portGroupDependency);
+					break;
 				}
 			}
 		}
@@ -483,6 +486,7 @@ public class ModuleUtil {
 					// Create a Data Dependency
 					Port port = fbBus.getPeer();
 					dataDependencies(port, bus, portGroupDependency);
+					break;
 				}
 			}
 		}
