@@ -279,13 +279,9 @@ public class Orc2HDL extends AbstractBackend {
 			transformations.add(new RepeatPattern());
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
-			// transformations.add(new DfVisitor<Void>(new
-			// DeadVariableRemoval()));
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
 			transformations.add(new DfVisitor<Expression>(
 					new LiteralIntegersAdder()));
-			transformations
-					.add(new DfVisitor<Expression>(new CastAdder(false)));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 			transformations.add(new DfVisitor<Expression>(
 					new TacTransformation()));
@@ -293,6 +289,8 @@ public class Orc2HDL extends AbstractBackend {
 					new ControlFlowAnalyzer()));
 			transformations.add(new DfVisitor<Expression>(
 					new LiteralIntegersAdder()));
+			transformations
+					.add(new DfVisitor<Expression>(new CastAdder(false)));
 			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
 			for (DfSwitch<?> transformation : transformations) {

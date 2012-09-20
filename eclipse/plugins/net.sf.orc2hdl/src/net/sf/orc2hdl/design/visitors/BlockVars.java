@@ -237,11 +237,20 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 	@Override
 	public Set<Var> caseInstSpecific(InstSpecific object) {
 		if (object instanceof InstCast) {
+			Var target = ((InstCast) object).getTarget().getVariable();
 			Var source = ((InstCast) object).getSource().getVariable();
-			if (inputVars) {
-				if (definedInOtherBlock(source)) {
-					blockVars.add(source);
+			if (!getDefinedVar) {
+				if (inputVars) {
+					if (definedInOtherBlock(source)) {
+						blockVars.add(source);
+					}
+				} else {
+					if (usedInOtherBlock(target)) {
+						blockVars.add(target);
+					}
 				}
+			} else {
+				blockVars.add(target);
 			}
 		}
 		return null;
