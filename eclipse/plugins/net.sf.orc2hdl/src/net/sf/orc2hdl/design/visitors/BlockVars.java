@@ -214,6 +214,15 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 			if (definedInOtherBlock(value)) {
 				blockVars.add(value);
 			}
+
+			Var storeIndexVar = null;
+			List<Expression> indexes = store.getIndexes();
+			for (Expression expr : new ArrayList<Expression>(indexes)) {
+				storeIndexVar = ((ExprVar) expr).getUse().getVariable();
+				if (definedInOtherBlock(storeIndexVar)) {
+					blockVars.add(storeIndexVar);
+				}
+			}
 		}
 		return null;
 	}
