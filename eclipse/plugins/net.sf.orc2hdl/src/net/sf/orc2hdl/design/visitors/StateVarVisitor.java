@@ -109,7 +109,8 @@ public class StateVarVisitor extends AbstractIrVisitor<Object> {
 			TypeList typeList = (TypeList) var.getType();
 			Type type = typeList.getInnermostType();
 
-			List<Integer> listDimension = typeList.getDimensions();
+			List<Integer> listDimension = new ArrayList<Integer>(
+					typeList.getDimensions());
 			Object varValue = var.getValue();
 			logicalValue = makeLogicalValueObject(varValue, listDimension, type);
 		} else {
@@ -153,13 +154,14 @@ public class StateVarVisitor extends AbstractIrVisitor<Object> {
 		if (dimension.size() > 1) {
 			List<LogicalValue> subElements = new ArrayList<LogicalValue>(
 					dimension.get(0));
-			List<Integer> newListDimension = dimension;
-			// Integer firstDim = dimension.get(0);
+			List<Integer> newListDimension = new ArrayList<Integer>(dimension);
+
+			Integer firstDim = dimension.get(0);
 			newListDimension.remove(0);
-			// for (int i = 0; i < firstDim; i++) {
-			subElements.add(makeLogicalValueObject(Array.get(obj, 0),
-					newListDimension, type));
-			// }
+			for (int i = 0; i < firstDim; i++) {
+				subElements.add(makeLogicalValueObject(Array.get(obj, i),
+						newListDimension, type));
+			}
 
 			logicalValue = new Record(subElements);
 		} else {
