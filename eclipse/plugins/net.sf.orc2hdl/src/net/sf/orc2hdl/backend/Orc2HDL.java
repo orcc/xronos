@@ -289,8 +289,8 @@ public class Orc2HDL extends AbstractBackend {
 					new ControlFlowAnalyzer()));
 			transformations.add(new DfVisitor<Expression>(
 					new LiteralIntegersAdder()));
-			transformations
-					.add(new DfVisitor<Expression>(new CastAdder(false)));
+			transformations.add(new DfVisitor<Expression>(new CastAdder(false,
+					false)));
 			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
 			for (DfSwitch<?> transformation : transformations) {
@@ -321,7 +321,7 @@ public class Orc2HDL extends AbstractBackend {
 					new DfVisitor<CfgNode>(new ControlFlowAnalyzer()),
 					new DfVisitor<Void>(new InstPhiTransformation()),
 					new DfVisitor<Expression>(new LiteralIntegersAdder()),
-					new DfVisitor<Expression>(new CastAdder(true)),
+					new DfVisitor<Expression>(new CastAdder(true, true)),
 					new XlimVariableRenamer(),
 					new DfVisitor<Void>(new EmptyBlockRemover()),
 					new DfVisitor<Void>(new BlockCombine()) };

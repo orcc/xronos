@@ -83,6 +83,9 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
 	private Block blockPhi;
 
+	/** Map of a Loop Module Output Variables **/
+	private Map<Block, List<Var>> stmOutputs;
+
 	public BlockVars(Boolean inputVars, Boolean deepSearch,
 			List<Block> blocksContainer, Block blockPhi) {
 		super(true);
@@ -106,12 +109,13 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		this.getDefinedVar = false;
 	}
 
-	public BlockVars(Boolean getDefinedVar) {
+	public BlockVars(Boolean getDefinedVar, Map<Block, List<Var>> stmOutputs) {
 		super(true);
 		this.inputVars = false;
 		this.deepSearch = false;
 		this.phiVisit = false;
 		this.getDefinedVar = getDefinedVar;
+		this.stmOutputs = stmOutputs;
 	}
 
 	@Override
@@ -124,6 +128,15 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
 	@Override
 	public Set<Var> caseBlockIf(BlockIf nodeIf) {
+		if (getDefinedVar) {
+			if (stmOutputs != null) {
+				if (stmOutputs.containsKey(nodeIf)) {
+					if (blockVars != null) {
+						blockVars.addAll(stmOutputs.get(nodeIf));
+					}
+				}
+			}
+		}
 		if (deepSearch) {
 			doSwitch(nodeIf.getThenBlocks());
 			doSwitch(nodeIf.getElseBlocks());
@@ -135,6 +148,15 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
 	@Override
 	public Set<Var> caseBlockWhile(BlockWhile nodeWhile) {
+		if (getDefinedVar) {
+			if (stmOutputs != null) {
+				if (stmOutputs.containsKey(nodeWhile)) {
+					if (blockVars != null) {
+						blockVars.addAll(stmOutputs.get(nodeWhile));
+					}
+				}
+			}
+		}
 		if (deepSearch) {
 			doSwitch(nodeWhile.getBlocks());
 			return blockVars;

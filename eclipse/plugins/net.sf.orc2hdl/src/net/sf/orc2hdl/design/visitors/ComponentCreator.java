@@ -156,39 +156,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		componentList = new ArrayList<Component>();
 	}
 
-	private List<Var> binaryCastOp(Var e1, Var e2, Integer newMaxSize) {
-		Boolean isSigned = e1.getType().isInt() || e2.getType().isInt();
-		List<Var> newVars = new ArrayList<Var>();
-		// Add the new Casted variables, group 0 by default
-		newVars.add(unaryCastOp(e1, newMaxSize, isSigned));
-		newVars.add(unaryCastOp(e2, newMaxSize, isSigned));
-		return newVars;
-	}
-
-	private Component binaryMapInCast(Component component, ExprBinary expr) {
-		Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
-		Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-		Integer newMaxSize = assignTarget.getVariable().getType()
-				.getSizeInBits();
-		PortUtil.mapInDataPorts(component, binaryCastOp(e1, e2, newMaxSize),
-				portDependency, portGroupDependency);
-		return component;
-	}
-
-	private Component binaryMapInLogic(Component component, ExprBinary expr) {
-		Var e1 = ((ExprVar) expr.getE1()).getUse().getVariable();
-		Var e2 = ((ExprVar) expr.getE2()).getUse().getVariable();
-
-		Integer maxSize = Math.max(e1.getType().getSizeInBits(), e2.getType()
-				.getSizeInBits());
-		List<Var> inVars = new ArrayList<Var>();
-		inVars.add(unaryCastOp(e1, maxSize, e1.getType().isInt()));
-		inVars.add(unaryCastOp(e2, maxSize, e2.getType().isInt()));
-		PortUtil.mapInDataPorts(component, inVars, portDependency,
-				portGroupDependency);
-		return component;
-	}
-
 	@Override
 	public List<Component> caseBlockIf(BlockIf blockIf) {
 		List<Component> oldComponents = new ArrayList<Component>(componentList);
@@ -480,24 +447,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	}
 
 	@Override
-	public List<Component> caseInstSpecific(InstSpecific object) {
-		if (object instanceof InstCast) {
-			InstCast cast = (InstCast) object;
-			Var target = cast.getTarget().getVariable();
-			Var source = cast.getSource().getVariable();
-			Integer castedSize = target.getType().getSizeInBits();
-
-			Component castOp = new CastOp(castedSize, target.getType().isInt());
-			PortUtil.mapInDataPorts(castOp, source, portDependency,
-					portGroupDependency);
-			PortUtil.mapOutDataPorts(castOp, target, busDependency,
-					doneBusDependency);
-			componentList.add(castOp);
-		}
-		return null;
-	}
-
-	@Override
 	public List<Component> caseInstLoad(InstLoad load) {
 		Var sourceVar = load.getSource().getVariable();
 
@@ -595,6 +544,24 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	@Override
 	public List<Component> caseInstPhi(InstPhi phi) {
 		// Do nothing
+		return null;
+	}
+
+	@Override
+	public List<Component> caseInstSpecific(InstSpecific object) {
+		if (object instanceof InstCast) {
+			InstCast cast = (InstCast) object;
+			Var target = cast.getTarget().getVariable();
+			Var source = cast.getSource().getVariable();
+			Integer castedSize = target.getType().getSizeInBits();
+
+			Component castOp = new CastOp(castedSize, target.getType().isInt());
+			PortUtil.mapInDataPorts(castOp, source, portDependency,
+					portGroupDependency);
+			PortUtil.mapOutDataPorts(castOp, target, busDependency,
+					doneBusDependency);
+			componentList.add(castOp);
+		}
 		return null;
 	}
 

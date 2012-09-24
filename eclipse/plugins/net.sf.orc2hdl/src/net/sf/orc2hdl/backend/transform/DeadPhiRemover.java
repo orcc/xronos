@@ -188,7 +188,8 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		List<Var> vars = new ArrayList<Var>();
 		if (!blocks.isEmpty()) {
 			for (Block block : blocks) {
-				Set<Var> blkVars = new BlockVars(definedVar).doSwitch(block);
+				Set<Var> blkVars = new BlockVars(definedVar, null)
+						.doSwitch(block);
 				for (Var var : blkVars) {
 					if (!vars.contains(var)) {
 						vars.add(var);
