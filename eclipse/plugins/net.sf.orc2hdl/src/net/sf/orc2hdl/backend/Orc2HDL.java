@@ -455,10 +455,23 @@ public class Orc2HDL extends AbstractBackend {
 
 					if (instanceToDesign) {
 						// Experimental
-						okForge = runForge(flags.toArray(new String[0]),
-								instance);
+						try {
+							okForge = runForge(flags.toArray(new String[0]),
+									instance);
+						} catch (NullPointerException ex) {
+							file.delete();
+							write("Compiling instance: " + id
+									+ ": OpenForge failed to compile" + "\n");
+						}
 					} else {
-						okForge = Forge.runForge(flags.toArray(new String[0]));
+						try {
+							okForge = Forge.runForge(flags
+									.toArray(new String[0]));
+						} catch (NullPointerException ex) {
+							file.delete();
+							write("Compiling instance: " + id
+									+ ": OpenForge failed to compile" + "\n");
+						}
 					}
 					long t1 = System.currentTimeMillis();
 					if (okForge) {
@@ -469,9 +482,6 @@ public class Orc2HDL extends AbstractBackend {
 						}
 						write("Compiling instance: " + id + ": Compiled in: "
 								+ ((float) (t1 - t0) / (float) 1000) + "s\n");
-					} else {
-						write("Compiling instance: " + id
-								+ ": OpenForge failed to compile" + "\n");
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
