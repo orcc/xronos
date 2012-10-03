@@ -104,6 +104,7 @@ import net.sf.orcc.ir.transform.DeadGlobalElimination;
 import net.sf.orcc.ir.transform.SSATransformation;
 import net.sf.orcc.ir.transform.TacTransformation;
 import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.util.OrccLogger;
 
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
@@ -371,7 +372,7 @@ public class Orc2HDL extends AbstractBackend {
 		if (modelsimAnalysis) {
 			String exe = Activator.getDefault().getPreference(P_MODELSIM, "");
 			if (exe == null || exe.isEmpty()) {
-				write("Warning: The path to ModelSim executable is not set!\n"
+				OrccLogger.traceln("Warning: The path to ModelSim executable is not set!\n"
 						+ "Go to Window > Preferences > Orc2HDL to edit them.\n");
 			} else {
 				// Run ModelSim
@@ -460,7 +461,7 @@ public class Orc2HDL extends AbstractBackend {
 									instance);
 						} catch (NullPointerException ex) {
 							file.delete();
-							write("Compiling instance: " + id
+							OrccLogger.severeln("Compiling instance: " + id
 									+ ": OpenForge failed to compile" + "\n");
 						}
 					} else {
@@ -469,7 +470,7 @@ public class Orc2HDL extends AbstractBackend {
 									.toArray(new String[0]));
 						} catch (NullPointerException ex) {
 							file.delete();
-							write("Compiling instance: " + id
+							OrccLogger.severeln("Compiling instance: " + id
 									+ ": OpenForge failed to compile" + "\n");
 						}
 					}
@@ -480,7 +481,7 @@ public class Orc2HDL extends AbstractBackend {
 									instance, srcPath, srcGoDonePath);
 							instanceWithGoDone.addGoDone();
 						}
-						write("Compiling instance: " + id + ": Compiled in: "
+						OrccLogger.traceln("Compiling instance: " + id + ": Compiled in: "
 								+ ((float) (t1 - t0) / (float) 1000) + "s\n");
 					}
 				} catch (IOException e) {
@@ -620,13 +621,13 @@ public class Orc2HDL extends AbstractBackend {
 			Engine engine = new DesignEngine(forgeMainJob, instance);
 			engine.begin();
 		} catch (NewJob.ForgeOptionException foe) {
-			write("Command line option error: " + foe.getMessage());
-			write("");
-			write(OptionRegistry.usage(false));
+			OrccLogger.severeln("Command line option error: " + foe.getMessage());
+			OrccLogger.severeln("");
+			OrccLogger.severeln(OptionRegistry.usage(false));
 			error = true;
 		} catch (ForgeFatalException ffe) {
-			write("Forge compilation ended with fatal error:");
-			write(ffe.getMessage());
+			OrccLogger.severeln("Forge compilation ended with fatal error:");
+			OrccLogger.severeln(ffe.getMessage());
 			error = true;
 		}
 
@@ -640,14 +641,14 @@ public class Orc2HDL extends AbstractBackend {
 
 			String arg = " -c -do sim_tb_" + network.getSimpleName() + ".do";
 			String cmd = modelSim + arg;
-			write("Launching Modelsim\n");
+			OrccLogger.traceln("Launching Modelsim\n");
 
 			Process p = Runtime.getRuntime().exec(cmd, null, fPath);
 
 			BufferedReader bri = new BufferedReader(new InputStreamReader(
 					p.getInputStream()));
 			while ((line = bri.readLine()) != null) {
-				write("Orc2HDL: " + line + "\n");
+				OrccLogger.traceln("Orc2HDL: " + line + "\n");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
