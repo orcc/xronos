@@ -372,8 +372,9 @@ public class Orc2HDL extends AbstractBackend {
 		if (modelsimAnalysis) {
 			String exe = Activator.getDefault().getPreference(P_MODELSIM, "");
 			if (exe == null || exe.isEmpty()) {
-				OrccLogger.traceln("Warning: The path to ModelSim executable is not set!\n"
-						+ "Go to Window > Preferences > Orc2HDL to edit them.\n");
+				OrccLogger
+						.traceln("Warning: The path to ModelSim executable is not set!\n"
+								+ "Go to Window > Preferences > Orc2HDL to edit them.\n");
 			} else {
 				// Run ModelSim
 
@@ -461,8 +462,9 @@ public class Orc2HDL extends AbstractBackend {
 									instance);
 						} catch (NullPointerException ex) {
 							file.delete();
-							OrccLogger.severeln("Compiling instance: " + id
-									+ ": OpenForge failed to compile" + "\n");
+							OrccLogger
+									.severeln("OpenForge failed to compile instance: "
+											+ id);
 						}
 					} else {
 						try {
@@ -470,8 +472,9 @@ public class Orc2HDL extends AbstractBackend {
 									.toArray(new String[0]));
 						} catch (NullPointerException ex) {
 							file.delete();
-							OrccLogger.severeln("Compiling instance: " + id
-									+ ": OpenForge failed to compile" + "\n");
+							OrccLogger
+									.severeln("OpenForge failed to compile instance: "
+											+ id);
 						}
 					}
 					long t1 = System.currentTimeMillis();
@@ -481,8 +484,9 @@ public class Orc2HDL extends AbstractBackend {
 									instance, srcPath, srcGoDonePath);
 							instanceWithGoDone.addGoDone();
 						}
-						OrccLogger.traceln("Compiling instance: " + id + ": Compiled in: "
-								+ ((float) (t1 - t0) / (float) 1000) + "s\n");
+						OrccLogger.traceln("Compiling instance: " + id
+								+ ": Compiled in: "
+								+ ((float) (t1 - t0) / (float) 1000) + "s");
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -621,7 +625,8 @@ public class Orc2HDL extends AbstractBackend {
 			Engine engine = new DesignEngine(forgeMainJob, instance);
 			engine.begin();
 		} catch (NewJob.ForgeOptionException foe) {
-			OrccLogger.severeln("Command line option error: " + foe.getMessage());
+			OrccLogger.severeln("Command line option error: "
+					+ foe.getMessage());
 			OrccLogger.severeln("");
 			OrccLogger.severeln(OptionRegistry.usage(false));
 			error = true;
