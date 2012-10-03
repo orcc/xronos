@@ -50,8 +50,8 @@ public abstract class Module extends Component implements Cloneable {
 	private InBuf inBuf;
 
 	/** Collection of Component */
-	private Collection<Component> components = new ArrayList<Component>();
-	// private Collection<Component> components = new HashSet<Component>();
+	//private Collection<Component> components = new ArrayList<Component>();
+	 private Collection<Component> components = new HashSet<Component>();
 
 	/** True iff this module needs a go signal */
 	private boolean consumesGo = false;
