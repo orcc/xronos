@@ -411,6 +411,8 @@ public class Orc2HDL extends AbstractBackend {
 				+ File.separator + "systemActors");
 		result &= copyFolderToFileSystem("/HdlLibraries/simPackage", libPath
 				+ File.separator + "simPackage");
+		result &= copyFolderToFileSystem("/HdlLibraries/glbl", libPath
+				+ File.separator + "glbl");
 
 		return result;
 	}
