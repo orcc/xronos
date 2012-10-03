@@ -280,8 +280,10 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 
 		} else if (currentBlock instanceof BlockWhile) {
 			loopBodyInputs.get(currentBlock).add(target);
-			loopBodyOutputs.get(currentBlock).add(valueOne);
-			stmInputs.get(currentBlock).add(valueZero);
+			if (!valueOne.getDefs().isEmpty())
+				loopBodyOutputs.get(currentBlock).add(valueOne);
+			if (!valueZero.getDefs().isEmpty())
+				stmInputs.get(currentBlock).add(valueZero);
 		}
 
 		// Fill up the JoinVar Map
