@@ -88,7 +88,7 @@ port(
   <instance.actor.inputs:{port | <componentPort(port=port,dir=true)>}; separator="\n">
   -- <instance.id> Ouput(s)
   <instance.actor.outputs:{port | <componentPort(port=port,dir=false)>}; separator="\n">
-  <if(options.goDoneSignal)>
+  <if(options.generateGoDone)>
   -- <instance.id> Actions Go and Done
   <instance.actor.actions: {action | <action.name>_go : out std_logic;}; separator="\n">
   <instance.actor.actions: {action | <action.name>_done : out std_logic;}; separator="\n">
@@ -136,7 +136,7 @@ port map(
   <instance.actor.inputs:{port | <actorIOPorts(port=port,dir=true)>}; separator="\n">
   -- <instance.id> Ouput(s)
   <instance.actor.outputs:{port | <actorIOPorts(port=port,dir=false)>}; separator="\n">
-  <if(options.goDoneSignal)>
+  <if(options.generateGoDone)>
   -- <instance.id> Actions Go and Done
   <instance.actor.actions: {action | <action.name>_go =\> <instance.simpleName>_<action.name>_go,}; separator="\n">
   <instance.actor.actions: {action | <action.name>_done =\> <instance.simpleName>_<action.name>_done,}; separator="\n">
@@ -331,7 +331,7 @@ networkPorts(network) ::= <<
 <network.inputs: {port | <printPorts(port=port, dir1="in",dir2="out")>}; separator="\n">
 -- XDF Output port(s)
 <network.outputs: {port | <printPorts(port=port, dir1="out",dir2="in")>}; separator="\n">
-<if(options.goDoneSignal)>
+<if(options.generateGoDone)>
 -- Action(s) Go & Done Output Ports
 <network.instances: goDoneOutputPorts(); separator="\n">
 <endif>

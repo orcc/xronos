@@ -9,9 +9,9 @@ printNetwork(network, options) ::= <<
 vlib SystemBuilder
 
 ## Compile the SystemBuilder Library from sources
-vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/sbtypes.vhdl
-vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/sbfifo.vhdl
-vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/sbfifo_behavioral.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/vhdl/sbtypes.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/vhdl/sbfifo.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/vhdl/sbfifo_behavioral.vhdl
 
 ## Map the SystemBuilder Library
 vmap SystemBuilder SystemBuilder
@@ -31,15 +31,15 @@ vmap SystemBuilder SystemBuilder
 vlib work
 
 ## Compile the glbl constans given by Xilinx 
-vlog glbl.v
+vlog ../lib/simulation/glbl.v
 
 ## Compile all the generated Verilog files by OpenForge
-vlog ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/*.v
+vlog ../<if(options.generateGoDone)>rtl/rtlGoDone<else>rtl<endif>/*.v
 
 ## Compile the Top VHDL Network
-vcom -93 -check_synthesis -quiet -work work ../<if(options.goDoneSignal)>srcGoDone<else>src<endif>/<network.simpleName>.vhd
+vcom -93 -check_synthesis -quiet -work work ../<if(options.generateGoDone)>rtl/rtlGoDone<else>rtl<endif>/<network.simpleName>.vhd
 <if(options.modelsimAnalysis)>
-vcom -93 -check_synthesis -quiet -work work ../srcGoDone/tb_<network.simpleName>.vhd
+vcom -93 -check_synthesis -quiet -work work ../rtl/rtlGoDone/tb_<network.simpleName>.vhd
 <endif>
 ## Start simulating the Top
 vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>
@@ -60,7 +60,7 @@ add wave -noupdate -divider -height 20 "FIFO FULL"
 <network.instances: printInstanceInputBuffer(); separator="\n">
 <if(options.modelsimAnalysis)>
 run <options.simTime>ns
-quit -force
+
 <else>
 <if(!network.inputs)>
 force -freeze sim:/<network.simpleName>/CLK 1 0, 0 {50 ns} -r 100
@@ -78,7 +78,7 @@ printNetworkOutputPorts(network) ::=<<
 ## Add Network Ouput signals
 <network.outputs: printOutputPorts(); separator="\n">
 <endif>
-<if(options.goDoneSignal)>
+<if(options.generateGoDone)>
 ## Action(s) Go & Done Output Ports
 <network.instances: goDoneOutputPorts(); separator="\n">
 <endif>

@@ -40,7 +40,7 @@ goDoneOutputPorts(instance, signal, out) ::= <<
 >>
 
 printOpenFile(instance) ::=<<
-<instance.actor.actions: {action | file_open(f_<instance.simpleName>_<action.name>, "../analysis/<instance.simpleName>_<action.name>.txt", WRITE_MODE);}; separator="\n">
+<instance.actor.actions: {action | file_open(f_<instance.simpleName>_<action.name>, "weights/<instance.simpleName>_<action.name>.txt", WRITE_MODE);}; separator="\n">
 >>
 
 printInstantiateComponent(network) ::=<<

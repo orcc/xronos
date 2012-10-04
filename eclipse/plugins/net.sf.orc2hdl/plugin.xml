@@ -5,7 +5,7 @@
          point="net.sf.orcc.backends.backends">
       <backend
             class="net.sf.orc2hdl.backend.Orc2HDL"
-            name="Verilog-Orc2HDL">
+            name="Verilog (Orc2HDL)">
          <option
                id="net.sf.orcc.plugins.compileXDF">
          </option>
@@ -13,10 +13,10 @@
                id="net.sf.orc2hdl.instanceDesign">
          </option>
          <option
-               id="net.sf.orc2hdl.simOptions">
+               id="net.sf.orc2hdl.generateGoDone">
          </option>
          <option
-               id="net.sf.orc2hdl.OpenForgeOptions">
+               id="net.sf.orcc.dontExportLibrary">
          </option>
       </backend>
    </extension>
@@ -26,151 +26,14 @@
             defaultValue="false"
             description="Generate directly the verilog file without using the XLIM backend."
             id="net.sf.orc2hdl.instanceDesign"
-            name="Do not use XLIM IR (Alpha)">
+            name="Faster Code Generation (Alpha)">
          <checkBox></checkBox>
       </option>
       <option
             defaultValue="false"
-            description="Select or Deselect differents OpenForge options"
-            id="net.sf.orc2hdl.OpenForgeOptions"
-            name="Modify Default OpenForge Options">
+            id="net.sf.orc2hdl.generateGoDone"
+            name="Generate Go/Done Signal for each Action">
          <checkBox>
-            <option
-                  defaultValue="Virtex 2"
-                  description="Choose the FPGA Type"
-                  id="net.sf.orc2hdl.FpgaType"
-                  name="FPGA Type">
-               <comboBox>
-                  <comboBoxItem
-                        id="Spartan 3">
-                  </comboBoxItem>
-                  <comboBoxItem
-                        id="Virtex 2">
-                  </comboBoxItem>
-                  <comboBoxItem
-                        id="Virtex 4">
-                  </comboBoxItem>
-               </comboBox>
-            </option>
-            <option
-                  defaultValue="false"
-                  description="Print OpenForge compilation Output."
-                  id="net.sf.orc2hdl.Verbose"
-                  name="Verbose">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Allow auto-insertion of registers based on max-gate-depth spec in the XLIM."
-                  id="net.sf.orc2hdl.Pipelining"
-                  name="Pipelining">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Do not automatically infer fifo interface from top level function signature."
-                  id="net.sf.orc2hdl.NoBlockIO"
-                  name="No Block IO">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Do not perform block-based scheduling(auto s/w pipelining of top level tasks)."
-                  id="net.sf.orc2hdl.NoBlockBasedScheduling"
-                  name="No Block Based Scheduling">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Use simple arbitration of shared memories (assumes logic handles contention)."
-                  id="net.sf.orc2hdl.SimpleSharedMemoryArbitration"
-                  name="Simple Shared Memory Arbitration">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Do not generate EDK pcore compliant directory output structure."
-                  id="net.sf.orc2hdl.NoEDKGeneration"
-                  name="No EDK Generation">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Balance loop latency. Ensures that all paths take at least 1 cycle if any path does so that loop iteration flop can be removed."
-                  id="net.sf.orc2hdl.BalanceLoopLatency"
-                  name="Balance Loop Latency">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Any multiplier which can be decomposed into 2 or fewer add/subtract + shift stages is."
-                  id="net.sf.orc2hdl.MultiplierDecomposition"
-                  name="Multiplier Decomposition">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Reads of LUT based memories are performed combinationally."
-                  id="net.sf.orc2hdl.CombinationallyLUTReads"
-                  name="Combinationally LUT Reads">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Allow generation of dual ported LUT memories (default is to only use dual port BRAMs)."
-                  id="net.sf.orc2hdl.AllowDualPortLUT"
-                  name="Allow Dual Port LUT">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="No Log File Generation"
-                  id="net.sf.orc2hdl.NoLog"
-                  name="No Log">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Suppress generation of _sim and _synth files."
-                  id="net.sf.orc2hdl.NoInclude"
-                  name="No Include">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="true"
-                  description="Generate report."
-                  id="net.sf.orc2hdl.Report"
-                  name="Report">
-               <checkBox></checkBox>
-            </option>
-         </checkBox>
-      </option>
-      <option
-            defaultValue="false"
-            id="net.sf.orc2hdl.simOptions"
-            name="Modelsim Simulation">
-         <checkBox>
-            <option
-                  defaultValue="false"
-                  description="Analysis of the Top Network by Actions &quot;Go and Done&quot; and FIFO visualization"
-                  id="net.sf.orc2hdl.modelSimAnalysis"
-                  name="ModelSim Analysis and Simulation">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  defaultValue="false"
-                  description="Output the GO and DONE signal for each action"
-                  id="net.sf.orc2hdl.goDoneSignal"
-                  name="Output the GO and DONE signal for each action">
-               <checkBox></checkBox>
-            </option>
-            <option
-                  id="net.sf.orc2hdl.simTime"
-                  name="Simulation Time in ns">
-               <textBox>
-                  
-               </textBox>
-            </option>
          </checkBox>
       </option>
    </extension>

@@ -1,21 +1,20 @@
 printInstance(instance, options) ::= <<
 # Generated for <instance.simpleName>
-set Lib "../../lib/simPackage"
-set Sim "../"
-set Src "../../src"
+set Lib "../lib/simulation"
+set Rtl "../rtl"
 set Testbench "vhd"
 
 # Create a work library for the instance
 vlib work_<instance.simpleName>
 
 # Compile the glbl constans given by Xilinx 
-vlog -work work_<instance.simpleName> $Sim/glbl.v
+vlog -work work_<instance.simpleName> $Lib/glbl.v
 
 # Compile sim package
 vcom -93 -reportprogress 30 -work work_<instance.simpleName> $Lib/sim_package.vhd
 
 # Compile the instance
-vlog -reportprogress 300 -work work_<instance.simpleName> $Src/<instance.simpleName>.v
+vlog -reportprogress 300 -work work_<instance.simpleName> $Rtl/<instance.simpleName>.v
 
 # Compile the actors testbench
 vcom -93 -reportprogress 30 -work work_<instance.simpleName> $Testbench/<instance.simpleName>_tb.vhd

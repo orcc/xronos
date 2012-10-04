@@ -1,44 +1,11 @@
-/*
- * Copyright (c) 2011, Ecole Polytechnique Fédérale de Lausanne
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- *   * Redistributions of source code must retain the above copyright notice,
- *     this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright notice,
- *     this list of conditions and the following disclaimer in the documentation
- *     and/or other materials provided with the distribution.
- *   * Neither the name of the Ecole Polytechnique Fédérale de Lausanne nor the names of its
- *     contributors may be used to endorse or promote products derived from this
- *     software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
- * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- */
-
 package net.sf.orc2hdl.backend;
 
-import static net.sf.orc2hdl.preference.Constants.P_MODELSIM;
 import static net.sf.orcc.OrccLaunchConstants.DEBUG_MODE;
 import static net.sf.orcc.OrccLaunchConstants.MAPPING;
+import static net.sf.orcc.OrccLaunchConstants.NO_LIBRARY_EXPORT;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -47,6 +14,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import net.sf.openforge.app.Engine;
 import net.sf.openforge.app.Forge;
@@ -54,11 +22,6 @@ import net.sf.openforge.app.ForgeFatalException;
 import net.sf.openforge.app.GenericJob;
 import net.sf.openforge.app.NewJob;
 import net.sf.openforge.app.OptionRegistry;
-import net.sf.orc2hdl.Activator;
-import net.sf.orc2hdl.analysis.ExecutionChart;
-import net.sf.orc2hdl.analysis.SimParser;
-import net.sf.orc2hdl.analysis.TimeGoDone;
-import net.sf.orc2hdl.analysis.WeightWriter;
 import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
 import net.sf.orc2hdl.backend.transform.RepeatPattern;
@@ -86,7 +49,6 @@ import net.sf.orcc.backends.xlim.transform.LocalArrayRemoval;
 import net.sf.orcc.backends.xlim.transform.UnaryListRemoval;
 import net.sf.orcc.backends.xlim.transform.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.transform.XlimVariableRenamer;
-import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
@@ -106,162 +68,106 @@ import net.sf.orcc.ir.transform.TacTransformation;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.OrccLogger;
 
-import org.eclipse.core.filesystem.EFS;
-import org.eclipse.core.filesystem.IFileStore;
-import org.eclipse.core.filesystem.IFileSystem;
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.FileLocator;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 
 /**
- * This class defines an XLIM and OpenForge based back-end
+ * The OpenForge's Orcc Frontend, it uses the AbstractBackend class for the XLIM
+ * Backend and for Orcc user Interface
  * 
  * @author Endri Bezati
- * @author Herve Yviquel
  * 
  */
+
 public class Orc2HDL extends AbstractBackend {
 
+	/** The clock Domains Map **/
 	private Map<String, String> clkDomains;
 
+	/** Debug Mode, no caching, generating always **/
 	private boolean debugMode;
 
+	/** A list which contains the given forgeFlags **/
 	private List<String> forgeFlags;
 
+	/** The used Xilinx FPGA Name **/
 	private String fpgaName;
 
-	private boolean goDoneSignal;
+	/** Generate Verilog files with Go And Done signal on Top Module **/
+	private boolean generateGoDone;
 
-	// private boolean haveSystemActors;
-
+	/** Use Orcc as a fronted for OpenForge, No XLIM code generation **/
 	private boolean instanceToDesign;
 
-	private boolean modelsimAnalysis;
+	/** The path used for the RTL Go Done generation **/
+	private String rtlGoDonePath;
 
+	/** The path used for the RTL generation **/
+	private String rtlPath;
+
+	/** The path used for the simulation generation **/
 	private String simPath;
 
-	private String simTime;
-
-	private String srcGoDonePath;
-
-	private String srcPath;
-
-	private String tbPath;
-
-	private String tracePath;
+	/** The path used for the testBench generation **/
+	private String testBenchPath;
 
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
-		instanceToDesign = getAttribute("net.sf.orc2hdl.instanceDesign", false);
-		goDoneSignal = getAttribute("net.sf.orc2hdl.goDoneSignal", false);
-		modelsimAnalysis = getAttribute("net.sf.orc2hdl.modelSimAnalysis",
-				false);
-		simTime = getAttribute("net.sf.orc2hdl.simTime", "5000");
-
-		// The source Path
-		srcPath = path + File.separator + "src";
-		new File(srcPath).mkdir();
-
-		// The source Path with the Go and Done signal
-		srcGoDonePath = path + File.separator + "srcGoDone";
-		if (goDoneSignal) {
-			new File(srcGoDonePath).mkdir();
-		}
-
-		// The simualtion path
-		simPath = path + File.separator + "sim";
-		new File(simPath).mkdir();
-
-		// The Testbench Path and Folder
-		tbPath = simPath + File.separator + "Testbench";
-		File tbFolder = new File(tbPath);
-		if (!tbFolder.exists()) {
-			tbFolder.mkdir();
-		}
-
-		// Testbench VHDs and Traces path
-		tracePath = tbPath + File.separator + "traces";
-		new File(tracePath).mkdir();
-		new File(tbPath + File.separator + "vhd").mkdir();
-
-		if (modelsimAnalysis) {
-			goDoneSignal = true;
-		}
-
-		String fpgaType = getAttribute("net.sf.orc2hdl.FpgaType", "Virtex 2");
-
-		if (fpgaType.equals("Spartan 3")) {
-			// fpgaName = "xc3s5000-5-fg1156";
-			fpgaName = "xc3s200-4-tq144C";
-		} else if (fpgaType.equals("Virtex 2")) {
-			fpgaName = "xc2vp30-7-ff1152";
-		} else if (fpgaType.equals("Virtex 4")) {
-			fpgaName = "xc4vlx100-10-ff1513";
-		}
-
 		debugMode = getAttribute(DEBUG_MODE, true);
+		instanceToDesign = getAttribute("net.sf.orc2hdl.instanceDesign", false);
+		generateGoDone = getAttribute("net.sf.orc2hdl.generateGoDone", false);
 
-		// Populating ForgeFlags
+		// Set Paths for RTL
+		rtlPath = path + File.separator + "rtl";
+		File rtlDir = new File(rtlPath);
+		if (!rtlDir.exists()) {
+			rtlDir.mkdir();
+		}
+
+		if (generateGoDone) {
+			rtlGoDonePath = rtlPath + File.separator + "rtlGoDone";
+			File rtlGoDoneDir = new File(rtlGoDonePath);
+			if (!rtlGoDoneDir.exists()) {
+				rtlGoDoneDir.mkdir();
+			}
+		}
+
+		// Set Paths for simulation
+		simPath = path + File.separator + "sim";
+		File simDir = new File(simPath);
+		if (!simDir.exists()) {
+			simDir.mkdir();
+		}
+
+		// Set Paths for testBenches
+		testBenchPath = path + File.separator + "testbench";
+		File testBenchDir = new File(testBenchPath);
+		if (!testBenchDir.exists()) {
+			testBenchDir.mkdir();
+		}
+
+		// Set FPGA name and forge flags
+		fpgaName = "xc2vp30-7-ff1152";
+
+		// Set Forge Flags
 		forgeFlags = new ArrayList<String>();
-
-		if (getAttribute("net.sf.orc2hdl.Verbose", false)) {
-			forgeFlags.add("-vv");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.Pipelining", true)) {
-			forgeFlags.add("-pipeline");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.NoBlockIO", true)) {
-			forgeFlags.add("-noblockio");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.NoBlockBasedScheduling", true)) {
-			forgeFlags.add("-no_block_sched");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.SimpleSharedMemoryArbitration", true)) {
-			forgeFlags.add("-simple_arbitration");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.NoEDKGeneration", true)) {
-			forgeFlags.add("-noedk");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.BalanceLoopLatency", true)) {
-			forgeFlags.add("-loopbal");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.MultiplierDecomposition", true)) {
-			forgeFlags.add("-multdecomplimit");
-			forgeFlags.add("2");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.CombinationallyLUTReads", true)) {
-			forgeFlags.add("-comb_lut_mem_read");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.AllowDualPortLUT", true)) {
-			forgeFlags.add("-dplut");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.NoLog", true)) {
-			forgeFlags.add("-nolog");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.NoInclude", true)) {
-			forgeFlags.add("-noinclude");
-		}
-
-		if (getAttribute("net.sf.orc2hdl.NoInclude", true)) {
-			forgeFlags.add("-report");
-			forgeFlags.add("-Xdetailed_report");
-		}
-
+		forgeFlags.add("-vv");
+		forgeFlags.add("-pipeline");
+		forgeFlags.add("-noblockio");
+		forgeFlags.add("-no_block_sched");
+		forgeFlags.add("-simple_arbitration");
+		forgeFlags.add("-noedk");
+		forgeFlags.add("-loopbal");
+		forgeFlags.add("-multdecomplimit");
+		forgeFlags.add("2");
+		forgeFlags.add("-comb_lut_mem_read");
+		forgeFlags.add("-dplut");
+		forgeFlags.add("-nolog");
+		forgeFlags.add("-noinclude");
+		forgeFlags.add("-report");
+		forgeFlags.add("-Xdetailed_report");
 	}
 
 	@Override
@@ -338,11 +244,12 @@ public class Orc2HDL extends AbstractBackend {
 		}
 
 		data.computeTemplateMaps(actor);
+
 	}
 
 	@Override
 	protected void doVtlCodeGeneration(List<IFile> files) throws OrccException {
-		// do not generate an XLIM VTL
+		// do not generate VTL
 	}
 
 	@Override
@@ -351,70 +258,46 @@ public class Orc2HDL extends AbstractBackend {
 		new Instantiator(false, 1).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
 
+		// Transform Actors
 		transformActors(network.getAllActors());
 
+		// Compute the Network Template
 		network.computeTemplateMaps();
-
 		TopNetworkTemplateData data = new TopNetworkTemplateData();
-
 		data.computeTemplateMaps(network, clkDomains);
 		network.setTemplateData(data);
 
+		// Print the Network
 		printNetwork(network);
-		// Create the sim directory copy the glbl.v file in it and then print
-		// the "do file"
 
-		printSimDoFile(network);
+		// Print Simulation files
+		printSimFiles(network);
 
-		// Print the xlim files
+		// Print Instance files
 		printInstances(network);
-
-		if (modelsimAnalysis) {
-			String exe = Activator.getDefault().getPreference(P_MODELSIM, "");
-			if (exe == null || exe.isEmpty()) {
-				OrccLogger
-						.traceln("Warning: The path to ModelSim executable is not set!\n"
-								+ "Go to Window > Preferences > Orc2HDL to edit them.\n");
-			} else {
-				// Run ModelSim
-
-				runModelSim(exe, network);
-
-				// Parse Files
-				SimParser simParser = new SimParser(network, path
-						+ File.separator + "analysis");
-				simParser.createMaps();
-				Map<Instance, Map<Action, TimeGoDone>> execution = simParser
-						.getExecutionMap();
-
-				WeightWriter weightWriter = new WeightWriter(execution,
-						network, path + File.separator + "analysis"
-								+ File.separator + network.getName() + ".ew");
-				weightWriter.writeProtobuf();
-				ExecutionChart chart = new ExecutionChart(execution, network,
-						path);
-				chart.saveChart();
-
-			}
-		}
 	}
 
 	@Override
 	public boolean exportRuntimeLibrary() throws OrccException {
+		boolean exportLibrary = !getAttribute(NO_LIBRARY_EXPORT, false);
 
 		String libPath = path + File.separator + "lib";
-		boolean result = true;
 
-		result &= copyFolderToFileSystem("/HdlLibraries/systemBuilder/vhdl",
-				libPath + File.separator + "systemBuilder");
-		result &= copyFolderToFileSystem("/HdlLibraries/systemActors", libPath
-				+ File.separator + "systemActors");
-		result &= copyFolderToFileSystem("/HdlLibraries/simPackage", libPath
-				+ File.separator + "simPackage");
-		result &= copyFolderToFileSystem("/HdlLibraries/glbl", libPath
-				+ File.separator + "glbl");
+		if (exportLibrary) {
+			copyFileToFilesystem("/bundle/README.txt", path + File.separator
+					+ "README.txt");
 
-		return result;
+			OrccLogger.trace("Export libraries sources into " + libPath
+					+ "... ");
+			if (copyFolderToFileSystem("/bundle/lib", libPath)) {
+				OrccLogger.traceRaw("OK" + "\n");
+				return true;
+			} else {
+				OrccLogger.warnRaw("Error" + "\n");
+				return false;
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -427,17 +310,16 @@ public class Orc2HDL extends AbstractBackend {
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 
+		// Create the XLIM Path
 		String xlimPath = path + File.separator + "xlim";
 		new File(xlimPath).mkdir();
-
 		Boolean printOK = true;
+
 		// Test if instance is Native
 		if (!instance.getActor().isNative()) {
 
-			// Print TestBench
+			// Print TCL launch script and VHD Testbenches for each Instance
 			printTestbench(instance);
-			// Print TestBench tcl script
-			printTCL(instance);
 
 			printOK = printer.print(instance.getName() + ".xlim", xlimPath,
 					instance);
@@ -452,7 +334,7 @@ public class Orc2HDL extends AbstractBackend {
 						xlim = file.getCanonicalPath();
 					}
 					List<String> flags = new ArrayList<String>(forgeFlags);
-					flags.addAll(Arrays.asList("-d", srcPath, "-o", id, xlim));
+					flags.addAll(Arrays.asList("-d", rtlPath, "-o", id, xlim));
 
 					long t0 = System.currentTimeMillis();
 					Boolean okForge = false;
@@ -477,13 +359,17 @@ public class Orc2HDL extends AbstractBackend {
 							OrccLogger
 									.severeln("OpenForge failed to compile instance: "
 											+ id);
+						} catch (NoSuchElementException ex) {
+							file.delete();
+							OrccLogger.severeln("Compiling instance: " + id
+									+ ": OpenForge failed to compile");
 						}
 					}
 					long t1 = System.currentTimeMillis();
 					if (okForge) {
-						if (goDoneSignal) {
+						if (generateGoDone) {
 							VerilogAddGoDone instanceWithGoDone = new VerilogAddGoDone(
-									instance, srcPath, srcGoDonePath);
+									instance, rtlPath, rtlGoDonePath);
 							instanceWithGoDone.addGoDone();
 						}
 						OrccLogger.traceln("Compiling instance: " + id
@@ -495,7 +381,6 @@ public class Orc2HDL extends AbstractBackend {
 				}
 			}
 		}
-
 		return printOK;
 	}
 
@@ -517,27 +402,23 @@ public class Orc2HDL extends AbstractBackend {
 		printer.getOptions().put("fifoSize", fifoSize);
 		printer.getOptions().put("currentTime", currentTime);
 
-		printer.print(file, srcPath, network);
+		printer.print(file, rtlPath, network);
 
-		if (goDoneSignal || modelsimAnalysis) {
-			new File(srcGoDonePath).mkdir();
-			printer.getOptions().put("goDoneSignal", goDoneSignal);
-			printer.print(file, srcGoDonePath, network);
-			if (modelsimAnalysis) {
-				String analysis = path + File.separator + "analysis";
-				new File(analysis).mkdir();
-				printer = new Orc2HDLPrinter(
-						"net/sf/orc2hdl/templates/GoDoneTestBench.stg");
-				printer.setExpressionPrinter(new XlimExprPrinter());
-				printer.setTypePrinter(new XlimTypePrinter());
-				printer.getOptions().put("currentTime", currentTime);
-				file = "tb_" + network.getSimpleName() + ".vhd";
-				printer.print(file, srcGoDonePath, network);
-			}
+		if (generateGoDone) {
+			printer.getOptions().put("generateGoDone", generateGoDone);
+			printer.print(file, rtlGoDonePath, network);
+			printer = new Orc2HDLPrinter(
+					"net/sf/orc2hdl/templates/GoDoneTestBench.stg");
+			printer.setExpressionPrinter(new XlimExprPrinter());
+			printer.setTypePrinter(new XlimTypePrinter());
+			printer.getOptions().put("currentTime", currentTime);
+			file = "tb_" + network.getSimpleName() + ".vhd";
+			printer.print(file, rtlGoDonePath, network);
 		}
+
 	}
 
-	private void printSimDoFile(Network network) {
+	private void printSimFiles(Network network) {
 		// Get the current time
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date date = new Date();
@@ -545,75 +426,64 @@ public class Orc2HDL extends AbstractBackend {
 		String currentTime = dateFormat.format(date);
 
 		Orc2HDLPrinter printer;
-		String file = network.getName();
 
 		printer = new Orc2HDLPrinter("net/sf/orc2hdl/templates/Top_Sim_do.stg");
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
 
+		String file = network.getName();
 		file = "sim_" + network.getSimpleName() + ".do";
-
 		printer.print(file, simPath, network);
 
-		if (goDoneSignal) {
-			printer.getOptions().put("goDoneSignal", goDoneSignal);
+		if (generateGoDone) {
+			// Print Simulation Do file with Go and Done on Top Modules
+			printer.getOptions().put("generateGoDone", generateGoDone);
 			file = "sim_" + network.getSimpleName() + "_goDone" + ".do";
 			new File(simPath).mkdir();
 			printer.print(file, simPath, network);
-		}
 
-		if (modelsimAnalysis) {
-			printer.getOptions().put("goDoneSignal", goDoneSignal);
-			printer.getOptions().put("modelsimAnalysis", modelsimAnalysis);
-			printer.getOptions().put("simTime", simTime);
-			file = "sim_tb_" + network.getSimpleName() + ".do";
+			// Print Go Done Weights Simluation file
+			String weightsPath = simPath + File.separator + "weights";
+			File weightsDir = new File(weightsPath);
+			if (!weightsDir.exists()) {
+				weightsDir.mkdir();
+			}
+			printer.getOptions().put("generateGoDone", generateGoDone);
+			printer.getOptions().put("modelsimAnalysis", generateGoDone);
+			printer.getOptions().put("simTime", "10000");
+			file = "sim_weights_" + network.getSimpleName() + ".do";
 			new File(simPath).mkdir();
 			printer.print(file, simPath, network);
 		}
-		// Copy the glbl.v file to the simulation "sim" folder
-
-		// Get the current folder
-		URL glblFileURL = Platform.getBundle("net.sf.orc2hdl").getEntry(
-				"/HdlLibraries/glbl");
-
-		try {
-
-			String glblFilePath = new File(FileLocator.resolve(glblFileURL)
-					.getFile()).getAbsolutePath();
-			IFileSystem fileSystem = EFS.getLocalFileSystem();
-
-			String path = glblFilePath + "/glbl.v";
-			URI uri = new File(path).toURI();
-			IFileStore pluginDir = fileSystem.getStore(uri);
-
-			path = simPath + "/glbl.v";
-			uri = new File(path).toURI();
-			IFileStore copyDir = fileSystem.getStore(uri);
-
-			pluginDir.copy(copyDir, EFS.OVERWRITE, null);
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	private void printTCL(Instance instance) {
-		Orc2HDLPrinter printer = new Orc2HDLPrinter(
-				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
-		printer.print("tcl_" + instance.getSimpleName() + ".tcl", tbPath,
-				instance);
 	}
 
 	private void printTestbench(Instance instance) {
+		// Print TCL Script
+		Orc2HDLPrinter printer = new Orc2HDLPrinter(
+				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
+		printer.print("tcl_" + instance.getSimpleName() + ".tcl",
+				testBenchPath, instance);
+		// Create VHD folder
+		String tbVhdPath = testBenchPath + File.separator + "vhd";
+		File tbVhdDir = new File(tbVhdPath);
+		if (!tbVhdDir.exists()) {
+			tbVhdDir.mkdir();
+		}
+
+		// Create the fifoTraces folder
+		String tracePath = testBenchPath + File.separator + "fifoTraces";
+		File fifoTracesDir = new File(tracePath);
+		if (!fifoTracesDir.exists()) {
+			fifoTracesDir.mkdir();
+		}
+
+		// Print the VHD testbenches
 		Orc2HDLPrinter tbPrinter = new Orc2HDLPrinter(
 				"net/sf/orc2hdl/templates/ModelSim_Testbench.stg");
 		tbPrinter.getOptions().put("tracePath", tracePath);
-		tbPrinter.print(instance.getSimpleName() + "_tb.vhd", tbPath
-				+ File.separator + "vhd", instance);
+		tbPrinter.print(instance.getSimpleName() + "_tb.vhd", tbVhdPath,
+				instance);
 	}
 
 	private boolean runForge(String[] args, Instance instance) {
@@ -641,24 +511,4 @@ public class Orc2HDL extends AbstractBackend {
 		return !error;
 	}
 
-	public void runModelSim(String modelSim, Network network) {
-		try {
-			String line;
-			File fPath = new File(simPath);
-
-			String arg = " -c -do sim_tb_" + network.getSimpleName() + ".do";
-			String cmd = modelSim + arg;
-			OrccLogger.traceln("Launching Modelsim\n");
-
-			Process p = Runtime.getRuntime().exec(cmd, null, fPath);
-
-			BufferedReader bri = new BufferedReader(new InputStreamReader(
-					p.getInputStream()));
-			while ((line = bri.readLine()) != null) {
-				OrccLogger.traceln("Orc2HDL: " + line + "\n");
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 }
