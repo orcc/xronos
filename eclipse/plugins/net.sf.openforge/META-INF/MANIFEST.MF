@@ -25,7 +25,8 @@ Export-Package: net.sf.openforge.app;
  net.sf.openforge.util,
  net.sf.openforge.util.io,
  net.sf.openforge.util.naming,
- net.sf.openforge.util.xml
+ net.sf.openforge.util.xml,
+ net.sf.openforge.verilog.model
 Bundle-ClassPath: .,
  lib/saxon8-dom.jar,
  lib/saxon8.jar
