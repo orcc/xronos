@@ -99,7 +99,7 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
 	public BlockVars(Block stmBlock, Map<Block, Map<Var, List<Var>>> phi) {
 		super(true);
-		this.inputVars = false;
+		this.inputVars = true;
 		this.deepSearch = false;
 		this.phiVisit = true;
 		this.stmBlock = stmBlock;

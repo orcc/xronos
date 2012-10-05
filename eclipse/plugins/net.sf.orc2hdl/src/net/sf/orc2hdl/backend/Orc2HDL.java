@@ -175,77 +175,83 @@ public class Orc2HDL extends AbstractBackend {
 	protected void doTransformActor(Actor actor) throws OrccException {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
-		if (instanceToDesign) {
-			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
-			// transformations.add(new DfVisitor<Void>(new
-			// LocalVarInitializer()));
-			transformations.add(new StoreOnceTransformation());
-			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
-			transformations.add(new UnitImporter());
-			transformations.add(new UnaryListRemoval());
-			transformations.add(new DfVisitor<Void>(new SSATransformation()));
-			transformations.add(new RepeatPattern());
-			transformations.add(new GlobalArrayInitializer(true));
-			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
-			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
-			transformations.add(new DfVisitor<Expression>(
-					new LiteralIntegersAdder()));
-			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
-			transformations.add(new DfVisitor<Expression>(
-					new TacTransformation()));
-			transformations.add(new DfVisitor<CfgNode>(
-					new ControlFlowAnalyzer()));
-			transformations.add(new DfVisitor<Expression>(
-					new LiteralIntegersAdder()));
-			transformations.add(new DfVisitor<Expression>(new CastAdder(false,
-					false)));
-			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
+		if (!actor.isNative()) {
+			if (instanceToDesign) {
+				List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
+				// transformations.add(new DfVisitor<Void>(new
+				// LocalVarInitializer()));
+				transformations.add(new StoreOnceTransformation());
+				transformations
+						.add(new DfVisitor<Void>(new LocalArrayRemoval()));
+				transformations.add(new UnitImporter());
+				transformations.add(new UnaryListRemoval());
+				transformations
+						.add(new DfVisitor<Void>(new SSATransformation()));
+				transformations.add(new RepeatPattern());
+				transformations.add(new GlobalArrayInitializer(true));
+				transformations
+						.add(new DfVisitor<Void>(new Inliner(true, true)));
+				transformations.add(new DfVisitor<Void>(
+						new DeadCodeElimination()));
+				transformations.add(new DfVisitor<Expression>(
+						new LiteralIntegersAdder()));
+				transformations.add(new DfVisitor<Void>(new IndexFlattener()));
+				transformations.add(new DfVisitor<Expression>(
+						new TacTransformation()));
+				transformations.add(new DfVisitor<CfgNode>(
+						new ControlFlowAnalyzer()));
+				transformations.add(new DfVisitor<Expression>(
+						new LiteralIntegersAdder()));
+				transformations.add(new DfVisitor<Expression>(new CastAdder(
+						false, false)));
+				transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
-			for (DfSwitch<?> transformation : transformations) {
-				transformation.doSwitch(actor);
-				ResourceSet set = new ResourceSetImpl();
-				if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
-					System.out.println("oops " + transformation + " "
-							+ actor.getName());
+				for (DfSwitch<?> transformation : transformations) {
+					transformation.doSwitch(actor);
+					ResourceSet set = new ResourceSetImpl();
+					if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
+						System.out.println("oops " + transformation + " "
+								+ actor.getName());
+					}
+				}
+
+			} else {
+				DfSwitch<?>[] transformations = {
+						new StoreOnceTransformation(),
+						new DfVisitor<Void>(new LocalArrayRemoval()),
+						new Multi2MonoToken(), new DivisionSubstitution(),
+						new UnitImporter(),
+						new DfVisitor<Void>(new SSATransformation()),
+						/* new TypeResizer(false, true, true, true), */
+						new GlobalArrayInitializer(true),
+						new DfVisitor<Void>(new Inliner(true, true)),
+						new DfVisitor<Void>(new InstTernaryAdder()),
+						new UnaryListRemoval(), new CustomPeekAdder(),
+						new DeadGlobalElimination(),
+						new DfVisitor<Void>(new DeadCodeElimination()),
+						new DfVisitor<Void>(new XlimDeadVariableRemoval()),
+						new DfVisitor<Void>(new ListFlattener()),
+						new DfVisitor<Expression>(new TacTransformation()),
+						new DfVisitor<CfgNode>(new ControlFlowAnalyzer()),
+						new DfVisitor<Void>(new InstPhiTransformation()),
+						new DfVisitor<Expression>(new LiteralIntegersAdder()),
+						new DfVisitor<Expression>(new CastAdder(true, true)),
+						new XlimVariableRenamer(),
+						new DfVisitor<Void>(new EmptyBlockRemover()),
+						new DfVisitor<Void>(new BlockCombine()) };
+
+				for (DfSwitch<?> transformation : transformations) {
+					transformation.doSwitch(actor);
+					ResourceSet set = new ResourceSetImpl();
+					if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
+						System.out.println("oops " + transformation + " "
+								+ actor.getName());
+					}
 				}
 			}
 
-		} else {
-			DfSwitch<?>[] transformations = { new StoreOnceTransformation(),
-					new DfVisitor<Void>(new LocalArrayRemoval()),
-					new Multi2MonoToken(), new DivisionSubstitution(),
-					new UnitImporter(),
-					new DfVisitor<Void>(new SSATransformation()),
-					/* new TypeResizer(false, true, true, true), */
-					new GlobalArrayInitializer(true),
-					new DfVisitor<Void>(new Inliner(true, true)),
-					new DfVisitor<Void>(new InstTernaryAdder()),
-					new UnaryListRemoval(), new CustomPeekAdder(),
-					new DeadGlobalElimination(),
-					new DfVisitor<Void>(new DeadCodeElimination()),
-					new DfVisitor<Void>(new XlimDeadVariableRemoval()),
-					new DfVisitor<Void>(new ListFlattener()),
-					new DfVisitor<Expression>(new TacTransformation()),
-					new DfVisitor<CfgNode>(new ControlFlowAnalyzer()),
-					new DfVisitor<Void>(new InstPhiTransformation()),
-					new DfVisitor<Expression>(new LiteralIntegersAdder()),
-					new DfVisitor<Expression>(new CastAdder(true, true)),
-					new XlimVariableRenamer(),
-					new DfVisitor<Void>(new EmptyBlockRemover()),
-					new DfVisitor<Void>(new BlockCombine()) };
-
-			for (DfSwitch<?> transformation : transformations) {
-				transformation.doSwitch(actor);
-				ResourceSet set = new ResourceSetImpl();
-				if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
-					System.out.println("oops " + transformation + " "
-							+ actor.getName());
-				}
-			}
+			data.computeTemplateMaps(actor);
 		}
-
-		data.computeTemplateMaps(actor);
-
 	}
 
 	@Override
@@ -325,7 +331,6 @@ public class Orc2HDL extends AbstractBackend {
 			printOK = printer.print(instance.getName() + ".xlim", xlimPath,
 					instance);
 			if (!printOK) {
-
 				try {
 					String xlim = null;
 					String id = instance.getName();
@@ -340,36 +345,30 @@ public class Orc2HDL extends AbstractBackend {
 					long t0 = System.currentTimeMillis();
 					Boolean okForge = false;
 
-					if (instanceToDesign) {
-						// Experimental
-						try {
+					// Experimental
+					try {
+						if (instanceToDesign) {
 							okForge = runForge(flags.toArray(new String[0]),
 									instance);
-						} catch (NullPointerException ex) {
-							file.delete();
-							OrccLogger
-									.severeln("OpenForge failed to compile instance: "
-											+ id);
-						}
-					} else {
-						try {
+						} else {
 							okForge = Forge.runForge(flags
 									.toArray(new String[0]));
-						} catch (NullPointerException ex) {
-							file.delete();
-							OrccLogger
-									.severeln("OpenForge failed to compile instance: "
-											+ id);
-						} catch (NoSuchElementException ex) {
-							file.delete();
-							OrccLogger.severeln("Compiling instance: " + id
-									+ ": OpenForge failed to compile");
-						} catch (UnbalancedAssignmentException ex){
-							file.delete();
-							OrccLogger.severeln("Compiling instance: " + id
-									+ ": OpenForge failed to compile");
 						}
+					} catch (NullPointerException ex) {
+						file.delete();
+						OrccLogger
+								.severeln("OpenForge failed to compile instance: "
+										+ id);
+					} catch (NoSuchElementException ex) {
+						file.delete();
+						OrccLogger.severeln("Compiling instance: " + id
+								+ ": OpenForge failed to compile");
+					} catch (UnbalancedAssignmentException ex) {
+						file.delete();
+						OrccLogger.severeln("Compiling instance: " + id
+								+ ": OpenForge failed to compile");
 					}
+
 					long t1 = System.currentTimeMillis();
 					if (okForge) {
 						if (generateGoDone) {
@@ -385,6 +384,7 @@ public class Orc2HDL extends AbstractBackend {
 					e.printStackTrace();
 				}
 			}
+
 		}
 		return printOK;
 	}

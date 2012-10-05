@@ -159,11 +159,11 @@ end process WaveGen_Proc_Out;
 
 printFSMIn(connection) ::= <<
 signal tb_FSM_<connection.targetPort.name>  : tb_type;
-file sim_file_<instance.simpleName>_<connection.targetPort.name>  : text is "<options.tracePath>/<connection.source.simpleName>_<connection.sourcePort.name>_<connection.target.simpleName>_<connection.targetPort.name>_traces.txt";
+file sim_file_<instance.simpleName>_<connection.targetPort.name>  : text is "fifoTraces/<connection.source.simpleName>_<connection.sourcePort.name>_<connection.target.simpleName>_<connection.targetPort.name>_traces.txt";
 >>
 
 printFSMOut(connection) ::= <<
-file sim_file_<instance.simpleName>_<connection.sourcePort.name>  : text is "<options.tracePath>/<connection.source.simpleName>_<connection.sourcePort.name>_<connection.target.simpleName>_<connection.targetPort.name>_traces.txt";
+file sim_file_<instance.simpleName>_<connection.sourcePort.name>  : text is "fifoTraces/<connection.source.simpleName>_<connection.sourcePort.name>_<connection.target.simpleName>_<connection.targetPort.name>_traces.txt";
 >>
 
 case_define_out(port) ::= <<
