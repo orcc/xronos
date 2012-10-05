@@ -22,6 +22,7 @@ import net.sf.openforge.app.ForgeFatalException;
 import net.sf.openforge.app.GenericJob;
 import net.sf.openforge.app.NewJob;
 import net.sf.openforge.app.OptionRegistry;
+import net.sf.openforge.verilog.model.Assign.UnbalancedAssignmentException;
 import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
 import net.sf.orc2hdl.backend.transform.RepeatPattern;
@@ -360,6 +361,10 @@ public class Orc2HDL extends AbstractBackend {
 									.severeln("OpenForge failed to compile instance: "
 											+ id);
 						} catch (NoSuchElementException ex) {
+							file.delete();
+							OrccLogger.severeln("Compiling instance: " + id
+									+ ": OpenForge failed to compile");
+						} catch (UnbalancedAssignmentException ex){
 							file.delete();
 							OrccLogger.severeln("Compiling instance: " + id
 									+ ": OpenForge failed to compile");

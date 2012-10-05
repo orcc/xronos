@@ -16,7 +16,7 @@ Configuration of your system Before Simulation:
 				xilinxcorelib = <Xilinx Installation Folder>/<ISE Version>/ISE_DS/ISE/vhdl/mti_se/<Modelsim Version>/lin64/xilinxcorelib
 				simprims_ver = <Xilinx Installation Folder>/<ISE Version>/ISE_DS/ISE/verilog/mti_se/<Modelsim Version>/lin64/simprims_ver
 				unisims_ver = <Xilinx Installation Folder>/<ISE Version>/ISE_DS/ISE/verilog/mti_se/<Modelsim Version>/lin64/unisims_ver
-				xilinxcorelib_ver = <Xilinx Installation Folder>/<ISE Version>/ISE_DS/ISE/verilog/mti_se/<Modelsim Version>/lin64
+				xilinxcorelib_ver = <Xilinx Installation Folder>/<ISE Version>/ISE_DS/ISE/verilog/mti_se/<Modelsim Version>/lin64/xilinxcorelib_ver
 		-Windows
 			- Run the "Run Simulation Library Compilation Wizard" found on the Xilinx ISE 
 			- Add the following lines in the modelsim.ini (<ModelSim Installation folder>/modelsim.ini)
