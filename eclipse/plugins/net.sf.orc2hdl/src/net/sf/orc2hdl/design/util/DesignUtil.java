@@ -144,7 +144,7 @@ public class DesignUtil {
 		// create Call
 		Call call = createCall(taskName, taskModule);
 		call.setSourceName(taskName);
-		// call.setIDLogical(taskName);
+		call.setIDLogical(taskName);
 		topLevelInitialization(call);
 		// Create task
 		task = new Task(call);

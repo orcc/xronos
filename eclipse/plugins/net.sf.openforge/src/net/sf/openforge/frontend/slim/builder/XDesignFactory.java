@@ -217,6 +217,7 @@ public class XDesignFactory extends XFactory {
 			if (autostart != null) {
 				task.setKickerRequired(autostart.toUpperCase().equals("TRUE"));
 			}
+			call.setIDLogical(taskName);
 			task.setSourceName(taskName);
 			taskModules.put(taskName, task);
 			design.addTask(task);
