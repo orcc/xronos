@@ -116,11 +116,14 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		this.phiVisit = false;
 		this.getDefinedVar = getDefinedVar;
 		this.stmOutputs = stmOutputs;
+		blockVars = new HashSet<Var>();
 	}
 
 	@Override
 	public Set<Var> caseBlockBasic(BlockBasic block) {
-		blockVars = new HashSet<Var>();
+		if (!getDefinedVar) {
+			blockVars = new HashSet<Var>();
+		}
 		currentBlock = block;
 		super.caseBlockBasic(block);
 		return blockVars;
@@ -136,14 +139,15 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 					}
 				}
 			}
-		}
-		if (deepSearch) {
-			doSwitch(nodeIf.getThenBlocks());
-			doSwitch(nodeIf.getElseBlocks());
-			return blockVars;
 		} else {
-			return new HashSet<Var>();
+			if (deepSearch) {
+
+				doSwitch(nodeIf.getThenBlocks());
+				doSwitch(nodeIf.getElseBlocks());
+				return blockVars;
+			}
 		}
+		return blockVars;
 	}
 
 	@Override
@@ -156,13 +160,13 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 					}
 				}
 			}
-		}
-		if (deepSearch) {
-			doSwitch(nodeWhile.getBlocks());
-			return blockVars;
 		} else {
-			return new HashSet<Var>();
+			if (deepSearch) {
+				doSwitch(nodeWhile.getBlocks());
+				return blockVars;
+			}
 		}
+		return blockVars;
 	}
 
 	@Override

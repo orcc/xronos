@@ -174,11 +174,12 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 			for (Block block : blocks) {
 				Set<Var> blkVars = new BlockVars(input, deepSearch, blocks,
 						phiBlock).doSwitch(block);
-				for (Var var : blkVars) {
-					if (!vars.contains(var)) {
-						vars.add(var);
+				if (blkVars != null)
+					for (Var var : blkVars) {
+						if (!vars.contains(var)) {
+							vars.add(var);
+						}
 					}
-				}
 			}
 		}
 		return vars;
@@ -190,11 +191,12 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 			for (Block block : blocks) {
 				Set<Var> blkVars = new BlockVars(definedVar, null)
 						.doSwitch(block);
-				for (Var var : blkVars) {
-					if (!vars.contains(var)) {
-						vars.add(var);
+				if (blkVars != null)
+					for (Var var : blkVars) {
+						if (!vars.contains(var)) {
+							vars.add(var);
+						}
 					}
-				}
 			}
 		}
 		return vars;

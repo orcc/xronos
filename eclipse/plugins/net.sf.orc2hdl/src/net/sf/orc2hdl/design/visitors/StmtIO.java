@@ -300,6 +300,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			for (Block block : blocks) {
 				Set<Var> blkVars = new BlockVars(input, deepSearch, blocks,
 						phiBlock).doSwitch(block);
+				if (blkVars != null)
 				for (Var var : blkVars) {
 					if (!vars.contains(var)) {
 						vars.add(var);
@@ -316,6 +317,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			for (Block block : blocks) {
 				Set<Var> blkVars = new BlockVars(definedVar, stmOutputs)
 						.doSwitch(block);
+				if (blkVars != null)
 				for (Var var : blkVars) {
 					if (!vars.contains(var)) {
 						vars.add(var);
