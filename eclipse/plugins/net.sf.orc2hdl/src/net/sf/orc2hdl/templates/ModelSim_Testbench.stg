@@ -31,6 +31,16 @@ signal <port.name>_send  : std_logic := '0';
 signal <port.name>_ack   : std_logic;
 signal <port.name>_rdy   : std_logic;
 signal <port.name>_count  : std_logic_vector(15 downto 0) := (others =\> '0');
+
+<if(port.type.bool)
+ >signal q_<port.name>_data  : std_logic := '0';
+<else
+ >signal q_<port.name>_data  : std_logic_vector(<port.type.size> -1 downto 0) := (others =\> '0');
+<endif>
+signal q_<port.name>_send  : std_logic := '0';
+signal q_<port.name>_ack   :  std_logic;
+signal q_<port.name>_rdy   :  std_logic;
+signal q_<port.name>_count  : std_logic_vector(15 downto 0);
 >>
 printOutPortSignals(port) ::= <<
 <if(port.type.bool)
@@ -52,7 +62,6 @@ printInPorts(port) ::= <<
 <endif>
 <port.name>_send  : IN std_logic;
 <port.name>_ack   : OUT std_logic;
-<port.name>_rdy   : OUT std_logic;
 <port.name>_count  : IN std_logic_vector(15 downto 0);
 >>
 
@@ -77,11 +86,42 @@ signalsInstanciation(port) ::= <<
 >>
 
 ActorInputSignalsInstanciation(port) ::= <<
-<port.name>_data  =\> <port.name>_data,
-<port.name>_send  =\> <port.name>_send,
-<port.name>_ack   =\> <port.name>_ack,
-<port.name>_count   =\> <port.name>_count
+<port.name>_data  =\> q_<port.name>_data,
+<port.name>_send  =\> q_<port.name>_send,
+<port.name>_ack   =\> q_<port.name>_ack,
+<port.name>_count   =\> q_<port.name>_count
 >>
+
+
+queueSignalsInstanciation(port) ::= <<
+OUT_DATA  =\> q_<port.name>_data,
+OUT_SEND  =\> q_<port.name>_send,
+OUT_ACK   =\> q_<port.name>_ack,
+OUT_COUNT   =\> q_<port.name>_count,
+>>
+
+queueInputSignalsInstanciation(port) ::= <<
+IN_DATA  =\> <port.name>_data,
+IN_SEND  =\> <port.name>_send,
+IN_ACK   =\> <port.name>_ack,
+IN_COUNT =\> <port.name>_count,
+IN_RDY   =\> <port.name>_rdy,
+>>
+
+
+queues(port) ::= <<
+q_ai_<port.name> : entity SystemBuilder.Queue(behavioral)
+  generic map (length => 512, width => <port.type.size>)
+  port map (
+    <queueSignalsInstanciation(port)>
+	
+	<queueInputSignalsInstanciation(port)>
+
+    clk => clock,
+    reset => reset_n
+  );
+>>
+
 
 waveform_process_in(input) ::= <<
 --
@@ -290,7 +330,7 @@ printInstance(instance, options) ::= <<
 -- Generated from <instance.id>
 ------------------------------------------------------------------------------
 
-LIBRARY ieee;
+LIBRARY ieee,SystemBuilder;
 USE ieee.std_logic_1164.ALL;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.ALL;
@@ -330,12 +370,13 @@ component <instance.simpleName>
 
 begin
 
-	uut : <instance.id> port map (
+	i_<instance.simpleName>  : <instance.simpleName>  port map (
     CLK      =\> clock,
     RESET    =\> reset_n<if(instance.actor.inputs || instance.actor.outputs)>,<endif>
     <instance.actor.inputs: ActorInputSignalsInstanciation(); separator=",\n"><if(instance.actor.inputs && instance.actor.outputs)>,<endif>
     <instance.actor.outputs: signalsInstanciation(); separator=",\n"><if(!instance.actor.outputs)>    <endif>);
-      
+     
+    <instance.actor.inputs: queues(); separator="\n">
        
     <clock_process()>
     
@@ -370,10 +411,10 @@ component <instance.id>
 
 begin
 
-   uut : <instance.simpleName> port map (
+   i_<instance.simpleName> : <instance.simpleName> port map (
       CLK      =\> clock,
       RESET    =\> reset_n<if(instance.network.inputs  || instance.network.outputs )>,<endif>
-      <instance.network.inputs : signalsInstanciation(); separator=",\n"><if(instance.network.inputs  && instance.network.outputs )>,<endif>
+      <instance.network.inputs : ActorInputSignalsInstanciation(); separator=",\n"><if(instance.network.inputs  && instance.network.outputs )>,<endif>
       <instance.network.outputs : signalsInstanciation(); separator=",\n"><if(!instance.network.outputs )>    <endif>);
       
     <clock_process()>

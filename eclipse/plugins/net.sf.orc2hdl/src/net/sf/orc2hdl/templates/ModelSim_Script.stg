@@ -4,6 +4,17 @@ set Lib "../lib/simulation"
 set Rtl "../rtl"
 set Testbench "vhd"
 
+## Create SystemBuilder Library
+vlib SystemBuilder
+
+## Compile the SystemBuilder Library from sources
+vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/vhdl/sbtypes.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/vhdl/sbfifo.vhdl
+vcom -reportprogress 300 -work SystemBuilder ../lib/systemBuilder/vhdl/sbfifo_behavioral.vhdl
+
+## Map the SystemBuilder Library
+vmap SystemBuilder SystemBuilder
+
 # Create a work library for the instance
 vlib work_<instance.simpleName>
 
