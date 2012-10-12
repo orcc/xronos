@@ -116,6 +116,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	private Def assignTarget;
 	/** Dependency between Components and Bus-Var **/
 	protected Map<Bus, Var> busDependency;
+
 	private Integer castIndex = 0;
 
 	/** Action component Counter **/
@@ -142,6 +143,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
+
+	private boolean STM_DEBUG = false;
 
 	public ComponentCreator(ResourceCache resources,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
@@ -212,7 +215,13 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				elseBlock, ifInputVars, ifOutputVars, phiOuts, "ifBLOCK",
 				Exit.DONE, portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
-
+		if (STM_DEBUG) {
+			System.out.println("Branch: line :" + blockIf.getLineNumber()
+					+ " Name: " + procedure.getName());
+			System.out.println("Branch: thenBlock :" + thenBlock.toString());
+			System.out.println("Branch: elseBlock :" + elseBlock.toString());
+			System.out.println("Branch: Branch :" + branch.toString() + "\n");
+		}
 		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 				blockIf.getLineNumber());
 
@@ -270,10 +279,15 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				loopPhi, loopInVars, loopOutVars, loopBodyInVars,
 				loopBodyOutVars, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
+		if (STM_DEBUG) {
+			System.out.println("Loop: line :" + blockWhile.getLineNumber()
+					+ " Name: " + procedure.getName());
+			System.out.println("Loop: LoopBody: " + loop.getBody().toString());
+			System.out.println("Loop: " + loop.toString() + "\n");
+		}
 
 		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 				blockWhile.getLineNumber());
-
 		loop.setIDSourceInfo(sinfo);
 
 		/** Clean componentList **/

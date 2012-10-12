@@ -165,7 +165,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 							nodeIf.getJoinBlock()));
 		}
 
-		resovleStmIO(nodeIf, null);
+		resovleStmIO(nodeIf, thenInputs.get(nodeIf), elseInputs.get(nodeIf));
 		// Add to Stm input
 		stmAddVars(nodeIf, stmInputs, thenInputs);
 		stmAddVars(nodeIf, stmInputs, elseInputs);
@@ -224,7 +224,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 				nodeWhile.getJoinBlock());
 		List<Var> blkOutputs = getVars(false, false, nodeWhile.getBlocks(),
 				nodeWhile.getJoinBlock());
-		resovleStmIO(nodeWhile, blkInputs);
+		resovleStmIO(nodeWhile, blkInputs, null);
 		resolveWhileIO(nodeWhile, blkInputs, blkOutputs, joinVarMap,
 				loopBodyInputs, loopBodyOutputs, stmInputs, stmOutputs);
 
@@ -280,10 +280,12 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 
 		} else if (currentBlock instanceof BlockWhile) {
 			loopBodyInputs.get(currentBlock).add(target);
-			if (!valueOne.getDefs().isEmpty())
+			if (!valueOne.getDefs().isEmpty()) {
 				loopBodyOutputs.get(currentBlock).add(valueOne);
-			if (!valueZero.getDefs().isEmpty())
+			}
+			if (!valueZero.getDefs().isEmpty()) {
 				stmInputs.get(currentBlock).add(valueZero);
+			}
 		}
 
 		// Fill up the JoinVar Map
@@ -324,7 +326,8 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		return vars;
 	}
 
-	private void resovleStmIO(Block block, List<Var> blkInputs) {
+	private void resovleStmIO(Block block, List<Var> blkInputsZero,
+			List<Var> blkInputsOne) {
 		if (block instanceof BlockIf) {
 			BlockIf blockIf = (BlockIf) block;
 
@@ -341,6 +344,14 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 							stmInputs.get(block).add(var);
 						}
 					}
+
+					// Fix the parent inputs by using the child output
+					for (Var var : childOutputs) {
+						if (blkInputsZero.contains(var)) {
+							blkInputsZero.remove(var);
+						}
+					}
+
 					// Case that the output of the child is directly connected
 					// to the Phi of the parent
 					for (Var var : childOutputs) {
@@ -368,6 +379,14 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 							stmInputs.get(block).add(var);
 						}
 					}
+
+					// Fix the parent inputs by using the child output
+					for (Var var : childOutputs) {
+						if (blkInputsOne.contains(var)) {
+							blkInputsOne.remove(var);
+						}
+					}
+
 					// Case that the output of the child is directly connected
 					// to the Phi of the parent
 					for (Var var : childOutputs) {
@@ -399,8 +418,8 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 					// Fix the parent inputs by using the child output
 					List<Var> childOutputs = stmOutputs.get(childBlock);
 					for (Var var : childOutputs) {
-						if (blkInputs.contains(var)) {
-							blkInputs.remove(var);
+						if (blkInputsZero.contains(var)) {
+							blkInputsZero.remove(var);
 						}
 					}
 				}
