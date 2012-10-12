@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.sf.openforge.frontend.slim.builder.SLIMConstants;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.Component;
@@ -80,11 +79,10 @@ public class DesignUtil {
 	public static Block buildAddressedBlock(OffsetMemoryAccess memAccess,
 			Location targetLocation, List<Component> otherComps) {
 		final LocationConstant locationConst = new LocationConstant(
-				targetLocation, SLIMConstants.MAX_ADDR_WIDTH, targetLocation
-						.getAbsoluteBase().getLogicalMemory()
-						.getAddressStridePolicy());
+				targetLocation, 32, targetLocation.getAbsoluteBase()
+						.getLogicalMemory().getAddressStridePolicy());
 		final AddOp adder = new AddOp();
-		final CastOp cast = new CastOp(SLIMConstants.MAX_ADDR_WIDTH, false);
+		final CastOp cast = new CastOp(32, false);
 
 		final Block block = new Block(false);
 		final Exit done = block.makeExit(0, Exit.DONE);

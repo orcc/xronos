@@ -356,17 +356,34 @@ public class Orc2HDL extends AbstractBackend {
 						}
 					} catch (NullPointerException ex) {
 						file.delete();
-						OrccLogger
-								.severeln("OpenForge failed to compile instance: "
-										+ id);
+						OrccLogger.severeln("Instance: " + id
+								+ ", failed to compile: NullPointerException, "
+								+ ex.getMessage());
 					} catch (NoSuchElementException ex) {
 						file.delete();
-						OrccLogger.severeln("Compiling instance: " + id
-								+ ": OpenForge failed to compile");
+						OrccLogger
+								.severeln("Instance: "
+										+ id
+										+ ", failed to compile: NoSuchElementException, "
+										+ ex.getMessage());
 					} catch (UnbalancedAssignmentException ex) {
 						file.delete();
-						OrccLogger.severeln("Compiling instance: " + id
-								+ ": OpenForge failed to compile");
+						OrccLogger
+								.severeln("Instance: "
+										+ id
+										+ ", failed to compile: UnbalancedAssignmentException, "
+										+ ex.getMessage());
+					} catch (ArrayIndexOutOfBoundsException ex) {
+						file.delete();
+						OrccLogger
+								.severeln("Instance: "
+										+ id
+										+ ", failed to compile: ArrayIndexOutOfBoundsException, "
+										+ ex.getMessage());
+					} catch (Throwable t) {
+						file.delete();
+						OrccLogger.severeln("Instance: " + id
+								+ ", failed to compile: " + t.getMessage());
 					}
 
 					long t1 = System.currentTimeMillis();

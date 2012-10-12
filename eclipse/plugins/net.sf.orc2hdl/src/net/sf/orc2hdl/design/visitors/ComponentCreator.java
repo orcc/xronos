@@ -490,8 +490,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		memPort.addAccess(read, targetLocation);
 
 		Var indexVar = procedure.newTempLocalVariable(
-				IrFactory.eINSTANCE.createTypeInt(dataSize), "index"
-						+ listIndexes);
+				IrFactory.eINSTANCE.createTypeInt(32), "index" + listIndexes);
 		listIndexes++;
 
 		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
@@ -513,22 +512,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			} else if (target.getType().isUint()) {
 				target.setType(IrFactory.eINSTANCE.createTypeUint(dataSize));
 			}
-
-			// Component castComp = new CastOp(targetSize, target.getType()
-			// .isInt());
-			// target = procedure.newTempLocalVariable(
-			// IrFactory.eINSTANCE.createTypeInt(dataSize), "casted_"
-			// + target.getIndexedName() + listIndexes);
-			//
-			// PortUtil.mapInDataPorts(castComp,
-			// (new GroupedVar(target, 0)).getAsList(), portDependency,
-			// portGroupDependency);
-			// PortUtil.mapOutDataPorts(castComp, (new
-			// GroupedVar(load.getTarget()
-			// .getVariable(), 0)).getAsList(), busDependency,
-			// doneBusDependency);
-			// componentList.add(castComp);
-
 		}
 
 		PortUtil.mapOutDataPorts(block, target, busDependency,

@@ -360,7 +360,7 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 						&& container != currentBlock) {
 					useMap.put(use, true);
 				} else {
-					return false;
+					useMap.put(use, false);
 				}
 			}
 		}
