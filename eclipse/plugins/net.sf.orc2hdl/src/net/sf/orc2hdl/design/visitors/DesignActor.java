@@ -158,7 +158,7 @@ public class DesignActor extends DfVisitor<Object> {
 
 		/** Get the values of the parameters before visiting **/
 		for (Var parameter : actor.getParameters()) {
-			irVisitor.doSwitch(parameter);
+			stateVarVisitor.doSwitch(parameter);
 		}
 		Var currentState = null;
 		// Add currentState stateVariable if the actor has an FSM
