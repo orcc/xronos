@@ -26,7 +26,7 @@
             defaultValue="false"
             description="Generate directly the verilog file without using the XLIM backend."
             id="net.sf.orc2hdl.instanceDesign"
-            name="Faster Code Generation (Alpha)">
+            name="Faster Code Generation (Beta)">
          <checkBox></checkBox>
       </option>
       <option

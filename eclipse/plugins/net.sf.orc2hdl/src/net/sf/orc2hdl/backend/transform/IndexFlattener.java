@@ -64,30 +64,45 @@ public class IndexFlattener extends AbstractIrVisitor<Void> {
 		// For the rest of the indexes create a binary expression
 		// of the index * Dim(index)
 		List<Expression> restOfIndex = new ArrayList<Expression>(indexes);
-		restOfIndex.remove(lastExpr);
+
 		// Get the Dimension for the rest of Indexes
 		List<Integer> listDim = listType.getDimensions();
 
-		int dimCounter = listDim.size() - 1;
 		Expression restIndex = null;
-		// Index in openForge is represented like a 32bit Integer
+		// Index in OpenForge is represented like a 32bit Integer
 		Type exrpType = IrFactory.eINSTANCE.createTypeInt(32);
+		int currentDim = 1;
 
-		for (Expression expr : new ArrayList<Expression>(restOfIndex)) {
-			Integer dim = listDim.get(dimCounter);
-			ExprInt exprDim = IrFactory.eINSTANCE.createExprInt(dim);
-			if (restIndex == null) {
-				restIndex = IrFactory.eINSTANCE.createExprBinary(expr,
-						OpBinary.TIMES, exprDim, exrpType);
-			} else {
-				Expression e = IrFactory.eINSTANCE.createExprBinary(expr,
-						OpBinary.TIMES, exprDim, exrpType);
-				restIndex = IrFactory.eINSTANCE.createExprBinary(restIndex,
-						OpBinary.PLUS, e, exrpType);
+		if (listDim.size() > 2) {
+			restOfIndex.remove(lastExpr);
+			boolean MultiOrAdd = true;
+			for (Expression expr : restOfIndex) {
+				ExprInt exprDim = IrFactory.eINSTANCE.createExprInt(listDim
+						.get(currentDim));
+				if (MultiOrAdd) {
+					if (restIndex == null) {
+						restIndex = IrFactory.eINSTANCE.createExprBinary(expr,
+								OpBinary.TIMES, exprDim, exrpType);
+					} else {
+						restIndex = IrFactory.eINSTANCE.createExprBinary(
+								restIndex, OpBinary.TIMES, exprDim, exrpType);
+					}
+					MultiOrAdd = false;
+					currentDim++;
+				} else {
+					restIndex = IrFactory.eINSTANCE.createExprBinary(expr,
+							OpBinary.PLUS, restIndex, exrpType);
+					MultiOrAdd = true;
+				}
 			}
-			dimCounter--;
+		} else {
+			// Get the first element
+			restIndex = restOfIndex.get(0);
 		}
-
+		ExprInt exprDim = IrFactory.eINSTANCE.createExprInt(listDim
+				.get(currentDim));
+		restIndex = IrFactory.eINSTANCE.createExprBinary(restIndex,
+				OpBinary.TIMES, exprDim, exrpType);
 		Expression finalIndex = IrFactory.eINSTANCE.createExprBinary(restIndex,
 				OpBinary.PLUS, lastExpr, exrpType);
 
