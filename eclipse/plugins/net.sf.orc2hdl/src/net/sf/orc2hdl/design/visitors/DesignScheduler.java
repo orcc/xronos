@@ -289,7 +289,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 		if (actor.getFsm() == null) {
 			/** Create the action Test for all actions outside the FSM **/
 			createActionTest(actor.getActions());
-			branchBlock = createOutFsmScheduler(actor.getActionsOutsideFsm());
+			branchBlock = createOutFsmScheduler(actor.getActionsOutsideFsm(),
+					null, Collections.<Var> emptyList());
 		} else {
 
 			/** Fill up the state index and var maps **/
@@ -322,7 +323,9 @@ public class DesignScheduler extends DfVisitor<Task> {
 				}
 			}
 
-			branchBlock = createActorFsmBranch(actor.getFsm().getStates());
+			branchBlock = createActorFsmBranch(actor.getFsm().getStates(),
+					actor.getActionsOutsideFsm());
+
 		}
 
 		/** Add the scheduler branch block to the scheduler Components **/
@@ -526,7 +529,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 		stateDecision.put(state, enableDecision);
 	}
 
-	private Module createActorFsmBranch(List<State> states) {
+	private Module createActorFsmBranch(List<State> states,
+			List<Action> actionsOutsideFSM) {
 		List<Component> moduleComponents = new ArrayList<Component>();
 		List<Var> inVars = new ArrayList<Var>();
 		List<Var> mutexVars = new ArrayList<Var>();
@@ -558,8 +562,9 @@ public class DesignScheduler extends DfVisitor<Task> {
 					busDependency, portGroupDependency, doneBusDependency);
 			moduleComponents.add(stateBranch);
 			for (Var var : inVars) {
-				if (!mutexVars.contains(var))
+				if (!mutexVars.contains(var)) {
 					mutexVars.add(var);
+				}
 			}
 		}
 		List<Var> mutexBlockInVars = mutexVars;
@@ -568,6 +573,13 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Collections.<Var> emptyList(), "mutexFSM_Block", true,
 				Exit.DONE, 0, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
+
+		// See if there are any actions outside the FSM
+		if (!actionsOutsideFSM.isEmpty()) {
+			createActionTest(actionsOutsideFSM);
+			return createOutFsmScheduler(actionsOutsideFSM,
+					(Block) mutexFsmBlock, mutexBlockInVars);
+		}
 
 		return mutexFsmBlock;
 	}
@@ -642,7 +654,8 @@ public class DesignScheduler extends DfVisitor<Task> {
 		return branch;
 	}
 
-	private Branch createOutFsmScheduler(List<Action> actions) {
+	private Branch createOutFsmScheduler(List<Action> actions,
+			Block fsmElseBlock, List<Var> fsmElseBlockInVars) {
 		Branch branch = null;
 
 		List<Var> currentInputPorts = new ArrayList<Var>();
@@ -663,10 +676,14 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Block thenBlock = (Block) comps.get(1);
 
 				List<Var> inVars = currentInputPorts;
+				if (!fsmElseBlockInVars.isEmpty()) {
+					inVars.addAll(fsmElseBlockInVars);
+				}
 				branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
-						null, inVars, Collections.<Var> emptyList(), null,
-						"ifBranch_" + action.getName(), null, portDependency,
-						busDependency, portGroupDependency, doneBusDependency);
+						fsmElseBlock, inVars, Collections.<Var> emptyList(),
+						null, "ifBranch_" + action.getName(), null,
+						portDependency, busDependency, portGroupDependency,
+						doneBusDependency);
 
 				branch.setIDLogical("ifBranch_" + action.getName());
 				previousInputPorts.add(currentInputPorts.get(1));
@@ -680,6 +697,9 @@ public class DesignScheduler extends DfVisitor<Task> {
 				Collections.reverse(inPort);
 
 				List<Var> inVars = previousInputPorts;
+				if (!fsmElseBlockInVars.isEmpty()) {
+					inVars.addAll(fsmElseBlockInVars);
+				}
 				Block elseBlock = (Block) ModuleUtil.createModule(
 						Arrays.asList((Component) branch), inVars,
 						Collections.<Var> emptyList(), "elseBlock", false,

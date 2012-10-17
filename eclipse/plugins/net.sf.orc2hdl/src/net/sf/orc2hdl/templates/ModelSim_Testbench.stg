@@ -238,7 +238,7 @@ else
   >    assert (<port.name>_data  = std_logic_vector(to_signed(input_bit, <port.type.size>)))
       -- report "on <port.name> incorrectly value computed : " & to_string(to_integer(to_signed(<port.name>_data))) & " instead of :" & to_string(input_bit)
       report "on port <port.name> incorrectly value computed : " & str(to_integer(signed(<port.name>_data))) & " instead of :" & str(input_bit)
-      severity error;
+      severity failure;
       
       assert (<port.name>_data /= std_logic_vector(to_signed(input_bit, <port.type.size>)))
       -- report "on <port.name> incorrectly value computed : " & to_string(to_integer(to_signed(<port.name>_data))) & " equals :" & to_string(input_bit)
@@ -249,7 +249,7 @@ else
   >    assert (<port.name>_data  = std_logic_vector(to_unsigned(input_bit, <port.type.size>)))
       --report "on port <port.name> incorrectly value computed : " & to_string(to_integer(to_unsigned(<port.name>_data))) & " instead of :" & to_string(input_bit)
       report "on port <port.name> incorrectly value computed : " & str(to_integer(unsigned(<port.name>_data))) & " instead of :" & str(input_bit)
-      severity error;
+      severity failure;
       
       assert (<port.name>_data /= std_logic_vector(to_unsigned(input_bit, <port.type.size>)))
       --report "on port <port.name> incorrectly value computed : " & to_string(to_integer(to_unsigned(<port.name>_data))) & " equals :" & to_string(input_bit)
