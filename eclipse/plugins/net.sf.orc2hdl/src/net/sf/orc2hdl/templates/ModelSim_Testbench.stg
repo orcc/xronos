@@ -270,7 +270,7 @@ end if;
 // does not output anything if <value> is empty
 
 sig_const(input, output, incoming, outgoing) ::= <<
-constant PERIOD : time := 50 ns;
+constant PERIOD : time := 20 ns;
 constant DUTY_CYCLE : real := 0.5;
 constant OFFSET : time := 100 ns;
 --
