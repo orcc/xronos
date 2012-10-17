@@ -58,53 +58,21 @@ public class IndexFlattener extends AbstractIrVisitor<Void> {
 	private void toOneDimIndex(BlockBasic currentBlock,
 			List<Expression> indexes, Type listType) {
 
-		// Get last index
-		Integer lastIndex = indexes.size() - 1;
-		Expression lastExpr = indexes.get(lastIndex);
-		// For the rest of the indexes create a binary expression
-		// of the index * Dim(index)
 		List<Expression> restOfIndex = new ArrayList<Expression>(indexes);
-
 		// Get the Dimension for the rest of Indexes
 		List<Integer> listDim = listType.getDimensions();
 
 		Expression restIndex = null;
 		// Index in OpenForge is represented like a 32bit Integer
 		Type exrpType = IrFactory.eINSTANCE.createTypeInt(32);
-		int currentDim = 1;
-
-		if (listDim.size() > 2) {
-			restOfIndex.remove(lastExpr);
-			boolean MultiOrAdd = true;
-			for (Expression expr : restOfIndex) {
-				ExprInt exprDim = IrFactory.eINSTANCE.createExprInt(listDim
-						.get(currentDim));
-				if (MultiOrAdd) {
-					if (restIndex == null) {
-						restIndex = IrFactory.eINSTANCE.createExprBinary(expr,
-								OpBinary.TIMES, exprDim, exrpType);
-					} else {
-						restIndex = IrFactory.eINSTANCE.createExprBinary(
-								restIndex, OpBinary.TIMES, exprDim, exrpType);
-					}
-					MultiOrAdd = false;
-					currentDim++;
-				} else {
-					restIndex = IrFactory.eINSTANCE.createExprBinary(expr,
-							OpBinary.PLUS, restIndex, exrpType);
-					MultiOrAdd = true;
-				}
-			}
-		} else {
-			// Get the first element
-			restIndex = restOfIndex.get(0);
+		restIndex = restOfIndex.get(0);
+		for (int i = 1; i < listDim.size(); i++) {
+			ExprInt exprDim = IrFactory.eINSTANCE.createExprInt(listDim.get(i));
+			restIndex = IrFactory.eINSTANCE.createExprBinary(restIndex,
+					OpBinary.TIMES, exprDim, exrpType);
+			restIndex = IrFactory.eINSTANCE.createExprBinary(restIndex,
+					OpBinary.PLUS, restOfIndex.get(i), exrpType);
 		}
-		ExprInt exprDim = IrFactory.eINSTANCE.createExprInt(listDim
-				.get(currentDim));
-		restIndex = IrFactory.eINSTANCE.createExprBinary(restIndex,
-				OpBinary.TIMES, exprDim, exrpType);
-		Expression finalIndex = IrFactory.eINSTANCE.createExprBinary(restIndex,
-				OpBinary.PLUS, lastExpr, exrpType);
 
 		Var indexVar = procedure.newTempLocalVariable(
 				IrFactory.eINSTANCE.createTypeInt(), "index");
@@ -113,7 +81,7 @@ public class IndexFlattener extends AbstractIrVisitor<Void> {
 		indexes.add(IrFactory.eINSTANCE.createExprVar(indexVar));
 		// Add the assign instruction that hold the one-dim index
 		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
-				finalIndex);
+				restIndex);
 		currentBlock.add(indexInst, assign);
 		indexInst++;
 	}
