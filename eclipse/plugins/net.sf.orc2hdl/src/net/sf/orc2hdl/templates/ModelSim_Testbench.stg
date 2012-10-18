@@ -94,14 +94,22 @@ ActorInputSignalsInstanciation(port) ::= <<
 
 
 queueSignalsInstanciation(port) ::= <<
+<if(port.type.bool)>
+OUT_DATA(0)  =\> q_<port.name>_data,
+<else>
 OUT_DATA  =\> q_<port.name>_data,
+<endif>
 OUT_SEND  =\> q_<port.name>_send,
 OUT_ACK   =\> q_<port.name>_ack,
 OUT_COUNT   =\> q_<port.name>_count,
 >>
 
 queueInputSignalsInstanciation(port) ::= <<
+<if(port.type.bool)>
+IN_DATA(0)  =\> <port.name>_data,
+<else>
 IN_DATA  =\> <port.name>_data,
+<endif>
 IN_SEND  =\> <port.name>_send,
 IN_ACK   =\> <port.name>_ack,
 IN_COUNT =\> <port.name>_count,
@@ -111,7 +119,7 @@ IN_RDY   =\> <port.name>_rdy,
 
 queues(port) ::= <<
 q_ai_<port.name> : entity SystemBuilder.Queue(behavioral)
-  generic map (length => 512, width => <port.type.size>)
+  generic map (length => 512, width => <if(port.type.bool)>1<else><port.type.size><endif>)
   port map (
     <queueSignalsInstanciation(port)>
 	
