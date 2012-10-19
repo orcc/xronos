@@ -62,9 +62,71 @@ The folder structure:
 			- <Instance Name>.tcl : ModelSim TCL script for launching an actors testbench 
 
  
- If you have any questions about Orcc and Orc2HDL:
+If you have any questions about Orcc and Orc2HDL:
  	- mail to : orcc-list@lists.sourceforge.net
  	   
-			 
-		
+ 	   
+Current bugs with the "Faster Code Generation":
 
+-Problems with repeats:
+	- priority problems
+	   a0: action In:[tokens] repeat 64 ==>
+	   ...
+	   
+	   a1: action In:[token] ==>
+	   
+	  schedule fsm s0:
+	 		s0 (a0) --> ..
+	 		s0 (a1) --> ..
+	  end
+	  
+	  for the moment it is possible to test if X tokens are in the FIFO, but only 1, in this situation even if token exists on the input 
+	  both actions can fire (first problem), but here a0 is going to fire because a0 has a greater priority to a1 due it's name(ORCC bug/feature :) )
+	
+	- peek problem
+	  a0: action In:[tokens] ==>
+	  guard
+	  	tokens[2] = 0
+	  ...
+	  
+	  not supported for the moment, a peek can be done only on the first element of tokens
+	   	
+	- action In:[tokens] repeat 64 ==> Out:[tokens] repeat 64
+	  do
+	  	 ...
+	  	 	tokens[i] := tokens[i] + ...	   
+		...	 
+	  end	
+	  
+	  for the moment this will cause some data corruption it is better create a new table and then copy the input values in it, ex
+	  action In:[ll] repeat 64 ==> Out:[tokens] repeat 64
+	  var 
+	  	 int ll[64]
+	  do
+	  	 foreach int i 0 .. 64 do
+	  	 	tokens[i] := ll[i];
+	  	 end
+	  	 ...
+	  	 	tokens[i] := tokens[i] + ...	   
+		...	 
+	  end
+	
+	- action ==> Out[w>>4, h>>4] 
+	  ...
+	  
+	  In some case this might not work is better to change it like this,
+	  
+	  action ==> Out[tokens] repeat 2
+	  var
+	  	int tokens[2]
+	  ...	
+- Arithmetic problems
+	- shifting problems
+		  a := (-1 << x);
+		  
+		  this will give a positive result, transform it to
+		  
+		  a:= -(1 << x)
+	
+	   
+	  
