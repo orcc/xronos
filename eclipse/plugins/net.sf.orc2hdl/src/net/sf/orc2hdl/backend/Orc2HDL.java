@@ -426,6 +426,9 @@ public class Orc2HDL extends AbstractBackend {
 
 		printer.print(file, rtlPath, network);
 
+		// Print the network testbench
+		printTestbench(network);
+
 		if (generateGoDone) {
 			printer.getOptions().put("generateGoDone", generateGoDone);
 			printer.print(file, rtlGoDonePath, network);
@@ -506,6 +509,34 @@ public class Orc2HDL extends AbstractBackend {
 		tbPrinter.getOptions().put("tracePath", tracePath);
 		tbPrinter.print(instance.getSimpleName() + "_tb.vhd", tbVhdPath,
 				instance);
+	}
+
+	private void printTestbench(Network network) {
+		// Print TCL Script
+		Orc2HDLPrinter printer = new Orc2HDLPrinter(
+				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
+		printer.print("tcl_" + network.getSimpleName() + ".tcl", testBenchPath,
+				network);
+		// Create VHD folder
+		String tbVhdPath = testBenchPath + File.separator + "vhd";
+		File tbVhdDir = new File(tbVhdPath);
+		if (!tbVhdDir.exists()) {
+			tbVhdDir.mkdir();
+		}
+
+		// Create the fifoTraces folder
+		String tracePath = testBenchPath + File.separator + "fifoTraces";
+		File fifoTracesDir = new File(tracePath);
+		if (!fifoTracesDir.exists()) {
+			fifoTracesDir.mkdir();
+		}
+
+		// Print the VHD testbenches
+		Orc2HDLPrinter tbPrinter = new Orc2HDLPrinter(
+				"net/sf/orc2hdl/templates/ModelSim_Testbench.stg");
+		tbPrinter.getOptions().put("tracePath", tracePath);
+		tbPrinter
+				.print(network.getSimpleName() + "_tb.vhd", tbVhdPath, network);
 	}
 
 	private boolean runForge(String[] args, Instance instance) {
