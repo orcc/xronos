@@ -131,7 +131,7 @@ q_ai_<port.name> : entity SystemBuilder.Queue(behavioral)
 >>
 
 
-waveform_process_in(input) ::= <<
+waveform_process_in(name,input) ::= <<
 --
 -- Input(s) Waveform Generation
 WaveGen_Proc_In : process (clock)
@@ -139,13 +139,13 @@ WaveGen_Proc_In : process (clock)
   variable line_number : line;
 begin
   if rising_edge(clock) then 
-    <input: case_define_in(); separator="\n">
+    <input: {port | <case_define_in(name,port)>}; separator="\n">
   end if;
 end process WaveGen_Proc_In;
 
 >>
 
-case_define_in(port) ::= <<
+case_define_in(name,port) ::= <<
 <if (!port.native)
 >--
 -- Input port: <port.name> Waveform Generation
@@ -158,8 +158,8 @@ case tb_FSM_<port.name> is
     end if;
 
   when read_file =\>
-    if (not endfile (sim_file_<instance.id>_<port.name>)) then
-      readline(sim_file_<instance.id>_<port.name>, line_number);
+    if (not endfile (sim_file_<name>_<port.name>)) then
+      readline(sim_file_<name>_<port.name>, line_number);
       --
       if (line_number'length \> 0 and line_number(1) /= '/') then
         read(line_number, input_bit);
@@ -170,15 +170,15 @@ case tb_FSM_<port.name> is
     end if;
 
   when CheckRead =\>
-    if (not endfile (sim_file_<instance.id>_<port.name>)) and <port.name>_ack = '1' then
-      readline(sim_file_<instance.id>_<port.name>, line_number);
+    if (not endfile (sim_file_<name>_<port.name>)) and <port.name>_ack = '1' then
+      readline(sim_file_<name>_<port.name>, line_number);
       --
       if (line_number'length \> 0 and line_number(1) /= '/') then
         read(line_number, input_bit);
         <sendData(port)>
         <port.name>_send \<= '1';      
       end if;
-    elsif (endfile (sim_file_<instance.id>_<port.name>)) then
+    elsif (endfile (sim_file_<name>_<port.name>)) then
       <port.name>_send \<= '0'; 
     end if;
 
@@ -189,7 +189,7 @@ end case;
 >>
 
 
-waveform_process_out(output) ::= <<
+waveform_process_out(name,output) ::= <<
 -- Output(s) waveform Generation
 <output: {port|<port.name>_ack \<= <port.name>_send;}; separator="\n">
 <output: {port|<port.name>_rdy \<= '1';}; separator="\n">    
@@ -199,7 +199,7 @@ WaveGen_Proc_Out : process (clock)
   variable line_number : line;
 begin
   if (rising_edge(clock)) then
-    <output: case_define_out(); separator="\n">
+    <output: {port | <case_define_out(name,port)>}; separator="\n">
   end if;
 end process WaveGen_Proc_Out;
 
@@ -210,15 +210,20 @@ signal tb_FSM_<connection.targetPort.name>  : tb_type;
 file sim_file_<instance.simpleName>_<connection.targetPort.name>  : text is "fifoTraces/<connection.source.simpleName>_<connection.sourcePort.name>_<connection.target.simpleName>_<connection.targetPort.name>_traces.txt";
 >>
 
+printNetworkFSMPort(port) ::= <<
+signal tb_FSM_<port.name>  : tb_type;
+file sim_file_<network.simpleName>_<port.name>  : text is "fifoTraces/<port.name>_traces.txt";
+>>
+
 printFSMOut(connection) ::= <<
 file sim_file_<instance.simpleName>_<connection.sourcePort.name>  : text is "fifoTraces/<connection.source.simpleName>_<connection.sourcePort.name>_<connection.target.simpleName>_<connection.targetPort.name>_traces.txt";
 >>
 
-case_define_out(port) ::= <<
+case_define_out(name,port) ::= <<
 --
 -- Output port: <port.name> Waveform Generation
-if (not endfile (sim_file_<instance.id>_<port.name>) and <port.name>_send = '1') then
-  readline(sim_file_<instance.id>_<port.name>, line_number);
+if (not endfile (sim_file_<name>_<port.name>) and <port.name>_send = '1') then
+  readline(sim_file_<name>_<port.name>, line_number);
   --
   if (line_number'length \> 0 and line_number(1) /= '/') then
     read(line_number, input_bit);
@@ -300,6 +305,29 @@ signal reset_n     : std_logic := '0';
 
 >>
 
+netwokr_sig_const(input, output) ::= <<
+constant PERIOD : time := 20 ns;
+constant DUTY_CYCLE : real := 0.5;
+constant OFFSET : time := 100 ns;
+--
+type severity_level is (note, warning, error, failure);
+type tb_type is (after_reset, read_file, CheckRead);
+--
+-- Input and Output files
+<input: printNetworkFSMPort(); separator="\n">
+<output: printNetworkFSMPort(); separator="\n">
+--
+-- Input and Output signals
+<input: printInPortSignals(); separator="\n">
+<output: printOutPortSignals(); separator="\n">
+--
+-- Configuration
+signal count       : integer range 255 downto 0 := 0;
+signal clock       : std_logic := '0';
+signal reset_n     : std_logic := '0';
+
+>>
+
 ///////////////////////////////////////////////////////////////////////////////
 // Print processes
 ///////////////////////////////////////////////////////////////////////////////
@@ -353,9 +381,6 @@ end <instance.simpleName>_tb;
 
 
 architecture arch_<instance.simpleName>_tb of <instance.simpleName>_tb is 
-
-<if(instance.actor)>
-
 ----------------------------------------------------------------------------
 -- component declaration
 ----------------------------------------------------------------------------
@@ -390,52 +415,72 @@ begin
     
     <RESET_process()>
     
-    <if(instance.actor.inputs)
-    ><waveform_process_in(input=instance.actor.inputs)><
+    <if(instance.actor.inputs)>
+    <waveform_process_in(name=instance.simpleName,input=instance.actor.inputs)>
+    <endif>
+    <if(instance.actor.outputs)>
+    <waveform_process_out(name=instance.simpleName,output=instance.actor.outputs)><
     endif>
-    <if(instance.actor.outputs)
-    ><waveform_process_out(output=instance.actor.outputs)><
-    endif>
-<else>
+end architecture arch_<instance.simpleName>_tb;
+>>
 
+
+printNetwork(network, options) ::= <<
+------------------------------------------------------------------------------
+-- Generated from <network.simpleName>
+------------------------------------------------------------------------------
+
+LIBRARY ieee,SystemBuilder;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_unsigned.all;
+USE ieee.numeric_std.ALL;
+USE std.textio.all;
+
+library work;
+use work.sim_package.all;
+
+entity <network.simpleName>_tb is
+
+end <network.simpleName>_tb;
+
+architecture arch_<network.simpleName>_tb of <network.simpleName>_tb is 
 ----------------------------------------------------------------------------
 -- component declaration
 ----------------------------------------------------------------------------
 
-component <instance.id>
+component <network.simpleName>
 	port (
-     
-      <if(instance.network.inputs  || instance.network.outputs )><endif>
-      <instance.network.inputs : printInPorts(); separator="\n"><if(instance.network.inputs  && instance.network.outputs )><endif>
-      <instance.network.outputs : printOutPorts(); separator="\n"><if(!instance.network.outputs )>    <endif>
+      <network.inputs: printInPorts(); separator="\n">
+      <network.outputs: printOutPorts(); separator="\n">
       CLK : IN std_logic;
       RESET : IN std_logic);
       end component;
+
   ---------------------------------------------------------------------------
   -- Signal & constant declaration
   --------------------------------------------------------------------------- 
-  <sig_const(input=instance.network.inputs ,output=instance.network.outputs,incoming=instance.incoming,outgoing=instance.outgoing)>
+  <netwokr_sig_const(input=network.inputs,output=network.outputs)>
   ---------------------------------------------------------------------------
 
 begin
 
-   i_<instance.simpleName> : <instance.simpleName> port map (
-      CLK      =\> clock,
-      RESET    =\> reset_n<if(instance.network.inputs  || instance.network.outputs )>,<endif>
-      <instance.network.inputs : ActorInputSignalsInstanciation(); separator=",\n"><if(instance.network.inputs  && instance.network.outputs )>,<endif>
-      <instance.network.outputs : signalsInstanciation(); separator=",\n"><if(!instance.network.outputs )>    <endif>);
-      
+	i_<network.simpleName>  : <network.simpleName>  port map (
+    CLK      =\> clock,
+    RESET    =\> reset_n<if(network.inputs || network.outputs)>,<endif>
+    <network.inputs: ActorInputSignalsInstanciation(); separator=",\n">
+    <network.outputs: signalsInstanciation(); separator=",\n">);
+     
+    <network.inputs: queues(); separator="\n">
+       
     <clock_process()>
-
+    
     <RESET_process()>
     
-    <if(instance.network.inputs )
-    ><waveform_process_in(input=instance.network.inputs)><
+    <if(network.inputs)>
+    <waveform_process_in(name=network.simpleName,input=network.inputs)>
+    <endif>
+    <if(network.outputs)>
+    <waveform_process_out(name=network.simpleName,output=network.outputs)><
     endif>
-    <if(instance.network.outputs )
-    ><waveform_process_out(output=instance.network.outputs)><
-    endif>
-<endif>
-
-end architecture arch_<instance.simpleName>_tb;
+end architecture arch_<network.simpleName>_tb;
 >>
