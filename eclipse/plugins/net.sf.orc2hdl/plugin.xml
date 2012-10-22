@@ -18,6 +18,9 @@
          <option
                id="net.sf.orcc.dontExportLibrary">
          </option>
+         <option
+               id="net.sf.orc2hdl.xilinxPrimitives">
+         </option>
       </backend>
    </extension>
    <extension
@@ -35,6 +38,12 @@
             name="Generate Go/Done Signal for each Action">
          <checkBox>
          </checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            id="net.sf.orc2hdl.xilinxPrimitives"
+            name="Copy and compile Xilinx Primitives (Don&apos;t use unisim Lib)">
+         <checkBox></checkBox>
       </option>
    </extension>
    <extension

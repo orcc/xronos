@@ -112,6 +112,8 @@ public class Orc2HDL extends AbstractBackend {
 
 	/** The path used for the testBench generation **/
 	private String testBenchPath;
+	
+	private boolean xilinxPrimitives;
 
 	@Override
 	protected void doInitializeOptions() {
@@ -119,7 +121,8 @@ public class Orc2HDL extends AbstractBackend {
 		debugMode = getAttribute(DEBUG_MODE, true);
 		instanceToDesign = getAttribute("net.sf.orc2hdl.instanceDesign", false);
 		generateGoDone = getAttribute("net.sf.orc2hdl.generateGoDone", false);
-
+		xilinxPrimitives = getAttribute("net.sf.orc2hdl.xilinxPrimitives", false);
+		
 		// Set Paths for RTL
 		rtlPath = path + File.separator + "rtl";
 		File rtlDir = new File(rtlPath);
@@ -456,6 +459,7 @@ public class Orc2HDL extends AbstractBackend {
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
+		printer.getOptions().put("xilinxPrimitives",xilinxPrimitives);
 
 		String file = network.getName();
 		file = "sim_" + network.getSimpleName() + ".do";
@@ -487,6 +491,7 @@ public class Orc2HDL extends AbstractBackend {
 		// Print TCL Script
 		Orc2HDLPrinter printer = new Orc2HDLPrinter(
 				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
+		printer.getOptions().put("xilinxPrimitives",xilinxPrimitives);
 		printer.print("tcl_" + instance.getSimpleName() + ".tcl",
 				testBenchPath, instance);
 		// Create VHD folder
@@ -515,6 +520,7 @@ public class Orc2HDL extends AbstractBackend {
 		// Print TCL Script
 		Orc2HDLPrinter printer = new Orc2HDLPrinter(
 				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
+		printer.getOptions().put("xilinxPrimitives",xilinxPrimitives);
 		printer.print("tcl_" + network.getSimpleName() + ".tcl", testBenchPath,
 				network);
 		// Create VHD folder

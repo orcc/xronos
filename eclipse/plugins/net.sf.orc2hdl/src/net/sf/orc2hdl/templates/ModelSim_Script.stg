@@ -4,6 +4,13 @@ set Lib "../lib/simulation"
 set Rtl "../rtl"
 set Testbench "vhd"
 
+
+<if(options.xilinxPrimitives)>
+## Create the xilinxPrimitives Library
+vlib xilinxPrimitives
+vlog -work xilinxPrimitives ../lib/xilinxPrimitives/*.v
+<endif>
+
 ## Create SystemBuilder Library
 vlib SystemBuilder
 
@@ -31,8 +38,11 @@ vlog -reportprogress 300 -work work_<instance.simpleName> $Rtl/<instance.simpleN
 vcom -93 -reportprogress 30 -work work_<instance.simpleName> $Testbench/<instance.simpleName>_tb.vhd
 
 # Start the simulation
+<if(options.xilinxPrimitives)>
+vsim -L xilinxPrimitives -t ns work_<instance.simpleName>.glbl work_<instance.simpleName>.<instance.simpleName>_tb
+<else>
 vsim -L unisims_ver -L simprims_ver -t ns work_<instance.simpleName>.glbl work_<instance.simpleName>.<instance.simpleName>_tb
-
+<endif>
 radix -decimal
 
 # Add signals to the wave
@@ -48,6 +58,12 @@ printNetwork(network, options) ::= <<
 set Lib "../lib/simulation"
 set Rtl "../rtl"
 set Testbench "vhd"
+
+<if(options.xilinxPrimitives)>
+## Create the xilinxPrimitives Library
+vlib xilinxPrimitives
+vlog -work xilinxPrimitives ../lib/xilinxPrimitives/*.v
+<endif>
 
 ## Create SystemBuilder Library
 vlib SystemBuilder
@@ -79,8 +95,11 @@ vcom -93 -check_synthesis -quiet -work work_<network.simpleName> $Rtl/<network.s
 vcom -93 -reportprogress 30 -work work_<network.simpleName> $Testbench/<network.simpleName>_tb.vhd
 
 # Start the simulation
+<if(options.xilinxPrimitives)>
+vsim -L xilinxPrimitive -t ns work_<network.simpleName>.glbl work_<network.simpleName>.<network.simpleName>_tb
+<else>
 vsim -L unisims_ver -L simprims_ver -t ns work_<network.simpleName>.glbl work_<network.simpleName>.<network.simpleName>_tb
-
+<endif>
 radix -decimal
 
 # Add signals to the wave

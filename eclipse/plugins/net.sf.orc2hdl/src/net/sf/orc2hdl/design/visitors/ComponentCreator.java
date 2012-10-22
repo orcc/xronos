@@ -144,7 +144,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
 
-	private boolean STM_DEBUG = false;
+	private boolean STM_DEBUG = true;
 
 	public ComponentCreator(ResourceCache resources,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,

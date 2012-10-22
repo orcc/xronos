@@ -101,7 +101,7 @@ Current bugs with the "Faster Code Generation":
 	  for the moment this will cause some data corruption it is better create a new table and then copy the input values in it, ex
 	  action In:[ll] repeat 64 ==> Out:[tokens] repeat 64
 	  var 
-	  	 int ll[64]
+	  	 int tokens[64]
 	  do
 	  	 foreach int i 0 .. 64 do
 	  	 	tokens[i] := ll[i];
@@ -111,7 +111,7 @@ Current bugs with the "Faster Code Generation":
 		...	 
 	  end
 	
-	- action ==> Out[w>>4, h>>4] 
+	- action ==> Out:[w>>4, h>>4] 
 	  ...
 	  
 	  In some case this might not work is better to change it like this,
@@ -120,13 +120,27 @@ Current bugs with the "Faster Code Generation":
 	  var
 	  	int tokens[2]
 	  ...	
+- Problem with ternary operation on output
+	-action In:[a] ==> Out:[if a > 5 then a else 0 end]
+	 ...
+	
+	This should be changed to:
+	
+	action In:[a] ==> Out:[outValue]
+	var
+		int outValue
+	do
+		...
+		outValue := if a > 5 then a else 0 end;
+	end 	  
+	  
 - Arithmetic problems
 	- shifting problems
 		  a := (-1 << x);
 		  
 		  this will give a positive result, transform it to
 		  
-		  a:= -(1 << x)
+		  a := -(1 << x);
 	
 	   
 	  

@@ -5,6 +5,12 @@ printNetwork(network, options) ::= <<
 ## Generated : <options.currentTime>
 ## ############################################################################
 
+<if(options.xilinxPrimitives)>
+## Create the xilinxPrimitives Library
+vlib xilinxPrimitives
+vlog -work xilinxPrimitives ../lib/xilinxPrimitives/*.v
+<endif>
+
 ## Create SystemBuilder Library
 vlib SystemBuilder
 
@@ -41,8 +47,13 @@ vcom -93 -check_synthesis -quiet -work work ../<if(options.generateGoDone)>rtl/r
 <if(options.modelsimAnalysis)>
 vcom -93 -check_synthesis -quiet -work work ../rtl/rtlGoDone/tb_<network.simpleName>.vhd
 <endif>
+
 ## Start simulating the Top
+<if(options.xilinxPrimitives)>
+vsim -L xilinxPrimitives -t ns work.glbl work.<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>
+<else>
 vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.<if(options.modelsimAnalysis)>tb_<endif><network.simpleName>
+<endif>
 
 ## Change radix to decimal
 radix -decimal
