@@ -28,7 +28,6 @@ import net.sf.orc2hdl.backend.transform.IndexFlattener;
 import net.sf.orc2hdl.backend.transform.RepeatPattern;
 import net.sf.orc2hdl.design.DesignEngine;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
-import net.sf.orcc.OrccException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.StandardPrinter;
 import net.sf.orcc.backends.transform.CastAdder;
@@ -112,7 +111,7 @@ public class Orc2HDL extends AbstractBackend {
 
 	/** The path used for the testBench generation **/
 	private String testBenchPath;
-	
+
 	private boolean xilinxPrimitives;
 
 	@Override
@@ -121,8 +120,9 @@ public class Orc2HDL extends AbstractBackend {
 		debugMode = getAttribute(DEBUG_MODE, true);
 		instanceToDesign = getAttribute("net.sf.orc2hdl.instanceDesign", false);
 		generateGoDone = getAttribute("net.sf.orc2hdl.generateGoDone", false);
-		xilinxPrimitives = getAttribute("net.sf.orc2hdl.xilinxPrimitives", false);
-		
+		xilinxPrimitives = getAttribute("net.sf.orc2hdl.xilinxPrimitives",
+				false);
+
 		// Set Paths for RTL
 		rtlPath = path + File.separator + "rtl";
 		File rtlDir = new File(rtlPath);
@@ -175,7 +175,7 @@ public class Orc2HDL extends AbstractBackend {
 	}
 
 	@Override
-	protected void doTransformActor(Actor actor) throws OrccException {
+	protected void doTransformActor(Actor actor) {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
 		if (!actor.isNative()) {
@@ -258,12 +258,12 @@ public class Orc2HDL extends AbstractBackend {
 	}
 
 	@Override
-	protected void doVtlCodeGeneration(List<IFile> files) throws OrccException {
+	protected void doVtlCodeGeneration(List<IFile> files) {
 		// do not generate VTL
 	}
 
 	@Override
-	protected void doXdfCodeGeneration(Network network) throws OrccException {
+	protected void doXdfCodeGeneration(Network network) {
 		// instantiate and flattens network
 		new Instantiator(false, 1).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
@@ -288,7 +288,7 @@ public class Orc2HDL extends AbstractBackend {
 	}
 
 	@Override
-	public boolean exportRuntimeLibrary() throws OrccException {
+	public boolean exportRuntimeLibrary() {
 		boolean exportLibrary = !getAttribute(NO_LIBRARY_EXPORT, false);
 
 		String libPath = path + File.separator + "lib";
@@ -459,7 +459,7 @@ public class Orc2HDL extends AbstractBackend {
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
 		printer.getOptions().put("currentTime", currentTime);
-		printer.getOptions().put("xilinxPrimitives",xilinxPrimitives);
+		printer.getOptions().put("xilinxPrimitives", xilinxPrimitives);
 
 		String file = network.getName();
 		file = "sim_" + network.getSimpleName() + ".do";
@@ -491,7 +491,7 @@ public class Orc2HDL extends AbstractBackend {
 		// Print TCL Script
 		Orc2HDLPrinter printer = new Orc2HDLPrinter(
 				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
-		printer.getOptions().put("xilinxPrimitives",xilinxPrimitives);
+		printer.getOptions().put("xilinxPrimitives", xilinxPrimitives);
 		printer.print("tcl_" + instance.getSimpleName() + ".tcl",
 				testBenchPath, instance);
 		// Create VHD folder
@@ -520,7 +520,7 @@ public class Orc2HDL extends AbstractBackend {
 		// Print TCL Script
 		Orc2HDLPrinter printer = new Orc2HDLPrinter(
 				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
-		printer.getOptions().put("xilinxPrimitives",xilinxPrimitives);
+		printer.getOptions().put("xilinxPrimitives", xilinxPrimitives);
 		printer.print("tcl_" + network.getSimpleName() + ".tcl", testBenchPath,
 				network);
 		// Create VHD folder
