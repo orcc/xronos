@@ -467,7 +467,7 @@ begin
 	i_<network.simpleName>  : <network.simpleName>  port map (
     CLK      =\> clock,
     RESET    =\> reset_n<if(network.inputs || network.outputs)>,<endif>
-    <network.inputs: ActorInputSignalsInstanciation(); separator=",\n">
+    <network.inputs: ActorInputSignalsInstanciation(); separator=",\n"><if(network.inputs && network.outputs)>,<endif>
     <network.outputs: signalsInstanciation(); separator=",\n">);
      
     <network.inputs: queues(); separator="\n">

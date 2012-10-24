@@ -51,7 +51,7 @@ public abstract class ActionIOHandler {
 	/**
 	 * A specific implementation of the ActionIOHandler class which is
 	 * implemented by a {@link FifoIF} resource. All input/output using this
-	 * type of handler is accopmlished through a standard Fifo interface. The
+	 * type of handler is accomplished through a standard Fifo interface. The
 	 * Fifo interface will be named according the the name of the specified port
 	 * node.
 	 */
@@ -70,6 +70,8 @@ public abstract class ActionIOHandler {
 
 		private final String portSize;
 
+		private final int type;
+		
 		public FifoIOHandler(Node portNode) {
 			super();
 			assert portNode.getNodeType() == Node.ELEMENT_NODE;
@@ -82,14 +84,16 @@ public abstract class ActionIOHandler {
 
 			portSize = ((Element) portNode)
 					.getAttribute(SLIMConstants.PORT_SIZE);
+			type = FifoID.TYPE_ACTION_SCALAR;
 
 		}
 
-		public FifoIOHandler(String direction, String portName, String portSize) {
+		public FifoIOHandler(String direction, String portName, String portSize, int type) {
 			super();
 			this.direction = direction;
 			this.portName = portName;
 			this.portSize = portSize;
+			this.type = type;
 		}
 
 		/**
@@ -108,7 +112,7 @@ public abstract class ActionIOHandler {
 			fifoId.setBitWidth(Integer.parseInt(portSize));
 			fifoId.setID(portName);
 			fifoId.setDirection(direction.startsWith("in"));
-			fifoId.setType(FifoID.TYPE_ACTION_SCALAR);
+			fifoId.setType(type);
 
 			resource = (ActorPort) design.getFifoIF(fifoId);
 		}

@@ -316,6 +316,7 @@ public class Orc2HDL extends AbstractBackend {
 				"net/sf/orcc/backends/xlim/hw/Actor.stg", !debugMode);
 
 		printer.getOptions().put("fpgaType", fpgaName);
+		printer.getOptions().put("instanceToDesign", instanceToDesign);
 
 		printer.setExpressionPrinter(new XlimExprPrinter());
 		printer.setTypePrinter(new XlimTypePrinter());
@@ -343,17 +344,18 @@ public class Orc2HDL extends AbstractBackend {
 						xlim = file.getCanonicalPath();
 					}
 					List<String> flags = new ArrayList<String>(forgeFlags);
-					flags.addAll(Arrays.asList("-d", rtlPath, "-o", id, xlim));
+					//flags.addAll(Arrays.asList("-d", rtlPath, "-o", id, xlim));
 
 					long t0 = System.currentTimeMillis();
 					Boolean okForge = false;
 
-					// Experimental
 					try {
 						if (instanceToDesign) {
+							flags.addAll(Arrays.asList("-d", rtlPath, "-o", id,xlim));
 							okForge = runForge(flags.toArray(new String[0]),
 									instance);
 						} else {
+							flags.addAll(Arrays.asList("-d", rtlPath, "-o", id, xlim));
 							okForge = Forge.runForge(flags
 									.toArray(new String[0]));
 						}

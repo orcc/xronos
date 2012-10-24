@@ -26,7 +26,7 @@
    <extension
          point="net.sf.orcc.core.options">
       <option
-            defaultValue="false"
+            defaultValue="true"
             description="Generate directly the verilog file without using the XLIM backend."
             id="net.sf.orc2hdl.instanceDesign"
             name="Faster Code Generation (Beta)">

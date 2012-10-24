@@ -175,6 +175,7 @@ public class Forge implements ForgeDebug {
 		// check to see that -noblockio has either a -channel_descriptor or a
 		// -Xmodule_builder
 		File[] inputFiles = job.getTargetFiles();
+		if(inputFiles.length != 0)
 		if (noblockio && !ForgeFileTyper.isXLIMSource(inputFiles[0].getName())) {
 			if (channel_descriptor && module_builder) {
 				job.fatalError("-channel_descriptor and -Xmodule_builder are mutually exclusive");

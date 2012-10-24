@@ -105,6 +105,4 @@ radix -decimal
 # Add signals to the wave
 add wave sim:/<network.simpleName>_tb/*
 
-# Run for 10us
-run 10us
 >>

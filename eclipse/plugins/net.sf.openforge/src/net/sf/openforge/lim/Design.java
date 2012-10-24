@@ -502,6 +502,12 @@ public class Design extends ID implements Visitable, Cloneable {
 				else
 					fifoIF = new ActorNativeScalarOutput(fifoID);
 				break;
+			case FifoID.TYPE_ACTION_CIRCULAR_BUFFER:
+				if (fifoID.isInputFifo())
+					fifoIF = new ActorScalarInput(fifoID);
+				else
+					fifoIF = new ActorScalarOutput(fifoID);
+				break;
 			case FifoID.TYPE_ACTION_OBJECT:
 				throw new UnsupportedOperationException(
 						"Object fifos not yet supported");

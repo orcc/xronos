@@ -42,6 +42,7 @@ import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Design;
 import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.Port;
+import net.sf.openforge.lim.io.FifoID;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
@@ -85,7 +86,8 @@ public class PortUtil {
 			} else {
 				FifoIOHandler ioHandler = new ActionIOHandler.FifoIOHandler(
 						direction, port.getName(), Integer.toString(port
-								.getType().getSizeInBits()));
+								.getType().getSizeInBits()),
+						FifoID.TYPE_ACTION_SCALAR);
 				ioHandler.build(design);
 				resources.addIOHandler(port, ioHandler);
 			}
