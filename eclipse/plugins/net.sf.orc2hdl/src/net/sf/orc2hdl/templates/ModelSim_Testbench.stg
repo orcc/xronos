@@ -205,18 +205,18 @@ end process WaveGen_Proc_Out;
 
 >>
 
-printFSMIn(connection) ::= <<
-signal tb_FSM_<connection.targetPort.name>  : tb_type;
-file sim_file_<instance.simpleName>_<connection.targetPort.name>  : text is "fifoTraces/<connection.source.simpleName>_<connection.sourcePort.name>_<connection.target.simpleName>_<connection.targetPort.name>_traces.txt";
+printFSMIn(port) ::= <<
+signal tb_FSM_<port.name>  : tb_type;
+file sim_file_<instance.simpleName>_<port.name>  : text is "fifoTraces/<instance.simpleName>_<port.name>.txt";
 >>
 
 printNetworkFSMPort(port) ::= <<
 signal tb_FSM_<port.name>  : tb_type;
-file sim_file_<network.simpleName>_<port.name>  : text is "fifoTraces/<port.name>_traces.txt";
+file sim_file_<network.simpleName>_<port.name>  : text is "fifoTraces/<port.name>.txt";
 >>
 
-printFSMOut(connection) ::= <<
-file sim_file_<instance.simpleName>_<connection.sourcePort.name>  : text is "fifoTraces/<connection.source.simpleName>_<connection.sourcePort.name>_<connection.target.simpleName>_<connection.targetPort.name>_traces.txt";
+printFSMOut(port) ::= <<
+file sim_file_<instance.simpleName>_<port.name>  : text is "fifoTraces/<instance.simpleName>_<port.name>.txt";
 >>
 
 case_define_out(name,port) ::= <<
@@ -282,7 +282,7 @@ end if;
 // the dimensions of a list: [dim1][dim2]...[dimn]
 // does not output anything if <value> is empty
 
-sig_const(input, output, incoming, outgoing) ::= <<
+sig_const(input, output) ::= <<
 constant PERIOD : time := 20 ns;
 constant DUTY_CYCLE : real := 0.5;
 constant OFFSET : time := 100 ns;
@@ -291,8 +291,8 @@ type severity_level is (note, warning, error, failure);
 type tb_type is (after_reset, read_file, CheckRead);
 --
 -- Input and Output files
-<incoming: printFSMIn(); separator="\n">
-<outgoing: printFSMOut(); separator="\n">
+<input: printFSMIn(); separator="\n">
+<output: printFSMOut(); separator="\n">
 --
 -- Input and Output signals
 <input: printInPortSignals(); separator="\n">
@@ -398,7 +398,7 @@ component <instance.simpleName>
   ---------------------------------------------------------------------------
   -- Signal & constant declaration
   --------------------------------------------------------------------------- 
-  <sig_const(input=instance.actor.inputs,output=instance.actor.outputs,incoming=instance.incoming,outgoing=instance.outgoing)>
+  <sig_const(input=instance.actor.inputs,output=instance.actor.outputs)>
   ---------------------------------------------------------------------------
 
 begin

@@ -96,7 +96,7 @@ vcom -93 -reportprogress 30 -work work_<network.simpleName> $Testbench/<network.
 
 # Start the simulation
 <if(options.xilinxPrimitives)>
-vsim -L xilinxPrimitive -t ns work_<network.simpleName>.glbl work_<network.simpleName>.<network.simpleName>_tb
+vsim -L xilinxPrimitives -t ns work_<network.simpleName>.glbl work_<network.simpleName>.<network.simpleName>_tb
 <else>
 vsim -L unisims_ver -L simprims_ver -t ns work_<network.simpleName>.glbl work_<network.simpleName>.<network.simpleName>_tb
 <endif>
