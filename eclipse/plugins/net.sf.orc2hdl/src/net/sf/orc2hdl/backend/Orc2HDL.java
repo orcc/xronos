@@ -33,21 +33,21 @@ import net.sf.orcc.backends.StandardPrinter;
 import net.sf.orcc.backends.transform.CastAdder;
 import net.sf.orcc.backends.transform.DivisionSubstitution;
 import net.sf.orcc.backends.transform.EmptyBlockRemover;
+import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.backends.transform.InstPhiTransformation;
+import net.sf.orcc.backends.transform.InstTernaryAdder;
+import net.sf.orcc.backends.transform.ListFlattener;
+import net.sf.orcc.backends.transform.LiteralIntegersAdder;
+import net.sf.orcc.backends.transform.LocalArrayRemoval;
 import net.sf.orcc.backends.transform.Multi2MonoToken;
 import net.sf.orcc.backends.transform.StoreOnceTransformation;
+import net.sf.orcc.backends.transform.UnaryListRemoval;
+import net.sf.orcc.backends.transform.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.XlimActorTemplateData;
 import net.sf.orcc.backends.xlim.XlimExprPrinter;
 import net.sf.orcc.backends.xlim.XlimTypePrinter;
 import net.sf.orcc.backends.xlim.transform.CustomPeekAdder;
-import net.sf.orcc.backends.xlim.transform.GlobalArrayInitializer;
-import net.sf.orcc.backends.xlim.transform.InstTernaryAdder;
-import net.sf.orcc.backends.xlim.transform.ListFlattener;
-import net.sf.orcc.backends.xlim.transform.LiteralIntegersAdder;
-import net.sf.orcc.backends.xlim.transform.LocalArrayRemoval;
-import net.sf.orcc.backends.xlim.transform.UnaryListRemoval;
-import net.sf.orcc.backends.xlim.transform.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.transform.XlimVariableRenamer;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
@@ -344,18 +344,21 @@ public class Orc2HDL extends AbstractBackend {
 						xlim = file.getCanonicalPath();
 					}
 					List<String> flags = new ArrayList<String>(forgeFlags);
-					//flags.addAll(Arrays.asList("-d", rtlPath, "-o", id, xlim));
+					// flags.addAll(Arrays.asList("-d", rtlPath, "-o", id,
+					// xlim));
 
 					long t0 = System.currentTimeMillis();
 					Boolean okForge = false;
 
 					try {
 						if (instanceToDesign) {
-							flags.addAll(Arrays.asList("-d", rtlPath, "-o", id,xlim));
+							flags.addAll(Arrays.asList("-d", rtlPath, "-o", id,
+									xlim));
 							okForge = runForge(flags.toArray(new String[0]),
 									instance);
 						} else {
-							flags.addAll(Arrays.asList("-d", rtlPath, "-o", id, xlim));
+							flags.addAll(Arrays.asList("-d", rtlPath, "-o", id,
+									xlim));
 							okForge = Forge.runForge(flags
 									.toArray(new String[0]));
 						}
