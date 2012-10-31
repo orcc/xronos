@@ -105,7 +105,7 @@ public class PortUtil {
 				.get(port);
 		if (repeatPattern == 1) {
 			// Create the pinRead component
-			Component pinRead = ioHandler.getReadAccess(false);
+			Component pinRead = ioHandler.getReadAccess(true);
 			pinRead.setNonRemovable();
 			// Get the Pin Read variable
 			Var pinReadVar = action.getInputPattern().getPortToVarMap()
@@ -121,7 +121,7 @@ public class PortUtil {
 				Var pinReadVar = action.getBody().getLocal(
 						"pinRead_" + inputReadVar.getName() + "_" + i);
 				// Create the pinRead component
-				Component pinRead = ioHandler.getReadAccess(false);
+				Component pinRead = ioHandler.getReadAccess(true);
 				pinRead.setNonRemovable();
 				// Map out Data Ports
 				mapOutDataPorts(pinRead, pinReadVar, busDependency,
@@ -166,7 +166,7 @@ public class PortUtil {
 				.get(port);
 		if (repeatPattern == 1) {
 			// Create the pinWrite component
-			Component pinWrite = ioHandler.getWriteAccess(false);
+			Component pinWrite = ioHandler.getWriteAccess(true);
 			pinWrite.setNonRemovable();
 			// Get the Pin Write variable
 			Var pinWriteVar = action.getOutputPattern().getPortToVarMap()
@@ -186,7 +186,7 @@ public class PortUtil {
 				Var pinWriteVar = action.getBody().getLocal(
 						"pinWrite_" + outputWriteVar.getName() + "_" + i);
 				// Create the pinWrite component
-				Component pinWrite = ioHandler.getWriteAccess(false);
+				Component pinWrite = ioHandler.getWriteAccess(true);
 				pinWrite.setNonRemovable();
 				// Map in Data Ports
 				mapInDataPorts(pinWrite, pinWriteVar, portDependency,

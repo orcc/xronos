@@ -173,6 +173,7 @@ public class DesignUtil {
 				mem = new LogicalMemory(maxAddressWidth);
 				mem.createLogicalMemoryPort();
 				design.addMemory(mem);
+				// memories.put(stride, mem);
 			}
 			// Create a 'location' for the stateVar that is
 			// appropriate for its type/size.

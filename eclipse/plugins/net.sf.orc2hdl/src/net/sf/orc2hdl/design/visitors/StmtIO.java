@@ -169,7 +169,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		// Add to Stm input
 		stmAddVars(nodeIf, stmInputs, thenInputs);
 		stmAddVars(nodeIf, stmInputs, elseInputs);
-
+		cleanIf(nodeIf, stmInputs, stmDecision, thenInputs, elseInputs);
 		// Add to cache
 		cache.addBranch(nodeIf, stmDecision, stmInputs, stmOutputs, thenInputs,
 				thenOutputs, elseInputs, elseOutputs, joinVarMap);
@@ -300,10 +300,11 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			for (Block block : blocks) {
 				Set<Var> blkVars = new BlockVars(input, deepSearch, blocks,
 						phiBlock).doSwitch(block);
-				if (blkVars != null)
-				for (Var var : blkVars) {
-					if (!vars.contains(var)) {
-						vars.add(var);
+				if (blkVars != null) {
+					for (Var var : blkVars) {
+						if (!vars.contains(var)) {
+							vars.add(var);
+						}
 					}
 				}
 			}
@@ -317,10 +318,11 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			for (Block block : blocks) {
 				Set<Var> blkVars = new BlockVars(definedVar, stmOutputs)
 						.doSwitch(block);
-				if (blkVars != null)
-				for (Var var : blkVars) {
-					if (!vars.contains(var)) {
-						vars.add(var);
+				if (blkVars != null) {
+					for (Var var : blkVars) {
+						if (!vars.contains(var)) {
+							vars.add(var);
+						}
 					}
 				}
 			}
@@ -435,6 +437,18 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		for (Var var : source.get(block)) {
 			if (!target.get(block).contains(var)) {
 				target.get(block).add(var);
+			}
+		}
+	}
+
+	private void cleanIf(Block block, Map<Block, List<Var>> ifInput,
+			Map<Block, List<Var>> decisionInput,
+			Map<Block, List<Var>> thenInput, Map<Block, List<Var>> elseInput) {
+		for (Var var : new ArrayList<Var>(ifInput.get(block))) {
+			if (!decisionInput.get(block).contains(var)
+					&& !thenInput.get(block).contains(var)
+					&& !elseInput.get(block).contains(var)) {
+				ifInput.get(block).remove(var);
 			}
 		}
 	}
