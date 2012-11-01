@@ -71,6 +71,8 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
 	private Boolean phiVisit;
 
+	private Boolean decisionInputs;
+
 	private Boolean getDefinedVar;
 
 	private Block currentBlock;
@@ -95,6 +97,7 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		this.blocksContainer = blocksContainer;
 		this.getDefinedVar = false;
 		this.blockPhi = blockPhi;
+		this.decisionInputs = false;
 	}
 
 	public BlockVars(Block stmBlock, Map<Block, Map<Var, List<Var>>> phi) {
@@ -107,6 +110,7 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		this.blocksContainer = new ArrayList<Block>();
 		this.blocksContainer.add(stmBlock);
 		this.getDefinedVar = false;
+		this.decisionInputs = true;
 	}
 
 	public BlockVars(Boolean getDefinedVar, Map<Block, List<Var>> stmOutputs) {
@@ -117,6 +121,7 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		this.getDefinedVar = getDefinedVar;
 		this.stmOutputs = stmOutputs;
 		blockVars = new HashSet<Var>();
+		this.decisionInputs = false;
 	}
 
 	@Override
@@ -313,11 +318,27 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		Map<Def, Boolean> defMap = new HashMap<Def, Boolean>();
 		for (Def def : var.getDefs()) {
 			EObject container = def.eContainer();
+
+			// Test if the container is from InstPhi
+			InstPhi instPhi = null;
+			if (container instanceof InstPhi) {
+				instPhi = (InstPhi) container;
+			}
+
 			// Get the BlockBasic container
 			while (!(container instanceof BlockBasic)) {
 				container = container.eContainer();
 				if (container == null) {
 					return false;
+				}
+			}
+
+			if (decisionInputs) {
+				if (instPhi != null) {
+					Var targetVar = instPhi.getTarget().getVariable();
+					if (targetVar == var) {
+						defMap.put(def, true);
+					}
 				}
 			}
 			if (blockPhi != null) {
