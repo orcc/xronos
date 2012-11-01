@@ -29,6 +29,9 @@
 package net.sf.orc2hdl.backend
 
 import net.sf.orcc.ir.util.IrSwitch
+import net.sf.orcc.df.Network
+import java.util.Map
+import net.sf.orcc.df.Instance
 
 /*
  * A VHDL Testbench printer
@@ -36,5 +39,17 @@ import net.sf.orcc.ir.util.IrSwitch
  * @author Endri Bezati
  */
 class TestbenchPrinter extends IrSwitch {
+	
+	def printGoDone(Network network, Map<String,Object> options){
+		''''''
+	}
+	
+	def printInstance(Instance instance, Map<String,Object> options){
+		''''''
+	}
+	
+	def printNetwork(Network network, Map<String,Object> options){
+		''''''
+	}
 	
 }

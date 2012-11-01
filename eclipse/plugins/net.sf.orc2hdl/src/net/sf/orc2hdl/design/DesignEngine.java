@@ -31,6 +31,7 @@ package net.sf.orc2hdl.design;
 
 import net.sf.openforge.app.Engine;
 import net.sf.openforge.app.GenericJob;
+import net.sf.openforge.app.JobHandlerAdapter;
 import net.sf.openforge.lim.Design;
 import net.sf.orcc.df.Instance;
 
@@ -46,6 +47,8 @@ public class DesignEngine extends Engine {
 	public DesignEngine(GenericJob genJob, Instance instance) {
 		super(genJob);
 		this.instance = instance;
+		this.jobHandler = new JobHandlerAdapter("Forging: "
+				+ instance.getSimpleName());
 	}
 
 	@Override

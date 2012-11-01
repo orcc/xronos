@@ -30,11 +30,19 @@
 package net.sf.orc2hdl.backend
 
 import net.sf.orcc.ir.util.IrSwitch
+import net.sf.orcc.df.Network
+import java.util.Map
+
 /*
  * A VHDL Network printer
  * 
  * @author Endri Bezati
  */
 class NetworkPrinter extends IrSwitch {
+	
+	def printNetwork(Network network, Map<String,Object> options){
+		'''
+		'''
+	}
 	
 }

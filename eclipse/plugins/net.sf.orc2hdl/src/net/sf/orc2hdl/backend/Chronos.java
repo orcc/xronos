@@ -5,7 +5,6 @@ import static net.sf.orcc.OrccLaunchConstants.MAPPING;
 import static net.sf.orcc.OrccLaunchConstants.NO_LIBRARY_EXPORT;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,41 +13,22 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
-import net.sf.openforge.app.Engine;
-import net.sf.openforge.app.Forge;
-import net.sf.openforge.app.ForgeFatalException;
-import net.sf.openforge.app.GenericJob;
-import net.sf.openforge.app.NewJob;
-import net.sf.openforge.app.OptionRegistry;
-import net.sf.openforge.verilog.model.Assign.UnbalancedAssignmentException;
 import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
 import net.sf.orc2hdl.backend.transform.RepeatPattern;
-import net.sf.orc2hdl.design.DesignEngine;
 import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.backends.AbstractBackend;
-import net.sf.orcc.backends.StandardPrinter;
 import net.sf.orcc.backends.transform.CastAdder;
-import net.sf.orcc.backends.transform.DivisionSubstitution;
-import net.sf.orcc.backends.transform.EmptyBlockRemover;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
-import net.sf.orcc.backends.transform.InstPhiTransformation;
-import net.sf.orcc.backends.transform.InstTernaryAdder;
-import net.sf.orcc.backends.transform.ListFlattener;
 import net.sf.orcc.backends.transform.LiteralIntegersAdder;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
-import net.sf.orcc.backends.transform.Multi2MonoToken;
 import net.sf.orcc.backends.transform.StoreOnceTransformation;
 import net.sf.orcc.backends.transform.UnaryListRemoval;
-import net.sf.orcc.backends.transform.XlimDeadVariableRemoval;
 import net.sf.orcc.backends.xlim.XlimActorTemplateData;
 import net.sf.orcc.backends.xlim.XlimExprPrinter;
 import net.sf.orcc.backends.xlim.XlimTypePrinter;
-import net.sf.orcc.backends.xlim.transform.CustomPeekAdder;
-import net.sf.orcc.backends.xlim.transform.XlimVariableRenamer;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
@@ -57,12 +37,11 @@ import net.sf.orcc.df.transform.NetworkFlattener;
 import net.sf.orcc.df.transform.UnitImporter;
 import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.transform.BlockCombine;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 import net.sf.orcc.ir.transform.DeadCodeElimination;
-import net.sf.orcc.ir.transform.DeadGlobalElimination;
 import net.sf.orcc.ir.transform.SSATransformation;
 import net.sf.orcc.ir.transform.TacTransformation;
 import net.sf.orcc.ir.util.IrUtil;
@@ -73,14 +52,13 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 
 /**
- * The OpenForge's Orcc Frontend, it uses the AbstractBackend class for the XLIM
- * Backend and for Orcc user Interface
+ * The Chronos (ex OpenForge) Orcc Front-End.
  * 
  * @author Endri Bezati
  * 
  */
 
-public class Orc2HDL extends AbstractBackend {
+public class Chronos extends AbstractBackend {
 
 	/** The clock Domains Map **/
 	private Map<String, String> clkDomains;
@@ -98,7 +76,6 @@ public class Orc2HDL extends AbstractBackend {
 	private boolean generateGoDone;
 
 	/** Use Orcc as a fronted for OpenForge, No XLIM code generation **/
-	private boolean instanceToDesign;
 
 	/** The path used for the RTL Go Done generation **/
 	private String rtlGoDonePath;
@@ -118,7 +95,6 @@ public class Orc2HDL extends AbstractBackend {
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
 		debugMode = getAttribute(DEBUG_MODE, true);
-		instanceToDesign = getAttribute("net.sf.orc2hdl.instanceDesign", false);
 		generateGoDone = getAttribute("net.sf.orc2hdl.generateGoDone", false);
 		xilinxPrimitives = getAttribute("net.sf.orc2hdl.xilinxPrimitives",
 				false);
@@ -179,77 +155,38 @@ public class Orc2HDL extends AbstractBackend {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
 		if (!actor.isNative()) {
-			if (instanceToDesign) {
-				List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
-				// transformations.add(new DfVisitor<Void>(new
-				// LocalVarInitializer()));
-				transformations.add(new StoreOnceTransformation());
-				transformations
-						.add(new DfVisitor<Void>(new LocalArrayRemoval()));
-				transformations.add(new UnitImporter());
-				transformations.add(new UnaryListRemoval());
-				transformations
-						.add(new DfVisitor<Void>(new SSATransformation()));
-				transformations.add(new RepeatPattern());
-				transformations.add(new GlobalArrayInitializer(true));
-				transformations
-						.add(new DfVisitor<Void>(new Inliner(true, true)));
-				transformations.add(new DfVisitor<Void>(
-						new DeadCodeElimination()));
-				transformations.add(new DfVisitor<Expression>(
-						new LiteralIntegersAdder()));
-				transformations.add(new DfVisitor<Void>(new IndexFlattener()));
-				transformations.add(new DfVisitor<Expression>(
-						new TacTransformation()));
-				transformations.add(new DfVisitor<CfgNode>(
-						new ControlFlowAnalyzer()));
-				transformations.add(new DfVisitor<Expression>(
-						new LiteralIntegersAdder()));
-				transformations.add(new DfVisitor<Expression>(new CastAdder(
-						false, false)));
-				transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
-				for (DfSwitch<?> transformation : transformations) {
-					transformation.doSwitch(actor);
-					ResourceSet set = new ResourceSetImpl();
-					if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
-						System.out.println("oops " + transformation + " "
-								+ actor.getName());
-					}
-				}
+			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
+			// transformations.add(new DfVisitor<Void>(new
+			// LocalVarInitializer()));
+			transformations.add(new StoreOnceTransformation());
+			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
+			transformations.add(new UnitImporter());
+			transformations.add(new UnaryListRemoval());
+			transformations.add(new DfVisitor<Void>(new SSATransformation()));
+			transformations.add(new RepeatPattern());
+			transformations.add(new GlobalArrayInitializer(true));
+			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
+			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
+			transformations.add(new DfVisitor<Expression>(
+					new LiteralIntegersAdder()));
+			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
+			transformations.add(new DfVisitor<Expression>(
+					new TacTransformation()));
+			transformations.add(new DfVisitor<CfgNode>(
+					new ControlFlowAnalyzer()));
+			transformations.add(new DfVisitor<Expression>(
+					new LiteralIntegersAdder()));
+			transformations.add(new DfVisitor<Expression>(new CastAdder(false,
+					false)));
+			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
-			} else {
-				DfSwitch<?>[] transformations = {
-						new StoreOnceTransformation(),
-						new DfVisitor<Void>(new LocalArrayRemoval()),
-						new Multi2MonoToken(), new DivisionSubstitution(),
-						new UnitImporter(),
-						new DfVisitor<Void>(new SSATransformation()),
-						/* new TypeResizer(false, true, true, true), */
-						new GlobalArrayInitializer(true),
-						new DfVisitor<Void>(new Inliner(true, true)),
-						new DfVisitor<Void>(new InstTernaryAdder()),
-						new UnaryListRemoval(), new CustomPeekAdder(),
-						new DeadGlobalElimination(),
-						new DfVisitor<Void>(new DeadCodeElimination()),
-						new DfVisitor<Void>(new XlimDeadVariableRemoval()),
-						new DfVisitor<Void>(new ListFlattener()),
-						new DfVisitor<Expression>(new TacTransformation()),
-						new DfVisitor<CfgNode>(new ControlFlowAnalyzer()),
-						new DfVisitor<Void>(new InstPhiTransformation()),
-						new DfVisitor<Expression>(new LiteralIntegersAdder()),
-						new DfVisitor<Expression>(new CastAdder(true, true)),
-						new XlimVariableRenamer(),
-						new DfVisitor<Void>(new EmptyBlockRemover()),
-						new DfVisitor<Void>(new BlockCombine()) };
-
-				for (DfSwitch<?> transformation : transformations) {
-					transformation.doSwitch(actor);
-					ResourceSet set = new ResourceSetImpl();
-					if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
-						System.out.println("oops " + transformation + " "
-								+ actor.getName());
-					}
+			for (DfSwitch<?> transformation : transformations) {
+				transformation.doSwitch(actor);
+				ResourceSet set = new ResourceSetImpl();
+				if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
+					System.out.println("oops " + transformation + " "
+							+ actor.getName());
 				}
 			}
 
@@ -277,14 +214,14 @@ public class Orc2HDL extends AbstractBackend {
 		data.computeTemplateMaps(network, clkDomains);
 		network.setTemplateData(data);
 
-		// Print the Network
+		// Print Network
 		printNetwork(network);
 
-		// Print Simulation files
-		printSimFiles(network);
+		// Print Testbenches
+		printTestbenches(network);
 
-		// Print Instance files
-		printInstances(network);
+		// Print Instances
+		generateInstances(network);
 	}
 
 	@Override
@@ -310,111 +247,42 @@ public class Orc2HDL extends AbstractBackend {
 		return false;
 	}
 
-	@Override
-	protected boolean printInstance(Instance instance) {
-		StandardPrinter printer = new StandardPrinter(
-				"net/sf/orcc/backends/xlim/hw/Actor.stg", !debugMode);
+	public void generateInstances(Network network) {
+		OrccLogger.traceln("Generating Instances...");
+		int numCached = 0;
 
-		printer.getOptions().put("fpgaType", fpgaName);
-		printer.getOptions().put("instanceToDesign", instanceToDesign);
-
-		printer.setExpressionPrinter(new XlimExprPrinter());
-		printer.setTypePrinter(new XlimTypePrinter());
-
-		// Create the XLIM Path
-		String xlimPath = path + File.separator + "xlim";
-		new File(xlimPath).mkdir();
-		Boolean printOK = true;
-
-		// Test if instance is Native
-		if (!instance.getActor().isNative()) {
-
-			// Print TCL launch script and VHD Testbenches for each Instance
-			printTestbench(instance);
-
-			printOK = printer.print(instance.getName() + ".xlim", xlimPath,
-					instance);
-			if (!printOK) {
-				try {
-					String xlim = null;
-					String id = instance.getName();
-					File file = new File(xlimPath + File.separator + id
-							+ ".xlim");
-					if (file.exists()) {
-						xlim = file.getCanonicalPath();
-					}
-					List<String> flags = new ArrayList<String>(forgeFlags);
-					// flags.addAll(Arrays.asList("-d", rtlPath, "-o", id,
-					// xlim));
-
-					long t0 = System.currentTimeMillis();
-					Boolean okForge = false;
-
-					try {
-						if (instanceToDesign) {
-							flags.addAll(Arrays.asList("-d", rtlPath, "-o", id,
-									xlim));
-							okForge = runForge(flags.toArray(new String[0]),
-									instance);
-						} else {
-							flags.addAll(Arrays.asList("-d", rtlPath, "-o", id,
-									xlim));
-							okForge = Forge.runForge(flags
-									.toArray(new String[0]));
-						}
-					} catch (NullPointerException ex) {
-						file.delete();
-						OrccLogger.severeln("Instance: " + id
-								+ ", failed to compile: NullPointerException, "
-								+ ex.getMessage());
-					} catch (NoSuchElementException ex) {
-						file.delete();
-						OrccLogger
-								.severeln("Instance: "
-										+ id
-										+ ", failed to compile: NoSuchElementException, "
-										+ ex.getMessage());
-					} catch (UnbalancedAssignmentException ex) {
-						file.delete();
-						OrccLogger
-								.severeln("Instance: "
-										+ id
-										+ ", failed to compile: UnbalancedAssignmentException, "
-										+ ex.getMessage());
-					} catch (ArrayIndexOutOfBoundsException ex) {
-						file.delete();
-						OrccLogger
-								.severeln("Instance: "
-										+ id
-										+ ", failed to compile: ArrayIndexOutOfBoundsException, "
-										+ ex.getMessage());
-					} catch (Throwable t) {
-						file.delete();
-						OrccLogger.severeln("Instance: " + id
-								+ ", failed to compile: " + t.getMessage());
-					}
-
-					long t1 = System.currentTimeMillis();
-					if (okForge) {
-						if (generateGoDone) {
-							VerilogAddGoDone instanceWithGoDone = new VerilogAddGoDone(
-									instance, rtlPath, rtlGoDonePath);
-							instanceWithGoDone.addGoDone();
-						}
-						OrccLogger.traceln("Compiling instance: " + id
-								+ ": Compiled in: "
-								+ ((float) (t1 - t0) / (float) 1000) + "s");
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
+		long t0 = System.currentTimeMillis();
+		for (Vertex vertex : network.getChildren()) {
+			final Instance instance = vertex.getAdapter(Instance.class);
+			if (instance != null) {
+				ChronosPrinter printer = new ChronosPrinter(debug);
+				printer.getOptions().put("fpgaType", fpgaName);
+				List<String> flags = new ArrayList<String>(forgeFlags);
+				flags.addAll(Arrays.asList("-d", rtlPath, "-o",
+						instance.getSimpleName()));
+				Boolean cached = printer.printInstance(
+						flags.toArray(new String[0]), rtlPath, instance);
+				if (cached) {
+					numCached++;
 				}
 			}
-
 		}
-		return printOK;
+		long t1 = System.currentTimeMillis();
+		OrccLogger.traceln("Done in " + ((float) (t1 - t0) / (float) 1000)
+				+ "s");
+		if (numCached > 0) {
+			OrccLogger
+					.traceln("*******************************************************************************");
+			OrccLogger.traceln("* NOTE: " + numCached
+					+ " instances were not regenerated "
+					+ "because they were not modyified *");
+			OrccLogger
+					.traceln("*******************************************************************************");
+		}
 	}
 
 	private void printNetwork(Network network) {
+		OrccLogger.traceln("Generating Network...");
 		// Get the current time
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date date = new Date();
@@ -451,6 +319,8 @@ public class Orc2HDL extends AbstractBackend {
 
 	}
 
+	// TODO: to be removed
+	@SuppressWarnings("unused")
 	private void printSimFiles(Network network) {
 		// Get the current time
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -477,7 +347,7 @@ public class Orc2HDL extends AbstractBackend {
 			new File(simPath).mkdir();
 			printer.print(file, simPath, network);
 
-			// Print Go Done Weights Simluation file
+			// Print Go Done Weights Simulation file
 			String weightsPath = simPath + File.separator + "weights";
 			File weightsDir = new File(weightsPath);
 			if (!weightsDir.exists()) {
@@ -492,6 +362,8 @@ public class Orc2HDL extends AbstractBackend {
 		}
 	}
 
+	// TODO: to be removed
+	@SuppressWarnings("unused")
 	private void printTestbench(Instance instance) {
 		// Print TCL Script
 		Orc2HDLPrinter printer = new Orc2HDLPrinter(
@@ -550,29 +422,41 @@ public class Orc2HDL extends AbstractBackend {
 				.print(network.getSimpleName() + "_tb.vhd", tbVhdPath, network);
 	}
 
-	private boolean runForge(String[] args, Instance instance) {
-		Forge f = new Forge();
-		GenericJob forgeMainJob = new GenericJob();
-		boolean error = false;
-		try {
-			// Experimental
-			forgeMainJob.setOptionValues(args);
-			f.preprocess(forgeMainJob);
-			Engine engine = new DesignEngine(forgeMainJob, instance);
-			engine.begin();
-		} catch (NewJob.ForgeOptionException foe) {
-			OrccLogger.severeln("Command line option error: "
-					+ foe.getMessage());
-			OrccLogger.severeln("");
-			OrccLogger.severeln(OptionRegistry.usage(false));
-			error = true;
-		} catch (ForgeFatalException ffe) {
-			OrccLogger.severeln("Forge compilation ended with fatal error:");
-			OrccLogger.severeln(ffe.getMessage());
-			error = true;
+	private void printTestbenches(Network network) {
+		OrccLogger.traceln("Generating Testbenches...");
+
+		// Create the fifoTraces folder
+		String tracePath = testBenchPath + File.separator + "fifoTraces";
+		File fifoTracesDir = new File(tracePath);
+		if (!fifoTracesDir.exists()) {
+			fifoTracesDir.mkdir();
 		}
 
-		return !error;
+		// Create the VHD directory on the testbench folder
+		String tbVhdPath = testBenchPath + File.separator + "vhd";
+		File tbVhdDir = new File(tbVhdPath);
+		if (!tbVhdDir.exists()) {
+			tbVhdDir.mkdir();
+		}
+
+		// Create the Chronos Printer
+		ChronosPrinter chronosPrinter = new ChronosPrinter();
+
+		// Print the network TCL ModelSim simulation script
+		chronosPrinter.printTclScript(simPath, false, network);
+
+		// print the network VHDL Testbech sourcefile
+		chronosPrinter.printTestbench(tbVhdPath, network);
+
+		// Print the network testbench TCL ModelSim simulation script
+		chronosPrinter.printTclScript(testBenchPath, true, network);
+
+		for (Vertex vertex : network.getChildren()) {
+			final Instance instance = vertex.getAdapter(Instance.class);
+			if (instance != null) {
+				chronosPrinter.printTestbench(tbVhdPath, instance);
+			}
+		}
 	}
 
 }

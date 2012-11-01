@@ -4,13 +4,10 @@
    <extension
          point="net.sf.orcc.backends.backends">
       <backend
-            class="net.sf.orc2hdl.backend.Orc2HDL"
-            name="Verilog (Orc2HDL)">
+            class="net.sf.orc2hdl.backend.Chronos"
+            name="Verilog (Chronos)">
          <option
                id="net.sf.orcc.plugins.compileXDF">
-         </option>
-         <option
-               id="net.sf.orc2hdl.instanceDesign">
          </option>
          <option
                id="net.sf.orc2hdl.generateGoDone">
@@ -25,13 +22,6 @@
    </extension>
    <extension
          point="net.sf.orcc.core.options">
-      <option
-            defaultValue="true"
-            description="Generate directly the verilog file without using the XLIM backend."
-            id="net.sf.orc2hdl.instanceDesign"
-            name="Faster Code Generation (Beta)">
-         <checkBox></checkBox>
-      </option>
       <option
             defaultValue="false"
             id="net.sf.orc2hdl.generateGoDone"
