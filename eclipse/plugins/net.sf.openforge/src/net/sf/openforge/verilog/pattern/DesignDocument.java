@@ -52,8 +52,17 @@ public class DesignDocument extends VerilogDocument implements
 		//
 		// Put standard header on the file.
 		//
-		Comment header = new Comment("Open Forge " + Version.versionNumber(),
-				Comment.SHORT);
+		Comment logo = new Comment("  ___ _  _ ___  ___  _  _  ___  ___ ");
+		append(logo);
+		logo = new Comment(" / __| || | _ \\/ _ \\| \\| |/ _ \\/ __|");
+		append(logo);
+		logo = new Comment("| (__| __ |   / (_) | .` | (_) \\__ \\");
+		append(logo);
+		logo = new Comment(" \\___|_||_|_|_\\\\___/|_|\\_|\\___/|___/");
+		append(logo);
+		append(new Comment(""));
+		Comment header = new Comment("Chronos synthesizer "
+				+ Version.versionNumber(), Comment.SHORT);
 		append(header);
 		String runDate = EngineThread.getGenericJob()
 				.getOption(OptionRegistry.RUN_DATE)
