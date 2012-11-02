@@ -54,16 +54,21 @@ class TclScriptPrinter extends IrSwitch {
 		var date = new Date();
 		'''
 		## ############################################################################
+		##   ___ _  _ ___  ___  _  _  ___  ___ 
+		##  / __| || | _ \/ _ \| \| |/ _ \/ __|
+		## | (__| __ |   / (_) | .` | (_) \__ \
+		##  \___|_||_|_|_\\___/|_|\_|\___/|___/
+		## ############################################################################
 		## Chronos synthesizer
 		«IF object instanceof Network »
 		## TCL Script file for «(object as Network).simpleName» Network
 		«ELSEIF object instanceof Instance»
 		## TCL Script file for «(object as Instance).simpleName» Instance
 		«ENDIF»
-		## Date : Date :  «dateFormat.format(date)»
+		## Date :  «dateFormat.format(date)»
 		## ############################################################################
 		'''	
-		}
+	}
 	
 	def setPathandLibrariesLibraries(){
 		'''
