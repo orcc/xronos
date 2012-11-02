@@ -35,6 +35,7 @@ import java.util.Map
 import net.sf.orcc.df.Instance
 import net.sf.orcc.df.Network
 import net.sf.orcc.ir.util.IrSwitch
+import net.sf.orcc.graph.Vertex
 
 /*
  * A ModelSim TCL script printer
@@ -49,7 +50,7 @@ class TclScriptPrinter extends IrSwitch {
 	
 	var Network network;
 	
-	def headerComments(Object object){
+	def headerComments(Object object, String string){
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
 		'''
@@ -61,11 +62,11 @@ class TclScriptPrinter extends IrSwitch {
 		## ############################################################################
 		## Chronos synthesizer
 		«IF object instanceof Network »
-		## TCL Script file for «(object as Network).simpleName» Network
+			## «string» TCL Script file for Network: «(object as Network).simpleName» 
 		«ELSEIF object instanceof Instance»
-		## TCL Script file for «(object as Instance).simpleName» Instance
+			## «string» TCL Script file for Instance: «(object as Instance).simpleName» 
 		«ENDIF»
-		## Date :  «dateFormat.format(date)»
+		## Date: «dateFormat.format(date)»
 		## ############################################################################
 		'''	
 	}
@@ -74,15 +75,17 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 		## Set paths
 		set Lib "../lib/"
-		set LibSim "../lib/simulation"
+		«IF testbench»set LibSim "../lib/simulation"«ENDIF»
 		set Rtl "../rtl"
 		set RtlGoDone "../rtl/rtlGoDone"
+		«IF testbench»set Testbench "vhd"«ENDIF»
 		
 		«IF xilinxPrimitives»
-		## Create the xilinxPrimitives design library
-		vlib xilinxPrimitives
-		vmap xilinxPrimitives xilinxPrimitives
-		vlog -work xilinxPrimitives $Lib/xilinxPrimitives/*.v
+			## Create the xilinxPrimitives design library
+			vlib xilinxPrimitives
+			vmap xilinxPrimitives xilinxPrimitives
+			vlog -work xilinxPrimitives $Lib/xilinxPrimitives/*.v
+			
 		«ENDIF»
 		## Create SystemBuilder design library
 		vlib SystemBuilder
@@ -95,25 +98,53 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 	}
 	
-	def setWorkLibrary(Network network){
+	def setWorkLibrary(Vertex vertex){
+		var String name;
+		if(vertex instanceof Instance){
+			name = (vertex as Instance).simpleName;
+		}else if(vertex instanceof Network){
+			name = (vertex as Network).simpleName;
+		} 
+		var String workName;
+		if(testbench){
+			workName = "work_" + name;
+		}else{
+			workName = "work";
+		}
 		'''
 		## Create the work design library
-		if {[file exist work]} {rm -r work}
-		vlib work
-		vmap work work
+		if {[file exist «workName»]} {rm -r work}
+		vlib «workName»
+		vmap «workName» «workName»
 		
 		## Compile the glbl constans given by Xilinx 
 		vlog ../lib/simulation/glbl.v
 		
-		## Compile network instances and add them to work library	
-		«FOR vertex : network.vertices»
-		«IF vertex instanceof Instance»
-		vlog «rtlPath»/«(vertex as Instance).simpleName».v
-		«ENDIF» 
-		«ENDFOR»
+		«IF testbench»
+		# Compile sim package
+		vcom -93 -reportprogress 30 -work work_rr $Lib/sim_package.vhd
 		
+		«ENDIF»
+		## Compile network instances and add them to work library	
+		«IF vertex instanceof Network»
+			«FOR netVertex : network.vertices»
+				«IF netVertex instanceof Instance»
+					vlog -work «workName» «rtlPath»/«(netVertex as Instance).simpleName».v
+				«ENDIF» 
+			«ENDFOR»
+		«ELSEIF vertex instanceof Instance»
+		vlog -work «workName» «rtlPath»/«(vertex as Instance).simpleName».v
+		«ENDIF»
+		
+		«IF vertex instanceof Network»
 		## Compile the Top Network
-		vcom -93 -check_synthesis -quiet -work work «rtlPath»/«network.simpleName».vhd
+		vcom -93 -check_synthesis -quiet -work «workName» «rtlPath»/«name».vhd
+		«ENDIF»
+		
+		«IF testbench»
+		## Compile the Testbench VHD
+		vcom -93 -check_synthesis -quiet -work «workName» $Testbench/«name»_tb.vhd
+		«ENDIF»
 		'''
 	}
 	
@@ -121,9 +152,9 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 		## Start VSIM
 		«IF(xilinxPrimitives)»
-		vsim -L xilinxPrimitives -t ns work.glbl work.«network.simpleName»
+			vsim -L xilinxPrimitives -t ns work.glbl work.«network.simpleName»
 		«ELSE»
-		vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.«network.simpleName»
+			vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.«network.simpleName»
 		«ENDIF»	
 			
 		## Add clock(s) and reset signal
@@ -140,13 +171,13 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 		add wave -noupdate -divider -height 20 i_«instance.simpleName»
 		«FOR port : instance.actor.inputs SEPARATOR "\n"»
-		add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_DATA
-		add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_ACK
+			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_DATA
+			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_ACK
 		«ENDFOR» 
 		«FOR port : instance.actor.outputs SEPARATOR "\n"»
-		add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_DATA
-		add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_SEND
-		add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_RDY
+			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_DATA
+			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_SEND
+			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_RDY
 		«ENDFOR» 
 		'''
 		
@@ -156,7 +187,7 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 		«FOR vertex : network.vertices»
 		«IF vertex instanceof Instance»
-		«addInstanceIO(vertex as Instance)»
+			«addInstanceIO(vertex as Instance)»
 		«ENDIF»
 		«ENDFOR»	
 		
@@ -172,13 +203,13 @@ class TclScriptPrinter extends IrSwitch {
 		add wave -noupdate -divider -height 20 no_«port.name»
 		add wave sim:/«network.simpleName»/«port.name»_DATA
 		«IF (!port.native)»
-		add wave sim:/«network.simpleName»/«port.name»_SEND
-		add wave sim:/«network.simpleName»/«port.name»_ACK
-		add wave sim:/«network.simpleName»/«port.name»_RDY
-		
-		## Freeze ACK and RDY at 1
-		force -freeze sim:/«network.simpleName»/«port.name»_ACK 1 0
-		force -freeze sim:/«network.simpleName»/«port.name»_RDY 1 0
+			add wave sim:/«network.simpleName»/«port.name»_SEND
+			add wave sim:/«network.simpleName»/«port.name»_ACK
+			add wave sim:/«network.simpleName»/«port.name»_RDY
+			
+			## Freeze ACK and RDY at 1
+			force -freeze sim:/«network.simpleName»/«port.name»_ACK 1 0
+			force -freeze sim:/«network.simpleName»/«port.name»_RDY 1 0
 		«ENDIF»
 		«ENDFOR»
 		'''
@@ -189,11 +220,11 @@ class TclScriptPrinter extends IrSwitch {
 		## FIFO FULL
 		add wave -noupdate -divider -height 20 "FIFO FULL"
 		«FOR vertex : network.vertices»
-		«IF vertex instanceof Instance»
-		«FOR port : (vertex as Instance).actor.inputs»
-		add wave sim:/«network.simpleName»/q_ai_«(vertex as Instance).simpleName»_«port.name»/fifo/msync_full 
-		«ENDFOR»
-		«ENDIF»
+			«IF vertex instanceof Instance»
+				«FOR port : (vertex as Instance).actor.inputs»
+				add wave sim:/«network.simpleName»/q_ai_«(vertex as Instance).simpleName»_«port.name»/fifo/msync_full 
+				«ENDFOR»
+			«ENDIF»
 		«ENDFOR»
 		'''
 	}
@@ -219,7 +250,7 @@ class TclScriptPrinter extends IrSwitch {
 			rtlPath = "$Rtl";
 		}
 		''' 			
-		«headerComments(network)»
+		«headerComments(network, "Simulation Launch")»
 		
 		«setPathandLibrariesLibraries()»
 		
@@ -236,27 +267,69 @@ class TclScriptPrinter extends IrSwitch {
 	def simRun(Network network){
 		'''
 		«IF (network.inputs.empty)»
-		force -freeze sim:/«network.simpleName»/CLK 1 0, 0 {50 ns} -r 100
-		force -freeze sim:/«network.simpleName»/RESET 1 0
-		run 500ns
-		force -freeze sim:/«network.simpleName»/RESET 0 0
-		run 10us
-		wave zoom full
+			force -freeze sim:/«network.simpleName»/CLK 1 0, 0 {50 ns} -r 100
+			force -freeze sim:/«network.simpleName»/RESET 1 0
+			run 500ns
+			force -freeze sim:/«network.simpleName»/RESET 0 0
+			run 10us
+			wave zoom full
 		«ENDIF»		
 		'''
 	}
 	
 	def printNetworkTestbenchTclScript(Network network, Map<String, Object> options){
-		headerComments(network);
-		setPathandLibrariesLibraries();
+				var Boolean generateGoDone = false;
 		
+		this.network = network;
+		
+		testbench = true;
+		
+		if (options.containsKey("generateGoDone")) {
+			generateGoDone= options.get("generateGoDone") as Boolean;
+		}
+		
+		if (options.containsKey("xilinxPrimitives")) {
+			xilinxPrimitives = options.get("xilinxPrimitives") as Boolean;
+		}
+		
+		if (generateGoDone){
+			rtlPath = "$RtlGoDone";
+		}else{
+			rtlPath = "$Rtl";
+		}
+		''' 			
+		«headerComments(network,"Testbench")»
+		
+		«setPathandLibrariesLibraries()»
+		
+		«setWorkLibrary(network)»
+		'''
 	}
 	
 	def printInstanceTestbenchTclScript(Instance instance, Map<String, Object> options){
+				var Boolean generateGoDone = false;
+		
+		this.network = network;
+		
 		testbench = true;
 		
-		headerComments(instance);
-		setPathandLibrariesLibraries();
+		if (options.containsKey("generateGoDone")) {
+			generateGoDone= options.get("generateGoDone") as Boolean;
+		}
+		
+		if (options.containsKey("xilinxPrimitives")) {
+			xilinxPrimitives = options.get("xilinxPrimitives") as Boolean;
+		}
+		
+		if (generateGoDone){
+			rtlPath = "$RtlGoDone";
+		}else{
+			rtlPath = "$Rtl";
+		}
+		''' 			
+		«headerComments(instance,"Testbench")»
+		
+		«setPathandLibrariesLibraries()»
+		'''
 	}
-	
 }

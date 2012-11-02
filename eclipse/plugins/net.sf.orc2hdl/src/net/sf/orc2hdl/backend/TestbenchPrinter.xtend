@@ -44,7 +44,7 @@ import java.util.List
  * @author Endri Bezati
  */
 class TestbenchPrinter extends IrSwitch {
-	def headerComments(Object object){
+	def headerComments(Object object, String string){
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
 		'''
@@ -56,18 +56,18 @@ class TestbenchPrinter extends IrSwitch {
 		-- ----------------------------------------------------------------------------
 		-- Chronos synthesizer
 		«IF object instanceof Network »
-		-- Testbench for Network: «(object as Network).simpleName» 
+		-- «IF string.equals("")»Testbench for Network:«ELSE»«string»«ENDIF» «(object as Network).simpleName» 
 		«ELSEIF object instanceof Instance»
 		-- Testbench for Instance: «(object as Instance).simpleName» 
 		«ENDIF»
-		-- Date : «dateFormat.format(date)»
+		-- Date: «dateFormat.format(date)»
 		-- ----------------------------------------------------------------------------
 		'''	
 	}
 	
 	def addLibraries(){
 		'''
-		library ieee,SystemBuilder;
+		library ieee, SystemBuilder;
 		use ieee.std_logic_1164.all;
 		use ieee.std_logic_unsigned.all;
 		use ieee.numeric_std.all;
@@ -446,12 +446,14 @@ class TestbenchPrinter extends IrSwitch {
 	}
 	
 	def printGoDone(Network network, Map<String,Object> options){
-		''''''
+		'''
+		«headerComments(network,"Go and Done Generator for Network:")»
+		'''
 	}
 	
 	def printInstance(Instance instance, Map<String,Object> options){
 		'''
-		«headerComments(instance)»
+		«headerComments(instance,"")»
 		
 		«addLibraries()»
 		
@@ -463,7 +465,7 @@ class TestbenchPrinter extends IrSwitch {
 	
 	def printNetwork(Network network, Map<String,Object> options){
 		'''
-		«headerComments(network)»
+		«headerComments(network,"")»
 		
 		«addLibraries()»
 		
