@@ -255,7 +255,7 @@ public class Chronos extends AbstractBackend {
 		for (Vertex vertex : network.getChildren()) {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
-				ChronosPrinter printer = new ChronosPrinter(debug);
+				ChronosPrinter printer = new ChronosPrinter(debugMode);
 				printer.getOptions().put("fpgaType", fpgaName);
 				List<String> flags = new ArrayList<String>(forgeFlags);
 				flags.addAll(Arrays.asList("-d", rtlPath, "-o",
@@ -441,6 +441,7 @@ public class Chronos extends AbstractBackend {
 
 		// Create the Chronos Printer
 		ChronosPrinter chronosPrinter = new ChronosPrinter();
+		chronosPrinter.getOptions().put("xilinxPrimitives", xilinxPrimitives);
 
 		// Print the network TCL ModelSim simulation script
 		chronosPrinter.printTclScript(simPath, false, network);

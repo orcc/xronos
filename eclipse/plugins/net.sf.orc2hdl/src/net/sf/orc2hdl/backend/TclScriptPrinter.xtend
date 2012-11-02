@@ -29,13 +29,12 @@
  
 package net.sf.orc2hdl.backend
 
-import net.sf.orcc.ir.util.IrSwitch
-import net.sf.orcc.df.Instance
-import net.sf.orcc.df.Network
-import java.util.Map
 import java.text.SimpleDateFormat
 import java.util.Date
-import net.sf.orcc.graph.Vertex
+import java.util.Map
+import net.sf.orcc.df.Instance
+import net.sf.orcc.df.Network
+import net.sf.orcc.ir.util.IrSwitch
 
 /*
  * A ModelSim TCL script printer
@@ -88,7 +87,6 @@ class TclScriptPrinter extends IrSwitch {
 		vcom -reportprogress 300 -work SystemBuilder $Lib/systemBuilder/vhdl/sbtypes.vhdl
 		vcom -reportprogress 300 -work SystemBuilder $Lib/systemBuilder/vhdl/sbfifo.vhdl
 		vcom -reportprogress 300 -work SystemBuilder $Lib/systemBuilder/vhdl/sbfifo_behavioral.vhdl
-		
 		'''
 	}
 	
@@ -111,24 +109,25 @@ class TclScriptPrinter extends IrSwitch {
 		
 		## Compile the Top Network
 		vcom -93 -check_synthesis -quiet -work work «rtlPath»/«network.simpleName».vhd
-		
 		'''
 	}
 	
 	def startSimulation(Network network){
 		'''
+		## Start VSIM
 		«IF(xilinxPrimitives)»
 		vsim -L xilinxPrimitives -t ns work.glbl work.«network.simpleName»
 		«ELSE»
 		vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.«network.simpleName»
-		«ENDIF»		
+		«ENDIF»	
+			
 		## Add clock(s) and reset signal
+		add wave -noupdate -divider -height 20 "CLK & RESET"
 		add wave sim:/«network.simpleName»/CLK
 		add wave sim:/«network.simpleName»/RESET
 		
 		## Change radix to decimal
 		radix -decimal
-		
 		'''
 	}
 	
@@ -149,14 +148,20 @@ class TclScriptPrinter extends IrSwitch {
 	}
 	
 	def addNetworkSignalsToWave(Network network){
-		// add instance IO signals
-		for (Vertex vertex: network.vertices){
-			if(vertex instanceof Instance){
-				addInstanceIO(vertex as Instance);
-			}
-		}
+		'''
+		«FOR vertex : network.vertices»
+		«IF vertex instanceof Instance»
+		«addInstanceIO(vertex as Instance)»
+		«ENDIF»
+		«ENDFOR»	
 		
-		// add network outputs port signals and full queue instance signal
+		«addNetworkOuputSignals(network)»
+		
+		«addNetworkFullFifoSignal(network)»
+		'''
+	}
+	
+	def addNetworkOuputSignals(Network network){
 		'''
 		«FOR port : network.outputs SEPARATOR "\n"»
 		add wave -noupdate -divider -height 20 no_«port.name»
@@ -165,9 +170,17 @@ class TclScriptPrinter extends IrSwitch {
 		add wave sim:/«network.simpleName»/«port.name»_SEND
 		add wave sim:/«network.simpleName»/«port.name»_ACK
 		add wave sim:/«network.simpleName»/«port.name»_RDY
+		
+		## Freeze ACK and RDY at 1
+		force -freeze sim:/«network.simpleName»/«port.name»_ACK 1 0
+		force -freeze sim:/«network.simpleName»/«port.name»_RDY 1 0
 		«ENDIF»
 		«ENDFOR»
-
+		'''
+	}
+	
+	def addNetworkFullFifoSignal(Network network){
+		'''
 		## FIFO FULL
 		add wave -noupdate -divider -height 20 "FIFO FULL"
 		«FOR vertex : network.vertices»
@@ -177,7 +190,6 @@ class TclScriptPrinter extends IrSwitch {
 		«ENDFOR»
 		«ENDIF»
 		«ENDFOR»
-		
 		'''
 	}
 	
@@ -201,19 +213,28 @@ class TclScriptPrinter extends IrSwitch {
 		}else{
 			rtlPath = "$Rtl";
 		}
-					
-		headerComments(network);
-		setPathandLibrariesLibraries();
-		setWorkLibrary(network);
-		startSimulation(network);
-		addNetworkSignalsToWave(network);
+		''' 			
+		«headerComments(network)»
 		
+		«setPathandLibrariesLibraries()»
+		
+		«setWorkLibrary(network)»
+		
+		«startSimulation(network)»
+		
+		«addNetworkSignalsToWave(network)»
+		
+		«simRun(network)»
 		'''
-		«IF (!network.inputs.empty)»
-		force -freeze sim:/<network.simpleName>/CLK 1 0, 0 {50 ns} -r 100
-		force -freeze sim:/<network.simpleName>/RESET 1 0
+	}
+	
+	def simRun(Network network){
+		'''
+		«IF (network.inputs.empty)»
+		force -freeze sim:/«network.simpleName»/CLK 1 0, 0 {50 ns} -r 100
+		force -freeze sim:/«network.simpleName»/RESET 1 0
 		run 500ns
-		force -freeze sim:/<network.simpleName>/RESET 0 0
+		force -freeze sim:/«network.simpleName»/RESET 0 0
 		run 10us
 		wave zoom full
 		«ENDIF»		
