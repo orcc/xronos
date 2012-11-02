@@ -56,7 +56,7 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 
 	private final Set<JobListener> listeners = new HashSet<JobListener>();
 	private final GenericJob gj;
-	private JobHandler jobHandler;
+	protected JobHandler jobHandler;
 	protected volatile int status = STOPPED;
 
 	public Engine(GenericJob genJob) {
