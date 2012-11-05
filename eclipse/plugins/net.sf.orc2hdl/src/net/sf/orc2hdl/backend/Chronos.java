@@ -22,7 +22,6 @@ import net.sf.orcc.backends.transform.LiteralIntegersAdder;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
 import net.sf.orcc.backends.transform.StoreOnceTransformation;
 import net.sf.orcc.backends.transform.UnaryListRemoval;
-import net.sf.orcc.backends.xlim.XlimActorTemplateData;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
@@ -146,8 +145,6 @@ public class Chronos extends AbstractBackend {
 
 	@Override
 	protected void doTransformActor(Actor actor) {
-		XlimActorTemplateData data = new XlimActorTemplateData();
-		actor.setTemplateData(data);
 		if (!actor.isNative()) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			// transformations.add(new DfVisitor<Void>(new
@@ -182,8 +179,6 @@ public class Chronos extends AbstractBackend {
 							+ actor.getName());
 				}
 			}
-
-			data.computeTemplateMaps(actor);
 		}
 	}
 
@@ -203,9 +198,9 @@ public class Chronos extends AbstractBackend {
 
 		// Compute the Network Template
 		network.computeTemplateMaps();
-		TopNetworkTemplateData data = new TopNetworkTemplateData();
-		data.computeTemplateMaps(network, clkDomains);
-		network.setTemplateData(data);
+		// TopNetworkTemplateData data = new TopNetworkTemplateData();
+		// data.computeTemplateMaps(network, clkDomains);
+		// network.setTemplateData(data);
 
 		// Print Network
 		printNetwork(network);
@@ -278,6 +273,7 @@ public class Chronos extends AbstractBackend {
 		OrccLogger.traceln("Generating Network...");
 
 		ChronosPrinter chronosPrinter = new ChronosPrinter();
+		chronosPrinter.getOptions().put("clkDomains", clkDomains);
 		chronosPrinter.printNetwork(rtlPath, network);
 
 		if (generateGoDone) {
