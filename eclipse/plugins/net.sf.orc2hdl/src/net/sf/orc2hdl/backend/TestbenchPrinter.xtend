@@ -44,6 +44,8 @@ import java.util.List
  * @author Endri Bezati
  */
 class TestbenchPrinter extends IrSwitch {
+	var Boolean goDone;
+	
 	def headerComments(Object object, String string){
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
@@ -67,14 +69,26 @@ class TestbenchPrinter extends IrSwitch {
 	
 	def addLibraries(){
 		'''
-		library ieee, SystemBuilder;
-		use ieee.std_logic_1164.all;
-		use ieee.std_logic_unsigned.all;
-		use ieee.numeric_std.all;
-		use std.textio.all;
+		«IF goDone»
+			library ieee;
+			use ieee.std_logic_1164.all;
+			use ieee.std_logic_unsigned.all;
+			use ieee.numeric_std.all;
 
-		library work;
-		use work.sim_package.all;
+			library std;
+			use std.textio.all;
+
+			library work;
+		«ELSE»
+			library ieee, SystemBuilder;
+			use ieee.std_logic_1164.all;
+			use ieee.std_logic_unsigned.all;
+			use ieee.numeric_std.all;
+			use std.textio.all;
+
+			library work;
+			use work.sim_package.all;
+		«ENDIF»
 		'''
 	}
 	
@@ -85,6 +99,9 @@ class TestbenchPrinter extends IrSwitch {
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
 		} 
+		if(goDone){
+			name = name + "_goDone"
+		}
 		'''
 		entity «name»_tb is
 		end «name»_tb;
@@ -97,7 +114,7 @@ class TestbenchPrinter extends IrSwitch {
 			name = (vertex as Instance).simpleName;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
-		} 
+		}
 		'''
 		architecture arch_«name»_tb of «name»_tb is
 			«addArchitectureComponent(vertex)»
@@ -109,6 +126,169 @@ class TestbenchPrinter extends IrSwitch {
 		'''
 	}
 	
+	def addArchitectureGoDone(Network network){
+		'''
+		architecture arch_«network.simpleName»_goDone_tb of «network.simpleName»_goDone_tb is
+			----------------------------------------------------------------------------
+			-- Output Files
+			----------------------------------------------------------------------------
+			«FOR vertex: network.vertices»
+				«IF vertex instanceof Instance»
+					«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
+					file f_«(vertex as Instance).simpleName»_«action.name»: TEXT;
+					«ENDFOR»
+				«ENDIF»
+			«ENDFOR»
+			
+			----------------------------------------------------------------------------
+			-- Component declaration
+			----------------------------------------------------------------------------
+			«addArchitectureComponent(network)»
+			
+			----------------------------------------------------------------------------
+			-- Network Output Signlas
+			----------------------------------------------------------------------------
+			«FOR port: network.outputs»
+				«IF port.type.bool || port.type.sizeInBits == 1»
+				signal «port.name»_DATA : std_logic;
+				«ELSE»
+				signal «port.name»_DATA : std_logic_vector(«port.type.sizeInBits-1» downto 0);
+				«ENDIF»
+				signal «port.name»_SEND : std_logic;
+				signal «port.name»_ACK : std_logic;
+				signal «port.name»_COUNT : std_logic_vector(15 downto 0);
+			«ENDFOR»
+			
+			----------------------------------------------------------------------------
+			-- Actions GO and DONE
+			----------------------------------------------------------------------------
+			«FOR vertex: network.vertices»
+				«IF vertex instanceof Instance»
+					«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
+					signal «(vertex as Instance).simpleName»_«action.name»_go : std_logic;
+					signal «(vertex as Instance).simpleName»_«action.name»_done : std_logic;
+					«ENDFOR»
+				«ENDIF»
+			«ENDFOR»
+			---------------------------------------------------------------------------
+			-- Constant and Clock, Reset declaration
+			--------------------------------------------------------------------------- 
+			constant PERIOD : time := 50 ns;
+			constant DUTY_CYCLE : real := 0.5;
+			constant OFFSET : time := 100 ns;
+		
+			signal CLK : std_logic := '0';
+		 	signal RESET : std_logic := '0';
+			
+			---------------------------------------------------------------------------
+			-- Functions declaration
+			--------------------------------------------------------------------------- 
+			function chr(sl : std_logic) return character is
+				variable c : character;
+			begin
+				case sl is
+					when 'U' =\> c := 'U';
+					when 'X' =\> c := 'X';
+					when '0' =\> c := '0';
+					when '1' =\> c := '1';
+					when 'Z' =\> c := 'Z';
+					when 'W' =\> c := 'W';
+					when 'L' =\> c := 'L';
+					when 'H' =\> c := 'H';
+					when '-' =\> c := '-';
+				end case;
+				return c;
+			end chr;
+			
+			function str(sl : std_logic) return string is
+			variable 
+				s : string(1 to 1);
+			begin
+				s(1) := chr(sl);
+				return s;
+			end str;
+		
+		begin
+			-- Output Files 
+			«FOR vertex: network.vertices»
+				«IF vertex instanceof Instance»
+					«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
+					file_open(f_«(vertex as Instance).simpleName»_«action.name», "weights/«(vertex as Instance).simpleName»_«action.name».txt", WRITE_MODE);
+					«ENDFOR»
+				«ENDIF»
+			«ENDFOR»
+			
+			-- Instantiate Network component with signals
+			n_«network.simpleName» : component «network.simpleName»
+			port map(
+				«FOR port: network.outputs SEPARATOR "\n"»
+					«port.name»_DATA => «port.name»_DATA,
+					«port.name»_SEND => «port.name»_SEND,
+					«port.name»_ACK => «port.name»_ACK,
+					«port.name»_RDY => «port.name»_RDY,
+					«port.name»_COUNT => «port.name»_COUNT,
+				«ENDFOR»
+				«FOR vertex: network.vertices»
+					«IF vertex instanceof Instance»
+						«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
+						«(vertex as Instance).simpleName»_«action.name»_go => «(vertex as Instance).simpleName»_«action.name»_go, 
+						«(vertex as Instance).simpleName»_«action.name»_done => «(vertex as Instance).simpleName»_«action.name»_done,
+						«ENDFOR»
+					«ENDIF»
+				«ENDFOR»
+				CLK =\> CLK,
+				RESET =\> RESET
+			);
+			
+			-- Make a virtual infinite queue for the Output(s)
+			«FOR port: network.outputs»
+				«port.name»_ACK \<= «port.name»_SEND;
+				«port.name»_RDY \<='1';
+			«ENDFOR»
+			
+				clKProcess : process
+				begin
+					wait for OFFSET;
+			    clock_LOOP : loop
+			      CLK \<= '0';
+			      wait for (PERIOD - (PERIOD * DUTY_CYCLE));
+			      CLK \<= '1';
+			      wait for (PERIOD * DUTY_CYCLE);
+			    end loop clock_LOOP;
+				end process;
+			
+				resetProcess : process
+				begin		
+					wait for OFFSET;
+					-- reset state for 500 ns.
+			    	RESET \<= '1';
+					wait for 500 ns;
+					RESET \<= '0';	
+					wait;
+				end process;
+				
+				writeProcess : process(CLK, RESET)
+				variable countClk: integer := 0;
+				variable l : line;
+				
+				begin
+					if (RESET = '1' ) then			
+						countClk := 0;
+					elsif (rising_edge(CLK)) then
+						«FOR vertex: network.vertices»
+							«IF vertex instanceof Instance»
+								«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
+									write(l, string'(integer'image(countClk)&";"&str(«(vertex as Instance).simpleName»_«action.name»_go)&";"&str(«(vertex as Instance).simpleName»_«action.name»_done)&";"));
+									writeline(f_«(vertex as Instance).simpleName»_«action.name», l );
+								«ENDFOR»
+							«ENDIF»
+						«ENDFOR»
+						countClk := countClk + 100;			
+					end if;
+				end process;   
+		end architecture arch_«network.simpleName»_goDone_tb; 
+		'''
+	}
 	
 	def addArchitectureComponent(Vertex vertex){
 		var String name;
@@ -135,6 +315,9 @@ class TestbenchPrinter extends IrSwitch {
 		    «FOR port: outputPorts»
 		    «addComponentPort(port,"OUT","IN")»
 		    «ENDFOR»
+		    «IF goDone»
+		    	«addGoDoneComponentPort((vertex as Network))»
+		    «ENDIF»
 		    CLK: IN std_logic;
 		    RESET: IN std_logic);
 		end component «name»;
@@ -154,6 +337,19 @@ class TestbenchPrinter extends IrSwitch {
 		«port.name»_rdy : «dirB» std_logic;
 		«ENDIF»
 		«port.name»_count : «dirA» std_logic_vector(15 downto 0);
+		'''
+	}
+	
+	def addGoDoneComponentPort(Network network){
+		'''
+		«FOR vertex: network.vertices»
+				«IF vertex instanceof Instance»
+					«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
+					«(vertex as Instance).simpleName»_«action.name»_go : OUT std_logic;
+					«(vertex as Instance).simpleName»_«action.name»_done : OUT std_logic;
+					«ENDFOR»
+				«ENDIF»
+		«ENDFOR»
 		'''
 	}
 	
@@ -446,12 +642,18 @@ class TestbenchPrinter extends IrSwitch {
 	}
 	
 	def printGoDone(Network network, Map<String,Object> options){
+		goDone = true;
 		'''
-		«headerComments(network,"Go and Done Generator for Network:")»
+		«headerComments(network,"Go and Done Generator :")»
+		
+		«addLibraries()»
+		
+		«addEntity(network)»
 		'''
 	}
 	
 	def printInstance(Instance instance, Map<String,Object> options){
+		goDone = false;
 		'''
 		«headerComments(instance,"")»
 		
@@ -464,6 +666,7 @@ class TestbenchPrinter extends IrSwitch {
 	}
 	
 	def printNetwork(Network network, Map<String,Object> options){
+		goDone = false;
 		'''
 		«headerComments(network,"")»
 		

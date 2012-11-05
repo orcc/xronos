@@ -5,11 +5,8 @@ import static net.sf.orcc.OrccLaunchConstants.MAPPING;
 import static net.sf.orcc.OrccLaunchConstants.NO_LIBRARY_EXPORT;
 
 import java.io.File;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +14,6 @@ import java.util.Map;
 import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
 import net.sf.orc2hdl.backend.transform.RepeatPattern;
-import net.sf.orc2hdl.printer.Orc2HDLPrinter;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.transform.CastAdder;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
@@ -27,8 +23,6 @@ import net.sf.orcc.backends.transform.LocalArrayRemoval;
 import net.sf.orcc.backends.transform.StoreOnceTransformation;
 import net.sf.orcc.backends.transform.UnaryListRemoval;
 import net.sf.orcc.backends.xlim.XlimActorTemplateData;
-import net.sf.orcc.backends.xlim.XlimExprPrinter;
-import net.sf.orcc.backends.xlim.XlimTypePrinter;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
@@ -52,7 +46,7 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 
 /**
- * The Chronos (ex OpenForge) Orcc Front-End.
+ * The Chronos Orcc Front-End.
  * 
  * @author Endri Bezati
  * 
@@ -155,7 +149,6 @@ public class Chronos extends AbstractBackend {
 		XlimActorTemplateData data = new XlimActorTemplateData();
 		actor.setTemplateData(data);
 		if (!actor.isNative()) {
-
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
@@ -283,144 +276,15 @@ public class Chronos extends AbstractBackend {
 
 	private void printNetwork(Network network) {
 		OrccLogger.traceln("Generating Network...");
-		// Get the current time
-		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		Date date = new Date();
 
-		String currentTime = dateFormat.format(date);
-
-		Orc2HDLPrinter printer;
-		String file = network.getSimpleName();
-
-		file += ".vhd";
-		printer = new Orc2HDLPrinter("net/sf/orc2hdl/templates/Network.stg");
-
-		printer.setExpressionPrinter(new XlimExprPrinter());
-		printer.setTypePrinter(new XlimTypePrinter());
-		printer.getOptions().put("fifoSize", fifoSize);
-		printer.getOptions().put("currentTime", currentTime);
-
-		printer.print(file, rtlPath, network);
-
-		// Print the network testbench
-		// printTestbench(network);
+		ChronosPrinter chronosPrinter = new ChronosPrinter();
+		chronosPrinter.printNetwork(rtlPath, network);
 
 		if (generateGoDone) {
-			printer.getOptions().put("generateGoDone", generateGoDone);
-			printer.print(file, rtlGoDonePath, network);
-			printer = new Orc2HDLPrinter(
-					"net/sf/orc2hdl/templates/GoDoneTestBench.stg");
-			printer.setExpressionPrinter(new XlimExprPrinter());
-			printer.setTypePrinter(new XlimTypePrinter());
-			printer.getOptions().put("currentTime", currentTime);
-			file = "tb_" + network.getSimpleName() + ".vhd";
-			printer.print(file, rtlGoDonePath, network);
+			chronosPrinter.getOptions().put("generateGoDone", generateGoDone);
+			chronosPrinter.printNetwork(rtlGoDonePath, network);
 		}
 
-	}
-
-	// TODO: to be removed
-	@SuppressWarnings("unused")
-	private void printSimFiles(Network network) {
-		// Get the current time
-		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		Date date = new Date();
-
-		String currentTime = dateFormat.format(date);
-
-		Orc2HDLPrinter printer;
-
-		printer = new Orc2HDLPrinter("net/sf/orc2hdl/templates/Top_Sim_do.stg");
-		printer.setExpressionPrinter(new XlimExprPrinter());
-		printer.setTypePrinter(new XlimTypePrinter());
-		printer.getOptions().put("currentTime", currentTime);
-		printer.getOptions().put("xilinxPrimitives", xilinxPrimitives);
-
-		String file = network.getName();
-		file = "sim_" + network.getSimpleName() + ".do";
-		printer.print(file, simPath, network);
-
-		if (generateGoDone) {
-			// Print Simulation Do file with Go and Done on Top Modules
-			printer.getOptions().put("generateGoDone", generateGoDone);
-			file = "sim_" + network.getSimpleName() + "_goDone" + ".do";
-			new File(simPath).mkdir();
-			printer.print(file, simPath, network);
-
-			// Print Go Done Weights Simulation file
-			String weightsPath = simPath + File.separator + "weights";
-			File weightsDir = new File(weightsPath);
-			if (!weightsDir.exists()) {
-				weightsDir.mkdir();
-			}
-			printer.getOptions().put("generateGoDone", generateGoDone);
-			printer.getOptions().put("modelsimAnalysis", generateGoDone);
-			printer.getOptions().put("simTime", "10000");
-			file = "sim_weights_" + network.getSimpleName() + ".do";
-			new File(simPath).mkdir();
-			printer.print(file, simPath, network);
-		}
-	}
-
-	// TODO: to be removed
-	@SuppressWarnings("unused")
-	private void printTestbench(Instance instance) {
-		// Print TCL Script
-		Orc2HDLPrinter printer = new Orc2HDLPrinter(
-				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
-		printer.getOptions().put("xilinxPrimitives", xilinxPrimitives);
-		printer.print("tcl_" + instance.getSimpleName() + ".tcl",
-				testBenchPath, instance);
-		// Create VHD folder
-		String tbVhdPath = testBenchPath + File.separator + "vhd";
-		File tbVhdDir = new File(tbVhdPath);
-		if (!tbVhdDir.exists()) {
-			tbVhdDir.mkdir();
-		}
-
-		// Create the fifoTraces folder
-		String tracePath = testBenchPath + File.separator + "fifoTraces";
-		File fifoTracesDir = new File(tracePath);
-		if (!fifoTracesDir.exists()) {
-			fifoTracesDir.mkdir();
-		}
-
-		// Print the VHD testbenches
-		Orc2HDLPrinter tbPrinter = new Orc2HDLPrinter(
-				"net/sf/orc2hdl/templates/ModelSim_Testbench.stg");
-		tbPrinter.getOptions().put("tracePath", tracePath);
-		tbPrinter.print(instance.getSimpleName() + "_tb.vhd", tbVhdPath,
-				instance);
-	}
-
-	@SuppressWarnings("unused")
-	private void printTestbench(Network network) {
-		// Print TCL Script
-		Orc2HDLPrinter printer = new Orc2HDLPrinter(
-				"net/sf/orc2hdl/templates/ModelSim_Script.stg");
-		printer.getOptions().put("xilinxPrimitives", xilinxPrimitives);
-		printer.print("tcl_" + network.getSimpleName() + ".tcl", testBenchPath,
-				network);
-		// Create VHD folder
-		String tbVhdPath = testBenchPath + File.separator + "vhd";
-		File tbVhdDir = new File(tbVhdPath);
-		if (!tbVhdDir.exists()) {
-			tbVhdDir.mkdir();
-		}
-
-		// Create the fifoTraces folder
-		String tracePath = testBenchPath + File.separator + "fifoTraces";
-		File fifoTracesDir = new File(tracePath);
-		if (!fifoTracesDir.exists()) {
-			fifoTracesDir.mkdir();
-		}
-
-		// Print the VHD testbenches
-		Orc2HDLPrinter tbPrinter = new Orc2HDLPrinter(
-				"net/sf/orc2hdl/templates/ModelSim_Testbench.stg");
-		tbPrinter.getOptions().put("tracePath", tracePath);
-		tbPrinter
-				.print(network.getSimpleName() + "_tb.vhd", tbVhdPath, network);
 	}
 
 	private void printTestbenches(Network network) {
@@ -445,7 +309,17 @@ public class Chronos extends AbstractBackend {
 		chronosPrinter.getOptions().put("xilinxPrimitives", xilinxPrimitives);
 
 		// Print the network TCL ModelSim simulation script
-		chronosPrinter.printTclScript(simPath, false, network);
+		chronosPrinter.printSimTclScript(simPath, false, network);
+		if (generateGoDone) {
+			chronosPrinter.getOptions().put("generateGoDone", generateGoDone);
+			// Create the weights path
+			File weightsPath = new File(simPath + File.separator + "weights");
+			if (!weightsPath.exists()) {
+				weightsPath.mkdir();
+			}
+			chronosPrinter.printWeightTclScript(simPath, network);
+			chronosPrinter.printSimTclScript(simPath, true, network);
+		}
 
 		// print the network VHDL Testbech sourcefile
 		chronosPrinter.printTestbench(tbVhdPath, network);

@@ -249,27 +249,53 @@ public class ChronosPrinter {
 	public boolean printTclScript(String path, Boolean testBench, Vertex vertex) {
 		String file = null;
 		CharSequence sequence = null;
-		String prefix = testBench ? "tcl_" : "sim_";
 		if (vertex instanceof Instance) {
-			file = path + File.separator + prefix
+			file = path + File.separator + "tcl_"
 					+ ((Instance) vertex).getSimpleName() + ".tcl";
 			sequence = new TclScriptPrinter().printInstanceTestbenchTclScript(
 					(Instance) vertex, options);
-
 		} else if (vertex instanceof Network) {
-			file = path + File.separator + prefix
+			file = path + File.separator + "tcl_"
 					+ ((Network) vertex).getSimpleName() + ".tcl";
-			if (testBench) {
-				sequence = new TclScriptPrinter()
-						.printNetworkTestbenchTclScript((Network) vertex,
-								options);
-			} else {
-				sequence = new TclScriptPrinter().printNetworkTclScript(
-						(Network) vertex, options);
-			}
+			sequence = new TclScriptPrinter().printNetworkTestbenchTclScript(
+					(Network) vertex, options);
 		}
 
 		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		return false;
+	}
+
+	public boolean printSimTclScript(String path, Boolean weights,
+			Network network) {
+		try {
+			String prefix = weights ? "sim_goDone_" : "sim_";
+			String file = path + File.separator + prefix
+					+ network.getSimpleName() + ".tcl";
+
+			CharSequence sequence = new TclScriptPrinter()
+					.printNetworkTclScript(network, options);
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		return false;
+	}
+
+	public boolean printWeightTclScript(String path, Network network) {
+		try {
+			String file = path + File.separator + "generateWeights_"
+					+ network.getSimpleName() + ".tcl";
+
+			CharSequence sequence = new TclScriptPrinter()
+					.printNetworkTclScript(network, options);
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
 			ps.close();
