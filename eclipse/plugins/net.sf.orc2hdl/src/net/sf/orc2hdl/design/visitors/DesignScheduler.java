@@ -412,10 +412,6 @@ public class DesignScheduler extends DfVisitor<Task> {
 					ActionIOHandler ioHandler = resources.getIOHandler(port);
 					Component peekComponent = ioHandler.getTokenPeekAccess();
 					peekComponent.setNonRemovable();
-					// the peek is supported only in the head of the queue
-					// PortUtil.mapInDataPorts(peekComponent,
-					// inOutVars.getAsList(), portDependency,
-					// portGroupDependency);
 
 					PortUtil.mapOutDataPorts(peekComponent, peekVar,
 							busDependency, doneBusDependency);

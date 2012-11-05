@@ -249,14 +249,15 @@ public class ChronosPrinter {
 	public boolean printTclScript(String path, Boolean testBench, Vertex vertex) {
 		String file = null;
 		CharSequence sequence = null;
+		String prefix = testBench ? "tcl_" : "sim_";
 		if (vertex instanceof Instance) {
-			file = path + File.separator + "tcl_"
+			file = path + File.separator + prefix
 					+ ((Instance) vertex).getSimpleName() + ".tcl";
 			sequence = new TclScriptPrinter().printInstanceTestbenchTclScript(
 					(Instance) vertex, options);
 
 		} else if (vertex instanceof Network) {
-			file = path + File.separator + "tcl_"
+			file = path + File.separator + prefix
 					+ ((Network) vertex).getSimpleName() + ".tcl";
 			if (testBench) {
 				sequence = new TclScriptPrinter()

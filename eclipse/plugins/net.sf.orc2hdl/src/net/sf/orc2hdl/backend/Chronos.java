@@ -303,7 +303,7 @@ public class Chronos extends AbstractBackend {
 		printer.print(file, rtlPath, network);
 
 		// Print the network testbench
-		printTestbench(network);
+		// printTestbench(network);
 
 		if (generateGoDone) {
 			printer.getOptions().put("generateGoDone", generateGoDone);
@@ -393,6 +393,7 @@ public class Chronos extends AbstractBackend {
 				instance);
 	}
 
+	@SuppressWarnings("unused")
 	private void printTestbench(Network network) {
 		// Print TCL Script
 		Orc2HDLPrinter printer = new Orc2HDLPrinter(
@@ -456,6 +457,7 @@ public class Chronos extends AbstractBackend {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
 				chronosPrinter.printTestbench(tbVhdPath, instance);
+				chronosPrinter.printTclScript(testBenchPath, true, instance);
 			}
 		}
 	}

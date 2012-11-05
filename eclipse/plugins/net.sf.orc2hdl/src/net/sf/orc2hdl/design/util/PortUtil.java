@@ -139,6 +139,7 @@ public class PortUtil {
 		// Create pin Status component from the ioHandler of the Port
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 		Component pinStatusComponent = ioHandler.getStatusAccess();
+		pinStatusComponent.setNonRemovable();
 
 		Type type = IrFactory.eINSTANCE.createTypeBool();
 		Var pinStatusVar = IrFactory.eINSTANCE.createVar(0, type,

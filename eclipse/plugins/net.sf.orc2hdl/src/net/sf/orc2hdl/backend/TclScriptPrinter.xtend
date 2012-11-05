@@ -113,7 +113,7 @@ class TclScriptPrinter extends IrSwitch {
 		}
 		'''
 		## Create the work design library
-		if {[file exist «workName»]} {rm -r work}
+		if {[file exist «workName»]} {rm -r «workName»}
 		vlib «workName»
 		vmap «workName» «workName»
 		
@@ -148,36 +148,59 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 	}
 	
-	def startSimulation(Network network){
+	def startSimulation(Vertex vertex){
+		var String name;
+		if(vertex instanceof Instance){
+			name = (vertex as Instance).simpleName;
+		}else if(vertex instanceof Network){
+			name = (vertex as Network).simpleName;
+		} 
+		var String workName;
+		var String simName;
+		if(testbench){
+			workName = "work_" + name;
+			simName = name+"_tb";
+		}else{
+			workName = "work";
+			simName = name;
+		}
+		
 		'''
 		## Start VSIM
 		«IF(xilinxPrimitives)»
-			vsim -L xilinxPrimitives -t ns work.glbl work.«network.simpleName»
+			vsim -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
 		«ELSE»
-			vsim -L unisims_ver -L simprims_ver -t ns work.glbl work.«network.simpleName»
+			vsim -L unisims_ver -L simprims_ver -t ns «workName».glbl «workName».«simName»
 		«ENDIF»	
 			
 		## Add clock(s) and reset signal
 		add wave -noupdate -divider -height 20 "CLK & RESET"
-		add wave sim:/«network.simpleName»/CLK
-		add wave sim:/«network.simpleName»/RESET
+		add wave sim:/«simName»/CLK
+		add wave sim:/«simName»/RESET
 		
 		## Change radix to decimal
 		radix -decimal
 		'''
 	}
 	
-	def addInstanceIO(Instance instance){
+	def addInstanceIO(Network network,Instance instance){
+		var String name = network.simpleName;
+		var String simName;
+		if(testbench){
+			simName = name + "_tb";
+		}else{
+			simName = name;
+		}
 		'''
 		add wave -noupdate -divider -height 20 i_«instance.simpleName»
 		«FOR port : instance.actor.inputs SEPARATOR "\n"»
-			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_DATA
-			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_ACK
+			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA
+			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_ACK
 		«ENDFOR» 
 		«FOR port : instance.actor.outputs SEPARATOR "\n"»
-			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_DATA
-			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_SEND
-			add wave sim:/«network.simpleName»/i_«instance.simpleName»/«port.name»_RDY
+			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA
+			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_SEND
+			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_RDY
 		«ENDFOR» 
 		'''
 		
@@ -187,7 +210,7 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 		«FOR vertex : network.vertices»
 		«IF vertex instanceof Instance»
-			«addInstanceIO(vertex as Instance)»
+			«addInstanceIO(network,vertex as Instance)»
 		«ENDIF»
 		«ENDFOR»	
 		
@@ -198,31 +221,46 @@ class TclScriptPrinter extends IrSwitch {
 	}
 	
 	def addNetworkOuputSignals(Network network){
+		var String name = network.simpleName;
+		var String simName;
+		if(testbench){
+			simName = name + "_tb";
+		}else{
+			simName = name;
+		}
 		'''
 		«FOR port : network.outputs SEPARATOR "\n"»
 		add wave -noupdate -divider -height 20 no_«port.name»
-		add wave sim:/«network.simpleName»/«port.name»_DATA
+		add wave sim:/«simName»/«port.name»_DATA
 		«IF (!port.native)»
-			add wave sim:/«network.simpleName»/«port.name»_SEND
-			add wave sim:/«network.simpleName»/«port.name»_ACK
-			add wave sim:/«network.simpleName»/«port.name»_RDY
-			
-			## Freeze ACK and RDY at 1
-			force -freeze sim:/«network.simpleName»/«port.name»_ACK 1 0
-			force -freeze sim:/«network.simpleName»/«port.name»_RDY 1 0
+			add wave sim:/«simName»/«port.name»_SEND
+			add wave sim:/«simName»/«port.name»_ACK
+			add wave sim:/«simName»/«port.name»_RDY
+			«IF (!testbench)»
+				## Freeze ACK and RDY at 1
+				force -freeze sim:/«simName»/«port.name»_ACK 1 0
+				force -freeze sim:/«simName»/«port.name»_RDY 1 0
+			«ENDIF»
 		«ENDIF»
 		«ENDFOR»
 		'''
 	}
 	
 	def addNetworkFullFifoSignal(Network network){
+		var String name = network.simpleName;
+		var String simName;
+		if(testbench){
+			simName = name + "_tb";
+		}else{
+			simName = name;
+		}
 		'''
 		## FIFO FULL
 		add wave -noupdate -divider -height 20 "FIFO FULL"
 		«FOR vertex : network.vertices»
 			«IF vertex instanceof Instance»
 				«FOR port : (vertex as Instance).actor.inputs»
-				add wave sim:/«network.simpleName»/q_ai_«(vertex as Instance).simpleName»_«port.name»/fifo/msync_full 
+				add wave sim:/«simName»/q_ai_«(vertex as Instance).simpleName»_«port.name»/fifo/msync_full 
 				«ENDFOR»
 			«ENDIF»
 		«ENDFOR»
@@ -303,6 +341,10 @@ class TclScriptPrinter extends IrSwitch {
 		«setPathandLibrariesLibraries()»
 		
 		«setWorkLibrary(network)»
+		
+		«startSimulation(network)»
+		
+		«addNetworkSignalsToWave(network)»
 		'''
 	}
 	
@@ -330,6 +372,13 @@ class TclScriptPrinter extends IrSwitch {
 		«headerComments(instance,"Testbench")»
 		
 		«setPathandLibrariesLibraries()»
+		
+		«setWorkLibrary(instance)»
+		
+		«startSimulation(instance)»
+		
+		# Add signals to the wave
+		add wave sim:/«instance.simpleName»_tb/*
 		'''
 	}
 }
