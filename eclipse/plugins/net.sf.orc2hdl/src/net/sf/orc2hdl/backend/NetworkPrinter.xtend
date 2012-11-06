@@ -51,6 +51,8 @@ class NetworkPrinter extends IrSwitch {
 	
 	var Network network;
 	
+	var Map<String,Object> options
+	
 	var String DEFAULT_CLOCK_DOMAIN = "CLK";
 		/**
 	 * Map which contains the Clock Domain of a port
@@ -235,7 +237,7 @@ class NetworkPrinter extends IrSwitch {
 	def printClockInformation(){
 		'''
 		-- ----------------------------------------------------------------------------
-		-- Clock Informations on the Network "«network.simpleName»"
+		-- Clock Domain(s) Information on the Network "«network.simpleName»"
 		--
 		-- Network input port(s) clock domain:
 		«FOR port: network.inputs»
@@ -255,9 +257,16 @@ class NetworkPrinter extends IrSwitch {
 	}
 	
 	def printLibrary(){
+		var Boolean systemActors = false;
+		for(Instance instance: network.children.filter(typeof(Instance)).filter[isActor]){
+			if (instance.actor.native){
+				systemActors = true;
+			}
+		}
 		'''
 		library ieee;
 		library SystemBuilder;
+		«IF systemActors»library SystemActors;«ENDIF»
 		
 		use ieee.std_logic_1164.all;
 		'''
@@ -275,6 +284,17 @@ class NetworkPrinter extends IrSwitch {
 			 «FOR port: network.outputs»
 			 	«addDeclarationPort(port,"out","in")»
 			 «ENDFOR»
+			 «IF options.containsKey("generateGoDone")»
+			 	«FOR instance: network.children.filter(typeof(Instance)).filter[isActor]»
+			 		«IF !instance.actor.native»
+			 			-- Instance «instance.simpleName» Actions Go and Done
+			 			«FOR action: instance.actor.actions»
+			 				«instance.simpleName»_«action.name»_go : in std_logic;
+			 				«instance.simpleName»_«action.name»_done : in std_logic;
+			 			«ENDFOR»
+			 		«ENDIF»
+			 	«ENDFOR»
+			 «ENDIF»
 			 -- Clock(s) and Reset
 			 «FOR string: clockDomainsIndex.keySet SEPARATOR "\n"»
 			 «string» : in std_logic;
@@ -293,7 +313,7 @@ class NetworkPrinter extends IrSwitch {
 		«ENDIF»
 		«port.name»_send : «dirA» std_logic;
 		«port.name»_ack : «dirB» std_logic;
-		«IF dirA.equals("OUT")»
+		«IF dirA.equals("out")»
 		«port.name»_rdy : «dirB» std_logic;
 		«ENDIF»
 		«port.name»_count : «dirA» std_logic_vector(15 downto 0);
@@ -310,7 +330,7 @@ class NetworkPrinter extends IrSwitch {
 			-- Clock(s) and Reset signal
 			signal clocks, resets: std_logic_vector(«clockDomainsIndex.size  - 1» downto 0);
 		
-			-- Network Input Port 
+			-- Network Input Port(s)
 			«FOR port: network.inputs»
 				«printSignal(port,"","ni",0,true)»
 			«ENDFOR»
@@ -319,9 +339,101 @@ class NetworkPrinter extends IrSwitch {
 			«FOR port: network.inputs»
 				«printSignal(port,"","nif",networkPortFanout.get(port),true)»
 			«ENDFOR»
+			
+			-- Network Output Port(s) 
+			«FOR port: network.outputs»
+				«printSignal(port,"","no",0,false)»
+			«ENDFOR»
+			
+			-- Actors Input/Output and Output fanout signals
+			«FOR instance: network.children.filter(typeof(Instance)).filter[isActor] SEPARATOR "\n"»
+				«FOR port: instance.actor.inputs SEPARATOR "\n"»
+					«printSignal(port,instance.simpleName+"_","ai",0,true)»
+				«ENDFOR»
+				
+				«FOR port: instance.actor.outputs SEPARATOR "\n"»
+					«printSignal(port,instance.simpleName+"_","ao",0,false)»
+					
+					«printSignal(port,instance.simpleName+"_","aof",instance.outgoingPortMap.size,false)»
+				«ENDFOR»
+			«ENDFOR»
+		
 			-- --------------------------------------------------------------------------
 			-- Network Instances
 			-- --------------------------------------------------------------------------
+			«printArchitectureComponents()»
+		
+		begin
+			-- Reset Controller
+			rcon: entity SystemBuilder.resetController(behavioral)
+			generic map(count => «clockDomainsIndex.size»)
+			port map( 
+			         clocks => clocks, 
+			         reset_in => reset, 
+			         resets => resets);
+			
+			«FOR clk: clockDomainsIndex.keySet»
+				clocks(«clockDomainsIndex.get(clk)») <= «clk»;
+			«ENDFOR»
+		
+			-- --------------------------------------------------------------------------
+			-- Actor instances
+			-- --------------------------------------------------------------------------
+			«printInstanceConnection()»
+			
+			-- --------------------------------------------------------------------------
+			-- Nework Input Fanouts
+			-- --------------------------------------------------------------------------
+			«FOR port: network.inputs»
+				«addFannout(port, "ni", "nif", null)»
+			«ENDFOR»
+		
+			-- --------------------------------------------------------------------------
+			-- Actor Output Fanouts
+			-- --------------------------------------------------------------------------
+			«FOR instance: network.children.filter(typeof(Instance)).filter[isActor] SEPARATOR "\n"»
+				«FOR port: instance.actor.outputs»
+					«addFannout(port, "ao", "aof", instance)»
+				«ENDFOR»
+			«ENDFOR»
+		
+			-- --------------------------------------------------------------------------
+			-- Queues
+			-- --------------------------------------------------------------------------
+			«FOR connection: network.connections SEPARATOR "\n"»
+				«IF connection.source instanceof Port»
+					«IF connection.target instanceof Instance»
+						«addQeueu(connection.source as Port, connection.targetPort, null, connection.target as Instance, connection, "ai", "nif")»
+					«ENDIF»
+				«ELSEIF connection.source instanceof Instance»
+					«IF connection.target instanceof Port»
+						«addQeueu(connection.sourcePort, connection.target as Port, connection.source as Instance, null, connection, "no", "aof")»
+					«ELSEIF connection.target instanceof Instance»
+						«addQeueu(connection.sourcePort, connection.targetPort, connection.source as Instance, connection.target as Instance, connection, "ai", "aof")»
+					«ENDIF»
+				«ENDIF»
+			«ENDFOR»
+		
+			-- --------------------------------------------------------------------------
+			-- Network port(s) instantiation
+			-- --------------------------------------------------------------------------
+			
+			-- Output Port(s) Instantiation
+			«FOR port: network.outputs»
+				«port.name»_data <= no_«port.name»_data;
+				«port.name»_send <= no_«port.name»_send;
+				no_«port.name»_ack <= «port.name»_ack;
+				no_«port.name»_rdy <= «port.name»_rdy;
+				«port.name»_count <= no_«port.name»_count;
+			«ENDFOR»
+			
+			-- Input Port(s) Instantiation
+			«FOR port: network.inputs»
+				ni_«port.name»_data <= «port.name»_data;
+				ni_«port.name»_send <= «port.name»_send;
+				«port.name»_ack <= ni_«port.name»_ack;
+				ni_«port.name»_count <= «port.name»_count;
+			«ENDFOR»
 		end architecture rtl;
 		'''
 	}
@@ -343,23 +455,177 @@ class NetworkPrinter extends IrSwitch {
 		«IF port.native»
 			signal «port.name»_data : «dataSize»;
 		«ELSE»
-			signal «prefix»_«owner»«port.name»_DATA : «dataSize»;
-			signal «prefix»_«owner»«port.name»_SEND : «fanoutSize»;
-			signal «prefix»_«owner»«port.name»_ACK : «fanoutSize»;
-			«IF !input»signal «prefix»_«owner»«port.name»_RDY : «fanoutSize»;«ENDIF»
-			signal «prefix»_«owner»«port.name»_COUNT : std_logic_vector(15 downto 0);
+			signal «prefix»_«owner»«port.name»_data : «dataSize»;
+			signal «prefix»_«owner»«port.name»_send : «fanoutSize»;
+			signal «prefix»_«owner»«port.name»_ack : «fanoutSize»;
+			«IF !input»signal «prefix»_«owner»«port.name»_rdy : «fanoutSize»;«ENDIF»
+			signal «prefix»_«owner»«port.name»_count : std_logic_vector(15 downto 0);
 		«ENDIF»
 		'''
 	}
 	
+	def printArchitectureComponents(){
+		'''
+		«FOR instance: network.children.filter(typeof(Instance)).filter[isActor] SEPARATOR "\n"»
+			«IF !instance.actor.native»
+			component «instance.simpleName» is
+			port(
+			     -- Instance «instance.simpleName» Input(s)
+			     «FOR port: instance.actor.inputs»
+			     	«addDeclarationPort(port,"in","out")»
+			     «ENDFOR»
+			     -- Instance «instance.simpleName» Output(s)
+			     «FOR port: instance.actor.outputs»
+			     	«addDeclarationPort(port,"out","in")»
+			     «ENDFOR»
+			     «IF options.containsKey("generateGoDone")»
+			     	-- Instance «instance.simpleName» Actions Go and Done
+			     	«FOR action: instance.actor.actions SEPARATOR "\n"»
+			     		«action.name»_go : in std_logic;
+			     		«action.name»_done : in std_logic;
+			    	«ENDFOR»
+			     «ENDIF»
+			     clk: in std_logic;
+			     reset: in std_logic);
+			end component «instance.simpleName»;
+			«ENDIF»
+		«ENDFOR»
+		'''
+	}
+	
+	def printInstanceConnection(){
+		'''
+		«FOR instance: network.children.filter(typeof(Instance)).filter[isActor] SEPARATOR "\n"»
+			«IF instance.actor.native»
+				-- «instance.simpleName» (System Actor)
+				i_«instance.simpleName» : entity SystemActors.«instance.simpleName»(behavioral)
+				«IF !instance.actor.parameters.empty»
+				generic map(
+					-- Not currently supported
+				)
+				«ENDIF»
+			«ELSE»
+			i_«instance.simpleName» : component «instance.simpleName»
+			«ENDIF»
+			port map(
+				-- Instance «instance.simpleName» Input(s)
+				«FOR port: instance.actor.inputs SEPARATOR "\n"»
+					«addSignalConnection(instance, port, "ai", "In", true, null, false)»
+				«ENDFOR»
+				-- Instance «instance.simpleName» Output(s)
+				«FOR port: instance.actor.outputs SEPARATOR "\n"»
+					«addSignalConnection(instance, port, "ao", "Out", true, null, true)»
+				«ENDFOR»
+				«IF options.containsKey("generateGoDone")»
+					-- Instance «instance.simpleName» Actions Go and Done
+					«FOR action: instance.actor.actions SEPARATOR "\n"»
+						«action.name»_go => «instance.simpleName»_«action.name»_go;
+						«action.name»_done => «instance.simpleName»_«action.name»_done;
+			    	«ENDFOR»
+			    «ENDIF»
+				-- Clock and Reset
+				clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(instance))»),
+				reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(instance))»));
+		«ENDFOR»
+		'''
+	}
+	
+	def addSignalConnection(Instance instance, Port port, String prefix, String dir, Boolean instConnection, Integer fanoutIndex, Boolean printRdy){
+		var String owner = "";
+		var String fanoutIndexString = "";
+		if(instance != null){
+			owner = instance.simpleName+"_";
+		}
+		if(fanoutIndex != null){
+			fanoutIndexString = "("+fanoutIndex+")";
+		}
+		
+		'''
+		«IF port.native»
+			«port.name»_data => «prefix»_«instance.simpleName»_«port.name»_data
+		«ELSE»
+			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_data => «prefix»_«owner»«port.name»_data,
+			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_send => «prefix»_«owner»«port.name»_send«fanoutIndexString»,
+			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_ack => «prefix»_«owner»«port.name»_ack«fanoutIndexString»,
+			«IF printRdy»
+				«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_rdy => «prefix»_«owner»«port.name»_rdy«fanoutIndexString»,
+			«ENDIF»
+			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_count => «prefix»_«owner»«port.name»_count,
+		«ENDIF»
+		'''
+	}
+
+	def addFannout(Port port, String prefixIn, String prefixOut, Instance instance){
+		var Integer fanoutDegree = 1;
+		if(instance != null){
+			// Actor Output port fanout
+			fanoutDegree = instance.outgoingPortMap.get(port).size;
+		}else{
+			// Network Input port fanout
+			fanoutDegree = networkPortFanout.get(port);
+		}
+		var Integer clkIndex = 0;
+		if(instance != null){
+			clkIndex = clockDomainsIndex.get(instanceClockDomain.get(instance));
+		}else{
+			clkIndex = clockDomainsIndex.get(portClockDomain.get(port));
+		}
+		'''
+		f_«prefixIn»_«port.name» : entity SystemBuilder.Fanout(behavioral)
+		generic map (fanout => «fanoutDegree», width => «port.type.sizeInBits»)
+		port map(
+			-- Fanout In
+			«addSignalConnection(instance, port, prefixIn,"In", false, null, true)»
+			-- Fanout Out
+			«addSignalConnection(instance, port, prefixOut,"Out", false, null, true)»
+			-- Clock & Reset
+			clk => clocks(«clkIndex»),
+			reset => resets(«clkIndex»));
+		'''
+	}
+	
+	def addQeueu(Port srcPort, Port tgtPort, Instance srcInstance, Instance tgtInstance, Connection connection, String prefixIn, String prefixOut){
+		var Integer fifoSize = 1;
+		if (connection.size != null){
+			fifoSize = connection.size;
+		}else{
+			if (options.containsKey("fifoSize")){
+				fifoSize = options.get("fifoSize") as Integer;
+			}
+		}
+		
+		'''
+		q_«prefixIn»_«tgtPort.name» : entity SystemBuilder.Queue(behavioral)
+		generic map (length => «fifoSize», width => «tgtPort.type.sizeInBits»)
+		port map(
+			-- Queue Out
+			«addSignalConnection(tgtInstance, tgtPort, prefixIn,"Out", false, null, false)»
+			-- Queue In
+			«addSignalConnection(srcInstance, srcPort, prefixOut,"In", false, networkPortConnectionFanout.get(connection), true)»
+			-- Clock & Reset
+			«IF connectionsClockDomain.containsKey(connection)»
+				clk_i => clocks(«connectionsClockDomain.get(connection).get(0)»),
+				reset_i => resets(«connectionsClockDomain.get(connection).get(0)»),
+				clk_o => clocks(«connectionsClockDomain.get(connection).get(1)»),
+				reset_o => resets(«connectionsClockDomain.get(connection).get(1)»));
+			«ELSE»
+				clk => clocks(0),
+				reset => resets(0));
+			«ENDIF»
+		'''
+	}
+	
+	
 	def printNetwork(Network network, Map<String,Object> options){
 		// Initialize members
 		this.network = network; 
+		this.options = options;
 		networkPortFanout = new HashMap<Port, Integer>();
 		networkPortConnectionFanout = new HashMap<Connection, Integer>();
 		portClockDomain = new HashMap<Port, String>();
 		instanceClockDomain = new HashMap<Instance, String>();
 		clockDomainsIndex = new HashMap<String, Integer>();
+		connectionsClockDomain = new HashMap<Connection,List<Integer>>();
 		computeNetworkInputPortFanout(network);
 		computeActorOutputPortFanout(network);
 		var Map<String,String> clkDomains = new HashMap<String,String>(); 

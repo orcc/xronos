@@ -141,6 +141,8 @@ Current bugs with the "Faster Code Generation":
 		  this will give a positive result, transform it to
 		  
 		  a := -(1 << x);
+	- Division and modulo
+		those operations are not supported for the moment
 	
 	   
 	  
