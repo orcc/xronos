@@ -278,11 +278,11 @@ class NetworkPrinter extends IrSwitch {
 		port(
 			 -- XDF Network Input(s)
 			 «FOR port: network.inputs»
-			 	«addDeclarationPort(port,"in","out")»
+			 	«addDeclarationPort(port,"in","out",true)»
 			 «ENDFOR»
 			 -- XDF Network Output(s)
 			 «FOR port: network.outputs»
-			 	«addDeclarationPort(port,"out","in")»
+			 	«addDeclarationPort(port,"out","in",true)»
 			 «ENDFOR»
 			 «IF options.containsKey("generateGoDone")»
 			 	«FOR instance: network.children.filter(typeof(Instance)).filter[isActor]»
@@ -304,7 +304,7 @@ class NetworkPrinter extends IrSwitch {
 		'''
 	}
 	
-	def addDeclarationPort(Port port, String dirA, String dirB){
+	def addDeclarationPort(Port port, String dirA, String dirB, Boolean printRdy){
 		'''
 		«IF port.type.bool || port.type.sizeInBits == 1»
 		«port.name»_data : «dirA» std_logic;
@@ -313,7 +313,7 @@ class NetworkPrinter extends IrSwitch {
 		«ENDIF»
 		«port.name»_send : «dirA» std_logic;
 		«port.name»_ack : «dirB» std_logic;
-		«IF dirA.equals("out")»
+		«IF printRdy»
 		«port.name»_rdy : «dirB» std_logic;
 		«ENDIF»
 		«port.name»_count : «dirA» std_logic_vector(15 downto 0);
@@ -342,19 +342,19 @@ class NetworkPrinter extends IrSwitch {
 			
 			-- Network Output Port(s) 
 			«FOR port: network.outputs»
-				«printSignal(port,"","no",0,false)»
+				«printSignal(port,"","no",0,true)»
 			«ENDFOR»
 			
 			-- Actors Input/Output and Output fanout signals
 			«FOR instance: network.children.filter(typeof(Instance)).filter[isActor] SEPARATOR "\n"»
 				«FOR port: instance.actor.inputs SEPARATOR "\n"»
-					«printSignal(port,instance.simpleName+"_","ai",0,true)»
+					«printSignal(port,instance.simpleName+"_","ai",0,false)»
 				«ENDFOR»
 				
 				«FOR port: instance.actor.outputs SEPARATOR "\n"»
-					«printSignal(port,instance.simpleName+"_","ao",0,false)»
+					«printSignal(port,instance.simpleName+"_","ao",0,true)»
 					
-					«printSignal(port,instance.simpleName+"_","aof",instance.outgoingPortMap.get(port).size,false)»
+					«printSignal(port,instance.simpleName+"_","aof",instance.outgoingPortMap.get(port).size,true)»
 				«ENDFOR»
 			«ENDFOR»
 		
@@ -438,7 +438,7 @@ class NetworkPrinter extends IrSwitch {
 		'''
 	}
 	
-	def printSignal(Port port, String owner, String prefix, Integer fanout, Boolean input){
+	def printSignal(Port port, String owner, String prefix, Integer fanout, Boolean printRdy){
 		var String dataSize;
 		if(port.type.bool || (port.type.sizeInBits == 1)){
 			dataSize = "std_logic";
@@ -458,7 +458,7 @@ class NetworkPrinter extends IrSwitch {
 			signal «prefix»_«owner»«port.name»_data : «dataSize»;
 			signal «prefix»_«owner»«port.name»_send : «fanoutSize»;
 			signal «prefix»_«owner»«port.name»_ack : «fanoutSize»;
-			«IF !input»signal «prefix»_«owner»«port.name»_rdy : «fanoutSize»;«ENDIF»
+			«IF printRdy»signal «prefix»_«owner»«port.name»_rdy : «fanoutSize»;«ENDIF»
 			signal «prefix»_«owner»«port.name»_count : std_logic_vector(15 downto 0);
 		«ENDIF»
 		'''
@@ -472,11 +472,11 @@ class NetworkPrinter extends IrSwitch {
 			port(
 			     -- Instance «instance.simpleName» Input(s)
 			     «FOR port: instance.actor.inputs»
-			     	«addDeclarationPort(port,"in","out")»
+			     	«addDeclarationPort(port,"in","out", false)»
 			     «ENDFOR»
 			     -- Instance «instance.simpleName» Output(s)
 			     «FOR port: instance.actor.outputs»
-			     	«addDeclarationPort(port,"out","in")»
+			     	«addDeclarationPort(port,"out","in", true)»
 			     «ENDFOR»
 			     «IF options.containsKey("generateGoDone")»
 			     	-- Instance «instance.simpleName» Actions Go and Done
@@ -539,12 +539,16 @@ class NetworkPrinter extends IrSwitch {
 		if(fanoutIndex != null){
 			fanoutIndexString = "("+fanoutIndex+")";
 		}
+		var String boolType = "";
+		if((port.type.bool || (port.type.sizeInBits == 1)) && !instConnection){
+			boolType = "(0)";
+		}
 		
 		'''
 		«IF port.native»
 			«port.name»_data => «prefix»_«instance.simpleName»_«port.name»_data
 		«ELSE»
-			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_data => «prefix»_«owner»«port.name»_data,
+			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_data«boolType» => «prefix»_«owner»«port.name»_data,
 			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_send => «prefix»_«owner»«port.name»_send«fanoutIndexString»,
 			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_ack => «prefix»_«owner»«port.name»_ack«fanoutIndexString»,
 			«IF printRdy»

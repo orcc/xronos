@@ -119,11 +119,11 @@ class TclScriptPrinter extends IrSwitch {
 		vmap «workName» «workName»
 		
 		## Compile the glbl constans given by Xilinx 
-		vlog ../lib/simulation/glbl.v
+		vlog -work «workName» ../lib/simulation/glbl.v
 		
 		«IF testbench»
 		# Compile sim package
-		vcom -93 -reportprogress 30 -work work_rr $Lib/sim_package.vhd
+		vcom -93 -reportprogress 30 -work «workName» $LibSim/sim_package.vhd
 		
 		«ENDIF»
 		## Compile network instances and add them to work library	
@@ -160,7 +160,7 @@ class TclScriptPrinter extends IrSwitch {
 		var String simName;
 		if(testbench){
 			workName = "work_" + name;
-			simName = name+"_tb";
+			simName = name + "_tb";
 		}else{
 			workName = "work";
 			simName = name;
@@ -188,7 +188,7 @@ class TclScriptPrinter extends IrSwitch {
 		var String name = network.simpleName;
 		var String simName;
 		if(testbench){
-			simName = name + "_tb";
+			simName = name + "_tb/i_" + network.simpleName;
 		}else{
 			simName = name;
 		}
@@ -258,7 +258,7 @@ class TclScriptPrinter extends IrSwitch {
 		var String name = network.simpleName;
 		var String simName;
 		if(testbench){
-			simName = name + "_tb";
+			simName = name + "_tb/i_" + network.simpleName;
 		}else{
 			simName = name;
 		}

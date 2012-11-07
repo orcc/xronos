@@ -187,15 +187,15 @@ class TestbenchPrinter extends IrSwitch {
 				variable c : character;
 			begin
 				case sl is
-					when 'U' =\> c := 'U';
-					when 'X' =\> c := 'X';
-					when '0' =\> c := '0';
-					when '1' =\> c := '1';
-					when 'Z' =\> c := 'Z';
-					when 'W' =\> c := 'W';
-					when 'L' =\> c := 'L';
-					when 'H' =\> c := 'H';
-					when '-' =\> c := '-';
+					when 'U' => c := 'U';
+					when 'X' => c := 'X';
+					when '0' => c := '0';
+					when '1' => c := '1';
+					when 'Z' => c := 'Z';
+					when 'W' => c := 'W';
+					when 'L' => c := 'L';
+					when 'H' => c := 'H';
+					when '-' => c := '-';
 				end case;
 				return c;
 			end chr;
@@ -236,23 +236,23 @@ class TestbenchPrinter extends IrSwitch {
 						«ENDFOR»
 					«ENDIF»
 				«ENDFOR»
-				CLK =\> CLK,
-				RESET =\> RESET
+				CLK => CLK,
+				RESET => RESET
 			);
 			
 			-- Make a virtual infinite queue for the Output(s)
 			«FOR port: network.outputs»
-				«port.name»_ACK \<= «port.name»_SEND;
-				«port.name»_RDY \<='1';
+				«port.name»_ACK <= «port.name»_SEND;
+				«port.name»_RDY <='1';
 			«ENDFOR»
 			
 				clKProcess : process
 				begin
 					wait for OFFSET;
 			    clock_LOOP : loop
-			      CLK \<= '0';
+			      CLK <= '0';
 			      wait for (PERIOD - (PERIOD * DUTY_CYCLE));
-			      CLK \<= '1';
+			      CLK <= '1';
 			      wait for (PERIOD * DUTY_CYCLE);
 			    end loop clock_LOOP;
 				end process;
@@ -261,9 +261,9 @@ class TestbenchPrinter extends IrSwitch {
 				begin		
 					wait for OFFSET;
 					-- reset state for 500 ns.
-			    	RESET \<= '1';
+			    	RESET <= '1';
 					wait for 500 ns;
-					RESET \<= '0';	
+					RESET <= '0';	
 					wait;
 				end process;
 				
@@ -389,6 +389,7 @@ class TestbenchPrinter extends IrSwitch {
 		«ENDIF»
 		signal «port.name»_send : std_logic := '0';
 		signal «port.name»_ack : std_logic;
+		signal «port.name»_rdy : std_logic;
 		signal «port.name»_count : std_logic_vector(15 downto 0) := (others => '0');
 		-- Input component queue
 		«IF port.type.bool || port.type.sizeInBits == 1»
@@ -398,6 +399,7 @@ class TestbenchPrinter extends IrSwitch {
 		«ENDIF»
 		signal q_«port.name»_send : std_logic := '0';
 		signal q_«port.name»_ack : std_logic;
+		signal q_«port.name»_rdy : std_logic;
 		signal q_«port.name»_count : std_logic_vector(15 downto 0) := (others => '0');
 		«ENDFOR»
 		
@@ -410,14 +412,14 @@ class TestbenchPrinter extends IrSwitch {
 		«ELSE»
 		signal «port.name»_data : std_logic_vector(«port.type.sizeInBits-1» downto 0) := (others => '0');
 		«ENDIF»
-		signal «port.name»_send : std_logic := '0';
-		signal «port.name»_ack : std_logic;
-		signal «port.name»_rdy : std_logic;
+		signal «port.name»_send : std_logic;
+		signal «port.name»_ack : std_logic := '0';
+		signal «port.name»_rdy : std_logic := '0';
 		signal «port.name»_count : std_logic_vector(15 downto 0) := (others => '0');
 		«ENDFOR»
 		
 		signal count : integer range 255 downto 0 := 0;
-		signal clock : std_logic := '0';
+		signal clk : std_logic := '0';
 		signal reset : std_logic := '0';
 		'''
 	}
@@ -436,29 +438,30 @@ class TestbenchPrinter extends IrSwitch {
 			outputPorts = (vertex as Network).outputs;
 		}
 		'''
-		i_«name» : «name» port map(
-			clk => clock,
-			reset => reset«IF(!inputPorts.empty || !outputPorts.empty)»,«ENDIF»
-			«FOR port: inputPorts SEPARATOR ",\n"»
+		i_«name» : «name» 
+		port map(
+			«FOR port: inputPorts SEPARATOR "\n"»
 				«port.name»_data => q_«port.name»_data,
 				«port.name»_send => q_«port.name»_send,
 				«port.name»_ack => q_«port.name»_ack,
-				«port.name»_count => q_«port.name»_count«IF(!inputPorts.empty && !outputPorts.empty)»,«ENDIF»
+				«port.name»_count => q_«port.name»_count,
 			«ENDFOR»
-		
-			«FOR port: outputPorts SEPARATOR ",\n"»
-				«port.name»_data => q_«port.name»_data,
-				«port.name»_send => q_«port.name»_send,
-				«port.name»_ack => q_«port.name»_ack,
-				«port.name»_rdy => q_«port.name»_rdy,
-				«port.name»_count => q_«port.name»_count
+			
+			«FOR port: outputPorts SEPARATOR "\n"»
+				«port.name»_data => «port.name»_data,
+				«port.name»_send => «port.name»_send,
+				«port.name»_ack => «port.name»_ack,
+				«port.name»_rdy => «port.name»_rdy,
+				«port.name»_count => «port.name»_count,
 			«ENDFOR»
-		);
+			clk => clk,
+			reset => reset);
 		
 		-- Input(s) queues
 		«FOR port: inputPorts SEPARATOR "\n"»
 		q_«port.name» : entity systemBuilder.Queue(behavioral)
 		generic map(length => 512, width => «IF port.type.bool || port.type.sizeInBits == 1»1«ELSE»«port.type.sizeInBits»«ENDIF»)
+		port map(
 			«IF port.type.bool || port.type.sizeInBits == 1»
 			OUT_DATA(0) => q_«port.name»_data,
 			«ELSE»
@@ -478,9 +481,8 @@ class TestbenchPrinter extends IrSwitch {
 			IN_RDY => «port.name»_rdy,
 			IN_COUNT => «port.name»_count,
 
-			clk => clock,
-			reset => reset
-		);
+			clk => clk,
+			reset => reset);
 		«ENDFOR»
 	
 		-- Clock process
@@ -488,9 +490,9 @@ class TestbenchPrinter extends IrSwitch {
 		begin
 		wait for OFFSET;
 			clock_LOOP : loop
-				clock <= '0';
+				clk <= '0';
 				wait for (PERIOD - (PERIOD * DUTY_CYCLE));
-				clock <= '1';
+				clk <= '1';
 				wait for (PERIOD * DUTY_CYCLE);
 			end loop clock_LOOP;
 		end process;
@@ -508,11 +510,11 @@ class TestbenchPrinter extends IrSwitch {
 	
 		
 		-- Input(s) Waveform Generation
-		WaveGen_Proc_In : process (clock)
+		WaveGen_Proc_In : process (clk)
 			variable Input_bit : integer range 2147483647 downto - 2147483648;
 			variable line_number : line;
 		begin
-			if rising_edge(clock) then
+			if rising_edge(clk) then
 			«FOR port: inputPorts SEPARATOR "\n"»
 			«IF (!port.native)»
 				-- Input port: «port.name» Waveform Generation
@@ -541,8 +543,8 @@ class TestbenchPrinter extends IrSwitch {
 											«port.name»_data <= std_logic_vector(to_signed(input_bit, «port.type.sizeInBits»));
 										«ENDIF»
 									«ENDIF»
-									«port.name»_send \<= '1';
-									tb_FSM_«port.name» \<= CheckRead;
+									«port.name»_send <= '1';
+									tb_FSM_«port.name» <= CheckRead;
 								end if;
 							end if;
 						when CheckRead =>
@@ -563,10 +565,10 @@ class TestbenchPrinter extends IrSwitch {
 											«port.name»_data <= std_logic_vector(to_signed(input_bit, «port.type.sizeInBits»));
 										«ENDIF»
 									«ENDIF»
-									«port.name»_send \<= '1';
+									«port.name»_send <= '1';
 								end if;
 							elsif (endfile (sim_file_«name»_«port.name»)) then
-								«port.name»_send \<= '0';
+								«port.name»_send <= '0';
 							end if;
 						when others => null;
 					end case;
@@ -581,21 +583,21 @@ class TestbenchPrinter extends IrSwitch {
 		«FOR port: outputPorts SEPARATOR "\n"»
 		«IF (!port.native)»
 		«port.name»_ack <= «port.name»_send;
-		«port.name»_rdy <= 1;
+		«port.name»_rdy <= '1';
 		«ENDIF»
 		«ENDFOR»
 		
-		WaveGen_Proc_Out : process (clock)
+		WaveGen_Proc_Out : process (clk)
 			variable Input_bit   : integer range 2147483647 downto - 2147483648;
 			variable line_number : line;
 		begin
-			if (rising_edge(clock)) then
+			if (rising_edge(clk)) then
 			«FOR port: outputPorts SEPARATOR "\n"»
 			«IF (!port.native)»
 			-- Output port: «port.name» Waveform Generation
 				if (not endfile (sim_file_«name»_«port.name») and «port.name»_send = '1') then
 					readline(sim_file_«name»_«port.name», line_number);
-						if (line_number'length \> 0 and line_number(1) /= '/') then
+						if (line_number'length > 0 and line_number(1) /= '/') then
 							read(line_number, input_bit);
 							«IF port.type.bool»
 							if (input_bit = 1) then
