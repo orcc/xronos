@@ -354,7 +354,7 @@ class NetworkPrinter extends IrSwitch {
 				«FOR port: instance.actor.outputs SEPARATOR "\n"»
 					«printSignal(port,instance.simpleName+"_","ao",0,false)»
 					
-					«printSignal(port,instance.simpleName+"_","aof",instance.outgoingPortMap.size,false)»
+					«printSignal(port,instance.simpleName+"_","aof",instance.outgoingPortMap.get(port).size,false)»
 				«ENDFOR»
 			«ENDFOR»
 		
@@ -557,9 +557,11 @@ class NetworkPrinter extends IrSwitch {
 
 	def addFannout(Port port, String prefixIn, String prefixOut, Instance instance){
 		var Integer fanoutDegree = 1;
+		var String instanceName = "";
 		if(instance != null){
 			// Actor Output port fanout
 			fanoutDegree = instance.outgoingPortMap.get(port).size;
+			instanceName = instance.simpleName + "_";
 		}else{
 			// Network Input port fanout
 			fanoutDegree = networkPortFanout.get(port);
@@ -571,7 +573,7 @@ class NetworkPrinter extends IrSwitch {
 			clkIndex = clockDomainsIndex.get(portClockDomain.get(port));
 		}
 		'''
-		f_«prefixIn»_«port.name» : entity SystemBuilder.Fanout(behavioral)
+		f_«prefixIn»_«instanceName»«port.name» : entity SystemBuilder.Fanout(behavioral)
 		generic map (fanout => «fanoutDegree», width => «port.type.sizeInBits»)
 		port map(
 			-- Fanout In
@@ -595,7 +597,7 @@ class NetworkPrinter extends IrSwitch {
 		}
 		
 		'''
-		q_«prefixIn»_«tgtPort.name» : entity SystemBuilder.Queue(behavioral)
+		q_«prefixIn»_«IF tgtInstance !=null»«tgtInstance.simpleName»_«ENDIF»«tgtPort.name» : entity SystemBuilder.Queue(behavioral)
 		generic map (length => «fifoSize», width => «tgtPort.type.sizeInBits»)
 		port map(
 			-- Queue Out
