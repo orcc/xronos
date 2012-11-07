@@ -77,6 +77,21 @@ public class VerilogAddGoDone {
 			FileOutputStream oStream = new FileOutputStream(newVerilogFile);
 			PrintWriter verilogWriter = new PrintWriter(oStream);
 
+			// Pass by the Header comments
+			Boolean finish = true;
+			while (finish) {
+				while (iBuffer.ready()) {
+					String line = iBuffer.readLine();
+					if (line.equals("")) {
+						verilogWriter.println(line);
+						finish = false;
+						break;
+					} else {
+						verilogWriter.println(line);
+					}
+				}
+			}
+
 			// Read each character in until ")" of the module
 			while (iBuffer.ready()) {
 				char tmp = (char) iBuffer.read();
@@ -117,23 +132,23 @@ public class VerilogAddGoDone {
 				contains = iBuffer.readLine();
 				// Find <actionName>_go and <actionName>_done in the assign on
 				// the Top Module
-				
+
 				if (contains.indexOf("endmodule") != -1) {
 					stop = true;
 				}
-				if (contains.indexOf("assign") != -1 && !stop) {
+				if ((contains.indexOf("assign") != -1) && !stop) {
 					for (Action action : instance.getActor().getActions()) {
 
 						String actionNameGo = action.getName() + "_go";
 						String actionNameDone = action.getName() + "_done";
-						if (contains.indexOf(actionNameGo+"=") != -1) {
+						if (contains.indexOf(actionNameGo + "=") != -1) {
 							int loc = contains.indexOf(actionNameGo);
 							String newLine = "assign "
 									+ contains
 											.substring(loc, contains.length());
 							verilogWriter.println(newLine);
 						}
-						if (contains.indexOf(actionNameDone+"=") != -1) {
+						if (contains.indexOf(actionNameDone + "=") != -1) {
 							int loc = contains.indexOf(actionNameDone);
 							String newLine = "assign "
 									+ contains

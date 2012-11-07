@@ -289,8 +289,8 @@ class NetworkPrinter extends IrSwitch {
 			 		«IF !instance.actor.native»
 			 			-- Instance «instance.simpleName» Actions Go and Done
 			 			«FOR action: instance.actor.actions»
-			 				«instance.simpleName»_«action.name»_go : in std_logic;
-			 				«instance.simpleName»_«action.name»_done : in std_logic;
+			 				«instance.simpleName»_«action.name»_go : out std_logic;
+			 				«instance.simpleName»_«action.name»_done : out std_logic;
 			 			«ENDFOR»
 			 		«ENDIF»
 			 	«ENDFOR»
@@ -481,8 +481,8 @@ class NetworkPrinter extends IrSwitch {
 			     «IF options.containsKey("generateGoDone")»
 			     	-- Instance «instance.simpleName» Actions Go and Done
 			     	«FOR action: instance.actor.actions SEPARATOR "\n"»
-			     		«action.name»_go : in std_logic;
-			     		«action.name»_done : in std_logic;
+			     		«action.name»_go : out std_logic;
+			     		«action.name»_done : out std_logic;
 			    	«ENDFOR»
 			     «ENDIF»
 			     clk: in std_logic;
@@ -519,8 +519,8 @@ class NetworkPrinter extends IrSwitch {
 				«IF options.containsKey("generateGoDone")»
 					-- Instance «instance.simpleName» Actions Go and Done
 					«FOR action: instance.actor.actions SEPARATOR "\n"»
-						«action.name»_go => «instance.simpleName»_«action.name»_go;
-						«action.name»_done => «instance.simpleName»_«action.name»_done;
+						«action.name»_go => «instance.simpleName»_«action.name»_go,
+						«action.name»_done => «instance.simpleName»_«action.name»_done,
 			    	«ENDFOR»
 			    «ENDIF»
 				-- Clock and Reset

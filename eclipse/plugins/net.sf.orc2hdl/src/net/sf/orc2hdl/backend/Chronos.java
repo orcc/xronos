@@ -59,8 +59,8 @@ public class Chronos extends AbstractBackend {
 	/** Debug Mode, no caching, generating always **/
 	private boolean debugMode;
 
-	/** A list which contains the given forgeFlags **/
-	private List<String> forgeFlags;
+	/** A list which contains the given chronosFlags **/
+	private List<String> chronosFlags;
 
 	/** The used Xilinx FPGA Name **/
 	private String fpgaName;
@@ -125,22 +125,22 @@ public class Chronos extends AbstractBackend {
 		fpgaName = "xc2vp30-7-ff1152";
 
 		// Set Forge Flags
-		forgeFlags = new ArrayList<String>();
-		forgeFlags.add("-vv");
-		forgeFlags.add("-pipeline");
-		forgeFlags.add("-noblockio");
-		forgeFlags.add("-no_block_sched");
-		forgeFlags.add("-simple_arbitration");
-		forgeFlags.add("-noedk");
-		forgeFlags.add("-loopbal");
-		forgeFlags.add("-multdecomplimit");
-		forgeFlags.add("2");
-		forgeFlags.add("-comb_lut_mem_read");
-		forgeFlags.add("-dplut");
-		forgeFlags.add("-nolog");
-		forgeFlags.add("-noinclude");
-		forgeFlags.add("-report");
-		forgeFlags.add("-Xdetailed_report");
+		chronosFlags = new ArrayList<String>();
+		chronosFlags.add("-vv");
+		chronosFlags.add("-pipeline");
+		chronosFlags.add("-noblockio");
+		chronosFlags.add("-no_block_sched");
+		chronosFlags.add("-simple_arbitration");
+		chronosFlags.add("-noedk");
+		chronosFlags.add("-loopbal");
+		chronosFlags.add("-multdecomplimit");
+		chronosFlags.add("2");
+		chronosFlags.add("-comb_lut_mem_read");
+		chronosFlags.add("-dplut");
+		chronosFlags.add("-nolog");
+		chronosFlags.add("-noinclude");
+		chronosFlags.add("-report");
+		chronosFlags.add("-Xdetailed_report");
 	}
 
 	@Override
@@ -198,9 +198,6 @@ public class Chronos extends AbstractBackend {
 
 		// Compute the Network Template
 		network.computeTemplateMaps();
-		// TopNetworkTemplateData data = new TopNetworkTemplateData();
-		// data.computeTemplateMaps(network, clkDomains);
-		// network.setTemplateData(data);
 
 		// Print Network
 		printNetwork(network);
@@ -244,8 +241,9 @@ public class Chronos extends AbstractBackend {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
 				ChronosPrinter printer = new ChronosPrinter(!debugMode);
+				printer.getOptions().put("generateGoDone", generateGoDone);
 				printer.getOptions().put("fpgaType", fpgaName);
-				List<String> flags = new ArrayList<String>(forgeFlags);
+				List<String> flags = new ArrayList<String>(chronosFlags);
 				flags.addAll(Arrays.asList("-d", rtlPath, "-o",
 						instance.getSimpleName()));
 				Boolean cached = printer.printInstance(

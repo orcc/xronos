@@ -206,6 +206,21 @@ public class ChronosPrinter {
 			OrccLogger.traceln("Compiling instance: "
 					+ instance.getSimpleName() + ": Compiled in: "
 					+ ((float) (t1 - t0) / 1000) + "s");
+
+			if (options.containsKey("generateGoDone")) {
+				Boolean generateGoDone = (Boolean) options
+						.get("generateGoDone");
+
+				if (generateGoDone) {
+					if (!error) {
+						String rtlGoDonePath = rtlPath + File.separator
+								+ "rtlGoDone";
+						VerilogAddGoDone verilogFile = new VerilogAddGoDone(
+								instance, rtlPath, rtlGoDonePath);
+						verilogFile.addGoDone();
+					}
+				}
+			}
 			return error;
 		}
 		return false;

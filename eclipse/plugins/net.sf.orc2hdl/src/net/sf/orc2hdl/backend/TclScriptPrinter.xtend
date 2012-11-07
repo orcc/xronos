@@ -47,6 +47,7 @@ class TclScriptPrinter extends IrSwitch {
 	var String rtlPath = "";
 	var Boolean xilinxPrimitives = false;
 	var Boolean testbench = false;
+	var Boolean generateGoDone = false;
 	
 	var Network network;
 	
@@ -196,19 +197,26 @@ class TclScriptPrinter extends IrSwitch {
 		«FOR port : instance.actor.inputs SEPARATOR "\n"»
 			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA
 			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_ACK
+			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_SEND
 		«ENDFOR» 
 		«FOR port : instance.actor.outputs SEPARATOR "\n"»
 			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA
 			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_SEND
 			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_RDY
 		«ENDFOR» 
+		«IF generateGoDone»
+			«FOR action: instance.actor.actions»
+				add wave -label «action.name»_go sim:/«simName»/i_«instance.simpleName»/«action.name»_go
+				add wave -label «action.name»_done sim:/«simName»/i_«instance.simpleName»/«action.name»_done
+			«ENDFOR»
+		«ENDIF»
 		'''
 		
 	}
 	
 	def addNetworkSignalsToWave(Network network){
 		'''
-		«FOR vertex : network.vertices»
+		«FOR vertex : network.vertices SEPARATOR "\n"»
 		«IF vertex instanceof Instance»
 			«addInstanceIO(network,vertex as Instance)»
 		«ENDIF»
@@ -268,8 +276,6 @@ class TclScriptPrinter extends IrSwitch {
 	}
 	
 	def printNetworkTclScript(Network network, Map<String, Object> options){
-		var Boolean generateGoDone = false;
-		
 		this.network = network;
 		
 		testbench = false;
@@ -316,8 +322,6 @@ class TclScriptPrinter extends IrSwitch {
 	}
 	
 	def printNetworkTestbenchTclScript(Network network, Map<String, Object> options){
-				var Boolean generateGoDone = false;
-		
 		this.network = network;
 		
 		testbench = true;
@@ -349,8 +353,6 @@ class TclScriptPrinter extends IrSwitch {
 	}
 	
 	def printInstanceTestbenchTclScript(Instance instance, Map<String, Object> options){
-				var Boolean generateGoDone = false;
-		
 		this.network = network;
 		
 		testbench = true;
