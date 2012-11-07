@@ -355,14 +355,17 @@ class TestbenchPrinter extends IrSwitch {
 	
 	def addArchitectureSignals(Vertex vertex){
 		var String name;
+		var String traceName;
 		var List<Port> inputPorts;
 		var List<Port> outputPorts;
 		if(vertex instanceof Instance){
 			name = (vertex as Instance).simpleName;
+			traceName = (vertex as Instance).name;
 			inputPorts = (vertex as Instance).actor.inputs;
 			outputPorts = (vertex as Instance).actor.outputs;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
+			traceName = (vertex as Network).simpleName;
 			inputPorts = (vertex as Network).inputs;
 			outputPorts = (vertex as Network).outputs;
 		}
@@ -381,7 +384,7 @@ class TestbenchPrinter extends IrSwitch {
 		-- Component input(s) signals
 		«FOR port: inputPorts»
 		signal tb_FSM_«port.name» : tb_type;
-		file sim_file_«name»_«port.name» : text is "fifoTraces/«port.name».txt";
+		file sim_file_«name»_«port.name» : text is "fifoTraces/«traceName»_«port.name».txt";
 		«IF port.type.bool || port.type.sizeInBits == 1»
 		signal «port.name»_data : std_logic := '0';
 		«ELSE»
@@ -406,7 +409,7 @@ class TestbenchPrinter extends IrSwitch {
 		-- Component Output(s) signals
 		«FOR port: outputPorts»
 		signal tb_FSM_«port.name» : tb_type;
-		file sim_file_«name»_«port.name» : text is "fifoTraces/«port.name».txt";
+		file sim_file_«name»_«port.name» : text is "fifoTraces/«traceName»_«port.name».txt";
 		«IF port.type.bool || port.type.sizeInBits == 1»
 		signal «port.name»_data : std_logic := '0';
 		«ELSE»
@@ -609,7 +612,7 @@ class TestbenchPrinter extends IrSwitch {
 								report "on port «port.name» correctly value computed : '1' instead of : '1'"
 								severity note;
 							else
-								assert (<port.name>_data = '0')
+								assert («port.name»_data = '0')
 								report "on port «port.name» incorrectly value computed : '1' instead of : '0'"
 								severity failure;
 								

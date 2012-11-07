@@ -68,6 +68,8 @@ public class Chronos extends AbstractBackend {
 	/** Generate Verilog files with Go And Done signal on Top Module **/
 	private boolean generateGoDone;
 
+	private boolean generateWeights;
+
 	/** Use Orcc as a fronted for OpenForge, No XLIM code generation **/
 
 	/** The path used for the RTL Go Done generation **/
@@ -89,6 +91,7 @@ public class Chronos extends AbstractBackend {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
 		debugMode = getAttribute(DEBUG_MODE, true);
 		generateGoDone = getAttribute("net.sf.orc2hdl.generateGoDone", false);
+		generateWeights = getAttribute("net.sf.orc2hdl.generateWeights", false);
 		xilinxPrimitives = getAttribute("net.sf.orc2hdl.xilinxPrimitives",
 				false);
 
@@ -240,16 +243,18 @@ public class Chronos extends AbstractBackend {
 		for (Vertex vertex : network.getChildren()) {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
-				ChronosPrinter printer = new ChronosPrinter(!debugMode);
-				printer.getOptions().put("generateGoDone", generateGoDone);
-				printer.getOptions().put("fpgaType", fpgaName);
-				List<String> flags = new ArrayList<String>(chronosFlags);
-				flags.addAll(Arrays.asList("-d", rtlPath, "-o",
-						instance.getSimpleName()));
-				Boolean cached = printer.printInstance(
-						flags.toArray(new String[0]), rtlPath, instance);
-				if (cached) {
-					numCached++;
+				if (!instance.getActor().isNative()) {
+					ChronosPrinter printer = new ChronosPrinter(!debugMode);
+					printer.getOptions().put("generateGoDone", generateGoDone);
+					printer.getOptions().put("fpgaType", fpgaName);
+					List<String> flags = new ArrayList<String>(chronosFlags);
+					flags.addAll(Arrays.asList("-d", rtlPath, "-o",
+							instance.getSimpleName()));
+					Boolean cached = printer.printInstance(
+							flags.toArray(new String[0]), rtlPath, instance);
+					if (cached) {
+						numCached++;
+					}
 				}
 			}
 		}
@@ -306,6 +311,7 @@ public class Chronos extends AbstractBackend {
 		chronosPrinter.printSimTclScript(simPath, false, network);
 		if (generateGoDone) {
 			chronosPrinter.getOptions().put("generateGoDone", generateGoDone);
+			chronosPrinter.getOptions().put("generateWeights", generateWeights);
 			// Create the weights path
 			File weightsPath = new File(simPath + File.separator + "weights");
 			if (!weightsPath.exists()) {

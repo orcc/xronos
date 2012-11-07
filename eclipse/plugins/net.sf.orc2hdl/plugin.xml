@@ -13,10 +13,10 @@
                id="net.sf.orc2hdl.generateGoDone">
          </option>
          <option
-               id="net.sf.orcc.dontExportLibrary">
+               id="net.sf.orc2hdl.xilinxPrimitives">
          </option>
          <option
-               id="net.sf.orc2hdl.xilinxPrimitives">
+               id="net.sf.orcc.dontExportLibrary">
          </option>
       </backend>
    </extension>
@@ -27,6 +27,12 @@
             id="net.sf.orc2hdl.generateGoDone"
             name="Generate Go/Done Signal for each Action">
          <checkBox>
+            <option
+                  defaultValue="false"
+                  id="net.sf.orc2hdl.generateWeights"
+                  name="Generate the Go&amp;Done weights for each action">
+               <checkBox></checkBox>
+            </option>
          </checkBox>
       </option>
       <option

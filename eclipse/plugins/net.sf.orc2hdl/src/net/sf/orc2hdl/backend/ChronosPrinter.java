@@ -182,31 +182,37 @@ public class ChronosPrinter {
 				OrccLogger.severeln("Instance: " + instance.getSimpleName()
 						+ ", failed to compile: NullPointerException, "
 						+ ex.getMessage());
+				error = true;
 			} catch (NoSuchElementException ex) {
 				OrccLogger.severeln("Instance: " + instance.getSimpleName()
 						+ ", failed to compile: NoSuchElementException, "
 						+ ex.getMessage());
+				error = true;
 			} catch (UnbalancedAssignmentException ex) {
 				OrccLogger
 						.severeln("Instance: "
 								+ instance.getSimpleName()
 								+ ", failed to compile: UnbalancedAssignmentException, "
 								+ ex.getMessage());
+				error = true;
 			} catch (ArrayIndexOutOfBoundsException ex) {
 				OrccLogger
 						.severeln("Instance: "
 								+ instance.getSimpleName()
 								+ ", failed to compile: ArrayIndexOutOfBoundsException, "
 								+ ex.getMessage());
+				error = true;
 			} catch (Throwable t) {
 				OrccLogger.severeln("Instance: " + instance.getSimpleName()
 						+ ", failed to compile: " + t.getMessage());
+				error = true;
 			}
-			long t1 = System.currentTimeMillis();
-			OrccLogger.traceln("Compiling instance: "
-					+ instance.getSimpleName() + ": Compiled in: "
-					+ ((float) (t1 - t0) / 1000) + "s");
-
+			if (!error) {
+				long t1 = System.currentTimeMillis();
+				OrccLogger.traceln("Compiling instance: "
+						+ instance.getSimpleName() + ": Compiled in: "
+						+ ((float) (t1 - t0) / 1000) + "s");
+			}
 			if (options.containsKey("generateGoDone")) {
 				Boolean generateGoDone = (Boolean) options
 						.get("generateGoDone");
