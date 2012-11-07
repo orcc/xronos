@@ -260,7 +260,7 @@ class TclScriptPrinter extends IrSwitch {
 		«FOR vertex : network.vertices»
 			«IF vertex instanceof Instance»
 				«FOR port : (vertex as Instance).actor.inputs»
-				add wave sim:/«simName»/q_ai_«(vertex as Instance).simpleName»_«port.name»/fifo/msync_full 
+				add wave -label «(vertex as Instance).simpleName»_«port.name»_full sim:/«simName»/q_ai_«(vertex as Instance).simpleName»_«port.name»/fifo/msync_full 
 				«ENDFOR»
 			«ENDIF»
 		«ENDFOR»

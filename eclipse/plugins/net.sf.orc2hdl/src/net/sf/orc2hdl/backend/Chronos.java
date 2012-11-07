@@ -243,7 +243,7 @@ public class Chronos extends AbstractBackend {
 		for (Vertex vertex : network.getChildren()) {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
-				ChronosPrinter printer = new ChronosPrinter(debugMode);
+				ChronosPrinter printer = new ChronosPrinter(!debugMode);
 				printer.getOptions().put("fpgaType", fpgaName);
 				List<String> flags = new ArrayList<String>(forgeFlags);
 				flags.addAll(Arrays.asList("-d", rtlPath, "-o",
