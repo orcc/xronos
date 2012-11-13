@@ -228,6 +228,32 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 	}
 	
+	def addInstanceSignalsToWave(Instance instance){
+		var String simName = instance.simpleName + "_tb";
+		'''
+		add wave -noupdate -divider -height 20  "Inputs: i_«instance.simpleName»"
+		«FOR port : instance.actor.inputs SEPARATOR "\n"»
+			add wave -label «port.name»_DATA sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA
+			add wave -label «port.name»_ACK sim:/«simName»/i_«instance.simpleName»/«port.name»_ACK 
+			add wave -label «port.name»_SEND sim:/«simName»/i_«instance.simpleName»/«port.name»_SEND 
+		«ENDFOR» 
+		add wave -noupdate -divider -height 20 "Outputs: i_«instance.simpleName»"
+		«FOR port : instance.actor.outputs SEPARATOR "\n"»
+			add wave -label «port.name»_DATA sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA 
+			add wave -label «port.name»_SEND sim:/«simName»/i_«instance.simpleName»/«port.name»_SEND
+			add wave -label «port.name»_RDY sim:/«simName»/i_«instance.simpleName»/«port.name»_RDY
+		«ENDFOR» 
+		add wave -noupdate -divider -height 20 "Go & Done" 
+		«IF generateGoDone»
+			«FOR action: instance.actor.actions»
+				add wave -noupdate -divider -height 20 "Action: «action.name»" 
+				add wave -label Go sim:/«simName»/i_«instance.simpleName»/«action.name»_go
+				add wave -label Done sim:/«simName»/i_«instance.simpleName»/«action.name»_done
+			«ENDFOR»
+		«ENDIF»
+		'''
+	}
+	
 	def addNetworkOuputSignals(Network network){
 		var String name = network.simpleName;
 		var String simName;
@@ -379,8 +405,7 @@ class TclScriptPrinter extends IrSwitch {
 		
 		«startSimulation(instance)»
 		
-		# Add signals to the wave
-		add wave sim:/«instance.simpleName»_tb/*
+		«addInstanceSignalsToWave(instance)»
 		'''
 	}
 }

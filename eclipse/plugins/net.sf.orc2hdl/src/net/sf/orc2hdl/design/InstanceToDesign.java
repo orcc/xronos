@@ -64,9 +64,8 @@ public class InstanceToDesign {
 
 		ResourceCache resources = new ResourceCache();
 
-		DfSwitch<Void> branchIOFinder = new DfVisitor<Void>(new StmtIO(
-				resources));
-		branchIOFinder.doSwitch(instance.getActor());
+		DfSwitch<Void> stmIOFinder = new DfVisitor<Void>(new StmtIO(resources));
+		stmIOFinder.doSwitch(instance.getActor());
 
 		DesignActor designVisitor = new DesignActor(design, resources);
 		designVisitor.doSwitch(instance.getActor());

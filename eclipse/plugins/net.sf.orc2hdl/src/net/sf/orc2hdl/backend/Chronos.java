@@ -159,12 +159,12 @@ public class Chronos extends AbstractBackend {
 			transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
-			transformations.add(new ScalarPortIO());
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
 			// transformations.add(new RepeatPattern(resources));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
+			transformations.add(new ScalarPortIO());
 			transformations.add(new DfVisitor<Expression>(
 					new ChronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
@@ -175,7 +175,6 @@ public class Chronos extends AbstractBackend {
 					new ChronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Expression>(new CastAdder(false,
 					false)));
-
 			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
 			for (DfSwitch<?> transformation : transformations) {
