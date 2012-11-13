@@ -172,6 +172,7 @@ public class DesignUtil {
 				// width
 				mem = new LogicalMemory(maxAddressWidth);
 				mem.createLogicalMemoryPort();
+				mem.setIDLogical("stateVar_" + stateVars.get(lvalue).getName());
 				design.addMemory(mem);
 				// memories.put(stride, mem);
 			}

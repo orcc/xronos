@@ -37,6 +37,7 @@ import java.util.Map;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.Location;
+import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.InstCall;
@@ -88,7 +89,26 @@ public class ResourceCache {
 	/** Map of a Branch Then Block Output Variables **/
 	private Map<Block, List<Var>> thenOutputs = new HashMap<Block, List<Var>>();
 
+	private Map<Actor, Map<Port, Var>> actorInputsVar = new HashMap<Actor, Map<Port, Var>>();
+
+	private Map<Actor, Map<Port, Var>> actorOutputsVar = new HashMap<Actor, Map<Port, Var>>();
+
+	private Map<Actor, Map<Port, Integer>> actorMaxPortRepeat = new HashMap<Actor, Map<Port, Integer>>();
+
 	public ResourceCache() {
+	}
+
+	public void addActorInputsVar(Actor actor, Map<Port, Var> portVar) {
+		actorInputsVar.put(actor, portVar);
+	}
+
+	public void addActorOutputsVar(Actor actor, Map<Port, Var> portVar) {
+		actorOutputsVar.put(actor, portVar);
+	}
+
+	public void addActorMaxPortRepeat(Actor actor,
+			Map<Port, Integer> portMaxRepeat) {
+		actorMaxPortRepeat.put(actor, portMaxRepeat);
 	}
 
 	public void addBranch(Block block, Map<Block, List<Var>> stmDecision,
@@ -227,5 +247,30 @@ public class ResourceCache {
 
 	public List<Var> getLoopBodyOutput(Block block) {
 		return loopBodyOutputs.get(block);
+	}
+
+	public Map<Port, Var> getActorInputsVar(Actor actor) {
+		if (actorInputsVar.get(actor) != null) {
+			return actorInputsVar.get(actor);
+		} else {
+			return null;
+		}
+
+	}
+
+	public Map<Port, Var> getActorOutputsVar(Actor actor) {
+		if (actorOutputsVar.get(actor) != null) {
+			return actorOutputsVar.get(actor);
+		} else {
+			return null;
+		}
+	}
+
+	public Map<Port, Integer> getActorMaxPortRepeat(Actor actor) {
+		if (actorMaxPortRepeat.get(actor) != null) {
+			return actorMaxPortRepeat.get(actor);
+		} else {
+			return null;
+		}
 	}
 }

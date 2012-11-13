@@ -11,17 +11,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orc2hdl.backend.transform.ChronosLiteralIntegersAdder;
+import net.sf.orc2hdl.backend.transform.ChronosTac;
 import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
-import net.sf.orc2hdl.backend.transform.RepeatPattern;
+import net.sf.orc2hdl.backend.transform.ScalarPortIO;
+import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.transform.CastAdder;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
-import net.sf.orcc.backends.transform.LiteralIntegersAdder;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
 import net.sf.orcc.backends.transform.StoreOnceTransformation;
-import net.sf.orcc.backends.transform.UnaryListRemoval;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
@@ -36,7 +37,6 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 import net.sf.orcc.ir.transform.DeadCodeElimination;
 import net.sf.orcc.ir.transform.SSATransformation;
-import net.sf.orcc.ir.transform.TacTransformation;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.OrccLogger;
 
@@ -85,6 +85,8 @@ public class Chronos extends AbstractBackend {
 	private String testBenchPath;
 
 	private boolean xilinxPrimitives;
+
+	private ResourceCache resources;
 
 	@Override
 	protected void doInitializeOptions() {
@@ -144,6 +146,8 @@ public class Chronos extends AbstractBackend {
 		chronosFlags.add("-noinclude");
 		chronosFlags.add("-report");
 		chronosFlags.add("-Xdetailed_report");
+
+		resources = new ResourceCache();
 	}
 
 	@Override
@@ -155,23 +159,23 @@ public class Chronos extends AbstractBackend {
 			transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
-			transformations.add(new UnaryListRemoval());
+			transformations.add(new ScalarPortIO());
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
-			transformations.add(new RepeatPattern());
+			// transformations.add(new RepeatPattern(resources));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
 			transformations.add(new DfVisitor<Expression>(
-					new LiteralIntegersAdder()));
+					new ChronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
-			transformations.add(new DfVisitor<Expression>(
-					new TacTransformation()));
+			transformations.add(new DfVisitor<Expression>(new ChronosTac()));
 			transformations.add(new DfVisitor<CfgNode>(
 					new ControlFlowAnalyzer()));
 			transformations.add(new DfVisitor<Expression>(
-					new LiteralIntegersAdder()));
+					new ChronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Expression>(new CastAdder(false,
 					false)));
+
 			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
 			for (DfSwitch<?> transformation : transformations) {

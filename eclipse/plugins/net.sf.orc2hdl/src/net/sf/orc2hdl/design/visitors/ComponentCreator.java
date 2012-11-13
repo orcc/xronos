@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Branch;
 import net.sf.openforge.lim.Bus;
@@ -80,6 +81,8 @@ import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
+import net.sf.orc2hdl.ir.InstPortRead;
+import net.sf.orc2hdl.ir.InstPortWrite;
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
@@ -558,6 +561,33 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			PortUtil.mapOutDataPorts(castOp, target, busDependency,
 					doneBusDependency);
 			componentList.add(castOp);
+		} else if (object instanceof InstPortRead) {
+			InstPortRead portRead = (InstPortRead) object;
+			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portRead.getPort();
+			ActionIOHandler ioHandler = resources.getIOHandler(port);
+
+			Component pinRead = ioHandler.getReadAccess(true);
+			pinRead.setNonRemovable();
+
+			Var pinReadVar = portRead.getTarget().getVariable();
+			PortUtil.mapOutDataPorts(pinRead, pinReadVar, busDependency,
+					doneBusDependency);
+			componentList.add(pinRead);
+		} else if (object instanceof InstPortWrite) {
+			InstPortWrite portWrite = (InstPortWrite) object;
+			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portWrite
+					.getPort();
+			ActionIOHandler ioHandler = resources.getIOHandler(port);
+			Component pinWrite = ioHandler.getWriteAccess(true);
+			pinWrite.setNonRemovable();
+
+			ExprVar value = (ExprVar) portWrite.getValue();
+			Var pinWriteVar = value.getUse().getVariable();
+
+			PortUtil.mapInDataPorts(pinWrite, pinWriteVar, portDependency,
+					portGroupDependency);
+			PortUtil.mapOutControlPort(pinWrite, 0, doneBusDependency);
+			componentList.add(pinWrite);
 		}
 		return null;
 	}

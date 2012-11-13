@@ -32,12 +32,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
-import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstStore;
@@ -95,13 +95,48 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 	}
 
+	private InnerVisitor innerVisitor = new InnerVisitor();
 	private Map<Port, Var> inputMap = new HashMap<Port, Var>();
-	private Map<Port, Var> outputMap = new HashMap<Port, Var>();
 
 	private Map<Var, Port> oldInputMap = new HashMap<Var, Port>();
 	private Map<Var, Port> oldOutputMap = new HashMap<Var, Port>();
 
-	private InnerVisitor innerVisitor = new InnerVisitor();
+	private Map<Port, Var> outputMap = new HashMap<Port, Var>();
+
+	private Map<Port, Integer> portMaxRepeatMap = new HashMap<Port, Integer>();
+	private ResourceCache resourceCache;
+
+	public RepeatPattern(ResourceCache resourceCache) {
+		super();
+		this.resourceCache = resourceCache;
+	}
+
+	private void biggestRepeatPattern(Var pinVar, Port port,
+			Integer repeatPattern, Map<Port, Var> ioMap) {
+		// If the repeat index is > 1
+		if (repeatPattern > 1) {
+			// If the inputList contains this port change it size if
+			// possible
+			if (ioMap.containsKey(port)) {
+				Var var = ioMap.get(port);
+				List<Integer> dim = var.getType().getDimensions();
+				Integer newSize = repeatPattern;
+				portMaxRepeatMap.put(port, repeatPattern);
+
+				if (dim.get(0) < newSize) {
+					Type type = IrFactory.eINSTANCE.createTypeList(newSize,
+							((TypeList) pinVar.getType()).getInnermostType());
+					var.setType(type);
+				}
+			} else {
+				Type type = pinVar.getType();
+				Var var = IrFactory.eINSTANCE.createVar(type, pinVar.getName(),
+						true, 0);
+				ioMap.put(port, var);
+				portMaxRepeatMap.put(port, repeatPattern);
+			}
+		}
+	}
 
 	@Override
 	public Void caseAction(Action action) {
@@ -112,10 +147,9 @@ public class RepeatPattern extends DfVisitor<Void> {
 			oldInputMap.put(pinReadVar, port);
 			EMap<Port, Integer> repeatPattern = action.getInputPattern()
 					.getNumTokensMap();
-			findBiggestRepeatPattern(pinReadVar, port, repeatPattern.get(port),
+			biggestRepeatPattern(pinReadVar, port, repeatPattern.get(port),
 					inputMap);
-			addLocalsAndStore(action, port, pinReadVar, "pinRead",
-					repeatPattern.get(port));
+
 		}
 		/** OutputPattern **/
 		for (Port port : action.getOutputPattern().getPorts()) {
@@ -124,71 +158,12 @@ public class RepeatPattern extends DfVisitor<Void> {
 			oldOutputMap.put(pinWriteVar, port);
 			EMap<Port, Integer> repeatPattern = action.getOutputPattern()
 					.getNumTokensMap();
-			findBiggestRepeatPattern(pinWriteVar, port,
-					repeatPattern.get(port), outputMap);
-			addLocalsAndLoad(action, port, pinWriteVar, "pinWrite",
-					repeatPattern.get(port));
+			biggestRepeatPattern(pinWriteVar, port, repeatPattern.get(port),
+					outputMap);
 
 		}
 		innerVisitor.doSwitch(action.getBody().getBlocks());
 		return null;
-	}
-
-	private void addLocalsAndStore(Action action, Port port, Var var,
-			String prefix, Integer repeatValue) {
-		if (repeatValue > 1) {
-			BlockBasic bodyNode = action.getBody().getFirst();
-			for (int i = 0; i < repeatValue; i++) {
-				Type type = ((TypeList) var.getType()).getInnermostType();
-				Var localReadVar = IrFactory.eINSTANCE.createVar(type, prefix
-						+ "_" + var.getName() + "_" + i, true, 0);
-				action.getBody().getLocals().add(localReadVar);
-				Var targetVar = inputMap.get(port);
-				bodyNode.add(i, IrFactory.eINSTANCE.createInstStore(targetVar,
-						i, localReadVar));
-			}
-		}
-	}
-
-	private void addLocalsAndLoad(Action action, Port port, Var var,
-			String prefix, Integer repeatValue) {
-		if (repeatValue > 1) {
-			BlockBasic bodyNode = action.getBody().getLast();
-			for (int i = 0; i < repeatValue; i++) {
-				Type type = ((TypeList) var.getType()).getInnermostType();
-				Var localWriteVar = IrFactory.eINSTANCE.createVar(type, prefix
-						+ "_" + var.getName() + "_" + i, true, 0);
-				action.getBody().getLocals().add(localWriteVar);
-				Var sourceVar = outputMap.get(port);
-				bodyNode.add(i, IrFactory.eINSTANCE.createInstLoad(
-						localWriteVar, sourceVar, i));
-			}
-		}
-	}
-
-	private void findBiggestRepeatPattern(Var pinReadVar, Port port,
-			Integer repeatPattern, Map<Port, Var> ioMap) {
-		// If the repeat index is > 1
-		if (repeatPattern > 1) {
-			// If the inputList contains this port change it size if
-			// possible
-			if (ioMap.containsKey(port)) {
-				Var var = ioMap.get(port);
-				List<Integer> dim = var.getType().getDimensions();
-				Integer newSize = repeatPattern;
-				if (dim.get(0) < newSize) {
-					Type type = IrFactory.eINSTANCE.createTypeList(newSize,
-							((TypeList) pinReadVar.getType())
-									.getInnermostType());
-					var.setType(type);
-				}
-			} else {
-				Type type = pinReadVar.getType();
-				Var var = IrFactory.eINSTANCE.createVar(type,
-						pinReadVar.getName(), true, 0);
-				ioMap.put(port, var);
-			}
-		}
 	}
 
 	@Override
@@ -205,9 +180,15 @@ public class RepeatPattern extends DfVisitor<Void> {
 		}
 
 		for (Port port : outputMap.keySet()) {
-			Var inVar = outputMap.get(port);
-			actor.getStateVars().add(inVar);
+			Var outVar = outputMap.get(port);
+			actor.getStateVars().add(outVar);
 		}
+
+		// Add to resources
+		resourceCache.addActorInputsVar(actor, inputMap);
+		resourceCache.addActorOutputsVar(actor, outputMap);
+		resourceCache.addActorMaxPortRepeat(actor, portMaxRepeatMap);
+
 		return null;
 	}
 
