@@ -78,6 +78,7 @@ import net.sf.openforge.lim.primitive.Or;
 import net.sf.openforge.util.MathStuff;
 import net.sf.openforge.util.naming.IDSourceInfo;
 import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orc2hdl.design.ResourceDependecies;
 import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
@@ -158,6 +159,17 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		this.busDependency = busDependency;
 		this.portGroupDependency = portGroupDependency;
 		this.doneBusDependency = doneBusDependency;
+		this.resources = resources;
+		componentList = new ArrayList<Component>();
+	}
+
+	public ComponentCreator(ResourceCache resources,
+			ResourceDependecies resourceDependecies) {
+		super(true);
+		this.portDependency = resourceDependecies.getPortDependency();
+		this.busDependency = resourceDependecies.getBusDependency();
+		this.portGroupDependency = resourceDependecies.getPortGroupDependency();
+		this.doneBusDependency = resourceDependecies.getDoneBusDependency();
 		this.resources = resources;
 		componentList = new ArrayList<Component>();
 	}

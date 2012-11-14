@@ -28,12 +28,22 @@
  */
 package net.sf.orc2hdl.design.visitors.io;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.Design;
+import net.sf.openforge.lim.Exit;
+import net.sf.openforge.lim.Module;
+import net.sf.openforge.lim.Task;
 import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orc2hdl.design.ResourceDependecies;
+import net.sf.orc2hdl.design.util.DesignUtil;
+import net.sf.orc2hdl.design.util.ModuleUtil;
+import net.sf.orc2hdl.design.visitors.ComponentCreator;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
@@ -57,33 +67,62 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 
 	private ResourceCache resourceCache;
 
-	public CircularBufferProcedure(Design design, ResourceCache resourceCache) {
+	private ResourceDependecies resourceDependecies;
+
+	/** Component Creator (Instruction Visitor) **/
+	private final ComponentCreator componentCreator;
+
+	public CircularBufferProcedure(Design design, ResourceCache resourceCache,
+			ResourceDependecies resourceDependecies) {
 		super();
 		this.design = design;
 		this.resourceCache = resourceCache;
+		this.resourceDependecies = resourceDependecies;
 		circularBufferPortMap = new HashMap<Port, CircularBuffer>();
+		componentCreator = new ComponentCreator(resourceCache,
+				resourceDependecies);
 	}
 
 	@Override
 	public Void caseActor(Actor actor) {
 		// Get Input Ports
 		for (Port port : actor.getInputs()) {
-			Var buffer = resourceCache.getActorInputsVar(actor).get(port);
-			Integer size = resourceCache.getActorMaxPortRepeat(actor).get(port);
-			CircularBuffer circularBuffer = new CircularBuffer(port, buffer,
-					size);
-			circularBufferPortMap.put(port, circularBuffer);
-			procedures.add(createReadProcedure(port, circularBuffer));
+			if (resourceCache.getActorInputCircularBuffer(actor).get(port) != null) {
+				CircularBuffer circularBuffer = resourceCache
+						.getActorInputCircularBuffer(actor).get(port);
+				circularBufferPortMap.put(port, circularBuffer);
+				procedures.add(createReadProcedure(port, circularBuffer));
+			}
 		}
 		// Get Output Ports
 		for (Port port : actor.getOutputs()) {
-			Var buffer = resourceCache.getActorInputsVar(actor).get(port);
-			Integer size = resourceCache.getActorMaxPortRepeat(actor).get(port);
-			CircularBuffer circularBuffer = new CircularBuffer(port, buffer,
-					size);
-			circularBufferPortMap.put(port, circularBuffer);
-			procedures.add(createWriteProcedure(port, circularBuffer));
+			if (resourceCache.getActorOutputCircularBuffer(actor).get(port) != null) {
+				CircularBuffer circularBuffer = resourceCache
+						.getActorOutputCircularBuffer(actor).get(port);
+				circularBufferPortMap.put(port, circularBuffer);
+				procedures.add(createWriteProcedure(port, circularBuffer));
+			}
 		}
+
+		// Create a task for each Procedure
+		for (Procedure procedure : procedures) {
+			List<Component> taskComponents = new ArrayList<Component>();
+			taskComponents = componentCreator.doSwitch(procedure);
+
+			Module taskModule = (Module) ModuleUtil.createModule(
+					taskComponents, Collections.<Var> emptyList(),
+					Collections.<Var> emptyList(),
+					procedure.getName() + "Body", false, Exit.RETURN, 0,
+					resourceDependecies.getPortDependency(),
+					resourceDependecies.getBusDependency(),
+					resourceDependecies.getPortGroupDependency(),
+					resourceDependecies.getDoneBusDependency());
+
+			Task task = DesignUtil.createTask(procedure.getName(), taskModule,
+					true);
+			design.addTask(task);
+		}
+
 		return null;
 	}
 

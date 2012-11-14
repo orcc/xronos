@@ -37,6 +37,7 @@ import java.util.Map;
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.Location;
+import net.sf.orc2hdl.design.visitors.io.CircularBuffer;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.Block;
@@ -52,6 +53,12 @@ import net.sf.orcc.ir.Var;
  * 
  */
 public class ResourceCache {
+
+	private Map<Actor, Boolean> actorContainsRepeat = new HashMap<Actor, Boolean>();
+
+	private Map<Actor, Map<Port, CircularBuffer>> actorInputCircularBuffer = new HashMap<Actor, Map<Port, CircularBuffer>>();
+
+	private Map<Actor, Map<Port, CircularBuffer>> actorOutputCircularBuffer = new HashMap<Actor, Map<Port, CircularBuffer>>();
 
 	/** Map of a Branch Else Block Input Variables **/
 	private Map<Block, List<Var>> elseInputs = new HashMap<Block, List<Var>>();
@@ -89,26 +96,11 @@ public class ResourceCache {
 	/** Map of a Branch Then Block Output Variables **/
 	private Map<Block, List<Var>> thenOutputs = new HashMap<Block, List<Var>>();
 
-	private Map<Actor, Map<Port, Var>> actorInputsVar = new HashMap<Actor, Map<Port, Var>>();
-
-	private Map<Actor, Map<Port, Var>> actorOutputsVar = new HashMap<Actor, Map<Port, Var>>();
-
-	private Map<Actor, Map<Port, Integer>> actorMaxPortRepeat = new HashMap<Actor, Map<Port, Integer>>();
-
 	public ResourceCache() {
 	}
 
-	public void addActorInputsVar(Actor actor, Map<Port, Var> portVar) {
-		actorInputsVar.put(actor, portVar);
-	}
-
-	public void addActorOutputsVar(Actor actor, Map<Port, Var> portVar) {
-		actorOutputsVar.put(actor, portVar);
-	}
-
-	public void addActorMaxPortRepeat(Actor actor,
-			Map<Port, Integer> portMaxRepeat) {
-		actorMaxPortRepeat.put(actor, portMaxRepeat);
+	public void addActorContainsRepeat(Actor actor, Boolean contains) {
+		actorContainsRepeat.put(actor, contains);
 	}
 
 	public void addBranch(Block block, Map<Block, List<Var>> stmDecision,
@@ -201,6 +193,22 @@ public class ResourceCache {
 		}
 	}
 
+	public Boolean getActorContainsRepeat(Actor actor) {
+		if (actorContainsRepeat.containsKey(actor)) {
+			return actorContainsRepeat.get(actor);
+		} else {
+			return false;
+		}
+	}
+
+	public Map<Port, CircularBuffer> getActorInputCircularBuffer(Actor actor) {
+		return actorInputCircularBuffer.get(actor);
+	}
+
+	public Map<Port, CircularBuffer> getActorOutputCircularBuffer(Actor actor) {
+		return actorOutputCircularBuffer.get(actor);
+	}
+
 	public List<Var> getBlockDecisionInput(Block block) {
 		return stmDecision.get(block);
 	}
@@ -249,28 +257,13 @@ public class ResourceCache {
 		return loopBodyOutputs.get(block);
 	}
 
-	public Map<Port, Var> getActorInputsVar(Actor actor) {
-		if (actorInputsVar.get(actor) != null) {
-			return actorInputsVar.get(actor);
-		} else {
-			return null;
-		}
-
+	public void setActorInputCircularBuffer(Actor actor,
+			Map<Port, CircularBuffer> portBuffer) {
+		this.actorInputCircularBuffer.put(actor, portBuffer);
 	}
 
-	public Map<Port, Var> getActorOutputsVar(Actor actor) {
-		if (actorOutputsVar.get(actor) != null) {
-			return actorOutputsVar.get(actor);
-		} else {
-			return null;
-		}
-	}
-
-	public Map<Port, Integer> getActorMaxPortRepeat(Actor actor) {
-		if (actorMaxPortRepeat.get(actor) != null) {
-			return actorMaxPortRepeat.get(actor);
-		} else {
-			return null;
-		}
+	public void setActorOutputCircularBuffer(Actor actor,
+			Map<Port, CircularBuffer> portBuffer) {
+		this.actorOutputCircularBuffer.put(actor, portBuffer);
 	}
 }

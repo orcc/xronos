@@ -15,6 +15,7 @@ import net.sf.orc2hdl.backend.transform.ChronosLiteralIntegersAdder;
 import net.sf.orc2hdl.backend.transform.ChronosTac;
 import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
+import net.sf.orc2hdl.backend.transform.RepeatPattern;
 import net.sf.orc2hdl.backend.transform.ScalarPortIO;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orcc.backends.AbstractBackend;
@@ -159,12 +160,12 @@ public class Chronos extends AbstractBackend {
 			transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
+			transformations.add(new RepeatPattern(resources));
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
-			// transformations.add(new RepeatPattern(resources));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
-			transformations.add(new ScalarPortIO());
+			transformations.add(new ScalarPortIO(resources));
 			transformations.add(new DfVisitor<Expression>(
 					new ChronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));

@@ -31,6 +31,8 @@ package net.sf.orc2hdl.backend.transform;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orc2hdl.design.visitors.io.CircularBuffer;
 import net.sf.orc2hdl.ir.ChronosIrSpecificFactory;
 import net.sf.orc2hdl.ir.InstPortRead;
 import net.sf.orc2hdl.ir.InstPortWrite;
@@ -74,8 +76,8 @@ public class ScalarPortIO extends DfVisitor<Void> {
 				BlockBasic block = load.getBlock();
 				int index = load.getBlock().indexOf(load);
 
-				IrUtil.delete(load);
 				block.add(index, portRead);
+				IrUtil.delete(load);
 			}
 			return null;
 		}
@@ -93,6 +95,7 @@ public class ScalarPortIO extends DfVisitor<Void> {
 				portWrite.setLineNumber(store.getLineNumber());
 				BlockBasic block = store.getBlock();
 				int index = store.getBlock().indexOf(store);
+
 				block.add(index, portWrite);
 				IrUtil.delete(store);
 			}
@@ -101,23 +104,37 @@ public class ScalarPortIO extends DfVisitor<Void> {
 
 	}
 
+	private ResourceCache resourceCache;
 	private InnerVisitor innerVisitor = new InnerVisitor();
 	private Map<Var, Port> varToPortMap = new HashMap<Var, Port>();
+
+	private Map<Port, CircularBuffer> CircularBufferInput;
+
+	private Map<Port, CircularBuffer> CircularBufferOutput;
+
+	public ScalarPortIO(ResourceCache resourceCache) {
+		super();
+		this.resourceCache = resourceCache;
+	}
 
 	@Override
 	public Void caseAction(Action action) {
 		if (!action.getInputPattern().isEmpty()
 				|| !action.getOutputPattern().isEmpty()) {
 			for (Port port : action.getInputPattern().getPorts()) {
-				Var portReadVar = action.getInputPattern().getPortToVarMap()
-						.get(port);
-				varToPortMap.put(portReadVar, port);
+				if (CircularBufferInput.get(port) == null) {
+					Var portReadVar = action.getInputPattern()
+							.getPortToVarMap().get(port);
+					varToPortMap.put(portReadVar, port);
+				}
 			}
 
 			for (Port port : action.getOutputPattern().getPorts()) {
-				Var portWriteVar = action.getOutputPattern().getPortToVarMap()
-						.get(port);
-				varToPortMap.put(portWriteVar, port);
+				if (CircularBufferOutput.get(port) == null) {
+					Var portWriteVar = action.getOutputPattern()
+							.getPortToVarMap().get(port);
+					varToPortMap.put(portWriteVar, port);
+				}
 			}
 			// Visit the action
 			innerVisitor.doSwitch(action.getBody());
@@ -127,10 +144,14 @@ public class ScalarPortIO extends DfVisitor<Void> {
 
 	@Override
 	public Void caseActor(Actor actor) {
+		CircularBufferInput = resourceCache.getActorInputCircularBuffer(actor);
+		CircularBufferOutput = resourceCache
+				.getActorOutputCircularBuffer(actor);
+
 		for (Action action : actor.getActions()) {
 			doSwitch(action);
 		}
+
 		return null;
 	}
-
 }

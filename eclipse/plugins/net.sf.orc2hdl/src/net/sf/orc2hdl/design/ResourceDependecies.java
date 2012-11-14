@@ -26,82 +26,59 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-package net.sf.orc2hdl.design.visitors.io;
 
-import net.sf.orcc.df.Port;
-import net.sf.orcc.ir.IrFactory;
-import net.sf.orcc.ir.Type;
+package net.sf.orc2hdl.design;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import net.sf.openforge.lim.Bus;
+import net.sf.openforge.lim.Port;
 import net.sf.orcc.ir.Var;
 
 /**
- * This class contains the necessary information of a Circular Buffer
+ * This class contains different Maps needed for the dependencies between LIM
+ * components.
  * 
- * @author Endri Bezati
+ * @author endrix
  * 
  */
-public class CircularBuffer {
+public class ResourceDependecies {
 
-	/** The buffer Variable **/
-	private Var buffer;
+	/** Dependency between Components and Bus-Var **/
+	private final Map<Bus, Var> busDependency;
 
-	/** The count variable of the circular Buffer Index **/
-	private Var count;
+	/** Dependency between Components and Done Bus **/
+	private final Map<Bus, Integer> doneBusDependency;
 
-	/** The head variable of the circular Buffer Index **/
-	private Var head;
+	/** Dependency between Components and Done Bus **/
+	private final Map<Port, Integer> portGroupDependency;
 
-	/** The name of the circular buffer **/
-	private String name;
+	/** Dependency between Components and Port-Var **/
+	private final Map<Port, Var> portDependency;
 
-	/** The circular buffer size **/
-	private Port port;
-
-	/** The circular buffer size **/
-	private Integer size;
-
-	/** The Boolean start Variable **/
-	private Var start;
-
-	public CircularBuffer(Port port, Var buffer, Integer size) {
-		this.port = port;
-		this.buffer = buffer;
-		this.size = size;
-		createVariables();
+	public ResourceDependecies() {
+		super();
+		busDependency = new HashMap<Bus, Var>();
+		doneBusDependency = new HashMap<Bus, Integer>();
+		portDependency = new HashMap<Port, Var>();
+		portGroupDependency = new HashMap<Port, Integer>();
 	}
 
-	private void createVariables() {
-		name = port.getName();
-		Type type = IrFactory.eINSTANCE.createTypeInt();
-		head = IrFactory.eINSTANCE.createVar(type, "cb_" + name + "_head",
-				true, 0);
-		count = IrFactory.eINSTANCE.createVar(type, "cb_" + name + "_count",
-				true, 0);
-		Type bool = IrFactory.eINSTANCE.createTypeBool();
-		start = IrFactory.eINSTANCE.createVar(bool, "cb_" + name + "_start",
-				true, 0);
+	public Map<Bus, Var> getBusDependency() {
+		return busDependency;
 	}
 
-	public Var getBuffer() {
-		return buffer;
+	public Map<Bus, Integer> getDoneBusDependency() {
+		return doneBusDependency;
 	}
 
-	public Var getCount() {
-		return count;
+	public Map<Port, Integer> getPortGroupDependency() {
+		return portGroupDependency;
 	}
 
-	public Var getHead() {
-		return head;
+	public Map<Port, Var> getPortDependency() {
+		return portDependency;
 	}
 
-	public Port getPort() {
-		return port;
-	}
-
-	public Integer getSize() {
-		return size;
-	}
-
-	public Var getStart() {
-		return start;
-	}
 }
