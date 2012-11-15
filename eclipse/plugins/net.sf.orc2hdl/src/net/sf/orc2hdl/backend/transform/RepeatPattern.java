@@ -244,10 +244,19 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 				Expression value = IrFactory.eINSTANCE.createExprBinary(
 						indexAdd, OpBinary.BITAND, exprIntSize, exrpType);
+				target = circularBuffer.getHead();
 				InstStore instStore = IrFactory.eINSTANCE.createInstStore(
 						target, value);
 				int instIndex = lastBlock.getInstructions().size() - 1;
 				lastBlock.add(instIndex, instStore);
+
+				// Create Load instruction for count
+				target = circularBuffer.getTmpCount();
+				source = circularBuffer.getCount();
+				InstLoad instLoadCount = IrFactory.eINSTANCE.createInstLoad(
+						target, source);
+				instIndex = lastBlock.getInstructions().size() - 1;
+				firstBlock.add(instIndex, instLoadCount);
 
 				// Create Store instruction for count
 				Var count = circularBuffer.getCount();

@@ -44,12 +44,21 @@ import net.sf.orc2hdl.design.ResourceDependecies;
 import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.visitors.ComponentCreator;
+import net.sf.orc2hdl.ir.InstPortStatus;
+import net.sf.orc2hdl.ir.XronosIrSpecificFactory;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.Def;
+import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 
 /**
@@ -132,9 +141,62 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		Procedure read = IrFactory.eINSTANCE.createProcedure(
 				"circularBufferRead_" + name, 0,
 				IrFactory.eINSTANCE.createTypeVoid());
+		/** Get portStatus **/
 		BlockBasic blockRead = IrFactory.eINSTANCE.createBlockBasic();
-		// Put the block to the procedure
+		// Create InstPortStatus
+		InstPortStatus instPortStatus = XronosIrSpecificFactory.eINSTANCE
+				.createInstPortStatus();
+		Type typeBool = IrFactory.eINSTANCE.createTypeBool();
+		Var tmpPortStatus = IrFactory.eINSTANCE.createVar(typeBool,
+				"tmpPortStatus_" + name, true, 0);
+		read.getLocals().add(tmpPortStatus);
+
+		Def defPortStatus = IrFactory.eINSTANCE.createDef(tmpPortStatus);
+		instPortStatus.setPort(port);
+		instPortStatus.setTarget(defPortStatus);
+		blockRead.add(instPortStatus);
+
+		/** Get circularBuffer start **/
+		Var cbStart = circularBuffer.getStart();
+		Var cbTmpStart = circularBuffer.getTmpStart();
+		read.getLocals().add(cbTmpStart);
+		InstLoad loadStart = IrFactory.eINSTANCE.createInstLoad(cbTmpStart,
+				cbStart);
+		blockRead.add(loadStart);
 		read.getBlocks().add(blockRead);
+
+		/** Block If Start **/
+		BlockIf blockIfStart = IrFactory.eINSTANCE.createBlockIf();
+		ExprVar exprtmpPortStatus = IrFactory.eINSTANCE
+				.createExprVar(tmpPortStatus);
+		ExprVar exprtTmpStart = IrFactory.eINSTANCE.createExprVar(cbTmpStart);
+
+		Expression conditionStart = IrFactory.eINSTANCE.createExprBinary(
+				exprtTmpStart, OpBinary.LOGIC_AND, exprtmpPortStatus, typeBool);
+		// Set If start condition
+		blockIfStart.setCondition(conditionStart);
+
+		// get tmpCount and tmpRequestSize and put them to the first Then Block
+		// basic
+		BlockBasic thenIfStartFirstBlock = IrFactory.eINSTANCE
+				.createBlockBasic();
+		Var cbTmpCount = circularBuffer.getTmpCount();
+		Var cbCount = circularBuffer.getCount();
+		InstLoad instLoadCount = IrFactory.eINSTANCE.createInstLoad(cbTmpCount,
+				cbCount);
+		thenIfStartFirstBlock.add(instLoadCount);
+
+		Var cbTmpRequestSize = circularBuffer.getTmpRequestSize();
+		Var cbRequestSize = circularBuffer.getRequestSize();
+		InstLoad instLoadRequestSize = IrFactory.eINSTANCE.createInstLoad(
+				cbTmpRequestSize, cbRequestSize);
+		thenIfStartFirstBlock.add(instLoadRequestSize);
+
+		// Block If request Size
+
+		// Block If full
+		// Put the block to the procedure
+
 		return null;
 	}
 

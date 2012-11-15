@@ -486,70 +486,78 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			loadIndexVar = ((ExprVar) expr).getUse().getVariable();
 		}
 
-		TypeList typeList = (TypeList) sourceVar.getType();
-		Type type = typeList.getInnermostType();
+		if (sourceVar.getType().isList()) {
+			TypeList typeList = (TypeList) sourceVar.getType();
+			Type type = typeList.getInnermostType();
 
-		Boolean isSigned = type.isInt();
-		Location targetLocation = resources.getLocation(sourceVar);
+			Boolean isSigned = type.isInt();
+			Location targetLocation = resources.getLocation(sourceVar);
 
-		LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
-				.getLogicalMemoryPorts().iterator().next();
+			LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
 
-		AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
-				.getInitialValue().getAddressStridePolicy();
+			AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
+					.getInitialValue().getAddressStridePolicy();
 
-		int dataSize = type.getSizeInBits();
-		HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(), 32, 0,
-				isSigned, addrPolicy);
-		CastOp castOp = new CastOp(dataSize, isSigned);
-		Block block = DesignUtil.buildAddressedBlock(read, targetLocation,
-				Collections.singletonList((Component) castOp));
-		Bus result = block.getExit(Exit.DONE).makeDataBus();
-		castOp.getEntries()
-				.get(0)
-				.addDependency(castOp.getDataPort(),
-						new DataDependency(read.getResultBus()));
-		result.getPeer()
-				.getOwner()
-				.getEntries()
-				.get(0)
-				.addDependency(result.getPeer(),
-						new DataDependency(castOp.getResultBus()));
+			int dataSize = type.getSizeInBits();
+			HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(), 32,
+					0, isSigned, addrPolicy);
+			CastOp castOp = new CastOp(dataSize, isSigned);
+			Block block = DesignUtil.buildAddressedBlock(read, targetLocation,
+					Collections.singletonList((Component) castOp));
+			Bus result = block.getExit(Exit.DONE).makeDataBus();
+			castOp.getEntries()
+					.get(0)
+					.addDependency(castOp.getDataPort(),
+							new DataDependency(read.getResultBus()));
+			result.getPeer()
+					.getOwner()
+					.getEntries()
+					.get(0)
+					.addDependency(result.getPeer(),
+							new DataDependency(castOp.getResultBus()));
 
-		memPort.addAccess(read, targetLocation);
+			memPort.addAccess(read, targetLocation);
 
-		Var indexVar = procedure.newTempLocalVariable(
-				IrFactory.eINSTANCE.createTypeInt(32), "index" + listIndexes);
-		listIndexes++;
+			Var indexVar = procedure.newTempLocalVariable(
+					IrFactory.eINSTANCE.createTypeInt(32), "index"
+							+ listIndexes);
+			listIndexes++;
 
-		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
-				loadIndexVar);
-		doSwitch(assign);
+			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
+					loadIndexVar);
+			doSwitch(assign);
 
-		PortUtil.mapInDataPorts(block, indexVar, portDependency,
-				portGroupDependency);
+			PortUtil.mapInDataPorts(block, indexVar, portDependency,
+					portGroupDependency);
 
-		// Check if the load target should be casted
+			// Check if the load target should be casted
 
-		Var target = load.getTarget().getVariable();
-		int targetSize = target.getType().getSizeInBits();
+			Var target = load.getTarget().getVariable();
+			int targetSize = target.getType().getSizeInBits();
 
-		if (targetSize > dataSize) {
-			// NOTE: OpenForge does not accept a cast here
-			if (target.getType().isInt()) {
-				target.setType(IrFactory.eINSTANCE.createTypeInt(dataSize));
-			} else if (target.getType().isUint()) {
-				target.setType(IrFactory.eINSTANCE.createTypeUint(dataSize));
+			if (targetSize > dataSize) {
+				// NOTE: OpenForge does not accept a cast here
+				if (target.getType().isInt()) {
+					target.setType(IrFactory.eINSTANCE.createTypeInt(dataSize));
+				} else if (target.getType().isUint()) {
+					target.setType(IrFactory.eINSTANCE.createTypeUint(dataSize));
+				}
 			}
+
+			PortUtil.mapOutDataPorts(block, target, busDependency,
+					doneBusDependency);
+			IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+					load.getLineNumber());
+			block.setIDSourceInfo(sinfo);
+			componentList.add(block);
+		} else {
+			Var target = load.getTarget().getVariable();
+			Component absoluteMemoryRead = ModuleUtil.absoluteMemoryRead(
+					sourceVar, target, resources, busDependency,
+					doneBusDependency);
+			componentList.add(absoluteMemoryRead);
 		}
-
-		PortUtil.mapOutDataPorts(block, target, busDependency,
-				doneBusDependency);
-		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
-				load.getLineNumber());
-		block.setIDSourceInfo(sinfo);
-		componentList.add(block);
-
 		return null;
 	}
 
@@ -626,70 +634,77 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			if (targetVar.getType().isList()) {
 				TypeList typeList = (TypeList) targetVar.getType();
 				type = typeList.getInnermostType();
+
+				// Get Location form resources
+				Location targetLocation = resources.getLocation(targetVar);
+				LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+						.getLogicalMemoryPorts().iterator().next();
+				AddressStridePolicy addrPolicy = targetLocation
+						.getAbsoluteBase().getInitialValue()
+						.getAddressStridePolicy();
+
+				int dataSize = type.getSizeInBits();
+				Boolean isSigned = type.isInt();
+
+				HeapWrite heapWrite = new HeapWrite(dataSize
+						/ addrPolicy.getStride(), 32, // max address width
+						0, // fixed offset
+						isSigned, // is signed?
+						addrPolicy); // addressing policy
+
+				Block block = DesignUtil.buildAddressedBlock(heapWrite,
+						targetLocation, Collections.<Component> emptyList());
+				Port data = block.makeDataPort();
+				heapWrite
+						.getEntries()
+						.get(0)
+						.addDependency(heapWrite.getValuePort(),
+								new DataDependency(data.getPeer()));
+
+				memPort.addAccess(heapWrite, targetLocation);
+
+				Var indexVar = procedure.newTempLocalVariable(
+						IrFactory.eINSTANCE.createTypeInt(32), "index"
+								+ listIndexes);
+				listIndexes++;
+				currentComponent = new CastOp(32, isSigned);
+
+				PortUtil.mapInDataPorts(currentComponent, storeIndexVar,
+						portDependency, portGroupDependency);
+				Var castedIndexVar = procedure.newTempLocalVariable(
+						IrFactory.eINSTANCE.createTypeInt(32),
+						"casted_" + castIndex + "_"
+								+ storeIndexVar.getIndexedName());
+
+				PortUtil.mapOutDataPorts(currentComponent, castedIndexVar,
+						busDependency, doneBusDependency);
+				componentList.add(currentComponent);
+				castIndex++;
+				// add the assign instruction for each index
+				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+						indexVar, castedIndexVar);
+				doSwitch(assign);
+
+				IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+						store.getLineNumber());
+				block.setIDSourceInfo(sinfo);
+
+				currentComponent = block;
+				List<Var> inVars = new ArrayList<Var>();
+				inVars.add(indexVar);
+				inVars.add(valueVar);
+				PortUtil.mapInDataPorts(currentComponent, inVars,
+						portDependency, portGroupDependency);
+				PortUtil.mapOutControlPort(currentComponent, 0,
+						doneBusDependency);
+				componentList.add(currentComponent);
 			} else {
 				type = targetVar.getType();
+				Component absoluteMemoryWrite = ModuleUtil.absoluteMemoryWrite(
+						targetVar, valueVar, resources, portDependency,
+						portGroupDependency, doneBusDependency);
+				componentList.add(absoluteMemoryWrite);
 			}
-
-			// Get Location form resources
-			Location targetLocation = resources.getLocation(targetVar);
-			LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
-					.getLogicalMemoryPorts().iterator().next();
-			AddressStridePolicy addrPolicy = targetLocation.getAbsoluteBase()
-					.getInitialValue().getAddressStridePolicy();
-
-			int dataSize = type.getSizeInBits();
-			Boolean isSigned = type.isInt();
-
-			HeapWrite heapWrite = new HeapWrite(dataSize
-					/ addrPolicy.getStride(), 32, // max address width
-					0, // fixed offset
-					isSigned, // is signed?
-					addrPolicy); // addressing policy
-
-			Block block = DesignUtil.buildAddressedBlock(heapWrite,
-					targetLocation, Collections.<Component> emptyList());
-			Port data = block.makeDataPort();
-			heapWrite
-					.getEntries()
-					.get(0)
-					.addDependency(heapWrite.getValuePort(),
-							new DataDependency(data.getPeer()));
-
-			memPort.addAccess(heapWrite, targetLocation);
-
-			Var indexVar = procedure.newTempLocalVariable(
-					IrFactory.eINSTANCE.createTypeInt(32), "index"
-							+ listIndexes);
-			listIndexes++;
-			currentComponent = new CastOp(32, isSigned);
-
-			PortUtil.mapInDataPorts(currentComponent, storeIndexVar,
-					portDependency, portGroupDependency);
-			Var castedIndexVar = procedure.newTempLocalVariable(
-					IrFactory.eINSTANCE.createTypeInt(32), "casted_"
-							+ castIndex + "_" + storeIndexVar.getIndexedName());
-
-			PortUtil.mapOutDataPorts(currentComponent, castedIndexVar,
-					busDependency, doneBusDependency);
-			componentList.add(currentComponent);
-			castIndex++;
-			// add the assign instruction for each index
-			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
-					castedIndexVar);
-			doSwitch(assign);
-
-			IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
-					store.getLineNumber());
-			block.setIDSourceInfo(sinfo);
-
-			currentComponent = block;
-			List<Var> inVars = new ArrayList<Var>();
-			inVars.add(indexVar);
-			inVars.add(valueVar);
-			PortUtil.mapInDataPorts(currentComponent, inVars, portDependency,
-					portGroupDependency);
-			PortUtil.mapOutControlPort(currentComponent, 0, doneBusDependency);
-			componentList.add(currentComponent);
 		} else {
 			if (store.getValue().isExprVar()) {
 				Var sourceVar = ((ExprVar) store.getValue()).getUse()

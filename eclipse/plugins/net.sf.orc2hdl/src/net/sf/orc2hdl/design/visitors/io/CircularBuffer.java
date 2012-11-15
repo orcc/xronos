@@ -60,19 +60,25 @@ public class CircularBuffer {
 	/** The circular buffer size **/
 	private Port port;
 
+	/** The circular buffer Request size **/
+	private Var requestSize;
+
 	/** The circular buffer size **/
 	private Integer size;
 
 	/** The Boolean start Variable **/
 	private Var start;
 
-	/** The temporary head variable of the circular Buffer Index **/
+	/** The temporary count variable of the circular Buffer Index **/
 	private Var tmpCount;
 
 	/** The temporary head variable of the circular Buffer Index **/
 	private Var tmpHead;
 
 	/** The temporary head variable of the circular Buffer Index **/
+	private Var tmpRequestSize;
+
+	/** The temporary start variable of the circular Buffer Index **/
 	private Var tmpStart;
 
 	public CircularBuffer(Port port, Var buffer, Integer size) {
@@ -82,22 +88,11 @@ public class CircularBuffer {
 		createVariables();
 	}
 
-	private void createVariables() {
-		name = port.getName();
-		Type type = IrFactory.eINSTANCE.createTypeInt();
-		head = IrFactory.eINSTANCE.createVar(type, "cb_" + name + "_head",
-				true, 0);
-		tmpHead = IrFactory.eINSTANCE.createVar(type,
-				"cb_" + name + "_tmpHead", true, 0);
-		count = IrFactory.eINSTANCE.createVar(type, "cb_" + name + "_count",
-				true, 0);
-		tmpCount = IrFactory.eINSTANCE.createVar(type, "cb_" + name
-				+ "_tmpCount", true, 0);
-		Type bool = IrFactory.eINSTANCE.createTypeBool();
-		start = IrFactory.eINSTANCE.createVar(bool, "cb_" + name + "_start",
-				true, 0);
-		tmpStart = IrFactory.eINSTANCE.createVar(bool, "cb_" + name
-				+ "_tmpStart", true, 0);
+	public void addToLocals(Action action) {
+		List<Var> locals = action.getBody().getLocals();
+		locals.add(tmpCount);
+		locals.add(tmpHead);
+		locals.add(tmpStart);
 	}
 
 	public void addToStateVars(Actor actor) {
@@ -106,13 +101,34 @@ public class CircularBuffer {
 		stateVars.add(head);
 		stateVars.add(count);
 		stateVars.add(start);
+		stateVars.add(requestSize);
 	}
 
-	public void addToLocals(Action action) {
-		List<Var> locals = action.getBody().getLocals();
-		locals.add(tmpCount);
-		locals.add(tmpHead);
-		locals.add(tmpStart);
+	private void createVariables() {
+		name = port.getName();
+		Type type = IrFactory.eINSTANCE.createTypeInt();
+
+		head = IrFactory.eINSTANCE.createVar(type, "cb_" + name + "_head",
+				true, 0);
+		tmpHead = IrFactory.eINSTANCE.createVar(type,
+				"cb_" + name + "_tmpHead", true, 0);
+
+		count = IrFactory.eINSTANCE.createVar(type, "cb_" + name + "_count",
+				true, 0);
+		tmpCount = IrFactory.eINSTANCE.createVar(type, "cb_" + name
+				+ "_tmpCount", true, 0);
+
+		requestSize = IrFactory.eINSTANCE.createVar(type, "cb_" + name
+				+ "_requestSize", true, 0);
+		tmpRequestSize = IrFactory.eINSTANCE.createVar(type, "cb_" + name
+				+ "_tmpRequestSize", true, 0);
+
+		Type bool = IrFactory.eINSTANCE.createTypeBool();
+
+		start = IrFactory.eINSTANCE.createVar(bool, "cb_" + name + "_start",
+				true, 0);
+		tmpStart = IrFactory.eINSTANCE.createVar(bool, "cb_" + name
+				+ "_tmpStart", true, 0);
 	}
 
 	public Var getBuffer() {
@@ -131,6 +147,10 @@ public class CircularBuffer {
 		return port;
 	}
 
+	public Var getRequestSize() {
+		return requestSize;
+	}
+
 	public Integer getSize() {
 		return size;
 	}
@@ -145,6 +165,10 @@ public class CircularBuffer {
 
 	public Var getTmpHead() {
 		return tmpHead;
+	}
+
+	public Var getTmpRequestSize() {
+		return tmpRequestSize;
 	}
 
 	public Var getTmpStart() {
