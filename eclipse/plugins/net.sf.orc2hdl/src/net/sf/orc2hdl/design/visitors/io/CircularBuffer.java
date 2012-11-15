@@ -28,6 +28,10 @@
  */
 package net.sf.orc2hdl.design.visitors.io;
 
+import java.util.List;
+
+import net.sf.orcc.df.Action;
+import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Type;
@@ -62,6 +66,15 @@ public class CircularBuffer {
 	/** The Boolean start Variable **/
 	private Var start;
 
+	/** The temporary head variable of the circular Buffer Index **/
+	private Var tmpCount;
+
+	/** The temporary head variable of the circular Buffer Index **/
+	private Var tmpHead;
+
+	/** The temporary head variable of the circular Buffer Index **/
+	private Var tmpStart;
+
 	public CircularBuffer(Port port, Var buffer, Integer size) {
 		this.port = port;
 		this.buffer = buffer;
@@ -74,11 +87,32 @@ public class CircularBuffer {
 		Type type = IrFactory.eINSTANCE.createTypeInt();
 		head = IrFactory.eINSTANCE.createVar(type, "cb_" + name + "_head",
 				true, 0);
+		tmpHead = IrFactory.eINSTANCE.createVar(type,
+				"cb_" + name + "_tmpHead", true, 0);
 		count = IrFactory.eINSTANCE.createVar(type, "cb_" + name + "_count",
 				true, 0);
+		tmpCount = IrFactory.eINSTANCE.createVar(type, "cb_" + name
+				+ "_tmpCount", true, 0);
 		Type bool = IrFactory.eINSTANCE.createTypeBool();
 		start = IrFactory.eINSTANCE.createVar(bool, "cb_" + name + "_start",
 				true, 0);
+		tmpStart = IrFactory.eINSTANCE.createVar(bool, "cb_" + name
+				+ "_tmpStart", true, 0);
+	}
+
+	public void addToStateVars(Actor actor) {
+		List<Var> stateVars = actor.getStateVars();
+		stateVars.add(buffer);
+		stateVars.add(head);
+		stateVars.add(count);
+		stateVars.add(start);
+	}
+
+	public void addToLocals(Action action) {
+		List<Var> locals = action.getBody().getLocals();
+		locals.add(tmpCount);
+		locals.add(tmpHead);
+		locals.add(tmpStart);
 	}
 
 	public Var getBuffer() {
@@ -103,5 +137,17 @@ public class CircularBuffer {
 
 	public Var getStart() {
 		return start;
+	}
+
+	public Var getTmpCount() {
+		return tmpCount;
+	}
+
+	public Var getTmpHead() {
+		return tmpHead;
+	}
+
+	public Var getTmpStart() {
+		return tmpStart;
 	}
 }

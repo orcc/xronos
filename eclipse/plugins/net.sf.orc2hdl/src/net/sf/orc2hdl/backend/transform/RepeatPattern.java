@@ -39,6 +39,7 @@ import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
@@ -52,8 +53,6 @@ import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
-
-import org.eclipse.emf.common.util.EMap;
 
 /**
  * 
@@ -128,7 +127,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 					Var newSourceVar = circularBufferInputs.get(port)
 							.getBuffer();
 
-					Var cbHead = circularBufferInputs.get(port).getHead();
+					Var cbHead = circularBufferInputs.get(port).getTmpHead();
 					int size = circularBufferInputs.get(port).getSize();
 
 					ExprVar cbHeadExprVar = IrFactory.eINSTANCE
@@ -139,7 +138,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 					Type exrpType = IrFactory.eINSTANCE.createTypeInt(32);
 					Expression indexAdd;
 					if (index instanceof ExprInt) {
-						ExprInt exprInt = (ExprInt) index;
 						int value = ((ExprInt) index).getIntValue();
 						if (value == 0) {
 							indexAdd = cbHeadExprVar;
@@ -205,17 +203,65 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 	@Override
 	public Void caseAction(Action action) {
-		EMap<Port, Integer> inputPortNumRead = action.getInputPattern()
-				.getNumTokensMap();
-		EMap<Port, Integer> inputPortNumWrite = action.getOutputPattern()
-				.getNumTokensMap();
+
+		BlockBasic firstBlock = action.getBody().getFirst();
+		BlockBasic lastBlock = action.getBody().getLast();
 
 		/** InputPattern **/
 		for (Port port : action.getInputPattern().getPorts()) {
 			if (circularBufferInputs.get(port) != null) {
+				// Create Load instruction head
+				// Load(tmpHead, head)
+				CircularBuffer circularBuffer = circularBufferInputs.get(port);
+				circularBuffer.addToLocals(action);
+				Var target = circularBuffer.getTmpHead();
+				Var source = circularBuffer.getHead();
+				InstLoad instLoad = IrFactory.eINSTANCE.createInstLoad(target,
+						source);
+				firstBlock.add(0, instLoad);
 
+				// Create Store instruction for head
+				// Store(head, (tmpHead + numReads) & (size - 1))
+				int numReads = action.getInputPattern().getNumTokens(port);
 				Var pinReadVar = action.getInputPattern().getPortToVarMap()
 						.get(port);
+				Var cbHead = circularBuffer.getTmpHead();
+				int size = circularBuffer.getSize();
+
+				ExprVar cbHeadExprVar = IrFactory.eINSTANCE
+						.createExprVar(cbHead);
+
+				ExprInt exprIntNumReads = IrFactory.eINSTANCE
+						.createExprInt(numReads);
+
+				Type exrpType = IrFactory.eINSTANCE.createTypeInt(32);
+				Expression indexAdd = IrFactory.eINSTANCE
+						.createExprBinary(cbHeadExprVar, OpBinary.PLUS,
+								exprIntNumReads, exrpType);
+
+				ExprInt exprIntSize = IrFactory.eINSTANCE
+						.createExprInt(size - 1);
+
+				Expression value = IrFactory.eINSTANCE.createExprBinary(
+						indexAdd, OpBinary.BITAND, exprIntSize, exrpType);
+				InstStore instStore = IrFactory.eINSTANCE.createInstStore(
+						target, value);
+				int instIndex = lastBlock.getInstructions().size() - 1;
+				lastBlock.add(instIndex, instStore);
+
+				// Create Store instruction for count
+				Var count = circularBuffer.getCount();
+				Var tmpCount = circularBuffer.getTmpCount();
+				ExprVar exprVarTmpCount = IrFactory.eINSTANCE
+						.createExprVar(tmpCount);
+				exprIntNumReads = IrFactory.eINSTANCE.createExprInt(numReads);
+				Expression valueCount = IrFactory.eINSTANCE.createExprBinary(
+						exprVarTmpCount, OpBinary.MINUS, exprIntNumReads,
+						exrpType);
+				InstStore instStoreCount = IrFactory.eINSTANCE.createInstStore(
+						count, valueCount);
+				instIndex = lastBlock.getInstructions().size() - 1;
+				lastBlock.add(instIndex, instStoreCount);
 				oldInputMap.put(pinReadVar, port);
 			}
 		}
@@ -223,16 +269,15 @@ public class RepeatPattern extends DfVisitor<Void> {
 		/** OutputPattern **/
 		for (Port port : action.getOutputPattern().getPorts()) {
 			if (circularBufferOutputs.get(port) != null) {
+				// int numWrites = action.getOutputPattern().getNumTokens(port);
 				Var pinWriteVar = action.getOutputPattern().getPortToVarMap()
 						.get(port);
-
 				oldOutputMap.put(pinWriteVar, port);
 			}
 		}
 
 		// Now change the Load/Store of an action
 		circularBufferLoadStore.doSwitch(action.getBody().getBlocks());
-
 		return null;
 	}
 
@@ -251,9 +296,9 @@ public class RepeatPattern extends DfVisitor<Void> {
 							type);
 					Var buffer = IrFactory.eINSTANCE.createVar(typeList,
 							"circularBufferIn_" + port.getName(), true, 0);
-					actor.getStateVars().add(buffer);
 					CircularBuffer circularBuffer = new CircularBuffer(port,
 							buffer, size);
+					circularBuffer.addToStateVars(actor);
 					circularBufferInputs.put(port, circularBuffer);
 				} else {
 					circularBufferInputs.put(port, null);
@@ -269,9 +314,9 @@ public class RepeatPattern extends DfVisitor<Void> {
 							type);
 					Var buffer = IrFactory.eINSTANCE.createVar(typeList,
 							"circularBufferOut_" + port.getName(), true, 0);
-					actor.getStateVars().add(buffer);
 					CircularBuffer circularBuffer = new CircularBuffer(port,
 							buffer, size);
+					circularBuffer.addToStateVars(actor);
 					circularBufferOutputs.put(port, circularBuffer);
 				} else {
 					circularBufferOutputs.put(port, null);
