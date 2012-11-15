@@ -55,25 +55,25 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.emf.ecore.EObject;
 
 /**
- * This class defines a printer for the Chronos Orcc frontend. This class
+ * This class defines a printer for the Xronos Orcc frontend. This class
  * supports caching in order not to regenerate the Verilog files.
  * 
  * @author Endri Bezati
  * 
  */
 
-public class ChronosPrinter {
+public class XronosPrinter {
 	/** Keep the unchanged files flag **/
 	private boolean keepUnchangedFiles;
 
 	/** The options given to the printer **/
 	protected Map<String, Object> options;
 
-	public ChronosPrinter() {
+	public XronosPrinter() {
 		options = new HashMap<String, Object>();
 	}
 
-	public ChronosPrinter(Boolean keepUnchangedFiles) {
+	public XronosPrinter(Boolean keepUnchangedFiles) {
 		this();
 		this.keepUnchangedFiles = keepUnchangedFiles;
 	}
@@ -133,21 +133,21 @@ public class ChronosPrinter {
 	}
 
 	/**
-	 * This method calls Chronos synthesizer and generates a Verilog file for a
+	 * This method calls Xronos synthesizer and generates a Verilog file for a
 	 * given Instance
 	 * 
-	 * @param chronosArgs
-	 *            Chronos input options
+	 * @param xronosArgs
+	 *            Xronos input options
 	 * @param rtlPath
 	 *            the RTL path
 	 * @param instance
 	 *            an Instance
 	 * @return
 	 */
-	public boolean printInstance(String[] chronosArgs, String rtlPath,
+	public boolean printInstance(String[] xronosArgs, String rtlPath,
 			Instance instance) {
 		Forge f = new Forge();
-		GenericJob chronosMainJob = new GenericJob();
+		GenericJob xronosMainJob = new GenericJob();
 		boolean error = false;
 
 		String file = rtlPath + File.separator + instance.getSimpleName()
@@ -163,9 +163,9 @@ public class ChronosPrinter {
 				}
 			}
 			try {
-				chronosMainJob.setOptionValues(chronosArgs);
-				f.preprocess(chronosMainJob);
-				Engine engine = new DesignEngine(chronosMainJob, instance);
+				xronosMainJob.setOptionValues(xronosArgs);
+				f.preprocess(xronosMainJob);
+				Engine engine = new DesignEngine(xronosMainJob, instance);
 				engine.begin();
 			} catch (NewJob.ForgeOptionException foe) {
 				OrccLogger.severeln("Command line option error: "

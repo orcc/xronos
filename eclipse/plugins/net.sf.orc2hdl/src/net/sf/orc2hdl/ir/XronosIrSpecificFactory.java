@@ -9,17 +9,17 @@ import org.eclipse.emf.ecore.EFactory;
  * The <b>Factory</b> for the model.
  * It provides a create method for each non-abstract class of the model.
  * <!-- end-user-doc -->
- * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage
+ * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage
  * @generated
  */
-public interface ChronosIrSpecificFactory extends EFactory {
+public interface XronosIrSpecificFactory extends EFactory {
 	/**
 	 * The singleton instance of the factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	ChronosIrSpecificFactory eINSTANCE = net.sf.orc2hdl.ir.impl.ChronosIrSpecificFactoryImpl.init();
+	XronosIrSpecificFactory eINSTANCE = net.sf.orc2hdl.ir.impl.XronosIrSpecificFactoryImpl.init();
 
 	/**
 	 * Returns a new object of class '<em>Inst Port Status</em>'.
@@ -64,6 +64,6 @@ public interface ChronosIrSpecificFactory extends EFactory {
 	 * @return the package supported by this factory.
 	 * @generated
 	 */
-	ChronosIrSpecificPackage getChronosIrSpecificPackage();
+	XronosIrSpecificPackage getXronosIrSpecificPackage();
 
-} //ChronosIrSpecificFactory
+} //XronosIrSpecificFactory

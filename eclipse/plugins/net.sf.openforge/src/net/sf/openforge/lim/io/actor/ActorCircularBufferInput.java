@@ -32,6 +32,7 @@ import java.util.Collection;
 
 import net.sf.openforge.lim.Component;
 import net.sf.openforge.lim.io.FifoID;
+import net.sf.openforge.lim.io.FifoIF;
 import net.sf.openforge.lim.io.FifoInput;
 import net.sf.openforge.lim.io.SimpleFifoPin;
 import net.sf.openforge.lim.io.SimplePin;
@@ -104,29 +105,25 @@ public class ActorCircularBufferInput extends FifoInput implements ActorPort {
 	
 	@Override
 	public SimplePin getDataPin() {
-		// TODO Auto-generated method stub
-		return null;
+		return data;
 	}
 
 	
 	@Override
 	public SimplePin getSendPin() {
-		// TODO Auto-generated method stub
-		return null;
+		return send;
 	}
 
 	
 	@Override
 	public SimplePin getAckPin() {
-		// TODO Auto-generated method stub
-		return null;
+		return ack;
 	}
 
 	
 	@Override
 	public int getType() {
-		// TODO Auto-generated method stub
-		return 0;
+		return FifoIF.TYPE_ACTOR_QUEUE;
 	}
 
 	
@@ -139,15 +136,12 @@ public class ActorCircularBufferInput extends FifoInput implements ActorPort {
 	
 	@Override
 	protected String buildPortBaseName(String portName) {
-		// TODO Auto-generated method stub
-		return null;
+		return portName;
 	}
 
 	
 	@Override
 	public String getPortBaseName() {
-		// TODO Auto-generated method stub
-		return null;
+		return baseName;
 	}
-
 }

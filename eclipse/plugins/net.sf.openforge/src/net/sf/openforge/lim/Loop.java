@@ -77,7 +77,7 @@ public class Loop extends Module {
 	/**
 	 * Collection of Latch objects used to hold data values used in the LoopBody
 	 */
-	private List dataLatches = new LinkedList();
+	private List<Latch> dataLatches = new LinkedList<Latch>();
 
 	/** Flop for control feedback */
 	private Reg controlRegister = null;
@@ -160,7 +160,7 @@ public class Loop extends Module {
 			controlRegister = (Reg) inserted;
 		} else if (getDataLatches().contains(removed)) {
 			int index = dataLatches.indexOf(removed);
-			dataLatches.add(index, inserted);
+			dataLatches.add(index, (Latch) inserted);
 			dataLatches.remove(removed);
 		} else if (getDataRegisters().contains(removed)) {
 			int index = dataRegisters.indexOf(removed);
@@ -464,7 +464,7 @@ public class Loop extends Module {
 		}
 		clone.dataLatches = new LinkedList();
 		for (Iterator iter = dataLatches.iterator(); iter.hasNext();) {
-			clone.dataLatches.add(cloneMap.get(iter.next()));
+			clone.dataLatches.add((Latch) cloneMap.get(iter.next()));
 		}
 		clone.controlRegister = (Reg) cloneMap.get(controlRegister);
 	}

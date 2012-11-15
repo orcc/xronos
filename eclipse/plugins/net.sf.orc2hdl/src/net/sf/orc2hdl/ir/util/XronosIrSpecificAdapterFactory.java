@@ -21,17 +21,17 @@ import org.eclipse.emf.ecore.EObject;
  * The <b>Adapter Factory</b> for the model.
  * It provides an adapter <code>createXXX</code> method for each class of the model.
  * <!-- end-user-doc -->
- * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage
+ * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage
  * @generated
  */
-public class ChronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
+public class XronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 	/**
 	 * The cached model package.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	protected static ChronosIrSpecificPackage modelPackage;
+	protected static XronosIrSpecificPackage modelPackage;
 
 	/**
 	 * Creates an instance of the adapter factory.
@@ -39,9 +39,9 @@ public class ChronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public ChronosIrSpecificAdapterFactory() {
+	public XronosIrSpecificAdapterFactory() {
 		if (modelPackage == null) {
-			modelPackage = ChronosIrSpecificPackage.eINSTANCE;
+			modelPackage = XronosIrSpecificPackage.eINSTANCE;
 		}
 	}
 
@@ -70,8 +70,8 @@ public class ChronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	protected ChronosIrSpecificSwitch<Adapter> modelSwitch =
-		new ChronosIrSpecificSwitch<Adapter>() {
+	protected XronosIrSpecificSwitch<Adapter> modelSwitch =
+		new XronosIrSpecificSwitch<Adapter>() {
 			@Override
 			public Adapter caseInstPortStatus(InstPortStatus object) {
 				return createInstPortStatusAdapter();
@@ -230,4 +230,4 @@ public class ChronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 		return null;
 	}
 
-} //ChronosIrSpecificAdapterFactory
+} //XronosIrSpecificAdapterFactory

@@ -2,12 +2,12 @@
  */
 package net.sf.orc2hdl.ir.impl;
 
-import net.sf.orc2hdl.ir.ChronosIrSpecificFactory;
-import net.sf.orc2hdl.ir.ChronosIrSpecificPackage;
 import net.sf.orc2hdl.ir.InstPortPeek;
 import net.sf.orc2hdl.ir.InstPortRead;
 import net.sf.orc2hdl.ir.InstPortStatus;
 import net.sf.orc2hdl.ir.InstPortWrite;
+import net.sf.orc2hdl.ir.XronosIrSpecificFactory;
+import net.sf.orc2hdl.ir.XronosIrSpecificPackage;
 
 import net.sf.orcc.graph.GraphPackage;
 
@@ -25,7 +25,7 @@ import org.eclipse.emf.ecore.impl.EPackageImpl;
  * <!-- end-user-doc -->
  * @generated
  */
-public class ChronosIrSpecificPackageImpl extends EPackageImpl implements ChronosIrSpecificPackage {
+public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosIrSpecificPackage {
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -65,12 +65,12 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see org.eclipse.emf.ecore.EPackage.Registry
-	 * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#eNS_URI
+	 * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#eNS_URI
 	 * @see #init()
 	 * @generated
 	 */
-	private ChronosIrSpecificPackageImpl() {
-		super(eNS_URI, ChronosIrSpecificFactory.eINSTANCE);
+	private XronosIrSpecificPackageImpl() {
+		super(eNS_URI, XronosIrSpecificFactory.eINSTANCE);
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	/**
 	 * Creates, registers, and initializes the <b>Package</b> for this model, and for any others upon which it depends.
 	 * 
-	 * <p>This method is used to initialize {@link ChronosIrSpecificPackage#eINSTANCE} when that field is accessed.
+	 * <p>This method is used to initialize {@link XronosIrSpecificPackage#eINSTANCE} when that field is accessed.
 	 * Clients should not invoke it directly. Instead, they should simply access that field to obtain the package.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -92,11 +92,11 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	 * @see #initializePackageContents()
 	 * @generated
 	 */
-	public static ChronosIrSpecificPackage init() {
-		if (isInited) return (ChronosIrSpecificPackage)EPackage.Registry.INSTANCE.getEPackage(ChronosIrSpecificPackage.eNS_URI);
+	public static XronosIrSpecificPackage init() {
+		if (isInited) return (XronosIrSpecificPackage)EPackage.Registry.INSTANCE.getEPackage(XronosIrSpecificPackage.eNS_URI);
 
 		// Obtain or create and register package
-		ChronosIrSpecificPackageImpl theChronosIrSpecificPackage = (ChronosIrSpecificPackageImpl)(EPackage.Registry.INSTANCE.get(eNS_URI) instanceof ChronosIrSpecificPackageImpl ? EPackage.Registry.INSTANCE.get(eNS_URI) : new ChronosIrSpecificPackageImpl());
+		XronosIrSpecificPackageImpl theXronosIrSpecificPackage = (XronosIrSpecificPackageImpl)(EPackage.Registry.INSTANCE.get(eNS_URI) instanceof XronosIrSpecificPackageImpl ? EPackage.Registry.INSTANCE.get(eNS_URI) : new XronosIrSpecificPackageImpl());
 
 		isInited = true;
 
@@ -104,18 +104,18 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 		IrPackage.eINSTANCE.eClass();
 
 		// Create package meta-data objects
-		theChronosIrSpecificPackage.createPackageContents();
+		theXronosIrSpecificPackage.createPackageContents();
 
 		// Initialize created meta-data
-		theChronosIrSpecificPackage.initializePackageContents();
+		theXronosIrSpecificPackage.initializePackageContents();
 
 		// Mark meta-data to indicate it can't be changed
-		theChronosIrSpecificPackage.freeze();
+		theXronosIrSpecificPackage.freeze();
 
   
 		// Update the registry and return the package
-		EPackage.Registry.INSTANCE.put(ChronosIrSpecificPackage.eNS_URI, theChronosIrSpecificPackage);
-		return theChronosIrSpecificPackage;
+		EPackage.Registry.INSTANCE.put(XronosIrSpecificPackage.eNS_URI, theXronosIrSpecificPackage);
+		return theXronosIrSpecificPackage;
 	}
 
 	/**
@@ -133,7 +133,7 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	 * @generated
 	 */
 	public EReference getInstPortStatus_Target() {
-		return (EReference)instPortStatusEClass.getEStructuralFeatures().get(1);
+		return (EReference)instPortStatusEClass.getEStructuralFeatures().get(0);
 	}
 
 	/**
@@ -142,7 +142,7 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	 * @generated
 	 */
 	public EReference getInstPortStatus_Port() {
-		return (EReference)instPortStatusEClass.getEStructuralFeatures().get(0);
+		return (EReference)instPortStatusEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
@@ -159,8 +159,8 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getInstPortRead_Port() {
-		return (EReference)instPortReadEClass.getEStructuralFeatures().get(1);
+	public EReference getInstPortRead_Target() {
+		return (EReference)instPortReadEClass.getEStructuralFeatures().get(0);
 	}
 
 	/**
@@ -168,8 +168,8 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getInstPortRead_Target() {
-		return (EReference)instPortReadEClass.getEStructuralFeatures().get(0);
+	public EReference getInstPortRead_Port() {
+		return (EReference)instPortReadEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
@@ -213,7 +213,7 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getInstPortPeek_Port() {
+	public EReference getInstPortPeek_Target() {
 		return (EReference)instPortPeekEClass.getEStructuralFeatures().get(0);
 	}
 
@@ -222,7 +222,7 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getInstPortPeek_Target() {
+	public EReference getInstPortPeek_Port() {
 		return (EReference)instPortPeekEClass.getEStructuralFeatures().get(1);
 	}
 
@@ -231,8 +231,8 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public ChronosIrSpecificFactory getChronosIrSpecificFactory() {
-		return (ChronosIrSpecificFactory)getEFactoryInstance();
+	public XronosIrSpecificFactory getXronosIrSpecificFactory() {
+		return (XronosIrSpecificFactory)getEFactoryInstance();
 	}
 
 	/**
@@ -255,8 +255,8 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 
 		// Create classes and their features
 		instPortStatusEClass = createEClass(INST_PORT_STATUS);
-		createEReference(instPortStatusEClass, INST_PORT_STATUS__PORT);
 		createEReference(instPortStatusEClass, INST_PORT_STATUS__TARGET);
+		createEReference(instPortStatusEClass, INST_PORT_STATUS__PORT);
 
 		instPortReadEClass = createEClass(INST_PORT_READ);
 		createEReference(instPortReadEClass, INST_PORT_READ__TARGET);
@@ -267,8 +267,8 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 		createEReference(instPortWriteEClass, INST_PORT_WRITE__VALUE);
 
 		instPortPeekEClass = createEClass(INST_PORT_PEEK);
-		createEReference(instPortPeekEClass, INST_PORT_PEEK__PORT);
 		createEReference(instPortPeekEClass, INST_PORT_PEEK__TARGET);
+		createEReference(instPortPeekEClass, INST_PORT_PEEK__PORT);
 	}
 
 	/**
@@ -310,8 +310,8 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 
 		// Initialize classes and features; add operations and parameters
 		initEClass(instPortStatusEClass, InstPortStatus.class, "InstPortStatus", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getInstPortStatus_Port(), theGraphPackage.getVertex(), null, "port", null, 0, 1, InstPortStatus.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getInstPortStatus_Target(), theIrPackage.getDef(), null, "target", null, 0, 1, InstPortStatus.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getInstPortStatus_Port(), theGraphPackage.getVertex(), null, "port", null, 0, 1, InstPortStatus.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(instPortReadEClass, InstPortRead.class, "InstPortRead", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getInstPortRead_Target(), theIrPackage.getDef(), null, "target", null, 0, 1, InstPortRead.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -322,11 +322,11 @@ public class ChronosIrSpecificPackageImpl extends EPackageImpl implements Chrono
 		initEReference(getInstPortWrite_Value(), theIrPackage.getExpression(), null, "value", null, 0, 1, InstPortWrite.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(instPortPeekEClass, InstPortPeek.class, "InstPortPeek", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getInstPortPeek_Port(), theGraphPackage.getVertex(), null, "port", null, 0, 1, InstPortPeek.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getInstPortPeek_Target(), theIrPackage.getDef(), null, "target", null, 0, 1, InstPortPeek.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getInstPortPeek_Port(), theGraphPackage.getVertex(), null, "port", null, 0, 1, InstPortPeek.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Create resource
 		createResource(eNS_URI);
 	}
 
-} //ChronosIrSpecificPackageImpl
+} //XronosIrSpecificPackageImpl

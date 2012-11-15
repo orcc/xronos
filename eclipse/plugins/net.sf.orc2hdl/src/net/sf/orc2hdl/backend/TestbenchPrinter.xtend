@@ -51,12 +51,12 @@ class TestbenchPrinter extends IrSwitch {
 		var date = new Date();
 		'''
 		-- ----------------------------------------------------------------------------
-		--   ___ _  _ ___  ___  _  _  ___  ___ 
-		--  / __| || | _ \/ _ \| \| |/ _ \/ __|
-		-- | (__| __ |   / (_) | .` | (_) \__ \
-		--  \___|_||_|_|_\\___/|_|\_|\___/|___/
+		-- __  ___ __ ___  _ __   ___  ___ 
+		-- \ \/ / '__/ _ \| '_ \ / _ \/ __|
+		--  >  <| | | (_) | | | | (_) \__ \
+		-- /_/\_\_|  \___/|_| |_|\___/|___/
 		-- ----------------------------------------------------------------------------
-		-- Chronos synthesizer
+		-- Xronos synthesizer
 		«IF object instanceof Network »
 		-- «IF string.equals("")»Testbench for Network:«ELSE»«string»«ENDIF» «(object as Network).simpleName» 
 		«ELSEIF object instanceof Instance»

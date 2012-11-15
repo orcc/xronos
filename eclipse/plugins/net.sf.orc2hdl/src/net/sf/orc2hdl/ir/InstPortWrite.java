@@ -20,7 +20,7 @@ import net.sf.orcc.ir.InstSpecific;
  * </ul>
  * </p>
  *
- * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#getInstPortWrite()
+ * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#getInstPortWrite()
  * @model
  * @generated
  */
@@ -29,13 +29,13 @@ public interface InstPortWrite extends InstSpecific {
 	 * Returns the value of the '<em><b>Port</b></em>' reference.
 	 * <!-- begin-user-doc -->
 	 * <p>
-	 * If the meaning of the '<em>Port</em>' containment reference isn't clear,
+	 * If the meaning of the '<em>Port</em>' reference isn't clear,
 	 * there really should be more of a description here...
 	 * </p>
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Port</em>' reference.
 	 * @see #setPort(Vertex)
-	 * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#getInstPortWrite_Port()
+	 * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#getInstPortWrite_Port()
 	 * @model resolveProxies="false"
 	 * @generated
 	 */
@@ -61,7 +61,7 @@ public interface InstPortWrite extends InstSpecific {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Value</em>' containment reference.
 	 * @see #setValue(Expression)
-	 * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#getInstPortWrite_Value()
+	 * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#getInstPortWrite_Value()
 	 * @model containment="true"
 	 * @generated
 	 */

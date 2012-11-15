@@ -52,16 +52,16 @@ public class DesignDocument extends VerilogDocument implements
 		//
 		// Put standard header on the file.
 		//
-		Comment logo = new Comment("  ___ _  _ ___  ___  _  _  ___  ___ ");
+		Comment logo = new Comment("__  ___ __ ___  _ __   ___  ___ ");
 		append(logo);
-		logo = new Comment(" / __| || | _ \\/ _ \\| \\| |/ _ \\/ __|");
+		logo = new Comment("\\ \\/ / '__/ _ \\| '_ \\ / _ \\/ __|");
 		append(logo);
-		logo = new Comment("| (__| __ |   / (_) | .` | (_) \\__ \\");
+		logo = new Comment(" >  <| | | (_) | | | | (_) \\__ \\");
 		append(logo);
-		logo = new Comment(" \\___|_||_|_|_\\\\___/|_|\\_|\\___/|___/");
+		logo = new Comment("/_/\\_\\_|  \\___/|_| |_|\\___/|___/");
 		append(logo);
 		append(new Comment(""));
-		Comment header = new Comment("Chronos synthesizer "
+		Comment header = new Comment("Xronos synthesizer "
 				+ Version.versionNumber(), Comment.SHORT);
 		append(header);
 		String runDate = EngineThread.getGenericJob()

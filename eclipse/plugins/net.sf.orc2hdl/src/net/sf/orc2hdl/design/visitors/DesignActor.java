@@ -189,6 +189,8 @@ public class DesignActor extends DfVisitor<Object> {
 		DesignUtil.designAllocateMemory(design, stateVars,
 				Constants.MAX_ADDR_WIDTH, resources);
 
+		/** Create a Task for each Circular Buffer, if any **/
+
 		/** Create a Task for each action in the actor **/
 		for (Action action : actor.getActions()) {
 			Task task = (Task) doSwitch(action);

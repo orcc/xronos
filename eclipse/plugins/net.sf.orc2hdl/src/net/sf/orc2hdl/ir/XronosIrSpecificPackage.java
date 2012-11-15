@@ -19,11 +19,11 @@ import org.eclipse.emf.ecore.EReference;
  *   <li>and each data type</li>
  * </ul>
  * <!-- end-user-doc -->
- * @see net.sf.orc2hdl.ir.ChronosIrSpecificFactory
+ * @see net.sf.orc2hdl.ir.XronosIrSpecificFactory
  * @model kind="package"
  * @generated
  */
-public interface ChronosIrSpecificPackage extends EPackage {
+public interface XronosIrSpecificPackage extends EPackage {
 	/**
 	 * The package name.
 	 * <!-- begin-user-doc -->
@@ -38,7 +38,7 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	String eNS_URI = "http://orcc.sf.net/backends/ir";
+	String eNS_URI = "http://www.xronos.org/ir";
 
 	/**
 	 * The package namespace name.
@@ -54,14 +54,14 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	ChronosIrSpecificPackage eINSTANCE = net.sf.orc2hdl.ir.impl.ChronosIrSpecificPackageImpl.init();
+	XronosIrSpecificPackage eINSTANCE = net.sf.orc2hdl.ir.impl.XronosIrSpecificPackageImpl.init();
 
 	/**
 	 * The meta object id for the '{@link net.sf.orc2hdl.ir.impl.InstPortStatusImpl <em>Inst Port Status</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see net.sf.orc2hdl.ir.impl.InstPortStatusImpl
-	 * @see net.sf.orc2hdl.ir.impl.ChronosIrSpecificPackageImpl#getInstPortStatus()
+	 * @see net.sf.orc2hdl.ir.impl.XronosIrSpecificPackageImpl#getInstPortStatus()
 	 * @generated
 	 */
 	int INST_PORT_STATUS = 0;
@@ -94,22 +94,22 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	int INST_PORT_STATUS__PREDICATE = IrPackage.INST_SPECIFIC__PREDICATE;
 
 	/**
-	 * The feature id for the '<em><b>Port</b></em>' reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int INST_PORT_STATUS__PORT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 0;
-
-	/**
 	 * The feature id for the '<em><b>Target</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_STATUS__TARGET = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 1;
+	int INST_PORT_STATUS__TARGET = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Port</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_PORT_STATUS__PORT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 1;
 
 	/**
 	 * The number of structural features of the '<em>Inst Port Status</em>' class.
@@ -125,7 +125,7 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see net.sf.orc2hdl.ir.impl.InstPortReadImpl
-	 * @see net.sf.orc2hdl.ir.impl.ChronosIrSpecificPackageImpl#getInstPortRead()
+	 * @see net.sf.orc2hdl.ir.impl.XronosIrSpecificPackageImpl#getInstPortRead()
 	 * @generated
 	 */
 	int INST_PORT_READ = 1;
@@ -189,7 +189,7 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see net.sf.orc2hdl.ir.impl.InstPortWriteImpl
-	 * @see net.sf.orc2hdl.ir.impl.ChronosIrSpecificPackageImpl#getInstPortWrite()
+	 * @see net.sf.orc2hdl.ir.impl.XronosIrSpecificPackageImpl#getInstPortWrite()
 	 * @generated
 	 */
 	int INST_PORT_WRITE = 2;
@@ -253,7 +253,7 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see net.sf.orc2hdl.ir.impl.InstPortPeekImpl
-	 * @see net.sf.orc2hdl.ir.impl.ChronosIrSpecificPackageImpl#getInstPortPeek()
+	 * @see net.sf.orc2hdl.ir.impl.XronosIrSpecificPackageImpl#getInstPortPeek()
 	 * @generated
 	 */
 	int INST_PORT_PEEK = 3;
@@ -286,22 +286,22 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	int INST_PORT_PEEK__PREDICATE = IrPackage.INST_SPECIFIC__PREDICATE;
 
 	/**
-	 * The feature id for the '<em><b>Port</b></em>' reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int INST_PORT_PEEK__PORT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 0;
-
-	/**
 	 * The feature id for the '<em><b>Target</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_PEEK__TARGET = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 1;
+	int INST_PORT_PEEK__TARGET = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Port</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_PORT_PEEK__PORT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 1;
 
 	/**
 	 * The number of structural features of the '<em>Inst Port Peek</em>' class.
@@ -356,17 +356,6 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	EClass getInstPortRead();
 
 	/**
-	 * Returns the meta object for the reference '{@link net.sf.orc2hdl.ir.InstPortRead#getPort <em>Port</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the reference '<em>Port</em>'.
-	 * @see net.sf.orc2hdl.ir.InstPortRead#getPort()
-	 * @see #getInstPortRead()
-	 * @generated
-	 */
-	EReference getInstPortRead_Port();
-
-	/**
 	 * Returns the meta object for the containment reference '{@link net.sf.orc2hdl.ir.InstPortRead#getTarget <em>Target</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -376,6 +365,17 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getInstPortRead_Target();
+
+	/**
+	 * Returns the meta object for the reference '{@link net.sf.orc2hdl.ir.InstPortRead#getPort <em>Port</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Port</em>'.
+	 * @see net.sf.orc2hdl.ir.InstPortRead#getPort()
+	 * @see #getInstPortRead()
+	 * @generated
+	 */
+	EReference getInstPortRead_Port();
 
 	/**
 	 * Returns the meta object for class '{@link net.sf.orc2hdl.ir.InstPortWrite <em>Inst Port Write</em>}'.
@@ -420,17 +420,6 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	EClass getInstPortPeek();
 
 	/**
-	 * Returns the meta object for the reference '{@link net.sf.orc2hdl.ir.InstPortPeek#getPort <em>Port</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the reference '<em>Port</em>'.
-	 * @see net.sf.orc2hdl.ir.InstPortPeek#getPort()
-	 * @see #getInstPortPeek()
-	 * @generated
-	 */
-	EReference getInstPortPeek_Port();
-
-	/**
 	 * Returns the meta object for the containment reference '{@link net.sf.orc2hdl.ir.InstPortPeek#getTarget <em>Target</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -442,13 +431,24 @@ public interface ChronosIrSpecificPackage extends EPackage {
 	EReference getInstPortPeek_Target();
 
 	/**
+	 * Returns the meta object for the reference '{@link net.sf.orc2hdl.ir.InstPortPeek#getPort <em>Port</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Port</em>'.
+	 * @see net.sf.orc2hdl.ir.InstPortPeek#getPort()
+	 * @see #getInstPortPeek()
+	 * @generated
+	 */
+	EReference getInstPortPeek_Port();
+
+	/**
 	 * Returns the factory that creates the instances of the model.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the factory that creates the instances of the model.
 	 * @generated
 	 */
-	ChronosIrSpecificFactory getChronosIrSpecificFactory();
+	XronosIrSpecificFactory getXronosIrSpecificFactory();
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -468,7 +468,7 @@ public interface ChronosIrSpecificPackage extends EPackage {
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @see net.sf.orc2hdl.ir.impl.InstPortStatusImpl
-		 * @see net.sf.orc2hdl.ir.impl.ChronosIrSpecificPackageImpl#getInstPortStatus()
+		 * @see net.sf.orc2hdl.ir.impl.XronosIrSpecificPackageImpl#getInstPortStatus()
 		 * @generated
 		 */
 		EClass INST_PORT_STATUS = eINSTANCE.getInstPortStatus();
@@ -494,18 +494,10 @@ public interface ChronosIrSpecificPackage extends EPackage {
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @see net.sf.orc2hdl.ir.impl.InstPortReadImpl
-		 * @see net.sf.orc2hdl.ir.impl.ChronosIrSpecificPackageImpl#getInstPortRead()
+		 * @see net.sf.orc2hdl.ir.impl.XronosIrSpecificPackageImpl#getInstPortRead()
 		 * @generated
 		 */
 		EClass INST_PORT_READ = eINSTANCE.getInstPortRead();
-
-		/**
-		 * The meta object literal for the '<em><b>Port</b></em>' reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference INST_PORT_READ__PORT = eINSTANCE.getInstPortRead_Port();
 
 		/**
 		 * The meta object literal for the '<em><b>Target</b></em>' containment reference feature.
@@ -516,11 +508,19 @@ public interface ChronosIrSpecificPackage extends EPackage {
 		EReference INST_PORT_READ__TARGET = eINSTANCE.getInstPortRead_Target();
 
 		/**
+		 * The meta object literal for the '<em><b>Port</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference INST_PORT_READ__PORT = eINSTANCE.getInstPortRead_Port();
+
+		/**
 		 * The meta object literal for the '{@link net.sf.orc2hdl.ir.impl.InstPortWriteImpl <em>Inst Port Write</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @see net.sf.orc2hdl.ir.impl.InstPortWriteImpl
-		 * @see net.sf.orc2hdl.ir.impl.ChronosIrSpecificPackageImpl#getInstPortWrite()
+		 * @see net.sf.orc2hdl.ir.impl.XronosIrSpecificPackageImpl#getInstPortWrite()
 		 * @generated
 		 */
 		EClass INST_PORT_WRITE = eINSTANCE.getInstPortWrite();
@@ -546,18 +546,10 @@ public interface ChronosIrSpecificPackage extends EPackage {
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @see net.sf.orc2hdl.ir.impl.InstPortPeekImpl
-		 * @see net.sf.orc2hdl.ir.impl.ChronosIrSpecificPackageImpl#getInstPortPeek()
+		 * @see net.sf.orc2hdl.ir.impl.XronosIrSpecificPackageImpl#getInstPortPeek()
 		 * @generated
 		 */
 		EClass INST_PORT_PEEK = eINSTANCE.getInstPortPeek();
-
-		/**
-		 * The meta object literal for the '<em><b>Port</b></em>' reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference INST_PORT_PEEK__PORT = eINSTANCE.getInstPortPeek_Port();
 
 		/**
 		 * The meta object literal for the '<em><b>Target</b></em>' containment reference feature.
@@ -567,6 +559,14 @@ public interface ChronosIrSpecificPackage extends EPackage {
 		 */
 		EReference INST_PORT_PEEK__TARGET = eINSTANCE.getInstPortPeek_Target();
 
+		/**
+		 * The meta object literal for the '<em><b>Port</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference INST_PORT_PEEK__PORT = eINSTANCE.getInstPortPeek_Port();
+
 	}
 
-} //ChronosIrSpecificPackage
+} //XronosIrSpecificPackage

@@ -20,37 +20,11 @@ import net.sf.orcc.ir.InstSpecific;
  * </ul>
  * </p>
  *
- * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#getInstPortRead()
+ * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#getInstPortRead()
  * @model
  * @generated
  */
 public interface InstPortRead extends InstSpecific {
-	/**
-	 * Returns the value of the '<em><b>Port</b></em>' reference.
-	 * <!-- begin-user-doc -->
-	 * <p>
-	 * If the meaning of the '<em>Port</em>' containment reference isn't clear,
-	 * there really should be more of a description here...
-	 * </p>
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Port</em>' reference.
-	 * @see #setPort(Vertex)
-	 * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#getInstPortRead_Port()
-	 * @model resolveProxies="false"
-	 * @generated
-	 */
-	Vertex getPort();
-
-	/**
-	 * Sets the value of the '{@link net.sf.orc2hdl.ir.InstPortRead#getPort <em>Port</em>}' reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Port</em>' reference.
-	 * @see #getPort()
-	 * @generated
-	 */
-	void setPort(Vertex value);
-
 	/**
 	 * Returns the value of the '<em><b>Target</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
@@ -61,7 +35,7 @@ public interface InstPortRead extends InstSpecific {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Target</em>' containment reference.
 	 * @see #setTarget(Def)
-	 * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#getInstPortRead_Target()
+	 * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#getInstPortRead_Target()
 	 * @model containment="true"
 	 * @generated
 	 */
@@ -76,5 +50,31 @@ public interface InstPortRead extends InstSpecific {
 	 * @generated
 	 */
 	void setTarget(Def value);
+
+	/**
+	 * Returns the value of the '<em><b>Port</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <p>
+	 * If the meaning of the '<em>Port</em>' reference isn't clear,
+	 * there really should be more of a description here...
+	 * </p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Port</em>' reference.
+	 * @see #setPort(Vertex)
+	 * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#getInstPortRead_Port()
+	 * @model resolveProxies="false"
+	 * @generated
+	 */
+	Vertex getPort();
+
+	/**
+	 * Sets the value of the '{@link net.sf.orc2hdl.ir.InstPortRead#getPort <em>Port</em>}' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Port</em>' reference.
+	 * @see #getPort()
+	 * @generated
+	 */
+	void setPort(Vertex value);
 
 } // InstPortRead

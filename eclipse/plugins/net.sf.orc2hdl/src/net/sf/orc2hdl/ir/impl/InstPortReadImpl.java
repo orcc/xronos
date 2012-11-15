@@ -2,8 +2,8 @@
  */
 package net.sf.orc2hdl.ir.impl;
 
-import net.sf.orc2hdl.ir.ChronosIrSpecificPackage;
 import net.sf.orc2hdl.ir.InstPortRead;
+import net.sf.orc2hdl.ir.XronosIrSpecificPackage;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.ir.Def;
@@ -21,17 +21,19 @@ import org.eclipse.emf.ecore.impl.ENotificationImpl;
  * <p>
  * The following features are implemented:
  * <ul>
- *   <li>{@link net.sf.orc2hdl.ir.impl.InstPortReadImpl#getTarget <em>Target</em>}</li>
- *   <li>{@link net.sf.orc2hdl.ir.impl.InstPortReadImpl#getPort <em>Port</em>}</li>
+ * <li>{@link net.sf.orc2hdl.ir.impl.InstPortReadImpl#getTarget <em>Target</em>}
+ * </li>
+ * <li>{@link net.sf.orc2hdl.ir.impl.InstPortReadImpl#getPort <em>Port</em>}</li>
  * </ul>
  * </p>
- *
+ * 
  * @generated
  */
 public class InstPortReadImpl extends InstSpecificImpl implements InstPortRead {
 	/**
-	 * The cached value of the '{@link #getTarget() <em>Target</em>}' containment reference.
-	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * The cached value of the '{@link #getTarget() <em>Target</em>}'
+	 * containment reference. <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @see #getTarget()
 	 * @generated
 	 * @ordered
@@ -41,6 +43,7 @@ public class InstPortReadImpl extends InstSpecificImpl implements InstPortRead {
 	/**
 	 * The cached value of the '{@link #getPort() <em>Port</em>}' reference.
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @see #getPort()
 	 * @generated
 	 * @ordered
@@ -49,6 +52,7 @@ public class InstPortReadImpl extends InstSpecificImpl implements InstPortRead {
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	protected InstPortReadImpl() {
@@ -57,36 +61,17 @@ public class InstPortReadImpl extends InstSpecificImpl implements InstPortRead {
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	@Override
 	protected EClass eStaticClass() {
-		return ChronosIrSpecificPackage.Literals.INST_PORT_READ;
+		return XronosIrSpecificPackage.Literals.INST_PORT_READ;
 	}
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public Vertex getPort() {
-		return port;
-	}
-
-	/**
-	 * <!-- begin-user-doc --> <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setPort(Vertex newPort) {
-		Vertex oldPort = port;
-		port = newPort;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ChronosIrSpecificPackage.INST_PORT_READ__PORT, oldPort, port));
-	}
-
-	/**
-	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	@Override
@@ -96,6 +81,7 @@ public class InstPortReadImpl extends InstSpecificImpl implements InstPortRead {
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	public NotificationChain basicSetTarget(Def newTarget,
@@ -103,105 +89,159 @@ public class InstPortReadImpl extends InstSpecificImpl implements InstPortRead {
 		Def oldTarget = target;
 		target = newTarget;
 		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, ChronosIrSpecificPackage.INST_PORT_READ__TARGET, oldTarget, newTarget);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+			ENotificationImpl notification = new ENotificationImpl(this,
+					Notification.SET,
+					XronosIrSpecificPackage.INST_PORT_READ__TARGET, oldTarget,
+					newTarget);
+			if (msgs == null) {
+				msgs = notification;
+			} else {
+				msgs.add(notification);
+			}
 		}
 		return msgs;
 	}
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	@Override
 	public void setTarget(Def newTarget) {
 		if (newTarget != target) {
 			NotificationChain msgs = null;
-			if (target != null)
-				msgs = ((InternalEObject)target).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - ChronosIrSpecificPackage.INST_PORT_READ__TARGET, null, msgs);
-			if (newTarget != null)
-				msgs = ((InternalEObject)newTarget).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - ChronosIrSpecificPackage.INST_PORT_READ__TARGET, null, msgs);
+			if (target != null) {
+				msgs = ((InternalEObject) target)
+						.eInverseRemove(
+								this,
+								EOPPOSITE_FEATURE_BASE
+										- XronosIrSpecificPackage.INST_PORT_READ__TARGET,
+								null, msgs);
+			}
+			if (newTarget != null) {
+				msgs = ((InternalEObject) newTarget)
+						.eInverseAdd(
+								this,
+								EOPPOSITE_FEATURE_BASE
+										- XronosIrSpecificPackage.INST_PORT_READ__TARGET,
+								null, msgs);
+			}
 			msgs = basicSetTarget(newTarget, msgs);
-			if (msgs != null) msgs.dispatch();
+			if (msgs != null) {
+				msgs.dispatch();
+			}
+		} else if (eNotificationRequired()) {
+			eNotify(new ENotificationImpl(this, Notification.SET,
+					XronosIrSpecificPackage.INST_PORT_READ__TARGET, newTarget,
+					newTarget));
 		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ChronosIrSpecificPackage.INST_PORT_READ__TARGET, newTarget, newTarget));
 	}
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
+	 * @generated
+	 */
+	@Override
+	public Vertex getPort() {
+		return port;
+	}
+
+	/**
+	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
+	 * @generated
+	 */
+	@Override
+	public void setPort(Vertex newPort) {
+		Vertex oldPort = port;
+		port = newPort;
+		if (eNotificationRequired()) {
+			eNotify(new ENotificationImpl(this, Notification.SET,
+					XronosIrSpecificPackage.INST_PORT_READ__PORT, oldPort, port));
+		}
+	}
+
+	/**
+	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd,
 			int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case ChronosIrSpecificPackage.INST_PORT_READ__TARGET:
-				return basicSetTarget(null, msgs);
+		case XronosIrSpecificPackage.INST_PORT_READ__TARGET:
+			return basicSetTarget(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case ChronosIrSpecificPackage.INST_PORT_READ__TARGET:
-				return getTarget();
-			case ChronosIrSpecificPackage.INST_PORT_READ__PORT:
-				return getPort();
+		case XronosIrSpecificPackage.INST_PORT_READ__TARGET:
+			return getTarget();
+		case XronosIrSpecificPackage.INST_PORT_READ__PORT:
+			return getPort();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case ChronosIrSpecificPackage.INST_PORT_READ__TARGET:
-				setTarget((Def)newValue);
-				return;
-			case ChronosIrSpecificPackage.INST_PORT_READ__PORT:
-				setPort((Vertex)newValue);
-				return;
+		case XronosIrSpecificPackage.INST_PORT_READ__TARGET:
+			setTarget((Def) newValue);
+			return;
+		case XronosIrSpecificPackage.INST_PORT_READ__PORT:
+			setPort((Vertex) newValue);
+			return;
 		}
 		super.eSet(featureID, newValue);
 	}
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case ChronosIrSpecificPackage.INST_PORT_READ__TARGET:
-				setTarget((Def)null);
-				return;
-			case ChronosIrSpecificPackage.INST_PORT_READ__PORT:
-				setPort((Vertex)null);
-				return;
+		case XronosIrSpecificPackage.INST_PORT_READ__TARGET:
+			setTarget((Def) null);
+			return;
+		case XronosIrSpecificPackage.INST_PORT_READ__PORT:
+			setPort((Vertex) null);
+			return;
 		}
 		super.eUnset(featureID);
 	}
 
 	/**
 	 * <!-- begin-user-doc --> <!-- end-user-doc -->
+	 * 
 	 * @generated
 	 */
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case ChronosIrSpecificPackage.INST_PORT_READ__TARGET:
-				return target != null;
-			case ChronosIrSpecificPackage.INST_PORT_READ__PORT:
-				return port != null;
+		case XronosIrSpecificPackage.INST_PORT_READ__TARGET:
+			return target != null;
+		case XronosIrSpecificPackage.INST_PORT_READ__PORT:
+			return port != null;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -212,4 +252,5 @@ public class InstPortReadImpl extends InstSpecificImpl implements InstPortRead {
 				+ target.getVariable().getIndexedName() + ", "
 				+ ((Port) port).getName() + ")";
 	}
+
 } // InstPortReadImpl

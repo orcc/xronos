@@ -18,24 +18,24 @@ import org.eclipse.emf.ecore.plugin.EcorePlugin;
  * <!-- end-user-doc -->
  * @generated
  */
-public class ChronosIrSpecificFactoryImpl extends EFactoryImpl implements ChronosIrSpecificFactory {
+public class XronosIrSpecificFactoryImpl extends EFactoryImpl implements XronosIrSpecificFactory {
 	/**
 	 * Creates the default factory implementation.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public static ChronosIrSpecificFactory init() {
+	public static XronosIrSpecificFactory init() {
 		try {
-			ChronosIrSpecificFactory theChronosIrSpecificFactory = (ChronosIrSpecificFactory)EPackage.Registry.INSTANCE.getEFactory("http://orcc.sf.net/backends/ir"); 
-			if (theChronosIrSpecificFactory != null) {
-				return theChronosIrSpecificFactory;
+			XronosIrSpecificFactory theXronosIrSpecificFactory = (XronosIrSpecificFactory)EPackage.Registry.INSTANCE.getEFactory("http://www.xronos.org/ir"); 
+			if (theXronosIrSpecificFactory != null) {
+				return theXronosIrSpecificFactory;
 			}
 		}
 		catch (Exception exception) {
 			EcorePlugin.INSTANCE.log(exception);
 		}
-		return new ChronosIrSpecificFactoryImpl();
+		return new XronosIrSpecificFactoryImpl();
 	}
 
 	/**
@@ -44,7 +44,7 @@ public class ChronosIrSpecificFactoryImpl extends EFactoryImpl implements Chrono
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public ChronosIrSpecificFactoryImpl() {
+	public XronosIrSpecificFactoryImpl() {
 		super();
 	}
 
@@ -56,10 +56,10 @@ public class ChronosIrSpecificFactoryImpl extends EFactoryImpl implements Chrono
 	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
-			case ChronosIrSpecificPackage.INST_PORT_STATUS: return createInstPortStatus();
-			case ChronosIrSpecificPackage.INST_PORT_READ: return createInstPortRead();
-			case ChronosIrSpecificPackage.INST_PORT_WRITE: return createInstPortWrite();
-			case ChronosIrSpecificPackage.INST_PORT_PEEK: return createInstPortPeek();
+			case XronosIrSpecificPackage.INST_PORT_STATUS: return createInstPortStatus();
+			case XronosIrSpecificPackage.INST_PORT_READ: return createInstPortRead();
+			case XronosIrSpecificPackage.INST_PORT_WRITE: return createInstPortWrite();
+			case XronosIrSpecificPackage.INST_PORT_PEEK: return createInstPortPeek();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -110,8 +110,8 @@ public class ChronosIrSpecificFactoryImpl extends EFactoryImpl implements Chrono
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public ChronosIrSpecificPackage getChronosIrSpecificPackage() {
-		return (ChronosIrSpecificPackage)getEPackage();
+	public XronosIrSpecificPackage getXronosIrSpecificPackage() {
+		return (XronosIrSpecificPackage)getEPackage();
 	}
 
 	/**
@@ -121,8 +121,8 @@ public class ChronosIrSpecificFactoryImpl extends EFactoryImpl implements Chrono
 	 * @generated
 	 */
 	@Deprecated
-	public static ChronosIrSpecificPackage getPackage() {
-		return ChronosIrSpecificPackage.eINSTANCE;
+	public static XronosIrSpecificPackage getPackage() {
+		return XronosIrSpecificPackage.eINSTANCE;
 	}
 
-} //ChronosIrSpecificFactoryImpl
+} //XronosIrSpecificFactoryImpl

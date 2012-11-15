@@ -33,9 +33,9 @@ import java.util.Map;
 
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.visitors.io.CircularBuffer;
-import net.sf.orc2hdl.ir.ChronosIrSpecificFactory;
 import net.sf.orc2hdl.ir.InstPortRead;
 import net.sf.orc2hdl.ir.InstPortWrite;
+import net.sf.orc2hdl.ir.XronosIrSpecificFactory;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
@@ -68,7 +68,7 @@ public class ScalarPortIO extends DfVisitor<Void> {
 				Port port = varToPortMap.get(sourceVar);
 				Var target = load.getTarget().getVariable();
 				Def def = IrFactory.eINSTANCE.createDef(target);
-				InstPortRead portRead = ChronosIrSpecificFactory.eINSTANCE
+				InstPortRead portRead = XronosIrSpecificFactory.eINSTANCE
 						.createInstPortRead();
 				portRead.setPort(port);
 				portRead.setTarget(def);
@@ -88,7 +88,7 @@ public class ScalarPortIO extends DfVisitor<Void> {
 			if (varToPortMap.containsKey(targetVar)) {
 				Port port = varToPortMap.get(targetVar);
 				Expression value = store.getValue();
-				InstPortWrite portWrite = ChronosIrSpecificFactory.eINSTANCE
+				InstPortWrite portWrite = XronosIrSpecificFactory.eINSTANCE
 						.createInstPortWrite();
 				portWrite.setPort(port);
 				portWrite.setValue(value);

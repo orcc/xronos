@@ -11,12 +11,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.sf.orc2hdl.backend.transform.ChronosLiteralIntegersAdder;
-import net.sf.orc2hdl.backend.transform.ChronosTac;
 import net.sf.orc2hdl.backend.transform.DeadPhiRemover;
 import net.sf.orc2hdl.backend.transform.IndexFlattener;
 import net.sf.orc2hdl.backend.transform.RepeatPattern;
 import net.sf.orc2hdl.backend.transform.ScalarPortIO;
+import net.sf.orc2hdl.backend.transform.XronosLiteralIntegersAdder;
+import net.sf.orc2hdl.backend.transform.XronosTac;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.transform.CastAdder;
@@ -46,13 +46,13 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 
 /**
- * The Chronos Orcc Front-End.
+ * The Xronos Orcc Front-End.
  * 
  * @author Endri Bezati
  * 
  */
 
-public class Chronos extends AbstractBackend {
+public class Xronos extends AbstractBackend {
 
 	/** The clock Domains Map **/
 	private Map<String, String> clkDomains;
@@ -60,8 +60,8 @@ public class Chronos extends AbstractBackend {
 	/** Debug Mode, no caching, generating always **/
 	private boolean debugMode;
 
-	/** A list which contains the given chronosFlags **/
-	private List<String> chronosFlags;
+	/** A list which contains the given xronosFlags **/
+	private List<String> xronosFlags;
 
 	/** The used Xilinx FPGA Name **/
 	private String fpgaName;
@@ -131,22 +131,22 @@ public class Chronos extends AbstractBackend {
 		fpgaName = "xc2vp30-7-ff1152";
 
 		// Set Forge Flags
-		chronosFlags = new ArrayList<String>();
-		chronosFlags.add("-vv");
-		chronosFlags.add("-pipeline");
-		chronosFlags.add("-noblockio");
-		chronosFlags.add("-no_block_sched");
-		chronosFlags.add("-simple_arbitration");
-		chronosFlags.add("-noedk");
-		chronosFlags.add("-loopbal");
-		chronosFlags.add("-multdecomplimit");
-		chronosFlags.add("2");
-		chronosFlags.add("-comb_lut_mem_read");
-		chronosFlags.add("-dplut");
-		chronosFlags.add("-nolog");
-		chronosFlags.add("-noinclude");
-		chronosFlags.add("-report");
-		chronosFlags.add("-Xdetailed_report");
+		xronosFlags = new ArrayList<String>();
+		xronosFlags.add("-vv");
+		xronosFlags.add("-pipeline");
+		xronosFlags.add("-noblockio");
+		xronosFlags.add("-no_block_sched");
+		xronosFlags.add("-simple_arbitration");
+		xronosFlags.add("-noedk");
+		xronosFlags.add("-loopbal");
+		xronosFlags.add("-multdecomplimit");
+		xronosFlags.add("2");
+		xronosFlags.add("-comb_lut_mem_read");
+		xronosFlags.add("-dplut");
+		xronosFlags.add("-nolog");
+		xronosFlags.add("-noinclude");
+		xronosFlags.add("-report");
+		xronosFlags.add("-Xdetailed_report");
 
 		resources = new ResourceCache();
 	}
@@ -167,13 +167,13 @@ public class Chronos extends AbstractBackend {
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
 			transformations.add(new ScalarPortIO(resources));
 			transformations.add(new DfVisitor<Expression>(
-					new ChronosLiteralIntegersAdder()));
+					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
-			transformations.add(new DfVisitor<Expression>(new ChronosTac()));
+			transformations.add(new DfVisitor<Expression>(new XronosTac()));
 			transformations.add(new DfVisitor<CfgNode>(
 					new ControlFlowAnalyzer()));
 			transformations.add(new DfVisitor<Expression>(
-					new ChronosLiteralIntegersAdder()));
+					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Expression>(new CastAdder(false,
 					false)));
 			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
@@ -248,10 +248,10 @@ public class Chronos extends AbstractBackend {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
 				if (!instance.getActor().isNative()) {
-					ChronosPrinter printer = new ChronosPrinter(!debugMode);
+					XronosPrinter printer = new XronosPrinter(!debugMode);
 					printer.getOptions().put("generateGoDone", generateGoDone);
 					printer.getOptions().put("fpgaType", fpgaName);
-					List<String> flags = new ArrayList<String>(chronosFlags);
+					List<String> flags = new ArrayList<String>(xronosFlags);
 					flags.addAll(Arrays.asList("-d", rtlPath, "-o",
 							instance.getSimpleName()));
 					Boolean cached = printer.printInstance(
@@ -279,13 +279,13 @@ public class Chronos extends AbstractBackend {
 	private void printNetwork(Network network) {
 		OrccLogger.traceln("Generating Network...");
 
-		ChronosPrinter chronosPrinter = new ChronosPrinter();
-		chronosPrinter.getOptions().put("clkDomains", clkDomains);
-		chronosPrinter.printNetwork(rtlPath, network);
+		XronosPrinter xronosPrinter = new XronosPrinter();
+		xronosPrinter.getOptions().put("clkDomains", clkDomains);
+		xronosPrinter.printNetwork(rtlPath, network);
 
 		if (generateGoDone) {
-			chronosPrinter.getOptions().put("generateGoDone", generateGoDone);
-			chronosPrinter.printNetwork(rtlGoDonePath, network);
+			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
+			xronosPrinter.printNetwork(rtlGoDonePath, network);
 		}
 
 	}
@@ -307,35 +307,35 @@ public class Chronos extends AbstractBackend {
 			tbVhdDir.mkdir();
 		}
 
-		// Create the Chronos Printer
-		ChronosPrinter chronosPrinter = new ChronosPrinter();
-		chronosPrinter.getOptions().put("xilinxPrimitives", xilinxPrimitives);
+		// Create the Xronos Printer
+		XronosPrinter xronosPrinter = new XronosPrinter();
+		xronosPrinter.getOptions().put("xilinxPrimitives", xilinxPrimitives);
 
 		// Print the network TCL ModelSim simulation script
-		chronosPrinter.printSimTclScript(simPath, false, network);
+		xronosPrinter.printSimTclScript(simPath, false, network);
 		if (generateGoDone) {
-			chronosPrinter.getOptions().put("generateGoDone", generateGoDone);
-			chronosPrinter.getOptions().put("generateWeights", generateWeights);
+			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
+			xronosPrinter.getOptions().put("generateWeights", generateWeights);
 			// Create the weights path
 			File weightsPath = new File(simPath + File.separator + "weights");
 			if (!weightsPath.exists()) {
 				weightsPath.mkdir();
 			}
-			chronosPrinter.printWeightTclScript(simPath, network);
-			chronosPrinter.printSimTclScript(simPath, true, network);
+			xronosPrinter.printWeightTclScript(simPath, network);
+			xronosPrinter.printSimTclScript(simPath, true, network);
 		}
 
 		// print the network VHDL Testbech sourcefile
-		chronosPrinter.printTestbench(tbVhdPath, network);
+		xronosPrinter.printTestbench(tbVhdPath, network);
 
 		// Print the network testbench TCL ModelSim simulation script
-		chronosPrinter.printTclScript(testBenchPath, true, network);
+		xronosPrinter.printTclScript(testBenchPath, true, network);
 
 		for (Vertex vertex : network.getChildren()) {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
-				chronosPrinter.printTestbench(tbVhdPath, instance);
-				chronosPrinter.printTclScript(testBenchPath, true, instance);
+				xronosPrinter.printTestbench(tbVhdPath, instance);
+				xronosPrinter.printTclScript(testBenchPath, true, instance);
 			}
 		}
 	}

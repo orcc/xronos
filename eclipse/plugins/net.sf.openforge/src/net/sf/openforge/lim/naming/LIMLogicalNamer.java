@@ -145,6 +145,9 @@ public class LIMLogicalNamer extends FilteredVisitor implements Visitor {
 	/** Used to turn on debug output. */
 	private static final boolean DEBUG = false;
 
+	/** Keep all instances of Kickers uniquely named */
+	private static int index = 0;
+	
 	private boolean fifoIO = false;
 
 	/**

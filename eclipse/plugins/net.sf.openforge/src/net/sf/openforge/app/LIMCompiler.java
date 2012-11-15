@@ -27,7 +27,6 @@
 package net.sf.openforge.app;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -63,7 +62,6 @@ import net.sf.openforge.report.SimpleResourceReporter;
 import net.sf.openforge.report.XmlResourcePrinter;
 import net.sf.openforge.report.throughput.ThroughputAnalyzer;
 import net.sf.openforge.schedule.Scheduler;
-import net.sf.openforge.verilog.testbench.CycleSimTestBench;
 import net.sf.openforge.verilog.testbench.GenericTestbenchWriter;
 import net.sf.openforge.verilog.translate.PassThroughComponentRemover;
 
@@ -102,18 +100,20 @@ public class LIMCompiler {
 			cycleCEngine = null;
 		}
 
-		if (cycleCEngine != null)
+		if (cycleCEngine != null) {
 			cycleCEngine.initEnvironment();
+		}
 		for (OutputEngine engine : outputEngines) {
 			engine.initEnvironment();
 		}
 
-		if (!gj.getUnscopedBooleanOptionValue(OptionRegistry.NO_EDK))
+		if (!gj.getUnscopedBooleanOptionValue(OptionRegistry.NO_EDK)) {
 			this.reportDirectory = gj.getFileHandler().getFile(
 					ForgeCoreDescriptor.EDK_REPORT_DIR);
-		else
+		} else {
 			this.reportDirectory = gj.getFileHandler().registerFile(
 					new ForgeFileKey("report dir"), "report");
+		}
 
 		Engine.breathe();
 
@@ -164,8 +164,9 @@ public class LIMCompiler {
 		Engine.breathe();
 
 		try {
-			if (cycleCEngine != null)
+			if (cycleCEngine != null) {
 				cycleCEngine.translate(design);
+			}
 		} catch (IOException ioe) {
 			gj.fatalError("Error generating files during "
 					+ cycleCEngine.getOutputPhaseId() + "\n" + ioe);
@@ -210,8 +211,8 @@ public class LIMCompiler {
 			xflow(design);
 			Engine.breathe();
 		}
-		
-		//LXGraph.graphTo(design, "/tmp/" +design.showIDGlobal()+"_graph.dot");
+
+		// LXGraph.graphTo(design, "/tmp/" +design.showIDGlobal()+"_graph.dot");
 		GenericTestbenchWriter test = new GenericTestbenchWriter(design);
 		test.genTestbench();
 		clearAPIRuntime();
@@ -265,8 +266,8 @@ public class LIMCompiler {
 			engines.add(new SysgenSimApi());
 		}
 
-		if (gj.getOption(OptionRegistry.UCF_FILE).getValue(CodeLabel.UNSCOPED)
-				.toString() != null
+		if ((gj.getOption(OptionRegistry.UCF_FILE).getValue(CodeLabel.UNSCOPED)
+				.toString() != null)
 				&& !gj.getOption(OptionRegistry.UCF_FILE)
 						.getValue(CodeLabel.UNSCOPED).toString().equals("")) {
 			engines.add(new DesignUCFDocument());
@@ -317,8 +318,9 @@ public class LIMCompiler {
 		GenericJob gj = EngineThread.getGenericJob();
 		for (Task task : design.getTasks()) {
 			final Call topCall = task.getCall();
-			if (topCall instanceof IPCoreCall)
+			if (topCall instanceof IPCoreCall) {
 				continue;
+			}
 			final Latency latency = topCall.getLatency();
 			// final StringBuffer stringBuffer = new StringBuffer();
 
@@ -336,12 +338,13 @@ public class LIMCompiler {
 			// !latency.isFixed() ? "not " : "") + "balanced");
 			String spacing = "";
 			int space = task.getGoSpacing();
-			if (space == Task.INDETERMINATE_GO_SPACING)
+			if (space == Task.INDETERMINATE_GO_SPACING) {
 				spacing = "indeterminate";
-			else {
+			} else {
 				spacing = Integer.toString(space) + " clock";
-				if (space != 1)
+				if (space != 1) {
 					spacing += "s";
+				}
 			}
 			gj.info("min go spacing is " + spacing);
 			gj.dec();
@@ -490,8 +493,9 @@ public class LIMCompiler {
 		File workingDir = new File(synthFile.getParent(),
 				(subFileName + "_xflow"));
 
-		if (!workingDir.exists())
+		if (!workingDir.exists()) {
 			workingDir.mkdirs();
+		}
 
 		Xflow xf = new Xflow(design, synthFile, workingDir);
 

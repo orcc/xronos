@@ -29,25 +29,27 @@
 package net.sf.orc2hdl.backend.transform;
 
 import net.sf.orc2hdl.ir.InstPortWrite;
-import net.sf.orcc.backends.transform.LiteralIntegersAdder;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstSpecific;
+import net.sf.orcc.ir.transform.TacTransformation;
 
 /**
- * This class extends LiteralIntegersAdder with InstSpecific Instructions
+ * This class extends the TacTransformation, adding it InstSpecific
  * 
  * @author Endri Bezati
  * 
  */
-public class ChronosLiteralIntegersAdder extends LiteralIntegersAdder {
-
+public class XronosTac extends TacTransformation {
 	@Override
 	public Expression caseInstSpecific(InstSpecific object) {
 		if (object instanceof InstPortWrite) {
-			InstPortWrite portWrite = (InstPortWrite) object;
-			portWrite.setValue(doSwitch(portWrite.getValue()));
+			InstPortWrite instPortWrite = (InstPortWrite) object;
+			complexityLevel++;
+			instPortWrite.setValue(doSwitch(instPortWrite.getValue()));
+			complexityLevel--;
+			return null;
 		}
 		return null;
-	}
 
+	}
 }

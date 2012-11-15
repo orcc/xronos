@@ -24,17 +24,17 @@ import org.eclipse.emf.ecore.util.Switch;
  * until a non-null result is returned,
  * which is the result of the switch.
  * <!-- end-user-doc -->
- * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage
+ * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage
  * @generated
  */
-public class ChronosIrSpecificSwitch<T> extends Switch<T> {
+public class XronosIrSpecificSwitch<T> extends Switch<T> {
 	/**
 	 * The cached model package
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	protected static ChronosIrSpecificPackage modelPackage;
+	protected static XronosIrSpecificPackage modelPackage;
 
 	/**
 	 * Creates an instance of the switch.
@@ -42,9 +42,9 @@ public class ChronosIrSpecificSwitch<T> extends Switch<T> {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public ChronosIrSpecificSwitch() {
+	public XronosIrSpecificSwitch() {
 		if (modelPackage == null) {
-			modelPackage = ChronosIrSpecificPackage.eINSTANCE;
+			modelPackage = XronosIrSpecificPackage.eINSTANCE;
 		}
 	}
 
@@ -71,7 +71,7 @@ public class ChronosIrSpecificSwitch<T> extends Switch<T> {
 	@Override
 	protected T doSwitch(int classifierID, EObject theEObject) {
 		switch (classifierID) {
-			case ChronosIrSpecificPackage.INST_PORT_STATUS: {
+			case XronosIrSpecificPackage.INST_PORT_STATUS: {
 				InstPortStatus instPortStatus = (InstPortStatus)theEObject;
 				T result = caseInstPortStatus(instPortStatus);
 				if (result == null) result = caseInstSpecific(instPortStatus);
@@ -80,7 +80,7 @@ public class ChronosIrSpecificSwitch<T> extends Switch<T> {
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case ChronosIrSpecificPackage.INST_PORT_READ: {
+			case XronosIrSpecificPackage.INST_PORT_READ: {
 				InstPortRead instPortRead = (InstPortRead)theEObject;
 				T result = caseInstPortRead(instPortRead);
 				if (result == null) result = caseInstSpecific(instPortRead);
@@ -89,7 +89,7 @@ public class ChronosIrSpecificSwitch<T> extends Switch<T> {
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case ChronosIrSpecificPackage.INST_PORT_WRITE: {
+			case XronosIrSpecificPackage.INST_PORT_WRITE: {
 				InstPortWrite instPortWrite = (InstPortWrite)theEObject;
 				T result = caseInstPortWrite(instPortWrite);
 				if (result == null) result = caseInstSpecific(instPortWrite);
@@ -98,7 +98,7 @@ public class ChronosIrSpecificSwitch<T> extends Switch<T> {
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case ChronosIrSpecificPackage.INST_PORT_PEEK: {
+			case XronosIrSpecificPackage.INST_PORT_PEEK: {
 				InstPortPeek instPortPeek = (InstPortPeek)theEObject;
 				T result = caseInstPortPeek(instPortPeek);
 				if (result == null) result = caseInstSpecific(instPortPeek);
@@ -232,4 +232,4 @@ public class ChronosIrSpecificSwitch<T> extends Switch<T> {
 		return null;
 	}
 
-} //ChronosIrSpecificSwitch
+} //XronosIrSpecificSwitch

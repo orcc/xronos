@@ -15,42 +15,16 @@ import net.sf.orcc.ir.InstSpecific;
  * <p>
  * The following features are supported:
  * <ul>
- *   <li>{@link net.sf.orc2hdl.ir.InstPortPeek#getPort <em>Port</em>}</li>
  *   <li>{@link net.sf.orc2hdl.ir.InstPortPeek#getTarget <em>Target</em>}</li>
+ *   <li>{@link net.sf.orc2hdl.ir.InstPortPeek#getPort <em>Port</em>}</li>
  * </ul>
  * </p>
  *
- * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#getInstPortPeek()
+ * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#getInstPortPeek()
  * @model
  * @generated
  */
 public interface InstPortPeek extends InstSpecific {
-	/**
-	 * Returns the value of the '<em><b>Port</b></em>' reference.
-	 * <!-- begin-user-doc -->
-	 * <p>
-	 * If the meaning of the '<em>Port</em>' containment reference isn't clear,
-	 * there really should be more of a description here...
-	 * </p>
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Port</em>' reference.
-	 * @see #setPort(Vertex)
-	 * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#getInstPortPeek_Port()
-	 * @model resolveProxies="false"
-	 * @generated
-	 */
-	Vertex getPort();
-
-	/**
-	 * Sets the value of the '{@link net.sf.orc2hdl.ir.InstPortPeek#getPort <em>Port</em>}' reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Port</em>' reference.
-	 * @see #getPort()
-	 * @generated
-	 */
-	void setPort(Vertex value);
-
 	/**
 	 * Returns the value of the '<em><b>Target</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
@@ -61,7 +35,7 @@ public interface InstPortPeek extends InstSpecific {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Target</em>' containment reference.
 	 * @see #setTarget(Def)
-	 * @see net.sf.orc2hdl.ir.ChronosIrSpecificPackage#getInstPortPeek_Target()
+	 * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#getInstPortPeek_Target()
 	 * @model containment="true"
 	 * @generated
 	 */
@@ -76,5 +50,31 @@ public interface InstPortPeek extends InstSpecific {
 	 * @generated
 	 */
 	void setTarget(Def value);
+
+	/**
+	 * Returns the value of the '<em><b>Port</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <p>
+	 * If the meaning of the '<em>Port</em>' reference isn't clear,
+	 * there really should be more of a description here...
+	 * </p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Port</em>' reference.
+	 * @see #setPort(Vertex)
+	 * @see net.sf.orc2hdl.ir.XronosIrSpecificPackage#getInstPortPeek_Port()
+	 * @model resolveProxies="false"
+	 * @generated
+	 */
+	Vertex getPort();
+
+	/**
+	 * Sets the value of the '{@link net.sf.orc2hdl.ir.InstPortPeek#getPort <em>Port</em>}' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Port</em>' reference.
+	 * @see #getPort()
+	 * @generated
+	 */
+	void setPort(Vertex value);
 
 } // InstPortPeek
