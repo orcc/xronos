@@ -71,7 +71,7 @@ public abstract class ActionIOHandler {
 		private final String portSize;
 
 		private final int type;
-		
+
 		public FifoIOHandler(Node portNode) {
 			super();
 			assert portNode.getNodeType() == Node.ELEMENT_NODE;
@@ -88,7 +88,8 @@ public abstract class ActionIOHandler {
 
 		}
 
-		public FifoIOHandler(String direction, String portName, String portSize, int type) {
+		public FifoIOHandler(String direction, String portName,
+				String portSize, int type) {
 			super();
 			this.direction = direction;
 			this.portName = portName;
@@ -123,7 +124,7 @@ public abstract class ActionIOHandler {
 				throw new UnsupportedOperationException(
 						"Cannot read from an output interface");
 			}
-			return resource.getAccess(false);
+			return resource.getAccess(blocking);
 		}
 
 		@Override
