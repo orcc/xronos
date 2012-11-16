@@ -83,6 +83,7 @@ import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
 import net.sf.orc2hdl.ir.InstPortRead;
+import net.sf.orc2hdl.ir.InstPortStatus;
 import net.sf.orc2hdl.ir.InstPortWrite;
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.ir.BlockIf;
@@ -608,7 +609,21 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 					portGroupDependency);
 			PortUtil.mapOutControlPort(pinWrite, 0, doneBusDependency);
 			componentList.add(pinWrite);
+		} else if (object instanceof InstPortStatus) {
+			InstPortStatus portStatus = (InstPortStatus) object;
+
+			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portStatus
+					.getPort();
+			Var statusVar = portStatus.getTarget().getVariable();
+
+			ActionIOHandler ioHandler = resources.getIOHandler(port);
+			Component pinStatusComponent = ioHandler.getStatusAccess();
+			pinStatusComponent.setNonRemovable();
+			PortUtil.mapOutDataPorts(pinStatusComponent, statusVar,
+					busDependency, doneBusDependency);
+			componentList.add(pinStatusComponent);
 		}
+
 		return null;
 	}
 

@@ -45,6 +45,7 @@ import net.sf.openforge.app.NewJob;
 import net.sf.openforge.app.OptionRegistry;
 import net.sf.openforge.verilog.model.Assign.UnbalancedAssignmentException;
 import net.sf.orc2hdl.design.DesignEngine;
+import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
@@ -145,7 +146,7 @@ public class XronosPrinter {
 	 * @return
 	 */
 	public boolean printInstance(String[] xronosArgs, String rtlPath,
-			Instance instance) {
+			Instance instance, ResourceCache resourceCache) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		boolean error = false;
@@ -165,7 +166,8 @@ public class XronosPrinter {
 			try {
 				xronosMainJob.setOptionValues(xronosArgs);
 				f.preprocess(xronosMainJob);
-				Engine engine = new DesignEngine(xronosMainJob, instance);
+				Engine engine = new DesignEngine(xronosMainJob, instance,
+						resourceCache);
 				engine.begin();
 			} catch (NewJob.ForgeOptionException foe) {
 				OrccLogger.severeln("Command line option error: "

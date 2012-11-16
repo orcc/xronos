@@ -43,17 +43,21 @@ import net.sf.orcc.df.Instance;
  */
 public class DesignEngine extends Engine {
 	Instance instance;
+	ResourceCache resourceCache;
 
-	public DesignEngine(GenericJob genJob, Instance instance) {
+	public DesignEngine(GenericJob genJob, Instance instance,
+			ResourceCache resourceCache) {
 		super(genJob);
 		this.instance = instance;
+		this.resourceCache = resourceCache;
 		this.jobHandler = new JobHandlerAdapter("Forging: "
 				+ instance.getSimpleName());
 	}
 
 	@Override
 	public Design buildLim() {
-		InstanceToDesign instanceToDesign = new InstanceToDesign(instance);
+		InstanceToDesign instanceToDesign = new InstanceToDesign(instance,
+				resourceCache);
 		Design design = instanceToDesign.buildDesign();
 		return design;
 	}

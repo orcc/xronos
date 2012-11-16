@@ -87,7 +87,7 @@ public class Xronos extends AbstractBackend {
 
 	private boolean xilinxPrimitives;
 
-	private ResourceCache resources;
+	private ResourceCache resourceCache;
 
 	@Override
 	protected void doInitializeOptions() {
@@ -148,7 +148,7 @@ public class Xronos extends AbstractBackend {
 		xronosFlags.add("-report");
 		xronosFlags.add("-Xdetailed_report");
 
-		resources = new ResourceCache();
+		resourceCache = new ResourceCache();
 	}
 
 	@Override
@@ -160,12 +160,12 @@ public class Xronos extends AbstractBackend {
 			transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
-			transformations.add(new RepeatPattern(resources));
+			transformations.add(new RepeatPattern(resourceCache));
 			transformations.add(new DfVisitor<Void>(new SSATransformation()));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
-			transformations.add(new ScalarPortIO(resources));
+			transformations.add(new ScalarPortIO(resourceCache));
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
@@ -255,7 +255,8 @@ public class Xronos extends AbstractBackend {
 					flags.addAll(Arrays.asList("-d", rtlPath, "-o",
 							instance.getSimpleName()));
 					Boolean cached = printer.printInstance(
-							flags.toArray(new String[0]), rtlPath, instance);
+							flags.toArray(new String[0]), rtlPath, instance,
+							resourceCache);
 					if (cached) {
 						numCached++;
 					}

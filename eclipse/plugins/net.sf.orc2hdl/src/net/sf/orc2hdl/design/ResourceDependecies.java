@@ -65,6 +65,16 @@ public class ResourceDependecies {
 		portGroupDependency = new HashMap<Port, Integer>();
 	}
 
+	public ResourceDependecies(Map<Bus, Var> busDependency,
+			Map<Bus, Integer> doneBusDependency, Map<Port, Var> portDependency,
+			Map<Port, Integer> portGroupDependency) {
+		super();
+		this.busDependency = busDependency;
+		this.doneBusDependency = doneBusDependency;
+		this.portDependency = portDependency;
+		this.portGroupDependency = portGroupDependency;
+	}
+
 	public Map<Bus, Var> getBusDependency() {
 		return busDependency;
 	}

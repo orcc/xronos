@@ -44,9 +44,11 @@ import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.memory.LogicalValue;
 import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orc2hdl.design.ResourceDependecies;
 import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
+import net.sf.orc2hdl.design.visitors.io.CircularBufferProcedure;
 import net.sf.orc2hdl.preference.Constants;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
@@ -96,6 +98,8 @@ public class DesignActor extends DfVisitor<Object> {
 	/** Dependency between Components and Port-Var **/
 	private final Map<Port, Var> portDependency;
 
+	private ResourceDependecies resourceDependecies;
+
 	public DesignActor(Design design, ResourceCache resources) {
 		this.design = design;
 		this.resources = resources;
@@ -108,6 +112,8 @@ public class DesignActor extends DfVisitor<Object> {
 		componentsList = new ArrayList<Component>();
 		componentCreator = new ComponentCreator(resources, portDependency,
 				busDependency, portGroupDependency, doneBusDependency);
+		resourceDependecies = new ResourceDependecies(busDependency,
+				doneBusDependency, portDependency, portGroupDependency);
 	}
 
 	@Override
@@ -173,6 +179,9 @@ public class DesignActor extends DfVisitor<Object> {
 				Constants.MAX_ADDR_WIDTH, resources);
 
 		/** Create a Task for each Circular Buffer, if any **/
+		CircularBufferProcedure circularBufferProcedure = new CircularBufferProcedure(
+				design, resources, resourceDependecies);
+		circularBufferProcedure.doSwitch(actor);
 
 		/** Create a Task for each action in the actor **/
 		for (Action action : actor.getActions()) {

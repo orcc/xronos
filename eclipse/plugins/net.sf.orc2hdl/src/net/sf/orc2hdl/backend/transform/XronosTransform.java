@@ -26,52 +26,43 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+package net.sf.orc2hdl.backend.transform;
 
-package net.sf.orc2hdl.design;
-
-import net.sf.openforge.app.EngineThread;
-import net.sf.openforge.app.GenericJob;
-import net.sf.openforge.app.OptionRegistry;
-import net.sf.openforge.lim.Design;
-import net.sf.orc2hdl.design.visitors.DesignActor;
+import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.visitors.StmtIO;
-import net.sf.orcc.df.Instance;
-import net.sf.orcc.df.util.DfSwitch;
-import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.backends.transform.CastAdder;
+import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.transform.SSATransformation;
 
 /**
- * This class transforms an Orcc {@link Instance} Object to an OpenForge
- * {@link Design} Object
+ * This helper class transforms only a given procedure
  * 
  * @author Endri Bezati
+ * 
  */
-public class InstanceToDesign {
-	Design design;
-	Instance instance;
-	ResourceCache resourceCache;
+public class XronosTransform {
 
-	public InstanceToDesign(Instance instance, ResourceCache resourceCache) {
-		this.instance = instance;
-		this.resourceCache = resourceCache;
-		design = new Design();
+	private Procedure procedure;
+
+	public XronosTransform(Procedure procedure) {
+		this.procedure = procedure;
 	}
 
-	public Design buildDesign() {
-		// Get Instance name
-		String designName = instance.getName();
-		design.setIDLogical(designName);
-		GenericJob job = EngineThread.getGenericJob();
-		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
-				design.getSearchLabel(), designName);
-
-		DfSwitch<Void> stmIOFinder = new DfVisitor<Void>(new StmtIO(
-				resourceCache));
-		stmIOFinder.doSwitch(instance.getActor());
-
-		DesignActor designVisitor = new DesignActor(design, resourceCache);
-		designVisitor.doSwitch(instance.getActor());
-
-		return design;
+	public Procedure transformProcedure(ResourceCache resourceCache) {
+		// SSA
+		new SSATransformation().doSwitch(procedure);
+		// Add Literal Integers
+		new XronosLiteralIntegersAdder().doSwitch(procedure);
+		// Three address Code
+		new XronosTac().doSwitch(procedure);
+		// Add Literal Integers
+		new XronosLiteralIntegersAdder().doSwitch(procedure);
+		// Cast Adder
+		new CastAdder(false, false).doSwitch(procedure);
+		// Dead Phi Removal
+		new DeadPhiRemover().doSwitch(procedure);
+		// StmIO
+		new StmtIO(resourceCache).doSwitch(procedure);
+		return procedure;
 	}
-
 }
