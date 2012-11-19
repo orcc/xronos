@@ -386,13 +386,15 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		this.xronosSchedulerLocals = new ArrayList<Var>();
 		actionFireability = new HashMap<Action, Var>();
 		actionSchedulability = new HashMap<Action, Var>();
-		inputCircularBuffer = resourceCache.getActorInputCircularBuffer(actor);
-		outputCircularBuffer = resourceCache
-				.getActorOutputCircularBuffer(actor);
 	}
 
 	@Override
 	public Procedure caseActor(Actor actor) {
+		// Initialize input/output circularBuffer
+		inputCircularBuffer = resourceCache.getActorInputCircularBuffer(actor);
+		outputCircularBuffer = resourceCache
+				.getActorOutputCircularBuffer(actor);
+
 		/** Create the Xronos scheduler procedure **/
 		Procedure xronosScheduler = irFactory.createProcedure();
 
@@ -403,7 +405,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		BlockWhile blockWhile = irFactory.createBlockWhile();
 
 		// Create a true expression
-		ExprBool exprTrue = irFactory.createExprBool();
+		ExprBool exprTrue = irFactory.createExprBool(true);
 
 		// Set the true condition
 		blockWhile.setCondition(exprTrue);
@@ -496,7 +498,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		} else {
 
 		}
-
+		blocks.add(lastBlockIf);
 		return blocks;
 	}
 
