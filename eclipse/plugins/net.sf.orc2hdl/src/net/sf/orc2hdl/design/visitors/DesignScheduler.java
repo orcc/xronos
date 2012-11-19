@@ -584,8 +584,6 @@ public class DesignScheduler extends DfVisitor<Task> {
 		Branch branch = null;
 		List<Edge> oldEdges = new ArrayList<Edge>(transitions);
 
-		// for (Iterator<Edge> iter = oldEdges.iterator(); iter.hasNext();) {
-
 		Iterator<Edge> iter = oldEdges.iterator();
 		Edge edge = iter.next();
 		Transition transition = (Transition) edge;
@@ -645,7 +643,6 @@ public class DesignScheduler extends DfVisitor<Task> {
 			branchInVars.put(branch, inVars);
 			branch.setIDLogical("ifBranch_" + action.getName());
 		}
-		// }
 
 		return branch;
 	}

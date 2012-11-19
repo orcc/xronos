@@ -189,6 +189,7 @@ public class DesignActor extends DfVisitor<Object> {
 			actorsTasks.put(action, task);
 			design.addTask(task);
 		}
+		resources.setActionToTask(actorsTasks);
 
 		/** Create the design scheduler **/
 		DesignScheduler designScheduler = new DesignScheduler(resources,

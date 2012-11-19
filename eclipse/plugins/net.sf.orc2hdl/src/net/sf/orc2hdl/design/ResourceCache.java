@@ -35,9 +35,11 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.openforge.frontend.slim.builder.ActionIOHandler;
+import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.Location;
 import net.sf.orc2hdl.design.visitors.io.CircularBuffer;
+import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.Block;
@@ -53,6 +55,8 @@ import net.sf.orcc.ir.Var;
  * 
  */
 public class ResourceCache {
+
+	private Map<Action, Task> actionToTask = new HashMap<Action, Task>();
 
 	private Map<Actor, Boolean> actorContainsRepeat = new HashMap<Actor, Boolean>();
 
@@ -255,6 +259,14 @@ public class ResourceCache {
 
 	public List<Var> getLoopBodyOutput(Block block) {
 		return loopBodyOutputs.get(block);
+	}
+
+	public Task getTaskFromAction(Action action) {
+		return actionToTask.get(action);
+	}
+
+	public void setActionToTask(Map<Action, Task> actionToTask) {
+		this.actionToTask = actionToTask;
 	}
 
 	public void setActorInputCircularBuffer(Actor actor,
