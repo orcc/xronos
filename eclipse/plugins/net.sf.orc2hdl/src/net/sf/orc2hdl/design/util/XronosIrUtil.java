@@ -34,7 +34,11 @@ import java.util.List;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Var;
@@ -86,6 +90,34 @@ public class XronosIrUtil {
 		}
 		blockIf.getThenBlocks().add(thenBlock);
 		return blockIf;
+	}
+
+	public static BlockWhile createBlockWhile(Expression condition,
+			List<Block> body) {
+		BlockWhile blockWhile = IrFactory.eINSTANCE.createBlockWhile();
+		// Set the condition
+		blockWhile.setCondition(condition);
+
+		// Set body
+		blockWhile.getBlocks().addAll(body);
+
+		// Set empty join Block
+		blockWhile.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
+
+		return blockWhile;
+	}
+
+	public static BlockWhile createTrueBlockWhile(List<Block> body) {
+		ExprBool exprTrue = IrFactory.eINSTANCE.createExprBool(true);
+
+		return createBlockWhile(exprTrue, body);
+	}
+
+	public static InstStore createInstStore(Var target, Boolean value) {
+		ExprBool exprBoool = IrFactory.eINSTANCE.createExprBool(value);
+		InstStore instStore = IrFactory.eINSTANCE.createInstStore(target,
+				exprBoool);
+		return instStore;
 	}
 
 }

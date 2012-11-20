@@ -86,6 +86,7 @@ import net.sf.orc2hdl.ir.InstPortRead;
 import net.sf.orc2hdl.ir.InstPortStatus;
 import net.sf.orc2hdl.ir.InstPortWrite;
 import net.sf.orcc.backends.ir.InstCast;
+import net.sf.orcc.df.Action;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
@@ -99,6 +100,7 @@ import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstPhi;
+import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.InstSpecific;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
@@ -150,6 +152,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	protected Map<LogicalValue, Var> stateVars;
 
 	private boolean STM_DEBUG = true;
+
+	private Var returnVar;
 
 	public ComponentCreator(ResourceCache resources,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
@@ -468,11 +472,27 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	@Override
 	public List<Component> caseInstCall(InstCall call) {
-		currentComponent = new TaskCall();
-		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
-				call.getLineNumber());
-		currentComponent.setIDSourceInfo(sinfo);
-		resources.addTaskCall(call, (TaskCall) currentComponent);
+		Procedure procedure = call.getProcedure();
+		if (call.getTarget() != null) {
+			returnVar = call.getTarget().getVariable();
+		}
+		// Test if the container is an Action, visit
+		if (procedure.eContainer() instanceof Action) {
+			Action action = (Action) procedure.eContainer();
+			if (procedure == action.getScheduler()) {
+				doSwitch(procedure);
+			} else if (procedure == action.getBody()) {
+				TaskCall taskCall = new TaskCall();
+				taskCall.setTarget(resources.getTaskFromAction(action));
+				PortUtil.mapOutControlPort(taskCall, 0, doneBusDependency);
+				IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+						call.getLineNumber());
+				taskCall.setIDSourceInfo(sinfo);
+				componentList.add(taskCall);
+				// resources.addTaskCall(call, (TaskCall) currentComponent);
+			}
+		}
+
 		return null;
 	}
 
@@ -565,6 +585,21 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	@Override
 	public List<Component> caseInstPhi(InstPhi phi) {
 		// Do nothing
+		return null;
+	}
+
+	@Override
+	public List<Component> caseInstReturn(InstReturn returnInstr) {
+		if (returnInstr.getValue() != null) {
+			if (returnInstr.getValue().isExprVar()) {
+				Var instReturnVar = ((ExprVar) returnInstr.getValue()).getUse()
+						.getVariable();
+				InstAssign noop = IrFactory.eINSTANCE.createInstAssign(
+						returnVar,
+						IrFactory.eINSTANCE.createExprVar(instReturnVar));
+				doSwitch(noop);
+			}
+		}
 		return null;
 	}
 
@@ -734,7 +769,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	@Override
 	public List<Component> caseProcedure(Procedure procedure) {
-		componentList = new ArrayList<Component>();
+		// componentList = new ArrayList<Component>();
 		super.caseProcedure(procedure);
 		return componentList;
 	}

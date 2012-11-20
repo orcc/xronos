@@ -127,11 +127,11 @@ public class RepeatPattern extends DfVisitor<Void> {
 					Var newSourceVar = circularBufferInputs.get(port)
 							.getBuffer();
 
-					Var cbHead = circularBufferInputs.get(port).getTmpHead();
+					Var cbTmpHead = circularBufferInputs.get(port).getTmpHead();
 					int size = circularBufferInputs.get(port).getSize();
 
 					ExprVar cbHeadExprVar = IrFactory.eINSTANCE
-							.createExprVar(cbHead);
+							.createExprVar(cbTmpHead);
 
 					Expression index = indexes.get(0);
 
@@ -204,8 +204,8 @@ public class RepeatPattern extends DfVisitor<Void> {
 	@Override
 	public Void caseAction(Action action) {
 
-		BlockBasic firstBlock = action.getBody().getFirst();
-		BlockBasic lastBlock = action.getBody().getLast();
+		BlockBasic firstBodyBlock = action.getBody().getFirst();
+		BlockBasic lastBodyBlock = action.getBody().getLast();
 
 		/** InputPattern **/
 		for (Port port : action.getInputPattern().getPorts()) {
@@ -213,12 +213,12 @@ public class RepeatPattern extends DfVisitor<Void> {
 				// Create Load instruction head
 				// Load(tmpHead, head)
 				CircularBuffer circularBuffer = circularBufferInputs.get(port);
-				circularBuffer.addToLocals(action);
+				circularBuffer.addToLocals(action.getBody());
 				Var target = circularBuffer.getTmpHead();
 				Var source = circularBuffer.getHead();
 				InstLoad instLoad = IrFactory.eINSTANCE.createInstLoad(target,
 						source);
-				firstBlock.add(0, instLoad);
+				firstBodyBlock.add(0, instLoad);
 
 				// Create Store instruction for head
 				// Store(head, (tmpHead + numReads) & (size - 1))
@@ -247,16 +247,16 @@ public class RepeatPattern extends DfVisitor<Void> {
 				target = circularBuffer.getHead();
 				InstStore instStore = IrFactory.eINSTANCE.createInstStore(
 						target, value);
-				int instIndex = lastBlock.getInstructions().size() - 1;
-				lastBlock.add(instIndex, instStore);
+				int instIndex = lastBodyBlock.getInstructions().size() - 1;
+				lastBodyBlock.add(instIndex, instStore);
 
 				// Create Load instruction for count
 				target = circularBuffer.getTmpCount();
 				source = circularBuffer.getCount();
 				InstLoad instLoadCount = IrFactory.eINSTANCE.createInstLoad(
 						target, source);
-				instIndex = lastBlock.getInstructions().size() - 1;
-				firstBlock.add(instIndex, instLoadCount);
+				instIndex = lastBodyBlock.getInstructions().size() - 1;
+				firstBodyBlock.add(instIndex, instLoadCount);
 
 				// Create Store instruction for count
 				Var count = circularBuffer.getCount();
@@ -269,9 +269,34 @@ public class RepeatPattern extends DfVisitor<Void> {
 						exrpType);
 				InstStore instStoreCount = IrFactory.eINSTANCE.createInstStore(
 						count, valueCount);
-				instIndex = lastBlock.getInstructions().size() - 1;
-				lastBlock.add(instIndex, instStoreCount);
+				instIndex = lastBodyBlock.getInstructions().size() - 1;
+				lastBodyBlock.add(instIndex, instStoreCount);
 				oldInputMap.put(pinReadVar, port);
+			}
+		}
+
+		BlockBasic actionSchedulerFirstBlock = action.getScheduler().getFirst();
+
+		/** Peek pattern **/
+		for (Port port : action.getPeekPattern().getPorts()) {
+			if (circularBufferInputs.get(port) != null) {
+				// Add to locals the tmp variables
+				CircularBuffer circularBuffer = circularBufferInputs.get(port);
+
+				// Add Load to the firstBlock
+				Var target = circularBuffer.getTmpHead();
+				Var source = circularBuffer.getHead();
+
+				// Put target to Locals
+				action.getScheduler().getLocals().add(target);
+
+				InstLoad instLoad = IrFactory.eINSTANCE.createInstLoad(target,
+						source);
+				actionSchedulerFirstBlock.add(0, instLoad);
+
+				Var peekVar = action.getPeekPattern().getPortToVarMap()
+						.get(port);
+				oldInputMap.put(peekVar, port);
 			}
 		}
 
@@ -287,6 +312,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 		// Now change the Load/Store of an action
 		circularBufferLoadStore.doSwitch(action.getBody().getBlocks());
+		circularBufferLoadStore.doSwitch(action.getScheduler().getBlocks());
 		return null;
 	}
 

@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.openforge.lim.Block;
 import net.sf.openforge.lim.Bus;
 import net.sf.openforge.lim.Call;
 import net.sf.openforge.lim.Component;
@@ -43,6 +44,7 @@ import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.Task;
 import net.sf.openforge.lim.memory.LogicalValue;
+import net.sf.orc2hdl.backend.transform.XronosTransform;
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.ResourceDependecies;
 import net.sf.orc2hdl.design.util.DesignUtil;
@@ -55,6 +57,7 @@ import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Var;
 
 /**
@@ -73,9 +76,6 @@ public class DesignActor extends DfVisitor<Object> {
 
 	/** The design that is being populated **/
 	private final Design design;
-
-	/** Component Creator (Instruction Visitor) **/
-	private final ComponentCreator componentCreator;
 
 	/** Instruction Visitor **/
 	private final StateVarVisitor stateVarVisitor;
@@ -110,8 +110,6 @@ public class DesignActor extends DfVisitor<Object> {
 		stateVars = new HashMap<LogicalValue, Var>();
 		stateVarVisitor = new StateVarVisitor(stateVars);
 		componentsList = new ArrayList<Component>();
-		componentCreator = new ComponentCreator(resources, portDependency,
-				busDependency, portGroupDependency, doneBusDependency);
 		resourceDependecies = new ResourceDependecies(busDependency,
 				doneBusDependency, portDependency, portGroupDependency);
 	}
@@ -122,7 +120,10 @@ public class DesignActor extends DfVisitor<Object> {
 		componentsList = new ArrayList<Component>();
 
 		/** Visit the action body and take all the generated components **/
-		List<Component> bodyComponents = componentCreator.doSwitch(action
+		ComponentCreator actionComponentCreator = new ComponentCreator(
+				resources, portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+		List<Component> bodyComponents = actionComponentCreator.doSwitch(action
 				.getBody());
 		componentsList.addAll(bodyComponents);
 
@@ -191,12 +192,30 @@ public class DesignActor extends DfVisitor<Object> {
 		}
 		resources.setActionToTask(actorsTasks);
 
-		/** Create the design scheduler **/
-		DesignScheduler designScheduler = new DesignScheduler(resources,
-				actorsTasks, currentState);
+		// Test new scheduler
+		XronosScheduler xronosScheduler = new XronosScheduler(resources);
+		Procedure procedure = xronosScheduler.doSwitch(actor);
+		XronosTransform xronosTransform = new XronosTransform(procedure);
+		xronosTransform.transformProcedure(resources);
+		List<Component> schedulerComponents = new ArrayList<Component>();
+
+		ComponentCreator schedulerComponentCreator = new ComponentCreator(
+				resources, portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+		schedulerComponents = schedulerComponentCreator.doSwitch(procedure);
+
+		/** Module of the scheduler **/
+		Module schedulerModule = (Block) ModuleUtil.createModule(
+				schedulerComponents, Collections.<Var> emptyList(),
+				Collections.<Var> emptyList(), "schedulerBody", false,
+				Exit.RETURN, 0, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+
+		/** Create scheduler Task **/
+		Task scheduler = DesignUtil.createTask("scheduler", schedulerModule,
+				true);
 
 		/** Add scheduler task to the design **/
-		Task scheduler = designScheduler.doSwitch(actor);
 		design.addTask(scheduler);
 
 		for (Task task : design.getTasks()) {

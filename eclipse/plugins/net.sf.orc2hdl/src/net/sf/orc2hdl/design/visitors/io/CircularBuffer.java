@@ -30,10 +30,10 @@ package net.sf.orc2hdl.design.visitors.io;
 
 import java.util.List;
 
-import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 
@@ -88,8 +88,8 @@ public class CircularBuffer {
 		createVariables();
 	}
 
-	public void addToLocals(Action action) {
-		List<Var> locals = action.getBody().getLocals();
+	public void addToLocals(Procedure procedure) {
+		List<Var> locals = procedure.getLocals();
 		locals.add(tmpCount);
 		locals.add(tmpHead);
 		locals.add(tmpStart);
