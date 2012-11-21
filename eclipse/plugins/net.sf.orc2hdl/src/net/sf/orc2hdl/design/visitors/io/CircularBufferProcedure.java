@@ -45,23 +45,24 @@ import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.ResourceDependecies;
 import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.ModuleUtil;
+import net.sf.orc2hdl.design.util.XronosIrUtil;
 import net.sf.orc2hdl.design.visitors.ComponentCreator;
 import net.sf.orc2hdl.ir.InstPortRead;
 import net.sf.orc2hdl.ir.InstPortStatus;
-import net.sf.orc2hdl.ir.XronosIrSpecificFactory;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
-import net.sf.orcc.ir.BlockWhile;
-import net.sf.orcc.ir.Def;
+import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
-import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.InstStore;
+import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
@@ -82,6 +83,8 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 	private ResourceCache resourceCache;
 
 	private ResourceDependecies resourceDependecies;
+
+	private IrFactory irFactory = IrFactory.eINSTANCE;
 
 	/** Component Creator (Instruction Visitor) **/
 	private final ComponentCreator componentCreator;
@@ -147,161 +150,127 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		Procedure read = IrFactory.eINSTANCE.createProcedure(
 				"circularBufferRead_" + name, 0,
 				IrFactory.eINSTANCE.createTypeVoid());
-		/** Get portStatus **/
-		BlockBasic blockRead = IrFactory.eINSTANCE.createBlockBasic();
-		// Create InstPortStatus
-		InstPortStatus instPortStatus = XronosIrSpecificFactory.eINSTANCE
-				.createInstPortStatus();
-		Type typeBool = IrFactory.eINSTANCE.createTypeBool();
-		Var tmpPortStatus = IrFactory.eINSTANCE.createVar(typeBool,
-				"tmpPortStatus_" + name, true, 0);
-		read.getLocals().add(tmpPortStatus);
+		// Add all circularBuffer locals to read procedure
+		circularBuffer.addToLocals(read);
 
-		Def defPortStatus = IrFactory.eINSTANCE.createDef(tmpPortStatus);
-		instPortStatus.setPort(port);
-		instPortStatus.setTarget(defPortStatus);
-		blockRead.add(instPortStatus);
+		// Create a Boolean type and int32 type
+		Type typeBool = irFactory.createTypeBool();
+		Type typeInt32 = irFactory.createTypeInt(32);
 
-		/** Get circularBuffer start **/
+		/** Create the true loop body **/
+		List<Block> trueLoopBody = new ArrayList<Block>();
+
+		// Create a BlockBasic, that contains the portStatus and the cbStart
+		BlockBasic statusAndStartBlock = irFactory.createBlockBasic();
+
+		// PortStatus(portStatus,port)
+		Var varPortStatus = irFactory.createVar(typeBool,
+				"portStatus_" + port.getName(), true, 0);
+		InstPortStatus instPortStatus = XronosIrUtil.creaInstPortStatus(
+				varPortStatus, port);
+
+		//
 		Var cbStart = circularBuffer.getStart();
 		Var cbTmpStart = circularBuffer.getTmpStart();
-		read.getLocals().add(cbTmpStart);
-		InstLoad loadStart = IrFactory.eINSTANCE.createInstLoad(cbTmpStart,
-				cbStart);
-		blockRead.add(loadStart);
-		read.getBlocks().add(blockRead);
+		InstLoad startLoad = irFactory.createInstLoad(cbTmpStart, cbStart);
 
-		/** Block while Start **/
-		BlockWhile blockWhileStart = IrFactory.eINSTANCE.createBlockWhile();
-		blockWhileStart.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
-		ExprVar exprtmpPortStatus = IrFactory.eINSTANCE
-				.createExprVar(tmpPortStatus);
-		ExprVar exprtTmpStart = IrFactory.eINSTANCE.createExprVar(cbTmpStart);
+		statusAndStartBlock.add(instPortStatus);
+		statusAndStartBlock.add(startLoad);
 
-		Expression conditionStart = IrFactory.eINSTANCE.createExprBinary(
-				exprtTmpStart, OpBinary.LOGIC_AND, exprtmpPortStatus, typeBool);
-		// Set If start condition
-		blockWhileStart.setCondition(conditionStart);
+		// Add to the true loop body
+		trueLoopBody.add(statusAndStartBlock);
 
-		// get tmpCount and tmpRequestSize and put them to the first Then Block
-		// basic
-		BlockBasic whileBodyFirstBlock = IrFactory.eINSTANCE.createBlockBasic();
-		Var cbTmpCount = circularBuffer.getTmpCount();
-		Var cbCount = circularBuffer.getCount();
-		InstLoad instLoadCount = IrFactory.eINSTANCE.createInstLoad(cbTmpCount,
-				cbCount);
-		whileBodyFirstBlock.add(instLoadCount);
+		/** Create the start loop body **/
+		List<Block> startLoopBody = new ArrayList<Block>();
 
-		Var cbTmpRequestSize = circularBuffer.getTmpRequestSize();
-		Var cbRequestSize = circularBuffer.getRequestSize();
-		InstLoad instLoadRequestSize = IrFactory.eINSTANCE.createInstLoad(
-				cbTmpRequestSize, cbRequestSize);
-		whileBodyFirstBlock.add(instLoadRequestSize);
-		blockWhileStart.getBlocks().add(whileBodyFirstBlock);
+		// Create a blockBasic that contains the load of cbHead,cbCount,
+		// portRead, and store of the cb
+		BlockBasic initAndRead = irFactory.createBlockBasic();
 
-		/** Block If requestSize **/
-		BlockIf ifRequest = IrFactory.eINSTANCE.createBlockIf();
-		ifRequest.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
-
-		// Block If requestSize condition
-		ExprVar evCbTmpCount = IrFactory.eINSTANCE.createExprVar(cbTmpCount);
-		ExprVar evCbTmpRequestSize = IrFactory.eINSTANCE
-				.createExprVar(cbTmpRequestSize);
-		Expression exprBlockIfReqiuest = IrFactory.eINSTANCE.createExprBinary(
-				evCbTmpCount, OpBinary.LT, evCbTmpRequestSize, typeBool);
-		ifRequest.setCondition(exprBlockIfReqiuest);
-
-		// Block If thenBlock
-		BlockBasic tIfRequest = IrFactory.eINSTANCE.createBlockBasic();
+		// Load(cbTmpHead, cbHead)
 		Var cbHead = circularBuffer.getHead();
 		Var cbTmpHead = circularBuffer.getTmpHead();
-		InstLoad instLoadHead = IrFactory.eINSTANCE.createInstLoad(cbTmpHead,
-				cbHead);
-		tIfRequest.add(instLoadHead);
+		InstLoad headLoad = irFactory.createInstLoad(cbTmpHead, cbHead);
 
-		// Create index end Expression
-		Type typeInt32 = IrFactory.eINSTANCE.createTypeInt(32);
-		ExprVar evCbTmpHead = IrFactory.eINSTANCE.createExprVar(cbTmpHead);
-		ExprVar evCbTmpCount2 = IrFactory.eINSTANCE.createExprVar(cbTmpCount);
-		Expression headPlusCount = IrFactory.eINSTANCE.createExprBinary(
-				evCbTmpHead, OpBinary.PLUS, evCbTmpCount2, typeInt32);
-		ExprInt eISizeMinusOne = IrFactory.eINSTANCE
-				.createExprInt(circularBuffer.getSize() - 1);
-		Expression cbEnd = IrFactory.eINSTANCE.createExprBinary(headPlusCount,
-				OpBinary.BITAND, eISizeMinusOne, typeInt32);
+		// Load(cbTmpCount, cbCount)
+		Var cbCount = circularBuffer.getCount();
+		Var cbTmpCount = circularBuffer.getTmpCount();
+		InstLoad countLoad = irFactory.createInstLoad(cbTmpCount, cbCount);
 
-		// Create PortRead of the Token
-		InstPortRead instPortRead = XronosIrSpecificFactory.eINSTANCE
-				.createInstPortRead();
-		Var token = IrFactory.eINSTANCE.createVar(port.getType(), "token_"
-				+ port.getName(), true, 0);
-		read.getLocals().add(token);
-		Def defToken = IrFactory.eINSTANCE.createDef(token);
-		instPortRead.setPort(port);
-		instPortRead.setTarget(defToken);
-		tIfRequest.add(instPortRead);
-		// Create InstStore on circularBuffer
-		InstStore storeCb = IrFactory.eINSTANCE.createInstStore(
-				circularBuffer.getBuffer(), Arrays.asList(cbEnd), token);
-		tIfRequest.add(storeCb);
-		ifRequest.getThenBlocks().add(tIfRequest);
+		// PortRead(token, port)
+		Var token = irFactory.createVar(port.getType(),
+				"token_" + port.getName(), true, 0);
+		InstPortRead portRead = XronosIrUtil.creaInstPortRead(token, port);
 
-		/** Block If full **/
-		BlockIf ifFull = IrFactory.eINSTANCE.createBlockIf();
-		ifFull.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
+		// Store( circularBuffer[cbHead + cbCount & (cbSize-1), token)
+		Integer cbSize = circularBuffer.getSize();
+		ExprInt eiSizeMinusOne = irFactory.createExprInt(cbSize - 1);
 
-		// Create ifFull condition
-		ExprVar evCbTmpCount3 = IrFactory.eINSTANCE.createExprVar(cbTmpCount);
-		ExprInt eIcbSize = IrFactory.eINSTANCE.createExprInt(circularBuffer
-				.getSize());
-		Expression ifFullCondition = IrFactory.eINSTANCE.createExprBinary(
-				evCbTmpCount3, OpBinary.EQ, eIcbSize, typeBool);
-		ifFull.setCondition(ifFullCondition);
-		// ifFull Then body
-		BlockBasic tIfFull = IrFactory.eINSTANCE.createBlockBasic();
+		ExprBinary ebHeadPlusCount = XronosIrUtil.createExprBinaryPlus(
+				cbTmpHead, cbTmpCount, typeInt32);
 
-		ExprVar evCbTmpHead2 = IrFactory.eINSTANCE.createExprVar(cbTmpHead);
-		Expression evCbHeadPlusOne = IrFactory.eINSTANCE.createExprBinary(
-				evCbTmpHead2, OpBinary.PLUS,
-				IrFactory.eINSTANCE.createExprInt(1), typeInt32);
-		Expression evCbSizeMinusOne = IrFactory.eINSTANCE
-				.createExprInt(circularBuffer.getSize() - 1);
+		Expression cbIndex = irFactory.createExprBinary(ebHeadPlusCount,
+				OpBinary.LOGIC_AND, eiSizeMinusOne, typeInt32);
 
-		Expression eCbHeadStore = IrFactory.eINSTANCE.createExprBinary(
-				evCbHeadPlusOne, OpBinary.BITAND, evCbSizeMinusOne, typeInt32);
-		InstStore instStoreHead = IrFactory.eINSTANCE.createInstStore(cbHead,
-				eCbHeadStore);
-		tIfFull.add(instStoreHead);
-		ifFull.getThenBlocks().add(tIfFull);
+		Var buffer = circularBuffer.getBuffer();
 
-		ifRequest.getThenBlocks().add(ifFull);
+		InstStore bufferStore = irFactory.createInstStore(buffer,
+				Arrays.asList(cbIndex), token);
 
-		// ifFull Else body
-		BlockBasic eIfFull = IrFactory.eINSTANCE.createBlockBasic();
-		ExprVar evCbTmpCount4 = IrFactory.eINSTANCE.createExprVar(cbTmpCount);
-		Expression tmpCountPlusOne = IrFactory.eINSTANCE.createExprBinary(
-				evCbTmpCount4, OpBinary.PLUS,
-				IrFactory.eINSTANCE.createExprInt(1), typeInt32);
-		InstStore instStoreCount = IrFactory.eINSTANCE.createInstStore(cbCount,
-				tmpCountPlusOne);
-		eIfFull.add(instStoreCount);
-		ifFull.getElseBlocks().add(eIfFull);
+		initAndRead.add(headLoad);
+		initAndRead.add(countLoad);
+		initAndRead.add(portRead);
+		initAndRead.add(bufferStore);
 
-		// Add ifFull to ifRequest
-		ifRequest.getThenBlocks().add(ifFull);
+		// Add initAndRead block to start loop body
+		startLoopBody.add(initAndRead);
 
-		// Block If elseBlock
-		BlockBasic eIfRequest = IrFactory.eINSTANCE.createBlockBasic();
-		ExprBool exprFalse = IrFactory.eINSTANCE.createExprBool(false);
-		InstStore instStoreStart = IrFactory.eINSTANCE.createInstStore(cbStart,
-				exprFalse);
-		eIfRequest.add(instStoreStart);
-		ifRequest.getElseBlocks().add(eIfRequest);
+		/** Create the stop if **/
 
-		blockWhileStart.getBlocks().add(ifRequest);
-		// Put the block to the procedure
-		read.getBlocks().add(blockWhileStart);
+		// Create the stop condition
+		Expression condition = XronosIrUtil.createExprBinaryEqual(cbTmpCount,
+				cbSize - 1);
 
+		// Then instructions
+		List<Instruction> thenInstructions = new ArrayList<Instruction>();
+
+		ExprBinary ebHeadPlusOne = XronosIrUtil.createExprBinaryPlus(cbTmpHead,
+				1, typeInt32);
+		Expression ebHeadPlusOneAndSizeMinusOne = XronosIrUtil
+				.createExprBinaryLogicAnd(ebHeadPlusOne, cbSize - 1, typeInt32);
+		InstStore headStore = irFactory.createInstStore(cbHead,
+				ebHeadPlusOneAndSizeMinusOne);
+
+		ExprBool exprFalse = irFactory.createExprBool(false);
+		InstStore startStore = irFactory.createInstStore(cbStart, exprFalse);
+
+		thenInstructions.add(headStore);
+		thenInstructions.add(startStore);
+
+		// Else instructions
+		List<Instruction> elseInstructions = new ArrayList<Instruction>();
+
+		Expression countPlusOne = XronosIrUtil.createExprBinaryPlus(cbTmpCount,
+				1, typeInt32);
+
+		InstStore countStore = IrFactory.eINSTANCE.createInstStore(cbCount,
+				countPlusOne);
+		elseInstructions.add(countStore);
+
+		// Create the if block
+		BlockIf stopIf = XronosIrUtil.createBlockIf(condition,
+				thenInstructions, elseInstructions);
+
+		// Add the if block to the start loop body
+		startLoopBody.add(stopIf);
+
+		/** Create Return Block **/
+		BlockBasic returnBlock = IrFactory.eINSTANCE.createBlockBasic();
+		InstReturn instReturn = IrFactory.eINSTANCE.createInstReturn(null);
+		returnBlock.add(instReturn);
+		read.getBlocks().add(returnBlock);
+		Type returnType = IrFactory.eINSTANCE.createTypeVoid();
+		read.setReturnType(returnType);
 		// Transform procedure
 		XronosTransform transform = new XronosTransform(read);
 		Procedure procedure = transform.transformProcedure(resourceCache);

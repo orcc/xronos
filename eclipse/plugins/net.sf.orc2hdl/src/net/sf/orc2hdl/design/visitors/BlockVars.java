@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.sf.orc2hdl.ir.InstPortStatus;
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
@@ -292,6 +293,17 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 			} else {
 				blockVars.add(target);
 			}
+		} else if (object instanceof InstPortStatus) {
+			Var target = ((InstPortStatus) object).getTarget().getVariable();
+			if (!getDefinedVar) {
+				if (!inputVars) {
+					if (usedInOtherBlock(target)) {
+						blockVars.add(target);
+					}
+				}
+			} else {
+				blockVars.add(target);
+			}
 		}
 		return null;
 	}
@@ -345,12 +357,12 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 				if (container == blockPhi) {
 					defMap.put(def, false);
 				} else if (!blocksContainer.contains(container)
-						&& container != currentBlock) {
+						&& (container != currentBlock)) {
 					defMap.put(def, true);
 				}
 			} else {
 				if (!blocksContainer.contains(container)
-						&& container != currentBlock) {
+						&& (container != currentBlock)) {
 					defMap.put(def, true);
 				}
 			}
@@ -382,7 +394,7 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 						useMap.put(use, false);
 					}
 				} else if (!blocksContainer.contains(container)
-						&& container != currentBlock) {
+						&& (container != currentBlock)) {
 					useMap.put(use, true);
 				} else {
 					useMap.put(use, false);

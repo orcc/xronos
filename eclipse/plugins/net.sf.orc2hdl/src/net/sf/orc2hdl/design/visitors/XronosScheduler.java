@@ -423,7 +423,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		// Initialize circular Buffer variables
 		BlockBasic initBlock = createSchedulerInitBlock(actor);
 		if (!initBlock.getInstructions().isEmpty()) {
-			blockWhileBody.add(initBlock);
+			xronosScheduler.getBlocks().add(initBlock);
 		}
 
 		// Create the scheduler Body
