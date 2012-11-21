@@ -55,6 +55,7 @@ import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
@@ -166,10 +167,11 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		// PortStatus(portStatus,port)
 		Var varPortStatus = irFactory.createVar(typeBool,
 				"portStatus_" + port.getName(), true, 0);
+		read.getLocals().add(varPortStatus);
 		InstPortStatus instPortStatus = XronosIrUtil.creaInstPortStatus(
 				varPortStatus, port);
 
-		//
+		// Load(cbTmpStart, cbStart)
 		Var cbStart = circularBuffer.getStart();
 		Var cbTmpStart = circularBuffer.getTmpStart();
 		InstLoad startLoad = irFactory.createInstLoad(cbTmpStart, cbStart);
@@ -181,6 +183,9 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		trueLoopBody.add(statusAndStartBlock);
 
 		/** Create the start loop body **/
+		Expression startLoopCondition = XronosIrUtil.createExprBinaryLogicAnd(
+				cbTmpStart, varPortStatus);
+
 		List<Block> startLoopBody = new ArrayList<Block>();
 
 		// Create a blockBasic that contains the load of cbHead,cbCount,
@@ -200,6 +205,7 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		// PortRead(token, port)
 		Var token = irFactory.createVar(port.getType(),
 				"token_" + port.getName(), true, 0);
+		read.getLocals().add(token);
 		InstPortRead portRead = XronosIrUtil.creaInstPortRead(token, port);
 
 		// Store( circularBuffer[cbHead + cbCount & (cbSize-1), token)
@@ -237,7 +243,7 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		ExprBinary ebHeadPlusOne = XronosIrUtil.createExprBinaryPlus(cbTmpHead,
 				1, typeInt32);
 		Expression ebHeadPlusOneAndSizeMinusOne = XronosIrUtil
-				.createExprBinaryLogicAnd(ebHeadPlusOne, cbSize - 1, typeInt32);
+				.createExprBinaryBitAnd(ebHeadPlusOne, cbSize - 1, typeInt32);
 		InstStore headStore = irFactory.createInstStore(cbHead,
 				ebHeadPlusOneAndSizeMinusOne);
 
@@ -263,6 +269,17 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 
 		// Add the if block to the start loop body
 		startLoopBody.add(stopIf);
+
+		/** Create the Start Loop **/
+		BlockWhile startLoop = XronosIrUtil.createBlockWhile(
+				startLoopCondition, startLoopBody);
+
+		// Add startLoop to the true loop body
+		trueLoopBody.add(startLoop);
+
+		/** Create the true loop body **/
+		BlockWhile trueLoop = XronosIrUtil.createTrueBlockWhile(trueLoopBody);
+		read.getBlocks().add(trueLoop);
 
 		/** Create Return Block **/
 		BlockBasic returnBlock = IrFactory.eINSTANCE.createBlockBasic();

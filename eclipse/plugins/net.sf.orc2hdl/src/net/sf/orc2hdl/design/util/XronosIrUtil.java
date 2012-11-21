@@ -219,12 +219,19 @@ public class XronosIrUtil {
 				.createExprBinary(e1, OpBinary.PLUS, e2, type);
 	}
 
-	public static ExprBinary createExprBinaryLogicAnd(Expression e1,
+	public static ExprBinary createExprBinaryBitAnd(Expression e1,
 			Integer value, Type type) {
 		ExprInt e2 = IrFactory.eINSTANCE.createExprInt(value);
 
-		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.LOGIC_AND, e2,
+		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.BITAND, e2,
 				type);
+	}
+
+	public static ExprBinary createExprBinaryLogicAnd(Var var1, Var var2) {
+		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var1);
+		ExprVar e2 = IrFactory.eINSTANCE.createExprVar(var2);
+		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.LOGIC_AND, e2,
+				IrFactory.eINSTANCE.createTypeBool());
 	}
 
 	public static ExprBinary createExprBinaryEqual(Var var, Integer value) {
