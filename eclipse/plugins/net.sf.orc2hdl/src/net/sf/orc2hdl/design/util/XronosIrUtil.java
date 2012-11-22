@@ -81,10 +81,10 @@ public class XronosIrUtil {
 		return blockIf;
 	}
 
-	public static BlockIf createBlockIf(Var condition, Block block) {
+	public static BlockIf createBlockIf(Var condition, Block singleThenBlock) {
 		BlockIf blockIf = createBlockIf(condition);
 
-		blockIf.getThenBlocks().add(block);
+		blockIf.getThenBlocks().add(singleThenBlock);
 		return blockIf;
 	}
 
@@ -149,7 +149,7 @@ public class XronosIrUtil {
 		BlockIf blockIf = createBlockIf(condition, thenInstructions);
 
 		BlockBasic elseBlock = IrFactory.eINSTANCE.createBlockBasic();
-		for (Instruction instruction : thenInstructions) {
+		for (Instruction instruction : elseInstructions) {
 			elseBlock.add(instruction);
 		}
 		blockIf.getElseBlocks().add(elseBlock);
@@ -234,11 +234,25 @@ public class XronosIrUtil {
 				IrFactory.eINSTANCE.createTypeBool());
 	}
 
+	public static ExprBinary createExprBinaryLogicAnd(Expression e1,
+			Expression e2) {
+		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.LOGIC_AND, e2,
+				IrFactory.eINSTANCE.createTypeBool());
+	}
+
 	public static ExprBinary createExprBinaryEqual(Var var, Integer value) {
 		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var);
 		ExprInt e2 = IrFactory.eINSTANCE.createExprInt(value);
 
 		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.EQ, e2,
+				IrFactory.eINSTANCE.createTypeBool());
+	}
+
+	public static ExprBinary createExprBinaryLessThan(Var var, Integer value) {
+		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var);
+		ExprInt e2 = IrFactory.eINSTANCE.createExprInt(value);
+
+		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.LT, e2,
 				IrFactory.eINSTANCE.createTypeBool());
 	}
 

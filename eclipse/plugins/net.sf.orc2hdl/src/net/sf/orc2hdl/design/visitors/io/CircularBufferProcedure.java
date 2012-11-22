@@ -54,16 +54,14 @@ import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
-import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.ExprBinary;
-import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.InstStore;
-import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
@@ -176,15 +174,19 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		Var cbTmpStart = circularBuffer.getTmpStart();
 		InstLoad startLoad = irFactory.createInstLoad(cbTmpStart, cbStart);
 
+		// Load(cbTmpCount, cbCount)
+		Var cbCount = circularBuffer.getCount();
+		Var cbTmpCount = circularBuffer.getTmpCount();
+		InstLoad countLoad = irFactory.createInstLoad(cbTmpCount, cbCount);
+
 		statusAndStartBlock.add(instPortStatus);
 		statusAndStartBlock.add(startLoad);
+		statusAndStartBlock.add(countLoad);
 
 		// Add to the true loop body
 		trueLoopBody.add(statusAndStartBlock);
 
 		/** Create the start loop body **/
-		Expression startLoopCondition = XronosIrUtil.createExprBinaryLogicAnd(
-				cbTmpStart, varPortStatus);
 
 		List<Block> startLoopBody = new ArrayList<Block>();
 
@@ -196,11 +198,6 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		Var cbHead = circularBuffer.getHead();
 		Var cbTmpHead = circularBuffer.getTmpHead();
 		InstLoad headLoad = irFactory.createInstLoad(cbTmpHead, cbHead);
-
-		// Load(cbTmpCount, cbCount)
-		Var cbCount = circularBuffer.getCount();
-		Var cbTmpCount = circularBuffer.getTmpCount();
-		InstLoad countLoad = irFactory.createInstLoad(cbTmpCount, cbCount);
 
 		// PortRead(token, port)
 		Var token = irFactory.createVar(port.getType(),
@@ -223,54 +220,35 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		InstStore bufferStore = irFactory.createInstStore(buffer,
 				Arrays.asList(cbIndex), token);
 
+		Expression countPlusOne = XronosIrUtil.createExprBinaryPlus(cbTmpCount,
+				1, typeInt32);
+
+		InstAssign countAssign = irFactory.createInstAssign(cbTmpCount,
+				countPlusOne);
+
+		InstStore countStore = irFactory.createInstStore(cbCount, cbTmpCount);
+
 		initAndRead.add(headLoad);
-		initAndRead.add(countLoad);
 		initAndRead.add(portRead);
 		initAndRead.add(bufferStore);
-
+		initAndRead.add(countAssign);
+		initAndRead.add(countStore);
 		// Add initAndRead block to start loop body
 		startLoopBody.add(initAndRead);
 
 		/** Create the stop if **/
 
-		// Create the stop condition
-		Expression condition = XronosIrUtil.createExprBinaryEqual(cbTmpCount,
-				cbSize - 1);
-
-		// Then instructions
-		List<Instruction> thenInstructions = new ArrayList<Instruction>();
-
-		ExprBinary ebHeadPlusOne = XronosIrUtil.createExprBinaryPlus(cbTmpHead,
-				1, typeInt32);
-		Expression ebHeadPlusOneAndSizeMinusOne = XronosIrUtil
-				.createExprBinaryBitAnd(ebHeadPlusOne, cbSize - 1, typeInt32);
-		InstStore headStore = irFactory.createInstStore(cbHead,
-				ebHeadPlusOneAndSizeMinusOne);
-
-		ExprBool exprFalse = irFactory.createExprBool(false);
-		InstStore startStore = irFactory.createInstStore(cbStart, exprFalse);
-
-		thenInstructions.add(headStore);
-		thenInstructions.add(startStore);
-
-		// Else instructions
-		List<Instruction> elseInstructions = new ArrayList<Instruction>();
-
-		Expression countPlusOne = XronosIrUtil.createExprBinaryPlus(cbTmpCount,
-				1, typeInt32);
-
-		InstStore countStore = IrFactory.eINSTANCE.createInstStore(cbCount,
-				countPlusOne);
-		elseInstructions.add(countStore);
-
-		// Create the if block
-		BlockIf stopIf = XronosIrUtil.createBlockIf(condition,
-				thenInstructions, elseInstructions);
-
-		// Add the if block to the start loop body
-		startLoopBody.add(stopIf);
-
 		/** Create the Start Loop **/
+
+		// Create the stop condition
+		Expression startStatusCondition = XronosIrUtil
+				.createExprBinaryLogicAnd(cbTmpStart, varPortStatus);
+		Expression isFull = XronosIrUtil.createExprBinaryLessThan(cbTmpCount,
+				cbSize);
+
+		Expression startLoopCondition = XronosIrUtil.createExprBinaryLogicAnd(
+				startStatusCondition, isFull);
+
 		BlockWhile startLoop = XronosIrUtil.createBlockWhile(
 				startLoopCondition, startLoopBody);
 

@@ -147,36 +147,24 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 							.get(port);
 					int numTokens = pattern.getNumTokensMap().get(port);
 					portRequestSize.put(port, numTokens);
-					// Create the start test Expression
-					Var cbTmpStart = circularBuffer.getTmpStart();
-
-					ExprVar evTmpStart = irFactory.createExprVar(cbTmpStart);
-					ExprBool exprFalse = irFactory.createExprBool(false);
-					Expression exprStartEqualsFalse = irFactory
-							.createExprBinary(evTmpStart, OpBinary.EQ,
-									exprFalse, typeBool);
 
 					Var cbTmpCount = circularBuffer.getTmpCount();
 
 					// Create token availability Expression for this port
 					ExprVar evTmpCount = irFactory.createExprVar(cbTmpCount);
-					ExprInt eiNumTokens = irFactory.createExprInt(numTokens);
-
+					ExprInt eiSize = irFactory.createExprInt(circularBuffer
+							.getSize());
 					Expression exprCountGeNumTokens = irFactory
-							.createExprBinary(evTmpCount, OpBinary.GE,
-									eiNumTokens, typeBool);
+							.createExprBinary(evTmpCount, OpBinary.GE, eiSize,
+									typeBool);
 
 					Var portTokenAvailability = irFactory.createVar(typeBool,
 							"portTokenAvailability_" + action.getName() + "_"
 									+ port.getName(), true, 0);
 					xronosSchedulerLocals.add(portTokenAvailability);
 
-					Expression exprPortTokenAvailability = irFactory
-							.createExprBinary(exprCountGeNumTokens,
-									OpBinary.LOGIC_AND, exprStartEqualsFalse,
-									typeBool);
 					InstAssign instAssign = irFactory.createInstAssign(
-							portTokenAvailability, exprPortTokenAvailability);
+							portTokenAvailability, exprCountGeNumTokens);
 					block.add(instAssign);
 
 					// Update the final Expression
@@ -270,6 +258,17 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				xronosSchedulerLocals.add(actionFire);
 				InstAssign instAssign = irFactory.createInstAssign(actionFire,
 						spaceAvailability);
+				block.add(instAssign);
+				actionFireability.put(action, actionFire);
+				actionOutputPortRequestSize.put(action, portRequestSize);
+			} else {
+				Type typeBool = irFactory.createTypeBool();
+				Var actionFire = irFactory.createVar(typeBool, "actionFire_"
+						+ action.getName(), true, 0);
+				xronosSchedulerLocals.add(actionFire);
+				ExprBool ebTrue = irFactory.createExprBool(true);
+				InstAssign instAssign = irFactory.createInstAssign(actionFire,
+						ebTrue);
 				block.add(instAssign);
 				actionFireability.put(action, actionFire);
 				actionOutputPortRequestSize.put(action, portRequestSize);
@@ -432,12 +431,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		/** Create the scheduler infinite loop **/
 		BlockWhile blockWhile = XronosIrUtil
 				.createTrueBlockWhile(blockWhileBody);
-		/** Get the first circulaBuffer request size, if any **/
-		if (actor.getActionsOutsideFsm() != null) {
-			xronosScheduler.getBlocks()
-					.add(createRequestSizeBlock(actor.getActionsOutsideFsm()
-							.get(0)));
-		}
 
 		/** Put the while loop into the procedure body **/
 		xronosScheduler.getBlocks().add(blockWhile);
@@ -571,13 +564,23 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			xronosSchedulerLocals.add(schedulability);
 			xronosSchedulerLocals.add(fireability);
 
+			// Create fireability thenBlock Basic
+			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
+
+			// Add circularBuffer start to false, if necessary
+			createInstStoreStart(action, false, fireabilityThenBlock);
+
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
+			fireabilityThenBlock.add(instCall);
 
+			// Add circularBuffer start to true, if necessary
+			createInstStoreStart(action, true, fireabilityThenBlock);
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					instCall);
+					fireabilityThenBlock);
+
 			// Create the schedulability BlockIf
 			blockIf = XronosIrUtil.createBlockIf(schedulability, fireabilityIf);
 		} else {
@@ -587,20 +590,26 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			xronosSchedulerLocals.add(schedulability);
 			xronosSchedulerLocals.add(fireability);
 
+			// Create fireability thenBlock Basic
+			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
+
+			// Add circularBuffer start to false, if necessary
+			createInstStoreStart(action, false, fireabilityThenBlock);
+
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
+			fireabilityThenBlock.add(instCall);
 
+			// Add circularBuffer start to true, if necessary
+			createInstStoreStart(action, true, fireabilityThenBlock);
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					instCall);
+					fireabilityThenBlock);
 
 			// Create the schedulability BlockIf
 			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
 					schedulability, fireabilityIf);
-
-			// Create a block with store for each
-			lastBlockIf.getElseBlocks().add(createRequestSizeBlock(action));
 
 			lastBlockIf.getElseBlocks().add(schedulabilityIf);
 			blockIf = lastBlockIf;
@@ -608,25 +617,19 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		return blockIf;
 	}
 
-	private BlockBasic createRequestSizeBlock(Action action) {
-		BlockBasic blockBasic = irFactory.createBlockBasic();
-		Map<Port, Integer> inputRequestSizeMap = actionInputPortRequestSize
-				.get(action);
-
-		if (inputRequestSizeMap != null) {
-			for (Port port : inputRequestSizeMap.keySet()) {
-				if (inputCircularBuffer.get(port) != null) {
-					CircularBuffer circularBuffer = inputCircularBuffer
-							.get(port);
-					Integer numTokens = inputRequestSizeMap.get(port);
-					Var cbRequestSize = circularBuffer.getRequestSize();
-					InstStore instStore = irFactory.createInstStore(
-							cbRequestSize, numTokens);
-					blockBasic.add(instStore);
-				}
+	private void createInstStoreStart(Action action, Boolean value,
+			BlockBasic block) {
+		for (Port port : action.getInputPattern().getPorts()) {
+			if (inputCircularBuffer.get(port) != null) {
+				CircularBuffer circularBuffer = inputCircularBuffer.get(port);
+				Var cbStart = circularBuffer.getStart();
+				ExprBool ebValue = irFactory.createExprBool(value);
+				InstStore storeStart = irFactory.createInstStore(cbStart,
+						ebValue);
+				block.add(storeStart);
 			}
+
 		}
-		// TODO: See if RequestSize is necessary for the output
-		return blockBasic;
 	}
+
 }
