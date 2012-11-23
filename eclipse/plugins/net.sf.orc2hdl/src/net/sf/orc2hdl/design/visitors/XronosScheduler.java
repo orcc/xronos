@@ -42,7 +42,10 @@ import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
+import net.sf.orcc.df.State;
+import net.sf.orcc.df.Transition;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.graph.Edge;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
@@ -405,6 +408,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 	@Override
 	public Procedure caseActor(Actor actor) {
+		this.actor = actor;
 		// Initialize input/output circularBuffer
 		inputCircularBuffer = resourceCache.getActorInputCircularBuffer(actor);
 		outputCircularBuffer = resourceCache
@@ -420,13 +424,13 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		List<Block> blockWhileBody = new ArrayList<Block>();
 
 		// Initialize circular Buffer variables
-		BlockBasic initBlock = createSchedulerInitBlock(actor);
+		BlockBasic initBlock = createSchedulerInitBlock(actor, xronosScheduler);
 		if (!initBlock.getInstructions().isEmpty()) {
 			xronosScheduler.getBlocks().add(initBlock);
 		}
 
 		// Create the scheduler Body
-		blockWhileBody.addAll(createSchedulerBody(actor));
+		blockWhileBody.addAll(createSchedulerBody(actor, xronosScheduler));
 
 		/** Create the scheduler infinite loop **/
 		BlockWhile blockWhile = XronosIrUtil
@@ -455,7 +459,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		return xronosScheduler;
 	}
 
-	private List<Block> createSchedulerBody(Actor actor) {
+	private List<Block> createSchedulerBody(Actor actor, Procedure procedure) {
 		List<Block> blocks = new ArrayList<Block>();
 
 		/** For each CircularBuffer Load the stateVars to temporary one **/
@@ -515,21 +519,88 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			blocks.add(actionFireability.doSwitch(action));
 		}
 
-		BlockIf lastBlockIf = null;
 		/** Test if the actor has an FSM **/
-		if (actor.getFsm() == null) {
+		if (!actor.hasFsm()) {
+			BlockIf lastBlockIf = null;
 			for (Action action : actor.getActionsOutsideFsm()) {
-				lastBlockIf = createTaskCall(action, lastBlockIf);
+				lastBlockIf = createTaskCall(procedure, action, lastBlockIf,
+						null);
 			}
+			blocks.add(lastBlockIf);
 		} else {
+			// Load the current state to temporary variable
+			BlockBasic currentStateBlock = irFactory.createBlockBasic();
+			Var currentState = actor.getStateVar("currentState");
+			Var tmpCurrentState = irFactory.createVar(
+					IrFactory.eINSTANCE.createTypeInt(), "tmpCurrentState",
+					true, 0);
+			procedure.getLocals().add(tmpCurrentState);
+			InstLoad loadCurrentState = irFactory.createInstLoad(
+					tmpCurrentState, currentState);
+			currentStateBlock.add(loadCurrentState);
+			blocks.add(currentStateBlock);
 
+			BlockIf lastBlockIf = null;
+			if (!actor.getActionsOutsideFsm().isEmpty()) {
+				for (Action action : actor.getActionsOutsideFsm()) {
+					lastBlockIf = createTaskCall(procedure, action,
+							lastBlockIf, null);
+				}
+				lastBlockIf.getElseBlocks().addAll(
+						createFsmBlockIf(actor, procedure));
+				blocks.add(lastBlockIf);
+			} else {
+				blocks.addAll(createFsmBlockIf(actor, procedure));
+			}
 		}
-		blocks.add(lastBlockIf);
 		return blocks;
 	}
 
-	private BlockBasic createSchedulerInitBlock(Actor actor) {
+	private List<BlockIf> createFsmBlockIf(Actor actor, Procedure procedure) {
+		List<BlockIf> blocks = new ArrayList<BlockIf>();
+		for (State state : actor.getFsm().getStates()) {
+
+			BlockIf lastBlockIf = null;
+			for (Edge edge : state.getOutgoing()) {
+				Transition transition = ((Transition) edge);
+				State stateTarget = transition.getTarget();
+				Action action = transition.getAction();
+				lastBlockIf = createTaskCall(procedure, action, lastBlockIf,
+						stateTarget);
+			}
+
+			// Create an if block that will contains all the transitions
+			Var stateSource = procedure.getLocal("s_" + state.getName());
+			Var currentState = procedure.getLocal("tmpCurrentState");
+			Expression ifStateCondition = XronosIrUtil.createExprBinaryEqual(
+					currentState, stateSource);
+
+			BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
+					lastBlockIf);
+			blocks.add(blockIf);
+		}
+		return blocks;
+	}
+
+	private BlockBasic createSchedulerInitBlock(Actor actor, Procedure procedure) {
 		BlockBasic block = irFactory.createBlockBasic();
+
+		// Add States if any
+		if (actor.hasFsm()) {
+			int i = 0;
+			for (State state : actor.getFsm().getStates()) {
+				Var fsmState = IrFactory.eINSTANCE.createVar(
+						IrFactory.eINSTANCE.createTypeInt(),
+						"s_" + state.getName(), false, 0);
+				fsmState.setValue(i);
+				procedure.getLocals().add(fsmState);
+				InstAssign assignStateIndex = irFactory.createInstAssign(
+						fsmState, i);
+				block.add(assignStateIndex);
+				i++;
+			}
+		}
+
 		// CircularBuffer inputs
 		for (Port port : actor.getInputs()) {
 			if (inputCircularBuffer.get(port) != null) {
@@ -555,7 +626,8 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		return block;
 	}
 
-	private BlockIf createTaskCall(Action action, BlockIf lastBlockIf) {
+	private BlockIf createTaskCall(Procedure procedure, Action action,
+			BlockIf lastBlockIf, State target) {
 		BlockIf blockIf = null;
 		if (lastBlockIf == null) {
 			// Get the fireability and schedulability conditions
@@ -574,6 +646,16 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
 			fireabilityThenBlock.add(instCall);
+
+			// Create InstStore for the currentState if a target exists
+			if (target != null) {
+				Var currentState = actor.getStateVar("currentState");
+				Var targetStateVar = procedure
+						.getLocal("s_" + target.getName());
+				InstStore storeCurrentState = irFactory.createInstStore(
+						currentState, targetStateVar);
+				fireabilityThenBlock.add(storeCurrentState);
+			}
 
 			// Add circularBuffer start to true, if necessary
 			createInstStoreStart(action, true, fireabilityThenBlock);
@@ -600,6 +682,16 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
 			fireabilityThenBlock.add(instCall);
+
+			// Create InstStore for the currentState if a target exists
+			if (target != null) {
+				Var currentState = actor.getStateVar("currentState");
+				Var targetStateVar = procedure
+						.getLocal("s_" + target.getName());
+				InstStore storeCurrentState = irFactory.createInstStore(
+						currentState, targetStateVar);
+				fireabilityThenBlock.add(storeCurrentState);
+			}
 
 			// Add circularBuffer start to true, if necessary
 			createInstStoreStart(action, true, fireabilityThenBlock);

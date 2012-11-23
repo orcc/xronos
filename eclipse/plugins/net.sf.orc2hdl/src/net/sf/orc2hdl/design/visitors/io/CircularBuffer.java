@@ -30,6 +30,7 @@ package net.sf.orc2hdl.design.visitors.io;
 
 import java.util.List;
 
+import net.sf.orc2hdl.design.util.XronosMathUtil;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.IrFactory;
@@ -66,6 +67,9 @@ public class CircularBuffer {
 	/** The circular buffer size **/
 	private Integer size;
 
+	/** The circular buffer size **/
+	private Integer sizePowTwo;
+
 	/** The Boolean start Variable **/
 	private Var start;
 
@@ -85,6 +89,7 @@ public class CircularBuffer {
 		this.port = port;
 		this.buffer = buffer;
 		this.size = size;
+		this.sizePowTwo = XronosMathUtil.nearestPowTwo(size);
 		createVariables();
 	}
 
@@ -153,6 +158,10 @@ public class CircularBuffer {
 
 	public Integer getSize() {
 		return size;
+	}
+
+	public Integer getSizePowTwo() {
+		return sizePowTwo;
 	}
 
 	public Var getStart() {

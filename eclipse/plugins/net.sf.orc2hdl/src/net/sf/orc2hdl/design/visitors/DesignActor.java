@@ -159,6 +159,7 @@ public class DesignActor extends DfVisitor<Object> {
 					true, 0);
 			int i = 0;
 			Map<State, Integer> stateIndex = new HashMap<State, Integer>();
+			// Add FSM states to the actors stateVar
 			for (State state : actor.getFsm().getStates()) {
 				stateIndex.put(state, i);
 				i++;
@@ -168,6 +169,7 @@ public class DesignActor extends DfVisitor<Object> {
 					.createExprInt(index));
 			currentState.setValue(index);
 			actor.getStateVars().add(currentState);
+
 		}
 
 		/** Visit the State Variables **/

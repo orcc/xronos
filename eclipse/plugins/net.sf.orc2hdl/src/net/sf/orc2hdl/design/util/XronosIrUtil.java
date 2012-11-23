@@ -248,6 +248,14 @@ public class XronosIrUtil {
 				IrFactory.eINSTANCE.createTypeBool());
 	}
 
+	public static ExprBinary createExprBinaryEqual(Var var1, Var var2) {
+		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var1);
+		ExprVar e2 = IrFactory.eINSTANCE.createExprVar(var2);
+
+		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.EQ, e2,
+				IrFactory.eINSTANCE.createTypeBool());
+	}
+
 	public static ExprBinary createExprBinaryLessThan(Var var, Integer value) {
 		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var);
 		ExprInt e2 = IrFactory.eINSTANCE.createExprInt(value);

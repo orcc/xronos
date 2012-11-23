@@ -205,8 +205,8 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		read.getLocals().add(token);
 		InstPortRead portRead = XronosIrUtil.creaInstPortRead(token, port);
 
-		// Store( circularBuffer[cbHead + cbCount & (cbSize-1), token)
-		Integer cbSize = circularBuffer.getSize();
+		// Store( circularBuffer[cbHead + cbCount & (cbSizePowTwo-1), token)
+		Integer cbSize = circularBuffer.getSizePowTwo();
 		ExprInt eiSizeMinusOne = irFactory.createExprInt(cbSize - 1);
 
 		ExprBinary ebHeadPlusCount = XronosIrUtil.createExprBinaryPlus(
@@ -236,15 +236,13 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		// Add initAndRead block to start loop body
 		startLoopBody.add(initAndRead);
 
-		/** Create the stop if **/
-
 		/** Create the Start Loop **/
 
 		// Create the stop condition
 		Expression startStatusCondition = XronosIrUtil
 				.createExprBinaryLogicAnd(cbTmpStart, varPortStatus);
 		Expression isFull = XronosIrUtil.createExprBinaryLessThan(cbTmpCount,
-				cbSize);
+				circularBuffer.getSize());
 
 		Expression startLoopCondition = XronosIrUtil.createExprBinaryLogicAnd(
 				startStatusCondition, isFull);

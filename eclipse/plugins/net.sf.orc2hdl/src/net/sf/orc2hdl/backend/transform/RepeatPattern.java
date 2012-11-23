@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.orc2hdl.design.ResourceCache;
+import net.sf.orc2hdl.design.util.XronosMathUtil;
 import net.sf.orc2hdl.design.visitors.io.CircularBuffer;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
@@ -128,7 +129,8 @@ public class RepeatPattern extends DfVisitor<Void> {
 							.getBuffer();
 
 					Var cbTmpHead = circularBufferInputs.get(port).getTmpHead();
-					int size = circularBufferInputs.get(port).getSize();
+					int sizePowTwo = circularBufferInputs.get(port)
+							.getSizePowTwo();
 
 					ExprVar cbHeadExprVar = IrFactory.eINSTANCE
 							.createExprVar(cbTmpHead);
@@ -152,7 +154,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 					}
 
 					ExprInt exprIntSize = IrFactory.eINSTANCE
-							.createExprInt(size - 1);
+							.createExprInt(sizePowTwo - 1);
 
 					Expression indexAddAndSize = IrFactory.eINSTANCE
 							.createExprBinary(indexAdd, OpBinary.BITAND,
@@ -226,7 +228,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 				Var pinReadVar = action.getInputPattern().getPortToVarMap()
 						.get(port);
 				Var cbHead = circularBuffer.getTmpHead();
-				int size = circularBuffer.getSize();
+				int sizePowTwo = circularBuffer.getSizePowTwo();
 
 				ExprVar cbHeadExprVar = IrFactory.eINSTANCE
 						.createExprVar(cbHead);
@@ -240,7 +242,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 								exprIntNumReads, exrpType);
 
 				ExprInt exprIntSize = IrFactory.eINSTANCE
-						.createExprInt(size - 1);
+						.createExprInt(sizePowTwo - 1);
 
 				Expression value = IrFactory.eINSTANCE.createExprBinary(
 						indexAdd, OpBinary.BITAND, exprIntSize, exrpType);
@@ -256,7 +258,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 				InstLoad instLoadCount = IrFactory.eINSTANCE.createInstLoad(
 						target, source);
 				instIndex = lastBodyBlock.getInstructions().size() - 1;
-				firstBodyBlock.add(instIndex, instLoadCount);
+				firstBodyBlock.add(0, instLoadCount);
 
 				// Create Store instruction for count
 				Var count = circularBuffer.getCount();
@@ -270,7 +272,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 				InstStore instStoreCount = IrFactory.eINSTANCE.createInstStore(
 						count, valueCount);
 				instIndex = lastBodyBlock.getInstructions().size() - 1;
-				lastBodyBlock.add(instIndex, instStoreCount);
+				lastBodyBlock.add(1, instStoreCount);
 				oldInputMap.put(pinReadVar, port);
 			}
 		}
@@ -327,8 +329,10 @@ public class RepeatPattern extends DfVisitor<Void> {
 				int size = portMaxRepeatSize.get(port);
 				if (size > 1) {
 					Type type = port.getType();
-					Type typeList = IrFactory.eINSTANCE.createTypeList(size,
-							type);
+					// Find the nearest Power of two
+					int sizePowTwo = XronosMathUtil.nearestPowTwo(size);
+					Type typeList = IrFactory.eINSTANCE.createTypeList(
+							sizePowTwo, type);
 					Var buffer = IrFactory.eINSTANCE.createVar(typeList,
 							"circularBufferIn_" + port.getName(), true, 0);
 					CircularBuffer circularBuffer = new CircularBuffer(port,
@@ -345,8 +349,10 @@ public class RepeatPattern extends DfVisitor<Void> {
 				int size = portMaxRepeatSize.get(port);
 				if (size > 1) {
 					Type type = port.getType();
-					Type typeList = IrFactory.eINSTANCE.createTypeList(size,
-							type);
+					// Find the nearest Power of two
+					int sizePowTwo = XronosMathUtil.nearestPowTwo(size);
+					Type typeList = IrFactory.eINSTANCE.createTypeList(
+							sizePowTwo, type);
 					Var buffer = IrFactory.eINSTANCE.createVar(typeList,
 							"circularBufferOut_" + port.getName(), true, 0);
 					CircularBuffer circularBuffer = new CircularBuffer(port,
