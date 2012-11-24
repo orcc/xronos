@@ -82,6 +82,7 @@ import net.sf.orc2hdl.design.ResourceDependecies;
 import net.sf.orc2hdl.design.util.DesignUtil;
 import net.sf.orc2hdl.design.util.ModuleUtil;
 import net.sf.orc2hdl.design.util.PortUtil;
+import net.sf.orc2hdl.ir.InstPortPeek;
 import net.sf.orc2hdl.ir.InstPortRead;
 import net.sf.orc2hdl.ir.InstPortStatus;
 import net.sf.orc2hdl.ir.InstPortWrite;
@@ -622,7 +623,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portRead.getPort();
 			ActionIOHandler ioHandler = resources.getIOHandler(port);
 
-			Component pinRead = ioHandler.getReadAccess(true);
+			Component pinRead = ioHandler.getReadAccess(false);
 			pinRead.setNonRemovable();
 
 			Var pinReadVar = portRead.getTarget().getVariable();
@@ -634,7 +635,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portWrite
 					.getPort();
 			ActionIOHandler ioHandler = resources.getIOHandler(port);
-			Component pinWrite = ioHandler.getWriteAccess(true);
+			Component pinWrite = ioHandler.getWriteAccess(false);
 			pinWrite.setNonRemovable();
 
 			ExprVar value = (ExprVar) portWrite.getValue();
@@ -657,6 +658,17 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			PortUtil.mapOutDataPorts(pinStatusComponent, statusVar,
 					busDependency, doneBusDependency);
 			componentList.add(pinStatusComponent);
+		} else if (object instanceof InstPortPeek) {
+			InstPortPeek portPeek = (InstPortPeek) object;
+
+			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portPeek.getPort();
+			Var peekVar = portPeek.getTarget().getVariable();
+			ActionIOHandler ioHandler = resources.getIOHandler(port);
+			Component pinPeekComponent = ioHandler.getTokenPeekAccess();
+			pinPeekComponent.setNonRemovable();
+			PortUtil.mapOutDataPorts(pinPeekComponent, peekVar, busDependency,
+					doneBusDependency);
+			componentList.add(pinPeekComponent);
 		}
 
 		return null;

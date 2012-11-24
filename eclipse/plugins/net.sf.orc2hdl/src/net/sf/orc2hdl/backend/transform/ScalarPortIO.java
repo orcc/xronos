@@ -33,6 +33,7 @@ import java.util.Map;
 
 import net.sf.orc2hdl.design.ResourceCache;
 import net.sf.orc2hdl.design.visitors.io.CircularBuffer;
+import net.sf.orc2hdl.ir.InstPortPeek;
 import net.sf.orc2hdl.ir.InstPortRead;
 import net.sf.orc2hdl.ir.InstPortWrite;
 import net.sf.orc2hdl.ir.XronosIrSpecificFactory;
@@ -68,15 +69,31 @@ public class ScalarPortIO extends DfVisitor<Void> {
 				Port port = varToPortMap.get(sourceVar);
 				Var target = load.getTarget().getVariable();
 				Def def = IrFactory.eINSTANCE.createDef(target);
-				InstPortRead portRead = XronosIrSpecificFactory.eINSTANCE
-						.createInstPortRead();
-				portRead.setPort(port);
-				portRead.setTarget(def);
-				portRead.setLineNumber(load.getLineNumber());
-				BlockBasic block = load.getBlock();
-				int index = load.getBlock().indexOf(load);
 
-				block.add(index, portRead);
+				if (portRead) {
+					InstPortRead portRead = XronosIrSpecificFactory.eINSTANCE
+							.createInstPortRead();
+					portRead.setPort(port);
+					portRead.setTarget(def);
+					portRead.setLineNumber(load.getLineNumber());
+
+					BlockBasic block = load.getBlock();
+					int index = load.getBlock().indexOf(load);
+
+					block.add(index, portRead);
+				} else {
+					InstPortPeek portPeek = XronosIrSpecificFactory.eINSTANCE
+							.createInstPortPeek();
+					portPeek.setPort(port);
+					portPeek.setTarget(def);
+					portPeek.setLineNumber(load.getLineNumber());
+
+					BlockBasic block = load.getBlock();
+					int index = load.getBlock().indexOf(load);
+
+					block.add(index, portPeek);
+				}
+
 				IrUtil.delete(load);
 			}
 			return null;
@@ -105,12 +122,17 @@ public class ScalarPortIO extends DfVisitor<Void> {
 	}
 
 	private ResourceCache resourceCache;
+
 	private InnerVisitor innerVisitor = new InnerVisitor();
+
 	private Map<Var, Port> varToPortMap = new HashMap<Var, Port>();
 
 	private Map<Port, CircularBuffer> CircularBufferInput;
 
 	private Map<Port, CircularBuffer> CircularBufferOutput;
+
+	/** Change Load to portRead if true, change to portPeek otherwise **/
+	private Boolean portRead;
 
 	public ScalarPortIO(ResourceCache resourceCache) {
 		super();
@@ -129,6 +151,14 @@ public class ScalarPortIO extends DfVisitor<Void> {
 				}
 			}
 
+			for (Port port : action.getPeekPattern().getPorts()) {
+				if (CircularBufferInput.get(port) == null) {
+					Var portReadVar = action.getPeekPattern()
+							.getPortToVarMap().get(port);
+					varToPortMap.put(portReadVar, port);
+				}
+			}
+
 			for (Port port : action.getOutputPattern().getPorts()) {
 				if (CircularBufferOutput.get(port) == null) {
 					Var portWriteVar = action.getOutputPattern()
@@ -137,7 +167,10 @@ public class ScalarPortIO extends DfVisitor<Void> {
 				}
 			}
 			// Visit the action
+			portRead = true;
 			innerVisitor.doSwitch(action.getBody());
+			portRead = false;
+			innerVisitor.doSwitch(action.getScheduler());
 		}
 		return null;
 	}

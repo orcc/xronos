@@ -528,17 +528,17 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			}
 			blocks.add(lastBlockIf);
 		} else {
-			// Load the current state to temporary variable
-			BlockBasic currentStateBlock = irFactory.createBlockBasic();
-			Var currentState = actor.getStateVar("currentState");
-			Var tmpCurrentState = irFactory.createVar(
-					IrFactory.eINSTANCE.createTypeInt(), "tmpCurrentState",
-					true, 0);
-			procedure.getLocals().add(tmpCurrentState);
-			InstLoad loadCurrentState = irFactory.createInstLoad(
-					tmpCurrentState, currentState);
-			currentStateBlock.add(loadCurrentState);
-			blocks.add(currentStateBlock);
+			// // Load the current state to temporary variable
+			// BlockBasic currentStateBlock = irFactory.createBlockBasic();
+			// Var currentState = actor.getStateVar("currentState");
+			// Var tmpCurrentState = irFactory.createVar(
+			// IrFactory.eINSTANCE.createTypeInt(), "tmpCurrentState",
+			// true, 0);
+			// procedure.getLocals().add(tmpCurrentState);
+			// InstLoad loadCurrentState = irFactory.createInstLoad(
+			// tmpCurrentState, currentState);
+			// currentStateBlock.add(loadCurrentState);
+			// blocks.add(currentStateBlock);
 
 			BlockIf lastBlockIf = null;
 			if (!actor.getActionsOutsideFsm().isEmpty()) {
@@ -546,11 +546,11 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					lastBlockIf = createTaskCall(procedure, action,
 							lastBlockIf, null);
 				}
-				lastBlockIf.getElseBlocks().addAll(
-						createFsmBlockIf(actor, procedure));
+				lastBlockIf.getElseBlocks().add(
+						screateFsmBlockIf(actor, procedure));
 				blocks.add(lastBlockIf);
 			} else {
-				blocks.addAll(createFsmBlockIf(actor, procedure));
+				blocks.add(screateFsmBlockIf(actor, procedure));
 			}
 		}
 		return blocks;
@@ -582,8 +582,51 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		return blocks;
 	}
 
+	private BlockIf screateFsmBlockIf(Actor actor, Procedure procedure) {
+		BlockIf block = null;
+		BlockIf lastFSMBlockIf = null;
+		for (State state : actor.getFsm().getStates()) {
+
+			BlockIf lastBlockIf = null;
+			for (Edge edge : state.getOutgoing()) {
+				Transition transition = ((Transition) edge);
+				State stateTarget = transition.getTarget();
+				Action action = transition.getAction();
+				lastBlockIf = createTaskCall(procedure, action, lastBlockIf,
+						stateTarget);
+			}
+
+			// Create an if block that will contains all the transitions
+			Var stateSource = procedure.getLocal("s_" + state.getName());
+			Var currentState = procedure.getLocal("tmpCurrentState");
+			Expression ifStateCondition = XronosIrUtil.createExprBinaryEqual(
+					currentState, stateSource);
+			if (block == null) {
+				BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
+						lastBlockIf);
+				block = blockIf;
+				lastFSMBlockIf = blockIf;
+			} else {
+				BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
+						lastBlockIf);
+				lastFSMBlockIf.getElseBlocks().add(blockIf);
+				lastFSMBlockIf = blockIf;
+			}
+		}
+		return block;
+	}
+
 	private BlockBasic createSchedulerInitBlock(Actor actor, Procedure procedure) {
 		BlockBasic block = irFactory.createBlockBasic();
+		// Load currentState
+		Var currentState = actor.getStateVar("currentState");
+		Var tmpCurrentState = irFactory
+				.createVar(IrFactory.eINSTANCE.createTypeInt(),
+						"tmpCurrentState", true, 0);
+		procedure.getLocals().add(tmpCurrentState);
+		InstLoad loadCurrentState = irFactory.createInstLoad(tmpCurrentState,
+				currentState);
+		block.add(loadCurrentState);
 
 		// Add States if any
 		if (actor.hasFsm()) {
@@ -649,10 +692,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 			// Create InstStore for the currentState if a target exists
 			if (target != null) {
-				Var currentState = actor.getStateVar("currentState");
+				Var currentState = procedure.getLocal("tmpCurrentState");
 				Var targetStateVar = procedure
 						.getLocal("s_" + target.getName());
-				InstStore storeCurrentState = irFactory.createInstStore(
+				InstAssign storeCurrentState = irFactory.createInstAssign(
 						currentState, targetStateVar);
 				fireabilityThenBlock.add(storeCurrentState);
 			}
