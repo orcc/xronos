@@ -76,6 +76,158 @@ import net.sf.orcc.ir.Var;
 public class XronosScheduler extends DfVisitor<Procedure> {
 	/**
 	 * This inner visor constructs a list of blocks that contains the conditions
+	 * for the fireability of an action
+	 * 
+	 * @author Endri Bezati
+	 * 
+	 */
+	public class ActionFireability extends DfVisitor<Block> {
+
+		private Action action;
+
+		private BlockBasic block;
+
+		private Map<Port, Integer> portRequestSize;
+
+		private Var spaceAvailability;
+
+		public ActionFireability(Actor actor, ResourceCache resourceCache) {
+			super();
+			block = irFactory.createBlockBasic();
+			portRequestSize = new HashMap<Port, Integer>();
+		}
+
+		@Override
+		public Block caseAction(Action action) {
+			this.action = action;
+			// Visit inputPattern
+			doSwitch(action.getOutputPattern());
+			if (spaceAvailability != null) {
+				Type typeBool = irFactory.createTypeBool();
+				Var actionFire = irFactory.createVar(typeBool, "actionFire_"
+						+ action.getName(), true, 0);
+				xronosSchedulerLocals.add(actionFire);
+				InstAssign instAssign = irFactory.createInstAssign(actionFire,
+						spaceAvailability);
+				block.add(instAssign);
+				actionFireability.put(action, actionFire);
+				actionOutputPortRequestSize.put(action, portRequestSize);
+			} else {
+				Type typeBool = irFactory.createTypeBool();
+				Var actionFire = irFactory.createVar(typeBool, "actionFire_"
+						+ action.getName(), true, 0);
+				xronosSchedulerLocals.add(actionFire);
+				ExprBool ebTrue = irFactory.createExprBool(true);
+				InstAssign instAssign = irFactory.createInstAssign(actionFire,
+						ebTrue);
+				block.add(instAssign);
+				actionFireability.put(action, actionFire);
+				actionOutputPortRequestSize.put(action, portRequestSize);
+			}
+			return block;
+		}
+
+		@Override
+		public Block casePattern(Pattern pattern) {
+			Expression exprSpaceAvailability = null;
+			Type typeBool = irFactory.createTypeBool();
+			for (Port port : pattern.getPorts()) {
+				if (outputCircularBuffer.get(port) != null) {
+					// Multiple token
+					CircularBuffer circularBuffer = inputCircularBuffer
+							.get(port);
+					// TODO: Implement a real circular Buffer on the Output
+					Integer numTokens = pattern.getNumTokensMap().get(port);
+					portRequestSize.put(port, numTokens);
+
+					// Create the start test Expression
+					Var cbTmpStart = circularBuffer.getTmpStart();
+
+					ExprVar evTmpStart = irFactory.createExprVar(cbTmpStart);
+					ExprBool exprFalse = irFactory.createExprBool(false);
+					Expression exprStartEqualsFalse = irFactory
+							.createExprBinary(evTmpStart, OpBinary.EQ,
+									exprFalse, typeBool);
+
+					Var cbTmpCount = circularBuffer.getTmpCount();
+
+					// Create Count equals ? 0 expression
+					ExprVar evTmpCount = irFactory.createExprVar(cbTmpCount);
+					ExprInt eiZero = irFactory.createExprInt(0);
+
+					Expression exprCountEmpty = irFactory.createExprBinary(
+							evTmpCount, OpBinary.EQ, eiZero, typeBool);
+
+					Var portSpaceAvailability = irFactory.createVar(typeBool,
+							"portTokenAvailability_" + action.getName() + "_"
+									+ port.getName(), true, 0);
+					xronosSchedulerLocals.add(portSpaceAvailability);
+
+					Expression exprPortSpaceAvailability = irFactory
+							.createExprBinary(exprCountEmpty,
+									OpBinary.LOGIC_AND, exprStartEqualsFalse,
+									typeBool);
+					InstAssign instAssign = irFactory.createInstAssign(
+							portSpaceAvailability, exprPortSpaceAvailability);
+					block.add(instAssign);
+
+					// Update the final Expression
+					if (exprSpaceAvailability == null) {
+						exprSpaceAvailability = irFactory
+								.createExprVar(portSpaceAvailability);
+					} else {
+						ExprVar exprVar = irFactory
+								.createExprVar(portSpaceAvailability);
+						exprSpaceAvailability = irFactory.createExprBinary(
+								exprSpaceAvailability, OpBinary.LOGIC_AND,
+								exprVar, typeBool);
+					}
+				} else {
+					// Single token
+					InstPortStatus instPortStatus = XronosIrSpecificFactory.eINSTANCE
+							.createInstPortStatus();
+					instPortStatus.setPort(port);
+
+					// Create the portStatus variable and add it to the locals
+					Var portStatus = irFactory.createVar(
+							typeBool,
+							"portStatus_" + action.getName() + "_"
+									+ port.getName(), true, 0);
+					xronosSchedulerLocals.add(portStatus);
+
+					Def target = irFactory.createDef(portStatus);
+					instPortStatus.setTarget(target);
+
+					// Add this instruction to the block
+					block.add(instPortStatus);
+
+					// Update the final Expression
+					if (exprSpaceAvailability == null) {
+						exprSpaceAvailability = irFactory
+								.createExprVar(portStatus);
+					} else {
+						ExprVar exprVar = irFactory.createExprVar(portStatus);
+						exprSpaceAvailability = irFactory.createExprBinary(
+								exprSpaceAvailability, OpBinary.LOGIC_AND,
+								exprVar, typeBool);
+					}
+				}
+			}
+			if (exprSpaceAvailability != null) {
+				spaceAvailability = irFactory.createVar(typeBool,
+						"tokenAvailability_" + action.getName(), true, 0);
+				xronosSchedulerLocals.add(spaceAvailability);
+				InstAssign instAssign = irFactory.createInstAssign(
+						spaceAvailability, exprSpaceAvailability);
+				block.add(instAssign);
+			}
+
+			return null;
+		}
+	}
+
+	/**
+	 * This inner visor constructs a list of blocks that contains the conditions
 	 * for the schedulability of an action
 	 * 
 	 * @author Endri Bezati
@@ -83,13 +235,13 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 	 */
 	public class ActionSchedulability extends DfVisitor<Block> {
 
-		private BlockBasic block;
-
 		private Action action;
 
-		private Var tokenAvailability;
+		private BlockBasic block;
 
 		private Map<Port, Integer> portRequestSize;
+
+		private Var tokenAvailability;
 
 		public ActionSchedulability(Actor actor, ResourceCache resourceCache) {
 			super();
@@ -227,175 +379,23 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		}
 	}
 
-	/**
-	 * This inner visor constructs a list of blocks that contains the conditions
-	 * for the fireability of an action
-	 * 
-	 * @author Endri Bezati
-	 * 
-	 */
-	public class ActionFireability extends DfVisitor<Block> {
-
-		private BlockBasic block;
-
-		private Action action;
-
-		private Var spaceAvailability;
-
-		private Map<Port, Integer> portRequestSize;
-
-		public ActionFireability(Actor actor, ResourceCache resourceCache) {
-			super();
-			block = irFactory.createBlockBasic();
-			portRequestSize = new HashMap<Port, Integer>();
-		}
-
-		@Override
-		public Block caseAction(Action action) {
-			this.action = action;
-			// Visit inputPattern
-			doSwitch(action.getOutputPattern());
-			if (spaceAvailability != null) {
-				Type typeBool = irFactory.createTypeBool();
-				Var actionFire = irFactory.createVar(typeBool, "actionFire_"
-						+ action.getName(), true, 0);
-				xronosSchedulerLocals.add(actionFire);
-				InstAssign instAssign = irFactory.createInstAssign(actionFire,
-						spaceAvailability);
-				block.add(instAssign);
-				actionFireability.put(action, actionFire);
-				actionOutputPortRequestSize.put(action, portRequestSize);
-			} else {
-				Type typeBool = irFactory.createTypeBool();
-				Var actionFire = irFactory.createVar(typeBool, "actionFire_"
-						+ action.getName(), true, 0);
-				xronosSchedulerLocals.add(actionFire);
-				ExprBool ebTrue = irFactory.createExprBool(true);
-				InstAssign instAssign = irFactory.createInstAssign(actionFire,
-						ebTrue);
-				block.add(instAssign);
-				actionFireability.put(action, actionFire);
-				actionOutputPortRequestSize.put(action, portRequestSize);
-			}
-			return block;
-		}
-
-		@Override
-		public Block casePattern(Pattern pattern) {
-			Expression exprSpaceAvailability = null;
-			Type typeBool = irFactory.createTypeBool();
-			for (Port port : pattern.getPorts()) {
-				if (outputCircularBuffer.get(port) != null) {
-					// Multiple token
-					CircularBuffer circularBuffer = inputCircularBuffer
-							.get(port);
-					// TODO: Implement a real circular Buffer on the Output
-					Integer numTokens = pattern.getNumTokensMap().get(port);
-					portRequestSize.put(port, numTokens);
-
-					// Create the start test Expression
-					Var cbTmpStart = circularBuffer.getTmpStart();
-
-					ExprVar evTmpStart = irFactory.createExprVar(cbTmpStart);
-					ExprBool exprFalse = irFactory.createExprBool(false);
-					Expression exprStartEqualsFalse = irFactory
-							.createExprBinary(evTmpStart, OpBinary.EQ,
-									exprFalse, typeBool);
-
-					Var cbTmpCount = circularBuffer.getTmpCount();
-
-					// Create Count equals ? 0 expression
-					ExprVar evTmpCount = irFactory.createExprVar(cbTmpCount);
-					ExprInt eiZero = irFactory.createExprInt(0);
-
-					Expression exprCountEmpty = irFactory.createExprBinary(
-							evTmpCount, OpBinary.EQ, eiZero, typeBool);
-
-					Var portSpaceAvailability = irFactory.createVar(typeBool,
-							"portTokenAvailability_" + action.getName() + "_"
-									+ port.getName(), true, 0);
-					xronosSchedulerLocals.add(portSpaceAvailability);
-
-					Expression exprPortSpaceAvailability = irFactory
-							.createExprBinary(exprCountEmpty,
-									OpBinary.LOGIC_AND, exprStartEqualsFalse,
-									typeBool);
-					InstAssign instAssign = irFactory.createInstAssign(
-							portSpaceAvailability, exprPortSpaceAvailability);
-					block.add(instAssign);
-
-					// Update the final Expression
-					if (exprSpaceAvailability == null) {
-						exprSpaceAvailability = irFactory
-								.createExprVar(portSpaceAvailability);
-					} else {
-						ExprVar exprVar = irFactory
-								.createExprVar(portSpaceAvailability);
-						exprSpaceAvailability = irFactory.createExprBinary(
-								exprSpaceAvailability, OpBinary.LOGIC_AND,
-								exprVar, typeBool);
-					}
-				} else {
-					// Single token
-					InstPortStatus instPortStatus = XronosIrSpecificFactory.eINSTANCE
-							.createInstPortStatus();
-					instPortStatus.setPort(port);
-
-					// Create the portStatus variable and add it to the locals
-					Var portStatus = irFactory.createVar(
-							typeBool,
-							"portStatus_" + action.getName() + "_"
-									+ port.getName(), true, 0);
-					xronosSchedulerLocals.add(portStatus);
-
-					Def target = irFactory.createDef(portStatus);
-					instPortStatus.setTarget(target);
-
-					// Add this instruction to the block
-					block.add(instPortStatus);
-
-					// Update the final Expression
-					if (exprSpaceAvailability == null) {
-						exprSpaceAvailability = irFactory
-								.createExprVar(portStatus);
-					} else {
-						ExprVar exprVar = irFactory.createExprVar(portStatus);
-						exprSpaceAvailability = irFactory.createExprBinary(
-								exprSpaceAvailability, OpBinary.LOGIC_AND,
-								exprVar, typeBool);
-					}
-				}
-			}
-			if (exprSpaceAvailability != null) {
-				spaceAvailability = irFactory.createVar(typeBool,
-						"tokenAvailability_" + action.getName(), true, 0);
-				xronosSchedulerLocals.add(spaceAvailability);
-				InstAssign instAssign = irFactory.createInstAssign(
-						spaceAvailability, exprSpaceAvailability);
-				block.add(instAssign);
-			}
-
-			return null;
-		}
-	}
-
-	private IrFactory irFactory = IrFactory.eINSTANCE;
-
-	private ResourceCache resourceCache;
-
-	private List<Var> xronosSchedulerLocals;
-
-	private Map<Port, CircularBuffer> inputCircularBuffer;
-
-	private Map<Port, CircularBuffer> outputCircularBuffer;
-
-	private Map<Action, Var> actionSchedulability;
-
 	private Map<Action, Var> actionFireability;
 
 	private Map<Action, Map<Port, Integer>> actionInputPortRequestSize;
 
 	private Map<Action, Map<Port, Integer>> actionOutputPortRequestSize;
+
+	private Map<Action, Var> actionSchedulability;
+
+	private Map<Port, CircularBuffer> inputCircularBuffer;
+
+	private IrFactory irFactory = IrFactory.eINSTANCE;
+
+	private Map<Port, CircularBuffer> outputCircularBuffer;
+
+	private ResourceCache resourceCache;
+
+	private List<Var> xronosSchedulerLocals;
 
 	public XronosScheduler(ResourceCache resourceCache) {
 		super();
@@ -428,6 +428,20 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		BlockBasic initBlock = createSchedulerInitBlock(actor, xronosScheduler);
 		if (!initBlock.getInstructions().isEmpty()) {
 			xronosScheduler.getBlocks().add(initBlock);
+		}
+
+		// Loads of states
+		if (actor.hasFsm()) {
+			BlockBasic stateBlock = irFactory.createBlockBasic();
+			for (State state : actor.getFsm().getStates()) {
+				Var fsmState = actor.getStateVar("state_" + state.getName());
+				Var sState = irFactory.createVar(fsmState.getType(), "s_"
+						+ state.getName(), true, 0);
+				xronosScheduler.getLocals().add(sState);
+				InstLoad instaLoad = irFactory.createInstLoad(sState, fsmState);
+				stateBlock.add(instaLoad);
+			}
+			blockWhileBody.add(stateBlock);
 		}
 
 		// Create the scheduler Body
@@ -463,6 +477,58 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				+ "_" + xronosScheduler.getName());
 
 		return xronosScheduler;
+	}
+
+	private BlockIf createFsmBlockIf(Actor actor, Procedure procedure) {
+		BlockIf block = null;
+		BlockIf lastFSMBlockIf = null;
+		for (State state : actor.getFsm().getStates()) {
+
+			BlockIf lastBlockIf = null;
+			for (Edge edge : state.getOutgoing()) {
+				Transition transition = ((Transition) edge);
+				State stateTarget = transition.getTarget();
+				State stateSource = transition.getSource();
+				Action action = transition.getAction();
+				lastBlockIf = createTaskCall(procedure, action, lastBlockIf,
+						stateSource, stateTarget);
+			}
+
+			// Create an if block that will contains all the transitions
+
+			Var stateSource = procedure.getLocal("s_" + state.getName());
+
+			Expression ifStateCondition = irFactory.createExprVar(stateSource);
+			if (block == null) {
+				BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
+						lastBlockIf);
+				block = blockIf;
+				lastFSMBlockIf = blockIf;
+			} else {
+				BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
+						lastBlockIf);
+				lastFSMBlockIf.getElseBlocks().add(blockIf);
+				lastFSMBlockIf = blockIf;
+			}
+		}
+		// Add the isMutex Attribute
+		block.setAttribute("isMutex", true);
+		return block;
+	}
+
+	private void createInstStoreStart(Action action, Boolean value,
+			BlockBasic block) {
+		for (Port port : action.getInputPattern().getPorts()) {
+			if (inputCircularBuffer.get(port) != null) {
+				CircularBuffer circularBuffer = inputCircularBuffer.get(port);
+				Var cbStart = circularBuffer.getStart();
+				ExprBool ebValue = irFactory.createExprBool(value);
+				InstStore storeStart = irFactory.createInstStore(cbStart,
+						ebValue);
+				block.add(storeStart);
+			}
+
+		}
 	}
 
 	private List<Block> createSchedulerBody(Actor actor, Procedure procedure) {
@@ -540,74 +606,15 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					lastBlockIf = createTaskCallOutFSM(procedure, action,
 							lastBlockIf);
 				}
-				BlockBasic blockBasic = irFactory.createBlockBasic();
-
-				Var currentState = actor.getStateVar("currentState");
-				Var tmpCurrentState = irFactory.createVar(
-						IrFactory.eINSTANCE.createTypeInt(), "tmpCurrentState",
-						true, 0);
-				procedure.getLocals().add(tmpCurrentState);
-				InstLoad loadCurrentState = irFactory.createInstLoad(
-						tmpCurrentState, currentState);
-				blockBasic.add(loadCurrentState);
-
-				lastBlockIf.getElseBlocks().add(blockBasic);
 
 				lastBlockIf.getElseBlocks().add(
 						createFsmBlockIf(actor, procedure));
 				blocks.add(lastBlockIf);
 			} else {
-				BlockBasic blockBasic = irFactory.createBlockBasic();
-
-				Var currentState = actor.getStateVar("currentState");
-				Var tmpCurrentState = irFactory.createVar(
-						IrFactory.eINSTANCE.createTypeInt(), "tmpCurrentState",
-						true, 0);
-				procedure.getLocals().add(tmpCurrentState);
-				InstLoad loadCurrentState = irFactory.createInstLoad(
-						tmpCurrentState, currentState);
-				blockBasic.add(loadCurrentState);
-				blocks.add(blockBasic);
 				blocks.add(createFsmBlockIf(actor, procedure));
 			}
 		}
 		return blocks;
-	}
-
-	private BlockIf createFsmBlockIf(Actor actor, Procedure procedure) {
-		BlockIf block = null;
-		BlockIf lastFSMBlockIf = null;
-		for (State state : actor.getFsm().getStates()) {
-
-			BlockIf lastBlockIf = null;
-			for (Edge edge : state.getOutgoing()) {
-				Transition transition = ((Transition) edge);
-				State stateTarget = transition.getTarget();
-				Action action = transition.getAction();
-				lastBlockIf = createTaskCall(procedure, action, lastBlockIf,
-						stateTarget);
-			}
-
-			// Create an if block that will contains all the transitions
-			Var currentState = procedure.getLocal("tmpCurrentState");
-			Var stateSource = procedure.getLocal("s_" + state.getName());
-			Expression ifStateCondition = XronosIrUtil.createExprBinaryEqual(
-					currentState, stateSource);
-			if (block == null) {
-				BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
-						lastBlockIf);
-				block = blockIf;
-				lastFSMBlockIf = blockIf;
-			} else {
-				BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
-						lastBlockIf);
-				lastFSMBlockIf.getElseBlocks().add(blockIf);
-				lastFSMBlockIf = blockIf;
-			}
-		}
-		// Add the isMutex Attribute
-		// block.setAttribute("isMutex", true);
-		return block;
 	}
 
 	private BlockBasic createSchedulerInitBlock(Actor actor, Procedure procedure) {
@@ -615,17 +622,19 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 		// Add States if any
 		if (actor.hasFsm()) {
-			int i = 0;
 			for (State state : actor.getFsm().getStates()) {
-				Var fsmState = IrFactory.eINSTANCE.createVar(
-						IrFactory.eINSTANCE.createTypeInt(),
-						"s_" + state.getName(), false, 0);
-				fsmState.setValue(i);
-				procedure.getLocals().add(fsmState);
-				InstAssign assignStateIndex = irFactory.createInstAssign(
-						fsmState, i);
-				block.add(assignStateIndex);
-				i++;
+				Var fsmState = actor.getStateVar("state_" + state.getName());
+				if (actor.getFsm().getInitialState() == state) {
+					Expression exprTrue = irFactory.createExprBool(true);
+					InstStore stateStore = irFactory.createInstStore(fsmState,
+							exprTrue);
+					block.add(stateStore);
+				} else {
+					Expression exprFalse = irFactory.createExprBool(false);
+					InstStore stateStore = irFactory.createInstStore(fsmState,
+							exprFalse);
+					block.add(stateStore);
+				}
 			}
 		}
 
@@ -655,7 +664,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 	}
 
 	private BlockIf createTaskCall(Procedure procedure, Action action,
-			BlockIf lastBlockIf, State target) {
+			BlockIf lastBlockIf, State source, State target) {
 		BlockIf blockIf = null;
 		if (lastBlockIf == null) {
 			// Get the fireability and schedulability conditions
@@ -676,13 +685,22 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			fireabilityThenBlock.add(instCall);
 
 			// Create InstStore for the currentState if a target exists
-			if (target != null) {
-				Var currentState = actor.getStateVar("currentState");
-				Var targetStateVar = procedure
-						.getLocal("s_" + target.getName());
-				InstStore assignCurrentState = irFactory.createInstStore(
-						currentState, targetStateVar);
-				fireabilityThenBlock.add(assignCurrentState);
+			if ((target != null) && (source != null)) {
+				Expression exprTrue = irFactory.createExprBool(true);
+				Expression exprFalse = irFactory.createExprBool(false);
+
+				Var targetState = actor
+						.getStateVar("state_" + target.getName());
+				Var sourceState = actor
+						.getStateVar("state_" + source.getName());
+
+				InstStore targetAtTrue = irFactory.createInstStore(targetState,
+						exprTrue);
+				fireabilityThenBlock.add(targetAtTrue);
+
+				InstStore targetAtFalse = irFactory.createInstStore(
+						sourceState, exprFalse);
+				fireabilityThenBlock.add(targetAtFalse);
 			}
 
 			// Add circularBuffer start to true, if necessary
@@ -714,13 +732,22 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			fireabilityThenBlock.add(instCall);
 
 			// Create InstStore for the currentState if a target exists
-			if (target != null) {
-				Var currentState = actor.getStateVar("currentState");
-				Var targetStateVar = procedure
-						.getLocal("s_" + target.getName());
-				InstStore assignCurrentState = irFactory.createInstStore(
-						currentState, targetStateVar);
-				fireabilityThenBlock.add(assignCurrentState);
+			if ((target != null) && (source != null)) {
+				Expression exprTrue = irFactory.createExprBool(true);
+				Expression exprFalse = irFactory.createExprBool(false);
+
+				Var targetState = actor
+						.getStateVar("state_" + target.getName());
+				Var sourceState = actor
+						.getStateVar("state_" + source.getName());
+
+				InstStore targetAtTrue = irFactory.createInstStore(targetState,
+						exprTrue);
+				fireabilityThenBlock.add(targetAtTrue);
+
+				InstStore targetAtFalse = irFactory.createInstStore(
+						sourceState, exprFalse);
+				fireabilityThenBlock.add(targetAtFalse);
 			}
 			// Add circularBuffer start to true, if necessary
 			createInstStoreStart(action, true, fireabilityThenBlock);
@@ -805,21 +832,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			blockIf = lastBlockIf;
 		}
 		return blockIf;
-	}
-
-	private void createInstStoreStart(Action action, Boolean value,
-			BlockBasic block) {
-		for (Port port : action.getInputPattern().getPorts()) {
-			if (inputCircularBuffer.get(port) != null) {
-				CircularBuffer circularBuffer = inputCircularBuffer.get(port);
-				Var cbStart = circularBuffer.getStart();
-				ExprBool ebValue = irFactory.createExprBool(value);
-				InstStore storeStart = irFactory.createInstStore(cbStart,
-						ebValue);
-				block.add(storeStart);
-			}
-
-		}
 	}
 
 }

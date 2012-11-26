@@ -58,6 +58,7 @@ import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 
 /**
@@ -169,6 +170,18 @@ public class DesignActor extends DfVisitor<Object> {
 					.createExprInt(index));
 			currentState.setValue(index);
 			actor.getStateVars().add(currentState);
+
+			for (State state : actor.getFsm().getStates()) {
+				Type typeBool = IrFactory.eINSTANCE.createTypeBool();
+				Var fsmState = IrFactory.eINSTANCE.createVar(typeBool, "state_"
+						+ state.getName(), true, 0);
+				if (state == actor.getFsm().getInitialState()) {
+					fsmState.setValue(true);
+				} else {
+					fsmState.setValue(false);
+				}
+				actor.getStateVars().add(fsmState);
+			}
 
 		}
 
