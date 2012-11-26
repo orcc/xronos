@@ -88,6 +88,15 @@ public class XronosIrUtil {
 		return blockIf;
 	}
 
+	public static BlockIf createBlockIf(Var condition, Block singleThenBlock,
+			Block singleElseBlock) {
+		BlockIf blockIf = createBlockIf(condition);
+
+		blockIf.getThenBlocks().add(singleThenBlock);
+		blockIf.getElseBlocks().add(singleElseBlock);
+		return blockIf;
+	}
+
 	public static BlockIf createBlockIf(Expression condition, Block block) {
 		BlockIf blockIf = createBlockIf(condition);
 
