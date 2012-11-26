@@ -6,9 +6,9 @@ import net.sf.orcc.ir.Procedure
 
 class DebugPrinter extends InstancePrinter {
 	
-	def printProcedure(String targetFolder,Procedure procedure) {
+	def printProcedure(String targetFolder, Procedure procedure, String name) {
 		val content = print(procedure)
-		val file = new File(targetFolder + File::separator + procedure.name + ".c")
+		val file = new File(targetFolder + File::separator + name + ".c")
 		
 		if(needToWriteFile(content, file)) {
 			printFile(content, file)

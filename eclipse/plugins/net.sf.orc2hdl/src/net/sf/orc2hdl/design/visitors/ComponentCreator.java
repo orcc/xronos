@@ -30,6 +30,7 @@
 package net.sf.orc2hdl.design.visitors;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ import net.sf.openforge.lim.Exit;
 import net.sf.openforge.lim.HeapRead;
 import net.sf.openforge.lim.HeapWrite;
 import net.sf.openforge.lim.Loop;
+import net.sf.openforge.lim.Module;
 import net.sf.openforge.lim.Port;
 import net.sf.openforge.lim.TaskCall;
 import net.sf.openforge.lim.memory.AddressStridePolicy;
@@ -250,7 +252,16 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		currentComponent = branch;
 		componentList = new ArrayList<Component>();
 		componentList.addAll(oldComponents);
-		componentList.add(currentComponent);
+		if (blockIf.getAttribute("isMutex") != null) {
+			Module mutexFsmBlock = (Module) ModuleUtil.createModule(
+					Arrays.asList((Component) branch), ifInputVars,
+					ifOutputVars, "mutex_BranchBlock", true, Exit.DONE, 0,
+					portDependency, busDependency, portGroupDependency,
+					doneBusDependency);
+			componentList.add(mutexFsmBlock);
+		} else {
+			componentList.add(currentComponent);
+		}
 		return null;
 	}
 

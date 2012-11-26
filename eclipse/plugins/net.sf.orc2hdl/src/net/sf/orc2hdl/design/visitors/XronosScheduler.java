@@ -459,7 +459,8 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 		// Debug
 		DebugPrinter debugPrinter = new DebugPrinter();
-		debugPrinter.printProcedure("/tmp", xronosScheduler);
+		debugPrinter.printProcedure("/tmp", xronosScheduler, actor.getName()
+				+ "_" + xronosScheduler.getName());
 
 		return xronosScheduler;
 	}
@@ -528,21 +529,45 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		if (!actor.hasFsm()) {
 			BlockIf lastBlockIf = null;
 			for (Action action : actor.getActionsOutsideFsm()) {
-				lastBlockIf = createTaskCall(procedure, action, lastBlockIf,
-						null, null);
+				lastBlockIf = createTaskCallOutFSM(procedure, action,
+						lastBlockIf);
 			}
 			blocks.add(lastBlockIf);
 		} else {
 			BlockIf lastBlockIf = null;
 			if (!actor.getActionsOutsideFsm().isEmpty()) {
 				for (Action action : actor.getActionsOutsideFsm()) {
-					lastBlockIf = createTaskCall(procedure, action,
-							lastBlockIf, null, null);
+					lastBlockIf = createTaskCallOutFSM(procedure, action,
+							lastBlockIf);
 				}
+				BlockBasic blockBasic = irFactory.createBlockBasic();
+
+				Var currentState = actor.getStateVar("currentState");
+				Var tmpCurrentState = irFactory.createVar(
+						IrFactory.eINSTANCE.createTypeInt(), "tmpCurrentState",
+						true, 0);
+				procedure.getLocals().add(tmpCurrentState);
+				InstLoad loadCurrentState = irFactory.createInstLoad(
+						tmpCurrentState, currentState);
+				blockBasic.add(loadCurrentState);
+
+				lastBlockIf.getElseBlocks().add(blockBasic);
+
 				lastBlockIf.getElseBlocks().add(
 						createFsmBlockIf(actor, procedure));
 				blocks.add(lastBlockIf);
 			} else {
+				BlockBasic blockBasic = irFactory.createBlockBasic();
+
+				Var currentState = actor.getStateVar("currentState");
+				Var tmpCurrentState = irFactory.createVar(
+						IrFactory.eINSTANCE.createTypeInt(), "tmpCurrentState",
+						true, 0);
+				procedure.getLocals().add(tmpCurrentState);
+				InstLoad loadCurrentState = irFactory.createInstLoad(
+						tmpCurrentState, currentState);
+				blockBasic.add(loadCurrentState);
+				blocks.add(blockBasic);
 				blocks.add(createFsmBlockIf(actor, procedure));
 			}
 		}
@@ -557,16 +582,15 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			BlockIf lastBlockIf = null;
 			for (Edge edge : state.getOutgoing()) {
 				Transition transition = ((Transition) edge);
-				State stateSource = transition.getSource();
 				State stateTarget = transition.getTarget();
 				Action action = transition.getAction();
 				lastBlockIf = createTaskCall(procedure, action, lastBlockIf,
-						stateTarget, stateSource);
+						stateTarget);
 			}
 
 			// Create an if block that will contains all the transitions
-			Var stateSource = procedure.getLocal("s_" + state.getName());
 			Var currentState = procedure.getLocal("tmpCurrentState");
+			Var stateSource = procedure.getLocal("s_" + state.getName());
 			Expression ifStateCondition = XronosIrUtil.createExprBinaryEqual(
 					currentState, stateSource);
 			if (block == null) {
@@ -581,20 +605,13 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				lastFSMBlockIf = blockIf;
 			}
 		}
+		// Add the isMutex Attribute
+		// block.setAttribute("isMutex", true);
 		return block;
 	}
 
 	private BlockBasic createSchedulerInitBlock(Actor actor, Procedure procedure) {
 		BlockBasic block = irFactory.createBlockBasic();
-		// Load currentState
-		Var currentState = actor.getStateVar("currentState");
-		Var tmpCurrentState = irFactory
-				.createVar(IrFactory.eINSTANCE.createTypeInt(),
-						"tmpCurrentState", true, 0);
-		procedure.getLocals().add(tmpCurrentState);
-		InstLoad loadCurrentState = irFactory.createInstLoad(tmpCurrentState,
-				currentState);
-		block.add(loadCurrentState);
 
 		// Add States if any
 		if (actor.hasFsm()) {
@@ -638,7 +655,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 	}
 
 	private BlockIf createTaskCall(Procedure procedure, Action action,
-			BlockIf lastBlockIf, State target, State source) {
+			BlockIf lastBlockIf, State target) {
 		BlockIf blockIf = null;
 		if (lastBlockIf == null) {
 			// Get the fireability and schedulability conditions
@@ -653,45 +670,30 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Add circularBuffer start to false, if necessary
 			createInstStoreStart(action, false, fireabilityThenBlock);
 
-			// Create InstStore for the currentState if a target exists
-			if (target != null) {
-				Var currentState = procedure.getLocal("tmpCurrentState");
-				Var targetStateVar = procedure
-						.getLocal("s_" + target.getName());
-				InstAssign assignCurrentState = irFactory.createInstAssign(
-						currentState, targetStateVar);
-				fireabilityThenBlock.add(assignCurrentState);
-			}
-
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
 			fireabilityThenBlock.add(instCall);
 
+			// Create InstStore for the currentState if a target exists
+			if (target != null) {
+				Var currentState = actor.getStateVar("currentState");
+				Var targetStateVar = procedure
+						.getLocal("s_" + target.getName());
+				InstStore assignCurrentState = irFactory.createInstStore(
+						currentState, targetStateVar);
+				fireabilityThenBlock.add(assignCurrentState);
+			}
+
 			// Add circularBuffer start to true, if necessary
 			createInstStoreStart(action, true, fireabilityThenBlock);
 
 			// Create the schedulability BlockIf
-			if (source == null) {
-				// Create the fireability BlockIf
-				BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-						fireabilityThenBlock);
-				blockIf = XronosIrUtil.createBlockIf(schedulability,
-						fireabilityIf);
-			} else {
-				BlockBasic fireabilityElseBlock = irFactory.createBlockBasic();
-				Var currentState = procedure.getLocal("tmpCurrentState");
-				Var sourceStateVar = procedure
-						.getLocal("s_" + source.getName());
-				InstAssign assignCurrentState = irFactory.createInstAssign(
-						currentState, sourceStateVar);
-				fireabilityElseBlock.add(assignCurrentState);
-				// Create the fireability BlockIf
-				BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-						fireabilityThenBlock, fireabilityElseBlock);
-				blockIf = XronosIrUtil.createBlockIf(schedulability,
-						fireabilityIf);
-			}
+
+			// Create the fireability BlockIf
+			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+					fireabilityThenBlock);
+			blockIf = XronosIrUtil.createBlockIf(schedulability, fireabilityIf);
 
 		} else {
 			// Get the fireability and schedulability conditions
@@ -706,15 +708,80 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Add circularBuffer start to false, if necessary
 			createInstStoreStart(action, false, fireabilityThenBlock);
 
+			// Create Inst call
+			InstCall instCall = irFactory.createInstCall();
+			instCall.setProcedure(action.getBody());
+			fireabilityThenBlock.add(instCall);
+
 			// Create InstStore for the currentState if a target exists
 			if (target != null) {
-				Var currentState = procedure.getLocal("tmpCurrentState");
+				Var currentState = actor.getStateVar("currentState");
 				Var targetStateVar = procedure
 						.getLocal("s_" + target.getName());
-				InstAssign assignCurrentState = irFactory.createInstAssign(
+				InstStore assignCurrentState = irFactory.createInstStore(
 						currentState, targetStateVar);
 				fireabilityThenBlock.add(assignCurrentState);
 			}
+			// Add circularBuffer start to true, if necessary
+			createInstStoreStart(action, true, fireabilityThenBlock);
+			// Create the fireability BlockIf
+			BlockIf fireabilityIf = null;
+			// Create the schedulability BlockIf
+
+			// Create the fireability BlockIf
+			fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+					fireabilityThenBlock);
+
+			// Create the schedulability BlockIf
+			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
+					schedulability, fireabilityIf);
+
+			lastBlockIf.getElseBlocks().add(schedulabilityIf);
+			blockIf = lastBlockIf;
+		}
+		return blockIf;
+	}
+
+	private BlockIf createTaskCallOutFSM(Procedure procedure, Action action,
+			BlockIf lastBlockIf) {
+		BlockIf blockIf = null;
+		if (lastBlockIf == null) {
+			// Get the fireability and schedulability conditions
+			Var schedulability = actionSchedulability.get(action);
+			Var fireability = actionFireability.get(action);
+			xronosSchedulerLocals.add(schedulability);
+			xronosSchedulerLocals.add(fireability);
+
+			// Create fireability thenBlock Basic
+			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
+
+			// Add circularBuffer start to false, if necessary
+			createInstStoreStart(action, false, fireabilityThenBlock);
+
+			// Create Inst call
+			InstCall instCall = irFactory.createInstCall();
+			instCall.setProcedure(action.getBody());
+			fireabilityThenBlock.add(instCall);
+
+			// Add circularBuffer start to true, if necessary
+			createInstStoreStart(action, true, fireabilityThenBlock);
+
+			// Create the fireability BlockIf
+			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+					fireabilityThenBlock);
+			blockIf = XronosIrUtil.createBlockIf(schedulability, fireabilityIf);
+		} else {
+			// Get the fireability and schedulability conditions
+			Var schedulability = actionSchedulability.get(action);
+			Var fireability = actionFireability.get(action);
+			xronosSchedulerLocals.add(schedulability);
+			xronosSchedulerLocals.add(fireability);
+
+			// Create fireability thenBlock Basic
+			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
+
+			// Add circularBuffer start to false, if necessary
+			createInstStoreStart(action, false, fireabilityThenBlock);
 
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
@@ -725,25 +792,11 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			createInstStoreStart(action, true, fireabilityThenBlock);
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = null;
-			// Create the schedulability BlockIf
-			if (source == null) {
-				// Create the fireability BlockIf
-				fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-						fireabilityThenBlock);
 
-			} else {
-				BlockBasic fireabilityElseBlock = irFactory.createBlockBasic();
-				Var currentState = procedure.getLocal("tmpCurrentState");
-				Var sourceStateVar = procedure
-						.getLocal("s_" + source.getName());
-				InstAssign assignCurrentState = irFactory.createInstAssign(
-						currentState, sourceStateVar);
-				fireabilityElseBlock.add(assignCurrentState);
-				// Create the fireability BlockIf
-				fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-						fireabilityThenBlock, fireabilityElseBlock);
+			// Create the fireability BlockIf
+			fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+					fireabilityThenBlock);
 
-			}
 			// Create the schedulability BlockIf
 			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
 					schedulability, fireabilityIf);
