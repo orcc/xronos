@@ -4,7 +4,7 @@
    <extension
          point="net.sf.orcc.backends.backends">
       <backend
-            class="net.sf.orc2hdl.backend.Xronos"
+            class="org.xronos.orcc.backend.Xronos"
             name="Verilog (Xronos)">
          <option
                id="net.sf.orcc.plugins.compileXDF">
@@ -45,7 +45,7 @@
    <extension
          point="org.eclipse.ui.preferencePages">
       <page
-            class="net.sf.orc2hdl.ui.Orc2HDLPreferencePage"
+            class="org.xronos.orcc.ui.Orc2HDLPreferencePage"
             id="net.sf.orc2hdl.ui.Orc2HDLPreferencePage"
             name="Orc2HDL">
       </page>

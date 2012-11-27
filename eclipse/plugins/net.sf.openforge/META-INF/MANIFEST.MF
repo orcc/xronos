@@ -1,12 +1,12 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: net.sf.openforge.core
-Bundle-SymbolicName: net.sf.openforge.core;singleton:=true
+Bundle-Name: org.xronos.openforge
+Bundle-SymbolicName: org.xronos.openforge;singleton:=true
 Bundle-Version: 1.2.1.qualifier
-Bundle-Activator: net.sf.openforge.Activator
+Bundle-Activator: org.xronos.openforge.Activator
 Require-Bundle: org.eclipse.core.runtime
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: net.sf.openforge.app;
+Export-Package: org.xronos.openforge.app;
   uses:="net.sf.openforge.util,
    net.sf.openforge.verilog.mapping,
    net.sf.openforge.backend,
@@ -14,20 +14,20 @@ Export-Package: net.sf.openforge.app;
    net.sf.openforge.app.project,
    net.sf.openforge.app.logging,
    net.sf.openforge.backend.hdl.ucf",
- net.sf.openforge.app.project,
- net.sf.openforge.frontend.slim.builder,
- net.sf.openforge.frontend.xlim.builder;uses:="net.sf.openforge.lim,org.xml.sax.helpers,org.w3c.dom",
- net.sf.openforge.lim,
- net.sf.openforge.lim.graph,
- net.sf.openforge.lim.io,
- net.sf.openforge.lim.memory,
- net.sf.openforge.lim.op,
- net.sf.openforge.lim.primitive,
- net.sf.openforge.util,
- net.sf.openforge.util.io,
- net.sf.openforge.util.naming,
- net.sf.openforge.util.xml,
- net.sf.openforge.verilog.model
+ org.xronos.openforge.app.project,
+ org.xronos.openforge.frontend.slim.builder,
+ org.xronos.openforge.frontend.xlim.builder;uses:="net.sf.openforge.lim,org.xml.sax.helpers,org.w3c.dom",
+ org.xronos.openforge.lim,
+ org.xronos.openforge.lim.graph,
+ org.xronos.openforge.lim.io,
+ org.xronos.openforge.lim.memory,
+ org.xronos.openforge.lim.op,
+ org.xronos.openforge.lim.primitive,
+ org.xronos.openforge.util,
+ org.xronos.openforge.util.io,
+ org.xronos.openforge.util.naming,
+ org.xronos.openforge.util.xml,
+ org.xronos.openforge.verilog.model
 Bundle-ClassPath: .,
  lib/saxon8-dom.jar,
  lib/saxon8.jar

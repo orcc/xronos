@@ -1,0 +1,393 @@
+/*******************************************************************************
+ * Copyright 2002-2009  Xilinx Inc.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
+/*
+ * 
+ *
+ * 
+ */
+
+package org.xronos.openforge.schedule;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.xronos.openforge.app.EngineThread;
+import org.xronos.openforge.lim.Bus;
+import org.xronos.openforge.lim.Component;
+import org.xronos.openforge.lim.ControlDependency;
+import org.xronos.openforge.lim.Dependency;
+import org.xronos.openforge.lim.Entry;
+import org.xronos.openforge.lim.Latch;
+import org.xronos.openforge.lim.Latency;
+import org.xronos.openforge.lim.Port;
+import org.xronos.openforge.lim.ResourceDependency;
+import org.xronos.openforge.lim.Scoreboard;
+import org.xronos.openforge.lim.Stallboard;
+import org.xronos.openforge.lim.primitive.Reg;
+import org.xronos.openforge.schedule.block.ProcessTracker;
+import org.xronos.openforge.schedule.block._block;
+
+
+/**
+ * UnbalancedEntrySchedule derives the scheduled {@link Bus} for each
+ * {@link Port} according to the {@link Dependency Dependencies} of a single
+ * {@link Entry}. This is accomplished in two steps. First the GO dependencies
+ * and the control bus for each data dependency are analysed to determine which
+ * bus arrives 'latest'. If one or more of these buses has a {@link Latency}
+ * which is not unambiguously comparable to the other buses then there may be
+ * multiple potential 'latest' buses. The collection of latest buses is used to
+ * generate a control signal for the component. Subsequently, all the data
+ * inputs are scheduled relative to this control signal, inserting latches or
+ * enabled registers as needed to preserve data validity.
+ * 
+ * @version $Id: UnbalancedEntrySchedule.java 538 2007-11-21 06:22:39Z imiller $
+ */
+class UnbalancedEntrySchedule extends EntrySchedule {
+
+	private boolean isStallPoint = false;
+	/*
+	 * The Stallboard created to stall this component. The stall inputs will be
+	 * generated after the design is scheduled.
+	 */
+	private Stallboard stallboard = null;
+
+	private boolean doDebug = false;
+
+	/**
+	 * Constructs an UnbalancedEntrySchedule for a given {@link Entry}.
+	 * 
+	 * @param entry
+	 *            the entry to be scheduled
+	 * @param tracker
+	 *            the current {@link LatencyTracker}
+	 * @param isBalancing
+	 *            a value of type 'boolean'
+	 * @param stall
+	 *            set to true if a scheduling stall point should be inserted
+	 *            into the control path enabling this node.
+	 */
+	UnbalancedEntrySchedule(Entry entry, LatencyTracker tracker,
+			boolean isBalancing, boolean stall) {
+		super(entry, tracker, isBalancing);
+		// if (entry.getOwner().debug || (entry.getOwner().getOwner() != null &&
+		// entry.getOwner().getOwner().debug == true))
+		// this.doDebug = true;
+
+		if (doDebug) {
+			System.out.println("Scheduling: " + entry.getOwner() + " "
+					+ entry.getOwner().showOwners());
+		}
+		isStallPoint = stall;
+
+		if (doDebug) {
+			System.out.println("Generating Control");
+		}
+		generateControl();
+		assert getControlBus() != null : "failed to init Entry's ControlState";
+		if (stall) {
+			assert stallboard != null : "did not create stall hardware";
+			if (_block.db) {
+				_block.ln("Inserted stallboard " + stallboard + " to control "
+						+ entry.getOwner());
+			}
+		}
+		if (doDebug) {
+			System.out.println("Syncing Data");
+		}
+		syncDataToControl();
+	}
+
+	/**
+	 * Constructor for unit testing.
+	 */
+	UnbalancedEntrySchedule() {
+		super();
+	}
+
+	/**
+	 * Returns the {@link Stallboard} created to stall this entry, or null if
+	 * this is not a stalled entry. It is an error to call this method on a
+	 * non-stalled process.
+	 * 
+	 * @return a Stallboard, may be null
+	 */
+	public Stallboard getStallboard() {
+		assert isStallPoint : "Attempt to retrieve stall hardware from non-stalled entry";
+		return stallboard;
+	}
+
+	/**
+	 * Determines the latency of each data dependency and each control
+	 * dependency and resolves this down to a set of all possible latest buses.
+	 * The set of latest buses are used to generate a signal capable of being
+	 * used as the GO to this component by getting the control bus for each
+	 * latest bus from the {@link LatencyTracker} and scoreboarding these.
+	 * 
+	 */
+	private void generateControl() {
+		final Component component = getEntry().getOwner();
+
+		/*
+		 * Collect the latencies of the data input Buses
+		 */
+		final List<Port> dataPorts = component.getDataPorts();
+		final Map<Bus, Latency> dataLatencies = new HashMap<Bus, Latency>();
+		for (Port port : dataPorts) {
+			final Collection<Dependency> dataDeps = getEntry().getDependencies(
+					port);
+			assert dataDeps.size() < 2 : "data dependencies: "
+					+ dataDeps.size() + " (should be < 2)";
+			if (!dataDeps.isEmpty()) {
+				final Dependency dataDep = dataDeps.iterator().next();
+				if (doDebug) {
+					System.out.println("\tdata dep " + dataDep);
+				}
+				final Bus bus = getSatisfyingBus(dataDep);
+				dataLatencies.put(tracker.getControlBus(bus),
+						tracker.getLatency(bus));
+			}
+		}
+		if (doDebug) {
+			System.out.println("\tGC dataPortLatencies: " + dataLatencies);
+		}
+
+		/*
+		 * Collect the latencies of the GO dependencies
+		 */
+		final Collection<Dependency> goDependencies = getEntry()
+				.getDependencies(component.getGoPort());
+		final Map<Bus, Latency> controlLatencies = new LinkedHashMap<Bus, Latency>(
+				goDependencies.size());
+		final Set<Bus> placeholderBuses = new HashSet<Bus>();
+		for (Dependency goDependency : goDependencies) {
+			if (doDebug) {
+				System.out.println("\tcontrol dep " + goDependency);
+			}
+
+			// The dependency may specify a certain number of 'delay'
+			// clocks which means that this entry must not execute
+			// until at least the specified number of clocks after the
+			// done of the dependencies logical bus, so delay the
+			// logical bus by that many cycles before adding to the map.
+			Bus controlBus = getSatisfyingBus(goDependency);
+			if (doDebug) {
+				System.out.println("\tGC Controlbus: " + controlBus + " from "
+						+ controlBus.getOwner() + " of "
+						+ controlBus.getOwner().getOwner() + " lat: "
+						+ tracker.getLatency(controlBus));
+			}
+			if (doDebug && goDependency.getDelayClocks() > 0) {
+				System.out.println("\tGC delaying: by "
+						+ goDependency.getDelayClocks());
+			}
+			controlBus = tracker.delayControlBus(controlBus,
+					component.getOwner(), goDependency.getDelayClocks());
+			if (LatencyTracker.isPlaceholder(controlBus)) {
+				/*
+				 * If the go state is just a placeholder, it has no effect on
+				 * the start time.
+				 */
+				placeholderBuses.add(controlBus);
+				continue;
+			}
+			controlLatencies.put(controlBus, tracker.getLatency(controlBus));
+		}
+		if (doDebug) {
+			System.out.println("\tGC controlLatencies: " + controlLatencies);
+		}
+
+		/*
+		 * Always prefer the control buses over the data buses. Otherwise
+		 * scheduling of loop bodies will fail when there is a data input from a
+		 * latch. The feedback latency is 0 and the data latency is 0 and
+		 * without preferring the control buses we may pick the data control
+		 * bus.
+		 */
+		final Set preferred = new HashSet(controlLatencies.keySet());
+
+		/*
+		 * If a control bus is contained in both maps it is guaranteed to have
+		 * the same latency in each map since the latencies both came from the
+		 * latency tracker.
+		 */
+		final Map<Bus, Latency> allLatencies = new HashMap<Bus, Latency>();
+		allLatencies.putAll(dataLatencies);
+		allLatencies.putAll(controlLatencies);
+
+		final Map latestLatencyMap = Latency.getLatest(allLatencies, preferred);
+		if (doDebug) {
+			System.out.println("\tGC latestLatencies: " + latestLatencyMap);
+		}
+
+		/*
+		 * Calculate the GO control bus. If there is a latest latency, then the
+		 * ready bus is that of the latency's bus. Otherwise it is the
+		 * scoreboard of the buses with the latest latencies.
+		 */
+		Set<Bus> latestBuses = latestLatencyMap.keySet();
+		if (latestBuses.size() == 0) {
+			// This means that there were no (non placeholder)
+			// dependencies for either the GO or the data ports, so we
+			// can go ahead and assume that the controlBus is the
+			// non-usefull placeholder
+			assert placeholderBuses.size() > 0 : "There were 0 dependencies in an entry";
+			latestBuses = placeholderBuses;
+		}
+
+		if (isStallPoint) {
+			stallboard = tracker.getStallboard(latestBuses,
+					component.getOwner());
+			controlBus = stallboard.getResultBus();
+		} else {
+			if (latestBuses.size() == 1) {
+				controlBus = latestBuses.iterator().next();
+			} else {
+				assert !isBalancing() : "balancing with variable control latencies";
+				final Scoreboard scoreboard = tracker.getScoreboard(
+						latestBuses, component.getOwner());
+				controlBus = scoreboard.getResultBus();
+			}
+		}
+
+		setBus(component.getGoPort(), controlBus);
+	}
+
+	private void syncDataToControl() {
+		/*
+		 * The goal here is to ensure that the data will be valid when the GO to
+		 * the component arrives.
+		 */
+
+		final Component component = getEntry().getOwner();
+		final Bus goBus = getControlBus();
+		final Latency goLatency = tracker.getLatency(goBus);
+		if (doDebug) {
+			System.out.println("\tSD goBus: " + goBus + " "
+					+ goBus.getOwner().getOwner() + " " + goLatency);
+		}
+		if (doDebug) {
+			System.out.println("\tSD component: " + component.show());
+		}
+
+		for (Port dataPort : component.getDataPorts()) {
+			final Collection<Dependency> dataDeps = getEntry().getDependencies(
+					dataPort);
+			assert dataDeps.size() < 2 : "data dependencies: "
+					+ dataDeps.size() + " (should be < 2)";
+			if (doDebug) {
+				System.out.println("\tSD port: " + dataPort);
+			}
+
+			/*
+			 * Because the previous version of this class did (essentially) the
+			 * same thing (ignore 0 dep ports) I think that this case is
+			 * precluded. ie, all ports must have dependencies in all entries.
+			 */
+			if (dataDeps.isEmpty()) {
+				continue;
+			}
+
+			final Dependency dataDep = dataDeps.iterator().next();
+			final Bus dataBus = getSatisfyingBus(dataDep);
+			final Latency dataLatency = tracker.getLatency(dataBus);
+			if (doDebug) {
+				System.out.println("\tSD dataBus: " + dataBus + " owner "
+						+ dataBus.getOwner().getOwner() + " lat: "
+						+ dataLatency);
+			}
+
+			/*
+			 * If the go can lag behind the data, then delay the data.
+			 */
+			Bus scheduledDataBus = dataBus;
+
+			/*
+			 * No need to include the test for goLatency.isGE(dataLatency)
+			 * because by definition that should always be true because the
+			 * control signal MUST account for all data inputs. The only time it
+			 * is not true is if they are not comparable in which case we must
+			 * latch the data anyway.
+			 */
+			if (doDebug) {
+				System.out.println("\tSD bal: " + isBalancing()
+						+ " go.gt(data): " + goLatency.isGT(dataLatency));
+			}
+			if (!goLatency.equals(dataLatency)
+					&& !ProcessTracker.isUntimed(dataBus)) {
+				if (isBalancing() && !goLatency.isOpen()
+						&& !dataLatency.isOpen()) {
+					/*
+					 * If balancing, make up the difference with a chain of
+					 * registers.
+					 */
+					scheduledDataBus = tracker.delayDataBus(dataBus,
+							component.getOwner(), goLatency.getMaxClocks()
+									- dataLatency.getMaxClocks());
+				} else {
+					if (isBalancing()) {
+						// If we get here, that means that either the
+						// go or done latency was NOT determinate and
+						// balanced scheduling could not be
+						// accomplished. This is the catch all to try
+						// to fix the error by inserting the latch
+						// instead.
+						EngineThread
+								.getEngine()
+								.getGenericJob()
+								.warn("Internal Error:  Balanced scheduling failed.  Correcting schedule and continuing, but design may not be fully balanced");
+					}
+					//
+					// Otherwise, just latch or insert a reg.
+					//
+					// To prevent a combinational data path int a loop body when
+					// we do
+					// loop flop optimization, we have to check if the data
+					// latency is less
+					// than go latency. If true we need to use a Enable Register
+					// instead of a Latch.
+					if (goLatency.isGT(dataLatency)) {
+						Reg reg = tracker.getEnableReg(dataBus,
+								component.getOwner());
+						scheduledDataBus = reg.getResultBus();
+					} else {
+						Latch latch = tracker.getLatch(dataBus,
+								component.getOwner());
+						scheduledDataBus = latch.getResultBus();
+					}
+				}
+			}
+			setBus(dataPort, scheduledDataBus);
+		}
+	}
+
+	private Bus getSatisfyingBus(Dependency dep) {
+		Bus logicalBus = dep.getLogicalBus();
+
+		if ((dep instanceof ResourceDependency.GoToGoDep)
+				&& ((ResourceDependency.GoToGoDep) dep).preconditionIsValid()) {
+			return tracker.getControlBus(logicalBus.getOwner().getOwner());
+		} else if (dep instanceof ControlDependency) {
+			return tracker.getControlBus(logicalBus);
+		} else {
+			return logicalBus;
+		}
+	}
+}
