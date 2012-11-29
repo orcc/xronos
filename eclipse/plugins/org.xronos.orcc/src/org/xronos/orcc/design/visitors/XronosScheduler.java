@@ -33,13 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.xronos.orcc.design.ResourceCache;
-import org.xronos.orcc.design.util.XronosIrUtil;
-import org.xronos.orcc.design.visitors.io.CircularBuffer;
-import org.xronos.orcc.ir.InstPortStatus;
-import org.xronos.orcc.ir.XronosIrSpecificFactory;
-
-import net.sf.orc2hdl.backend.debug.DebugPrinter;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
@@ -67,6 +60,13 @@ import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
+
+import org.xronos.orcc.backend.debug.DebugPrinter;
+import org.xronos.orcc.design.ResourceCache;
+import org.xronos.orcc.design.util.XronosIrUtil;
+import org.xronos.orcc.design.visitors.io.CircularBuffer;
+import org.xronos.orcc.ir.InstPortStatus;
+import org.xronos.orcc.ir.XronosIrSpecificFactory;
 
 /**
  * Xronos Action scheduler class

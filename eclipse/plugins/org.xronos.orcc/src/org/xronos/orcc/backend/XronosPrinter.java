@@ -37,9 +37,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import net.sf.orc2hdl.backend.NetworkPrinter;
-import net.sf.orc2hdl.backend.TclScriptPrinter;
-import net.sf.orc2hdl.backend.TestbenchPrinter;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
