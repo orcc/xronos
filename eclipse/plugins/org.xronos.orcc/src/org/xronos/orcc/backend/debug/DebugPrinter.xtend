@@ -1,8 +1,8 @@
 package org.xronos.orcc.backend.debug
 
-import net.sf.orcc.backends.c.InstancePrinter
 import java.io.File
 import net.sf.orcc.ir.Procedure
+import net.sf.orcc.backends.c.InstancePrinter
 
 class DebugPrinter extends InstancePrinter {
 	

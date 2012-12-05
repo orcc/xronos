@@ -42,13 +42,5 @@
          <checkBox></checkBox>
       </option>
    </extension>
-   <extension
-         point="org.eclipse.ui.preferencePages">
-      <page
-            class="org.xronos.orcc.ui.Orc2HDLPreferencePage"
-            id="net.sf.orc2hdl.ui.Orc2HDLPreferencePage"
-            name="Orc2HDL">
-      </page>
-   </extension>
 
 </plugin>

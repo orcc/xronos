@@ -44,7 +44,7 @@ public class Activator extends AbstractUIPlugin {
 	private static Activator plugin;
 
 	// The plug-in ID
-	public static final String PLUGIN_ID = "net.sf.orc2hdl"; //$NON-NLS-1$
+	public static final String PLUGIN_ID = "org.xronos.orcc"; //$NON-NLS-1$
 
 	/**
 	 * Returns the shared instance
