@@ -32,9 +32,38 @@ package org.xronos.orcc.design.visitors;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orcc.backends.ir.InstCast;
+import net.sf.orcc.df.Action;
+import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.Def;
+import net.sf.orcc.ir.ExprBinary;
+import net.sf.orcc.ir.ExprBool;
+import net.sf.orcc.ir.ExprInt;
+import net.sf.orcc.ir.ExprUnary;
+import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstCall;
+import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstPhi;
+import net.sf.orcc.ir.InstReturn;
+import net.sf.orcc.ir.InstSpecific;
+import net.sf.orcc.ir.InstStore;
+import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.OpBinary;
+import net.sf.orcc.ir.OpUnary;
+import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.TypeList;
+import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.AbstractIrVisitor;
+
+import org.eclipse.emf.ecore.EObject;
 import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Branch;
@@ -84,37 +113,11 @@ import org.xronos.orcc.design.ResourceDependecies;
 import org.xronos.orcc.design.util.DesignUtil;
 import org.xronos.orcc.design.util.ModuleUtil;
 import org.xronos.orcc.design.util.PortUtil;
+import org.xronos.orcc.ir.BlockMutex;
 import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.ir.InstPortStatus;
 import org.xronos.orcc.ir.InstPortWrite;
-
-import net.sf.orcc.backends.ir.InstCast;
-import net.sf.orcc.df.Action;
-import net.sf.orcc.ir.BlockIf;
-import net.sf.orcc.ir.BlockWhile;
-import net.sf.orcc.ir.Def;
-import net.sf.orcc.ir.ExprBinary;
-import net.sf.orcc.ir.ExprBool;
-import net.sf.orcc.ir.ExprInt;
-import net.sf.orcc.ir.ExprUnary;
-import net.sf.orcc.ir.ExprVar;
-import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstAssign;
-import net.sf.orcc.ir.InstCall;
-import net.sf.orcc.ir.InstLoad;
-import net.sf.orcc.ir.InstPhi;
-import net.sf.orcc.ir.InstReturn;
-import net.sf.orcc.ir.InstSpecific;
-import net.sf.orcc.ir.InstStore;
-import net.sf.orcc.ir.IrFactory;
-import net.sf.orcc.ir.OpBinary;
-import net.sf.orcc.ir.OpUnary;
-import net.sf.orcc.ir.Procedure;
-import net.sf.orcc.ir.Type;
-import net.sf.orcc.ir.TypeList;
-import net.sf.orcc.ir.Var;
-import net.sf.orcc.ir.util.AbstractIrVisitor;
 
 /**
  * This visitor visit the procedural blocks and it creates a Design component
@@ -132,8 +135,13 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	/** Action component Counter **/
 	protected Integer componentCounter;
+
+	private final Map<Component, List<Var>> componentInputVar;
+
 	/** Current List Component **/
 	private List<Component> componentList;
+
+	private final Map<Component, List<Var>> componentOutputVar;
 
 	/** Current Component **/
 	private Component currentComponent;
@@ -152,12 +160,12 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	/** Design Resources **/
 	protected ResourceCache resources;
 
+	private Var returnVar;
+
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
 
-	private boolean STM_DEBUG = true;
-
-	private Var returnVar;
+	private final boolean STM_DEBUG = true;
 
 	public ComponentCreator(ResourceCache resources,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
@@ -170,6 +178,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		this.doneBusDependency = doneBusDependency;
 		this.resources = resources;
 		componentList = new ArrayList<Component>();
+		componentInputVar = new HashMap<Component, List<Var>>();
+		componentOutputVar = new HashMap<Component, List<Var>>();
 	}
 
 	public ComponentCreator(ResourceCache resources,
@@ -181,6 +191,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		this.doneBusDependency = resourceDependecies.getDoneBusDependency();
 		this.resources = resources;
 		componentList = new ArrayList<Component>();
+		componentInputVar = new HashMap<Component, List<Var>>();
+		componentOutputVar = new HashMap<Component, List<Var>>();
 	}
 
 	@Override
@@ -232,6 +244,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		}
 		// Get All input Vars
 		List<Var> ifInputVars = resources.getBlockInput(blockIf);
+
 		List<Var> ifOutputVars = resources.getBlockOutput(blockIf);
 		// Get Phi target Vars, aka branchIf Outputs
 		Map<Var, List<Var>> phiOuts = resources.getBlockPhi(blockIf);
@@ -250,6 +263,10 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				blockIf.getLineNumber());
 
 		branch.setIDSourceInfo(sinfo);
+
+		componentInputVar.put(branch, ifInputVars);
+		componentOutputVar.put(branch, ifOutputVars);
+
 		currentComponent = branch;
 		componentList = new ArrayList<Component>();
 		componentList.addAll(oldComponents);
@@ -263,6 +280,38 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		} else {
 			componentList.add(currentComponent);
 		}
+		return null;
+	}
+
+	public List<Component> caseBlockMutex(BlockMutex blockMutex) {
+		List<Component> oldComponents = new ArrayList<Component>(componentList);
+		componentList = new ArrayList<Component>();
+
+		doSwitch(blockMutex.getBlocks());
+
+		List<Var> inputs = new ArrayList<Var>();
+		for (Component component : componentList) {
+			if (componentInputVar.containsKey(component)) {
+				inputs.addAll(componentInputVar.get(component));
+			}
+		}
+
+		List<Var> outputs = new ArrayList<Var>();
+		for (Component component : componentList) {
+			if (componentOutputVar.containsKey(component)) {
+				outputs.addAll(componentOutputVar.get(component));
+			}
+		}
+
+		Module mutexModule = (Module) ModuleUtil.createModule(componentList,
+				inputs, outputs, "mutex_BranchBlock", true, Exit.DONE, 0,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+
+		componentList = new ArrayList<Component>();
+		/** Put back all previous components and add the loop **/
+		componentList.addAll(oldComponents);
+		componentList.add(mutexModule);
 		return null;
 	}
 
@@ -509,6 +558,20 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		return null;
 	}
 
+	public List<Component> caseInstCast(InstCast cast) {
+		Var target = cast.getTarget().getVariable();
+		Var source = cast.getSource().getVariable();
+		Integer castedSize = target.getType().getSizeInBits();
+
+		Component castOp = new CastOp(castedSize, target.getType().isInt());
+		PortUtil.mapInDataPorts(castOp, source, portDependency,
+				portGroupDependency);
+		PortUtil.mapOutDataPorts(castOp, target, busDependency,
+				doneBusDependency);
+		componentList.add(castOp);
+		return null;
+	}
+
 	@Override
 	public List<Component> caseInstLoad(InstLoad load) {
 		Var sourceVar = load.getSource().getVariable();
@@ -601,6 +664,61 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		return null;
 	}
 
+	public List<Component> caseInstPortPeek(InstPortPeek portPeek) {
+		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portPeek.getPort();
+		Var peekVar = portPeek.getTarget().getVariable();
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+		Component pinPeekComponent = ioHandler.getTokenPeekAccess();
+		pinPeekComponent.setNonRemovable();
+		PortUtil.mapOutDataPorts(pinPeekComponent, peekVar, busDependency,
+				doneBusDependency);
+		componentList.add(pinPeekComponent);
+		return null;
+	}
+
+	public List<Component> caseInstPortRead(InstPortRead portRead) {
+		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portRead.getPort();
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+
+		Component pinRead = ioHandler.getReadAccess(false);
+		pinRead.setNonRemovable();
+
+		Var pinReadVar = portRead.getTarget().getVariable();
+		PortUtil.mapOutDataPorts(pinRead, pinReadVar, busDependency,
+				doneBusDependency);
+		componentList.add(pinRead);
+		return null;
+	}
+
+	public List<Component> caseInstPortStatus(InstPortStatus portStatus) {
+		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portStatus.getPort();
+		Var statusVar = portStatus.getTarget().getVariable();
+
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+		Component pinStatusComponent = ioHandler.getStatusAccess();
+		pinStatusComponent.setNonRemovable();
+		PortUtil.mapOutDataPorts(pinStatusComponent, statusVar, busDependency,
+				doneBusDependency);
+		componentList.add(pinStatusComponent);
+		return null;
+	}
+
+	public List<Component> caseInstPortWrite(InstPortWrite portWrite) {
+		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portWrite.getPort();
+		ActionIOHandler ioHandler = resources.getIOHandler(port);
+		Component pinWrite = ioHandler.getWriteAccess(false);
+		pinWrite.setNonRemovable();
+
+		ExprVar value = (ExprVar) portWrite.getValue();
+		Var pinWriteVar = value.getUse().getVariable();
+
+		PortUtil.mapInDataPorts(pinWrite, pinWriteVar, portDependency,
+				portGroupDependency);
+		PortUtil.mapOutControlPort(pinWrite, 0, doneBusDependency);
+		componentList.add(pinWrite);
+		return null;
+	}
+
 	@Override
 	public List<Component> caseInstReturn(InstReturn returnInstr) {
 		if (returnInstr.getValue() != null) {
@@ -619,68 +737,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	@Override
 	public List<Component> caseInstSpecific(InstSpecific object) {
 		if (object instanceof InstCast) {
-			InstCast cast = (InstCast) object;
-			Var target = cast.getTarget().getVariable();
-			Var source = cast.getSource().getVariable();
-			Integer castedSize = target.getType().getSizeInBits();
-
-			Component castOp = new CastOp(castedSize, target.getType().isInt());
-			PortUtil.mapInDataPorts(castOp, source, portDependency,
-					portGroupDependency);
-			PortUtil.mapOutDataPorts(castOp, target, busDependency,
-					doneBusDependency);
-			componentList.add(castOp);
-		} else if (object instanceof InstPortRead) {
-			InstPortRead portRead = (InstPortRead) object;
-			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portRead.getPort();
-			ActionIOHandler ioHandler = resources.getIOHandler(port);
-
-			Component pinRead = ioHandler.getReadAccess(false);
-			pinRead.setNonRemovable();
-
-			Var pinReadVar = portRead.getTarget().getVariable();
-			PortUtil.mapOutDataPorts(pinRead, pinReadVar, busDependency,
-					doneBusDependency);
-			componentList.add(pinRead);
-		} else if (object instanceof InstPortWrite) {
-			InstPortWrite portWrite = (InstPortWrite) object;
-			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portWrite
-					.getPort();
-			ActionIOHandler ioHandler = resources.getIOHandler(port);
-			Component pinWrite = ioHandler.getWriteAccess(false);
-			pinWrite.setNonRemovable();
-
-			ExprVar value = (ExprVar) portWrite.getValue();
-			Var pinWriteVar = value.getUse().getVariable();
-
-			PortUtil.mapInDataPorts(pinWrite, pinWriteVar, portDependency,
-					portGroupDependency);
-			PortUtil.mapOutControlPort(pinWrite, 0, doneBusDependency);
-			componentList.add(pinWrite);
-		} else if (object instanceof InstPortStatus) {
-			InstPortStatus portStatus = (InstPortStatus) object;
-
-			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portStatus
-					.getPort();
-			Var statusVar = portStatus.getTarget().getVariable();
-
-			ActionIOHandler ioHandler = resources.getIOHandler(port);
-			Component pinStatusComponent = ioHandler.getStatusAccess();
-			pinStatusComponent.setNonRemovable();
-			PortUtil.mapOutDataPorts(pinStatusComponent, statusVar,
-					busDependency, doneBusDependency);
-			componentList.add(pinStatusComponent);
-		} else if (object instanceof InstPortPeek) {
-			InstPortPeek portPeek = (InstPortPeek) object;
-
-			net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portPeek.getPort();
-			Var peekVar = portPeek.getTarget().getVariable();
-			ActionIOHandler ioHandler = resources.getIOHandler(port);
-			Component pinPeekComponent = ioHandler.getTokenPeekAccess();
-			pinPeekComponent.setNonRemovable();
-			PortUtil.mapOutDataPorts(pinPeekComponent, peekVar, busDependency,
-					doneBusDependency);
-			componentList.add(pinPeekComponent);
+			return caseInstCast((InstCast) object);
 		}
 
 		return null;
@@ -796,6 +853,22 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		// componentList = new ArrayList<Component>();
 		super.caseProcedure(procedure);
 		return componentList;
+	}
+
+	@Override
+	public List<Component> defaultCase(EObject object) {
+		if (object instanceof BlockMutex) {
+			return caseBlockMutex((BlockMutex) object);
+		} else if (object instanceof InstPortPeek) {
+			return caseInstPortPeek((InstPortPeek) object);
+		} else if (object instanceof InstPortRead) {
+			return caseInstPortRead((InstPortRead) object);
+		} else if (object instanceof InstPortStatus) {
+			return caseInstPortStatus((InstPortStatus) object);
+		} else if (object instanceof InstPortWrite) {
+			return caseInstPortWrite((InstPortWrite) object);
+		}
+		return super.defaultCase(object);
 	}
 
 	protected Var unaryCastOp(Var var, Integer newMaxSize, Boolean isSigned) {

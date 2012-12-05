@@ -2,8 +2,7 @@
  */
 package org.xronos.orcc.ir.util;
 
-
-import net.sf.orcc.ir.InstSpecific;
+import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.Instruction;
 
 import net.sf.orcc.util.Attributable;
@@ -12,6 +11,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 
 import org.eclipse.emf.ecore.util.Switch;
+
 import org.xronos.orcc.ir.*;
 
 /**
@@ -24,17 +24,17 @@ import org.xronos.orcc.ir.*;
  * until a non-null result is returned,
  * which is the result of the switch.
  * <!-- end-user-doc -->
- * @see org.xronos.orcc.ir.XronosIrSpecificPackage
+ * @see org.xronos.orcc.ir.XronosIrPackage
  * @generated
  */
-public class XronosIrSpecificSwitch<T> extends Switch<T> {
+public class XronosIrSwitch<T> extends Switch<T> {
 	/**
 	 * The cached model package
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	protected static XronosIrSpecificPackage modelPackage;
+	protected static XronosIrPackage modelPackage;
 
 	/**
 	 * Creates an instance of the switch.
@@ -42,9 +42,9 @@ public class XronosIrSpecificSwitch<T> extends Switch<T> {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public XronosIrSpecificSwitch() {
+	public XronosIrSwitch() {
 		if (modelPackage == null) {
-			modelPackage = XronosIrSpecificPackage.eINSTANCE;
+			modelPackage = XronosIrPackage.eINSTANCE;
 		}
 	}
 
@@ -71,39 +71,43 @@ public class XronosIrSpecificSwitch<T> extends Switch<T> {
 	@Override
 	protected T doSwitch(int classifierID, EObject theEObject) {
 		switch (classifierID) {
-			case XronosIrSpecificPackage.INST_PORT_STATUS: {
+			case XronosIrPackage.INST_PORT_STATUS: {
 				InstPortStatus instPortStatus = (InstPortStatus)theEObject;
 				T result = caseInstPortStatus(instPortStatus);
-				if (result == null) result = caseInstSpecific(instPortStatus);
 				if (result == null) result = caseInstruction(instPortStatus);
 				if (result == null) result = caseAttributable(instPortStatus);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case XronosIrSpecificPackage.INST_PORT_READ: {
+			case XronosIrPackage.INST_PORT_READ: {
 				InstPortRead instPortRead = (InstPortRead)theEObject;
 				T result = caseInstPortRead(instPortRead);
-				if (result == null) result = caseInstSpecific(instPortRead);
 				if (result == null) result = caseInstruction(instPortRead);
 				if (result == null) result = caseAttributable(instPortRead);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case XronosIrSpecificPackage.INST_PORT_WRITE: {
+			case XronosIrPackage.INST_PORT_WRITE: {
 				InstPortWrite instPortWrite = (InstPortWrite)theEObject;
 				T result = caseInstPortWrite(instPortWrite);
-				if (result == null) result = caseInstSpecific(instPortWrite);
 				if (result == null) result = caseInstruction(instPortWrite);
 				if (result == null) result = caseAttributable(instPortWrite);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case XronosIrSpecificPackage.INST_PORT_PEEK: {
+			case XronosIrPackage.INST_PORT_PEEK: {
 				InstPortPeek instPortPeek = (InstPortPeek)theEObject;
 				T result = caseInstPortPeek(instPortPeek);
-				if (result == null) result = caseInstSpecific(instPortPeek);
 				if (result == null) result = caseInstruction(instPortPeek);
 				if (result == null) result = caseAttributable(instPortPeek);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case XronosIrPackage.BLOCK_MUTEX: {
+				BlockMutex blockMutex = (BlockMutex)theEObject;
+				T result = caseBlockMutex(blockMutex);
+				if (result == null) result = caseBlock(blockMutex);
+				if (result == null) result = caseAttributable(blockMutex);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -172,6 +176,21 @@ public class XronosIrSpecificSwitch<T> extends Switch<T> {
 	}
 
 	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Block Mutex</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Block Mutex</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseBlockMutex(BlockMutex object) {
+		return null;
+	}
+
+	/**
 	 * Returns the result of interpreting the object as an instance of '<em>Attributable</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
@@ -202,17 +221,17 @@ public class XronosIrSpecificSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Inst Specific</em>'.
+	 * Returns the result of interpreting the object as an instance of '<em>Block</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
 	 * returning a non-null result will terminate the switch.
 	 * <!-- end-user-doc -->
 	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Inst Specific</em>'.
+	 * @return the result of interpreting the object as an instance of '<em>Block</em>'.
 	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
 	 * @generated
 	 */
-	public T caseInstSpecific(InstSpecific object) {
+	public T caseBlock(Block object) {
 		return null;
 	}
 
@@ -232,4 +251,4 @@ public class XronosIrSpecificSwitch<T> extends Switch<T> {
 		return null;
 	}
 
-} //XronosIrSpecificSwitch
+} //XronosIrSwitch

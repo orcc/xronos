@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/org.xronos.orcc/src" modelPluginID="org.xronos.orcc"
+    modelName="XronosIr" importerID="org.eclipse.emf.importer.ecore" complianceLevel="6.0"
+    copyrightFields="false" usedGenPackages="../../net.sf.orcc.core/model/Core.genmodel#//ir platform:/plugin/org.eclipse.emf.ecore/model/Ecore.genmodel#//ecore ../../net.sf.orcc.models/model/Graph.genmodel#//graph ../../net.sf.orcc.models/model/Graph.genmodel#//util">
+  <foreignModel>XronosIr.ecore</foreignModel>
+  <genPackages prefix="XronosIr" basePackage="org.xronos.orcc" disposableProviderFactory="true"
+      ecorePackage="XronosIr.ecore#/">
+    <genClasses ecoreClass="XronosIr.ecore#//InstPortStatus">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortStatus/target"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortStatus/port"/>
+    </genClasses>
+    <genClasses ecoreClass="XronosIr.ecore#//InstPortRead">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortRead/target"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortRead/port"/>
+    </genClasses>
+    <genClasses ecoreClass="XronosIr.ecore#//InstPortWrite">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortWrite/port"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortWrite/value"/>
+    </genClasses>
+    <genClasses ecoreClass="XronosIr.ecore#//InstPortPeek">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortPeek/target"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortPeek/port"/>
+    </genClasses>
+    <genClasses ecoreClass="XronosIr.ecore#//BlockMutex">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//BlockMutex/blocks"/>
+    </genClasses>
+  </genPackages>
+</genmodel:GenModel>

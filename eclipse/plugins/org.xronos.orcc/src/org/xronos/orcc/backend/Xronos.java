@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.backends.AbstractBackend;
-import net.sf.orcc.backends.transform.CastAdder;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
@@ -30,7 +29,6 @@ import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 import net.sf.orcc.ir.transform.DeadCodeElimination;
-import net.sf.orcc.ir.transform.SSATransformation;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.OrccLogger;
 
@@ -41,7 +39,9 @@ import org.xronos.orcc.backend.transform.DeadPhiRemover;
 import org.xronos.orcc.backend.transform.IndexFlattener;
 import org.xronos.orcc.backend.transform.RepeatPattern;
 import org.xronos.orcc.backend.transform.ScalarPortIO;
+import org.xronos.orcc.backend.transform.XronosCast;
 import org.xronos.orcc.backend.transform.XronosLiteralIntegersAdder;
+import org.xronos.orcc.backend.transform.XronosSSA;
 import org.xronos.orcc.backend.transform.XronosTac;
 import org.xronos.orcc.design.ResourceCache;
 
@@ -161,7 +161,7 @@ public class Xronos extends AbstractBackend {
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
 			transformations.add(new RepeatPattern(resourceCache));
-			transformations.add(new DfVisitor<Void>(new SSATransformation()));
+			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
@@ -174,7 +174,7 @@ public class Xronos extends AbstractBackend {
 					new ControlFlowAnalyzer()));
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
-			transformations.add(new DfVisitor<Expression>(new CastAdder(false,
+			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
 					false)));
 			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 

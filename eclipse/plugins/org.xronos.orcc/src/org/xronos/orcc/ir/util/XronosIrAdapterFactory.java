@@ -2,8 +2,7 @@
  */
 package org.xronos.orcc.ir.util;
 
-
-import net.sf.orcc.ir.InstSpecific;
+import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.Instruction;
 
 import net.sf.orcc.util.Attributable;
@@ -14,6 +13,7 @@ import org.eclipse.emf.common.notify.Notifier;
 import org.eclipse.emf.common.notify.impl.AdapterFactoryImpl;
 
 import org.eclipse.emf.ecore.EObject;
+
 import org.xronos.orcc.ir.*;
 
 /**
@@ -21,17 +21,17 @@ import org.xronos.orcc.ir.*;
  * The <b>Adapter Factory</b> for the model.
  * It provides an adapter <code>createXXX</code> method for each class of the model.
  * <!-- end-user-doc -->
- * @see org.xronos.orcc.ir.XronosIrSpecificPackage
+ * @see org.xronos.orcc.ir.XronosIrPackage
  * @generated
  */
-public class XronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
+public class XronosIrAdapterFactory extends AdapterFactoryImpl {
 	/**
 	 * The cached model package.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	protected static XronosIrSpecificPackage modelPackage;
+	protected static XronosIrPackage modelPackage;
 
 	/**
 	 * Creates an instance of the adapter factory.
@@ -39,9 +39,9 @@ public class XronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public XronosIrSpecificAdapterFactory() {
+	public XronosIrAdapterFactory() {
 		if (modelPackage == null) {
-			modelPackage = XronosIrSpecificPackage.eINSTANCE;
+			modelPackage = XronosIrPackage.eINSTANCE;
 		}
 	}
 
@@ -70,8 +70,8 @@ public class XronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	protected XronosIrSpecificSwitch<Adapter> modelSwitch =
-		new XronosIrSpecificSwitch<Adapter>() {
+	protected XronosIrSwitch<Adapter> modelSwitch =
+		new XronosIrSwitch<Adapter>() {
 			@Override
 			public Adapter caseInstPortStatus(InstPortStatus object) {
 				return createInstPortStatusAdapter();
@@ -89,6 +89,10 @@ public class XronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 				return createInstPortPeekAdapter();
 			}
 			@Override
+			public Adapter caseBlockMutex(BlockMutex object) {
+				return createBlockMutexAdapter();
+			}
+			@Override
 			public Adapter caseAttributable(Attributable object) {
 				return createAttributableAdapter();
 			}
@@ -97,8 +101,8 @@ public class XronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 				return createInstructionAdapter();
 			}
 			@Override
-			public Adapter caseInstSpecific(InstSpecific object) {
-				return createInstSpecificAdapter();
+			public Adapter caseBlock(Block object) {
+				return createBlockAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -177,6 +181,20 @@ public class XronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
+	 * Creates a new adapter for an object of class '{@link org.xronos.orcc.ir.BlockMutex <em>Block Mutex</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see org.xronos.orcc.ir.BlockMutex
+	 * @generated
+	 */
+	public Adapter createBlockMutexAdapter() {
+		return null;
+	}
+
+	/**
 	 * Creates a new adapter for an object of class '{@link net.sf.orcc.util.Attributable <em>Attributable</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -205,16 +223,16 @@ public class XronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link net.sf.orcc.ir.InstSpecific <em>Inst Specific</em>}'.
+	 * Creates a new adapter for an object of class '{@link net.sf.orcc.ir.Block <em>Block</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
 	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
 	 * <!-- end-user-doc -->
 	 * @return the new adapter.
-	 * @see net.sf.orcc.ir.InstSpecific
+	 * @see net.sf.orcc.ir.Block
 	 * @generated
 	 */
-	public Adapter createInstSpecificAdapter() {
+	public Adapter createBlockAdapter() {
 		return null;
 	}
 
@@ -230,4 +248,4 @@ public class XronosIrSpecificAdapterFactory extends AdapterFactoryImpl {
 		return null;
 	}
 
-} //XronosIrSpecificAdapterFactory
+} //XronosIrAdapterFactory

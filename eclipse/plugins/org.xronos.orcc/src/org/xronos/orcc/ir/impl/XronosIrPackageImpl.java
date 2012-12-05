@@ -2,7 +2,6 @@
  */
 package org.xronos.orcc.ir.impl;
 
-
 import net.sf.orcc.graph.GraphPackage;
 
 import net.sf.orcc.ir.IrPackage;
@@ -12,12 +11,14 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 
 import org.eclipse.emf.ecore.impl.EPackageImpl;
+
+import org.xronos.orcc.ir.BlockMutex;
 import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.ir.InstPortStatus;
 import org.xronos.orcc.ir.InstPortWrite;
-import org.xronos.orcc.ir.XronosIrSpecificFactory;
-import org.xronos.orcc.ir.XronosIrSpecificPackage;
+import org.xronos.orcc.ir.XronosIrFactory;
+import org.xronos.orcc.ir.XronosIrPackage;
 
 /**
  * <!-- begin-user-doc -->
@@ -25,7 +26,7 @@ import org.xronos.orcc.ir.XronosIrSpecificPackage;
  * <!-- end-user-doc -->
  * @generated
  */
-public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosIrSpecificPackage {
+public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage {
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -55,6 +56,13 @@ public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosI
 	private EClass instPortPeekEClass = null;
 
 	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass blockMutexEClass = null;
+
+	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
 	 * {@link org.eclipse.emf.ecore.EPackage.Registry EPackage.Registry} by the package
 	 * package URI value.
@@ -65,12 +73,12 @@ public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosI
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see org.eclipse.emf.ecore.EPackage.Registry
-	 * @see org.xronos.orcc.ir.XronosIrSpecificPackage#eNS_URI
+	 * @see org.xronos.orcc.ir.XronosIrPackage#eNS_URI
 	 * @see #init()
 	 * @generated
 	 */
-	private XronosIrSpecificPackageImpl() {
-		super(eNS_URI, XronosIrSpecificFactory.eINSTANCE);
+	private XronosIrPackageImpl() {
+		super(eNS_URI, XronosIrFactory.eINSTANCE);
 	}
 
 	/**
@@ -83,7 +91,7 @@ public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosI
 	/**
 	 * Creates, registers, and initializes the <b>Package</b> for this model, and for any others upon which it depends.
 	 * 
-	 * <p>This method is used to initialize {@link XronosIrSpecificPackage#eINSTANCE} when that field is accessed.
+	 * <p>This method is used to initialize {@link XronosIrPackage#eINSTANCE} when that field is accessed.
 	 * Clients should not invoke it directly. Instead, they should simply access that field to obtain the package.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -92,11 +100,11 @@ public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosI
 	 * @see #initializePackageContents()
 	 * @generated
 	 */
-	public static XronosIrSpecificPackage init() {
-		if (isInited) return (XronosIrSpecificPackage)EPackage.Registry.INSTANCE.getEPackage(XronosIrSpecificPackage.eNS_URI);
+	public static XronosIrPackage init() {
+		if (isInited) return (XronosIrPackage)EPackage.Registry.INSTANCE.getEPackage(XronosIrPackage.eNS_URI);
 
 		// Obtain or create and register package
-		XronosIrSpecificPackageImpl theXronosIrSpecificPackage = (XronosIrSpecificPackageImpl)(EPackage.Registry.INSTANCE.get(eNS_URI) instanceof XronosIrSpecificPackageImpl ? EPackage.Registry.INSTANCE.get(eNS_URI) : new XronosIrSpecificPackageImpl());
+		XronosIrPackageImpl theXronosIrPackage = (XronosIrPackageImpl)(EPackage.Registry.INSTANCE.get(eNS_URI) instanceof XronosIrPackageImpl ? EPackage.Registry.INSTANCE.get(eNS_URI) : new XronosIrPackageImpl());
 
 		isInited = true;
 
@@ -104,18 +112,18 @@ public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosI
 		IrPackage.eINSTANCE.eClass();
 
 		// Create package meta-data objects
-		theXronosIrSpecificPackage.createPackageContents();
+		theXronosIrPackage.createPackageContents();
 
 		// Initialize created meta-data
-		theXronosIrSpecificPackage.initializePackageContents();
+		theXronosIrPackage.initializePackageContents();
 
 		// Mark meta-data to indicate it can't be changed
-		theXronosIrSpecificPackage.freeze();
+		theXronosIrPackage.freeze();
 
   
 		// Update the registry and return the package
-		EPackage.Registry.INSTANCE.put(XronosIrSpecificPackage.eNS_URI, theXronosIrSpecificPackage);
-		return theXronosIrSpecificPackage;
+		EPackage.Registry.INSTANCE.put(XronosIrPackage.eNS_URI, theXronosIrPackage);
+		return theXronosIrPackage;
 	}
 
 	/**
@@ -231,8 +239,26 @@ public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosI
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public XronosIrSpecificFactory getXronosIrSpecificFactory() {
-		return (XronosIrSpecificFactory)getEFactoryInstance();
+	public EClass getBlockMutex() {
+		return blockMutexEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EReference getBlockMutex_Blocks() {
+		return (EReference)blockMutexEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public XronosIrFactory getXronosIrFactory() {
+		return (XronosIrFactory)getEFactoryInstance();
 	}
 
 	/**
@@ -269,6 +295,9 @@ public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosI
 		instPortPeekEClass = createEClass(INST_PORT_PEEK);
 		createEReference(instPortPeekEClass, INST_PORT_PEEK__TARGET);
 		createEReference(instPortPeekEClass, INST_PORT_PEEK__PORT);
+
+		blockMutexEClass = createEClass(BLOCK_MUTEX);
+		createEReference(blockMutexEClass, BLOCK_MUTEX__BLOCKS);
 	}
 
 	/**
@@ -303,10 +332,11 @@ public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosI
 		// Set bounds for type parameters
 
 		// Add supertypes to classes
-		instPortStatusEClass.getESuperTypes().add(theIrPackage.getInstSpecific());
-		instPortReadEClass.getESuperTypes().add(theIrPackage.getInstSpecific());
-		instPortWriteEClass.getESuperTypes().add(theIrPackage.getInstSpecific());
-		instPortPeekEClass.getESuperTypes().add(theIrPackage.getInstSpecific());
+		instPortStatusEClass.getESuperTypes().add(theIrPackage.getInstruction());
+		instPortReadEClass.getESuperTypes().add(theIrPackage.getInstruction());
+		instPortWriteEClass.getESuperTypes().add(theIrPackage.getInstruction());
+		instPortPeekEClass.getESuperTypes().add(theIrPackage.getInstruction());
+		blockMutexEClass.getESuperTypes().add(theIrPackage.getBlock());
 
 		// Initialize classes and features; add operations and parameters
 		initEClass(instPortStatusEClass, InstPortStatus.class, "InstPortStatus", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -325,8 +355,11 @@ public class XronosIrSpecificPackageImpl extends EPackageImpl implements XronosI
 		initEReference(getInstPortPeek_Target(), theIrPackage.getDef(), null, "target", null, 0, 1, InstPortPeek.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getInstPortPeek_Port(), theGraphPackage.getVertex(), null, "port", null, 0, 1, InstPortPeek.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
+		initEClass(blockMutexEClass, BlockMutex.class, "BlockMutex", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getBlockMutex_Blocks(), theIrPackage.getBlock(), null, "blocks", null, 0, -1, BlockMutex.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
 		// Create resource
 		createResource(eNS_URI);
 	}
 
-} //XronosIrSpecificPackageImpl
+} //XronosIrPackageImpl

@@ -5,7 +5,7 @@ package org.xronos.orcc.ir;
 import net.sf.orcc.graph.Vertex;
 
 import net.sf.orcc.ir.Def;
-import net.sf.orcc.ir.InstSpecific;
+import net.sf.orcc.ir.Instruction;
 
 /**
  * <!-- begin-user-doc -->
@@ -20,11 +20,11 @@ import net.sf.orcc.ir.InstSpecific;
  * </ul>
  * </p>
  *
- * @see org.xronos.orcc.ir.XronosIrSpecificPackage#getInstPortRead()
+ * @see org.xronos.orcc.ir.XronosIrPackage#getInstPortRead()
  * @model
  * @generated
  */
-public interface InstPortRead extends InstSpecific {
+public interface InstPortRead extends Instruction {
 	/**
 	 * Returns the value of the '<em><b>Target</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
@@ -35,7 +35,7 @@ public interface InstPortRead extends InstSpecific {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Target</em>' containment reference.
 	 * @see #setTarget(Def)
-	 * @see org.xronos.orcc.ir.XronosIrSpecificPackage#getInstPortRead_Target()
+	 * @see org.xronos.orcc.ir.XronosIrPackage#getInstPortRead_Target()
 	 * @model containment="true"
 	 * @generated
 	 */
@@ -61,7 +61,7 @@ public interface InstPortRead extends InstSpecific {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Port</em>' reference.
 	 * @see #setPort(Vertex)
-	 * @see org.xronos.orcc.ir.XronosIrSpecificPackage#getInstPortRead_Port()
+	 * @see org.xronos.orcc.ir.XronosIrPackage#getInstPortRead_Port()
 	 * @model resolveProxies="false"
 	 * @generated
 	 */

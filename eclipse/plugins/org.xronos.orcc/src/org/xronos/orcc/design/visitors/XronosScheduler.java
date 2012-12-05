@@ -65,8 +65,9 @@ import org.xronos.orcc.backend.debug.DebugPrinter;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.XronosIrUtil;
 import org.xronos.orcc.design.visitors.io.CircularBuffer;
+import org.xronos.orcc.ir.BlockMutex;
 import org.xronos.orcc.ir.InstPortStatus;
-import org.xronos.orcc.ir.XronosIrSpecificFactory;
+import org.xronos.orcc.ir.XronosIrFactory;
 
 /**
  * Xronos Action scheduler class
@@ -185,7 +186,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					}
 				} else {
 					// Single token
-					InstPortStatus instPortStatus = XronosIrSpecificFactory.eINSTANCE
+					InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
 							.createInstPortStatus();
 					instPortStatus.setPort(port);
 
@@ -337,7 +338,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					}
 				} else {
 					// Single token
-					InstPortStatus instPortStatus = XronosIrSpecificFactory.eINSTANCE
+					InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
 							.createInstPortStatus();
 					instPortStatus.setPort(port);
 
@@ -480,9 +481,8 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		return xronosScheduler;
 	}
 
-	private BlockIf createFsmBlockIf(Actor actor, Procedure procedure) {
-		BlockIf block = null;
-		BlockIf lastFSMBlockIf = null;
+	private List<BlockIf> createFsmBlockIf(Actor actor, Procedure procedure) {
+		List<BlockIf> blocks = new ArrayList<BlockIf>();
 		for (State state : actor.getFsm().getStates()) {
 
 			BlockIf lastBlockIf = null;
@@ -500,21 +500,12 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			Var stateSource = procedure.getLocal("s_" + state.getName());
 
 			Expression ifStateCondition = irFactory.createExprVar(stateSource);
-			if (block == null) {
-				BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
-						lastBlockIf);
-				block = blockIf;
-				lastFSMBlockIf = blockIf;
-			} else {
-				BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
-						lastBlockIf);
-				lastFSMBlockIf.getElseBlocks().add(blockIf);
-				lastFSMBlockIf = blockIf;
-			}
+
+			BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
+					lastBlockIf);
+			blocks.add(blockIf);
 		}
-		// Add the isMutex Attribute
-		block.setAttribute("isMutex", true);
-		return block;
+		return blocks;
 	}
 
 	private void createInstStoreStart(Action action, Boolean value,
@@ -607,12 +598,15 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					lastBlockIf = createTaskCallOutFSM(procedure, action,
 							lastBlockIf);
 				}
-
-				lastBlockIf.getElseBlocks().add(
-						createFsmBlockIf(actor, procedure));
+				BlockMutex blockMutex = XronosIrFactory.eINSTANCE.createBlockMutex();
+				blockMutex.getBlocks().addAll(createFsmBlockIf(actor, procedure));
+				lastBlockIf.getElseBlocks().add(blockMutex);
 				blocks.add(lastBlockIf);
 			} else {
-				blocks.add(createFsmBlockIf(actor, procedure));
+				BlockMutex blockMutex = XronosIrFactory.eINSTANCE.createBlockMutex();
+				blockMutex.getBlocks().addAll(createFsmBlockIf(actor, procedure));
+				
+				blocks.add(blockMutex);
 			}
 		}
 		return blocks;

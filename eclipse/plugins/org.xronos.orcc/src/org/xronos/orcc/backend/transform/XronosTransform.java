@@ -28,12 +28,11 @@
  */
 package org.xronos.orcc.backend.transform;
 
-import org.xronos.orcc.design.ResourceCache;
-import org.xronos.orcc.design.visitors.StmtIO;
-
 import net.sf.orcc.backends.transform.CastAdder;
 import net.sf.orcc.ir.Procedure;
-import net.sf.orcc.ir.transform.SSATransformation;
+
+import org.xronos.orcc.design.ResourceCache;
+import org.xronos.orcc.design.visitors.StmtIO;
 
 /**
  * This helper class transforms only a given procedure
@@ -43,7 +42,7 @@ import net.sf.orcc.ir.transform.SSATransformation;
  */
 public class XronosTransform {
 
-	private Procedure procedure;
+	private final Procedure procedure;
 
 	public XronosTransform(Procedure procedure) {
 		this.procedure = procedure;
@@ -51,7 +50,7 @@ public class XronosTransform {
 
 	public Procedure transformProcedure(ResourceCache resourceCache) {
 		// SSA
-		new SSATransformation().doSwitch(procedure);
+		new XronosSSA().doSwitch(procedure);
 		// Add Literal Integers
 		new XronosLiteralIntegersAdder().doSwitch(procedure);
 		// Three address Code

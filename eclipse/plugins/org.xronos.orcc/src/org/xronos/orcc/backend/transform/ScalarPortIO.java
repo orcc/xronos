@@ -31,13 +31,6 @@ package org.xronos.orcc.backend.transform;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.xronos.orcc.design.ResourceCache;
-import org.xronos.orcc.design.visitors.io.CircularBuffer;
-import org.xronos.orcc.ir.InstPortPeek;
-import org.xronos.orcc.ir.InstPortRead;
-import org.xronos.orcc.ir.InstPortWrite;
-import org.xronos.orcc.ir.XronosIrSpecificFactory;
-
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
@@ -51,6 +44,13 @@ import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
+
+import org.xronos.orcc.design.ResourceCache;
+import org.xronos.orcc.design.visitors.io.CircularBuffer;
+import org.xronos.orcc.ir.InstPortPeek;
+import org.xronos.orcc.ir.InstPortRead;
+import org.xronos.orcc.ir.InstPortWrite;
+import org.xronos.orcc.ir.XronosIrFactory;
 
 /**
  * This class visits an Action and when it finds a Load or Store operation on a
@@ -72,7 +72,7 @@ public class ScalarPortIO extends DfVisitor<Void> {
 				Def def = IrFactory.eINSTANCE.createDef(target);
 
 				if (portRead) {
-					InstPortRead portRead = XronosIrSpecificFactory.eINSTANCE
+					InstPortRead portRead = XronosIrFactory.eINSTANCE
 							.createInstPortRead();
 					portRead.setPort(port);
 					portRead.setTarget(def);
@@ -83,7 +83,7 @@ public class ScalarPortIO extends DfVisitor<Void> {
 
 					block.add(index, portRead);
 				} else {
-					InstPortPeek portPeek = XronosIrSpecificFactory.eINSTANCE
+					InstPortPeek portPeek = XronosIrFactory.eINSTANCE
 							.createInstPortPeek();
 					portPeek.setPort(port);
 					portPeek.setTarget(def);
@@ -106,7 +106,7 @@ public class ScalarPortIO extends DfVisitor<Void> {
 			if (varToPortMap.containsKey(targetVar)) {
 				Port port = varToPortMap.get(targetVar);
 				Expression value = store.getValue();
-				InstPortWrite portWrite = XronosIrSpecificFactory.eINSTANCE
+				InstPortWrite portWrite = XronosIrFactory.eINSTANCE
 						.createInstPortWrite();
 				portWrite.setPort(port);
 				portWrite.setValue(value);
@@ -119,14 +119,13 @@ public class ScalarPortIO extends DfVisitor<Void> {
 			}
 			return null;
 		}
-
 	}
 
-	private ResourceCache resourceCache;
+	private final ResourceCache resourceCache;
 
-	private InnerVisitor innerVisitor = new InnerVisitor();
+	private final InnerVisitor innerVisitor = new InnerVisitor();
 
-	private Map<Var, Port> varToPortMap = new HashMap<Var, Port>();
+	private final Map<Var, Port> varToPortMap = new HashMap<Var, Port>();
 
 	private Map<Port, CircularBuffer> CircularBufferInput;
 
@@ -154,8 +153,8 @@ public class ScalarPortIO extends DfVisitor<Void> {
 
 			for (Port port : action.getPeekPattern().getPorts()) {
 				if (CircularBufferInput.get(port) == null) {
-					Var portReadVar = action.getPeekPattern()
-							.getPortToVarMap().get(port);
+					Var portReadVar = action.getPeekPattern().getPortToVarMap()
+							.get(port);
 					varToPortMap.put(portReadVar, port);
 				}
 			}
@@ -188,4 +187,5 @@ public class ScalarPortIO extends DfVisitor<Void> {
 
 		return null;
 	}
+
 }

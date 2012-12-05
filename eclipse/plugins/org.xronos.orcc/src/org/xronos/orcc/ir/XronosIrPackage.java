@@ -19,11 +19,11 @@ import org.eclipse.emf.ecore.EReference;
  *   <li>and each data type</li>
  * </ul>
  * <!-- end-user-doc -->
- * @see org.xronos.orcc.ir.XronosIrSpecificFactory
+ * @see org.xronos.orcc.ir.XronosIrFactory
  * @model kind="package"
  * @generated
  */
-public interface XronosIrSpecificPackage extends EPackage {
+public interface XronosIrPackage extends EPackage {
 	/**
 	 * The package name.
 	 * <!-- begin-user-doc -->
@@ -46,7 +46,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	String eNS_PREFIX = "net.sf.orc2hdl.ir";
+	String eNS_PREFIX = "org.xronos.orcc.ir";
 
 	/**
 	 * The singleton instance of the package.
@@ -54,14 +54,14 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	XronosIrSpecificPackage eINSTANCE = org.xronos.orcc.ir.impl.XronosIrSpecificPackageImpl.init();
+	XronosIrPackage eINSTANCE = org.xronos.orcc.ir.impl.XronosIrPackageImpl.init();
 
 	/**
 	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.InstPortStatusImpl <em>Inst Port Status</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see org.xronos.orcc.ir.impl.InstPortStatusImpl
-	 * @see org.xronos.orcc.ir.impl.XronosIrSpecificPackageImpl#getInstPortStatus()
+	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstPortStatus()
 	 * @generated
 	 */
 	int INST_PORT_STATUS = 0;
@@ -73,7 +73,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_STATUS__ATTRIBUTES = IrPackage.INST_SPECIFIC__ATTRIBUTES;
+	int INST_PORT_STATUS__ATTRIBUTES = IrPackage.INSTRUCTION__ATTRIBUTES;
 
 	/**
 	 * The feature id for the '<em><b>Line Number</b></em>' attribute.
@@ -82,7 +82,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_STATUS__LINE_NUMBER = IrPackage.INST_SPECIFIC__LINE_NUMBER;
+	int INST_PORT_STATUS__LINE_NUMBER = IrPackage.INSTRUCTION__LINE_NUMBER;
 
 	/**
 	 * The feature id for the '<em><b>Predicate</b></em>' containment reference.
@@ -91,7 +91,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_STATUS__PREDICATE = IrPackage.INST_SPECIFIC__PREDICATE;
+	int INST_PORT_STATUS__PREDICATE = IrPackage.INSTRUCTION__PREDICATE;
 
 	/**
 	 * The feature id for the '<em><b>Target</b></em>' containment reference.
@@ -100,7 +100,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_STATUS__TARGET = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 0;
+	int INST_PORT_STATUS__TARGET = IrPackage.INSTRUCTION_FEATURE_COUNT + 0;
 
 	/**
 	 * The feature id for the '<em><b>Port</b></em>' reference.
@@ -109,7 +109,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_STATUS__PORT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 1;
+	int INST_PORT_STATUS__PORT = IrPackage.INSTRUCTION_FEATURE_COUNT + 1;
 
 	/**
 	 * The number of structural features of the '<em>Inst Port Status</em>' class.
@@ -118,14 +118,14 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_STATUS_FEATURE_COUNT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 2;
+	int INST_PORT_STATUS_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
 
 	/**
 	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.InstPortReadImpl <em>Inst Port Read</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see org.xronos.orcc.ir.impl.InstPortReadImpl
-	 * @see org.xronos.orcc.ir.impl.XronosIrSpecificPackageImpl#getInstPortRead()
+	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstPortRead()
 	 * @generated
 	 */
 	int INST_PORT_READ = 1;
@@ -137,7 +137,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_READ__ATTRIBUTES = IrPackage.INST_SPECIFIC__ATTRIBUTES;
+	int INST_PORT_READ__ATTRIBUTES = IrPackage.INSTRUCTION__ATTRIBUTES;
 
 	/**
 	 * The feature id for the '<em><b>Line Number</b></em>' attribute.
@@ -146,7 +146,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_READ__LINE_NUMBER = IrPackage.INST_SPECIFIC__LINE_NUMBER;
+	int INST_PORT_READ__LINE_NUMBER = IrPackage.INSTRUCTION__LINE_NUMBER;
 
 	/**
 	 * The feature id for the '<em><b>Predicate</b></em>' containment reference.
@@ -155,7 +155,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_READ__PREDICATE = IrPackage.INST_SPECIFIC__PREDICATE;
+	int INST_PORT_READ__PREDICATE = IrPackage.INSTRUCTION__PREDICATE;
 
 	/**
 	 * The feature id for the '<em><b>Target</b></em>' containment reference.
@@ -164,7 +164,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_READ__TARGET = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 0;
+	int INST_PORT_READ__TARGET = IrPackage.INSTRUCTION_FEATURE_COUNT + 0;
 
 	/**
 	 * The feature id for the '<em><b>Port</b></em>' reference.
@@ -173,7 +173,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_READ__PORT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 1;
+	int INST_PORT_READ__PORT = IrPackage.INSTRUCTION_FEATURE_COUNT + 1;
 
 	/**
 	 * The number of structural features of the '<em>Inst Port Read</em>' class.
@@ -182,14 +182,14 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_READ_FEATURE_COUNT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 2;
+	int INST_PORT_READ_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
 
 	/**
 	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.InstPortWriteImpl <em>Inst Port Write</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see org.xronos.orcc.ir.impl.InstPortWriteImpl
-	 * @see org.xronos.orcc.ir.impl.XronosIrSpecificPackageImpl#getInstPortWrite()
+	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstPortWrite()
 	 * @generated
 	 */
 	int INST_PORT_WRITE = 2;
@@ -201,7 +201,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_WRITE__ATTRIBUTES = IrPackage.INST_SPECIFIC__ATTRIBUTES;
+	int INST_PORT_WRITE__ATTRIBUTES = IrPackage.INSTRUCTION__ATTRIBUTES;
 
 	/**
 	 * The feature id for the '<em><b>Line Number</b></em>' attribute.
@@ -210,7 +210,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_WRITE__LINE_NUMBER = IrPackage.INST_SPECIFIC__LINE_NUMBER;
+	int INST_PORT_WRITE__LINE_NUMBER = IrPackage.INSTRUCTION__LINE_NUMBER;
 
 	/**
 	 * The feature id for the '<em><b>Predicate</b></em>' containment reference.
@@ -219,7 +219,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_WRITE__PREDICATE = IrPackage.INST_SPECIFIC__PREDICATE;
+	int INST_PORT_WRITE__PREDICATE = IrPackage.INSTRUCTION__PREDICATE;
 
 	/**
 	 * The feature id for the '<em><b>Port</b></em>' reference.
@@ -228,7 +228,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_WRITE__PORT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 0;
+	int INST_PORT_WRITE__PORT = IrPackage.INSTRUCTION_FEATURE_COUNT + 0;
 
 	/**
 	 * The feature id for the '<em><b>Value</b></em>' containment reference.
@@ -237,7 +237,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_WRITE__VALUE = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 1;
+	int INST_PORT_WRITE__VALUE = IrPackage.INSTRUCTION_FEATURE_COUNT + 1;
 
 	/**
 	 * The number of structural features of the '<em>Inst Port Write</em>' class.
@@ -246,14 +246,14 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_WRITE_FEATURE_COUNT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 2;
+	int INST_PORT_WRITE_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
 
 	/**
 	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.InstPortPeekImpl <em>Inst Port Peek</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see org.xronos.orcc.ir.impl.InstPortPeekImpl
-	 * @see org.xronos.orcc.ir.impl.XronosIrSpecificPackageImpl#getInstPortPeek()
+	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstPortPeek()
 	 * @generated
 	 */
 	int INST_PORT_PEEK = 3;
@@ -265,7 +265,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_PEEK__ATTRIBUTES = IrPackage.INST_SPECIFIC__ATTRIBUTES;
+	int INST_PORT_PEEK__ATTRIBUTES = IrPackage.INSTRUCTION__ATTRIBUTES;
 
 	/**
 	 * The feature id for the '<em><b>Line Number</b></em>' attribute.
@@ -274,7 +274,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_PEEK__LINE_NUMBER = IrPackage.INST_SPECIFIC__LINE_NUMBER;
+	int INST_PORT_PEEK__LINE_NUMBER = IrPackage.INSTRUCTION__LINE_NUMBER;
 
 	/**
 	 * The feature id for the '<em><b>Predicate</b></em>' containment reference.
@@ -283,7 +283,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_PEEK__PREDICATE = IrPackage.INST_SPECIFIC__PREDICATE;
+	int INST_PORT_PEEK__PREDICATE = IrPackage.INSTRUCTION__PREDICATE;
 
 	/**
 	 * The feature id for the '<em><b>Target</b></em>' containment reference.
@@ -292,7 +292,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_PEEK__TARGET = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 0;
+	int INST_PORT_PEEK__TARGET = IrPackage.INSTRUCTION_FEATURE_COUNT + 0;
 
 	/**
 	 * The feature id for the '<em><b>Port</b></em>' reference.
@@ -301,7 +301,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_PEEK__PORT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 1;
+	int INST_PORT_PEEK__PORT = IrPackage.INSTRUCTION_FEATURE_COUNT + 1;
 
 	/**
 	 * The number of structural features of the '<em>Inst Port Peek</em>' class.
@@ -310,7 +310,53 @@ public interface XronosIrSpecificPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_PEEK_FEATURE_COUNT = IrPackage.INST_SPECIFIC_FEATURE_COUNT + 2;
+	int INST_PORT_PEEK_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
+
+	/**
+	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.BlockMutexImpl <em>Block Mutex</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see org.xronos.orcc.ir.impl.BlockMutexImpl
+	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getBlockMutex()
+	 * @generated
+	 */
+	int BLOCK_MUTEX = 4;
+
+	/**
+	 * The feature id for the '<em><b>Attributes</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BLOCK_MUTEX__ATTRIBUTES = IrPackage.BLOCK__ATTRIBUTES;
+
+	/**
+	 * The feature id for the '<em><b>Cfg Node</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BLOCK_MUTEX__CFG_NODE = IrPackage.BLOCK__CFG_NODE;
+
+	/**
+	 * The feature id for the '<em><b>Blocks</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BLOCK_MUTEX__BLOCKS = IrPackage.BLOCK_FEATURE_COUNT + 0;
+
+	/**
+	 * The number of structural features of the '<em>Block Mutex</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int BLOCK_MUTEX_FEATURE_COUNT = IrPackage.BLOCK_FEATURE_COUNT + 1;
 
 
 	/**
@@ -442,13 +488,34 @@ public interface XronosIrSpecificPackage extends EPackage {
 	EReference getInstPortPeek_Port();
 
 	/**
+	 * Returns the meta object for class '{@link org.xronos.orcc.ir.BlockMutex <em>Block Mutex</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Block Mutex</em>'.
+	 * @see org.xronos.orcc.ir.BlockMutex
+	 * @generated
+	 */
+	EClass getBlockMutex();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link org.xronos.orcc.ir.BlockMutex#getBlocks <em>Blocks</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Blocks</em>'.
+	 * @see org.xronos.orcc.ir.BlockMutex#getBlocks()
+	 * @see #getBlockMutex()
+	 * @generated
+	 */
+	EReference getBlockMutex_Blocks();
+
+	/**
 	 * Returns the factory that creates the instances of the model.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the factory that creates the instances of the model.
 	 * @generated
 	 */
-	XronosIrSpecificFactory getXronosIrSpecificFactory();
+	XronosIrFactory getXronosIrFactory();
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -468,7 +535,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @see org.xronos.orcc.ir.impl.InstPortStatusImpl
-		 * @see org.xronos.orcc.ir.impl.XronosIrSpecificPackageImpl#getInstPortStatus()
+		 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstPortStatus()
 		 * @generated
 		 */
 		EClass INST_PORT_STATUS = eINSTANCE.getInstPortStatus();
@@ -494,7 +561,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @see org.xronos.orcc.ir.impl.InstPortReadImpl
-		 * @see org.xronos.orcc.ir.impl.XronosIrSpecificPackageImpl#getInstPortRead()
+		 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstPortRead()
 		 * @generated
 		 */
 		EClass INST_PORT_READ = eINSTANCE.getInstPortRead();
@@ -520,7 +587,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @see org.xronos.orcc.ir.impl.InstPortWriteImpl
-		 * @see org.xronos.orcc.ir.impl.XronosIrSpecificPackageImpl#getInstPortWrite()
+		 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstPortWrite()
 		 * @generated
 		 */
 		EClass INST_PORT_WRITE = eINSTANCE.getInstPortWrite();
@@ -546,7 +613,7 @@ public interface XronosIrSpecificPackage extends EPackage {
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @see org.xronos.orcc.ir.impl.InstPortPeekImpl
-		 * @see org.xronos.orcc.ir.impl.XronosIrSpecificPackageImpl#getInstPortPeek()
+		 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstPortPeek()
 		 * @generated
 		 */
 		EClass INST_PORT_PEEK = eINSTANCE.getInstPortPeek();
@@ -567,6 +634,24 @@ public interface XronosIrSpecificPackage extends EPackage {
 		 */
 		EReference INST_PORT_PEEK__PORT = eINSTANCE.getInstPortPeek_Port();
 
+		/**
+		 * The meta object literal for the '{@link org.xronos.orcc.ir.impl.BlockMutexImpl <em>Block Mutex</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see org.xronos.orcc.ir.impl.BlockMutexImpl
+		 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getBlockMutex()
+		 * @generated
+		 */
+		EClass BLOCK_MUTEX = eINSTANCE.getBlockMutex();
+
+		/**
+		 * The meta object literal for the '<em><b>Blocks</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference BLOCK_MUTEX__BLOCKS = eINSTANCE.getBlockMutex_Blocks();
+
 	}
 
-} //XronosIrSpecificPackage
+} //XronosIrPackage

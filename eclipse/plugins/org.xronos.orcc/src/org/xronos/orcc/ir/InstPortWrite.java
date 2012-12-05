@@ -5,7 +5,7 @@ package org.xronos.orcc.ir;
 import net.sf.orcc.graph.Vertex;
 
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstSpecific;
+import net.sf.orcc.ir.Instruction;
 
 /**
  * <!-- begin-user-doc -->
@@ -20,11 +20,11 @@ import net.sf.orcc.ir.InstSpecific;
  * </ul>
  * </p>
  *
- * @see org.xronos.orcc.ir.XronosIrSpecificPackage#getInstPortWrite()
+ * @see org.xronos.orcc.ir.XronosIrPackage#getInstPortWrite()
  * @model
  * @generated
  */
-public interface InstPortWrite extends InstSpecific {
+public interface InstPortWrite extends Instruction {
 	/**
 	 * Returns the value of the '<em><b>Port</b></em>' reference.
 	 * <!-- begin-user-doc -->
@@ -35,7 +35,7 @@ public interface InstPortWrite extends InstSpecific {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Port</em>' reference.
 	 * @see #setPort(Vertex)
-	 * @see org.xronos.orcc.ir.XronosIrSpecificPackage#getInstPortWrite_Port()
+	 * @see org.xronos.orcc.ir.XronosIrPackage#getInstPortWrite_Port()
 	 * @model resolveProxies="false"
 	 * @generated
 	 */
@@ -61,7 +61,7 @@ public interface InstPortWrite extends InstSpecific {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Value</em>' containment reference.
 	 * @see #setValue(Expression)
-	 * @see org.xronos.orcc.ir.XronosIrSpecificPackage#getInstPortWrite_Value()
+	 * @see org.xronos.orcc.ir.XronosIrPackage#getInstPortWrite_Value()
 	 * @model containment="true"
 	 * @generated
 	 */

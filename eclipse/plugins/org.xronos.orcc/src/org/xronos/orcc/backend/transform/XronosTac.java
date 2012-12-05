@@ -28,11 +28,12 @@
  */
 package org.xronos.orcc.backend.transform;
 
-import org.xronos.orcc.ir.InstPortWrite;
-
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstSpecific;
 import net.sf.orcc.ir.transform.TacTransformation;
+
+import org.eclipse.emf.ecore.EObject;
+import org.xronos.orcc.ir.BlockMutex;
+import org.xronos.orcc.ir.InstPortWrite;
 
 /**
  * This class extends the TacTransformation, adding it InstSpecific
@@ -42,15 +43,16 @@ import net.sf.orcc.ir.transform.TacTransformation;
  */
 public class XronosTac extends TacTransformation {
 	@Override
-	public Expression caseInstSpecific(InstSpecific object) {
-		if (object instanceof InstPortWrite) {
+	public Expression defaultCase(EObject object) {
+		if (object instanceof BlockMutex) {
+			doSwitch(((BlockMutex) object).getBlocks());
+		} else if (object instanceof InstPortWrite) {
 			InstPortWrite instPortWrite = (InstPortWrite) object;
 			complexityLevel++;
 			instPortWrite.setValue(doSwitch(instPortWrite.getValue()));
 			complexityLevel--;
 			return null;
 		}
-		return null;
-
+		return super.defaultCase(object);
 	}
 }

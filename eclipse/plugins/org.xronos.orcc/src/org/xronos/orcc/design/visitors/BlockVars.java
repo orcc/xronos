@@ -64,42 +64,30 @@ import org.xronos.orcc.ir.InstPortStatus;
  */
 public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 
-	private Set<Var> blockVars;
-
-	private Boolean inputVars;
-
-	private Boolean deepSearch;
-
-	private Boolean phiVisit;
-
-	private Boolean decisionInputs;
-
-	private Boolean getDefinedVar;
-
-	private Block currentBlock;
-
-	private Block stmBlock;
-
-	private Map<Block, Map<Var, List<Var>>> phi;
+	private Block blockPhi;
 
 	private List<Block> blocksContainer;
 
-	private Block blockPhi;
+	private Set<Var> blockVars;
+
+	private Block currentBlock;
+
+	private Boolean decisionInputs;
+
+	private Boolean deepSearch;
+
+	private Boolean getDefinedVar;
+
+	private Boolean inputVars;
+
+	private Map<Block, Map<Var, List<Var>>> phi;
+
+	private Boolean phiVisit;
+
+	private Block stmBlock;
 
 	/** Map of a Loop Module Output Variables **/
 	private Map<Block, List<Var>> stmOutputs;
-
-	public BlockVars(Boolean inputVars, Boolean deepSearch,
-			List<Block> blocksContainer, Block blockPhi) {
-		super(true);
-		this.inputVars = inputVars;
-		this.deepSearch = deepSearch;
-		this.phiVisit = false;
-		this.blocksContainer = blocksContainer;
-		this.getDefinedVar = false;
-		this.blockPhi = blockPhi;
-		this.decisionInputs = false;
-	}
 
 	public BlockVars(Block stmBlock, Map<Block, Map<Var, List<Var>>> phi) {
 		super(true);
@@ -112,6 +100,18 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		this.blocksContainer.add(stmBlock);
 		this.getDefinedVar = false;
 		this.decisionInputs = true;
+	}
+
+	public BlockVars(Boolean inputVars, Boolean deepSearch,
+			List<Block> blocksContainer, Block blockPhi) {
+		super(true);
+		this.inputVars = inputVars;
+		this.deepSearch = deepSearch;
+		this.phiVisit = false;
+		this.blocksContainer = blocksContainer;
+		this.getDefinedVar = false;
+		this.blockPhi = blockPhi;
+		this.decisionInputs = false;
 	}
 
 	public BlockVars(Boolean getDefinedVar, Map<Block, List<Var>> stmOutputs) {
@@ -202,8 +202,55 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 	}
 
 	@Override
-	public Set<Var> caseInstPhi(InstPhi phi) {
-		// Do not visit PHI
+	public Set<Var> caseExprVar(ExprVar expr) {
+		Var var = expr.getUse().getVariable();
+		if (inputVars) {
+			if (definedInOtherBlock(var)) {
+				blockVars.add(var);
+			}
+		}
+
+		if (phiVisit) {
+			if (definedInOtherBlock(var) || phi.get(stmBlock).containsKey(var)) {
+				blockVars.add(var);
+			}
+		}
+
+		return null;
+	}
+
+	@Override
+	public Set<Var> caseInstAssign(InstAssign assign) {
+		Var target = assign.getTarget().getVariable();
+		if (!getDefinedVar) {
+			if (!inputVars) {
+				if (usedInOtherBlock(target)) {
+					blockVars.add(target);
+				}
+			}
+		} else {
+			blockVars.add(target);
+		}
+		super.caseInstAssign(assign);
+		return null;
+	}
+
+	public Set<Var> caseInstCast(InstCast cast) {
+		Var target = cast.getTarget().getVariable();
+		Var source = cast.getSource().getVariable();
+		if (!getDefinedVar) {
+			if (inputVars) {
+				if (definedInOtherBlock(source)) {
+					blockVars.add(source);
+				}
+			} else {
+				if (usedInOtherBlock(target)) {
+					blockVars.add(target);
+				}
+			}
+		} else {
+			blockVars.add(target);
+		}
 		return null;
 	}
 
@@ -230,6 +277,35 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 			blockVars.add(target);
 		}
 		return null;
+	}
+
+	@Override
+	public Set<Var> caseInstPhi(InstPhi phi) {
+		// Do not visit PHI
+		return null;
+	}
+
+	public Set<Var> caseInstPortStatus(InstPortStatus portStatus) {
+		Var target = portStatus.getTarget().getVariable();
+		if (!getDefinedVar) {
+			if (!inputVars) {
+				if (usedInOtherBlock(target)) {
+					blockVars.add(target);
+				}
+			}
+		} else {
+			blockVars.add(target);
+		}
+
+		return null;
+	}
+
+	@Override
+	public Set<Var> caseInstSpecific(InstSpecific object) {
+		if (object instanceof InstCast) {
+			return caseInstCast((InstCast) object);
+		}
+		return super.defaultCase(object);
 	}
 
 	@Override
@@ -260,69 +336,10 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 	}
 
 	@Override
-	public Set<Var> caseInstAssign(InstAssign assign) {
-		Var target = assign.getTarget().getVariable();
-		if (!getDefinedVar) {
-			if (!inputVars) {
-				if (usedInOtherBlock(target)) {
-					blockVars.add(target);
-				}
-			}
-		} else {
-			blockVars.add(target);
+	public Set<Var> defaultCase(EObject object) {
+		if (object instanceof InstPortStatus) {
+			return caseInstPortStatus((InstPortStatus) object);
 		}
-		super.caseInstAssign(assign);
-		return null;
-	}
-
-	@Override
-	public Set<Var> caseInstSpecific(InstSpecific object) {
-		if (object instanceof InstCast) {
-			Var target = ((InstCast) object).getTarget().getVariable();
-			Var source = ((InstCast) object).getSource().getVariable();
-			if (!getDefinedVar) {
-				if (inputVars) {
-					if (definedInOtherBlock(source)) {
-						blockVars.add(source);
-					}
-				} else {
-					if (usedInOtherBlock(target)) {
-						blockVars.add(target);
-					}
-				}
-			} else {
-				blockVars.add(target);
-			}
-		} else if (object instanceof InstPortStatus) {
-			Var target = ((InstPortStatus) object).getTarget().getVariable();
-			if (!getDefinedVar) {
-				if (!inputVars) {
-					if (usedInOtherBlock(target)) {
-						blockVars.add(target);
-					}
-				}
-			} else {
-				blockVars.add(target);
-			}
-		}
-		return null;
-	}
-
-	@Override
-	public Set<Var> caseExprVar(ExprVar expr) {
-		Var var = expr.getUse().getVariable();
-		if (inputVars) {
-			if (definedInOtherBlock(var)) {
-				blockVars.add(var);
-			}
-		}
-
-		if (phiVisit) {
-			if (definedInOtherBlock(var) || phi.get(stmBlock).containsKey(var)) {
-				blockVars.add(var);
-			}
-		}
-
 		return null;
 	}
 

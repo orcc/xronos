@@ -36,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.xronos.orcc.design.ResourceCache;
-
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
@@ -46,6 +44,10 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+
+import org.eclipse.emf.ecore.EObject;
+import org.xronos.orcc.design.ResourceCache;
+import org.xronos.orcc.ir.BlockMutex;
 
 /**
  * This visitor figures out the Input and Output of a Branch or a While for an
@@ -58,44 +60,44 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 public class StmtIO extends AbstractIrVisitor<Void> {
 
 	/** Design Resources **/
-	private ResourceCache cache;
+	private final ResourceCache cache;
 
 	/** The current visited If Block **/
 	private Block currentBlock;
 
 	/** Map of a Branch Else Block Input Variables **/
-	private Map<Block, List<Var>> elseInputs;
+	private final Map<Block, List<Var>> elseInputs;
 
 	/** Map of a Branch Else Block Output Variables **/
-	private Map<Block, List<Var>> elseOutputs;
+	private final Map<Block, List<Var>> elseOutputs;
 
 	/** Map containing the join node **/
-	private Map<Block, Map<Var, List<Var>>> joinVarMap;
+	private final Map<Block, Map<Var, List<Var>>> joinVarMap;
 
 	/** Map of a LoopBody Block Input Variables **/
-	private Map<Block, List<Var>> loopBodyInputs;
+	private final Map<Block, List<Var>> loopBodyInputs;
 
 	/** Map of a LoopBody Block Output Variables **/
-	private Map<Block, List<Var>> loopBodyOutputs;
+	private final Map<Block, List<Var>> loopBodyOutputs;
 
-	private LinkedList<Block> nestedBlock;
+	private final LinkedList<Block> nestedBlock;
 
 	/** Map of a Decision Module Input Variables **/
-	private Map<Block, List<Var>> stmDecision;
+	private final Map<Block, List<Var>> stmDecision;
 
 	/** Map of a Loop Module Input Variables **/
-	private Map<Block, List<Var>> stmInputs;
+	private final Map<Block, List<Var>> stmInputs;
 
 	/** Map of a Loop Module Output Variables **/
-	private Map<Block, List<Var>> stmOutputs;
+	private final Map<Block, List<Var>> stmOutputs;
 
 	/** Map of a Branch Then Block Input Variables **/
-	private Map<Block, List<Var>> thenInputs;
+	private final Map<Block, List<Var>> thenInputs;
 
 	/** Map of a Branch Then Block Output Variables **/
-	private Map<Block, List<Var>> thenOutputs;
+	private final Map<Block, List<Var>> thenOutputs;
 
-	private Set<Block> visitedBlocks;
+	private final Set<Block> visitedBlocks;
 
 	public StmtIO(ResourceCache cache) {
 		super(true);
@@ -170,7 +172,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		// Add to Stm input
 		stmAddVars(nodeIf, stmInputs, thenInputs);
 		stmAddVars(nodeIf, stmInputs, elseInputs);
-		cleanIf(nodeIf, stmInputs, stmDecision, thenInputs, elseInputs);
+		// cleanIf(nodeIf, stmInputs, stmDecision, thenInputs, elseInputs);
 		// Add to cache
 		cache.addBranch(nodeIf, stmDecision, stmInputs, stmOutputs, thenInputs,
 				thenOutputs, elseInputs, elseOutputs, joinVarMap);
@@ -294,6 +296,27 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
+	@SuppressWarnings("unused")
+	private void cleanIf(Block block, Map<Block, List<Var>> ifInput,
+			Map<Block, List<Var>> decisionInput,
+			Map<Block, List<Var>> thenInput, Map<Block, List<Var>> elseInput) {
+		for (Var var : new ArrayList<Var>(ifInput.get(block))) {
+			if (!decisionInput.get(block).contains(var)
+					&& !thenInput.get(block).contains(var)
+					&& !elseInput.get(block).contains(var)) {
+				ifInput.get(block).remove(var);
+			}
+		}
+	}
+
+	@Override
+	public Void defaultCase(EObject object) {
+		if (object instanceof BlockMutex) {
+			doSwitch(((BlockMutex) object).getBlocks());
+		}
+		return super.defaultCase(object);
+	}
+
 	private List<Var> getVars(Boolean input, Boolean deepSearch,
 			List<Block> blocks, Block phiBlock) {
 		List<Var> vars = new ArrayList<Var>();
@@ -329,6 +352,71 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			}
 		}
 		return vars;
+	}
+
+	private List<Var> otherStmDecisionVars(Block block) {
+		List<Var> vars = new ArrayList<Var>();
+
+		Set<Var> blkVars = new BlockVars(currentBlock, joinVarMap)
+				.doSwitch(block);
+		for (Var var : blkVars) {
+			if (!vars.contains(var)) {
+				vars.add(var);
+			}
+		}
+
+		return vars;
+	}
+
+	private void resolveWhileIO(Block block, List<Var> blkInputs,
+			List<Var> blkOutputs, Map<Block, Map<Var, List<Var>>> phi,
+			Map<Block, List<Var>> loopBodyInputs,
+			Map<Block, List<Var>> loopBodyOutputs,
+			Map<Block, List<Var>> stmInputs, Map<Block, List<Var>> stmOutputs) {
+
+		List<Var> resolvedInputs = new ArrayList<Var>(blkInputs);
+		// First resolve blkInput
+		for (Var iVar : blkInputs) {
+			if (phi.get(block).keySet().contains(iVar)) {
+				// This is a LoopBody input and a Loop output
+				loopBodyInputs.get(block).add(iVar);
+				stmOutputs.get(block).add(iVar);
+				// Get the Group 0 Input
+				stmInputs.get(block).add(phi.get(block).get(iVar).get(0));
+				if (!loopBodyOutputs.get(block).contains(
+						phi.get(block).get(iVar).get(1))) {
+					loopBodyOutputs.get(block).add(
+							phi.get(block).get(iVar).get(1));
+				}
+				resolvedInputs.remove(iVar);
+			}
+		}
+
+		// The input that has been left should just be latched, so add a direct
+		// connection
+		for (Var dVar : resolvedInputs) {
+			loopBodyInputs.get(block).add(dVar);
+			stmInputs.get(block).add(dVar);
+		}
+
+		// Now resolve blkOutput
+		for (Var oVar : blkOutputs) {
+			for (Var kVar : phi.get(block).keySet()) {
+				List<Var> values = phi.get(block).get(kVar);
+				// Add the Feedback Output
+				if (values.get(1) == oVar) {
+					if (!stmInputs.get(block).contains(values.get(0))) {
+						stmInputs.get(block).add(values.get(0));
+					}
+					if (!stmOutputs.get(block).contains(kVar)) {
+						stmOutputs.get(block).add(kVar);
+					}
+					loopBodyInputs.get(block).add(kVar);
+					loopBodyOutputs.get(block).add(oVar);
+				}
+			}
+		}
+
 	}
 
 	private void resovleStmIO(Block block, List<Var> blkInputsZero,
@@ -440,82 +528,5 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 				target.get(block).add(var);
 			}
 		}
-	}
-
-	private void cleanIf(Block block, Map<Block, List<Var>> ifInput,
-			Map<Block, List<Var>> decisionInput,
-			Map<Block, List<Var>> thenInput, Map<Block, List<Var>> elseInput) {
-		for (Var var : new ArrayList<Var>(ifInput.get(block))) {
-			if (!decisionInput.get(block).contains(var)
-					&& !thenInput.get(block).contains(var)
-					&& !elseInput.get(block).contains(var)) {
-				ifInput.get(block).remove(var);
-			}
-		}
-	}
-
-	private List<Var> otherStmDecisionVars(Block block) {
-		List<Var> vars = new ArrayList<Var>();
-
-		Set<Var> blkVars = new BlockVars(currentBlock, joinVarMap)
-				.doSwitch(block);
-		for (Var var : blkVars) {
-			if (!vars.contains(var)) {
-				vars.add(var);
-			}
-		}
-
-		return vars;
-	}
-
-	private void resolveWhileIO(Block block, List<Var> blkInputs,
-			List<Var> blkOutputs, Map<Block, Map<Var, List<Var>>> phi,
-			Map<Block, List<Var>> loopBodyInputs,
-			Map<Block, List<Var>> loopBodyOutputs,
-			Map<Block, List<Var>> stmInputs, Map<Block, List<Var>> stmOutputs) {
-
-		List<Var> resolvedInputs = new ArrayList<Var>(blkInputs);
-		// First resolve blkInput
-		for (Var iVar : blkInputs) {
-			if (phi.get(block).keySet().contains(iVar)) {
-				// This is a LoopBody input and a Loop output
-				loopBodyInputs.get(block).add(iVar);
-				stmOutputs.get(block).add(iVar);
-				// Get the Group 0 Input
-				stmInputs.get(block).add(phi.get(block).get(iVar).get(0));
-				if (!loopBodyOutputs.get(block).contains(
-						phi.get(block).get(iVar).get(1))) {
-					loopBodyOutputs.get(block).add(
-							phi.get(block).get(iVar).get(1));
-				}
-				resolvedInputs.remove(iVar);
-			}
-		}
-
-		// The input that has been left should just be latched, so add a direct
-		// connection
-		for (Var dVar : resolvedInputs) {
-			loopBodyInputs.get(block).add(dVar);
-			stmInputs.get(block).add(dVar);
-		}
-
-		// Now resolve blkOutput
-		for (Var oVar : blkOutputs) {
-			for (Var kVar : phi.get(block).keySet()) {
-				List<Var> values = phi.get(block).get(kVar);
-				// Add the Feedback Output
-				if (values.get(1) == oVar) {
-					if (!stmInputs.get(block).contains(values.get(0))) {
-						stmInputs.get(block).add(values.get(0));
-					}
-					if (!stmOutputs.get(block).contains(kVar)) {
-						stmOutputs.get(block).add(kVar);
-					}
-					loopBodyInputs.get(block).add(kVar);
-					loopBodyOutputs.get(block).add(oVar);
-				}
-			}
-		}
-
 	}
 }

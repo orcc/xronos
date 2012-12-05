@@ -49,6 +49,7 @@ import net.sf.orcc.ir.util.IrUtil;
 
 import org.eclipse.emf.ecore.EObject;
 import org.xronos.orcc.design.visitors.BlockVars;
+import org.xronos.orcc.ir.BlockMutex;
 
 /**
  * This visitor finds and deletes the unused Phis on Block While
@@ -59,19 +60,10 @@ import org.xronos.orcc.design.visitors.BlockVars;
 public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 
 	Block currentBlock;
-	Map<Block, List<Var>> usedVariables;
 	Map<Block, List<Var>> defVariables;
-	Map<Block, List<InstPhi>> phiToBeRemoved;
 	private LinkedList<Block> nestedBlock;
-
-	@Override
-	public Void caseProcedure(Procedure procedure) {
-		phiToBeRemoved = new HashMap<Block, List<InstPhi>>();
-		usedVariables = new HashMap<Block, List<Var>>();
-		defVariables = new HashMap<Block, List<Var>>();
-		nestedBlock = new LinkedList<Block>();
-		return super.caseProcedure(procedure);
-	}
+	Map<Block, List<InstPhi>> phiToBeRemoved;
+	Map<Block, List<Var>> usedVariables;
 
 	@Override
 	public Void caseBlockIf(BlockIf nodeIf) {
@@ -167,6 +159,23 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
+	@Override
+	public Void caseProcedure(Procedure procedure) {
+		phiToBeRemoved = new HashMap<Block, List<InstPhi>>();
+		usedVariables = new HashMap<Block, List<Var>>();
+		defVariables = new HashMap<Block, List<Var>>();
+		nestedBlock = new LinkedList<Block>();
+		return super.caseProcedure(procedure);
+	}
+
+	@Override
+	public Void defaultCase(EObject object) {
+		if (object instanceof BlockMutex) {
+			doSwitch(((BlockMutex) object).getBlocks());
+		}
+		return super.defaultCase(object);
+	}
+
 	private List<Var> getVars(Boolean input, Boolean deepSearch,
 			List<Block> blocks, Block phiBlock) {
 		List<Var> vars = new ArrayList<Var>();
@@ -174,12 +183,13 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 			for (Block block : blocks) {
 				Set<Var> blkVars = new BlockVars(input, deepSearch, blocks,
 						phiBlock).doSwitch(block);
-				if (blkVars != null)
+				if (blkVars != null) {
 					for (Var var : blkVars) {
 						if (!vars.contains(var)) {
 							vars.add(var);
 						}
 					}
+				}
 			}
 		}
 		return vars;
@@ -191,12 +201,13 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 			for (Block block : blocks) {
 				Set<Var> blkVars = new BlockVars(definedVar, null)
 						.doSwitch(block);
-				if (blkVars != null)
+				if (blkVars != null) {
 					for (Var var : blkVars) {
 						if (!vars.contains(var)) {
 							vars.add(var);
 						}
 					}
+				}
 			}
 		}
 		return vars;
@@ -233,5 +244,4 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		}
 
 	}
-
 }

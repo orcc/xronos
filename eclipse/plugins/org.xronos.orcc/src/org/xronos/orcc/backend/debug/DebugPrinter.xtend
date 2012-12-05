@@ -3,6 +3,8 @@ package org.xronos.orcc.backend.debug
 import java.io.File
 import net.sf.orcc.ir.Procedure
 import net.sf.orcc.backends.c.InstancePrinter
+import org.eclipse.emf.ecore.EObject
+import org.xronos.orcc.ir.BlockMutex
 
 class DebugPrinter extends InstancePrinter {
 	
@@ -17,4 +19,12 @@ class DebugPrinter extends InstancePrinter {
 			return 1
 		}
 	}
+	
+	override defaultCase(EObject object){
+		if (object instanceof BlockMutex){
+			doSwitch((object as BlockMutex).blocks);
+		}
+		return super.defaultCase(object);
+	}
+	
 }

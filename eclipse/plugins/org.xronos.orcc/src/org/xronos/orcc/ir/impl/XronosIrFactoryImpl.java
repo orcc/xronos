@@ -2,7 +2,6 @@
  */
 package org.xronos.orcc.ir.impl;
 
-
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -10,6 +9,7 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.impl.EFactoryImpl;
 
 import org.eclipse.emf.ecore.plugin.EcorePlugin;
+
 import org.xronos.orcc.ir.*;
 
 /**
@@ -18,24 +18,24 @@ import org.xronos.orcc.ir.*;
  * <!-- end-user-doc -->
  * @generated
  */
-public class XronosIrSpecificFactoryImpl extends EFactoryImpl implements XronosIrSpecificFactory {
+public class XronosIrFactoryImpl extends EFactoryImpl implements XronosIrFactory {
 	/**
 	 * Creates the default factory implementation.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public static XronosIrSpecificFactory init() {
+	public static XronosIrFactory init() {
 		try {
-			XronosIrSpecificFactory theXronosIrSpecificFactory = (XronosIrSpecificFactory)EPackage.Registry.INSTANCE.getEFactory("http://www.xronos.org/ir"); 
-			if (theXronosIrSpecificFactory != null) {
-				return theXronosIrSpecificFactory;
+			XronosIrFactory theXronosIrFactory = (XronosIrFactory)EPackage.Registry.INSTANCE.getEFactory("http://www.xronos.org/ir"); 
+			if (theXronosIrFactory != null) {
+				return theXronosIrFactory;
 			}
 		}
 		catch (Exception exception) {
 			EcorePlugin.INSTANCE.log(exception);
 		}
-		return new XronosIrSpecificFactoryImpl();
+		return new XronosIrFactoryImpl();
 	}
 
 	/**
@@ -44,7 +44,7 @@ public class XronosIrSpecificFactoryImpl extends EFactoryImpl implements XronosI
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public XronosIrSpecificFactoryImpl() {
+	public XronosIrFactoryImpl() {
 		super();
 	}
 
@@ -56,10 +56,11 @@ public class XronosIrSpecificFactoryImpl extends EFactoryImpl implements XronosI
 	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
-			case XronosIrSpecificPackage.INST_PORT_STATUS: return createInstPortStatus();
-			case XronosIrSpecificPackage.INST_PORT_READ: return createInstPortRead();
-			case XronosIrSpecificPackage.INST_PORT_WRITE: return createInstPortWrite();
-			case XronosIrSpecificPackage.INST_PORT_PEEK: return createInstPortPeek();
+			case XronosIrPackage.INST_PORT_STATUS: return createInstPortStatus();
+			case XronosIrPackage.INST_PORT_READ: return createInstPortRead();
+			case XronosIrPackage.INST_PORT_WRITE: return createInstPortWrite();
+			case XronosIrPackage.INST_PORT_PEEK: return createInstPortPeek();
+			case XronosIrPackage.BLOCK_MUTEX: return createBlockMutex();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -110,8 +111,18 @@ public class XronosIrSpecificFactoryImpl extends EFactoryImpl implements XronosI
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public XronosIrSpecificPackage getXronosIrSpecificPackage() {
-		return (XronosIrSpecificPackage)getEPackage();
+	public BlockMutex createBlockMutex() {
+		BlockMutexImpl blockMutex = new BlockMutexImpl();
+		return blockMutex;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public XronosIrPackage getXronosIrPackage() {
+		return (XronosIrPackage)getEPackage();
 	}
 
 	/**
@@ -121,8 +132,8 @@ public class XronosIrSpecificFactoryImpl extends EFactoryImpl implements XronosI
 	 * @generated
 	 */
 	@Deprecated
-	public static XronosIrSpecificPackage getPackage() {
-		return XronosIrSpecificPackage.eINSTANCE;
+	public static XronosIrPackage getPackage() {
+		return XronosIrPackage.eINSTANCE;
 	}
 
-} //XronosIrSpecificFactoryImpl
+} //XronosIrFactoryImpl

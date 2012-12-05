@@ -28,11 +28,12 @@
  */
 package org.xronos.orcc.backend.transform;
 
-import org.xronos.orcc.ir.InstPortWrite;
-
 import net.sf.orcc.backends.transform.LiteralIntegersAdder;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstSpecific;
+
+import org.eclipse.emf.ecore.EObject;
+import org.xronos.orcc.ir.BlockMutex;
+import org.xronos.orcc.ir.InstPortWrite;
 
 /**
  * This class extends LiteralIntegersAdder with InstSpecific Instructions
@@ -43,12 +44,13 @@ import net.sf.orcc.ir.InstSpecific;
 public class XronosLiteralIntegersAdder extends LiteralIntegersAdder {
 
 	@Override
-	public Expression caseInstSpecific(InstSpecific object) {
-		if (object instanceof InstPortWrite) {
+	public Expression defaultCase(EObject object) {
+		if (object instanceof BlockMutex) {
+			doSwitch(((BlockMutex) object).getBlocks());
+		} else if (object instanceof InstPortWrite) {
 			InstPortWrite portWrite = (InstPortWrite) object;
 			portWrite.setValue(doSwitch(portWrite.getValue()));
 		}
-		return null;
+		return super.defaultCase(object);
 	}
-
 }

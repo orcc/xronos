@@ -31,10 +31,6 @@ package org.xronos.orcc.design.util;
 
 import java.util.List;
 
-import org.xronos.orcc.ir.InstPortRead;
-import org.xronos.orcc.ir.InstPortStatus;
-import org.xronos.orcc.ir.XronosIrSpecificFactory;
-
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
@@ -52,6 +48,10 @@ import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
+
+import org.xronos.orcc.ir.InstPortRead;
+import org.xronos.orcc.ir.InstPortStatus;
+import org.xronos.orcc.ir.XronosIrFactory;
 
 /**
  * This class contains several methods for manipulating the Orcc Ir EMF model
@@ -195,7 +195,7 @@ public class XronosIrUtil {
 	}
 
 	public static InstPortRead creaInstPortRead(Var target, Port port) {
-		InstPortRead instPortRead = XronosIrSpecificFactory.eINSTANCE
+		InstPortRead instPortRead = XronosIrFactory.eINSTANCE
 				.createInstPortRead();
 		Def def = IrFactory.eINSTANCE.createDef(target);
 		instPortRead.setTarget(def);
@@ -204,7 +204,7 @@ public class XronosIrUtil {
 	}
 
 	public static InstPortStatus creaInstPortStatus(Var target, Port port) {
-		InstPortStatus instPortStatus = XronosIrSpecificFactory.eINSTANCE
+		InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
 				.createInstPortStatus();
 		Def def = IrFactory.eINSTANCE.createDef(target);
 		instPortStatus.setTarget(def);
