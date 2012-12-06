@@ -22,17 +22,17 @@ class DebugPrinter extends InstancePrinter {
 		}
 	}
 	
-	override defaultCase(EObject object){
-		if (object instanceof BlockMutex){
-			caseBlockMutex(object as BlockMutex);
-		} else if (object instanceof InstPortStatus){
-			caseInstPortStatus(object as InstPortStatus);
-		}
-		return null;
+	override defaultCase(EObject object){'''
+		«IF (object instanceof BlockMutex)»
+			«caseBlockMutex(object as BlockMutex)»
+		«ELSEIF (object instanceof InstPortStatus)»
+			«caseInstPortStatus(object as InstPortStatus)»
+		«ENDIF»
+	'''
 	}
 	
 	def caseBlockMutex(BlockMutex blockMutex)'''
-		// Paralle Block
+		// Parallel Block
 		«FOR block : blockMutex.blocks»
 				«block.doSwitch»
 		«ENDFOR»
@@ -41,7 +41,7 @@ class DebugPrinter extends InstancePrinter {
 	def caseInstPortStatus(InstPortStatus portStatus) {
 	val Port port = portStatus.port as Port;
 	'''
-		«portStatus.target.variable» = portStatus(«port.name»);
+		«portStatus.target.variable.name» = portStatus(«port.name»);
 	'''
 	}
 }

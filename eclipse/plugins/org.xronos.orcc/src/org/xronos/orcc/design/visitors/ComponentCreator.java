@@ -550,6 +550,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 						call.getLineNumber());
 				taskCall.setIDSourceInfo(sinfo);
+				taskCall.setNonRemovable();
 				componentList.add(taskCall);
 				// resources.addTaskCall(call, (TaskCall) currentComponent);
 			}

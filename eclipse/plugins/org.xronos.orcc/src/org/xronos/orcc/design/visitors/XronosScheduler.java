@@ -126,6 +126,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				actionFireability.put(action, actionFire);
 				actionOutputPortRequestSize.put(action, portRequestSize);
 			}
+			spaceAvailability = null;
 			return block;
 		}
 
@@ -290,6 +291,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			}
 			actionSchedulability.put(action, actionGo);
 			actionInputPortRequestSize.put(action, portRequestSize);
+			tokenAvailability = null;
 			return block;
 		}
 
@@ -399,6 +401,8 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 	private final List<Var> xronosSchedulerLocals;
 
+	private BlockIf stateIf;
+
 	public XronosScheduler(ResourceCache resourceCache) {
 		super();
 		this.resourceCache = resourceCache;
@@ -502,7 +506,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			Expression ifStateCondition = irFactory.createExprVar(stateSource);
 
 			BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
-					lastBlockIf);
+					stateIf);
 			blocks.add(blockIf);
 		}
 		return blocks;
@@ -705,13 +709,13 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Add circularBuffer start to true, if necessary
 			createInstStoreStart(action, true, fireabilityThenBlock);
 
-			// Create the schedulability BlockIf
-
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
 					fireabilityThenBlock);
-			blockIf = XronosIrUtil.createBlockIf(schedulability, fireabilityIf);
 
+			// Create the schedulability BlockIf
+			blockIf = XronosIrUtil.createBlockIf(schedulability, fireabilityIf);
+			stateIf = blockIf;
 		} else {
 			// Get the fireability and schedulability conditions
 			Var schedulability = actionSchedulability.get(action);
@@ -750,12 +754,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			}
 			// Add circularBuffer start to true, if necessary
 			createInstStoreStart(action, true, fireabilityThenBlock);
-			// Create the fireability BlockIf
-			BlockIf fireabilityIf = null;
-			// Create the schedulability BlockIf
 
 			// Create the fireability BlockIf
-			fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
 					fireabilityThenBlock);
 
 			// Create the schedulability BlockIf
@@ -763,7 +764,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					schedulability, fireabilityIf);
 
 			lastBlockIf.getElseBlocks().add(schedulabilityIf);
-			blockIf = lastBlockIf;
+			blockIf = schedulabilityIf;
 		}
 		return blockIf;
 	}
@@ -816,11 +817,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 			// Add circularBuffer start to true, if necessary
 			createInstStoreStart(action, true, fireabilityThenBlock);
-			// Create the fireability BlockIf
-			BlockIf fireabilityIf = null;
 
 			// Create the fireability BlockIf
-			fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
 					fireabilityThenBlock);
 
 			// Create the schedulability BlockIf
