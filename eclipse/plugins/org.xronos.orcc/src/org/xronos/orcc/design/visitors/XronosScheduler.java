@@ -87,9 +87,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 		private Action action;
 
-		private BlockBasic block;
+		private final BlockBasic block;
 
-		private Map<Port, Integer> portRequestSize;
+		private final Map<Port, Integer> portRequestSize;
 
 		private Var spaceAvailability;
 
@@ -239,9 +239,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 		private Action action;
 
-		private BlockBasic block;
+		private final BlockBasic block;
 
-		private Map<Port, Integer> portRequestSize;
+		private final Map<Port, Integer> portRequestSize;
 
 		private Var tokenAvailability;
 
@@ -381,23 +381,23 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		}
 	}
 
-	private Map<Action, Var> actionFireability;
+	private final Map<Action, Var> actionFireability;
 
-	private Map<Action, Map<Port, Integer>> actionInputPortRequestSize;
+	private final Map<Action, Map<Port, Integer>> actionInputPortRequestSize;
 
-	private Map<Action, Map<Port, Integer>> actionOutputPortRequestSize;
+	private final Map<Action, Map<Port, Integer>> actionOutputPortRequestSize;
 
-	private Map<Action, Var> actionSchedulability;
+	private final Map<Action, Var> actionSchedulability;
 
 	private Map<Port, CircularBuffer> inputCircularBuffer;
 
-	private IrFactory irFactory = IrFactory.eINSTANCE;
+	private final IrFactory irFactory = IrFactory.eINSTANCE;
 
 	private Map<Port, CircularBuffer> outputCircularBuffer;
 
-	private ResourceCache resourceCache;
+	private final ResourceCache resourceCache;
 
-	private List<Var> xronosSchedulerLocals;
+	private final List<Var> xronosSchedulerLocals;
 
 	public XronosScheduler(ResourceCache resourceCache) {
 		super();
@@ -598,14 +598,18 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					lastBlockIf = createTaskCallOutFSM(procedure, action,
 							lastBlockIf);
 				}
-				BlockMutex blockMutex = XronosIrFactory.eINSTANCE.createBlockMutex();
-				blockMutex.getBlocks().addAll(createFsmBlockIf(actor, procedure));
+				BlockMutex blockMutex = XronosIrFactory.eINSTANCE
+						.createBlockMutex();
+				blockMutex.getBlocks().addAll(
+						createFsmBlockIf(actor, procedure));
 				lastBlockIf.getElseBlocks().add(blockMutex);
 				blocks.add(lastBlockIf);
 			} else {
-				BlockMutex blockMutex = XronosIrFactory.eINSTANCE.createBlockMutex();
-				blockMutex.getBlocks().addAll(createFsmBlockIf(actor, procedure));
-				
+				BlockMutex blockMutex = XronosIrFactory.eINSTANCE
+						.createBlockMutex();
+				blockMutex.getBlocks().addAll(
+						createFsmBlockIf(actor, procedure));
+
 				blocks.add(blockMutex);
 			}
 		}
@@ -680,7 +684,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			fireabilityThenBlock.add(instCall);
 
 			// Create InstStore for the currentState if a target exists
-			if ((target != null) && (source != null)) {
+			if ((target != source)) {
 				Expression exprTrue = irFactory.createExprBool(true);
 				Expression exprFalse = irFactory.createExprBool(false);
 
@@ -727,7 +731,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			fireabilityThenBlock.add(instCall);
 
 			// Create InstStore for the currentState if a target exists
-			if ((target != null) && (source != null)) {
+			if ((target != source)) {
 				Expression exprTrue = irFactory.createExprBool(true);
 				Expression exprFalse = irFactory.createExprBool(false);
 

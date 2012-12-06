@@ -1,10 +1,12 @@
 package org.xronos.orcc.backend.debug
 
 import java.io.File
-import net.sf.orcc.ir.Procedure
 import net.sf.orcc.backends.c.InstancePrinter
+import net.sf.orcc.ir.Procedure
 import org.eclipse.emf.ecore.EObject
 import org.xronos.orcc.ir.BlockMutex
+import org.xronos.orcc.ir.InstPortStatus
+import net.sf.orcc.df.Port
 
 class DebugPrinter extends InstancePrinter {
 	
@@ -22,9 +24,24 @@ class DebugPrinter extends InstancePrinter {
 	
 	override defaultCase(EObject object){
 		if (object instanceof BlockMutex){
-			doSwitch((object as BlockMutex).blocks);
+			caseBlockMutex(object as BlockMutex);
+		} else if (object instanceof InstPortStatus){
+			caseInstPortStatus(object as InstPortStatus);
 		}
-		return super.defaultCase(object);
+		return null;
 	}
 	
+	def caseBlockMutex(BlockMutex blockMutex)'''
+		// Paralle Block
+		«FOR block : blockMutex.blocks»
+				«block.doSwitch»
+		«ENDFOR»
+	'''
+	
+	def caseInstPortStatus(InstPortStatus portStatus) {
+	val Port port = portStatus.port as Port;
+	'''
+		«portStatus.target.variable» = portStatus(«port.name»);
+	'''
+	}
 }
