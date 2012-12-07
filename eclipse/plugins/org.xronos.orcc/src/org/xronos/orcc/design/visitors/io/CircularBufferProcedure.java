@@ -35,21 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.xronos.openforge.lim.Component;
-import org.xronos.openforge.lim.Design;
-import org.xronos.openforge.lim.Exit;
-import org.xronos.openforge.lim.Module;
-import org.xronos.openforge.lim.Task;
-import org.xronos.orcc.backend.transform.XronosTransform;
-import org.xronos.orcc.design.ResourceCache;
-import org.xronos.orcc.design.ResourceDependecies;
-import org.xronos.orcc.design.util.DesignUtil;
-import org.xronos.orcc.design.util.ModuleUtil;
-import org.xronos.orcc.design.util.XronosIrUtil;
-import org.xronos.orcc.design.visitors.ComponentCreator;
-import org.xronos.orcc.ir.InstPortRead;
-import org.xronos.orcc.ir.InstPortStatus;
-
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
@@ -69,6 +54,22 @@ import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 
+import org.xronos.openforge.lim.Component;
+import org.xronos.openforge.lim.Design;
+import org.xronos.openforge.lim.Exit;
+import org.xronos.openforge.lim.Module;
+import org.xronos.openforge.lim.Task;
+import org.xronos.orcc.backend.debug.DebugPrinter;
+import org.xronos.orcc.backend.transform.XronosTransform;
+import org.xronos.orcc.design.ResourceCache;
+import org.xronos.orcc.design.ResourceDependecies;
+import org.xronos.orcc.design.util.DesignUtil;
+import org.xronos.orcc.design.util.ModuleUtil;
+import org.xronos.orcc.design.util.XronosIrUtil;
+import org.xronos.orcc.design.visitors.ComponentCreator;
+import org.xronos.orcc.ir.InstPortRead;
+import org.xronos.orcc.ir.InstPortStatus;
+
 /**
  * 
  * @author Endri Bezati
@@ -86,9 +87,6 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 
 	private IrFactory irFactory = IrFactory.eINSTANCE;
 
-	/** Component Creator (Instruction Visitor) **/
-	private final ComponentCreator componentCreator;
-
 	public CircularBufferProcedure(Design design, ResourceCache resourceCache,
 			ResourceDependecies resourceDependecies) {
 		super();
@@ -96,12 +94,12 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		this.resourceCache = resourceCache;
 		this.resourceDependecies = resourceDependecies;
 		circularBufferPortMap = new HashMap<Port, CircularBuffer>();
-		componentCreator = new ComponentCreator(resourceCache,
-				resourceDependecies);
+
 	}
 
 	@Override
 	public Void caseActor(Actor actor) {
+		this.actor = actor;
 		List<Procedure> procedures = new ArrayList<Procedure>();
 		// Get Input Ports
 		for (Port port : actor.getInputs()) {
@@ -125,6 +123,8 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		// Create a task for each Procedure
 		for (Procedure procedure : procedures) {
 			List<Component> taskComponents = new ArrayList<Component>();
+			ComponentCreator componentCreator = new ComponentCreator(
+					resourceCache, resourceDependecies);
 			taskComponents = componentCreator.doSwitch(procedure);
 
 			Module taskModule = (Module) ModuleUtil.createModule(
@@ -265,9 +265,18 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		read.getBlocks().add(returnBlock);
 		Type returnType = IrFactory.eINSTANCE.createTypeVoid();
 		read.setReturnType(returnType);
+
+		// Debug
+		DebugPrinter debugPrinter = new DebugPrinter();
+		debugPrinter.printProcedure("/tmp", read,
+				actor.getName() + "_" + read.getName());
 		// Transform procedure
 		XronosTransform transform = new XronosTransform(read);
 		Procedure procedure = transform.transformProcedure(resourceCache);
+
+		debugPrinter = new DebugPrinter();
+		debugPrinter.printProcedure("/tmp", procedure, actor.getName() + "_"
+				+ procedure.getName() + "_tr");
 
 		return procedure;
 	}

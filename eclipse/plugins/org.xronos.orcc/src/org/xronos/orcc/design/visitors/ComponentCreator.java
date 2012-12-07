@@ -662,7 +662,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portRead.getPort();
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 
-		Component pinRead = ioHandler.getReadAccess(false);
+		Component pinRead = ioHandler.getReadAccess(true);
 		pinRead.setNonRemovable();
 
 		Var pinReadVar = portRead.getTarget().getVariable();
@@ -688,7 +688,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseInstPortWrite(InstPortWrite portWrite) {
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portWrite.getPort();
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
-		Component pinWrite = ioHandler.getWriteAccess(false);
+		Component pinWrite = ioHandler.getWriteAccess(true);
 		pinWrite.setNonRemovable();
 
 		ExprVar value = (ExprVar) portWrite.getValue();

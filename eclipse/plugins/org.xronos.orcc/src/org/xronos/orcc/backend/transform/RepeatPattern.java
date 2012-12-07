@@ -32,10 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.xronos.orcc.design.ResourceCache;
-import org.xronos.orcc.design.util.XronosMathUtil;
-import org.xronos.orcc.design.visitors.io.CircularBuffer;
-
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
@@ -55,6 +51,10 @@ import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
+
+import org.xronos.orcc.design.ResourceCache;
+import org.xronos.orcc.design.util.XronosMathUtil;
+import org.xronos.orcc.design.visitors.io.CircularBuffer;
 
 /**
  * 
@@ -95,7 +95,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 						portMaxRepeatSize.put(port, numTokens);
 					}
 				}
-				return null;
 			}
 
 			for (Port port : action.getOutputPattern().getPorts()) {

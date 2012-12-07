@@ -139,6 +139,7 @@ public class Xronos extends AbstractBackend {
 		xronosFlags.add("-simple_arbitration");
 		xronosFlags.add("-noedk");
 		xronosFlags.add("-loopbal");
+		// xronosFlags.add("-unroll");
 		xronosFlags.add("-multdecomplimit");
 		xronosFlags.add("2");
 		xronosFlags.add("-comb_lut_mem_read");
