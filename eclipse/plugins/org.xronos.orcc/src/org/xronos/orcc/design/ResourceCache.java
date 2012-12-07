@@ -34,18 +34,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
-import org.xronos.openforge.lim.Task;
-import org.xronos.openforge.lim.TaskCall;
-import org.xronos.openforge.lim.memory.Location;
-import org.xronos.orcc.design.visitors.io.CircularBuffer;
-
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.Var;
+
+import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
+import org.xronos.openforge.lim.Task;
+import org.xronos.openforge.lim.TaskCall;
+import org.xronos.openforge.lim.memory.Location;
+import org.xronos.orcc.design.visitors.io.CircularBuffer;
 
 /**
  * ResourceCache maintains mappings from the Orcc objects needed to all the
@@ -183,6 +183,14 @@ public class ResourceCache {
 			copyMap.put(var, listVars);
 		}
 		this.joinVarMap.put(block, copyMap);
+	}
+
+	public void addMutex(Block block, Map<Block, List<Var>> stmInputs,
+			Map<Block, List<Var>> stmOutputs) {
+		this.stmInputs.put(block, new ArrayList<Var>());
+		this.stmOutputs.put(block, new ArrayList<Var>());
+		copyVars(block, this.stmInputs, stmInputs);
+		copyVars(block, this.stmOutputs, stmOutputs);
 	}
 
 	public void addTaskCall(InstCall instCall, TaskCall taskCall) {

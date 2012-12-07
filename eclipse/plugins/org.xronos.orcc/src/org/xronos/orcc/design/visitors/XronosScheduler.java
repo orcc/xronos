@@ -401,7 +401,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 	private final List<Var> xronosSchedulerLocals;
 
-	private BlockIf stateIf;
+	private BlockIf firstBlockIf;
 
 	public XronosScheduler(ResourceCache resourceCache) {
 		super();
@@ -490,6 +490,14 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		for (State state : actor.getFsm().getStates()) {
 
 			BlockIf lastBlockIf = null;
+			BlockIf oldFirstBlock = null;
+			if (!actor.getActionsOutsideFsm().isEmpty()) {
+				for (Action action : actor.getActionsOutsideFsm()) {
+					lastBlockIf = createTaskCallOutFSM(procedure, action,
+							lastBlockIf);
+				}
+				oldFirstBlock = firstBlockIf;
+			}
 			for (Edge edge : state.getOutgoing()) {
 				Transition transition = ((Transition) edge);
 				State stateTarget = transition.getTarget();
@@ -504,9 +512,11 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			Var stateSource = procedure.getLocal("s_" + state.getName());
 
 			Expression ifStateCondition = irFactory.createExprVar(stateSource);
-
+			if (oldFirstBlock == null) {
+				oldFirstBlock = firstBlockIf;
+			}
 			BlockIf blockIf = XronosIrUtil.createBlockIf(ifStateCondition,
-					stateIf);
+					oldFirstBlock);
 			blocks.add(blockIf);
 		}
 		return blocks;
@@ -594,28 +604,13 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				lastBlockIf = createTaskCallOutFSM(procedure, action,
 						lastBlockIf);
 			}
-			blocks.add(lastBlockIf);
+			blocks.add(firstBlockIf);
 		} else {
-			BlockIf lastBlockIf = null;
-			if (!actor.getActionsOutsideFsm().isEmpty()) {
-				for (Action action : actor.getActionsOutsideFsm()) {
-					lastBlockIf = createTaskCallOutFSM(procedure, action,
-							lastBlockIf);
-				}
-				BlockMutex blockMutex = XronosIrFactory.eINSTANCE
-						.createBlockMutex();
-				blockMutex.getBlocks().addAll(
-						createFsmBlockIf(actor, procedure));
-				lastBlockIf.getElseBlocks().add(blockMutex);
-				blocks.add(lastBlockIf);
-			} else {
-				BlockMutex blockMutex = XronosIrFactory.eINSTANCE
-						.createBlockMutex();
-				blockMutex.getBlocks().addAll(
-						createFsmBlockIf(actor, procedure));
+			BlockMutex blockMutex = XronosIrFactory.eINSTANCE
+					.createBlockMutex();
+			blockMutex.getBlocks().addAll(createFsmBlockIf(actor, procedure));
 
-				blocks.add(blockMutex);
-			}
+			blocks.add(blockMutex);
 		}
 		return blocks;
 	}
@@ -715,7 +710,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 			// Create the schedulability BlockIf
 			blockIf = XronosIrUtil.createBlockIf(schedulability, fireabilityIf);
-			stateIf = blockIf;
+			firstBlockIf = blockIf;
 		} else {
 			// Get the fireability and schedulability conditions
 			Var schedulability = actionSchedulability.get(action);
@@ -796,7 +791,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
 					fireabilityThenBlock);
-			blockIf = XronosIrUtil.createBlockIf(schedulability, fireabilityIf);
+			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
+					schedulability, fireabilityIf);
+			firstBlockIf = schedulabilityIf;
+			blockIf = schedulabilityIf;
 		} else {
 			// Get the fireability and schedulability conditions
 			Var schedulability = actionSchedulability.get(action);
@@ -827,7 +825,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					schedulability, fireabilityIf);
 
 			lastBlockIf.getElseBlocks().add(schedulabilityIf);
-			blockIf = lastBlockIf;
+			blockIf = schedulabilityIf;
 		}
 		return blockIf;
 	}

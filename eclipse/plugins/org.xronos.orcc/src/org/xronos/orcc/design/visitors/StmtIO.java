@@ -256,6 +256,21 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
+	public Void caseBlockMutex(BlockMutex blockMutex) {
+		List<Var> blockMutexInputs = new ArrayList<Var>();
+		List<Var> blockMutexOutputs = new ArrayList<Var>();
+
+		for (Block block : blockMutex.getBlocks()) {
+			doSwitch(block);
+			blockMutexInputs.addAll(stmInputs.get(block));
+			blockMutexOutputs.addAll(stmOutputs.get(block));
+		}
+		stmInputs.put(blockMutex, blockMutexInputs);
+		stmOutputs.put(blockMutex, blockMutexOutputs);
+		cache.addMutex(blockMutex, stmInputs, stmOutputs);
+		return null;
+	}
+
 	@Override
 	public Void caseInstPhi(InstPhi phi) {
 		List<Var> phiValues = new ArrayList<Var>();
@@ -312,7 +327,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 	@Override
 	public Void defaultCase(EObject object) {
 		if (object instanceof BlockMutex) {
-			doSwitch(((BlockMutex) object).getBlocks());
+			caseBlockMutex((BlockMutex) object);
 		}
 		return super.defaultCase(object);
 	}
@@ -428,7 +443,8 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			List<Block> definedThenBlocks = blockIf.getThenBlocks();
 			List<Var> definedThenVar = getVars(true, definedThenBlocks);
 			for (Block childBlock : blockIf.getThenBlocks()) {
-				if (childBlock.isBlockIf() || childBlock.isBlockWhile()) {
+				if (childBlock.isBlockIf() || childBlock.isBlockWhile()
+						|| isBlockMutex(childBlock)) {
 					List<Var> childInputs = stmInputs.get(childBlock);
 					List<Var> childOutputs = stmOutputs.get(childBlock);
 					for (Var var : childInputs) {
@@ -463,7 +479,8 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			List<Block> definedElseBlocks = blockIf.getElseBlocks();
 			List<Var> definedElseVar = getVars(true, definedElseBlocks);
 			for (Block childBlock : blockIf.getElseBlocks()) {
-				if (childBlock.isBlockIf() || childBlock.isBlockWhile()) {
+				if (childBlock.isBlockIf() || childBlock.isBlockWhile()
+						|| isBlockMutex(childBlock)) {
 					List<Var> childInputs = stmInputs.get(childBlock);
 					List<Var> childOutputs = stmOutputs.get(childBlock);
 					for (Var var : childInputs) {
@@ -498,7 +515,8 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			List<Block> definedBlocks = blockWhile.getBlocks();
 			List<Var> definedVar = getVars(true, definedBlocks);
 			for (Block childBlock : blockWhile.getBlocks()) {
-				if (childBlock.isBlockIf() || childBlock.isBlockWhile()) {
+				if (childBlock.isBlockIf() || childBlock.isBlockWhile()
+						|| isBlockMutex(childBlock)) {
 					// Resolve the child Inputs
 					List<Var> childInputs = stmInputs.get(childBlock);
 					for (Var var : childInputs) {
@@ -519,6 +537,10 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			}
 		}
 
+	}
+
+	private boolean isBlockMutex(Block block) {
+		return (block instanceof BlockMutex);
 	}
 
 	private void stmAddVars(Block block, Map<Block, List<Var>> target,

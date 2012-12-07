@@ -32,7 +32,6 @@ package org.xronos.orcc.design.visitors;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -136,12 +135,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	/** Action component Counter **/
 	protected Integer componentCounter;
 
-	private final Map<Component, List<Var>> componentInputVar;
-
 	/** Current List Component **/
 	private List<Component> componentList;
-
-	private final Map<Component, List<Var>> componentOutputVar;
 
 	/** Current Component **/
 	private Component currentComponent;
@@ -178,8 +173,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		this.doneBusDependency = doneBusDependency;
 		this.resources = resources;
 		componentList = new ArrayList<Component>();
-		componentInputVar = new HashMap<Component, List<Var>>();
-		componentOutputVar = new HashMap<Component, List<Var>>();
 	}
 
 	public ComponentCreator(ResourceCache resources,
@@ -191,8 +184,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		this.doneBusDependency = resourceDependecies.getDoneBusDependency();
 		this.resources = resources;
 		componentList = new ArrayList<Component>();
-		componentInputVar = new HashMap<Component, List<Var>>();
-		componentOutputVar = new HashMap<Component, List<Var>>();
 	}
 
 	@Override
@@ -211,9 +202,11 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		// Visit the then block
 		componentList = new ArrayList<Component>();
 		doSwitch(blockIf.getThenBlocks());
+
 		// Get the then Input Vars
 		List<Var> thenInputs = resources.getBranchThenInput(blockIf);
 		List<Var> thenOutputs = resources.getBranchThenOutput(blockIf);
+
 		Block thenBlock = (Block) ModuleUtil.createModule(componentList,
 				thenInputs, thenOutputs, "thenBlock", false, Exit.DONE, 0,
 				portDependency, busDependency, portGroupDependency,
@@ -228,6 +221,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 			List<Var> elseInputs = resources.getBranchElseInput(blockIf);
 			List<Var> elseOutputs = resources.getBranchElseOutput(blockIf);
+
 			elseBlock = (Block) ModuleUtil.createModule(componentList,
 					elseInputs, elseOutputs, "elseBlock", false, Exit.DONE, 1,
 					portDependency, busDependency, portGroupDependency,
@@ -244,8 +238,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		}
 		// Get All input Vars
 		List<Var> ifInputVars = resources.getBlockInput(blockIf);
-
 		List<Var> ifOutputVars = resources.getBlockOutput(blockIf);
+
 		// Get Phi target Vars, aka branchIf Outputs
 		Map<Var, List<Var>> phiOuts = resources.getBlockPhi(blockIf);
 		Branch branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
@@ -263,9 +257,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				blockIf.getLineNumber());
 
 		branch.setIDSourceInfo(sinfo);
-
-		componentInputVar.put(branch, ifInputVars);
-		componentOutputVar.put(branch, ifOutputVars);
 
 		currentComponent = branch;
 		componentList = new ArrayList<Component>();
@@ -289,19 +280,9 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 		doSwitch(blockMutex.getBlocks());
 
-		List<Var> inputs = new ArrayList<Var>();
-		for (Component component : componentList) {
-			if (componentInputVar.containsKey(component)) {
-				inputs.addAll(componentInputVar.get(component));
-			}
-		}
+		List<Var> inputs = resources.getBlockInput(blockMutex);
 
-		List<Var> outputs = new ArrayList<Var>();
-		for (Component component : componentList) {
-			if (componentOutputVar.containsKey(component)) {
-				outputs.addAll(componentOutputVar.get(component));
-			}
-		}
+		List<Var> outputs = resources.getBlockOutput(blockMutex);
 
 		Module mutexModule = (Module) ModuleUtil.createModule(componentList,
 				inputs, outputs, "mutex_BranchBlock", true, Exit.DONE, 0,
