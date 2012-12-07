@@ -312,11 +312,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 					// Create token availability Expression for this port
 					ExprVar evTmpCount = irFactory.createExprVar(cbTmpCount);
-					ExprInt eiSize = irFactory.createExprInt(circularBuffer
-							.getSize());
+					ExprInt eiNumTokens = irFactory.createExprInt(numTokens);
 					Expression exprCountGeNumTokens = irFactory
-							.createExprBinary(evTmpCount, OpBinary.GE, eiSize,
-									typeBool);
+							.createExprBinary(evTmpCount, OpBinary.GE,
+									eiNumTokens, typeBool);
 
 					Var portTokenAvailability = irFactory.createVar(typeBool,
 							"portTokenAvailability_" + action.getName() + "_"
