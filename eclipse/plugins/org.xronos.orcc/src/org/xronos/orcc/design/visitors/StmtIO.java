@@ -37,11 +37,13 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.orcc.ir.Block;
+import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstPhi;
+import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 
@@ -293,7 +295,9 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			}
 
 			if (((BlockIf) currentBlock).getElseBlocks().isEmpty()) {
-				stmInputs.get(currentBlock).add(valueOne);
+				if (!usedOnlyInPhi(valueOne)) {
+					stmInputs.get(currentBlock).add(valueOne);
+				}
 			}
 
 		} else if (currentBlock instanceof BlockWhile) {
@@ -551,4 +555,37 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			}
 		}
 	}
+
+	private Boolean usedOnlyInPhi(Var var) {
+		Map<Use, Boolean> useMap = new HashMap<Use, Boolean>();
+		for (Use use : var.getUses()) {
+			EObject container = use.eContainer();
+			// Get the BlockBasic container
+			while (!(container instanceof Block)) {
+				container = container.eContainer();
+				if (container instanceof InstPhi) {
+					useMap.put(use, true);
+					break;
+				}
+			}
+			if (container instanceof BlockBasic) {
+				useMap.put(use, false);
+			}
+
+			if (container instanceof BlockIf) {
+				useMap.put(use, false);
+			}
+			if (container instanceof BlockWhile) {
+				useMap.put(use, false);
+			}
+		}
+
+		if (!useMap.containsValue(false)) {
+			return true;
+		} else {
+			return false;
+		}
+
+	}
+
 }

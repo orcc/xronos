@@ -30,14 +30,14 @@ package org.xronos.orcc.design.visitors.io;
 
 import java.util.List;
 
-import org.xronos.orcc.design.util.XronosMathUtil;
-
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
+
+import org.xronos.orcc.design.util.XronosMathUtil;
 
 /**
  * This class contains the necessary information of a Circular Buffer
@@ -101,13 +101,15 @@ public class CircularBuffer {
 		locals.add(tmpStart);
 	}
 
-	public void addToStateVars(Actor actor) {
+	public void addToStateVars(Actor actor, boolean addRequestSize) {
 		List<Var> stateVars = actor.getStateVars();
 		stateVars.add(buffer);
 		stateVars.add(head);
 		stateVars.add(count);
 		stateVars.add(start);
-		stateVars.add(requestSize);
+		if (addRequestSize) {
+			stateVars.add(requestSize);
+		}
 	}
 
 	private void createVariables() {

@@ -305,9 +305,39 @@ public class RepeatPattern extends DfVisitor<Void> {
 		/** OutputPattern **/
 		for (Port port : action.getOutputPattern().getPorts()) {
 			if (circularBufferOutputs.get(port) != null) {
-				// int numWrites = action.getOutputPattern().getNumTokens(port);
+				// Create Load instruction head
+				// Load(tmpHead, head)
+				CircularBuffer circularBuffer = circularBufferOutputs.get(port);
+				circularBuffer.addToLocals(action.getBody());
+
+				int numWrites = action.getOutputPattern().getNumTokens(port);
 				Var pinWriteVar = action.getOutputPattern().getPortToVarMap()
 						.get(port);
+				ExprInt exprIntNumWrites = IrFactory.eINSTANCE
+						.createExprInt(numWrites);
+
+				// Create Store instruction for count
+				// Var count = circularBuffer.getCount();
+				// InstStore instStoreCount =
+				// IrFactory.eINSTANCE.createInstStore(
+				// count, 0);
+				//
+				// Var cbStart = circularBuffer.getStart();
+				// ExprBool ebValue = IrFactory.eINSTANCE.createExprBool(true);
+				// InstStore storeStart = IrFactory.eINSTANCE.createInstStore(
+				// cbStart, ebValue);
+
+				Var cbRequestSize = circularBuffer.getRequestSize();
+				InstStore storeRequestSize = IrFactory.eINSTANCE
+						.createInstStore(cbRequestSize, exprIntNumWrites);
+
+				int instIndex = lastBodyBlock.getInstructions().size() - 1;
+				// lastBodyBlock.add(instIndex, instStoreCount);
+				// instIndex = lastBodyBlock.getInstructions().size() - 1;
+				// lastBodyBlock.add(instIndex, storeStart);
+				// instIndex = lastBodyBlock.getInstructions().size() - 1;
+				lastBodyBlock.add(instIndex, storeRequestSize);
+
 				oldOutputMap.put(pinWriteVar, port);
 			}
 		}
@@ -337,7 +367,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 							"circularBufferIn_" + port.getName(), true, 0);
 					CircularBuffer circularBuffer = new CircularBuffer(port,
 							buffer, size);
-					circularBuffer.addToStateVars(actor);
+					circularBuffer.addToStateVars(actor, false);
 					circularBufferInputs.put(port, circularBuffer);
 				} else {
 					circularBufferInputs.put(port, null);
@@ -357,7 +387,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 							"circularBufferOut_" + port.getName(), true, 0);
 					CircularBuffer circularBuffer = new CircularBuffer(port,
 							buffer, size);
-					circularBuffer.addToStateVars(actor);
+					circularBuffer.addToStateVars(actor, true);
 					circularBufferOutputs.put(port, circularBuffer);
 				} else {
 					circularBufferOutputs.put(port, null);

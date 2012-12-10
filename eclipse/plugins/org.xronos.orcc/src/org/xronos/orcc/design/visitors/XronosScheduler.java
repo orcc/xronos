@@ -137,7 +137,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			for (Port port : pattern.getPorts()) {
 				if (outputCircularBuffer.get(port) != null) {
 					// Multiple token
-					CircularBuffer circularBuffer = inputCircularBuffer
+					CircularBuffer circularBuffer = outputCircularBuffer
 							.get(port);
 					// TODO: Implement a real circular Buffer on the Output
 					Integer numTokens = pattern.getNumTokensMap().get(port);
@@ -152,26 +152,27 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 							.createExprBinary(evTmpStart, OpBinary.EQ,
 									exprFalse, typeBool);
 
-					Var cbTmpCount = circularBuffer.getTmpCount();
+					// Var cbTmpCount = circularBuffer.getTmpCount();
 
 					// Create Count equals ? 0 expression
-					ExprVar evTmpCount = irFactory.createExprVar(cbTmpCount);
-					ExprInt eiZero = irFactory.createExprInt(0);
+					// ExprVar evTmpCount = irFactory.createExprVar(cbTmpCount);
+					// ExprInt eiZero = irFactory.createExprInt(0);
 
-					Expression exprCountEmpty = irFactory.createExprBinary(
-							evTmpCount, OpBinary.EQ, eiZero, typeBool);
+					// Expression exprCountEmpty = irFactory.createExprBinary(
+					// evTmpCount, OpBinary.EQ, eiZero, typeBool);
 
 					Var portSpaceAvailability = irFactory.createVar(typeBool,
 							"portTokenAvailability_" + action.getName() + "_"
 									+ port.getName(), true, 0);
 					xronosSchedulerLocals.add(portSpaceAvailability);
 
-					Expression exprPortSpaceAvailability = irFactory
-							.createExprBinary(exprCountEmpty,
-									OpBinary.LOGIC_AND, exprStartEqualsFalse,
-									typeBool);
+					// Expression exprPortSpaceAvailability = irFactory
+					// .createExprBinary(exprCountEmpty,
+					// OpBinary.LOGIC_AND, exprStartEqualsFalse,
+					// typeBool);
+
 					InstAssign instAssign = irFactory.createInstAssign(
-							portSpaceAvailability, exprPortSpaceAvailability);
+							portSpaceAvailability, exprStartEqualsFalse);
 					block.add(instAssign);
 
 					// Update the final Expression
@@ -521,7 +522,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		return blocks;
 	}
 
-	private void createInstStoreStart(Action action, Boolean value,
+	private void createCircularBufferStoreStart(Action action, Boolean value,
 			BlockBasic block) {
 		for (Port port : action.getInputPattern().getPorts()) {
 			if (inputCircularBuffer.get(port) != null) {
@@ -532,8 +533,28 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 						ebValue);
 				block.add(storeStart);
 			}
-
 		}
+
+		if (value) {
+			for (Port port : action.getOutputPattern().getPorts()) {
+				if (outputCircularBuffer.get(port) != null) {
+					CircularBuffer circularBuffer = outputCircularBuffer
+							.get(port);
+					Var cbStart = circularBuffer.getStart();
+					ExprBool ebValue = irFactory.createExprBool(value);
+					InstStore storeStart = irFactory.createInstStore(cbStart,
+							ebValue);
+
+					// Var cbCount = circularBuffer.getCount();
+					// InstStore storeCount = irFactory
+					// .createInstStore(cbCount, 0);
+					block.add(storeStart);
+					// block.add(storeCount);
+				}
+
+			}
+		}
+
 	}
 
 	private List<Block> createSchedulerBody(Actor actor, Procedure procedure) {
@@ -653,7 +674,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				// Store(cbStart, true);
 				Var cbStart = circularBuffer.getStart();
 				InstStore instStoreStart = XronosIrUtil.createInstStore(
-						cbStart, true);
+						cbStart, false);
 				block.add(instStoreStart);
 			}
 		}
@@ -674,7 +695,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
 
 			// Add circularBuffer start to false, if necessary
-			createInstStoreStart(action, false, fireabilityThenBlock);
+			createCircularBufferStoreStart(action, false, fireabilityThenBlock);
 
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
@@ -701,7 +722,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			}
 
 			// Add circularBuffer start to true, if necessary
-			createInstStoreStart(action, true, fireabilityThenBlock);
+			createCircularBufferStoreStart(action, true, fireabilityThenBlock);
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
@@ -721,7 +742,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
 
 			// Add circularBuffer start to false, if necessary
-			createInstStoreStart(action, false, fireabilityThenBlock);
+			createCircularBufferStoreStart(action, false, fireabilityThenBlock);
 
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
@@ -747,7 +768,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				fireabilityThenBlock.add(targetAtFalse);
 			}
 			// Add circularBuffer start to true, if necessary
-			createInstStoreStart(action, true, fireabilityThenBlock);
+			createCircularBufferStoreStart(action, true, fireabilityThenBlock);
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
@@ -777,7 +798,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
 
 			// Add circularBuffer start to false, if necessary
-			createInstStoreStart(action, false, fireabilityThenBlock);
+			createCircularBufferStoreStart(action, false, fireabilityThenBlock);
 
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
@@ -785,7 +806,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			fireabilityThenBlock.add(instCall);
 
 			// Add circularBuffer start to true, if necessary
-			createInstStoreStart(action, true, fireabilityThenBlock);
+			createCircularBufferStoreStart(action, true, fireabilityThenBlock);
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
@@ -805,7 +826,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
 
 			// Add circularBuffer start to false, if necessary
-			createInstStoreStart(action, false, fireabilityThenBlock);
+			createCircularBufferStoreStart(action, false, fireabilityThenBlock);
 
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
@@ -813,7 +834,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			fireabilityThenBlock.add(instCall);
 
 			// Add circularBuffer start to true, if necessary
-			createInstStoreStart(action, true, fireabilityThenBlock);
+			createCircularBufferStoreStart(action, true, fireabilityThenBlock);
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,

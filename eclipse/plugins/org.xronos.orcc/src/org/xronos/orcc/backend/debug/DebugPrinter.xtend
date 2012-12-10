@@ -2,11 +2,15 @@ package org.xronos.orcc.backend.debug
 
 import java.io.File
 import net.sf.orcc.backends.c.InstancePrinter
+import net.sf.orcc.df.Port
+import net.sf.orcc.ir.BlockWhile
 import net.sf.orcc.ir.Procedure
 import org.eclipse.emf.ecore.EObject
 import org.xronos.orcc.ir.BlockMutex
+import org.xronos.orcc.ir.InstPortRead
 import org.xronos.orcc.ir.InstPortStatus
-import net.sf.orcc.df.Port
+import org.xronos.orcc.ir.InstPortWrite
+import net.sf.orcc.ir.ExprVar
 
 class DebugPrinter extends InstancePrinter {
 	
@@ -25,8 +29,12 @@ class DebugPrinter extends InstancePrinter {
 	override defaultCase(EObject object){'''
 		«IF (object instanceof BlockMutex)»
 			«caseBlockMutex(object as BlockMutex)»
+		«ELSEIF (object instanceof InstPortRead)»
+			«caseInstPortRead(object as InstPortRead)»
 		«ELSEIF (object instanceof InstPortStatus)»
 			«caseInstPortStatus(object as InstPortStatus)»
+			«ELSEIF (object instanceof InstPortWrite)»
+			«caseInstPortWrite(object as InstPortWrite)»
 		«ENDIF»
 	'''
 	}
@@ -44,4 +52,27 @@ class DebugPrinter extends InstancePrinter {
 		«portStatus.target.variable.name» = portStatus(«port.name»);
 	'''
 	}
+	
+	def caseInstPortRead(InstPortRead portRead) {
+	val Port port = portRead.port as Port;
+	'''
+		«portRead.target.variable.name» = portRead(«port.name»);
+	'''
+	}
+	
+	def caseInstPortWrite(InstPortWrite portWrite) {
+	val Port port = portWrite.port as Port;
+	'''
+		portWrite(«port.name», «(portWrite.value as ExprVar).use.variable.indexedName»);
+	'''
+	}
+	
+	
+	override caseBlockWhile(BlockWhile blockWhile)'''
+	«IF (blockWhile.joinBlock != null)»
+		«blockWhile.joinBlock.doSwitch»
+	«ENDIF»
+	«super.caseBlockWhile(blockWhile)»
+	'''
+	
 }

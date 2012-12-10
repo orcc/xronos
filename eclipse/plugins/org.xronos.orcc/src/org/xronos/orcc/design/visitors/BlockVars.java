@@ -56,6 +56,7 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 
 import org.eclipse.emf.ecore.EObject;
 import org.xronos.orcc.ir.InstPortStatus;
+import org.xronos.orcc.ir.InstPortWrite;
 
 /**
  * 
@@ -300,6 +301,18 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 		return null;
 	}
 
+	public Set<Var> caseInstPortWrite(InstPortWrite portWrite) {
+		Var source = ((ExprVar) portWrite.getValue()).getUse().getVariable();
+		if (!getDefinedVar) {
+			if (inputVars) {
+				if (definedInOtherBlock(source)) {
+					blockVars.add(source);
+				}
+			}
+		}
+		return null;
+	}
+
 	@Override
 	public Set<Var> caseInstSpecific(InstSpecific object) {
 		if (object instanceof InstCast) {
@@ -339,6 +352,8 @@ public class BlockVars extends AbstractIrVisitor<Set<Var>> {
 	public Set<Var> defaultCase(EObject object) {
 		if (object instanceof InstPortStatus) {
 			return caseInstPortStatus((InstPortStatus) object);
+		} else if (object instanceof InstPortWrite) {
+			return caseInstPortWrite((InstPortWrite) object);
 		}
 		return null;
 	}

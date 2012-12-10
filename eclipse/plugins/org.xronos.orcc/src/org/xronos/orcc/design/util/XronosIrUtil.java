@@ -51,6 +51,7 @@ import net.sf.orcc.ir.Var;
 
 import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.ir.InstPortStatus;
+import org.xronos.orcc.ir.InstPortWrite;
 import org.xronos.orcc.ir.XronosIrFactory;
 
 /**
@@ -128,18 +129,6 @@ public class XronosIrUtil {
 		return blockIf;
 	}
 
-	public static BlockIf createBlockIf(Expression condition,
-			List<Instruction> thenInstructions) {
-		BlockIf blockIf = createBlockIf(condition);
-
-		BlockBasic thenBlock = IrFactory.eINSTANCE.createBlockBasic();
-		for (Instruction instruction : thenInstructions) {
-			thenBlock.add(instruction);
-		}
-		blockIf.getThenBlocks().add(thenBlock);
-		return blockIf;
-	}
-
 	public static BlockIf createBlockIf(Var condition,
 			List<Instruction> thenInstructions,
 			List<Instruction> elseInstructions) {
@@ -154,15 +143,14 @@ public class XronosIrUtil {
 	}
 
 	public static BlockIf createBlockIf(Expression condition,
-			List<Instruction> thenInstructions,
-			List<Instruction> elseInstructions) {
-		BlockIf blockIf = createBlockIf(condition, thenInstructions);
+			List<Block> thenBlocks) {
+		BlockIf blockIf = createBlockIf(condition);
 
-		BlockBasic elseBlock = IrFactory.eINSTANCE.createBlockBasic();
-		for (Instruction instruction : elseInstructions) {
-			elseBlock.add(instruction);
-		}
-		blockIf.getElseBlocks().add(elseBlock);
+		blockIf.getThenBlocks().addAll(thenBlocks);
+		// Put an empty join Block
+		BlockBasic emptyBlock = IrFactory.eINSTANCE.createBlockBasic();
+		blockIf.setJoinBlock(emptyBlock);
+
 		return blockIf;
 	}
 
@@ -194,7 +182,7 @@ public class XronosIrUtil {
 		return instStore;
 	}
 
-	public static InstPortRead creaInstPortRead(Var target, Port port) {
+	public static InstPortRead createInstPortRead(Var target, Port port) {
 		InstPortRead instPortRead = XronosIrFactory.eINSTANCE
 				.createInstPortRead();
 		Def def = IrFactory.eINSTANCE.createDef(target);
@@ -203,7 +191,16 @@ public class XronosIrUtil {
 		return instPortRead;
 	}
 
-	public static InstPortStatus creaInstPortStatus(Var target, Port port) {
+	public static InstPortWrite createInstPortWrite(Port port, Var source) {
+		InstPortWrite instPortWrite = XronosIrFactory.eINSTANCE
+				.createInstPortWrite();
+		ExprVar exprVar = IrFactory.eINSTANCE.createExprVar(source);
+		instPortWrite.setValue(exprVar);
+		instPortWrite.setPort(port);
+		return instPortWrite;
+	}
+
+	public static InstPortStatus createInstPortStatus(Var target, Port port) {
 		InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
 				.createInstPortStatus();
 		Def def = IrFactory.eINSTANCE.createDef(target);
@@ -227,6 +224,15 @@ public class XronosIrUtil {
 
 		return IrFactory.eINSTANCE
 				.createExprBinary(e1, OpBinary.PLUS, e2, type);
+	}
+
+	public static ExprBinary createExprBinaryMinus(Var var1, Integer value,
+			Type type) {
+		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var1);
+		ExprInt e2 = IrFactory.eINSTANCE.createExprInt(value);
+
+		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.MINUS, e2,
+				type);
 	}
 
 	public static ExprBinary createExprBinaryBitAnd(Expression e1,
@@ -255,6 +261,14 @@ public class XronosIrUtil {
 		ExprInt e2 = IrFactory.eINSTANCE.createExprInt(value);
 
 		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.EQ, e2,
+				IrFactory.eINSTANCE.createTypeBool());
+	}
+
+	public static ExprBinary createExprBinaryNotEqual(Var var, Integer value) {
+		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var);
+		ExprInt e2 = IrFactory.eINSTANCE.createExprInt(value);
+
+		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.NE, e2,
 				IrFactory.eINSTANCE.createTypeBool());
 	}
 
