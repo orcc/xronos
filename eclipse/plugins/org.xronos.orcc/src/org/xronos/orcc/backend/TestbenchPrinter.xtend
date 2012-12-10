@@ -537,7 +537,7 @@ class TestbenchPrinter extends IrSwitch {
 									if (input_bit = 1) then
 										«port.name»_data <= '1';
 									else
-										«port.name»_data <= '1';
+										«port.name»_data <= '0';
 									end if;
 									«ELSE»
 										«IF (port.type.uint)»
@@ -559,7 +559,7 @@ class TestbenchPrinter extends IrSwitch {
 									if (input_bit = 1) then
 										«port.name»_data <= '1';
 									else
-										«port.name»_data <= '1';
+										«port.name»_data <= '0';
 									end if;
 									«ELSE»
 										«IF (port.type.uint)»
