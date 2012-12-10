@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.backends.AbstractBackend;
+import net.sf.orcc.backends.transform.DivisionSubstitution;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
@@ -159,6 +160,7 @@ public class Xronos extends AbstractBackend {
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
 			transformations.add(new StoreOnceTransformation());
+			transformations.add(new DivisionSubstitution());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
 			transformations.add(new RepeatPattern(resourceCache));
