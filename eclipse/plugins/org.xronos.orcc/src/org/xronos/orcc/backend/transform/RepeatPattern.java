@@ -53,6 +53,7 @@ import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.util.util.EcoreHelper;
 
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.XronosIrUtil;
@@ -204,27 +205,31 @@ public class RepeatPattern extends DfVisitor<Void> {
 				block.add(index, insPortWrite);
 				IrUtil.delete(store);
 
-				BlockWhile blockWhile = (BlockWhile) block.eContainer();
+				BlockWhile blockWhile = EcoreHelper.getContainerOfType(block,
+						BlockWhile.class);
+				if (blockWhile != null) {
+					Var portStatus = IrFactory.eINSTANCE.createVar(
+							port.getType(), "portStatus_" + port.getName(),
+							true, 0);
+					procedure.getLocals().add(portStatus);
+					InstPortStatus instPortStatus = XronosIrUtil
+							.createInstPortStatus(portStatus, port);
 
-				Var portStatus = IrFactory.eINSTANCE.createVar(port.getType(),
-						"portStatus_" + port.getName(), true, 0);
-				procedure.getLocals().add(portStatus);
-				InstPortStatus instPortStatus = XronosIrUtil
-						.createInstPortStatus(portStatus, port);
+					BlockBasic portStatusBlock = IrFactory.eINSTANCE
+							.createBlockBasic();
+					portStatusBlock.add(instPortStatus);
 
-				BlockBasic portStatusBlock = IrFactory.eINSTANCE
-						.createBlockBasic();
-				portStatusBlock.add(instPortStatus);
+					Expression eFalse = IrFactory.eINSTANCE
+							.createExprBool(false);
+					Expression statusWhileCondition = XronosIrUtil
+							.createExprBinaryNotEqual(portStatus, eFalse);
 
-				Expression eFalse = IrFactory.eINSTANCE.createExprBool(false);
-				Expression statusWhileCondition = XronosIrUtil
-						.createExprBinaryNotEqual(portStatus, eFalse);
+					BlockIf statusIf = XronosIrUtil.createBlockIf(
+							statusWhileCondition, block);
 
-				BlockIf statusIf = XronosIrUtil.createBlockIf(
-						statusWhileCondition, block);
-
-				blockWhile.getBlocks().add(0, portStatusBlock);
-				blockWhile.getBlocks().add(statusIf);
+					blockWhile.getBlocks().add(0, portStatusBlock);
+					blockWhile.getBlocks().add(statusIf);
+				}
 			}
 			return null;
 		}
