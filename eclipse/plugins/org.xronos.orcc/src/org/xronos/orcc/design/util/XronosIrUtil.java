@@ -117,33 +117,19 @@ public class XronosIrUtil {
 		return blockIf;
 	}
 
-	public static BlockIf createBlockIf(Var condition,
-			List<Instruction> thenInstructions) {
-		BlockIf blockIf = createBlockIf(condition);
-
-		BlockBasic thenBlock = IrFactory.eINSTANCE.createBlockBasic();
-		for (Instruction instruction : thenInstructions) {
-			thenBlock.add(instruction);
-		}
-		blockIf.getThenBlocks().add(thenBlock);
-		return blockIf;
-	}
-
-	public static BlockIf createBlockIf(Var condition,
-			List<Instruction> thenInstructions,
-			List<Instruction> elseInstructions) {
-		BlockIf blockIf = createBlockIf(condition, thenInstructions);
-
-		BlockBasic elseBlock = IrFactory.eINSTANCE.createBlockBasic();
-		for (Instruction instruction : thenInstructions) {
-			elseBlock.add(instruction);
-		}
-		blockIf.getElseBlocks().add(elseBlock);
-		return blockIf;
-	}
-
 	public static BlockIf createBlockIf(Expression condition,
 			List<Block> thenBlocks) {
+		BlockIf blockIf = createBlockIf(condition);
+
+		blockIf.getThenBlocks().addAll(thenBlocks);
+		// Put an empty join Block
+		BlockBasic emptyBlock = IrFactory.eINSTANCE.createBlockBasic();
+		blockIf.setJoinBlock(emptyBlock);
+
+		return blockIf;
+	}
+
+	public static BlockIf createBlockIf(Var condition, List<Block> thenBlocks) {
 		BlockIf blockIf = createBlockIf(condition);
 
 		blockIf.getThenBlocks().addAll(thenBlocks);
@@ -162,6 +148,20 @@ public class XronosIrUtil {
 
 		// Set body
 		blockWhile.getBlocks().addAll(body);
+
+		// Set empty join Block
+		blockWhile.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
+
+		return blockWhile;
+	}
+
+	public static BlockWhile createBlockWhile(Expression condition, Block body) {
+		BlockWhile blockWhile = IrFactory.eINSTANCE.createBlockWhile();
+		// Set the condition
+		blockWhile.setCondition(condition);
+
+		// Set body
+		blockWhile.getBlocks().add(body);
 
 		// Set empty join Block
 		blockWhile.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
@@ -272,11 +272,26 @@ public class XronosIrUtil {
 				IrFactory.eINSTANCE.createTypeBool());
 	}
 
+	public static ExprBinary createExprBinaryNotEqual(Var var, Expression value) {
+		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var);
+
+		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.NE, value,
+				IrFactory.eINSTANCE.createTypeBool());
+	}
+
 	public static ExprBinary createExprBinaryEqual(Var var1, Var var2) {
 		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var1);
 		ExprVar e2 = IrFactory.eINSTANCE.createExprVar(var2);
 
 		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.EQ, e2,
+				IrFactory.eINSTANCE.createTypeBool());
+	}
+
+	public static ExprBinary createExprBinaryLessThan(Var var1, Var var2) {
+		ExprVar e1 = IrFactory.eINSTANCE.createExprVar(var1);
+		ExprVar e2 = IrFactory.eINSTANCE.createExprVar(var2);
+
+		return IrFactory.eINSTANCE.createExprBinary(e1, OpBinary.LT, e2,
 				IrFactory.eINSTANCE.createTypeBool());
 	}
 

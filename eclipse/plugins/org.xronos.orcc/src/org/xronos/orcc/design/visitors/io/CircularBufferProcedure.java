@@ -40,10 +40,8 @@ import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
-import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.ExprBinary;
-import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
@@ -71,7 +69,6 @@ import org.xronos.orcc.design.util.XronosIrUtil;
 import org.xronos.orcc.design.visitors.ComponentCreator;
 import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.ir.InstPortStatus;
-import org.xronos.orcc.ir.InstPortWrite;
 
 /**
  * 
@@ -119,7 +116,7 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 				CircularBuffer circularBuffer = resourceCache
 						.getActorOutputCircularBuffer(actor).get(port);
 				circularBufferPortMap.put(port, circularBuffer);
-				procedures.add(createWriteProcedure(port, circularBuffer));
+				// procedures.add(createWriteProcedure(port, circularBuffer));
 			}
 		}
 
@@ -284,152 +281,178 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		return procedure;
 	}
 
-	private Procedure createWriteProcedure(Port port,
-			CircularBuffer circularBuffer) {
-		String name = port.getName();
-		Procedure write = IrFactory.eINSTANCE.createProcedure(
-				"circularBufferWrite_" + name, 0,
-				IrFactory.eINSTANCE.createTypeVoid());
-		// Add all circularBuffer locals to read procedure
-		circularBuffer.addToLocals(write);
-
-		// Create a Boolean type and int32 type
-		Type typeBool = irFactory.createTypeBool();
-		Type typeInt32 = irFactory.createTypeInt(32);
-
-		/** Create the true loop body **/
-		List<Block> trueLoopBody = new ArrayList<Block>();
-
-		// Create a BlockBasic, that contains the portStatus and the cbStart
-		BlockBasic statusAndStartBlock = irFactory.createBlockBasic();
-
-		// PortStatus(portStatus,port)
-		Var varPortStatus = irFactory.createVar(typeBool,
-				"portStatus_" + port.getName(), true, 0);
-		write.getLocals().add(varPortStatus);
-		InstPortStatus instPortStatus = XronosIrUtil.createInstPortStatus(
-				varPortStatus, port);
-
-		// Load(cbTmpStart, cbStart)
-		Var cbStart = circularBuffer.getStart();
-		Var cbTmpStart = circularBuffer.getTmpStart();
-		InstLoad startLoad = irFactory.createInstLoad(cbTmpStart, cbStart);
-
-		// Load(cbTmpCount, cbCount)
-		Var cbCount = circularBuffer.getCount();
-		Var cbTmpCount = circularBuffer.getTmpCount();
-		InstLoad countLoad = irFactory.createInstLoad(cbTmpCount, cbCount);
-
-		statusAndStartBlock.add(instPortStatus);
-		statusAndStartBlock.add(startLoad);
-		statusAndStartBlock.add(countLoad);
-
-		// Add to the true loop body
-		trueLoopBody.add(statusAndStartBlock);
-
-		/** Create the start loop body **/
-
-		List<Block> startIfThenBody = new ArrayList<Block>();
-
-		// Create a blockBasic that contains the load of cbHead,cbCount,
-		// portWrite, and Load of the cb
-		BlockBasic initAndWrite = irFactory.createBlockBasic();
-
-		// PortRead(token, port)
-		Var token = irFactory.createVar(port.getType(),
-				"token_" + port.getName(), true, 0);
-		write.getLocals().add(token);
-
-		// Load(token, circularBuffer[cbCount ])
-
-		Expression cbIndex = irFactory.createExprVar(cbTmpCount);
-
-		Var buffer = circularBuffer.getBuffer();
-
-		InstLoad bufferLoad = irFactory.createInstLoad(token, buffer,
-				Arrays.asList(cbIndex));
-
-		InstPortWrite portWrite = XronosIrUtil.createInstPortWrite(port, token);
-		Expression countPlusOne = XronosIrUtil.createExprBinaryPlus(cbTmpCount,
-				1, typeInt32);
-
-		InstAssign countAssign = irFactory.createInstAssign(cbTmpCount,
-				countPlusOne);
-
-		InstStore countStore = irFactory.createInstStore(cbCount, cbTmpCount);
-
-		Var cbRequestSize = circularBuffer.getRequestSize();
-		Var cbTmpRequestSize = circularBuffer.getTmpRequestSize();
-		write.getLocals().add(cbTmpRequestSize);
-		InstLoad loadRequestSize = irFactory.createInstLoad(cbTmpRequestSize,
-				cbRequestSize);
-
-		initAndWrite.add(bufferLoad);
-		initAndWrite.add(portWrite);
-		initAndWrite.add(countAssign);
-		initAndWrite.add(countStore);
-		initAndWrite.add(loadRequestSize);
-
-		// Add initAndRead block to start loop body
-		startIfThenBody.add(initAndWrite);
-
-		// if(cb_Count = cbTmpRequestSize)
-		// cb_Tmp_Start = false;
-		// cb_Start = cb_Tmp_Start
-
-		Expression stopCondition = XronosIrUtil.createExprBinaryEqual(
-				cbTmpCount, cbTmpRequestSize);
-
-		BlockBasic stopThenBlock = irFactory.createBlockBasic();
-
-		ExprBool exprFalse = irFactory.createExprBool(false);
-		InstAssign assignTmpStart = irFactory.createInstAssign(cbTmpStart,
-				exprFalse);
-		InstStore storeStart = irFactory.createInstStore(cbStart, cbTmpStart);
-
-		stopThenBlock.add(assignTmpStart);
-		stopThenBlock.add(storeStart);
-
-		BlockIf stopIf = XronosIrUtil.createBlockIf(stopCondition,
-				stopThenBlock);
-
-		startIfThenBody.add(stopIf);
-
-		/** Create the Start Loop **/
-
-		// Create the stop condition
-		Expression startLoopCondition = XronosIrUtil.createExprBinaryLogicAnd(
-				cbTmpStart, varPortStatus);
-		BlockIf startIf = XronosIrUtil.createBlockIf(startLoopCondition,
-				startIfThenBody);
-
-		// Add startLoop to the true loop body
-		trueLoopBody.add(startIf);
-
-		/** Create the true loop body **/
-		BlockWhile trueLoop = XronosIrUtil.createTrueBlockWhile(trueLoopBody);
-		write.getBlocks().add(trueLoop);
-
-		/** Create Return Block **/
-		BlockBasic returnBlock = IrFactory.eINSTANCE.createBlockBasic();
-		InstReturn instReturn = IrFactory.eINSTANCE.createInstReturn(null);
-		returnBlock.add(instReturn);
-		write.getBlocks().add(returnBlock);
-		Type returnType = IrFactory.eINSTANCE.createTypeVoid();
-		write.setReturnType(returnType);
-
-		// Debug
-		DebugPrinter debugPrinter = new DebugPrinter();
-		debugPrinter.printProcedure("/tmp", write, actor.getName() + "_"
-				+ write.getName());
-		// Transform procedure
-		XronosTransform transform = new XronosTransform(write);
-		Procedure procedure = transform.transformProcedure(resourceCache);
-
-		debugPrinter = new DebugPrinter();
-		debugPrinter.printProcedure("/tmp", procedure, actor.getName() + "_"
-				+ procedure.getName() + "_tr");
-
-		return procedure;
-	}
+	// private Procedure createWriteProcedure(Port port,
+	// CircularBuffer circularBuffer) {
+	// String name = port.getName();
+	// Procedure write = IrFactory.eINSTANCE.createProcedure(
+	// "circularBufferWrite_" + name, 0,
+	// IrFactory.eINSTANCE.createTypeVoid());
+	// // Add all circularBuffer locals to read procedure
+	// circularBuffer.addToLocals(write);
+	//
+	// // Create a Boolean type and int32 type
+	// Type typeBool = irFactory.createTypeBool();
+	// Type typeInt32 = irFactory.createTypeInt(32);
+	//
+	// /** Create the true loop body **/
+	// List<Block> trueLoopBody = new ArrayList<Block>();
+	//
+	// // A BlockBasic, that contains the cbCount, cbStart and cbRequestSize
+	// BlockBasic statusStartRequestSizeBlock = irFactory.createBlockBasic();
+	//
+	// // Load(cbTmpStart, cbStart)
+	// Var cbStart = circularBuffer.getStart();
+	// Var cbTmpStart = circularBuffer.getTmpStart();
+	// InstLoad startLoad = irFactory.createInstLoad(cbTmpStart, cbStart);
+	//
+	// // Load(cbTmpCount, cbCount)
+	// Var cbCount = circularBuffer.getCount();
+	// Var cbTmpCount = circularBuffer.getTmpCount();
+	// InstLoad countLoad = irFactory.createInstLoad(cbTmpCount, cbCount);
+	//
+	// Var cbRequestSize = circularBuffer.getRequestSize();
+	// Var cbTmpRequestSize = circularBuffer.getTmpRequestSize();
+	// write.getLocals().add(cbTmpRequestSize);
+	// InstLoad requestSizeLoad = irFactory.createInstLoad(cbTmpRequestSize,
+	// cbRequestSize);
+	//
+	// statusStartRequestSizeBlock.add(startLoad);
+	// statusStartRequestSizeBlock.add(countLoad);
+	// statusStartRequestSizeBlock.add(requestSizeLoad);
+	//
+	// // Add to the true loop body
+	// trueLoopBody.add(statusStartRequestSizeBlock);
+	//
+	// /** Create the start loop body **/
+	//
+	// // PortStatus(portStatus,port)
+	// Var varPortStatus = irFactory.createVar(typeBool,
+	// "portStatus_" + port.getName(), true, 0);
+	// InstPortStatus instPortStatus = XronosIrUtil.createInstPortStatus(
+	// varPortStatus, port);
+	//
+	// Expression ifStatusCondition = irFactory.createExprVar(varPortStatus);
+	//
+	// List<Block> ifStatusThenBlocks = new ArrayList<Block>();
+	//
+	// BlockBasic portWriteBlock = irFactory.createBlockBasic();
+	//
+	// // PortRead(token, port)
+	// Var token = irFactory.createVar(port.getType(),
+	// "token_" + port.getName(), true, 0);
+	// write.getLocals().add(token);
+	//
+	// // Load(token, circularBuffer[cbCount ])
+	//
+	// Expression cbIndex = irFactory.createExprVar(cbTmpCount);
+	//
+	// Var buffer = circularBuffer.getBuffer();
+	//
+	// InstLoad bufferLoad = irFactory.createInstLoad(token, buffer,
+	// Arrays.asList(cbIndex));
+	//
+	// InstPortWrite portWrite = XronosIrUtil.createInstPortWrite(port, token);
+	// Expression countPlusOne = XronosIrUtil.createExprBinaryPlus(cbTmpCount,
+	// 1, typeInt32);
+	//
+	// InstAssign countAssign = irFactory.createInstAssign(cbTmpCount,
+	// countPlusOne);
+	//
+	// // InstStore countStore = irFactory.createInstStore(cbCount,
+	// // cbTmpCount);
+	//
+	// portWriteBlock.add(bufferLoad);
+	// portWriteBlock.add(portWrite);
+	// portWriteBlock.add(countAssign);
+	// // portWriteBlock.add(countStore);
+	//
+	// ifStatusThenBlocks.add(portWriteBlock);
+	//
+	// // if(cb_Count = cbTmpRequestSize)
+	// // cb_Tmp_Start = false;
+	// // cb_Start = cb_Tmp_Start
+	//
+	// // Expression stopCondition = XronosIrUtil.createExprBinaryEqual(
+	// // cbTmpCount, cbTmpRequestSize);
+	// //
+	// // BlockBasic stopThenBlock = irFactory.createBlockBasic();
+	// //
+	// // ExprBool exprFalse = irFactory.createExprBool(false);
+	// // InstAssign assignTmpStart = irFactory.createInstAssign(cbTmpStart,
+	// // exprFalse);
+	// // InstStore storeStart = irFactory.createInstStore(cbStart,
+	// // cbTmpStart);
+	// //
+	// // InstAssign storeTmpCount = irFactory.createInstAssign(cbTmpCount, 0);
+	// //
+	// // stopThenBlock.add(assignTmpStart);
+	// // stopThenBlock.add(storeStart);
+	// // stopThenBlock.add(storeTmpCount);
+	// //
+	// // BlockIf stopIf = XronosIrUtil.createBlockIf(stopCondition,
+	// // stopThenBlock);
+	// //
+	// // ifStatusThenBlocks.add(stopIf);
+	//
+	// BlockBasic storeCountBlock = irFactory.createBlockBasic();
+	//
+	// InstStore storeCount = irFactory.createInstStore(cbCount, cbTmpCount);
+	//
+	// storeCountBlock.add(storeCount);
+	//
+	// ifStatusThenBlocks.add(storeCountBlock);
+	//
+	// // Create the status If
+	// BlockIf statusIf = XronosIrUtil.createBlockIf(ifStatusCondition,
+	// ifStatusThenBlocks);
+	//
+	// BlockBasic portStatusBlock = irFactory.createBlockBasic();
+	//
+	// portStatusBlock.add(instPortStatus);
+	//
+	// List<Block> activateWhileBlocks = new ArrayList<Block>();
+	//
+	// activateWhileBlocks.add(portStatusBlock);
+	// activateWhileBlocks.add(statusIf);
+	//
+	// ExprBinary countLessThanRequestSize = XronosIrUtil
+	// .createExprBinaryLessThan(cbTmpCount, cbTmpRequestSize);
+	//
+	// // Expression evStart = irFactory.createExprVar(cbTmpStart);
+	//
+	// // ExprBinary activateWhileCondition = XronosIrUtil
+	// // .createExprBinaryLogicAnd(countLessThanRequestSize,
+	// // countLessThanRequestSize);
+	//
+	// BlockWhile activateWhile = XronosIrUtil.createBlockWhile(
+	// countLessThanRequestSize, activateWhileBlocks);
+	//
+	// trueLoopBody.add(activateWhile);
+	//
+	// /** Create the true loop body **/
+	// BlockWhile trueLoop = XronosIrUtil.createTrueBlockWhile(trueLoopBody);
+	// write.getBlocks().add(trueLoop);
+	//
+	// /** Create Return Block **/
+	// BlockBasic returnBlock = IrFactory.eINSTANCE.createBlockBasic();
+	// InstReturn instReturn = IrFactory.eINSTANCE.createInstReturn(null);
+	// returnBlock.add(instReturn);
+	// write.getBlocks().add(returnBlock);
+	// Type returnType = IrFactory.eINSTANCE.createTypeVoid();
+	// write.setReturnType(returnType);
+	//
+	// // Debug
+	// DebugPrinter debugPrinter = new DebugPrinter();
+	// debugPrinter.printProcedure("/tmp", write, actor.getName() + "_"
+	// + write.getName());
+	// // Transform procedure
+	// XronosTransform transform = new XronosTransform(write);
+	// Procedure procedure = transform.transformProcedure(resourceCache);
+	//
+	// debugPrinter = new DebugPrinter();
+	// debugPrinter.printProcedure("/tmp", procedure, actor.getName() + "_"
+	// + procedure.getName() + "_tr");
+	//
+	// return procedure;
+	// }
 }

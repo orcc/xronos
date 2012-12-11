@@ -211,6 +211,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				thenInputs, thenOutputs, "thenBlock", false, Exit.DONE, 0,
 				portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
+		thenBlock.setNonRemovable();
 		thenBlock.setIDLogical("thenBlock");
 		// Visit the else block
 		Block elseBlock = null;
@@ -235,6 +236,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 					Exit.DONE, 1, portDependency, busDependency,
 					portGroupDependency, doneBusDependency);
 			elseBlock.setIDLogical("elseBlock");
+			elseBlock.setNonRemovable();
 		}
 		// Get All input Vars
 		List<Var> ifInputVars = resources.getBlockInput(blockIf);
@@ -246,6 +248,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				elseBlock, ifInputVars, ifOutputVars, phiOuts, "ifBLOCK",
 				Exit.DONE, portDependency, busDependency, portGroupDependency,
 				doneBusDependency);
+		branch.setNonRemovable();
 		if (STM_DEBUG) {
 			System.out.println("Branch: line :" + blockIf.getLineNumber()
 					+ " Name: " + procedure.getName());
@@ -342,6 +345,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				loopPhi, loopInVars, loopOutVars, loopBodyInVars,
 				loopBodyOutVars, portDependency, busDependency,
 				portGroupDependency, doneBusDependency);
+		loop.setNonRemovable();
 		if (STM_DEBUG) {
 			System.out.println("Loop: line :" + blockWhile.getLineNumber()
 					+ " Name: " + procedure.getName());
@@ -432,6 +436,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			currentComponent = new MultiplyOp(expr.getType().getSizeInBits());
 			// currentComponent = binaryMapInCast(component, expr);
 		}
+		currentComponent.setNonRemovable();
 		PortUtil.mapInDataPorts(currentComponent, inVars, portDependency,
 				portGroupDependency);
 		return null;
@@ -441,6 +446,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseExprBool(ExprBool expr) {
 		final long value = expr.isValue() ? 1 : 0;
 		currentComponent = new SimpleConstant(value, 1, true);
+		currentComponent.setNonRemovable();
 		return null;
 	}
 
@@ -457,6 +463,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 		currentComponent = new SimpleConstant(value, sizeInBits, expr.getType()
 				.isInt());
+		currentComponent.setNonRemovable();
 		return null;
 	}
 
@@ -469,6 +476,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		} else if (expr.getOp() == OpUnary.MINUS) {
 			currentComponent = new MinusOp();
 		}
+		currentComponent.setNonRemovable();
 		return null;
 	}
 
@@ -489,6 +497,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		PortUtil.mapInDataPorts(noop, inVar, portDependency,
 				portGroupDependency);
 		currentComponent = noop;
+		currentComponent.setNonRemovable();
 		return null;
 	}
 
@@ -546,6 +555,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		Integer castedSize = target.getType().getSizeInBits();
 
 		Component castOp = new CastOp(castedSize, target.getType().isInt());
+		castOp.setNonRemovable();
 		PortUtil.mapInDataPorts(castOp, source, portDependency,
 				portGroupDependency);
 		PortUtil.mapOutDataPorts(castOp, target, busDependency,
@@ -581,9 +591,12 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			int dataSize = type.getSizeInBits();
 			HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(), 32,
 					0, isSigned, addrPolicy);
+			read.setNonRemovable();
 			CastOp castOp = new CastOp(dataSize, isSigned);
+			castOp.setNonRemovable();
 			Block block = DesignUtil.buildAddressedBlock(read, targetLocation,
 					Collections.singletonList((Component) castOp));
+			block.setNonRemovable();
 			Bus result = block.getExit(Exit.DONE).makeDataBus();
 			castOp.getEntries()
 					.get(0)
@@ -764,9 +777,10 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 						0, // fixed offset
 						isSigned, // is signed?
 						addrPolicy); // addressing policy
-
+				heapWrite.setNonRemovable();
 				Block block = DesignUtil.buildAddressedBlock(heapWrite,
 						targetLocation, Collections.<Component> emptyList());
+				block.setNonRemovable();
 				Port data = block.makeDataPort();
 				heapWrite
 						.getEntries()
@@ -816,6 +830,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				Component absoluteMemoryWrite = ModuleUtil.absoluteMemoryWrite(
 						targetVar, valueVar, resources, portDependency,
 						portGroupDependency, doneBusDependency);
+				absoluteMemoryWrite.setNonRemovable();
 				componentList.add(absoluteMemoryWrite);
 			}
 		} else {
@@ -859,7 +874,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 		if (sizeVar != newMaxSize) {
 			Component castOp = new CastOp(newMaxSize, isSigned);
-
+			castOp.setNonRemovable();
 			PortUtil.mapInDataPorts(castOp, var, portDependency,
 					portGroupDependency);
 			Var castedVar = procedure.newTempLocalVariable(
