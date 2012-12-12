@@ -32,7 +32,6 @@ import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.util.SizedInteger;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * @author gandhij
  * 
@@ -109,7 +108,10 @@ public class ModuleEmulator extends Emulator {
 						unEmulatable.add(component);
 						return outputValues;
 					}
-					outputValues = ((Emulatable) component).emulate(portValues);
+					if (component instanceof Emulatable) {
+						outputValues = ((Emulatable) component)
+								.emulate(portValues);
+					}
 				} catch (Exception ex) {
 					// System.out.println("EMULATION EXCEPTION ON COMPONENT " +
 					// component);
