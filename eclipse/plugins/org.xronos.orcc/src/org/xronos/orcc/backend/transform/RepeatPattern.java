@@ -269,12 +269,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 				// Load(tmpHead, head)
 				CircularBuffer circularBuffer = circularBufferInputs.get(port);
 				circularBuffer.addToLocals(action.getBody());
-				Var cbStart = circularBuffer.getStart();
-				// Expression eFalse =
-				// IrFactory.eINSTANCE.createExprBool(false);
-				// InstStore storeStart = IrFactory.eINSTANCE.createInstStore(
-				// cbStart, eFalse);
-				// firstBodyBlock.add(0, storeStart);
 
 				Var target = circularBuffer.getTmpHead();
 				Var source = circularBuffer.getHead();
@@ -333,12 +327,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 						count, valueCount);
 				instIndex = lastBodyBlock.getInstructions().size() - 1;
 				lastBodyBlock.add(instIndex, instStoreCount);
-
-				Expression eTrue = IrFactory.eINSTANCE.createExprBool(true);
-				InstStore storeStart = IrFactory.eINSTANCE.createInstStore(
-						cbStart, eTrue);
-				instIndex = lastBodyBlock.getInstructions().size() - 1;
-				lastBodyBlock.add(instIndex, storeStart);
 				oldInputMap.put(pinReadVar, port);
 			}
 		}
@@ -472,170 +460,191 @@ public class RepeatPattern extends DfVisitor<Void> {
 	}
 
 	private Action createFillBufferAction(Actor actor) {
-		String name = actor.getSimpleName() + "_fillBuffers";
-		Type typeVoid = IrFactory.eINSTANCE.createTypeVoid();
-		// Create the Procedure
-		Procedure body = irFactory.createProcedure(name, 0, typeVoid);
-
-		BlockBasic statusAndRequestBlock = irFactory.createBlockBasic();
-		// Fill statusAndRequestBlock
-		for (Port port : actor.getInputs()) {
-			if (circularBufferInputs.containsKey(port)) {
-				Type typeBool = irFactory.createTypeBool();
-				Var portStatusVar = irFactory.createVar(typeBool, "portStatus_"
-						+ port.getName(), true, 0);
-				body.getLocals().add(portStatusVar);
-				InstPortStatus portStatus = XronosIrUtil.createInstPortStatus(
-						portStatusVar, port);
-
-				Var cbTmpRequestSize = circularBufferInputs.get(port)
-						.getTmpRequestSize();
-				Var cbRequestSize = circularBufferInputs.get(port)
-						.getRequestSize();
-				body.getLocals().add(cbTmpRequestSize);
-
-				InstLoad requestLoad = irFactory.createInstLoad(
-						cbTmpRequestSize, cbRequestSize);
-
-				Var cbTmpCount = circularBufferInputs.get(port).getTmpCount();
-				Var cbCount = circularBufferInputs.get(port).getCount();
-				body.getLocals().add(cbTmpCount);
-
-				InstLoad countLoad = irFactory.createInstLoad(cbTmpCount,
-						cbCount);
-
-				statusAndRequestBlock.add(portStatus);
-				statusAndRequestBlock.add(requestLoad);
-				statusAndRequestBlock.add(countLoad);
-			}
-		}
-
-		body.getBlocks().add(statusAndRequestBlock);
-
-		List<BlockIf> mutexIfs = new ArrayList<BlockIf>();
-		BlockBasic readIfConditionBlock = irFactory.createBlockBasic();
+		boolean hasRepeats = false;
 
 		for (Port port : actor.getInputs()) {
 			if (circularBufferInputs.containsKey(port)) {
-				CircularBuffer circularBuffer = circularBufferInputs.get(port);
-				Var portStatusVar = body.getLocal("portStatus_"
-						+ port.getName());
-				Expression portStatusExprVar = irFactory
-						.createExprVar(portStatusVar);
-
-				Var cbTmpCount = circularBuffer.getTmpCount();
-				Var cbTmpRequestSize = circularBuffer.getTmpRequestSize();
-
-				Expression countLessThanRequest = XronosIrUtil
-						.createExprBinaryLessThan(cbTmpCount, cbTmpRequestSize);
-
-				Expression readIfConditionExpr = XronosIrUtil
-						.createExprBinaryLogicAnd(portStatusExprVar,
-								countLessThanRequest);
-				Type typeBool = irFactory.createTypeBool();
-				Var readIfConditionVar = irFactory.createVar(typeBool,
-						"readIf_" + port.getName(), true, 0);
-				body.getLocals().add(readIfConditionVar);
-
-				InstAssign assignReadIf = irFactory.createInstAssign(
-						readIfConditionVar, readIfConditionExpr);
-
-				readIfConditionBlock.add(assignReadIf);
-
-				// Create thenblock
-				BlockBasic thenBlock = irFactory.createBlockBasic();
-				Var cbHead = circularBuffer.getHead();
-				Var cbTmpHead = circularBuffer.getTmpHead();
-				InstLoad headLoad = irFactory.createInstLoad(cbTmpHead, cbHead);
-
-				// PortRead(token, port)
-				Var token = irFactory.createVar(port.getType(),
-						"token_" + port.getName(), true, 0);
-				body.getLocals().add(token);
-				InstPortRead portRead = XronosIrUtil.createInstPortRead(token,
-						port);
-
-				// Store( circularBuffer[cbHead + cbCount & (cbSizePowTwo-1),
-				// token)
-				Integer cbSize = circularBuffer.getSizePowTwo();
-				ExprInt eiSizeMinusOne = irFactory.createExprInt(cbSize - 1);
-
-				Type typeInt32 = irFactory.createTypeInt(32);
-				ExprBinary ebHeadPlusCount = XronosIrUtil.createExprBinaryPlus(
-						cbTmpHead, cbTmpCount, typeInt32);
-
-				Expression cbIndex = irFactory.createExprBinary(
-						ebHeadPlusCount, OpBinary.LOGIC_AND, eiSizeMinusOne,
-						typeInt32);
-
-				Var buffer = circularBuffer.getBuffer();
-
-				InstStore bufferStore = irFactory.createInstStore(buffer,
-						Arrays.asList(cbIndex), token);
-
-				Expression countPlusOne = XronosIrUtil.createExprBinaryPlus(
-						cbTmpCount, 1, typeInt32);
-
-				InstAssign countAssign = irFactory.createInstAssign(cbTmpCount,
-						countPlusOne);
-				Var cbCount = circularBuffer.getCount();
-				InstStore countStore = irFactory.createInstStore(cbCount,
-						cbTmpCount);
-
-				thenBlock.add(headLoad);
-				thenBlock.add(portRead);
-				thenBlock.add(bufferStore);
-				thenBlock.add(countAssign);
-				thenBlock.add(countStore);
-
-				// Create the statusIf
-				Expression readIfCondition = irFactory
-						.createExprVar(readIfConditionVar);
-
-				BlockIf readIf = XronosIrUtil.createBlockIf(readIfCondition,
-						thenBlock);
-				mutexIfs.add(readIf);
+				hasRepeats = true;
+				break;
 			}
 		}
-		BlockMutex blockMutex = XronosIrFactory.eINSTANCE.createBlockMutex();
-		blockMutex.getBlocks().addAll(mutexIfs);
 
-		body.getBlocks().add(readIfConditionBlock);
-		body.getBlocks().add(blockMutex);
+		if (hasRepeats) {
+			String name = actor.getSimpleName() + "_fillBuffers";
+			Type typeVoid = IrFactory.eINSTANCE.createTypeVoid();
+			// Create the Procedure
+			Procedure body = irFactory.createProcedure(name, 0, typeVoid);
 
-		/** Create Return Block **/
-		BlockBasic returnBlock = IrFactory.eINSTANCE.createBlockBasic();
-		InstReturn instReturn = IrFactory.eINSTANCE.createInstReturn(null);
-		returnBlock.add(instReturn);
-		body.getBlocks().add(returnBlock);
-		Type returnType = IrFactory.eINSTANCE.createTypeVoid();
-		body.setReturnType(returnType);
+			BlockBasic statusAndRequestBlock = irFactory.createBlockBasic();
+			// Fill statusAndRequestBlock
+			for (Port port : actor.getInputs()) {
+				if (circularBufferInputs.containsKey(port)) {
+					Type typeBool = irFactory.createTypeBool();
+					Var portStatusVar = irFactory.createVar(typeBool,
+							"portStatus_" + port.getName(), true, 0);
+					body.getLocals().add(portStatusVar);
+					InstPortStatus portStatus = XronosIrUtil
+							.createInstPortStatus(portStatusVar, port);
 
-		returnType = IrFactory.eINSTANCE.createTypeBool();
-		Procedure scheduler = irFactory.createProcedure("isSchedulable_"
-				+ actor.getSimpleName() + "_fillBuffer", 0, returnType);
+					Var cbTmpRequestSize = circularBufferInputs.get(port)
+							.getTmpRequestSize();
+					Var cbRequestSize = circularBufferInputs.get(port)
+							.getRequestSize();
+					body.getLocals().add(cbTmpRequestSize);
 
-		BlockBasic schedulerReturnBlock = IrFactory.eINSTANCE
-				.createBlockBasic();
-		Expression trueExpr = irFactory.createExprBool(true);
-		instReturn = IrFactory.eINSTANCE.createInstReturn(trueExpr);
-		schedulerReturnBlock.add(instReturn);
-		scheduler.getBlocks().add(schedulerReturnBlock);
-		returnType = IrFactory.eINSTANCE.createTypeBool();
-		scheduler.setReturnType(returnType);
+					InstLoad requestLoad = irFactory.createInstLoad(
+							cbTmpRequestSize, cbRequestSize);
 
-		DebugPrinter debugPrinter = new DebugPrinter();
-		debugPrinter.printProcedure("/tmp", body,
-				actor.getSimpleName()+ "_" + body.getName());
+					Var cbTmpCount = circularBufferInputs.get(port)
+							.getTmpCount();
+					Var cbCount = circularBufferInputs.get(port).getCount();
+					body.getLocals().add(cbTmpCount);
 
-		Pattern inputPattern = DfFactory.eINSTANCE.createPattern();
-		Pattern outputPattern = DfFactory.eINSTANCE.createPattern();
-		Pattern peekPattern = DfFactory.eINSTANCE.createPattern();
+					InstLoad countLoad = irFactory.createInstLoad(cbTmpCount,
+							cbCount);
 
-		Action action = DfFactory.eINSTANCE.createAction(name, inputPattern,
-				outputPattern, peekPattern, scheduler, body);
-		action.addAttribute("fillBuffer");
-		return action;
+					statusAndRequestBlock.add(portStatus);
+					statusAndRequestBlock.add(requestLoad);
+					statusAndRequestBlock.add(countLoad);
+				}
+			}
+
+			body.getBlocks().add(statusAndRequestBlock);
+
+			List<BlockIf> mutexIfs = new ArrayList<BlockIf>();
+			BlockBasic readIfConditionBlock = irFactory.createBlockBasic();
+
+			for (Port port : actor.getInputs()) {
+				if (circularBufferInputs.containsKey(port)) {
+					CircularBuffer circularBuffer = circularBufferInputs
+							.get(port);
+					Var portStatusVar = body.getLocal("portStatus_"
+							+ port.getName());
+					Expression portStatusExprVar = irFactory
+							.createExprVar(portStatusVar);
+
+					Var cbTmpCount = circularBuffer.getTmpCount();
+					Var cbTmpRequestSize = circularBuffer.getTmpRequestSize();
+
+					Expression countLessThanRequest = XronosIrUtil
+							.createExprBinaryLessThan(cbTmpCount,
+									cbTmpRequestSize);
+
+					Expression readIfConditionExpr = XronosIrUtil
+							.createExprBinaryLogicAnd(portStatusExprVar,
+									countLessThanRequest);
+					Type typeBool = irFactory.createTypeBool();
+					Var readIfConditionVar = irFactory.createVar(typeBool,
+							"readIf_" + port.getName(), true, 0);
+					body.getLocals().add(readIfConditionVar);
+
+					InstAssign assignReadIf = irFactory.createInstAssign(
+							readIfConditionVar, readIfConditionExpr);
+
+					readIfConditionBlock.add(assignReadIf);
+
+					// Create thenblock
+					BlockBasic thenBlock = irFactory.createBlockBasic();
+					Var cbHead = circularBuffer.getHead();
+					Var cbTmpHead = circularBuffer.getTmpHead();
+					InstLoad headLoad = irFactory.createInstLoad(cbTmpHead,
+							cbHead);
+
+					// PortRead(token, port)
+					Var token = irFactory.createVar(port.getType(), "token_"
+							+ port.getName(), true, 0);
+					body.getLocals().add(token);
+					InstPortRead portRead = XronosIrUtil.createInstPortRead(
+							token, port);
+
+					// Store( circularBuffer[cbHead + cbCount &
+					// (cbSizePowTwo-1),
+					// token)
+					Integer cbSize = circularBuffer.getSizePowTwo();
+					ExprInt eiSizeMinusOne = irFactory
+							.createExprInt(cbSize - 1);
+
+					Type typeInt32 = irFactory.createTypeInt(32);
+					ExprBinary ebHeadPlusCount = XronosIrUtil
+							.createExprBinaryPlus(cbTmpHead, cbTmpCount,
+									typeInt32);
+
+					Expression cbIndex = irFactory.createExprBinary(
+							ebHeadPlusCount, OpBinary.LOGIC_AND,
+							eiSizeMinusOne, typeInt32);
+
+					Var buffer = circularBuffer.getBuffer();
+
+					InstStore bufferStore = irFactory.createInstStore(buffer,
+							Arrays.asList(cbIndex), token);
+
+					Expression countPlusOne = XronosIrUtil
+							.createExprBinaryPlus(cbTmpCount, 1, typeInt32);
+
+					InstAssign countAssign = irFactory.createInstAssign(
+							cbTmpCount, countPlusOne);
+					Var cbCount = circularBuffer.getCount();
+					InstStore countStore = irFactory.createInstStore(cbCount,
+							cbTmpCount);
+
+					thenBlock.add(headLoad);
+					thenBlock.add(portRead);
+					thenBlock.add(bufferStore);
+					thenBlock.add(countAssign);
+					thenBlock.add(countStore);
+
+					// Create the statusIf
+					Expression readIfCondition = irFactory
+							.createExprVar(readIfConditionVar);
+
+					BlockIf readIf = XronosIrUtil.createBlockIf(
+							readIfCondition, thenBlock);
+					mutexIfs.add(readIf);
+				}
+			}
+			BlockMutex blockMutex = XronosIrFactory.eINSTANCE
+					.createBlockMutex();
+			blockMutex.getBlocks().addAll(mutexIfs);
+
+			body.getBlocks().add(readIfConditionBlock);
+			body.getBlocks().add(blockMutex);
+
+			/** Create Return Block **/
+			BlockBasic returnBlock = IrFactory.eINSTANCE.createBlockBasic();
+			InstReturn instReturn = IrFactory.eINSTANCE.createInstReturn(null);
+			returnBlock.add(instReturn);
+			body.getBlocks().add(returnBlock);
+			Type returnType = IrFactory.eINSTANCE.createTypeVoid();
+			body.setReturnType(returnType);
+
+			returnType = IrFactory.eINSTANCE.createTypeBool();
+			Procedure scheduler = irFactory.createProcedure("isSchedulable_"
+					+ actor.getSimpleName() + "_fillBuffer", 0, returnType);
+
+			BlockBasic schedulerReturnBlock = IrFactory.eINSTANCE
+					.createBlockBasic();
+			Expression trueExpr = irFactory.createExprBool(true);
+			instReturn = IrFactory.eINSTANCE.createInstReturn(trueExpr);
+			schedulerReturnBlock.add(instReturn);
+			scheduler.getBlocks().add(schedulerReturnBlock);
+			returnType = IrFactory.eINSTANCE.createTypeBool();
+			scheduler.setReturnType(returnType);
+
+			DebugPrinter debugPrinter = new DebugPrinter();
+			debugPrinter.printProcedure("/tmp", body, actor.getSimpleName()
+					+ "_" + body.getName());
+
+			Pattern inputPattern = DfFactory.eINSTANCE.createPattern();
+			Pattern outputPattern = DfFactory.eINSTANCE.createPattern();
+			Pattern peekPattern = DfFactory.eINSTANCE.createPattern();
+
+			Action action = DfFactory.eINSTANCE.createAction(name,
+					inputPattern, outputPattern, peekPattern, scheduler, body);
+			action.addAttribute("fillBuffer");
+			return action;
+		} else {
+			return null;
+		}
 	}
 
 	@Override
