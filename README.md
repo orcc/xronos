@@ -1,4 +1,2 @@
 Xronos
-
-High Level Dataflow Synthesis 
-
+High Level Synthesis
