@@ -464,6 +464,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 			}
 		} else {
 			if (fillBuffers != null) {
+				actor.getActions().add(fillBuffers);
 				actor.getActionsOutsideFsm().add(fillBuffers);
 			}
 		}
@@ -513,7 +514,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 		List<BlockIf> mutexIfs = new ArrayList<BlockIf>();
 		BlockBasic readIfConditionBlock = irFactory.createBlockBasic();
-		
+
 		for (Port port : actor.getInputs()) {
 			if (circularBufferInputs.containsKey(port)) {
 				CircularBuffer circularBuffer = circularBufferInputs.get(port);
@@ -535,7 +536,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 				Var readIfConditionVar = irFactory.createVar(typeBool,
 						"readIf_" + port.getName(), true, 0);
 				body.getLocals().add(readIfConditionVar);
-				
+
 				InstAssign assignReadIf = irFactory.createInstAssign(
 						readIfConditionVar, readIfConditionExpr);
 
@@ -598,7 +599,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 		}
 		BlockMutex blockMutex = XronosIrFactory.eINSTANCE.createBlockMutex();
 		blockMutex.getBlocks().addAll(mutexIfs);
-		
+
 		body.getBlocks().add(readIfConditionBlock);
 		body.getBlocks().add(blockMutex);
 
@@ -610,7 +611,9 @@ public class RepeatPattern extends DfVisitor<Void> {
 		Type returnType = IrFactory.eINSTANCE.createTypeVoid();
 		body.setReturnType(returnType);
 
-		Procedure scheduler = irFactory.createProcedure();
+		returnType = IrFactory.eINSTANCE.createTypeBool();
+		Procedure scheduler = irFactory.createProcedure("isSchedulable_"
+				+ actor.getSimpleName() + "_fillBuffer", 0, returnType);
 
 		BlockBasic schedulerReturnBlock = IrFactory.eINSTANCE
 				.createBlockBasic();
@@ -623,7 +626,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 		DebugPrinter debugPrinter = new DebugPrinter();
 		debugPrinter.printProcedure("/tmp", body,
-				actor.getName() + "_" + body.getName());
+				actor.getSimpleName()+ "_" + body.getName());
 
 		Pattern inputPattern = DfFactory.eINSTANCE.createPattern();
 		Pattern outputPattern = DfFactory.eINSTANCE.createPattern();
@@ -631,9 +634,8 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 		Action action = DfFactory.eINSTANCE.createAction(name, inputPattern,
 				outputPattern, peekPattern, scheduler, body);
-
+		action.addAttribute("fillBuffer");
 		return action;
-
 	}
 
 	@Override

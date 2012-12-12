@@ -55,6 +55,7 @@ import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.InstStore;
+import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
@@ -508,7 +509,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			}
 
 			// Create an if block that will contains all the transitions
-
 			Var stateSource = procedure.getLocal("s_" + state.getName());
 
 			Expression ifStateCondition = irFactory.createExprVar(stateSource);
@@ -521,7 +521,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		}
 		return blocks;
 	}
-
 
 	private List<Block> createSchedulerBody(Actor actor, Procedure procedure) {
 		List<Block> blocks = new ArrayList<Block>();
@@ -559,12 +558,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				xronosSchedulerLocals.add(cbTmpCount);
 				InstLoad instLoadCount = irFactory.createInstLoad(cbTmpCount,
 						cbCount);
-				// Start
-				// Var cbStart = circularBuffer.getStart();
-				// Var cbTmpStart = circularBuffer.getTmpStart();
-				// xronosSchedulerLocals.add(cbTmpStart);
-				// InstLoad instLoadStart = irFactory.createInstLoad(cbTmpStart,
-				// cbStart);
 
 				// Add all instructions
 				cbLoadBlock.add(instLoadCount);
@@ -649,7 +642,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Create fireability thenBlock Basic
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
 
-
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -674,7 +666,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				fireabilityThenBlock.add(targetAtFalse);
 			}
 
-
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
 					fireabilityThenBlock);
@@ -691,7 +682,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 			// Create fireability thenBlock Basic
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
-
 
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
@@ -734,6 +724,37 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 	private BlockIf createTaskCallOutFSM(Procedure procedure, Action action,
 			BlockIf lastBlockIf) {
 		BlockIf blockIf = null;
+		
+		List<Instruction> requestInsts = new ArrayList<Instruction>();
+		if (action.getAttribute("fillBuffer") != null) {
+			Map<Port, Integer> portsReads = new HashMap<Port, Integer>();
+			for (Action outFsmAction : actor.getActionsOutsideFsm()) {
+				for (Port port : outFsmAction.getInputPattern().getPorts()) {
+					if (inputCircularBuffer.containsKey(port)) {
+						Integer numReads = outFsmAction.getInputPattern()
+								.getNumTokens(port);
+						if (portsReads.containsKey(port)) {
+							Integer oldNumRead = portsReads.get(port);
+							if (oldNumRead < numReads) {
+								portsReads.put(port, numReads);
+							}
+						} else {
+							portsReads.put(port, numReads);
+						}
+					}
+				}
+			}
+			
+			for(Port port: portsReads.keySet()){
+				CircularBuffer circularBuffer = inputCircularBuffer.get(port);
+				Var cbRequestSize = circularBuffer.getRequestSize();
+				Integer numReads = portsReads.get(port);
+				
+				InstStore requestStore = irFactory.createInstStore(cbRequestSize, numReads);
+				requestInsts.add(requestStore);
+			}
+		}
+
 		if (lastBlockIf == null) {
 			// Get the fireability and schedulability conditions
 			Var schedulability = actionSchedulability.get(action);
@@ -749,9 +770,13 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Add circularBuffer start to false
 			BlockBasic stopStartBlockBasic = irFactory.createBlockBasic();
 
-
 			schedulabilityThenBlocks.add(stopStartBlockBasic);
 
+			if(!requestInsts.isEmpty()){
+				for(Instruction inst: requestInsts){
+					fireabilityThenBlock.add(inst);
+				}
+			}
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -778,6 +803,12 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Create fireability thenBlock Basic
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
 
+			
+			if(!requestInsts.isEmpty()){
+				for(Instruction inst: requestInsts){
+					fireabilityThenBlock.add(inst);
+				}
+			}
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -796,5 +827,4 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		}
 		return blockIf;
 	}
-
 }

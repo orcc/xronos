@@ -55,7 +55,6 @@ import org.xronos.openforge.lim.Task;
 import org.xronos.openforge.lim.memory.LogicalValue;
 import org.xronos.orcc.backend.transform.XronosTransform;
 import org.xronos.orcc.design.ResourceCache;
-import org.xronos.orcc.design.ResourceDependecies;
 import org.xronos.orcc.design.util.DesignUtil;
 import org.xronos.orcc.design.util.ModuleUtil;
 import org.xronos.orcc.design.util.PortUtil;
@@ -99,7 +98,6 @@ public class DesignActor extends DfVisitor<Object> {
 	/** Dependency between Components and Port-Var **/
 	private final Map<Port, Var> portDependency;
 
-	private ResourceDependecies resourceDependecies;
 
 	public DesignActor(Design design, ResourceCache resources) {
 		this.design = design;
@@ -111,8 +109,7 @@ public class DesignActor extends DfVisitor<Object> {
 		stateVars = new HashMap<LogicalValue, Var>();
 		stateVarVisitor = new StateVarVisitor(stateVars);
 		componentsList = new ArrayList<Component>();
-		resourceDependecies = new ResourceDependecies(busDependency,
-				doneBusDependency, portDependency, portGroupDependency);
+		
 	}
 
 	@Override
