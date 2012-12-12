@@ -264,8 +264,10 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 
 		for (Block block : blockMutex.getBlocks()) {
 			doSwitch(block);
-			blockMutexInputs.addAll(stmInputs.get(block));
-			blockMutexOutputs.addAll(stmOutputs.get(block));
+			if (block.isBlockIf() || block.isBlockWhile()) {
+				blockMutexInputs.addAll(stmInputs.get(block));
+				blockMutexOutputs.addAll(stmOutputs.get(block));
+			}
 		}
 		stmInputs.put(blockMutex, blockMutexInputs);
 		stmOutputs.put(blockMutex, blockMutexOutputs);

@@ -34,6 +34,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orcc.df.Action;
+import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.State;
+import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Var;
+
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Call;
@@ -50,17 +59,7 @@ import org.xronos.orcc.design.ResourceDependecies;
 import org.xronos.orcc.design.util.DesignUtil;
 import org.xronos.orcc.design.util.ModuleUtil;
 import org.xronos.orcc.design.util.PortUtil;
-import org.xronos.orcc.design.visitors.io.CircularBufferProcedure;
 import org.xronos.orcc.preference.Constants;
-
-import net.sf.orcc.df.Action;
-import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.State;
-import net.sf.orcc.df.util.DfVisitor;
-import net.sf.orcc.ir.IrFactory;
-import net.sf.orcc.ir.Procedure;
-import net.sf.orcc.ir.Type;
-import net.sf.orcc.ir.Var;
 
 /**
  * The DesignActor class converts an Orcc Actor to an OpenForge Design
@@ -195,10 +194,10 @@ public class DesignActor extends DfVisitor<Object> {
 		DesignUtil.designAllocateMemory(design, stateVars,
 				Constants.MAX_ADDR_WIDTH, resources);
 
-		/** Create a Task for each Circular Buffer, if any **/
-		CircularBufferProcedure circularBufferProcedure = new CircularBufferProcedure(
-				design, resources, resourceDependecies);
-		circularBufferProcedure.doSwitch(actor);
+//		/** Create a Task for each Circular Buffer, if any **/
+//		CircularBufferProcedure circularBufferProcedure = new CircularBufferProcedure(
+//				design, resources, resourceDependecies);
+//		circularBufferProcedure.doSwitch(actor);
 
 		/** Create a Task for each action in the actor **/
 		for (Action action : actor.getActions()) {

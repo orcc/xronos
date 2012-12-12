@@ -522,19 +522,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		return blocks;
 	}
 
-	private void createCircularBufferStoreStart(Action action, Boolean value,
-			BlockBasic block) {
-		for (Port port : action.getInputPattern().getPorts()) {
-			if (inputCircularBuffer.get(port) != null) {
-				CircularBuffer circularBuffer = inputCircularBuffer.get(port);
-				Var cbStart = circularBuffer.getStart();
-				ExprBool ebValue = irFactory.createExprBool(value);
-				InstStore storeStart = irFactory.createInstStore(cbStart,
-						ebValue);
-				block.add(storeStart);
-			}
-		}
-	}
 
 	private List<Block> createSchedulerBody(Actor actor, Procedure procedure) {
 		List<Block> blocks = new ArrayList<Block>();
@@ -646,17 +633,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				block.add(instStoreStart);
 			}
 		}
-
-		// for (Port port : actor.getOutputs()) {
-		// if (outputCircularBuffer.get(port) != null) {
-		// CircularBuffer circularBuffer = outputCircularBuffer.get(port);
-		// // Store(cbStart, true);
-		// Var cbStart = circularBuffer.getStart();
-		// InstStore instStoreStart = XronosIrUtil.createInstStore(
-		// cbStart, false);
-		// block.add(instStoreStart);
-		// }
-		// }
 		return block;
 	}
 
@@ -673,8 +649,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Create fireability thenBlock Basic
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
 
-			// Add circularBuffer start to false, if necessary
-			createCircularBufferStoreStart(action, false, fireabilityThenBlock);
 
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
@@ -700,8 +674,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				fireabilityThenBlock.add(targetAtFalse);
 			}
 
-			// Add circularBuffer start to true, if necessary
-			createCircularBufferStoreStart(action, true, fireabilityThenBlock);
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
@@ -720,8 +692,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Create fireability thenBlock Basic
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
 
-			// Add circularBuffer start to false, if necessary
-			createCircularBufferStoreStart(action, false, fireabilityThenBlock);
 
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
@@ -746,8 +716,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 						sourceState, exprFalse);
 				fireabilityThenBlock.add(targetAtFalse);
 			}
-			// Add circularBuffer start to true, if necessary
-			createCircularBufferStoreStart(action, true, fireabilityThenBlock);
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
@@ -781,8 +749,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Add circularBuffer start to false
 			BlockBasic stopStartBlockBasic = irFactory.createBlockBasic();
 
-			// Add circularBuffer start to false, if necessary
-			createCircularBufferStoreStart(action, false, stopStartBlockBasic);
 
 			schedulabilityThenBlocks.add(stopStartBlockBasic);
 
@@ -792,7 +758,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			fireabilityThenBlock.add(instCall);
 
 			// Add circularBuffer start to true, if necessary
-			createCircularBufferStoreStart(action, true, fireabilityThenBlock);
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
@@ -813,16 +778,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Create fireability thenBlock Basic
 			BlockBasic fireabilityThenBlock = irFactory.createBlockBasic();
 
-			// Add circularBuffer start to false, if necessary
-			createCircularBufferStoreStart(action, false, fireabilityThenBlock);
-
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
 			fireabilityThenBlock.add(instCall);
-
-			// Add circularBuffer start to true, if necessary
-			createCircularBufferStoreStart(action, true, fireabilityThenBlock);
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
