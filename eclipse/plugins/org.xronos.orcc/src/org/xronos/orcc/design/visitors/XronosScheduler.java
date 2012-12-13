@@ -626,7 +626,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				Transition transition = ((Transition) edge);
 				actions.add(transition.getAction());
 			}
-
+			actions.addAll(actor.getActionsOutsideFsm());
 			for (Action outFsmAction : actions) {
 				for (Port port : outFsmAction.getInputPattern().getPorts()) {
 					if (inputCircularBuffer.containsKey(port)) {
