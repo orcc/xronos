@@ -20,232 +20,219 @@
  */
 package org.xronos.openforge.report;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import org.xronos.openforge.lim.*;
-import org.xronos.openforge.lim.memory.*;
+import org.xronos.openforge.lim.Block;
+import org.xronos.openforge.lim.Call;
+import org.xronos.openforge.lim.Design;
+import org.xronos.openforge.lim.FilteredVisitor;
+import org.xronos.openforge.lim.Operation;
+import org.xronos.openforge.lim.Procedure;
+import org.xronos.openforge.lim.Task;
+import org.xronos.openforge.lim.memory.MemoryAccess;
 import org.xronos.openforge.lim.primitive.Primitive;
-
 
 /**
  * A visitor that travserses through a Design and stores resources it discovers
  * to a {@link ResourceBank}.
- *
- * @author    ysyu
- * @version   $Id: ResourceReporter.java 149 2006-06-28 17:34:19Z imiller $
+ * 
+ * @author ysyu
+ * @version $Id: ResourceReporter.java 149 2006-06-28 17:34:19Z imiller $
  */
-public class ResourceReporter extends FilteredVisitor
-{
-    private final static String _RCS_ = "$Rev: 149 $";
+public class ResourceReporter extends FilteredVisitor {
+	private DesignResource designResource = null;
 
-    private DesignResource designResource = null;
+	/*
+	 * used to keep track of calling methods and submethod calls
+	 */
+	private ProcedureResource callingProcResource = null;
+	private ProcedureResource currentProcResource = null;
+	private Map<ProcedureResource, ProcedureResource> callingToCurrent = new HashMap<ProcedureResource, ProcedureResource>();
 
-    /*
-     * used to keep track of calling methods and submethod calls 
-     */
-    private ProcedureResource callingProcResource = null;
-    private ProcedureResource currentProcResource = null;
-    private Map callingToCurrent = new HashMap();
-    
-    /** used to prevent calling generateTotalReport() more than once */
-    private Set unique_proc = new HashSet(11);
+	/** used to prevent calling generateTotalReport() more than once */
+	private Set<Procedure> unique_proc = new HashSet<Procedure>(11);
 
-    public ResourceReporter()
-    {
-    }
-    
-    public DesignResource getResource()
-    {
-        return designResource;
-    }
+	public ResourceReporter() {
+	}
 
-    /**
-     * Creates a new DesignResource and adds a new TaskResource to the
-     * newly created DesignResource
-     *
-     * @param design a LIM design
-     */
-    public void preFilter(Design design)
-    {
-        designResource = new DesignResource(design);
-        for (Iterator it = design.getTasks().iterator(); it.hasNext();)
-        {
-            Task task = (Task)it.next();
-            designResource.addResource(new TaskResource(task));
-        }
-    }
+	public DesignResource getResource() {
+		return designResource;
+	}
 
-    /**
-     * Visit the Task(s) according to TaskResources in a DesignResource 
-     *
-     * @param design a LIM design
-     */
-    public void visit(Design design)
-    {
-        preFilter(design);
-        for(Iterator iter = designResource.getResources().iterator(); iter.hasNext();)
-        {
-            TaskResource tr = (TaskResource)iter.next();
-            tr.getTask().accept(this);
-        }
-    }
+	/**
+	 * Creates a new DesignResource and adds a new TaskResource to the newly
+	 * created DesignResource
+	 * 
+	 * @param design
+	 *            a LIM design
+	 */
+	public void preFilter(Design design) {
+		designResource = new DesignResource(design);
+		for (Object element : design.getTasks()) {
+			Task task = (Task) element;
+			designResource.addResource(new TaskResource(task));
+		}
+	}
 
-    /**
-     * Resolves the current TaskResource and add a ProcedureResource for 
-     * entry method of this Task
-     *
-     * @param task a LIM task
-     */
-    public void preFilter(Task task)
-    {
-        TaskResource res = getCurrentResource(task);
-        res.addResource(new ProcedureResource(task.getCall().getProcedure()));
-    }
+	/**
+	 * Visit the Task(s) according to TaskResources in a DesignResource
+	 * 
+	 * @param design
+	 *            a LIM design
+	 */
+	@Override
+	public void visit(Design design) {
+		preFilter(design);
+		for (Object element : designResource.getResources()) {
+			TaskResource tr = (TaskResource) element;
+			tr.getTask().accept(this);
+		}
+	}
 
-    public void visit(Task task)
-    {
-        preFilter(task);
-        super.visit(task.getCall());
-    }
+	/**
+	 * Resolves the current TaskResource and add a ProcedureResource for entry
+	 * method of this Task
+	 * 
+	 * @param task
+	 *            a LIM task
+	 */
+	public void preFilter(Task task) {
+		TaskResource res = getCurrentResource(task);
+		res.addResource(new ProcedureResource(task.getCall().getProcedure()));
+	}
 
-    /**
-     * Resolves the current ProcedureResource 
-     *
-     * @param call a LIM method call
-     */
-    public void preFilter(Call call)
-    {
-        ProcedureResource res = getCurrentResource(call.getProcedure());
-        if(res == null)
-        {
-            ProcedureResource newRes = new ProcedureResource(call.getProcedure());
-            currentProcResource.addResource(newRes);
-            callingToCurrent.put(newRes, currentProcResource);
-            callingProcResource = currentProcResource;
-            currentProcResource = newRes;
-        }
-        else
-        {
-            currentProcResource = res;
-        }
-    }
+	@Override
+	public void visit(Task task) {
+		preFilter(task);
+		super.visit(task.getCall());
+	}
 
-    /**
-     * Generate a total resource report for a Procedure
-     *
-     * @param call a LIM method call
-     */
-    public void filter(Call call)
-    {
-        if(callingProcResource != null) 
-        {    
-            if(unique_proc.add(call.getProcedure()))
-            {
-                currentProcResource.generateTotalReport();
-            }
-            currentProcResource = callingProcResource;
-            callingProcResource = (ProcedureResource)callingToCurrent.get(callingProcResource);
-        }
-        else
-        {
-            if(unique_proc.add(call.getProcedure()))
-            {
-                currentProcResource.generateTotalReport();
-            }
-        }
-    }
+	/**
+	 * Resolves the current ProcedureResource
+	 * 
+	 * @param call
+	 *            a LIM method call
+	 */
+	@Override
+	public void preFilter(Call call) {
+		ProcedureResource res = getCurrentResource(call.getProcedure());
+		if (res == null) {
+			ProcedureResource newRes = new ProcedureResource(
+					call.getProcedure());
+			currentProcResource.addResource(newRes);
+			callingToCurrent.put(newRes, currentProcResource);
+			callingProcResource = currentProcResource;
+			currentProcResource = newRes;
+		} else {
+			currentProcResource = res;
+		}
+	}
 
-    public void visit(Block block)
-    {
-        traverse(block);
-    }
+	/**
+	 * Generate a total resource report for a Procedure
+	 * 
+	 * @param call
+	 *            a LIM method call
+	 */
+	@Override
+	public void filter(Call call) {
+		if (callingProcResource != null) {
+			if (unique_proc.add(call.getProcedure())) {
+				currentProcResource.generateTotalReport();
+			}
+			currentProcResource = callingProcResource;
+			callingProcResource = (ProcedureResource) callingToCurrent
+					.get(callingProcResource);
+		} else {
+			if (unique_proc.add(call.getProcedure())) {
+				currentProcResource.generateTotalReport();
+			}
+		}
+	}
 
-    /**
-     * Adds an operation to a ProcedureResource
-     *
-     * @param op a LIM operation
-     */
-    public void filter (Operation op)
-    {
-        currentProcResource.addResource(op);
-    }
+	@Override
+	public void visit(Block block) {
+		traverse(block);
+	}
 
-    /**
-     * Adds a primitive to a ProcedureResource
-     *
-     * @param pm a LIM primitive
-     */
-    public void filter (Primitive pm)
-    {
-        currentProcResource.addResource(pm);
-    }
+	/**
+	 * Adds an operation to a ProcedureResource
+	 * 
+	 * @param op
+	 *            a LIM operation
+	 */
+	@Override
+	public void filter(Operation op) {
+		currentProcResource.addResource(op);
+	}
 
-    public void filter (MemoryAccess access)
-    {
-        currentProcResource.addResource(access);
-    }
+	/**
+	 * Adds a primitive to a ProcedureResource
+	 * 
+	 * @param pm
+	 *            a LIM primitive
+	 */
+	@Override
+	public void filter(Primitive pm) {
+		currentProcResource.addResource(pm);
+	}
 
-    /**
-     * Resolves the TaskResource that contains all the resources
-     * from the given Task.
-     *
-     * @param task a LIM task
-     *
-     * @return a TaskResource associated with a Task
-     */
-    private TaskResource getCurrentResource(Task task)
-    {
-        TaskResource resource = null;
-        for(Iterator iter = designResource.getResources().iterator(); iter.hasNext();)
-        {
-            TaskResource res = (TaskResource)iter.next();
-            if(task.equals(res.getTask()))
-            {
-                resource = res;
-            }
-        }
-        return resource;
-    }
+	public void filter(MemoryAccess access) {
+		currentProcResource.addResource(access);
+	}
 
-    /**
-     * Resolves the Procedure that contains all the resources from
-     * the given Procedure.
-     *
-     * @param proc a LIM procedure
-     *
-     * @return a ProcedureResource associated with a Procedure
-     */
-    private ProcedureResource getCurrentResource(Procedure proc)
-    {
-        ProcedureResource resource = null;
-        for(Iterator iter = designResource.getResources().iterator(); iter.hasNext();)
-        {
-            TaskResource tres = (TaskResource)iter.next();
-            for(Iterator titer = tres.getResources().iterator(); titer.hasNext();)
-            {
-                ProcedureResource pres = (ProcedureResource)titer.next();
-                if(proc.equals(pres.getProcedure()))
-                {
-                    return pres;
-                }
-                else
-                {
-                    for(Iterator piter = pres.getResources().iterator(); piter.hasNext();)
-                    {
-                        Object o = piter.next();
-                        if(o instanceof ProcedureResource)
-                        {
-                            if(proc.equals(((ProcedureResource)o).getProcedure()))
-                            {   
-                                resource = (ProcedureResource)o;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return resource;
-    }
+	/**
+	 * Resolves the TaskResource that contains all the resources from the given
+	 * Task.
+	 * 
+	 * @param task
+	 *            a LIM task
+	 * 
+	 * @return a TaskResource associated with a Task
+	 */
+	private TaskResource getCurrentResource(Task task) {
+		TaskResource resource = null;
+		for (Object element : designResource.getResources()) {
+			TaskResource res = (TaskResource) element;
+			if (task.equals(res.getTask())) {
+				resource = res;
+			}
+		}
+		return resource;
+	}
+
+	/**
+	 * Resolves the Procedure that contains all the resources from the given
+	 * Procedure.
+	 * 
+	 * @param proc
+	 *            a LIM procedure
+	 * 
+	 * @return a ProcedureResource associated with a Procedure
+	 */
+	private ProcedureResource getCurrentResource(Procedure proc) {
+		ProcedureResource resource = null;
+		for (Object element : designResource.getResources()) {
+			TaskResource tres = (TaskResource) element;
+			for (Object element2 : tres.getResources()) {
+				ProcedureResource pres = (ProcedureResource) element2;
+				if (proc.equals(pres.getProcedure())) {
+					return pres;
+				} else {
+					for (Object o : pres.getResources()) {
+						if (o instanceof ProcedureResource) {
+							if (proc.equals(((ProcedureResource) o)
+									.getProcedure())) {
+								resource = (ProcedureResource) o;
+							}
+						}
+					}
+				}
+			}
+		}
+		return resource;
+	}
 }
-
-        

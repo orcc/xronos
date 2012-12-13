@@ -20,8 +20,8 @@ import java.io.PrintStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -98,7 +98,7 @@ public class GnuOptionDictionary {
 	 * 
 	 * @return the set of GnuOptionDefinitions.
 	 */
-	public Collection getDefinitions() {
+	public Collection<GnuOptionDefinition> getDefinitions() {
 		return shortMap.values();
 	}
 
@@ -140,31 +140,11 @@ public class GnuOptionDictionary {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see java.util.Map#putAll(java.util.Map)
-	 */
-	public void putAll(Map arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
 	 * @see java.util.Map#clear()
 	 */
 	public void clear() {
 		shortMap.clear();
 		longMap.clear();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.util.Map#keySet()
-	 */
-	public Set keySet() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	/*
@@ -181,8 +161,8 @@ public class GnuOptionDictionary {
 	 * 
 	 * @see java.util.Map#entrySet()
 	 */
-	public Set entrySet() {
-		Set entries = new HashSet();
+	public Set<Entry<Character, GnuOptionDefinition>> entrySet() {
+		Set<Entry<Character, GnuOptionDefinition>> entries = new HashSet<Entry<Character, GnuOptionDefinition>>();
 		entries.addAll(shortMap.entrySet());
 		return entries;
 	}
@@ -191,8 +171,8 @@ public class GnuOptionDictionary {
 	 * @param err
 	 */
 	public void printUsage(PrintStream printer) {
-		for (Iterator it = values().iterator(); it.hasNext();) {
-			printer.println("  " + it.next());
+		for (Object element : values()) {
+			printer.println("  " + element);
 		}
 	}
 

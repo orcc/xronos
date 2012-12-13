@@ -21,9 +21,10 @@
 package org.xronos.openforge.report;
 
 import java.util.Map;
+import java.util.Set;
 
+import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Task;
-
 
 /**
  * TaskResource is responsible to report all resources in a Task.
@@ -45,7 +46,7 @@ public class TaskResource extends ResourceBank {
 	 * @return a mapping of all resources to its counts
 	 */
 	@Override
-	public Map generateReport() {
+	public Map<Class<Object>, Set<Component>> generateReport() {
 		ProcedureResource pResource = (ProcedureResource) getResources()
 				.iterator().next();
 		return pResource.getTotalReport();

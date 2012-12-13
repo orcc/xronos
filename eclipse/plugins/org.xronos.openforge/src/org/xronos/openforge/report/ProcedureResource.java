@@ -26,8 +26,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Procedure;
-
 
 /**
  * @author ysyu
@@ -56,8 +56,7 @@ public class ProcedureResource extends ResourceBank {
 	public Map generateReport() {
 		Map resourceTypeToInstances = new HashMap();
 
-		for (Iterator iter = getResources().iterator(); iter.hasNext();) {
-			Object o = iter.next();
+		for (Object o : getResources()) {
 			if (o instanceof ProcedureResource) {
 			} else {
 				Class klass = o.getClass();
@@ -105,7 +104,7 @@ public class ProcedureResource extends ResourceBank {
 	/**
 	 * @return a mapping of all resource counts, including sub methods
 	 */
-	public Map getTotalReport() {
+	public Map<Class<Object>, Set<Component>> getTotalReport() {
 		return total_report;
 	}
 

@@ -42,7 +42,6 @@ import org.xronos.openforge.lim.memory.LocationConstant;
 import org.xronos.openforge.lim.primitive.Reg;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 
-
 /**
  * Loop is a generic representation of a loop control structure. Its purpose is
  * to iteratively execute the contents of a {@link LoopBody}. Internally, the
@@ -319,9 +318,8 @@ public class Loop extends Module {
 			exits.addAll(getBody().getBody().getExits());
 			exits.remove(getBody().getBody().getExit(Exit.DONE));
 
-			for (Iterator iter = getBody().getBody().getComponents().iterator(); iter
-					.hasNext();) {
-				Component comp = (Component) iter.next();
+			for (Object element : getBody().getBody().getComponents()) {
+				Component comp = (Component) element;
 				containsContinue |= (comp.getExit(Exit.CONTINUE) != null);
 			}
 		}
@@ -464,8 +462,8 @@ public class Loop extends Module {
 			clone.dataRegisters.add(cloneMap.get(iter.next()));
 		}
 		clone.dataLatches = new LinkedList();
-		for (Iterator iter = dataLatches.iterator(); iter.hasNext();) {
-			clone.dataLatches.add((Latch) cloneMap.get(iter.next()));
+		for (Object element : dataLatches) {
+			clone.dataLatches.add((Latch) cloneMap.get(element));
 		}
 		clone.controlRegister = (Reg) cloneMap.get(controlRegister);
 	}
@@ -514,10 +512,11 @@ public class Loop extends Module {
 	 *            a value of type 'Port'
 	 * @return a value of type 'Bus'
 	 */
+	@SuppressWarnings("unused")
 	private Bus getSingleBus(Port port) {
 		assert port.getOwner().getEntries().size() == 1;
 		Entry entry = port.getOwner().getEntries().get(0);
-		Collection deps = entry.getDependencies(port);
+		Collection<Dependency> deps = entry.getDependencies(port);
 		assert deps.size() == 1;
 		return ((Dependency) deps.iterator().next()).getLogicalBus();
 	}

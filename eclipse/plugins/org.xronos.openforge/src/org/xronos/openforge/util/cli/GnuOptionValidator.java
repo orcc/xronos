@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -98,10 +99,12 @@ public class GnuOptionValidator {
 								&& ((argFlag & GnuOptionDefinition.REQUIRED_ARGUMENT) != 0)) {
 							goodOptions.add(def);
 							putArg(def, arg);
-						} else
+						} else {
 							badOptions.add(currentToken);
-					} else
+						}
+					} else {
 						badOptions.add(currentToken);
+					}
 				} else {
 					// handle the short switch(es)
 					for (int j = 1; j < currentToken.length(); j++) {
@@ -138,8 +141,9 @@ public class GnuOptionValidator {
 							} else {
 								goodOptions.add(def);
 							}
-						} else
+						} else {
 							badOptions.add(currentToken);
+						}
 					}
 				}
 			} else {
@@ -177,8 +181,9 @@ public class GnuOptionValidator {
 
 	public String getArgument(char shortKey) {
 		List<String> l = get(goodOptions.getDefinition(shortKey));
-		if (l == null)
+		if (l == null) {
 			return null;
+		}
 		return (l.get(l.size() - 1));
 	}
 
@@ -188,8 +193,9 @@ public class GnuOptionValidator {
 	 */
 	public String getArgument(String longKey) {
 		List<String> l = get(goodOptions.getDefinition(longKey));
-		if (l == null)
+		if (l == null) {
 			return null;
+		}
 		return (l.get(l.size() - 1));
 	}
 
@@ -206,8 +212,9 @@ public class GnuOptionValidator {
 	 */
 	private void putArg(GnuOptionDefinition definition, String arg) {
 		List<String> argument = get(definition);
-		if (argument == null)
+		if (argument == null) {
 			argument = new ArrayList<String>();
+		}
 		argument.add(arg);
 		argMap.put(definition, argument);
 	}
@@ -226,7 +233,7 @@ public class GnuOptionValidator {
 		return badOptions;
 	}
 
-	public Set getGoodOptions() {
+	public Set<Entry<Character, GnuOptionDefinition>> getGoodOptions() {
 		return goodOptions.entrySet();
 	}
 
@@ -249,30 +256,35 @@ public class GnuOptionValidator {
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 		buf.append("GnuOptionValidator: {");
-		if (isValid())
+		if (isValid()) {
 			buf.append("valid");
-		else
+		} else {
 			buf.append("invalid");
+		}
 		buf.append("; ");
 		buf.append("good: ");
-		for (Iterator it = getGoodOptions().iterator(); it.hasNext();) {
+		for (Iterator<Entry<Character, GnuOptionDefinition>> it = getGoodOptions()
+				.iterator(); it.hasNext();) {
 			buf.append(it.next());
-			if (it.hasNext())
+			if (it.hasNext()) {
 				buf.append(", ");
+			}
 		}
 		buf.append("; ");
 		buf.append("bad: ");
 		for (Iterator<String> it = getBadOptions().iterator(); it.hasNext();) {
 			buf.append(it.next());
-			if (it.hasNext())
+			if (it.hasNext()) {
 				buf.append(", ");
+			}
 		}
 		buf.append("; ");
 		buf.append("args: ");
 		for (Iterator<String> it = getCmdArguments().iterator(); it.hasNext();) {
 			buf.append(it.next());
-			if (it.hasNext())
+			if (it.hasNext()) {
 				buf.append(", ");
+			}
 		}
 		buf.append("}");
 		return buf.toString();

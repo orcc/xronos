@@ -93,7 +93,6 @@ import org.xronos.openforge.lim.op.XorOp;
 import org.xronos.openforge.lim.primitive.Mux;
 import org.xronos.openforge.lim.primitive.Reg;
 
-
 /**
  * <code>ObjectResolver</code> maps out the potential flow of pointer values
  * through a user's {@link Design}. The purpose is to determine which memory
@@ -187,9 +186,8 @@ public class ObjectResolver extends DataFlowVisitor {
 
 		if (debug) {
 			System.out.println("OBJECT RESOLVING");
-			for (Iterator<LogicalMemory> iter = design.getLogicalMemories()
-					.iterator(); iter.hasNext();) {
-				iter.next().showContents();
+			for (LogicalMemory logicalMemory : design.getLogicalMemories()) {
+				logicalMemory.showContents();
 			}
 		}
 
@@ -201,9 +199,8 @@ public class ObjectResolver extends DataFlowVisitor {
 		resolver.finish();
 
 		if (debug) {
-			for (Iterator<LogicalMemory> iter = design.getLogicalMemories()
-					.iterator(); iter.hasNext();) {
-				iter.next().showAccessors();
+			for (LogicalMemory logicalMemory : design.getLogicalMemories()) {
+				logicalMemory.showAccessors();
 			}
 		}
 
@@ -716,8 +713,8 @@ public class ObjectResolver extends DataFlowVisitor {
 	@Override
 	public void visit(Mux mux) {
 		final Set inputValues = new HashSet();
-		for (Iterator iter = mux.getGoPorts().iterator(); iter.hasNext();) {
-			final Port goPort = (Port) iter.next();
+		for (Object element : mux.getGoPorts()) {
+			final Port goPort = (Port) element;
 			inputValues.addAll(getValues(mux.getDataPort(goPort)));
 		}
 		setValues(mux.getResultBus(), inputValues);
@@ -748,8 +745,8 @@ public class ObjectResolver extends DataFlowVisitor {
 
 	public void visit(OrOpMulti op) {
 		final Set inputValues = new HashSet();
-		for (Iterator iter = op.getDataPorts().iterator(); iter.hasNext();) {
-			final Port port = (Port) iter.next();
+		for (Object element : op.getDataPorts()) {
+			final Port port = (Port) element;
 			inputValues.addAll(getNewValues(port));
 		}
 		addDefaultValues(inputValues, op.getResultBus());
@@ -757,16 +754,15 @@ public class ObjectResolver extends DataFlowVisitor {
 
 	@Override
 	public void visit(OutBuf outbuf) {
-		for (Iterator iter = outbuf.getDataPorts().iterator(); iter.hasNext();) {
-			final Port port = (Port) iter.next();
+		for (Object element : outbuf.getDataPorts()) {
+			final Port port = (Port) element;
 			final Set values = new HashSet();
 
 			if (port.isConnected()) {
 				values.addAll(getValues(port.getBus()));
 			} else {
-				for (Iterator eiter = outbuf.getEntries().iterator(); eiter
-						.hasNext();) {
-					final Entry entry = (Entry) eiter.next();
+				for (Object element2 : outbuf.getEntries()) {
+					final Entry entry = (Entry) element2;
 					final Collection dependencies = entry.getDependencies(port);
 
 					/*
@@ -924,8 +920,8 @@ public class ObjectResolver extends DataFlowVisitor {
 	 */
 	private void addDefaultValues(Set<LogicalValue> inputValues, Bus outputBus) {
 		final Set outputValues = new HashSet();
-		for (Iterator iter = inputValues.iterator(); iter.hasNext();) {
-			final LogicalValue inputValue = (LogicalValue) iter.next();
+		for (Object element : inputValues) {
+			final LogicalValue inputValue = (LogicalValue) element;
 			final Location inputLocation = inputValue.toLocation();
 			if (inputLocation != Location.INVALID) {
 				final Pointer pointer = new Pointer(
@@ -1065,8 +1061,8 @@ public class ObjectResolver extends DataFlowVisitor {
 	}
 
 	private Set<LogicalValue> getValuesForObject(Object key) {
-		final Set set = valueMap.get(key);
-		return set == null ? Collections.EMPTY_SET : set;
+		final Set<LogicalValue> set = valueMap.get(key);
+		return set == null ? Collections.<LogicalValue> emptySet() : set;
 	}
 
 	private void setValues(Bus bus, Set values) {
@@ -1305,9 +1301,8 @@ public class ObjectResolver extends DataFlowVisitor {
 		@Override
 		public void visit(Record record) {
 			int delta = 0;
-			for (Iterator iter = record.getComponentValues().iterator(); iter
-					.hasNext();) {
-				final LogicalValue nextValue = (LogicalValue) iter.next();
+			for (Object element : record.getComponentValues()) {
+				final LogicalValue nextValue = (LogicalValue) element;
 				final Location location = baseLocation.createOffset(
 						nextValue.getSize(), delta);
 				nextValue.accept(new Initializer(location));

@@ -22,12 +22,11 @@ package org.xronos.openforge.report;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Design;
-
 
 /**
  * DesignResource is responsible to report all resources in a Design
@@ -52,17 +51,18 @@ public class DesignResource extends ResourceBank {
 	 * @return a mapurces to their counts in this design
 	 */
 	@Override
-	public Map generateReport() {
-		Map total = new HashMap();
-		for (Iterator iter = getResources().iterator(); iter.hasNext();) {
-			TaskResource tResource = (TaskResource) iter.next();
-			Map tReport = tResource.generateReport();
-			for (Iterator riter = tReport.keySet().iterator(); riter.hasNext();) {
-				Class klass = (Class) riter.next();
+	public Map<Class<Object>, Set<Component>> generateReport() {
+		Map<Class<Object>, Set<Component>> total = new HashMap<Class<Object>, Set<Component>>();
+		for (Object element : getResources()) {
+			TaskResource tResource = (TaskResource) element;
+			Map<Class<Object>, Set<Component>> tReport = tResource
+					.generateReport();
+			for (Class<Object> element2 : tReport.keySet()) {
+				Class<Object> klass = element2;
 				if (total.containsKey(klass)) {
-					Set left = (Set) total.get(klass);
-					Set right = (Set) tReport.get(klass);
-					Set combined = new HashSet();
+					Set<Component> left = total.get(klass);
+					Set<Component> right = tReport.get(klass);
+					Set<Component> combined = new HashSet<Component>();
 					combined.addAll(left);
 					combined.addAll(right);
 					total.put(klass, combined);
