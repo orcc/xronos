@@ -11,6 +11,7 @@ import org.xronos.orcc.ir.InstPortRead
 import org.xronos.orcc.ir.InstPortStatus
 import org.xronos.orcc.ir.InstPortWrite
 import net.sf.orcc.ir.ExprVar
+import org.xronos.orcc.ir.InstPortPeek
 
 class DebugPrinter extends InstancePrinter {
 	
@@ -29,11 +30,13 @@ class DebugPrinter extends InstancePrinter {
 	override defaultCase(EObject object){'''
 		«IF (object instanceof BlockMutex)»
 			«caseBlockMutex(object as BlockMutex)»
+		«ELSEIF (object instanceof InstPortPeek)»
+			«caseInstPortPeek(object as InstPortPeek)»	
 		«ELSEIF (object instanceof InstPortRead)»
 			«caseInstPortRead(object as InstPortRead)»
 		«ELSEIF (object instanceof InstPortStatus)»
 			«caseInstPortStatus(object as InstPortStatus)»
-			«ELSEIF (object instanceof InstPortWrite)»
+		«ELSEIF (object instanceof InstPortWrite)»
 			«caseInstPortWrite(object as InstPortWrite)»
 		«ENDIF»
 	'''
@@ -57,6 +60,13 @@ class DebugPrinter extends InstancePrinter {
 	val Port port = portRead.port as Port;
 	'''
 		«portRead.target.variable.name» = portRead(«port.name»);
+	'''
+	}
+	
+	def caseInstPortPeek(InstPortPeek portPeek) {
+	val Port port = portPeek.port as Port;
+	'''
+		«portPeek.target.variable.name» = portPeek(«port.name»);
 	'''
 	}
 	

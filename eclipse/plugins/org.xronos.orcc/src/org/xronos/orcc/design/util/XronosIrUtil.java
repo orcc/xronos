@@ -303,4 +303,17 @@ public class XronosIrUtil {
 				IrFactory.eINSTANCE.createTypeBool());
 	}
 
+	public static Var getVarFromList(String name, List<Var> vars) {
+		Var found = null;
+
+		for (Var var : vars) {
+			if (var.getName().equals(name)) {
+				found = var;
+				break;
+			}
+		}
+
+		return found;
+	}
+
 }

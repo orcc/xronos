@@ -38,6 +38,7 @@ import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
@@ -47,7 +48,6 @@ import net.sf.orcc.ir.util.IrUtil;
 
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.io.CircularBuffer;
-import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.ir.InstPortWrite;
 import org.xronos.orcc.ir.XronosIrFactory;
@@ -82,21 +82,30 @@ public class ScalarPortIO extends DfVisitor<Void> {
 					int index = load.getBlock().indexOf(load);
 
 					block.add(index, portRead);
-				} else {
-					InstPortPeek portPeek = XronosIrFactory.eINSTANCE
-							.createInstPortPeek();
-					portPeek.setPort(port);
-					portPeek.setTarget(def);
-					portPeek.setLineNumber(load.getLineNumber());
 
+				} else {
+					Var portPeekVar = null;
+					if (actor.getStateVar("portPeek_" + port.getName()) != null) {
+						portPeekVar = actor.getStateVar("portPeek_"
+								+ port.getName());
+					} else {
+						portPeekVar = IrFactory.eINSTANCE.createVar(
+								port.getType(), "portPeek_" + port.getName(),
+								true, 0);
+						actor.getStateVars().add(portPeekVar);
+					}
+
+					Var loadTarget = load.getTarget().getVariable();
+
+					InstAssign peekAssign = IrFactory.eINSTANCE
+							.createInstAssign(loadTarget, portPeekVar);
 					BlockBasic block = load.getBlock();
 					int index = load.getBlock().indexOf(load);
-
-					block.add(index, portPeek);
+					block.add(index, peekAssign);
 				}
-
 				IrUtil.delete(load);
 			}
+
 			return null;
 		}
 
@@ -177,6 +186,7 @@ public class ScalarPortIO extends DfVisitor<Void> {
 
 	@Override
 	public Void caseActor(Actor actor) {
+		this.actor = actor;
 		CircularBufferInput = resourceCache.getActorInputCircularBuffer(actor);
 		CircularBufferOutput = resourceCache
 				.getActorOutputCircularBuffer(actor);

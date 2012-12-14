@@ -67,6 +67,7 @@ import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.XronosIrUtil;
 import org.xronos.orcc.design.visitors.io.CircularBuffer;
 import org.xronos.orcc.ir.BlockMutex;
+import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.InstPortStatus;
 import org.xronos.orcc.ir.XronosIrFactory;
 
@@ -173,23 +174,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 								exprVar, typeBool);
 					}
 				} else {
-					// Single token
-					InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
-							.createInstPortStatus();
-					instPortStatus.setPort(port);
-
-					// Create the portStatus variable and add it to the locals
-					Var portStatus = irFactory.createVar(
-							typeBool,
-							"portStatus_" + action.getName() + "_"
-									+ port.getName(), true, 0);
-					xronosSchedulerLocals.add(portStatus);
-
-					Def target = irFactory.createDef(portStatus);
-					instPortStatus.setTarget(target);
-
-					// Add this instruction to the block
-					block.add(instPortStatus);
+					// Get portStatus from Locals
+					Var portStatus = XronosIrUtil.getVarFromList("portStatus_"
+							+ port.getName(), xronosSchedulerLocals);
 
 					// Update the final Expression
 					if (exprSpaceAvailability == null) {
@@ -325,24 +312,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 								exprVar, typeBool);
 					}
 				} else {
-					// Single token
-					InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
-							.createInstPortStatus();
-					instPortStatus.setPort(port);
-
-					// Create the portStatus variable and add it to the locals
-					Var portStatus = irFactory.createVar(
-							typeBool,
-							"portStatus_" + action.getName() + "_"
-									+ port.getName(), true, 0);
-					xronosSchedulerLocals.add(portStatus);
-
-					Def target = irFactory.createDef(portStatus);
-					instPortStatus.setTarget(target);
-
-					// Add this instruction to the block
-					block.add(instPortStatus);
-
+					// Get PortSatus form locals
+					Var portStatus = XronosIrUtil.getVarFromList("portStatus_"
+							+ port.getName(), xronosSchedulerLocals);
 					// Update the final Expression
 					if (exprTokenAvailability == null) {
 						exprTokenAvailability = irFactory
@@ -512,6 +484,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 		/** For each CircularBuffer Load the stateVars to temporary one **/
 		BlockBasic cbLoadBlock = irFactory.createBlockBasic();
+		BlockBasic statusPeekBlock = irFactory.createBlockBasic();
 		for (Port port : actor.getInputs()) {
 			if (inputCircularBuffer.get(port) != null) {
 				CircularBuffer circularBuffer = inputCircularBuffer.get(port);
@@ -531,6 +504,39 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				// Add all instructions
 				cbLoadBlock.add(instLoadCount);
 				cbLoadBlock.add(instLoadStart);
+			} else {
+				InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
+						.createInstPortStatus();
+				instPortStatus.setPort(port);
+				Type typeBool = irFactory.createTypeBool();
+				// Create the portStatus variable and add it to the locals
+				Var portStatus = irFactory.createVar(typeBool, "portStatus_"
+						+ port.getName(), true, 0);
+				xronosSchedulerLocals.add(portStatus);
+
+				Def target = irFactory.createDef(portStatus);
+				instPortStatus.setTarget(target);
+
+				statusPeekBlock.add(instPortStatus);
+
+				if (actor.getStateVar("portPeek_" + port.getName()) != null) {
+					Var portPeekVar = actor.getStateVar("portPeek_"
+							+ port.getName());
+					InstPortPeek portPeek = XronosIrFactory.eINSTANCE
+							.createInstPortPeek();
+					portPeek.setPort(port);
+					Var peekVar = irFactory.createVar(port.getType(),
+							"peekVar", true, 0);
+					xronosSchedulerLocals.add(peekVar);
+					Def def = irFactory.createDef(portPeekVar);
+					portPeek.setTarget(def);
+
+					// InstStore storePeek = irFactory.createInstStore(
+					// portPeekVar, peekVar);
+
+					statusPeekBlock.add(portPeek);
+					// statusPeekBlock.add(storePeek);
+				}
 			}
 		}
 
@@ -547,9 +553,30 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				// Add all instructions
 				cbLoadBlock.add(instLoadCount);
 				// cbLoadBlock.add(instLoadStart);
+			} else {
+				InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
+						.createInstPortStatus();
+				instPortStatus.setPort(port);
+				Type typeBool = irFactory.createTypeBool();
+				// Create the portStatus variable and add it to the locals
+				Var portStatus = irFactory.createVar(typeBool, "portStatus_"
+						+ port.getName(), true, 0);
+				xronosSchedulerLocals.add(portStatus);
+
+				Def target = irFactory.createDef(portStatus);
+				instPortStatus.setTarget(target);
+
+				statusPeekBlock.add(instPortStatus);
 			}
 		}
-		blocks.add(cbLoadBlock);
+
+		if (!cbLoadBlock.getInstructions().isEmpty()) {
+			blocks.add(cbLoadBlock);
+		}
+
+		if (!statusPeekBlock.getInstructions().isEmpty()) {
+			blocks.add(statusPeekBlock);
+		}
 
 		// Add schedulability and fireability blocks
 		ActionSchedulability actionSchedulability = new ActionSchedulability(
