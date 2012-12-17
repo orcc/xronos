@@ -141,14 +141,14 @@ public class VerilogAddGoDone {
 
 						String actionNameGo = action.getName() + "_go";
 						String actionNameDone = action.getName() + "_done";
-						if (contains.indexOf(actionNameGo + "=") != -1) {
+						if (contains.indexOf("assign " + actionNameGo + "=") != -1) {
 							int loc = contains.indexOf(actionNameGo);
 							String newLine = "assign "
 									+ contains
 											.substring(loc, contains.length());
 							verilogWriter.println(newLine);
 						}
-						if (contains.indexOf(actionNameDone + "=") != -1) {
+						if (contains.indexOf("assign " + actionNameDone + "=") != -1) {
 							int loc = contains.indexOf(actionNameDone);
 							String newLine = "assign "
 									+ contains
