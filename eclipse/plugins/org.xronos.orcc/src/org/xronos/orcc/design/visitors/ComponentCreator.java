@@ -378,63 +378,44 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		// Component component = null;
 		if (expr.getOp() == OpBinary.BITAND) {
 			currentComponent = new AndOp();
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.BITOR) {
 			currentComponent = new OrOp();
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.BITXOR) {
 			currentComponent = new XorOp();
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.DIV) {
 			currentComponent = new DivideOp(sizeInBits);
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.DIV_INT) {
 			currentComponent = new DivideOp(sizeInBits);
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.EQ) {
 			currentComponent = new EqualsOp();
-			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.GE) {
 			currentComponent = new GreaterThanEqualToOp();
-			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.GT) {
 			currentComponent = new GreaterThanOp();
-			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.LE) {
 			currentComponent = new LessThanEqualToOp();
-			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.LOGIC_AND) {
 			currentComponent = new And(2);
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.LOGIC_OR) {
 			currentComponent = new Or(2);
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.LT) {
 			currentComponent = new LessThanOp();
-			// currentComponent = binaryMapInLogic(component, expr);
 		} else if (expr.getOp() == OpBinary.MINUS) {
 			currentComponent = new SubtractOp();
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.MOD) {
 			currentComponent = new ModuloOp();
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.NE) {
 			currentComponent = new NotEqualsOp();
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.PLUS) {
 			currentComponent = new AddOp();
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.SHIFT_LEFT) {
 			int log2N = MathStuff.log2(sizeInBits);
 			currentComponent = new LeftShiftOp(log2N);
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.SHIFT_RIGHT) {
 			int log2N = MathStuff.log2(sizeInBits);
 			currentComponent = new RightShiftOp(log2N);
-			// currentComponent = binaryMapInCast(component, expr);
 		} else if (expr.getOp() == OpBinary.TIMES) {
 			currentComponent = new MultiplyOp(expr.getType().getSizeInBits());
-			// currentComponent = binaryMapInCast(component, expr);
 		}
 		currentComponent.setNonRemovable();
 		PortUtil.mapInDataPorts(currentComponent, inVars, portDependency,

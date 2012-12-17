@@ -62,7 +62,6 @@ import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 
-import org.xronos.orcc.backend.debug.DebugPrinter;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.XronosIrUtil;
 import org.xronos.orcc.design.visitors.io.CircularBuffer;
@@ -434,11 +433,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		xronosScheduler.getBlocks().add(returnBlock);
 		Type returnType = irFactory.createTypeVoid();
 		xronosScheduler.setReturnType(returnType);
-
-		// Debug
-		DebugPrinter debugPrinter = new DebugPrinter();
-		debugPrinter.printProcedure("/tmp", xronosScheduler, actor.getName()
-				+ "_" + xronosScheduler.getName());
 
 		return xronosScheduler;
 	}

@@ -593,6 +593,9 @@ class TestbenchPrinter extends IrSwitch {
 		WaveGen_Proc_Out : process (clk)
 			variable Input_bit   : integer range 2147483647 downto - 2147483648;
 			variable line_number : line;
+			«FOR port_out: outputPorts SEPARATOR "\n"»
+			variable sequence_«port_out.name» : integer := 0;
+			«ENDFOR»
 		begin
 			if (rising_edge(clk)) then
 			«FOR port: outputPorts SEPARATOR "\n"»
@@ -605,37 +608,40 @@ class TestbenchPrinter extends IrSwitch {
 							«IF port.type.bool»
 							if (input_bit = 1) then
 								assert («port.name»_data = '1')
-								report "on port «port.name» incorrectly value computed : '0' instead of : '1'"
+								report "on port «port.name» incorrectly value computed : '0' instead of : '1' sequence " & str(sequence_«port.name»)
 								severity failure;
 								
 								assert («port.name»_data = '0')
-								report "on port «port.name» correctly value computed : '1' instead of : '1'"
+								report "on port «port.name» correctly value computed : '1' instead of : '1' sequence " & str(sequence_«port.name»)
 								severity note;
 							else
 								assert («port.name»_data = '0')
-								report "on port «port.name» incorrectly value computed : '1' instead of : '0'"
+								report "on port «port.name» incorrectly value computed : '1' instead of : '0' sequence " & str(sequence_«port.name»)
 								severity failure;
 								
 								assert («port.name»_data = '1')
-								report "on port «port.name» correctly value computed : '0' instead of : '0'"
+								report "on port «port.name» correctly value computed : '0' instead of : '0' sequence " & str(sequence_«port.name»)
 								severity note;
 							end if;
+							sequence_«port.name» := sequence_«port.name» + 1;
 							«ELSEIF port.type.int»
 							assert («port.name»_data  = std_logic_vector(to_signed(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» incorrectly value computed : " & str(to_integer(signed(«port.name»_data))) & " instead of :" & str(input_bit)
+							report "on port «port.name» incorrectly value computed : " & str(to_integer(signed(«port.name»_data))) & " instead of :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity failure;
 							
 							assert («port.name»_data /= std_logic_vector(to_signed(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» correct value computed : " & str(to_integer(signed(«port.name»_data))) & " equals :" & str(input_bit)
+							report "on port «port.name» correct value computed : " & str(to_integer(signed(«port.name»_data))) & " equals :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity note;
+							sequence_«port.name» := sequence_«port.name» + 1;
 							«ELSEIF port.type.uint»
 							assert («port.name»_data  = std_logic_vector(to_unsigned(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» incorrectly value computed : " & str(to_integer(signed(«port.name»_data))) & " instead of :" & str(input_bit)
+							report "on port «port.name» incorrectly value computed : " & str(to_integer(signed(«port.name»_data))) & " instead of :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity failure;
 							
 							assert («port.name»_data /= std_logic_vector(to_unsigned(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» correct value computed : " & str(to_integer(signed(«port.name»_data))) & " equals :" & str(input_bit)
+							report "on port «port.name» correct value computed : " & str(to_integer(signed(«port.name»_data))) & " equals :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity note;
+							sequence_«port.name» := sequence_«port.name» + 1;
 							«ENDIF»
 						end if;
 				end if;

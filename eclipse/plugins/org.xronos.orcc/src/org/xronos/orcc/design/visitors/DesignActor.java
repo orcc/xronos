@@ -53,6 +53,7 @@ import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.Task;
 import org.xronos.openforge.lim.memory.LogicalValue;
+import org.xronos.orcc.backend.debug.DebugPrinter;
 import org.xronos.orcc.backend.transform.XronosTransform;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.DesignUtil;
@@ -98,7 +99,6 @@ public class DesignActor extends DfVisitor<Object> {
 	/** Dependency between Components and Port-Var **/
 	private final Map<Port, Var> portDependency;
 
-
 	public DesignActor(Design design, ResourceCache resources) {
 		this.design = design;
 		this.resources = resources;
@@ -109,7 +109,7 @@ public class DesignActor extends DfVisitor<Object> {
 		stateVars = new HashMap<LogicalValue, Var>();
 		stateVarVisitor = new StateVarVisitor(stateVars);
 		componentsList = new ArrayList<Component>();
-		
+
 	}
 
 	@Override
@@ -191,11 +191,6 @@ public class DesignActor extends DfVisitor<Object> {
 		DesignUtil.designAllocateMemory(design, stateVars,
 				Constants.MAX_ADDR_WIDTH, resources);
 
-//		/** Create a Task for each Circular Buffer, if any **/
-//		CircularBufferProcedure circularBufferProcedure = new CircularBufferProcedure(
-//				design, resources, resourceDependecies);
-//		circularBufferProcedure.doSwitch(actor);
-
 		/** Create a Task for each action in the actor **/
 		for (Action action : actor.getActions()) {
 			Task task = (Task) doSwitch(action);
@@ -209,8 +204,14 @@ public class DesignActor extends DfVisitor<Object> {
 		Procedure procedure = xronosScheduler.doSwitch(actor);
 		XronosTransform xronosTransform = new XronosTransform(procedure);
 		xronosTransform.transformProcedure(resources);
-		List<Component> schedulerComponents = new ArrayList<Component>();
 
+		// Print Debug
+
+		DebugPrinter debugPrinter = new DebugPrinter();
+		debugPrinter.printActor("/tmp", actor, procedure, actor.getName(),
+				resources);
+
+		List<Component> schedulerComponents = new ArrayList<Component>();
 		ComponentCreator schedulerComponentCreator = new ComponentCreator(
 				resources, portDependency, busDependency, portGroupDependency,
 				doneBusDependency);

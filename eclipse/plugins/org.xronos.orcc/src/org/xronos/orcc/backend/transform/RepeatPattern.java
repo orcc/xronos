@@ -62,7 +62,6 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.util.EcoreHelper;
 
-import org.xronos.orcc.backend.debug.DebugPrinter;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.XronosIrUtil;
 import org.xronos.orcc.design.util.XronosMathUtil;
@@ -629,10 +628,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 			scheduler.getBlocks().add(schedulerReturnBlock);
 			returnType = IrFactory.eINSTANCE.createTypeBool();
 			scheduler.setReturnType(returnType);
-
-			DebugPrinter debugPrinter = new DebugPrinter();
-			debugPrinter.printProcedure("/tmp", body, actor.getSimpleName()
-					+ "_" + body.getName());
 
 			Pattern inputPattern = DfFactory.eINSTANCE.createPattern();
 			Pattern outputPattern = DfFactory.eINSTANCE.createPattern();
