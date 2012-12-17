@@ -155,81 +155,86 @@ public class XronosPrinter {
 				+ ".v";
 		long t0 = System.currentTimeMillis();
 		if (instance.isActor()) {
-			if (keepUnchangedFiles) {
-				long sourceLastModified = getLastModifiedHierarchy(instance);
-				File targetFile = new File(file);
-				long targetLastModified = targetFile.lastModified();
-				if (sourceLastModified < targetLastModified) {
-					return true;
-				}
-			}
-			try {
-				xronosMainJob.setOptionValues(xronosArgs);
-				f.preprocess(xronosMainJob);
-				Engine engine = new DesignEngine(xronosMainJob, instance,
-						resourceCache);
-				engine.begin();
-			} catch (NewJob.ForgeOptionException foe) {
-				OrccLogger.severeln("Command line option error: "
-						+ foe.getMessage());
-				OrccLogger.severeln("");
-				OrccLogger.severeln(OptionRegistry.usage(false));
-				error = true;
-			} catch (ForgeFatalException ffe) {
-				OrccLogger
-						.severeln("Forge compilation ended with fatal error:");
-				OrccLogger.severeln(ffe.getMessage());
-				error = true;
-			} catch (NullPointerException ex) {
-				OrccLogger.severeln("Instance: " + instance.getSimpleName()
-						+ ", failed to compile: NullPointerException, "
-						+ ex.getMessage());
-				error = true;
-			} catch (NoSuchElementException ex) {
-				OrccLogger.severeln("Instance: " + instance.getSimpleName()
-						+ ", failed to compile: NoSuchElementException, "
-						+ ex.getMessage());
-				error = true;
-			} catch (UnbalancedAssignmentException ex) {
-				OrccLogger
-						.severeln("Instance: "
-								+ instance.getSimpleName()
-								+ ", failed to compile: UnbalancedAssignmentException, "
-								+ ex.getMessage());
-				error = true;
-			} catch (ArrayIndexOutOfBoundsException ex) {
-				OrccLogger
-						.severeln("Instance: "
-								+ instance.getSimpleName()
-								+ ", failed to compile: ArrayIndexOutOfBoundsException, "
-								+ ex.getMessage());
-				error = true;
-			} catch (Throwable t) {
-				OrccLogger.severeln("Instance: " + instance.getSimpleName()
-						+ ", failed to compile: " + t.getMessage());
-				error = true;
-			}
-			if (!error) {
-				long t1 = System.currentTimeMillis();
-				OrccLogger.traceln("Compiling instance: "
-						+ instance.getSimpleName() + ": Compiled in: "
-						+ ((float) (t1 - t0) / 1000) + "s");
-			}
-			if (options.containsKey("generateGoDone")) {
-				Boolean generateGoDone = (Boolean) options
-						.get("generateGoDone");
-
-				if (generateGoDone) {
-					if (!error) {
-						String rtlGoDonePath = rtlPath + File.separator
-								+ "rtlGoDone";
-						VerilogAddGoDone verilogFile = new VerilogAddGoDone(
-								instance, rtlPath, rtlGoDonePath);
-						verilogFile.addGoDone();
+			if (!instance.getActor().hasAttribute("no_generation")) {
+				if (keepUnchangedFiles) {
+					long sourceLastModified = getLastModifiedHierarchy(instance);
+					File targetFile = new File(file);
+					long targetLastModified = targetFile.lastModified();
+					if (sourceLastModified < targetLastModified) {
+						return true;
 					}
 				}
+				try {
+					xronosMainJob.setOptionValues(xronosArgs);
+					f.preprocess(xronosMainJob);
+					Engine engine = new DesignEngine(xronosMainJob, instance,
+							resourceCache);
+					engine.begin();
+				} catch (NewJob.ForgeOptionException foe) {
+					OrccLogger.severeln("Command line option error: "
+							+ foe.getMessage());
+					OrccLogger.severeln("");
+					OrccLogger.severeln(OptionRegistry.usage(false));
+					error = true;
+				} catch (ForgeFatalException ffe) {
+					OrccLogger
+							.severeln("Forge compilation ended with fatal error:");
+					OrccLogger.severeln(ffe.getMessage());
+					error = true;
+				} catch (NullPointerException ex) {
+					OrccLogger.severeln("Instance: " + instance.getSimpleName()
+							+ ", failed to compile: NullPointerException, "
+							+ ex.getMessage());
+					error = true;
+				} catch (NoSuchElementException ex) {
+					OrccLogger.severeln("Instance: " + instance.getSimpleName()
+							+ ", failed to compile: NoSuchElementException, "
+							+ ex.getMessage());
+					error = true;
+				} catch (UnbalancedAssignmentException ex) {
+					OrccLogger
+							.severeln("Instance: "
+									+ instance.getSimpleName()
+									+ ", failed to compile: UnbalancedAssignmentException, "
+									+ ex.getMessage());
+					error = true;
+				} catch (ArrayIndexOutOfBoundsException ex) {
+					OrccLogger
+							.severeln("Instance: "
+									+ instance.getSimpleName()
+									+ ", failed to compile: ArrayIndexOutOfBoundsException, "
+									+ ex.getMessage());
+					error = true;
+				} catch (Throwable t) {
+					OrccLogger.severeln("Instance: " + instance.getSimpleName()
+							+ ", failed to compile: " + t.getMessage());
+					error = true;
+				}
+				if (!error) {
+					long t1 = System.currentTimeMillis();
+					OrccLogger.traceln("Compiling instance: "
+							+ instance.getSimpleName() + ": Compiled in: "
+							+ ((float) (t1 - t0) / 1000) + "s");
+				}
+				if (options.containsKey("generateGoDone")) {
+					Boolean generateGoDone = (Boolean) options
+							.get("generateGoDone");
+
+					if (generateGoDone) {
+						if (!error) {
+							String rtlGoDonePath = rtlPath + File.separator
+									+ "rtlGoDone";
+							VerilogAddGoDone verilogFile = new VerilogAddGoDone(
+									instance, rtlPath, rtlGoDonePath);
+							verilogFile.addGoDone();
+						}
+					}
+				}
+				return error;
+			} else {
+				OrccLogger.warnln("Instance: " + instance.getSimpleName()
+						+ " will not be generated!");
 			}
-			return error;
 		}
 		return false;
 	}

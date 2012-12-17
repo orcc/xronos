@@ -155,7 +155,7 @@ public class Xronos extends AbstractBackend {
 
 	@Override
 	protected void doTransformActor(Actor actor) {
-		if (!actor.isNative()) {
+		if (!actor.hasAttribute("no_generation") ) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
