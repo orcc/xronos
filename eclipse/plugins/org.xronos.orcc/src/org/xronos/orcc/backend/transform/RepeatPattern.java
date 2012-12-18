@@ -41,6 +41,7 @@ import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
@@ -132,7 +133,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 	}
 
 	private class TransformCircularBufferLoadStore extends
-			AbstractIrVisitor<Object> {
+	AbstractIrVisitor<Object> {
 
 		public TransformCircularBufferLoadStore(Procedure procedure) {
 			super(true);
@@ -188,6 +189,62 @@ public class RepeatPattern extends DfVisitor<Void> {
 			}
 			return null;
 		}
+	}
+
+	private class StoreToPortWrite extends AbstractIrVisitor<Object> {
+
+		private Map<BlockWhile, Map<InstStore, InstPortWrite>> blockStore;
+
+		public StoreToPortWrite() {
+			super(true);
+		}
+
+		@Override
+		public Object caseProcedure(Procedure procedure) {
+			this.procedure = procedure;
+			blockStore = new HashMap<BlockWhile, Map<InstStore, InstPortWrite>>();
+			super.caseProcedure(procedure);
+
+			for (BlockWhile blockWhile : blockStore.keySet()) {
+				Map<InstStore,InstPortWrite> storePortWrite = blockStore.get(blockWhile);
+				Port port = null;
+				// Replace Stores with PortWrite
+				for(InstStore store: storePortWrite.keySet()){
+					InstPortWrite insPortWrite = storePortWrite.get(store);
+					port = (Port) insPortWrite.getPort();
+					BlockBasic block = store.getBlock();
+					int index = block.getInstructions().indexOf(store);
+					block.add(index, insPortWrite);
+					IrUtil.delete(store);
+				}
+				// Add Port Status and the portStatusIf block
+				List<Block> whileBlocks = blockWhile.getBlocks();
+				Var portStatus = IrFactory.eINSTANCE.createVar(
+						port.getType(), "portStatus_" + port.getName(),
+						true, 0);
+				procedure.getLocals().add(portStatus);
+				InstPortStatus instPortStatus = XronosIrUtil
+						.createInstPortStatus(portStatus, port);
+
+				BlockBasic portStatusBlock = IrFactory.eINSTANCE
+						.createBlockBasic();
+				portStatusBlock.add(instPortStatus);
+
+				Expression eFalse = IrFactory.eINSTANCE
+						.createExprBool(false);
+				Expression statusWhileCondition = XronosIrUtil
+						.createExprBinaryNotEqual(portStatus, eFalse);
+
+				BlockIf statusIf = XronosIrUtil.createBlockIf(
+						statusWhileCondition, whileBlocks);
+
+				blockWhile.getBlocks().add(0, portStatusBlock);
+				blockWhile.getBlocks().add(statusIf);
+
+			}
+
+			return null;
+		}
 
 		@Override
 		public Object caseInstStore(InstStore store) {
@@ -199,35 +256,25 @@ public class RepeatPattern extends DfVisitor<Void> {
 						.createInstPortWrite();
 				insPortWrite.setPort(port);
 				insPortWrite.setValue(value);
-				BlockBasic block = store.getBlock();
-				int index = block.getInstructions().indexOf(store);
-				block.add(index, insPortWrite);
-				IrUtil.delete(store);
 
-				BlockWhile blockWhile = EcoreHelper.getContainerOfType(block,
+				// Find the BlockWhile and store the InstStore and InstPortWrite
+				BlockWhile blockWhile = EcoreHelper.getContainerOfType(store,
 						BlockWhile.class);
 				if (blockWhile != null) {
-					Var portStatus = IrFactory.eINSTANCE.createVar(
-							port.getType(), "portStatus_" + port.getName(),
-							true, 0);
-					procedure.getLocals().add(portStatus);
-					InstPortStatus instPortStatus = XronosIrUtil
-							.createInstPortStatus(portStatus, port);
+					Map<InstStore, InstPortWrite> storePortWrite;
+					if (blockStore.containsKey(blockWhile)) {
+						storePortWrite = blockStore.get(blockWhile);
+					} else {
+						storePortWrite = new HashMap<InstStore, InstPortWrite>();
+					}
 
-					BlockBasic portStatusBlock = IrFactory.eINSTANCE
-							.createBlockBasic();
-					portStatusBlock.add(instPortStatus);
-
-					Expression eFalse = IrFactory.eINSTANCE
-							.createExprBool(false);
-					Expression statusWhileCondition = XronosIrUtil
-							.createExprBinaryNotEqual(portStatus, eFalse);
-
-					BlockIf statusIf = XronosIrUtil.createBlockIf(
-							statusWhileCondition, block);
-
-					blockWhile.getBlocks().add(0, portStatusBlock);
-					blockWhile.getBlocks().add(statusIf);
+					storePortWrite.put(store, insPortWrite);
+					blockStore.put(blockWhile, storePortWrite);
+				} else {
+					BlockBasic block = store.getBlock();
+					int index = block.getInstructions().indexOf(store);
+					block.add(index, insPortWrite);
+					IrUtil.delete(store);
 				}
 			}
 			return null;
@@ -368,10 +415,16 @@ public class RepeatPattern extends DfVisitor<Void> {
 			}
 		}
 
-		// Now change the Load/Store of an action
+		// Now change the Loads of an action
 		TransformCircularBufferLoadStore circularBufferLoadStore = new TransformCircularBufferLoadStore(
 				action.getBody());
 		circularBufferLoadStore.doSwitch(action.getBody().getBlocks());
+
+		// Now change the Stores to PortWrite of an action
+		StoreToPortWrite storeToPortWrite = new StoreToPortWrite();
+		storeToPortWrite.doSwitch(action.getBody());
+
+		// Now change the Loads of an action schedueler
 		circularBufferLoadStore = new TransformCircularBufferLoadStore(
 				action.getScheduler());
 		circularBufferLoadStore.doSwitch(action.getScheduler().getBlocks());
@@ -431,7 +484,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 		}
 		resourceCache.setActorInputCircularBuffer(actor, circularBufferInputs);
 		resourceCache
-				.setActorOutputCircularBuffer(actor, circularBufferOutputs);
+		.setActorOutputCircularBuffer(actor, circularBufferOutputs);
 		addFillBufferAction(actor);
 
 		return null;
