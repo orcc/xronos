@@ -16,7 +16,6 @@ import net.sf.orcc.backends.transform.DivisionSubstitution;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
-import net.sf.orcc.backends.transform.StoreOnceTransformation;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
@@ -159,7 +158,7 @@ public class Xronos extends AbstractBackend {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
-			transformations.add(new StoreOnceTransformation());
+			//transformations.add(new StoreOnceTransformation());
 			transformations.add(new DivisionSubstitution());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
@@ -267,16 +266,16 @@ public class Xronos extends AbstractBackend {
 			}
 		}
 		long t1 = System.currentTimeMillis();
-		OrccLogger.traceln("Done in " + ((float) (t1 - t0) / (float) 1000)
+		OrccLogger.traceln("Done in " + (float) (t1 - t0) / (float) 1000
 				+ "s");
 		if (numCached > 0) {
 			OrccLogger
-					.traceln("*******************************************************************************");
+			.traceln("*******************************************************************************");
 			OrccLogger.traceln("* NOTE: " + numCached
 					+ " instances were not regenerated "
 					+ "because they were not modyified *");
 			OrccLogger
-					.traceln("*******************************************************************************");
+			.traceln("*******************************************************************************");
 		}
 	}
 
