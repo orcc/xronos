@@ -154,11 +154,11 @@ public class Xronos extends AbstractBackend {
 
 	@Override
 	protected void doTransformActor(Actor actor) {
-		if (!actor.hasAttribute("no_generation") ) {
+		if (!actor.hasAttribute("no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
-			//transformations.add(new StoreOnceTransformation());
+			// transformations.add(new StoreOnceTransformation());
 			transformations.add(new DivisionSubstitution());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new UnitImporter());
@@ -216,6 +216,9 @@ public class Xronos extends AbstractBackend {
 
 		// Print Instances
 		generateInstances(network);
+
+		Runtime r = Runtime.getRuntime();
+		r.gc();
 	}
 
 	@Override
@@ -266,16 +269,15 @@ public class Xronos extends AbstractBackend {
 			}
 		}
 		long t1 = System.currentTimeMillis();
-		OrccLogger.traceln("Done in " + (float) (t1 - t0) / (float) 1000
-				+ "s");
+		OrccLogger.traceln("Done in " + (float) (t1 - t0) / (float) 1000 + "s");
 		if (numCached > 0) {
 			OrccLogger
-			.traceln("*******************************************************************************");
+					.traceln("*******************************************************************************");
 			OrccLogger.traceln("* NOTE: " + numCached
 					+ " instances were not regenerated "
 					+ "because they were not modyified *");
 			OrccLogger
-			.traceln("*******************************************************************************");
+					.traceln("*******************************************************************************");
 		}
 	}
 

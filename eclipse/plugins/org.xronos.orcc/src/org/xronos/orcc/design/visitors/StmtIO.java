@@ -46,6 +46,7 @@ import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.EObject;
 import org.xronos.orcc.design.ResourceCache;
@@ -561,24 +562,24 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 	private Boolean usedOnlyInPhi(Var var) {
 		Map<Use, Boolean> useMap = new HashMap<Use, Boolean>();
 		for (Use use : var.getUses()) {
-			EObject container = use.eContainer();
-			// Get the BlockBasic container
-			while (!(container instanceof Block)) {
-				container = container.eContainer();
+			EObject container = EcoreHelper.getContainerOfType(use,
+					InstPhi.class);
+			if (container != null) {
 				if (container instanceof InstPhi) {
 					useMap.put(use, true);
-					break;
 				}
-			}
-			if (container instanceof BlockBasic) {
-				useMap.put(use, false);
-			}
+			} else {
+				container = EcoreHelper.getContainerOfType(use, Block.class);
 
-			if (container instanceof BlockIf) {
-				useMap.put(use, false);
-			}
-			if (container instanceof BlockWhile) {
-				useMap.put(use, false);
+				if (container instanceof BlockBasic) {
+					useMap.put(use, false);
+				}
+				if (container instanceof BlockIf) {
+					useMap.put(use, false);
+				}
+				if (container instanceof BlockWhile) {
+					useMap.put(use, false);
+				}
 			}
 		}
 

@@ -178,7 +178,7 @@ public class XronosPrinter {
 					error = true;
 				} catch (ForgeFatalException ffe) {
 					OrccLogger
-					.severeln("Forge compilation ended with fatal error:");
+							.severeln("Forge compilation ended with fatal error:");
 					OrccLogger.severeln(ffe.getMessage());
 					error = true;
 				} catch (NullPointerException ex) {
@@ -193,17 +193,17 @@ public class XronosPrinter {
 					error = true;
 				} catch (UnbalancedAssignmentException ex) {
 					OrccLogger
-					.severeln("Instance: "
-							+ instance.getSimpleName()
-							+ ", failed to compile: UnbalancedAssignmentException, "
-							+ ex.getMessage());
+							.severeln("Instance: "
+									+ instance.getSimpleName()
+									+ ", failed to compile: UnbalancedAssignmentException, "
+									+ ex.getMessage());
 					error = true;
 				} catch (ArrayIndexOutOfBoundsException ex) {
 					OrccLogger
-					.severeln("Instance: "
-							+ instance.getSimpleName()
-							+ ", failed to compile: ArrayIndexOutOfBoundsException, "
-							+ ex.getMessage());
+							.severeln("Instance: "
+									+ instance.getSimpleName()
+									+ ", failed to compile: ArrayIndexOutOfBoundsException, "
+									+ ex.getMessage());
 					error = true;
 				} catch (Throwable t) {
 					OrccLogger.severeln("Instance: " + instance.getSimpleName()
@@ -230,16 +230,12 @@ public class XronosPrinter {
 						}
 					}
 				}
-				Runtime r = Runtime.getRuntime();
-				r.gc();
 				return error;
 			} else {
 				OrccLogger.warnln("Instance: " + instance.getSimpleName()
 						+ " will not be generated!");
 			}
 		}
-		Runtime r = Runtime.getRuntime();
-		r.gc();
 		return false;
 	}
 
@@ -311,7 +307,7 @@ public class XronosPrinter {
 					+ network.getSimpleName() + ".tcl";
 
 			CharSequence sequence = new TclScriptPrinter()
-			.printNetworkTclScript(network, options);
+					.printNetworkTclScript(network, options);
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
 			ps.close();
@@ -327,7 +323,7 @@ public class XronosPrinter {
 					+ network.getSimpleName() + ".tcl";
 
 			CharSequence sequence = new TclScriptPrinter()
-			.printNetworkTclScript(network, options);
+					.printNetworkTclScript(network, options);
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
 			ps.close();
