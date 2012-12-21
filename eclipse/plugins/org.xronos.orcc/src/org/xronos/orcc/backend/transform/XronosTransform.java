@@ -28,8 +28,23 @@
  */
 package org.xronos.orcc.backend.transform;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.sf.orcc.backends.transform.CastAdder;
+import net.sf.orcc.backends.transform.DivisionSubstitution;
+import net.sf.orcc.backends.transform.GlobalArrayInitializer;
+import net.sf.orcc.backends.transform.Inliner;
+import net.sf.orcc.backends.transform.LocalArrayRemoval;
+import net.sf.orcc.backends.transform.ParameterImporter;
+import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.transform.UnitImporter;
+import net.sf.orcc.df.util.DfSwitch;
+import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.CfgNode;
+import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.StmtIO;
@@ -49,6 +64,8 @@ public class XronosTransform {
 	}
 
 	public Procedure transformProcedure(ResourceCache resourceCache) {
+		// new XronosConstantPropagation();
+		// new ConstantPropagator();
 		// SSA
 		new XronosSSA().doSwitch(procedure);
 		// Add Literal Integers
@@ -65,4 +82,48 @@ public class XronosTransform {
 		new StmtIO(resourceCache).doSwitch(procedure);
 		return procedure;
 	}
+
+	public static void transformActor(Actor actor, ResourceCache resourceCache,
+			boolean debugMode) {
+		if (!actor.hasAttribute("no_generation")) {
+			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
+			transformations.add(new UnitImporter());
+			// transformations.add(new DfVisitor<Void>(new
+			// LocalVarInitializer()));
+			// transformations.add(new StoreOnceTransformation());
+			transformations.add(new ParameterImporter());
+			// transformations.add(new DfVisitor<Void>(
+			// new XronosConstantPropagation()));
+			// transformations.add(new DfVisitor<Void>(new
+			// ConstantPropagator()));
+			transformations.add(new DivisionSubstitution());
+			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
+			transformations.add(new RepeatPattern(resourceCache));
+			transformations.add(new DfVisitor<Void>(new XronosSSA()));
+			transformations.add(new GlobalArrayInitializer(true));
+			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
+			transformations.add(new ScalarPortIO(resourceCache));
+			transformations.add(new DfVisitor<Expression>(
+					new XronosLiteralIntegersAdder()));
+			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
+			transformations.add(new DfVisitor<Expression>(new XronosTac()));
+			transformations.add(new DfVisitor<CfgNode>(
+					new ControlFlowAnalyzer()));
+			transformations.add(new DfVisitor<Expression>(
+					new XronosLiteralIntegersAdder()));
+			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
+					false)));
+			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
+
+			for (DfSwitch<?> transformation : transformations) {
+				transformation.doSwitch(actor);
+				if (debugMode) {
+					System.out.println("oops " + transformation + " "
+							+ actor.getName());
+				}
+			}
+		}
+
+	}
+
 }

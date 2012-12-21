@@ -12,37 +12,16 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.backends.AbstractBackend;
-import net.sf.orcc.backends.transform.DivisionSubstitution;
-import net.sf.orcc.backends.transform.GlobalArrayInitializer;
-import net.sf.orcc.backends.transform.Inliner;
-import net.sf.orcc.backends.transform.LocalArrayRemoval;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
-import net.sf.orcc.df.transform.UnitImporter;
-import net.sf.orcc.df.util.DfSwitch;
-import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.graph.Vertex;
-import net.sf.orcc.ir.CfgNode;
-import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
-import net.sf.orcc.ir.transform.DeadCodeElimination;
-import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.OrccLogger;
 
 import org.eclipse.core.resources.IFile;
-import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.xronos.orcc.backend.transform.DeadPhiRemover;
-import org.xronos.orcc.backend.transform.IndexFlattener;
-import org.xronos.orcc.backend.transform.RepeatPattern;
-import org.xronos.orcc.backend.transform.ScalarPortIO;
-import org.xronos.orcc.backend.transform.XronosCast;
-import org.xronos.orcc.backend.transform.XronosLiteralIntegersAdder;
-import org.xronos.orcc.backend.transform.XronosSSA;
-import org.xronos.orcc.backend.transform.XronosTac;
+import org.xronos.orcc.backend.transform.XronosTransform;
 import org.xronos.orcc.design.ResourceCache;
 
 /**
@@ -154,41 +133,7 @@ public class Xronos extends AbstractBackend {
 
 	@Override
 	protected void doTransformActor(Actor actor) {
-		if (!actor.hasAttribute("no_generation")) {
-			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
-			// transformations.add(new DfVisitor<Void>(new
-			// LocalVarInitializer()));
-			// transformations.add(new StoreOnceTransformation());
-			transformations.add(new DivisionSubstitution());
-			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
-			transformations.add(new UnitImporter());
-			transformations.add(new RepeatPattern(resourceCache));
-			transformations.add(new DfVisitor<Void>(new XronosSSA()));
-			transformations.add(new GlobalArrayInitializer(true));
-			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
-			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
-			transformations.add(new ScalarPortIO(resourceCache));
-			transformations.add(new DfVisitor<Expression>(
-					new XronosLiteralIntegersAdder()));
-			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
-			transformations.add(new DfVisitor<Expression>(new XronosTac()));
-			transformations.add(new DfVisitor<CfgNode>(
-					new ControlFlowAnalyzer()));
-			transformations.add(new DfVisitor<Expression>(
-					new XronosLiteralIntegersAdder()));
-			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
-					false)));
-			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
-
-			for (DfSwitch<?> transformation : transformations) {
-				transformation.doSwitch(actor);
-				ResourceSet set = new ResourceSetImpl();
-				if (debugMode && !IrUtil.serializeActor(set, path, actor)) {
-					System.out.println("oops " + transformation + " "
-							+ actor.getName());
-				}
-			}
-		}
+		// Do not transform at this moment
 	}
 
 	@Override
@@ -201,9 +146,6 @@ public class Xronos extends AbstractBackend {
 		// instantiate and flattens network
 		new Instantiator(false, 1).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
-
-		// Transform Actors
-		transformActors(network.getAllActors());
 
 		// Compute the Network Template
 		network.computeTemplateMaps();
@@ -249,10 +191,17 @@ public class Xronos extends AbstractBackend {
 		int numCached = 0;
 
 		long t0 = System.currentTimeMillis();
+		List<Actor> visitedActrors = new ArrayList<Actor>();
 		for (Vertex vertex : network.getChildren()) {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
 				if (!instance.getActor().isNative()) {
+					Actor actor = instance.getActor();
+					if (!visitedActrors.contains(actor)) {
+						XronosTransform.transformActor(actor, resourceCache,
+								debugMode);
+						visitedActrors.add(actor);
+					}
 					XronosPrinter printer = new XronosPrinter(!debugMode);
 					printer.getOptions().put("generateGoDone", generateGoDone);
 					printer.getOptions().put("fpgaType", fpgaName);
