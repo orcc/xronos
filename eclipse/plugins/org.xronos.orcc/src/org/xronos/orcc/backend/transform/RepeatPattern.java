@@ -45,6 +45,7 @@ import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
@@ -189,6 +190,60 @@ public class RepeatPattern extends DfVisitor<Void> {
 			}
 			return null;
 		}
+
+		@Override
+		public Object caseInstStore(InstStore store) {
+			Var targetVar = store.getTarget().getVariable();
+			if (oldInputMap.containsKey(targetVar)) {
+				List<Expression> indexes = store.getIndexes();
+				if (indexes.size() == 1) {
+					Port port = oldInputMap.get(targetVar);
+					Var newTargetVar = circularBufferInputs.get(port)
+							.getBuffer();
+
+					Var cbTmpHead = circularBufferInputs.get(port).getTmpHead();
+					int sizePowTwo = circularBufferInputs.get(port)
+							.getSizePowTwo();
+
+					ExprVar cbHeadExprVar = IrFactory.eINSTANCE
+							.createExprVar(cbTmpHead);
+
+					Expression index = indexes.get(0);
+
+					Type exrpType = IrFactory.eINSTANCE.createTypeInt(32);
+					Expression indexAdd;
+					if (index instanceof ExprInt) {
+						int value = ((ExprInt) index).getIntValue();
+						if (value == 0) {
+							indexAdd = cbHeadExprVar;
+						} else {
+							indexAdd = IrFactory.eINSTANCE.createExprBinary(
+									cbHeadExprVar, OpBinary.PLUS, index,
+									exrpType);
+						}
+					} else {
+						indexAdd = IrFactory.eINSTANCE.createExprBinary(
+								cbHeadExprVar, OpBinary.PLUS, index, exrpType);
+					}
+
+					ExprInt exprIntSize = IrFactory.eINSTANCE
+							.createExprInt(sizePowTwo - 1);
+
+					Expression indexAddAndSize = IrFactory.eINSTANCE
+							.createExprBinary(indexAdd, OpBinary.BITAND,
+									exprIntSize, exrpType);
+					IrUtil.delete(indexes);
+					indexes.add(indexAddAndSize);
+					Def newDef = IrFactory.eINSTANCE.createDef(newTargetVar);
+					store.setTarget(newDef);
+				}
+
+			}
+			return null;
+		}
+
+
+
 	}
 
 	private class StoreToPortWrite extends AbstractIrVisitor<Object> {
