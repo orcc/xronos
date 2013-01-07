@@ -36,6 +36,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Var;
+
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Branch;
 import org.xronos.openforge.lim.Bus;
@@ -68,10 +72,6 @@ import org.xronos.openforge.lim.op.NoOp;
 import org.xronos.openforge.lim.primitive.Reg;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.preference.Constants;
-
-import net.sf.orcc.ir.IrFactory;
-import net.sf.orcc.ir.Type;
-import net.sf.orcc.ir.Var;
 
 /**
  * This class contains several methods for building Design Modules
@@ -531,7 +531,8 @@ public class ModuleUtil {
 									targetPort = lbBus.getPeer();
 									sourceBus = outBus;
 									Reg fbReg = loop.createDataRegister();
-									fbReg.setIDLogical("fbReg_"+src.getIndexedName());
+									fbReg.setIDLogical("fbReg_"
+											+ src.getIndexedName());
 									fbReg.getDataPort().setIDLogical(
 											src.getIndexedName());
 									fbReg.getResultBus().setIDLogical(
@@ -551,7 +552,7 @@ public class ModuleUtil {
 					Port port = lbBus.getPeer();
 					Bus sourceBus = lBus;
 					Latch latch = loop.createDataLatch();
-					latch.setIDLogical("latchedInput_"+src.getIndexedName());
+					latch.setIDLogical("latchedInput_" + src.getIndexedName());
 					Entry latchEntry = latch.makeEntry(initDoneBus.getOwner());
 					latch.getDataPort().setIDLogical(src.getIndexedName());
 					latchEntry.addDependency(latch.getEnablePort(),
@@ -900,9 +901,7 @@ public class ModuleUtil {
 			}
 
 			// Build control Dependencies
-			if (!(component instanceof InBuf) && !(component instanceof OutBuf)
-					&& !(component instanceof Decision)
-					&& !(module instanceof Branch)) {
+			if (!(component instanceof InBuf) && !(component instanceof OutBuf)) {
 				Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
 				Port donePort = exit.getDoneBus().getPeer();
 				List<Entry> entries = donePort.getOwner().getEntries();

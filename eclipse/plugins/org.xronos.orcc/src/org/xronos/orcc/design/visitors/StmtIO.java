@@ -566,7 +566,13 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 					InstPhi.class);
 			if (container != null) {
 				if (container instanceof InstPhi) {
-					useMap.put(use, true);
+					InstPhi phi = (InstPhi) container;
+					Var targetVar = phi.getTarget().getVariable();
+					if (targetVar.getUses().isEmpty()) {
+						useMap.put(use, true);
+					} else {
+						useMap.put(use, false);
+					}
 				}
 			} else {
 				container = EcoreHelper.getContainerOfType(use, Block.class);

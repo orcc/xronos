@@ -119,21 +119,21 @@ class DebugPrinter extends InstancePrinter {
 	def caseInstPortStatus(InstPortStatus portStatus) {
 	val Port port = portStatus.port as Port;
 	'''
-		«portStatus.target.variable.name» = portStatus(«port.name»);
+		«portStatus.target.variable.indexedName» = portStatus(«port.name»);
 	'''
 	}
 	
 	def caseInstPortRead(InstPortRead portRead) {
 	val Port port = portRead.port as Port;
 	'''
-		«portRead.target.variable.name» = portRead(«port.name»);
+		«portRead.target.variable.indexedName» = portRead(«port.name»);
 	'''
 	}
 	
 	def caseInstPortPeek(InstPortPeek portPeek) {
 	val Port port = portPeek.port as Port;
 	'''
-		«portPeek.target.variable.name» = portPeek(«port.name»);
+		«portPeek.target.variable.indexedName» = portPeek(«port.name»);
 	'''
 	}
 	
