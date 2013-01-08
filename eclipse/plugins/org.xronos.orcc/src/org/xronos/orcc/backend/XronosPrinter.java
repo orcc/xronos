@@ -167,6 +167,8 @@ public class XronosPrinter {
 				try {
 					xronosMainJob.setOptionValues(xronosArgs);
 					f.preprocess(xronosMainJob);
+					OrccLogger.traceln("Compiling instance: "
+							+ instance.getSimpleName());
 					Engine engine = new DesignEngine(xronosMainJob, instance,
 							resourceCache);
 					engine.begin();
@@ -212,9 +214,9 @@ public class XronosPrinter {
 				}
 				if (!error) {
 					long t1 = System.currentTimeMillis();
-					OrccLogger.traceln("Compiling instance: "
-							+ instance.getSimpleName() + ": Compiled in: "
-							+ (float) (t1 - t0) / 1000 + "s");
+					OrccLogger.traceln("Instance: " + instance.getSimpleName()
+							+ ": Compiled in: " + (float) (t1 - t0) / 1000
+							+ "s");
 				}
 				if (options.containsKey("generateGoDone")) {
 					Boolean generateGoDone = (Boolean) options

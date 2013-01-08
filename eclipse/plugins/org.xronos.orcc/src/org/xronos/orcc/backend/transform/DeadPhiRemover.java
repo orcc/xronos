@@ -36,16 +36,17 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.orcc.ir.Block;
-import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.EObject;
 import org.xronos.orcc.design.visitors.BlockVars;
@@ -59,11 +60,11 @@ import org.xronos.orcc.ir.BlockMutex;
  */
 public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 
-	Block currentBlock;
-	Map<Block, List<Var>> defVariables;
+	private Block currentBlock;
+	private Map<Block, List<Var>> defVariables;
 	private LinkedList<Block> nestedBlock;
-	Map<Block, List<InstPhi>> phiToBeRemoved;
-	Map<Block, List<Var>> usedVariables;
+	private Map<Block, List<InstPhi>> phiToBeRemoved;
+	private Map<Block, List<Var>> usedVariables;
 
 	@Override
 	public Void caseBlockIf(BlockIf nodeIf) {
@@ -149,7 +150,7 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 			phiToBeRemoved.get(currentBlock).add(phi);
 		} else {
 			if (!usedVariables.get(currentBlock).contains(target)) {
-				if (usedOnlyInPhi(target)
+				if (usedOnlyInPhi2(target)
 						&& !defVariables.get(currentBlock).contains(valueZero)) {
 					phiToBeRemoved.get(currentBlock).add(phi);
 				}
@@ -213,27 +214,21 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		return vars;
 	}
 
-	private Boolean usedOnlyInPhi(Var var) {
+	private Boolean usedOnlyInPhi2(Var var) {
 		Map<Use, Boolean> useMap = new HashMap<Use, Boolean>();
 		for (Use use : var.getUses()) {
-			EObject container = use.eContainer();
-			// Get the BlockBasic container
-			while (!(container instanceof Block)) {
-				container = container.eContainer();
+			EObject container = EcoreHelper.getContainerOfType(use,
+					InstPhi.class);
+			if (container != null) {
 				if (container instanceof InstPhi) {
 					useMap.put(use, true);
-					break;
 				}
-			}
-			if (container instanceof BlockBasic) {
-				useMap.put(use, false);
-			}
-
-			if (container instanceof BlockIf) {
-				useMap.put(use, false);
-			}
-			if (container instanceof BlockWhile) {
-				useMap.put(use, false);
+			} else {
+				container = EcoreHelper.getContainerOfType(use,
+						InstAssign.class);
+				if (container != null) {
+					useMap.put(use, false);
+				}
 			}
 		}
 
@@ -242,6 +237,6 @@ public class DeadPhiRemover extends AbstractIrVisitor<Void> {
 		} else {
 			return false;
 		}
-
 	}
+
 }

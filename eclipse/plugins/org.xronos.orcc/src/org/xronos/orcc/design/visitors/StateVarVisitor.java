@@ -34,18 +34,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.xronos.openforge.lim.memory.AddressStridePolicy;
-import org.xronos.openforge.lim.memory.AddressableUnit;
-import org.xronos.openforge.lim.memory.LogicalValue;
-import org.xronos.openforge.lim.memory.Record;
-import org.xronos.openforge.lim.memory.Scalar;
 import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
+import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.ValueUtil;
+
+import org.xronos.openforge.lim.memory.AddressStridePolicy;
+import org.xronos.openforge.lim.memory.AddressableUnit;
+import org.xronos.openforge.lim.memory.LogicalValue;
+import org.xronos.openforge.lim.memory.Record;
+import org.xronos.openforge.lim.memory.Scalar;
 
 /**
  * This class visits the state variables of an actor and it creates a
@@ -117,14 +119,29 @@ public class StateVarVisitor extends AbstractIrVisitor<Object> {
 			Type type = var.getType();
 			if (var.isInitialized()) {
 				if (type.isBool()) {
-					Integer value = ((ExprBool) var.getInitialValue())
-							.isValue() ? 1 : 0;
-					String valueString = Integer.toString(value);
-					logicalValue = makeLogicalValue(valueString, type);
+					if (var.getInitialValue() instanceof ExprVar) {
+						ExprVar exprVar = (ExprVar) var.getInitialValue();
+						Integer value = (Boolean) exprVar.getUse()
+								.getVariable().getValue() ? 1 : 0;
+						String valueString = Integer.toString(value);
+						logicalValue = makeLogicalValue(valueString, type);
+					} else {
+						Integer value = ((ExprBool) var.getInitialValue())
+								.isValue() ? 1 : 0;
+						String valueString = Integer.toString(value);
+						logicalValue = makeLogicalValue(valueString, type);
+					}
 				} else if (type.isInt() || type.isUint()) {
-					String valueString = Integer.toString(((ExprInt) var
-							.getInitialValue()).getIntValue());
-					logicalValue = makeLogicalValue(valueString, type);
+					if (var.getInitialValue() instanceof ExprVar) {
+						ExprVar exprVar = (ExprVar) var.getInitialValue();
+						String valueString = Integer.toString((Integer) exprVar
+								.getUse().getVariable().getValue());
+						logicalValue = makeLogicalValue(valueString, type);
+					} else {
+						String valueString = Integer.toString(((ExprInt) var
+								.getInitialValue()).getIntValue());
+						logicalValue = makeLogicalValue(valueString, type);
+					}
 				} else {
 					logicalValue = makeLogicalValue("0", type);
 				}

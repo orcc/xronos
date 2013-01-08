@@ -146,6 +146,9 @@ class DebugPrinter extends InstancePrinter {
 	
 	
 	override caseBlockWhile(BlockWhile blockWhile)'''
+	// Block While
+	// Inputs[«FOR variable: resourceCache.getBlockInput(blockWhile) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+	// Outputs[«FOR variable: resourceCache.getBlockOutput(blockWhile) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
 	«IF (blockWhile.joinBlock != null)»
 		«blockWhile.joinBlock.doSwitch»
 	«ENDIF»
