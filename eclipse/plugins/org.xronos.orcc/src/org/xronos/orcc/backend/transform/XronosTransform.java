@@ -36,7 +36,6 @@ import net.sf.orcc.backends.transform.DivisionSubstitution;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
-import net.sf.orcc.backends.transform.ParameterImporter;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.transform.UnitImporter;
 import net.sf.orcc.df.util.DfSwitch;
@@ -91,7 +90,7 @@ public class XronosTransform {
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
 			// transformations.add(new StoreOnceTransformation());
-			transformations.add(new ParameterImporter());
+			transformations.add(new XronosParameterPropagation());
 			// transformations.add(new DfVisitor<Void>(
 			// new XronosConstantPropagation()));
 			// transformations.add(new DfVisitor<Void>(new
