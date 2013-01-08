@@ -32,6 +32,8 @@ import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.ExprBool;
+import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
@@ -49,8 +51,6 @@ import net.sf.orcc.ir.util.IrUtil;
  * 
  */
 public class XronosParameterPropagation extends DfVisitor<Void> {
-	private IrFactory factory = IrFactory.eINSTANCE;
-
 	private class Propagator extends AbstractIrVisitor<Void> {
 
 		@Override
@@ -60,11 +60,14 @@ public class XronosParameterPropagation extends DfVisitor<Void> {
 				Var target = load.getTarget().getVariable();
 
 				Expression exprValue = null;
-				if (target.getValue() instanceof ExprVar) {
-					exprValue = (Expression) ((ExprVar) source.getValue())
-							.getUse().getVariable().getValue();
+				if (source.getValue() instanceof ExprVar) {
+					Var valueVar = ((ExprVar) source.getValue()).getUse()
+							.getVariable();
+					if (valueVar.getValue() == null) {
+						exprValue = getValue((Expression) valueVar.getInitialValue());
+					}
 				} else {
-					exprValue = (Expression) source.getValue();
+					exprValue = getValue((Expression) source.getValue());
 				}
 				InstAssign assign = factory.createInstAssign(target, exprValue);
 				BlockBasic block = load.getBlock();
@@ -77,6 +80,8 @@ public class XronosParameterPropagation extends DfVisitor<Void> {
 
 	}
 
+	private IrFactory factory = IrFactory.eINSTANCE;
+
 	@Override
 	public Void caseActor(Actor actor) {
 		this.actor = actor;
@@ -88,6 +93,18 @@ public class XronosParameterPropagation extends DfVisitor<Void> {
 		}
 
 		return null;
+	}
+
+	private Expression getValue(Expression inputExpr) {
+		Expression expression = null;
+		if (inputExpr instanceof ExprInt) {
+			int value = ((ExprInt) inputExpr).getIntValue();
+			expression = factory.createExprInt(value);
+		} else if (inputExpr instanceof ExprBool) {
+			boolean value = ((ExprBool) inputExpr).isValue();
+			expression = factory.createExprBool(value);
+		}
+		return expression;
 	}
 
 }
