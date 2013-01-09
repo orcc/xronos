@@ -154,9 +154,6 @@ public class Xronos extends AbstractBackend {
 
 		// Print Instances
 		generateInstances(network);
-
-		Runtime r = Runtime.getRuntime();
-		r.gc();
 	}
 
 	@Override
@@ -184,48 +181,107 @@ public class Xronos extends AbstractBackend {
 
 	public void generateInstances(Network network) {
 		OrccLogger.traceln("Generating Instances...");
-		int numCached = 0;
-
+		OrccLogger
+				.traceln("-------------------------------------------------------------------------------");
 		long t0 = System.currentTimeMillis();
 		List<Actor> visitedActrors = new ArrayList<Actor>();
 		ResourceCache resourceCache = new ResourceCache();
+		List<Instance> instanceToBeCompiled = new ArrayList<Instance>();
+
+		int cachedInstances = 0;
+		// Figure out how many instances need to be compiled/Recompiled
 		for (Vertex vertex : network.getChildren()) {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
-				if (!instance.getActor().isNative()) {
+				if (instance.isActor()) {
+					if (!instance.getActor().isNative()) {
+						if (!debugMode) {
+							long sourceLastModified = XronosPrinter
+									.getLastModifiedHierarchy(instance);
+							String file = rtlPath + File.separator
+									+ instance.getSimpleName() + ".v";
+							File targetFile = new File(file);
+							long targetLastModified = targetFile.lastModified();
+							if (sourceLastModified > targetLastModified) {
+								if (!instance.getActor().hasAttribute(
+										"no_generation")) {
+									instanceToBeCompiled.add(instance);
+								} else {
+									OrccLogger
+											.warnln("Instance: "
+													+ instance.getSimpleName()
+													+ " contains @no_generation tag, it will not be generated!");
+								}
+							} else {
+								cachedInstances++;
+							}
+						} else {
+							if (!instance.getActor().hasAttribute(
+									"no_generation")) {
+								instanceToBeCompiled.add(instance);
+							} else {
+								OrccLogger
+										.warnln("Instance: "
+												+ instance.getSimpleName()
+												+ " contains @no_generation tag, it will not be generated!");
 
-					Actor actor = instance.getActor();
-					if (!visitedActrors.contains(actor)) {
-						XronosTransform.transformActor(actor, resourceCache,
-								debugMode);
-						visitedActrors.add(actor);
-					}
-					XronosPrinter printer = new XronosPrinter(!debugMode);
-					printer.getOptions().put("generateGoDone", generateGoDone);
-					printer.getOptions().put("fpgaType", fpgaName);
-					List<String> flags = new ArrayList<String>(xronosFlags);
-					flags.addAll(Arrays.asList("-d", rtlPath, "-o",
-							instance.getSimpleName()));
-					Boolean cached = printer.printInstance(
-							flags.toArray(new String[0]), rtlPath, instance,
-							resourceCache);
-					if (cached) {
-						numCached++;
+							}
+						}
+
 					}
 				}
 			}
 		}
-		long t1 = System.currentTimeMillis();
-		OrccLogger.traceln("Done in " + (float) (t1 - t0) / (float) 1000 + "s");
-		if (numCached > 0) {
-			OrccLogger
-					.traceln("*******************************************************************************");
-			OrccLogger.traceln("* NOTE: " + numCached
-					+ " instances were not regenerated "
-					+ "because they were not modyified *");
-			OrccLogger
-					.traceln("*******************************************************************************");
+
+		int toBeCompiled = instanceToBeCompiled.size();
+
+		if (cachedInstances > 0) {
+			OrccLogger.traceln("NOTE: Cached instances: " + cachedInstances);
 		}
+		if (toBeCompiled > 0) {
+			OrccLogger.traceln("NOTE: Instances to be generated: "
+					+ toBeCompiled);
+		}
+		OrccLogger
+				.traceln("-------------------------------------------------------------------------------");
+
+		int numInstance = 1;
+		int failedToCompile = 0;
+		for (Instance instance : instanceToBeCompiled) {
+			Actor actor = instance.getActor();
+			if (!visitedActrors.contains(actor)) {
+				XronosTransform.transformActor(actor, resourceCache, debugMode);
+				visitedActrors.add(actor);
+			}
+			XronosPrinter printer = new XronosPrinter(!debugMode);
+			printer.getOptions().put("generateGoDone", generateGoDone);
+			printer.getOptions().put("fpgaType", fpgaName);
+			List<String> flags = new ArrayList<String>(xronosFlags);
+			flags.addAll(Arrays.asList("-d", rtlPath, "-o",
+					instance.getSimpleName()));
+			boolean failed = printer.printInstance(flags.toArray(new String[0]), rtlPath,
+					instance, resourceCache, numInstance, toBeCompiled);
+			if (failed) {
+				failedToCompile++;
+			}
+			numInstance++;
+		}
+
+		if (failedToCompile > 0) {
+
+			OrccLogger
+					.severeln("-------------------------------------------------------------------------------");
+			OrccLogger.traceln("NOTE: " + toBeCompiled
+					+ "  instance(s) failed to compile");
+			OrccLogger
+					.severeln("-------------------------------------------------------------------------------");
+		}
+
+		OrccLogger
+				.traceln("*******************************************************************************");
+		long t1 = System.currentTimeMillis();
+		OrccLogger.traceln("Xronos done in " + (float) (t1 - t0) / (float) 1000
+				+ "s");
 	}
 
 	private void printNetwork(Network network) {

@@ -44,6 +44,7 @@ import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
+import net.sf.orcc.ir.transform.DeadCodeElimination;
 
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.StmtIO;
@@ -97,6 +98,12 @@ public class XronosTransform {
 			// ConstantPropagator()));
 			transformations.add(new DivisionSubstitution());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
+			// transformations.add(new DeadGlobalElimination());
+			// transformations.add(new DfVisitor<Void>(new
+			// DeadVariableRemoval()));
+			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
+			// transformations.add(new DfVisitor<Void>(new
+			// DeadVariableRemoval()));
 			transformations.add(new RepeatPattern(resourceCache));
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new GlobalArrayInitializer(true));

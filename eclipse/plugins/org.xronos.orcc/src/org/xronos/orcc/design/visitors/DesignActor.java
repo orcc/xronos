@@ -146,10 +146,6 @@ public class DesignActor extends DfVisitor<Object> {
 		PortUtil.createDesignPorts(design, actor.getInputs(), "in", resources);
 		PortUtil.createDesignPorts(design, actor.getOutputs(), "out", resources);
 
-		/** Get the values of the parameters before visiting **/
-		for (Var parameter : actor.getParameters()) {
-			stateVarVisitor.doSwitch(parameter);
-		}
 		Var currentState = null;
 		// Add currentState stateVariable if the actor has an FSM
 		if (actor.getFsm() != null) {

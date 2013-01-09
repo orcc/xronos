@@ -64,9 +64,6 @@ import org.xronos.orcc.design.ResourceCache;
  */
 
 public class XronosPrinter {
-	/** Keep the unchanged files flag **/
-	private boolean keepUnchangedFiles;
-
 	/** The options given to the printer **/
 	protected Map<String, Object> options;
 
@@ -76,7 +73,6 @@ public class XronosPrinter {
 
 	public XronosPrinter(Boolean keepUnchangedFiles) {
 		this();
-		this.keepUnchangedFiles = keepUnchangedFiles;
 	}
 
 	/**
@@ -86,7 +82,7 @@ public class XronosPrinter {
 	 *            an instance
 	 * @return the time of the most recently modified file in the hierarchy
 	 */
-	private long getLastModifiedHierarchy(Instance instance) {
+	static public long getLastModifiedHierarchy(Instance instance) {
 		long instanceModified = 0;
 		if (instance.isActor()) {
 			Actor actor = instance.getActor();
@@ -146,77 +142,64 @@ public class XronosPrinter {
 	 * @return
 	 */
 	public boolean printInstance(String[] xronosArgs, String rtlPath,
-			Instance instance, ResourceCache resourceCache) {
+			Instance instance, ResourceCache resourceCache, int idxInstance,
+			int totalInstances) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		boolean error = false;
 
-		String file = rtlPath + File.separator + instance.getSimpleName()
-				+ ".v";
 		long t0 = System.currentTimeMillis();
 		if (instance.isActor()) {
 			if (!instance.getActor().hasAttribute("no_generation")) {
-				if (keepUnchangedFiles) {
-					long sourceLastModified = getLastModifiedHierarchy(instance);
-					File targetFile = new File(file);
-					long targetLastModified = targetFile.lastModified();
-					if (sourceLastModified < targetLastModified) {
-						return true;
-					}
-				}
 				try {
 					xronosMainJob.setOptionValues(xronosArgs);
 					f.preprocess(xronosMainJob);
 					OrccLogger.traceln("Compiling instance: "
-							+ instance.getSimpleName());
+							+ instance.getSimpleName() + " (" + idxInstance
+							+ "/" + totalInstances + ")");
 					Engine engine = new DesignEngine(xronosMainJob, instance,
 							resourceCache);
 					engine.begin();
 				} catch (NewJob.ForgeOptionException foe) {
-					OrccLogger.severeln("Command line option error: "
+					OrccLogger.severeln("\t command line option error: "
 							+ foe.getMessage());
 					OrccLogger.severeln("");
 					OrccLogger.severeln(OptionRegistry.usage(false));
 					error = true;
 				} catch (ForgeFatalException ffe) {
 					OrccLogger
-							.severeln("Forge compilation ended with fatal error:");
-					OrccLogger.severeln(ffe.getMessage());
+							.severeln("\t - failed to compile:Forge compilation ended with fatal error: "
+									+ ffe.getMessage());
 					error = true;
 				} catch (NullPointerException ex) {
-					OrccLogger.severeln("Instance: " + instance.getSimpleName()
-							+ ", failed to compile: NullPointerException, "
-							+ ex.getMessage());
+					OrccLogger
+							.severeln("\t - failed to compile: NullPointerException, "
+									+ ex.getMessage());
 					error = true;
 				} catch (NoSuchElementException ex) {
-					OrccLogger.severeln("Instance: " + instance.getSimpleName()
-							+ ", failed to compile: NoSuchElementException, "
-							+ ex.getMessage());
+					OrccLogger
+							.severeln("\t - failed to compile: NoSuchElementException, "
+									+ ex.getMessage());
 					error = true;
 				} catch (UnbalancedAssignmentException ex) {
 					OrccLogger
-							.severeln("Instance: "
-									+ instance.getSimpleName()
-									+ ", failed to compile: UnbalancedAssignmentException, "
+							.severeln("\t - failed to compile: UnbalancedAssignmentException, "
 									+ ex.getMessage());
 					error = true;
 				} catch (ArrayIndexOutOfBoundsException ex) {
 					OrccLogger
-							.severeln("Instance: "
-									+ instance.getSimpleName()
-									+ ", failed to compile: ArrayIndexOutOfBoundsException, "
+							.severeln("\t - failed to compile: ArrayIndexOutOfBoundsException, "
 									+ ex.getMessage());
 					error = true;
 				} catch (Throwable t) {
-					OrccLogger.severeln("Instance: " + instance.getSimpleName()
-							+ ", failed to compile: " + t.getMessage());
+					OrccLogger.severeln("\t - failed to compile: "
+							+ t.getMessage());
 					error = true;
 				}
 				if (!error) {
 					long t1 = System.currentTimeMillis();
-					OrccLogger.traceln("Instance: " + instance.getSimpleName()
-							+ ": Compiled in: " + (float) (t1 - t0) / 1000
-							+ "s");
+					OrccLogger.traceln("\t - Compiled in: " + (float) (t1 - t0)
+							/ 1000 + "s");
 				}
 				if (options.containsKey("generateGoDone")) {
 					Boolean generateGoDone = (Boolean) options
@@ -233,9 +216,6 @@ public class XronosPrinter {
 					}
 				}
 				return error;
-			} else {
-				OrccLogger.warnln("Instance: " + instance.getSimpleName()
-						+ " will not be generated!");
 			}
 		}
 		return false;
