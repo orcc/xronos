@@ -112,7 +112,7 @@ public class XronosTransform {
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
 					false)));
-			transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
+			// transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
 			for (DfSwitch<?> transformation : transformations) {
 				transformation.doSwitch(actor);

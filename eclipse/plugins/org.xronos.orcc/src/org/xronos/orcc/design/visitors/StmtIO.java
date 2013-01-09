@@ -39,9 +39,9 @@ import java.util.Set;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
@@ -566,18 +566,39 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 					InstPhi.class);
 			if (container != null) {
 				if (container instanceof InstPhi) {
-					useMap.put(use, true);
+					if (definedInPhi(var)) {
+						useMap.put(use, true);
+					} else {
+						useMap.put(use, false);
+					}
 				}
 			} else {
-				container = EcoreHelper.getContainerOfType(use,
-						InstAssign.class);
-				if (container != null) {
-					useMap.put(use, false);
-				}
+				useMap.put(use, false);
 			}
 		}
 
 		if (!useMap.containsValue(false)) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	private Boolean definedInPhi(Var var) {
+		Map<Def, Boolean> defMap = new HashMap<Def, Boolean>();
+		for (Def def : var.getDefs()) {
+			EObject container = EcoreHelper.getContainerOfType(def,
+					InstPhi.class);
+			if (container != null) {
+				if (container instanceof InstPhi) {
+					defMap.put(def, true);
+				}
+			} else {
+				defMap.put(def, false);
+			}
+		}
+
+		if (!defMap.containsValue(false)) {
 			return true;
 		} else {
 			return false;
