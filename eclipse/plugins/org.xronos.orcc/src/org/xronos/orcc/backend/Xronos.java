@@ -188,11 +188,12 @@ public class Xronos extends AbstractBackend {
 
 		long t0 = System.currentTimeMillis();
 		List<Actor> visitedActrors = new ArrayList<Actor>();
+		ResourceCache resourceCache = new ResourceCache();
 		for (Vertex vertex : network.getChildren()) {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
 				if (!instance.getActor().isNative()) {
-					ResourceCache resourceCache = new ResourceCache();
+
 					Actor actor = instance.getActor();
 					if (!visitedActrors.contains(actor)) {
 						XronosTransform.transformActor(actor, resourceCache,
