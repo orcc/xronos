@@ -605,7 +605,7 @@ class TestbenchPrinter extends IrSwitch {
 					readline(sim_file_«name»_«port.name», line_number);
 						if (line_number'length > 0 and line_number(1) /= '/') then
 							read(line_number, input_bit);
-							«IF port.type.bool»
+							«IF port.type.bool || port.type.sizeInBits == 1»
 							if (input_bit = 1) then
 								assert («port.name»_data = '1')
 								report "on port «port.name» incorrectly value computed : '0' instead of : '1' sequence " & str(sequence_«port.name»)

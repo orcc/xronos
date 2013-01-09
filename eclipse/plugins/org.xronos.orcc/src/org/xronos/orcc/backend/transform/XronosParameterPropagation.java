@@ -64,7 +64,8 @@ public class XronosParameterPropagation extends DfVisitor<Void> {
 					Var valueVar = ((ExprVar) source.getValue()).getUse()
 							.getVariable();
 					if (valueVar.getValue() == null) {
-						exprValue = getValue((Expression) valueVar.getInitialValue());
+						exprValue = getValue((Expression) valueVar
+								.getInitialValue());
 					}
 				} else {
 					exprValue = getValue((Expression) source.getValue());
@@ -77,7 +78,6 @@ public class XronosParameterPropagation extends DfVisitor<Void> {
 			}
 			return null;
 		}
-
 	}
 
 	private IrFactory factory = IrFactory.eINSTANCE;
