@@ -66,8 +66,6 @@ public class Xronos extends AbstractBackend {
 
 	private boolean xilinxPrimitives;
 
-	private ResourceCache resourceCache;
-
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
@@ -127,8 +125,6 @@ public class Xronos extends AbstractBackend {
 		xronosFlags.add("-noinclude");
 		xronosFlags.add("-report");
 		xronosFlags.add("-Xdetailed_report");
-
-		resourceCache = new ResourceCache();
 	}
 
 	@Override
@@ -196,6 +192,7 @@ public class Xronos extends AbstractBackend {
 			final Instance instance = vertex.getAdapter(Instance.class);
 			if (instance != null) {
 				if (!instance.getActor().isNative()) {
+					ResourceCache resourceCache = new ResourceCache();
 					Actor actor = instance.getActor();
 					if (!visitedActrors.contains(actor)) {
 						XronosTransform.transformActor(actor, resourceCache,
