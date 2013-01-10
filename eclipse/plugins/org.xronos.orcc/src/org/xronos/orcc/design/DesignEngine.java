@@ -29,11 +29,12 @@
 
 package org.xronos.orcc.design;
 
+import net.sf.orcc.df.Actor;
+
 import org.xronos.openforge.app.Engine;
 import org.xronos.openforge.app.GenericJob;
 import org.xronos.openforge.app.JobHandlerAdapter;
 import org.xronos.openforge.lim.Design;
-import net.sf.orcc.df.Instance;
 
 /**
  * Creates an Engine with a given {@Design}
@@ -42,21 +43,21 @@ import net.sf.orcc.df.Instance;
  * 
  */
 public class DesignEngine extends Engine {
-	Instance instance;
+	Actor actor;
 	ResourceCache resourceCache;
 
-	public DesignEngine(GenericJob genJob, Instance instance,
+	public DesignEngine(GenericJob genJob, Actor actor,
 			ResourceCache resourceCache) {
 		super(genJob);
-		this.instance = instance;
+		this.actor = actor;
 		this.resourceCache = resourceCache;
 		this.jobHandler = new JobHandlerAdapter("Forging: "
-				+ instance.getSimpleName());
+				+ actor.getSimpleName());
 	}
 
 	@Override
 	public Design buildLim() {
-		InstanceToDesign instanceToDesign = new InstanceToDesign(instance,
+		ActorToDesign instanceToDesign = new ActorToDesign(actor,
 				resourceCache);
 		Design design = instanceToDesign.buildDesign();
 		return design;

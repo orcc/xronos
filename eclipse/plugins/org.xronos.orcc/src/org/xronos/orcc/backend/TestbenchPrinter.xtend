@@ -31,12 +31,12 @@ package org.xronos.orcc.backend
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Map
-import net.sf.orcc.df.Instance
 import net.sf.orcc.df.Network
 import net.sf.orcc.ir.util.IrSwitch
 import net.sf.orcc.graph.Vertex
 import net.sf.orcc.df.Port
 import java.util.List
+import net.sf.orcc.df.Actor
 
 /*
  * A VHDL Testbench printer
@@ -59,8 +59,8 @@ class TestbenchPrinter extends IrSwitch {
 		-- Xronos synthesizer
 		«IF object instanceof Network »
 		-- «IF string.equals("")»Testbench for Network:«ELSE»«string»«ENDIF» «(object as Network).simpleName» 
-		«ELSEIF object instanceof Instance»
-		-- Testbench for Instance: «(object as Instance).simpleName» 
+		«ELSEIF object instanceof Actor»
+		-- Testbench for Instance: «(object as Actor).simpleName» 
 		«ENDIF»
 		-- Date: «dateFormat.format(date)»
 		-- ----------------------------------------------------------------------------
@@ -94,8 +94,8 @@ class TestbenchPrinter extends IrSwitch {
 	
 	def addEntity(Vertex vertex){
 		var String name;
-		if(vertex instanceof Instance){
-			name = (vertex as Instance).simpleName;
+		if(vertex instanceof Actor){
+			name = (vertex as Actor).simpleName;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
 		} 
@@ -110,8 +110,8 @@ class TestbenchPrinter extends IrSwitch {
 	
 	def addArchitecture(Vertex vertex){
 		var String name;
-		if(vertex instanceof Instance){
-			name = (vertex as Instance).simpleName;
+		if(vertex instanceof Actor){
+			name = (vertex as Actor).simpleName;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
 		}
@@ -133,9 +133,9 @@ class TestbenchPrinter extends IrSwitch {
 			-- Output Files
 			----------------------------------------------------------------------------
 			«FOR vertex: network.vertices»
-				«IF vertex instanceof Instance»
-					«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
-					file f_«(vertex as Instance).simpleName»_«action.name»: TEXT;
+				«IF vertex instanceof Actor»
+					«FOR action: (vertex as Actor).actions SEPARATOR "\n"»
+					file f_«(vertex as Actor).simpleName»_«action.name»: TEXT;
 					«ENDFOR»
 				«ENDIF»
 			«ENDFOR»
@@ -163,10 +163,10 @@ class TestbenchPrinter extends IrSwitch {
 			-- Actions GO and DONE
 			----------------------------------------------------------------------------
 			«FOR vertex: network.vertices»
-				«IF vertex instanceof Instance»
-					«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
-					signal «(vertex as Instance).simpleName»_«action.name»_go : std_logic;
-					signal «(vertex as Instance).simpleName»_«action.name»_done : std_logic;
+				«IF vertex instanceof Actor»
+					«FOR action: (vertex as Actor).actions SEPARATOR "\n"»
+					signal «(vertex as Actor).simpleName»_«action.name»_go : std_logic;
+					signal «(vertex as Actor).simpleName»_«action.name»_done : std_logic;
 					«ENDFOR»
 				«ENDIF»
 			«ENDFOR»
@@ -211,9 +211,9 @@ class TestbenchPrinter extends IrSwitch {
 		begin
 			-- Output Files 
 			«FOR vertex: network.vertices»
-				«IF vertex instanceof Instance»
-					«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
-					file_open(f_«(vertex as Instance).simpleName»_«action.name», "weights/«(vertex as Instance).simpleName»_«action.name».txt", WRITE_MODE);
+				«IF vertex instanceof Actor»
+					«FOR action: (vertex as Actor).actions SEPARATOR "\n"»
+					file_open(f_«(vertex as Actor).simpleName»_«action.name», "weights/«(vertex as Actor).simpleName»_«action.name».txt", WRITE_MODE);
 					«ENDFOR»
 				«ENDIF»
 			«ENDFOR»
@@ -229,10 +229,10 @@ class TestbenchPrinter extends IrSwitch {
 					«port.name»_COUNT => «port.name»_COUNT,
 				«ENDFOR»
 				«FOR vertex: network.vertices»
-					«IF vertex instanceof Instance»
-						«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
-						«(vertex as Instance).simpleName»_«action.name»_go => «(vertex as Instance).simpleName»_«action.name»_go, 
-						«(vertex as Instance).simpleName»_«action.name»_done => «(vertex as Instance).simpleName»_«action.name»_done,
+					«IF vertex instanceof Actor»
+						«FOR action: (vertex as Actor).actions SEPARATOR "\n"»
+						«(vertex as Actor).simpleName»_«action.name»_go => «(vertex as Actor).simpleName»_«action.name»_go, 
+						«(vertex as Actor).simpleName»_«action.name»_done => «(vertex as Actor).simpleName»_«action.name»_done,
 						«ENDFOR»
 					«ENDIF»
 				«ENDFOR»
@@ -276,10 +276,10 @@ class TestbenchPrinter extends IrSwitch {
 						countClk := 0;
 					elsif (rising_edge(CLK)) then
 						«FOR vertex: network.vertices»
-							«IF vertex instanceof Instance»
-								«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
-									write(l, string'(integer'image(countClk)&";"&str(«(vertex as Instance).simpleName»_«action.name»_go)&";"&str(«(vertex as Instance).simpleName»_«action.name»_done)&";"));
-									writeline(f_«(vertex as Instance).simpleName»_«action.name», l );
+							«IF vertex instanceof Actor»
+								«FOR action: (vertex as Actor).actions SEPARATOR "\n"»
+									write(l, string'(integer'image(countClk)&";"&str(«(vertex as Actor).simpleName»_«action.name»_go)&";"&str(«(vertex as Actor).simpleName»_«action.name»_done)&";"));
+									writeline(f_«(vertex as Actor).simpleName»_«action.name», l );
 								«ENDFOR»
 							«ENDIF»
 						«ENDFOR»
@@ -294,10 +294,10 @@ class TestbenchPrinter extends IrSwitch {
 		var String name;
 		var List<Port> inputPorts;
 		var List<Port> outputPorts;
-		if(vertex instanceof Instance){
-			name = (vertex as Instance).simpleName;
-			inputPorts = (vertex as Instance).actor.inputs;
-			outputPorts = (vertex as Instance).actor.outputs;
+		if(vertex instanceof Actor){
+			name = (vertex as Actor).simpleName;
+			inputPorts = (vertex as Actor).inputs;
+			outputPorts = (vertex as Actor).outputs;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
 			inputPorts = (vertex as Network).inputs;
@@ -343,10 +343,10 @@ class TestbenchPrinter extends IrSwitch {
 	def addGoDoneComponentPort(Network network){
 		'''
 		«FOR vertex: network.vertices»
-				«IF vertex instanceof Instance»
-					«FOR action: (vertex as Instance).actor.actions SEPARATOR "\n"»
-					«(vertex as Instance).simpleName»_«action.name»_go : OUT std_logic;
-					«(vertex as Instance).simpleName»_«action.name»_done : OUT std_logic;
+				«IF vertex instanceof Actor»
+					«FOR action: (vertex as Actor).actions SEPARATOR "\n"»
+					«(vertex as Actor).simpleName»_«action.name»_go : OUT std_logic;
+					«(vertex as Actor).simpleName»_«action.name»_done : OUT std_logic;
 					«ENDFOR»
 				«ENDIF»
 		«ENDFOR»
@@ -358,11 +358,11 @@ class TestbenchPrinter extends IrSwitch {
 		var String traceName;
 		var List<Port> inputPorts;
 		var List<Port> outputPorts;
-		if(vertex instanceof Instance){
-			name = (vertex as Instance).simpleName;
-			traceName = (vertex as Instance).name;
-			inputPorts = (vertex as Instance).actor.inputs;
-			outputPorts = (vertex as Instance).actor.outputs;
+		if(vertex instanceof Actor){
+			name = (vertex as Actor).simpleName;
+			traceName = (vertex as Actor).name;
+			inputPorts = (vertex as Actor).inputs;
+			outputPorts = (vertex as Actor).outputs;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
 			traceName = (vertex as Network).simpleName;
@@ -431,10 +431,10 @@ class TestbenchPrinter extends IrSwitch {
 		var String name;
 		var List<Port> inputPorts;
 		var List<Port> outputPorts;
-		if(vertex instanceof Instance){
-			name = (vertex as Instance).simpleName;
-			inputPorts = (vertex as Instance).actor.inputs;
-			outputPorts = (vertex as Instance).actor.outputs;
+		if(vertex instanceof Actor){
+			name = (vertex as Actor).simpleName;
+			inputPorts = (vertex as Actor).inputs;
+			outputPorts = (vertex as Actor).outputs;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
 			inputPorts = (vertex as Network).inputs;
@@ -663,16 +663,16 @@ class TestbenchPrinter extends IrSwitch {
 		'''
 	}
 	
-	def printInstance(Instance instance, Map<String,Object> options){
+	def printInstance(Actor actor, Map<String,Object> options){
 		goDone = false;
 		'''
-		«headerComments(instance,"")»
+		«headerComments(actor,"")»
 		
 		«addLibraries()»
 		
-		«addEntity(instance)»
+		«addEntity(actor)»
 		
-		«addArchitecture(instance)»
+		«addArchitecture(actor)»
 		'''
 	}
 	

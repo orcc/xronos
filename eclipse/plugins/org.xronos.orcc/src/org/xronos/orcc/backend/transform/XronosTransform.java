@@ -45,6 +45,7 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 import net.sf.orcc.ir.transform.DeadCodeElimination;
+import net.sf.orcc.util.OrccLogger;
 
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.StmtIO;
@@ -83,8 +84,7 @@ public class XronosTransform {
 		return procedure;
 	}
 
-	public static void transformActor(Actor actor, ResourceCache resourceCache,
-			boolean debugMode) {
+	public static void transformActor(Actor actor, ResourceCache resourceCache) {
 		if (!actor.hasAttribute("no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
@@ -122,10 +122,12 @@ public class XronosTransform {
 			// transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
 			for (DfSwitch<?> transformation : transformations) {
-				transformation.doSwitch(actor);
-				if (debugMode) {
-					System.out.println("oops " + transformation + " "
-							+ actor.getName());
+				try {
+					transformation.doSwitch(actor);
+				} catch (NullPointerException ex) {
+					OrccLogger
+							.severeln("\t - transformation failed: NullPointerException, "
+									+ ex.getMessage());
 				}
 			}
 		}

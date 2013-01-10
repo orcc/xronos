@@ -37,10 +37,11 @@ import net.sf.orcc.ir.util.IrSwitch
 import net.sf.orcc.df.Connection
 import java.util.List
 import net.sf.orcc.df.Port
-import net.sf.orcc.df.Instance
 import net.sf.orcc.graph.Vertex
 import java.util.HashMap
 import java.util.ArrayList
+import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Entity
 
 /*
  * A VHDL Network printer
@@ -62,7 +63,7 @@ class NetworkPrinter extends IrSwitch {
 	/**
 	 * Map which contains the Clock Domain of an instance
 	 */
-	var Map<Instance, String> instanceClockDomain;
+	var Map<Actor, String> instanceClockDomain;
 
 	/**
 	 * Contains a Map which indicates the number of the broadcasted actor
@@ -90,9 +91,10 @@ class NetworkPrinter extends IrSwitch {
 	
 	def computeActorOutputPortFanout(Network network) {
 		for (Vertex vertex : network.getVertices()) {
-			if (vertex instanceof Instance) {
-				var Instance instance = vertex as Instance;
-				var Map<Port, List<Connection>> map = instance.getOutgoingPortMap();
+			if (vertex instanceof Actor) {
+				var Actor actor = vertex as Actor;
+				var Map<Port, List<Connection>> map = actor.getAdapter((typeof(Entity))).getOutgoingPortMap()
+	
 				for (List<Connection> values : map.values()) {
 					var int cp = 0;
 					for (Connection connection : values) {
@@ -144,22 +146,22 @@ class NetworkPrinter extends IrSwitch {
 		}
 
 		for (Vertex vertex : network.getVertices()) {
-			if (vertex instanceof Instance) {
-				var Instance instance = vertex as Instance;
+			if (vertex instanceof Actor) {
+				var Actor actor = vertex as Actor;
 				if (!clockDomains.isEmpty()) {
 					if (clockDomains.keySet().contains(
-							instance.getHierarchicalName())) {
-						if (!clockDomains.get(instance.getHierarchicalName())
+							actor.getName())) {
+						if (!clockDomains.get(actor.getName())
 								.isEmpty()) {
 
-							instanceClockDomain.put(instance, clockDomains
-									.get(instance.getHierarchicalName()));
+							instanceClockDomain.put(actor, clockDomains
+									.get(actor.getName()));
 						}
 					} else {
-						instanceClockDomain.put(instance, DEFAULT_CLOCK_DOMAIN);
+						instanceClockDomain.put(actor, DEFAULT_CLOCK_DOMAIN);
 					}
 				} else {
-					instanceClockDomain.put(instance, DEFAULT_CLOCK_DOMAIN);
+					instanceClockDomain.put(actor, DEFAULT_CLOCK_DOMAIN);
 				}
 
 			}
@@ -247,10 +249,10 @@ class NetworkPrinter extends IrSwitch {
 		«FOR port: network.outputs»
 			-- 	«port.name» --> «portClockDomain.get(port)»
 		«ENDFOR»
-		-- Instance(s) clock domains:
+		-- Actor(s) clock domains:
 		«FOR vertex: network.vertices»
-			«IF vertex instanceof Instance»
-				--	«(vertex as Instance).simpleName» («(vertex as Instance).actor.simpleName») --> «instanceClockDomain.get(vertex as Instance)»
+			«IF vertex instanceof Actor»
+				--	«(vertex as Actor).simpleName» («(vertex as Actor).simpleName») --> «instanceClockDomain.get(vertex as Actor)»
 			«ENDIF»
 		«ENDFOR»
 		'''
@@ -258,8 +260,8 @@ class NetworkPrinter extends IrSwitch {
 	
 	def printLibrary(){
 		var Boolean systemActors = false;
-		for(Instance instance: network.children.filter(typeof(Instance)).filter[isActor]){
-			if (instance.actor.native){
+		for(Actor actor: network.children.filter(typeof(Actor))){
+			if (actor.native){
 				systemActors = true;
 			}
 		}
@@ -285,12 +287,12 @@ class NetworkPrinter extends IrSwitch {
 			 	«addDeclarationPort(port,"out","in",true)»
 			 «ENDFOR»
 			 «IF options.containsKey("generateGoDone")»
-			 	«FOR instance: network.children.filter(typeof(Instance)).filter[isActor]»
-			 		«IF !instance.actor.native»
-			 			-- Instance «instance.simpleName» Actions Go and Done
-			 			«FOR action: instance.actor.actions»
-			 				«instance.simpleName»_«action.name»_go : out std_logic;
-			 				«instance.simpleName»_«action.name»_done : out std_logic;
+			 	«FOR actor: network.children.filter(typeof(Actor))»
+			 		«IF !actor.native»
+			 			-- Instance «actor.simpleName» Actions Go and Done
+			 			«FOR action: actor.actions»
+			 				«actor.simpleName»_«action.name»_go : out std_logic;
+			 				«actor.simpleName»_«action.name»_done : out std_logic;
 			 			«ENDFOR»
 			 		«ENDIF»
 			 	«ENDFOR»
@@ -346,15 +348,15 @@ class NetworkPrinter extends IrSwitch {
 			«ENDFOR»
 			
 			-- Actors Input/Output and Output fanout signals
-			«FOR instance: network.children.filter(typeof(Instance)).filter[isActor] SEPARATOR "\n"»
-				«FOR port: instance.actor.inputs SEPARATOR "\n"»
-					«printSignal(port,instance.simpleName+"_","ai",0,false)»
+			«FOR actor: network.children.filter(typeof(Actor)) SEPARATOR "\n"»
+				«FOR port: actor.inputs SEPARATOR "\n"»
+					«printSignal(port,actor.simpleName+"_","ai",0,false)»
 				«ENDFOR»
 				
-				«FOR port: instance.actor.outputs SEPARATOR "\n"»
-					«printSignal(port,instance.simpleName+"_","ao",0,true)»
+				«FOR port: actor.outputs SEPARATOR "\n"»
+					«printSignal(port,actor.simpleName+"_","ao",0,true)»
 					
-					«printSignal(port,instance.simpleName+"_","aof",instance.outgoingPortMap.get(port).size,true)»
+					«printSignal(port,actor.simpleName+"_","aof",actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size,true)»
 				«ENDFOR»
 			«ENDFOR»
 		
@@ -391,9 +393,9 @@ class NetworkPrinter extends IrSwitch {
 			-- --------------------------------------------------------------------------
 			-- Actor Output Fanouts
 			-- --------------------------------------------------------------------------
-			«FOR instance: network.children.filter(typeof(Instance)).filter[isActor] SEPARATOR "\n"»
-				«FOR port: instance.actor.outputs»
-					«addFannout(port, "ao", "aof", instance)»
+			«FOR actor: network.children.filter(typeof(Actor)) SEPARATOR "\n"»
+				«FOR port: actor.outputs»
+					«addFannout(port, "ao", "aof", actor)»
 				«ENDFOR»
 			«ENDFOR»
 		
@@ -402,14 +404,14 @@ class NetworkPrinter extends IrSwitch {
 			-- --------------------------------------------------------------------------
 			«FOR connection: network.connections SEPARATOR "\n"»
 				«IF connection.source instanceof Port»
-					«IF connection.target instanceof Instance»
-						«addQeueu(connection.source as Port, connection.targetPort, null, connection.target as Instance, connection, "ai", "nif")»
+					«IF connection.target instanceof Actor»
+						«addQeueu(connection.source as Port, connection.targetPort, null, connection.target as Actor, connection, "ai", "nif")»
 					«ENDIF»
-				«ELSEIF connection.source instanceof Instance»
+				«ELSEIF connection.source instanceof Actor»
 					«IF connection.target instanceof Port»
-						«addQeueu(connection.sourcePort, connection.target as Port, connection.source as Instance, null, connection, "no", "aof")»
-					«ELSEIF connection.target instanceof Instance»
-						«addQeueu(connection.sourcePort, connection.targetPort, connection.source as Instance, connection.target as Instance, connection, "ai", "aof")»
+						«addQeueu(connection.sourcePort, connection.target as Port, connection.source as Actor, null, connection, "no", "aof")»
+					«ELSEIF connection.target instanceof Actor»
+						«addQeueu(connection.sourcePort, connection.targetPort, connection.source as Actor, connection.target as Actor, connection, "ai", "aof")»
 					«ENDIF»
 				«ENDIF»
 			«ENDFOR»
@@ -466,28 +468,28 @@ class NetworkPrinter extends IrSwitch {
 	
 	def printArchitectureComponents(){
 		'''
-		«FOR instance: network.children.filter(typeof(Instance)).filter[isActor] SEPARATOR "\n"»
-			«IF !instance.actor.native»
-			component «instance.simpleName» is
+		«FOR actor: network.children.filter(typeof(Actor)) SEPARATOR "\n"»
+			«IF !actor.native»
+			component «actor.simpleName» is
 			port(
-			     -- Instance «instance.simpleName» Input(s)
-			     «FOR port: instance.actor.inputs»
+			     -- Instance «actor.simpleName» Input(s)
+			     «FOR port: actor.inputs»
 			     	«addDeclarationPort(port,"in","out", false)»
 			     «ENDFOR»
-			     -- Instance «instance.simpleName» Output(s)
-			     «FOR port: instance.actor.outputs»
+			     -- Instance «actor.simpleName» Output(s)
+			     «FOR port: actor.outputs»
 			     	«addDeclarationPort(port,"out","in", true)»
 			     «ENDFOR»
 			     «IF options.containsKey("generateGoDone")»
-			     	-- Instance «instance.simpleName» Actions Go and Done
-			     	«FOR action: instance.actor.actions SEPARATOR "\n"»
+			     	-- Instance «actor.simpleName» Actions Go and Done
+			     	«FOR action: actor.actions SEPARATOR "\n"»
 			     		«action.name»_go : out std_logic;
 			     		«action.name»_done : out std_logic;
 			    	«ENDFOR»
 			     «ENDIF»
 			     clk: in std_logic;
 			     reset: in std_logic);
-			end component «instance.simpleName»;
+			end component «actor.simpleName»;
 			«ENDIF»
 		«ENDFOR»
 		'''
@@ -495,46 +497,46 @@ class NetworkPrinter extends IrSwitch {
 	
 	def printInstanceConnection(){
 		'''
-		«FOR instance: network.children.filter(typeof(Instance)).filter[isActor] SEPARATOR "\n"»
-			«IF instance.actor.native»
-				-- «instance.simpleName» (System Actor)
-				i_«instance.simpleName» : entity SystemActors.«instance.simpleName»(behavioral)
-				«IF !instance.actor.parameters.empty»
+		«FOR actor: network.children.filter(typeof(Actor)) SEPARATOR "\n"»
+			«IF actor.native»
+				-- «actor.simpleName» (System Actor)
+				i_«actor.simpleName» : entity SystemActors.«actor.simpleName»(behavioral)
+				«IF !actor.parameters.empty»
 				generic map(
 					-- Not currently supported
 				)
 				«ENDIF»
 			«ELSE»
-			i_«instance.simpleName» : component «instance.simpleName»
+			i_«actor.simpleName» : component «actor.simpleName»
 			«ENDIF»
 			port map(
-				-- Instance «instance.simpleName» Input(s)
-				«FOR port: instance.actor.inputs SEPARATOR "\n"»
-					«addSignalConnection(instance, port, "ai", "In", true, null, false)»
+				-- Instance «actor.simpleName» Input(s)
+				«FOR port: actor.inputs SEPARATOR "\n"»
+					«addSignalConnection(actor, port, "ai", "In", true, null, false)»
 				«ENDFOR»
-				-- Instance «instance.simpleName» Output(s)
-				«FOR port: instance.actor.outputs SEPARATOR "\n"»
-					«addSignalConnection(instance, port, "ao", "Out", true, null, true)»
+				-- Instance «actor.simpleName» Output(s)
+				«FOR port: actor.outputs SEPARATOR "\n"»
+					«addSignalConnection(actor, port, "ao", "Out", true, null, true)»
 				«ENDFOR»
 				«IF options.containsKey("generateGoDone")»
-					-- Instance «instance.simpleName» Actions Go and Done
-					«FOR action: instance.actor.actions SEPARATOR "\n"»
-						«action.name»_go => «instance.simpleName»_«action.name»_go,
-						«action.name»_done => «instance.simpleName»_«action.name»_done,
+					-- Instance «actor.simpleName» Actions Go and Done
+					«FOR action: actor.actions SEPARATOR "\n"»
+						«action.name»_go => «actor.simpleName»_«action.name»_go,
+						«action.name»_done => «actor.simpleName»_«action.name»_done,
 			    	«ENDFOR»
 			    «ENDIF»
 				-- Clock and Reset
-				clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(instance))»),
-				reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(instance))»));
+				clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
+				reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(actor))»));
 		«ENDFOR»
 		'''
 	}
 	
-	def addSignalConnection(Instance instance, Port port, String prefix, String dir, Boolean instConnection, Integer fanoutIndex, Boolean printRdy){
+	def addSignalConnection(Actor actor, Port port, String prefix, String dir, Boolean instConnection, Integer fanoutIndex, Boolean printRdy){
 		var String owner = "";
 		var String fanoutIndexString = "";
-		if(instance != null){
-			owner = instance.simpleName+"_";
+		if(actor != null){
+			owner = actor.simpleName+"_";
 		}
 		if(fanoutIndex != null){
 			fanoutIndexString = "("+fanoutIndex+")";
@@ -546,7 +548,7 @@ class NetworkPrinter extends IrSwitch {
 		
 		'''
 		«IF port.native»
-			«port.name»_data => «prefix»_«instance.simpleName»_«port.name»_data
+			«port.name»_data => «prefix»_«actor.simpleName»_«port.name»_data
 		«ELSE»
 			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_data«boolType» => «prefix»_«owner»«port.name»_data,
 			«IF instConnection»«port.name»«ELSE»«dir»«ENDIF»_send => «prefix»_«owner»«port.name»_send«fanoutIndexString»,
@@ -559,20 +561,20 @@ class NetworkPrinter extends IrSwitch {
 		'''
 	}
 
-	def addFannout(Port port, String prefixIn, String prefixOut, Instance instance){
+	def addFannout(Port port, String prefixIn, String prefixOut, Actor actor){
 		var Integer fanoutDegree = 1;
 		var String instanceName = "";
-		if(instance != null){
+		if(actor != null){
 			// Actor Output port fanout
-			fanoutDegree = instance.outgoingPortMap.get(port).size;
-			instanceName = instance.simpleName + "_";
+			fanoutDegree = actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size;
+			instanceName = actor.simpleName + "_";
 		}else{
 			// Network Input port fanout
 			fanoutDegree = networkPortFanout.get(port);
 		}
 		var Integer clkIndex = 0;
-		if(instance != null){
-			clkIndex = clockDomainsIndex.get(instanceClockDomain.get(instance));
+		if(actor != null){
+			clkIndex = clockDomainsIndex.get(instanceClockDomain.get(actor));
 		}else{
 			clkIndex = clockDomainsIndex.get(portClockDomain.get(port));
 		}
@@ -581,16 +583,16 @@ class NetworkPrinter extends IrSwitch {
 		generic map (fanout => «fanoutDegree», width => «port.type.sizeInBits»)
 		port map(
 			-- Fanout In
-			«addSignalConnection(instance, port, prefixIn,"In", false, null, true)»
+			«addSignalConnection(actor, port, prefixIn,"In", false, null, true)»
 			-- Fanout Out
-			«addSignalConnection(instance, port, prefixOut,"Out", false, null, true)»
+			«addSignalConnection(actor, port, prefixOut,"Out", false, null, true)»
 			-- Clock & Reset
 			clk => clocks(«clkIndex»),
 			reset => resets(«clkIndex»));
 		'''
 	}
 	
-	def addQeueu(Port srcPort, Port tgtPort, Instance srcInstance, Instance tgtInstance, Connection connection, String prefixIn, String prefixOut){
+	def addQeueu(Port srcPort, Port tgtPort, Actor srcInstance, Actor tgtInstance, Connection connection, String prefixIn, String prefixOut){
 		var Integer fifoSize = 1;
 		if (connection.size != null){
 			fifoSize = connection.size;
@@ -629,7 +631,7 @@ class NetworkPrinter extends IrSwitch {
 		networkPortFanout = new HashMap<Port, Integer>();
 		networkPortConnectionFanout = new HashMap<Connection, Integer>();
 		portClockDomain = new HashMap<Port, String>();
-		instanceClockDomain = new HashMap<Instance, String>();
+		instanceClockDomain = new HashMap<Actor, String>();
 		clockDomainsIndex = new HashMap<String, Integer>();
 		connectionsClockDomain = new HashMap<Connection,List<Integer>>();
 		computeNetworkInputPortFanout(network);

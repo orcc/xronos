@@ -32,10 +32,10 @@ package org.xronos.orcc.backend
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Map
-import net.sf.orcc.df.Instance
 import net.sf.orcc.df.Network
 import net.sf.orcc.ir.util.IrSwitch
 import net.sf.orcc.graph.Vertex
+import net.sf.orcc.df.Actor
 
 /*
  * A ModelSim TCL script printer
@@ -64,8 +64,8 @@ class TclScriptPrinter extends IrSwitch {
 		## Xronos synthesizer
 		«IF object instanceof Network »
 			## «string» TCL Script file for Network: «(object as Network).simpleName» 
-		«ELSEIF object instanceof Instance»
-			## «string» TCL Script file for Instance: «(object as Instance).simpleName» 
+		«ELSEIF object instanceof Actor»
+			## «string» TCL Script file for Actor: «(object as Actor).simpleName» 
 		«ENDIF»
 		## Date: «dateFormat.format(date)»
 		## ############################################################################
@@ -101,8 +101,8 @@ class TclScriptPrinter extends IrSwitch {
 	
 	def setWorkLibrary(Vertex vertex){
 		var String name;
-		if(vertex instanceof Instance){
-			name = (vertex as Instance).simpleName;
+		if(vertex instanceof Actor){
+			name = (vertex as Actor).simpleName;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
 		} 
@@ -129,12 +129,12 @@ class TclScriptPrinter extends IrSwitch {
 		## Compile network instances and add them to work library	
 		«IF vertex instanceof Network»
 			«FOR netVertex : network.vertices»
-				«IF netVertex instanceof Instance»
-					vlog -work «workName» «rtlPath»/«(netVertex as Instance).simpleName».v
+				«IF netVertex instanceof Actor»
+					vlog -work «workName» «rtlPath»/«(netVertex as Actor).simpleName».v
 				«ENDIF» 
 			«ENDFOR»
-		«ELSEIF vertex instanceof Instance»
-		vlog -work «workName» «rtlPath»/«(vertex as Instance).simpleName».v
+		«ELSEIF vertex instanceof Actor»
+		vlog -work «workName» «rtlPath»/«(vertex as Actor).simpleName».v
 		«ENDIF»
 		
 		«IF vertex instanceof Network»
@@ -151,8 +151,8 @@ class TclScriptPrinter extends IrSwitch {
 	
 	def startSimulation(Vertex vertex){
 		var String name;
-		if(vertex instanceof Instance){
-			name = (vertex as Instance).simpleName;
+		if(vertex instanceof Actor){
+			name = (vertex as Actor).simpleName;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
 		} 
@@ -184,7 +184,7 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 	}
 	
-	def addInstanceIO(Network network,Instance instance){
+	def addInstanceIO(Network network,Actor actor){
 		var String name = network.simpleName;
 		var String simName;
 		if(testbench){
@@ -193,21 +193,21 @@ class TclScriptPrinter extends IrSwitch {
 			simName = name;
 		}
 		'''
-		add wave -noupdate -divider -height 20 i_«instance.simpleName»
-		«FOR port : instance.actor.inputs SEPARATOR "\n"»
-			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA
-			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_ACK
-			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_SEND
+		add wave -noupdate -divider -height 20 i_«actor.simpleName»
+		«FOR port : actor.inputs SEPARATOR "\n"»
+			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_DATA
+			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_ACK
+			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_SEND
 		«ENDFOR» 
-		«FOR port : instance.actor.outputs SEPARATOR "\n"»
-			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA
-			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_SEND
-			add wave sim:/«simName»/i_«instance.simpleName»/«port.name»_RDY
+		«FOR port : actor.outputs SEPARATOR "\n"»
+			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_DATA
+			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_SEND
+			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_RDY
 		«ENDFOR» 
 		«IF generateGoDone»
-			«FOR action: instance.actor.actions»
-				add wave -label «action.name»_go sim:/«simName»/i_«instance.simpleName»/«action.name»_go
-				add wave -label «action.name»_done sim:/«simName»/i_«instance.simpleName»/«action.name»_done
+			«FOR action: actor.actions»
+				add wave -label «action.name»_go sim:/«simName»/i_«actor.simpleName»/«action.name»_go
+				add wave -label «action.name»_done sim:/«simName»/i_«actor.simpleName»/«action.name»_done
 			«ENDFOR»
 		«ENDIF»
 		'''
@@ -217,8 +217,8 @@ class TclScriptPrinter extends IrSwitch {
 	def addNetworkSignalsToWave(Network network){
 		'''
 		«FOR vertex : network.vertices SEPARATOR "\n"»
-		«IF vertex instanceof Instance»
-			«addInstanceIO(network,vertex as Instance)»
+		«IF vertex instanceof Actor»
+			«addInstanceIO(network,vertex as Actor)»
 		«ENDIF»
 		«ENDFOR»	
 		
@@ -228,27 +228,27 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 	}
 	
-	def addInstanceSignalsToWave(Instance instance){
-		var String simName = instance.simpleName + "_tb";
+	def addInstanceSignalsToWave(Actor actor){
+		var String simName = actor.simpleName + "_tb";
 		'''
-		add wave -noupdate -divider -height 20  "Inputs: i_«instance.simpleName»"
-		«FOR port : instance.actor.inputs SEPARATOR "\n"»
-			add wave -label «port.name»_DATA sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA
-			add wave -label «port.name»_ACK sim:/«simName»/i_«instance.simpleName»/«port.name»_ACK 
-			add wave -label «port.name»_SEND sim:/«simName»/i_«instance.simpleName»/«port.name»_SEND 
+		add wave -noupdate -divider -height 20  "Inputs: i_«actor.simpleName»"
+		«FOR port : actor.inputs SEPARATOR "\n"»
+			add wave -label «port.name»_DATA sim:/«simName»/i_«actor.simpleName»/«port.name»_DATA
+			add wave -label «port.name»_ACK sim:/«simName»/i_«actor.simpleName»/«port.name»_ACK 
+			add wave -label «port.name»_SEND sim:/«simName»/i_«actor.simpleName»/«port.name»_SEND 
 		«ENDFOR» 
-		add wave -noupdate -divider -height 20 "Outputs: i_«instance.simpleName»"
-		«FOR port : instance.actor.outputs SEPARATOR "\n"»
-			add wave -label «port.name»_DATA sim:/«simName»/i_«instance.simpleName»/«port.name»_DATA 
-			add wave -label «port.name»_SEND sim:/«simName»/i_«instance.simpleName»/«port.name»_SEND
-			add wave -label «port.name»_RDY sim:/«simName»/i_«instance.simpleName»/«port.name»_RDY
+		add wave -noupdate -divider -height 20 "Outputs: i_«actor.simpleName»"
+		«FOR port : actor.outputs SEPARATOR "\n"»
+			add wave -label «port.name»_DATA sim:/«simName»/i_«actor.simpleName»/«port.name»_DATA 
+			add wave -label «port.name»_SEND sim:/«simName»/i_«actor.simpleName»/«port.name»_SEND
+			add wave -label «port.name»_RDY sim:/«simName»/i_«actor.simpleName»/«port.name»_RDY
 		«ENDFOR» 
 		add wave -noupdate -divider -height 20 "Go & Done" 
 		«IF generateGoDone»
-			«FOR action: instance.actor.actions»
+			«FOR action: actor.actions»
 				add wave -noupdate -divider -height 20 "Action: «action.name»" 
-				add wave -label Go sim:/«simName»/i_«instance.simpleName»/«action.name»_go
-				add wave -label Done sim:/«simName»/i_«instance.simpleName»/«action.name»_done
+				add wave -label Go sim:/«simName»/i_«actor.simpleName»/«action.name»_go
+				add wave -label Done sim:/«simName»/i_«actor.simpleName»/«action.name»_done
 			«ENDFOR»
 		«ENDIF»
 		'''
@@ -292,9 +292,9 @@ class TclScriptPrinter extends IrSwitch {
 		## FIFO FULL
 		add wave -noupdate -divider -height 20 "FIFO FULL"
 		«FOR vertex : network.vertices»
-			«IF vertex instanceof Instance»
-				«FOR port : (vertex as Instance).actor.inputs»
-				add wave -label «(vertex as Instance).simpleName»_«port.name»_full sim:/«simName»/q_ai_«(vertex as Instance).simpleName»_«port.name»/fifo/msync_full 
+			«IF vertex instanceof Actor»
+				«FOR port : (vertex as Actor).inputs»
+				add wave -label «(vertex as Actor).simpleName»_«port.name»_full sim:/«simName»/q_ai_«(vertex as Actor).simpleName»_«port.name»/fifo/msync_full 
 				«ENDFOR»
 			«ENDIF»
 		«ENDFOR»
@@ -378,7 +378,7 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 	}
 	
-	def printInstanceTestbenchTclScript(Instance instance, Map<String, Object> options){
+	def printInstanceTestbenchTclScript(Actor actor, Map<String, Object> options){
 		this.network = network;
 		
 		testbench = true;
@@ -397,15 +397,15 @@ class TclScriptPrinter extends IrSwitch {
 			rtlPath = "$Rtl";
 		}
 		''' 			
-		«headerComments(instance,"Testbench")»
+		«headerComments(actor,"Testbench")»
 		
 		«setPathandLibrariesLibraries()»
 		
-		«setWorkLibrary(instance)»
+		«setWorkLibrary(actor)»
 		
-		«startSimulation(instance)»
+		«startSimulation(actor)»
 		
-		«addInstanceSignalsToWave(instance)»
+		«addInstanceSignalsToWave(actor)»
 		'''
 	}
 }

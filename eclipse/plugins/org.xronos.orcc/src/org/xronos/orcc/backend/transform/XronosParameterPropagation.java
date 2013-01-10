@@ -53,6 +53,10 @@ import net.sf.orcc.ir.util.IrUtil;
 public class XronosParameterPropagation extends DfVisitor<Void> {
 	private class Propagator extends AbstractIrVisitor<Void> {
 
+		public Propagator() {
+			super(true);
+		}
+
 		@Override
 		public Void caseInstLoad(InstLoad load) {
 			Var source = load.getSource().getVariable();
@@ -68,7 +72,12 @@ public class XronosParameterPropagation extends DfVisitor<Void> {
 								.getInitialValue());
 					}
 				} else {
-					exprValue = getValue((Expression) source.getValue());
+					if (source.getValue() != null) {
+						exprValue = getValue((Expression) source.getValue());
+					} else {
+						exprValue = getValue((Expression) source
+								.getInitialValue());
+					}
 				}
 				InstAssign assign = factory.createInstAssign(target, exprValue);
 				BlockBasic block = load.getBlock();

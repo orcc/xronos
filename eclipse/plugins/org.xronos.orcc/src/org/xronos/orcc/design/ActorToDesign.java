@@ -29,6 +29,11 @@
 
 package org.xronos.orcc.design;
 
+import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.Instance;
+import net.sf.orcc.df.util.DfSwitch;
+import net.sf.orcc.df.util.DfVisitor;
+
 import org.xronos.openforge.app.EngineThread;
 import org.xronos.openforge.app.GenericJob;
 import org.xronos.openforge.app.OptionRegistry;
@@ -36,30 +41,26 @@ import org.xronos.openforge.lim.Design;
 import org.xronos.orcc.design.visitors.DesignActor;
 import org.xronos.orcc.design.visitors.StmtIO;
 
-import net.sf.orcc.df.Instance;
-import net.sf.orcc.df.util.DfSwitch;
-import net.sf.orcc.df.util.DfVisitor;
-
 /**
  * This class transforms an Orcc {@link Instance} Object to an OpenForge
  * {@link Design} Object
  * 
  * @author Endri Bezati
  */
-public class InstanceToDesign {
+public class ActorToDesign {
 	Design design;
-	Instance instance;
+	Actor actor;
 	ResourceCache resourceCache;
 
-	public InstanceToDesign(Instance instance, ResourceCache resourceCache) {
-		this.instance = instance;
+	public ActorToDesign(Actor actor, ResourceCache resourceCache) {
+		this.actor = actor;
 		this.resourceCache = resourceCache;
 		design = new Design();
 	}
 
 	public Design buildDesign() {
 		// Get Instance name
-		String designName = instance.getName();
+		String designName = actor.getName();
 		design.setIDLogical(designName);
 		GenericJob job = EngineThread.getGenericJob();
 		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
@@ -67,10 +68,10 @@ public class InstanceToDesign {
 
 		DfSwitch<Void> stmIOFinder = new DfVisitor<Void>(new StmtIO(
 				resourceCache));
-		stmIOFinder.doSwitch(instance.getActor());
+		stmIOFinder.doSwitch(actor);
 
 		DesignActor designVisitor = new DesignActor(design, resourceCache);
-		designVisitor.doSwitch(instance.getActor());
+		designVisitor.doSwitch(actor);
 
 		return design;
 	}

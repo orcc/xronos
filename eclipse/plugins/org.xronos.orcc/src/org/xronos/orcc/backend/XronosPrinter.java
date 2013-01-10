@@ -52,6 +52,7 @@ import org.xronos.openforge.app.GenericJob;
 import org.xronos.openforge.app.NewJob;
 import org.xronos.openforge.app.OptionRegistry;
 import org.xronos.openforge.verilog.model.Assign.UnbalancedAssignmentException;
+import org.xronos.orcc.backend.transform.XronosTransform;
 import org.xronos.orcc.design.DesignEngine;
 import org.xronos.orcc.design.ResourceCache;
 
@@ -120,6 +121,19 @@ public class XronosPrinter {
 		}
 	}
 
+	static public long getLastModifiedHierarchy(Actor actor) {
+		long actorModified = 0;
+
+		if (actor.getFileName() == null) {
+			// if source file does not exist, force to generate
+			actorModified = Long.MAX_VALUE;
+		} else {
+			IFile file = actor.getFile();
+			actorModified = file.getLocalTimeStamp();
+		}
+		return actorModified;
+	}
+
 	/**
 	 * Get the map of options
 	 * 
@@ -142,82 +156,82 @@ public class XronosPrinter {
 	 * @return
 	 */
 	public boolean printInstance(String[] xronosArgs, String rtlPath,
-			Instance instance, ResourceCache resourceCache, int idxInstance,
+			Actor actor, ResourceCache resourceCache, int idxInstance,
 			int totalInstances) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		boolean error = false;
 
 		long t0 = System.currentTimeMillis();
-		if (instance.isActor()) {
-			if (!instance.getActor().hasAttribute("no_generation")) {
-				try {
-					xronosMainJob.setOptionValues(xronosArgs);
-					f.preprocess(xronosMainJob);
-					OrccLogger.traceln("Compiling instance: "
-							+ instance.getSimpleName() + " (" + idxInstance
-							+ "/" + totalInstances + ")");
-					Engine engine = new DesignEngine(xronosMainJob, instance,
-							resourceCache);
-					engine.begin();
-				} catch (NewJob.ForgeOptionException foe) {
-					OrccLogger.severeln("\t command line option error: "
-							+ foe.getMessage());
-					OrccLogger.severeln("");
-					OrccLogger.severeln(OptionRegistry.usage(false));
-					error = true;
-				} catch (ForgeFatalException ffe) {
-					OrccLogger
-							.severeln("\t - failed to compile:Forge compilation ended with fatal error: "
-									+ ffe.getMessage());
-					error = true;
-				} catch (NullPointerException ex) {
-					OrccLogger
-							.severeln("\t - failed to compile: NullPointerException, "
-									+ ex.getMessage());
-					error = true;
-				} catch (NoSuchElementException ex) {
-					OrccLogger
-							.severeln("\t - failed to compile: NoSuchElementException, "
-									+ ex.getMessage());
-					error = true;
-				} catch (UnbalancedAssignmentException ex) {
-					OrccLogger
-							.severeln("\t - failed to compile: UnbalancedAssignmentException, "
-									+ ex.getMessage());
-					error = true;
-				} catch (ArrayIndexOutOfBoundsException ex) {
-					OrccLogger
-							.severeln("\t - failed to compile: ArrayIndexOutOfBoundsException, "
-									+ ex.getMessage());
-					error = true;
-				} catch (Throwable t) {
-					OrccLogger.severeln("\t - failed to compile: "
-							+ t.getMessage());
-					error = true;
-				}
-				if (!error) {
-					long t1 = System.currentTimeMillis();
-					OrccLogger.traceln("\t - Compiled in: " + (float) (t1 - t0)
-							/ 1000 + "s");
-				}
-				if (options.containsKey("generateGoDone")) {
-					Boolean generateGoDone = (Boolean) options
-							.get("generateGoDone");
+		if (!actor.hasAttribute("no_generation")) {
+			try {
+				xronosMainJob.setOptionValues(xronosArgs);
+				f.preprocess(xronosMainJob);
+				OrccLogger.traceln("Compiling instance: "
+						+ actor.getSimpleName() + " (" + idxInstance + "/"
+						+ totalInstances + ")");
+				XronosTransform.transformActor(actor, resourceCache);
+				Engine engine = new DesignEngine(xronosMainJob, actor,
+						resourceCache);
+				engine.begin();
+			} catch (NewJob.ForgeOptionException foe) {
+				OrccLogger.severeln("\t command line option error: "
+						+ foe.getMessage());
+				OrccLogger.severeln("");
+				OrccLogger.severeln(OptionRegistry.usage(false));
+				error = true;
+			} catch (ForgeFatalException ffe) {
+				OrccLogger
+						.severeln("\t - failed to compile:Forge compilation ended with fatal error: "
+								+ ffe.getMessage());
+				error = true;
+			} catch (NullPointerException ex) {
+				OrccLogger
+						.severeln("\t - failed to compile: NullPointerException, "
+								+ ex.getMessage());
+				error = true;
+			} catch (NoSuchElementException ex) {
+				OrccLogger
+						.severeln("\t - failed to compile: NoSuchElementException, "
+								+ ex.getMessage());
+				error = true;
+			} catch (UnbalancedAssignmentException ex) {
+				OrccLogger
+						.severeln("\t - failed to compile: UnbalancedAssignmentException, "
+								+ ex.getMessage());
+				error = true;
+			} catch (ArrayIndexOutOfBoundsException ex) {
+				OrccLogger
+						.severeln("\t - failed to compile: ArrayIndexOutOfBoundsException, "
+								+ ex.getMessage());
+				error = true;
+			} catch (Throwable t) {
+				OrccLogger
+						.severeln("\t - failed to compile: " + t.getMessage());
+				error = true;
+			}
+			if (!error) {
+				long t1 = System.currentTimeMillis();
+				OrccLogger.traceln("\t - Compiled in: " + (float) (t1 - t0)
+						/ 1000 + "s");
+			}
+			if (options.containsKey("generateGoDone")) {
+				Boolean generateGoDone = (Boolean) options
+						.get("generateGoDone");
 
-					if (generateGoDone) {
-						if (!error) {
-							String rtlGoDonePath = rtlPath + File.separator
-									+ "rtlGoDone";
-							VerilogAddGoDone verilogFile = new VerilogAddGoDone(
-									instance, rtlPath, rtlGoDonePath);
-							verilogFile.addGoDone();
-						}
+				if (generateGoDone) {
+					if (!error) {
+						String rtlGoDonePath = rtlPath + File.separator
+								+ "rtlGoDone";
+						VerilogAddGoDone verilogFile = new VerilogAddGoDone(
+								actor, rtlPath, rtlGoDonePath);
+						verilogFile.addGoDone();
 					}
 				}
-				return error;
 			}
+			return error;
 		}
+
 		return false;
 	}
 
@@ -259,11 +273,11 @@ public class XronosPrinter {
 	public boolean printTclScript(String path, Boolean testBench, Vertex vertex) {
 		String file = null;
 		CharSequence sequence = null;
-		if (vertex instanceof Instance) {
+		if (vertex instanceof Actor) {
 			file = path + File.separator + "tcl_"
-					+ ((Instance) vertex).getSimpleName() + ".tcl";
+					+ ((Actor) vertex).getSimpleName() + ".tcl";
 			sequence = new TclScriptPrinter().printInstanceTestbenchTclScript(
-					(Instance) vertex, options);
+					(Actor) vertex, options);
 		} else if (vertex instanceof Network) {
 			file = path + File.separator + "tcl_"
 					+ ((Network) vertex).getSimpleName() + ".tcl";
@@ -351,10 +365,9 @@ public class XronosPrinter {
 	 *            a Instance
 	 * @return
 	 */
-	public boolean printTestbench(String path, Instance instance) {
-		String file = path + File.separator + instance.getSimpleName()
-				+ "_tb.vhd";
-		CharSequence sequence = new TestbenchPrinter().printInstance(instance,
+	public boolean printTestbench(String path, Actor actor) {
+		String file = path + File.separator + actor.getSimpleName() + "_tb.vhd";
+		CharSequence sequence = new TestbenchPrinter().printInstance(actor,
 				options);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));

@@ -13,7 +13,6 @@ import java.util.Map;
 
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
@@ -21,7 +20,6 @@ import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.util.OrccLogger;
 
 import org.eclipse.core.resources.IFile;
-import org.xronos.orcc.backend.transform.XronosTransform;
 import org.xronos.orcc.design.ResourceCache;
 
 /**
@@ -140,7 +138,7 @@ public class Xronos extends AbstractBackend {
 	@Override
 	protected void doXdfCodeGeneration(Network network) {
 		// instantiate and flattens network
-		new Instantiator(false, 1).doSwitch(network);
+		new Instantiator(true, 1).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
 
 		// Compute the Network Template
@@ -184,52 +182,48 @@ public class Xronos extends AbstractBackend {
 		OrccLogger
 				.traceln("-------------------------------------------------------------------------------");
 		long t0 = System.currentTimeMillis();
-		List<Actor> visitedActrors = new ArrayList<Actor>();
-		ResourceCache resourceCache = new ResourceCache();
-		List<Instance> instanceToBeCompiled = new ArrayList<Instance>();
+
+		List<Actor> instanceToBeCompiled = new ArrayList<Actor>();
 
 		int cachedInstances = 0;
 		// Figure out how many instances need to be compiled/Recompiled
 		for (Vertex vertex : network.getChildren()) {
-			final Instance instance = vertex.getAdapter(Instance.class);
-			if (instance != null) {
-				if (instance.isActor()) {
-					if (!instance.getActor().isNative()) {
-						if (!debugMode) {
-							long sourceLastModified = XronosPrinter
-									.getLastModifiedHierarchy(instance);
-							String file = rtlPath + File.separator
-									+ instance.getSimpleName() + ".v";
-							File targetFile = new File(file);
-							long targetLastModified = targetFile.lastModified();
-							if (sourceLastModified > targetLastModified) {
-								if (!instance.getActor().hasAttribute(
-										"no_generation")) {
-									instanceToBeCompiled.add(instance);
-								} else {
-									OrccLogger
-											.warnln("Instance: "
-													+ instance.getSimpleName()
-													+ " contains @no_generation tag, it will not be generated!");
-								}
-							} else {
-								cachedInstances++;
-							}
-						} else {
-							if (!instance.getActor().hasAttribute(
-									"no_generation")) {
-								instanceToBeCompiled.add(instance);
+			final Actor actor = vertex.getAdapter(Actor.class);
+			if (actor != null) {
+				if (!actor.isNative()) {
+					if (!debugMode) {
+						long sourceLastModified = XronosPrinter
+								.getLastModifiedHierarchy(actor);
+						String file = rtlPath + File.separator
+								+ actor.getSimpleName() + ".v";
+						File targetFile = new File(file);
+						long targetLastModified = targetFile.lastModified();
+						if (sourceLastModified > targetLastModified) {
+							if (!actor.hasAttribute("no_generation")) {
+								instanceToBeCompiled.add(actor);
 							} else {
 								OrccLogger
 										.warnln("Instance: "
-												+ instance.getSimpleName()
+												+ actor.getSimpleName()
 												+ " contains @no_generation tag, it will not be generated!");
-
 							}
+						} else {
+							cachedInstances++;
 						}
+					} else {
+						if (!actor.hasAttribute("no_generation")) {
+							instanceToBeCompiled.add(actor);
+						} else {
+							OrccLogger
+									.warnln("Actor: "
+											+ actor.getSimpleName()
+											+ " contains @no_generation tag, it will not be generated!");
 
+						}
 					}
+
 				}
+
 			}
 		}
 
@@ -239,28 +233,24 @@ public class Xronos extends AbstractBackend {
 			OrccLogger.traceln("NOTE: Cached instances: " + cachedInstances);
 		}
 		if (toBeCompiled > 0) {
-			OrccLogger.traceln("NOTE: Instances to be generated: "
-					+ toBeCompiled);
+			OrccLogger.traceln("NOTE: Actors to be generated: " + toBeCompiled);
 		}
 		OrccLogger
 				.traceln("-------------------------------------------------------------------------------");
 
 		int numInstance = 1;
 		int failedToCompile = 0;
-		for (Instance instance : instanceToBeCompiled) {
-			Actor actor = instance.getActor();
-			if (!visitedActrors.contains(actor)) {
-				XronosTransform.transformActor(actor, resourceCache, debugMode);
-				visitedActrors.add(actor);
-			}
+		for (Actor actor : instanceToBeCompiled) {
+			ResourceCache resourceCache = new ResourceCache();
 			XronosPrinter printer = new XronosPrinter(!debugMode);
 			printer.getOptions().put("generateGoDone", generateGoDone);
 			printer.getOptions().put("fpgaType", fpgaName);
 			List<String> flags = new ArrayList<String>(xronosFlags);
 			flags.addAll(Arrays.asList("-d", rtlPath, "-o",
-					instance.getSimpleName()));
-			boolean failed = printer.printInstance(flags.toArray(new String[0]), rtlPath,
-					instance, resourceCache, numInstance, toBeCompiled);
+					actor.getSimpleName()));
+			boolean failed = printer.printInstance(
+					flags.toArray(new String[0]), rtlPath, actor,
+					resourceCache, numInstance, toBeCompiled);
 			if (failed) {
 				failedToCompile++;
 			}
@@ -268,11 +258,10 @@ public class Xronos extends AbstractBackend {
 		}
 
 		if (failedToCompile > 0) {
-
 			OrccLogger
 					.severeln("-------------------------------------------------------------------------------");
-			OrccLogger.traceln("NOTE: " + toBeCompiled
-					+ "  instance(s) failed to compile");
+			OrccLogger.severeln("NOTE: " + failedToCompile + " actor"
+					+ (failedToCompile > 1 ? "s" : "") + " failed to compile");
 			OrccLogger
 					.severeln("-------------------------------------------------------------------------------");
 		}
@@ -340,10 +329,10 @@ public class Xronos extends AbstractBackend {
 		xronosPrinter.printTclScript(testBenchPath, true, network);
 
 		for (Vertex vertex : network.getChildren()) {
-			final Instance instance = vertex.getAdapter(Instance.class);
-			if (instance != null) {
-				xronosPrinter.printTestbench(tbVhdPath, instance);
-				xronosPrinter.printTclScript(testBenchPath, true, instance);
+			final Actor actor = vertex.getAdapter(Actor.class);
+			if (actor != null) {
+				xronosPrinter.printTestbench(tbVhdPath, actor);
+				xronosPrinter.printTclScript(testBenchPath, true, actor);
 			}
 		}
 	}
