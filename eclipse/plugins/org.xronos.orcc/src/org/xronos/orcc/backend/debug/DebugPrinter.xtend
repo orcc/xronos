@@ -89,13 +89,13 @@ class DebugPrinter extends InstancePrinter {
 	
 	override caseBlockIf(BlockIf block)'''
 	«IF resourceCache.getBlockInput(block) != null»
-	// Block If
+	// Block Branch
 	// Inputs[«FOR variable: resourceCache.getBlockInput(block) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
 	// Outputs[«FOR variable: resourceCache.getBlockOutput(block) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
 	«ENDIF»
 	«super.caseBlockIf(block)»
 	«IF !block.joinBlock.instructions.empty»
-		// PHI
+		// Branch PHI
 		«FOR instruction: block.joinBlock.instructions»
 			«IF instruction instanceof InstPhi»
 				«printPhi(block.condition,instruction as InstPhi)»
@@ -146,13 +146,21 @@ class DebugPrinter extends InstancePrinter {
 	
 	
 	override caseBlockWhile(BlockWhile blockWhile)'''
-	// Block While
+	// Block Loop
 	// Inputs[«FOR variable: resourceCache.getBlockInput(blockWhile) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
 	// Outputs[«FOR variable: resourceCache.getBlockOutput(blockWhile) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
 	«IF (blockWhile.joinBlock != null)»
 		«blockWhile.joinBlock.doSwitch»
 	«ENDIF»
 	«super.caseBlockWhile(blockWhile)»
+	«IF !blockWhile.joinBlock.instructions.empty»
+		// Loop PHI
+		«FOR instruction: blockWhile.joinBlock.instructions»
+			«IF instruction instanceof InstPhi»
+				«printPhi(blockWhile.condition,instruction as InstPhi)»
+			«ENDIF»
+		«ENDFOR»
+	«ENDIF»
 	'''
 	
 }

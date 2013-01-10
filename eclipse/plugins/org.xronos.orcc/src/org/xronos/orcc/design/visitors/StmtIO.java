@@ -37,12 +37,16 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.orcc.ir.Block;
+import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstPhi;
+import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
@@ -307,8 +311,13 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			loopBodyInputs.get(currentBlock).add(target);
 			if (!valueOne.getDefs().isEmpty()) {
 				loopBodyOutputs.get(currentBlock).add(valueOne);
+			} else {
+				addAssign(currentBlock, valueZero);
 			}
 			if (!valueZero.getDefs().isEmpty()) {
+				stmInputs.get(currentBlock).add(valueZero);
+			} else {
+				addAssign(currentBlock, valueZero);
 				stmInputs.get(currentBlock).add(valueZero);
 			}
 		}
@@ -316,6 +325,40 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		// Fill up the JoinVar Map
 		joinVarMap.get(currentBlock).put(target, phiValues);
 		return null;
+	}
+
+	private void addAssign(Block block, Var var) {
+		// Create the InstaAssign
+		Expression value = null;
+		if (var.getType().isBool()) {
+			value = IrFactory.eINSTANCE.createExprBool(false);
+		} else if (var.getType().isInt() || var.getType().isUint()) {
+			value = IrFactory.eINSTANCE.createExprInt(0);
+		} else if (var.getType().isFloat()) {
+			value = IrFactory.eINSTANCE.createExprFloat(0);
+		}
+
+		InstAssign assign = IrFactory.eINSTANCE.createInstAssign(var, value);
+
+		BlockBasic blockBasic = IrFactory.eINSTANCE.createBlockBasic();
+		blockBasic.add(assign);
+
+		EObject container = block.eContainer();
+		if (container instanceof Procedure) {
+			Procedure proc = (Procedure) container;
+			proc.getBlocks().add(0, blockBasic);
+
+		} else if (container instanceof BlockWhile) {
+			BlockWhile blockWhile = (BlockWhile) container;
+			blockWhile.getBlocks().add(0, blockBasic);
+		} else if (container instanceof BlockIf) {
+			BlockIf blockIf = (BlockIf) container;
+			if (blockIf.getThenBlocks().contains(block)) {
+				blockIf.getThenBlocks().add(0, blockBasic);
+			} else {
+				blockIf.getElseBlocks().add(0, blockBasic);
+			}
+		}
 	}
 
 	@SuppressWarnings("unused")
