@@ -39,6 +39,7 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
@@ -95,10 +96,17 @@ public class XronosParameterPropagation extends DfVisitor<Void> {
 	public Void caseActor(Actor actor) {
 		this.actor = actor;
 
+		// Visit all actions
 		for (Action verifAction : actor.getActions()) {
 			Propagator propagator = new Propagator();
 			propagator.doSwitch(verifAction.getBody());
 			propagator.doSwitch(verifAction.getScheduler());
+		}
+
+		// Visit all the procedures
+		for (Procedure procedure : actor.getProcs()) {
+			Propagator propagator = new Propagator();
+			propagator.doSwitch(procedure);
 		}
 
 		return null;

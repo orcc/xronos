@@ -302,7 +302,13 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			}
 
 			if (((BlockIf) currentBlock).getElseBlocks().isEmpty()) {
-				if (!usedOnlyInPhi(valueOne)) {
+				if (!valueOne.getDefs().isEmpty()) {
+					if (!usedOnlyInPhi(valueOne)) {
+						stmInputs.get(currentBlock).add(valueOne);
+					}
+
+				} else {
+					addAssign(currentBlock, valueOne);
 					stmInputs.get(currentBlock).add(valueOne);
 				}
 			}
@@ -311,9 +317,8 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 			loopBodyInputs.get(currentBlock).add(target);
 			if (!valueOne.getDefs().isEmpty()) {
 				loopBodyOutputs.get(currentBlock).add(valueOne);
-			} else {
-				addAssign(currentBlock, valueZero);
 			}
+
 			if (!valueZero.getDefs().isEmpty()) {
 				stmInputs.get(currentBlock).add(valueZero);
 			} else {
