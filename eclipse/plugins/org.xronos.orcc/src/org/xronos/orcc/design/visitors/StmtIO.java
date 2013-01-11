@@ -303,9 +303,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 
 			if (((BlockIf) currentBlock).getElseBlocks().isEmpty()) {
 				if (!valueOne.getDefs().isEmpty()) {
-					if (!usedOnlyInPhi(valueOne)) {
-						stmInputs.get(currentBlock).add(valueOne);
-					}
+					stmInputs.get(currentBlock).add(valueOne);
 
 				} else {
 					addAssign(currentBlock, valueOne);
@@ -607,6 +605,7 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private Boolean usedOnlyInPhi(Var var) {
 		Map<Use, Boolean> useMap = new HashMap<Use, Boolean>();
 		for (Use use : var.getUses()) {
