@@ -118,7 +118,7 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
-					false)));
+					true)));
 			// transformations.add(new DfVisitor<Void>(new DeadPhiRemover()));
 
 			for (DfSwitch<?> transformation : transformations) {
