@@ -297,17 +297,12 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		Var valueOne = phiValues.get(1);
 
 		if (currentBlock instanceof BlockIf) {
-			if (((BlockIf) currentBlock).getThenBlocks().isEmpty()) {
-				stmInputs.get(currentBlock).add(valueZero);
-			}
-
-			if (((BlockIf) currentBlock).getElseBlocks().isEmpty()) {
-				if (!valueOne.getDefs().isEmpty()) {
-					stmInputs.get(currentBlock).add(valueOne);
-
-				} else {
+			List<Var> definedInElse = getVars(true,
+					((BlockIf) currentBlock).getElseBlocks());
+			if (!definedInElse.contains(valueOne)) {
+				// stmInputs.get(currentBlock).add(valueOne);
+				if (valueOne.getDefs().isEmpty()) {
 					addAssign(currentBlock, valueOne);
-					stmInputs.get(currentBlock).add(valueOne);
 				}
 			}
 
@@ -349,35 +344,6 @@ public class StmtIO extends AbstractIrVisitor<Void> {
 		Procedure procedure = EcoreHelper.getContainerOfType(block,
 				Procedure.class);
 		procedure.getBlocks().add(0, blockBasic);
-
-		// EObject container = block.eContainer();
-		// if (container instanceof Procedure) {
-		// Procedure proc = (Procedure) container;
-		// proc.getBlocks().add(0, blockBasic);
-		//
-		// } else if (container instanceof BlockWhile) {
-		// BlockWhile blockWhile = (BlockWhile) container;
-		// blockWhile.getBlocks().add(0, blockBasic);
-		// } else if (container instanceof BlockIf) {
-		// BlockIf blockIf = (BlockIf) container;
-		// // Add as an input in the blockIf
-		// stmInputs.get(blockIf).add(var);
-		// // Now get its container and and add the BlockBasic
-		// if (blockIf.eContainer() instanceof Procedure) {
-		// Procedure proc = (Procedure) blockIf.eContainer();
-		// proc.getBlocks().add(0, blockBasic);
-		// } else if (blockIf.eContainer() instanceof BlockWhile) {
-		// BlockWhile blockWhile = (BlockWhile) blockIf.eContainer();
-		// blockWhile.getBlocks().add(0, blockBasic);
-		// } else if (blockIf.eContainer() instanceof BlockIf) {
-		// BlockIf parentIf = (BlockIf) blockIf.eContainer();
-		// if (parentIf.getThenBlocks().contains(block)) {
-		// parentIf.getThenBlocks().add(0, blockBasic);
-		// } else {
-		// parentIf.getElseBlocks().add(0, blockBasic);
-		// }
-		// }
-		// }
 	}
 
 	@SuppressWarnings("unused")
