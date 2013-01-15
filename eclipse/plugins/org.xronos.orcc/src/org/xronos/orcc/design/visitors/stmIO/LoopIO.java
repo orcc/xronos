@@ -170,6 +170,8 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 
 				// The input takes the zero value of Phi
 				inputs.add(valueZero);
+				// The output takes the target of Phi
+				outputs.add(target);
 				// The body Input takes also the target of Phi
 				bodyInputs.add(target);
 				// The bodyOutput takes the target and the first value of Phi
