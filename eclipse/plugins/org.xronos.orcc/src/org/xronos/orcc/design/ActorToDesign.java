@@ -31,15 +31,12 @@ package org.xronos.orcc.design;
 
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
-import net.sf.orcc.df.util.DfSwitch;
-import net.sf.orcc.df.util.DfVisitor;
 
 import org.xronos.openforge.app.EngineThread;
 import org.xronos.openforge.app.GenericJob;
 import org.xronos.openforge.app.OptionRegistry;
 import org.xronos.openforge.lim.Design;
 import org.xronos.orcc.design.visitors.DesignActor;
-import org.xronos.orcc.design.visitors.StmtIO;
 
 /**
  * This class transforms an Orcc {@link Instance} Object to an OpenForge
@@ -66,9 +63,9 @@ public class ActorToDesign {
 		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
 				design.getSearchLabel(), designName);
 
-		DfSwitch<Void> stmIOFinder = new DfVisitor<Void>(new StmtIO(
-				resourceCache));
-		stmIOFinder.doSwitch(actor);
+		// DfSwitch<Void> stmIOFinder = new DfVisitor<Void>(new StmtIO(
+		// resourceCache));
+		// stmIOFinder.doSwitch(actor);
 
 		DesignActor designVisitor = new DesignActor(design, resourceCache);
 		designVisitor.doSwitch(actor);

@@ -19,6 +19,10 @@ import org.xronos.orcc.ir.InstPortWrite
 import net.sf.orcc.ir.InstSpecific
 import net.sf.orcc.backends.ir.InstCast
 import org.xronos.orcc.design.ResourceCache
+import java.util.List
+import net.sf.orcc.ir.Var
+import org.xronos.orcc.design.visitors.stmIO.LoopIO
+import org.xronos.orcc.design.visitors.stmIO.BranchIO
 
 class DebugPrinter extends InstancePrinter {
 	
@@ -87,23 +91,25 @@ class DebugPrinter extends InstancePrinter {
 	}
 	
 	
-	override caseBlockIf(BlockIf block)'''
-	«IF resourceCache.getBlockInput(block) != null»
-	// Block Branch
-	// Inputs[«FOR variable: resourceCache.getBlockInput(block) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-	// Outputs[«FOR variable: resourceCache.getBlockOutput(block) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-	«ENDIF»
-	«super.caseBlockIf(block)»
-	«IF !block.joinBlock.instructions.empty»
-		// Branch PHI
-		«FOR instruction: block.joinBlock.instructions»
-			«IF instruction instanceof InstPhi»
-				«printPhi(block.condition,instruction as InstPhi)»
-			«ENDIF»
-		«ENDFOR»
-	«ENDIF»
+	override caseBlockIf(BlockIf block){
+		var BranchIO branchIO = new BranchIO(block);
+		var List<Var> inputs = branchIO.inputs;
+		var List<Var> outputs = branchIO.outputs;
 	'''
-	
+		// Block Branch : «block.lineNumber»
+		// Inputs[«FOR variable: inputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		// Outputs[«FOR variable: outputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		«super.caseBlockIf(block)»
+		«IF !block.joinBlock.instructions.empty»
+			// Branch PHI  : «block.lineNumber»
+			«FOR instruction: block.joinBlock.instructions»
+				«IF instruction instanceof InstPhi»
+					«printPhi(block.condition,instruction as InstPhi)»
+				«ENDIF»
+			«ENDFOR»
+		«ENDIF»
+	'''
+	}
 	
 	def printPhi(Expression condition, InstPhi instPhi)'''
 	«instPhi.target.variable.indexedName» = «doSwitch(condition)» ? «(instPhi.values.get(0) as ExprVar).use.variable.indexedName» : «(instPhi.values.get(1) as ExprVar).use.variable.indexedName»;
@@ -145,22 +151,27 @@ class DebugPrinter extends InstancePrinter {
 	}
 	
 	
-	override caseBlockWhile(BlockWhile blockWhile)'''
-	// Block Loop
-	// Inputs[«FOR variable: resourceCache.getBlockInput(blockWhile) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-	// Outputs[«FOR variable: resourceCache.getBlockOutput(blockWhile) SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-	«IF (blockWhile.joinBlock != null)»
-		«blockWhile.joinBlock.doSwitch»
-	«ENDIF»
-	«super.caseBlockWhile(blockWhile)»
-	«IF !blockWhile.joinBlock.instructions.empty»
-		// Loop PHI
-		«FOR instruction: blockWhile.joinBlock.instructions»
-			«IF instruction instanceof InstPhi»
-				«printPhi(blockWhile.condition,instruction as InstPhi)»
-			«ENDIF»
-		«ENDFOR»
-	«ENDIF»
+	override caseBlockWhile(BlockWhile blockWhile){
+		var LoopIO loopIO = new LoopIO(blockWhile);
+		var List<Var> inputs = loopIO.inputs;
+		var List<Var> outputs = loopIO.outputs;
 	'''
+		// Block Loop : «blockWhile.lineNumber»
+		// Inputs[«FOR variable: inputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		// Outputs[«FOR variable: outputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		«IF (blockWhile.joinBlock != null)»
+			«blockWhile.joinBlock.doSwitch»
+		«ENDIF»
+		«super.caseBlockWhile(blockWhile)»
+		«IF !blockWhile.joinBlock.instructions.empty»
+			// Loop PHI : «blockWhile.lineNumber»
+			«FOR instruction: blockWhile.joinBlock.instructions»
+				«IF instruction instanceof InstPhi»
+					«printPhi(blockWhile.condition,instruction as InstPhi)»
+				«ENDIF»
+			«ENDFOR»
+		«ENDIF»
+	'''
+	}
 	
 }

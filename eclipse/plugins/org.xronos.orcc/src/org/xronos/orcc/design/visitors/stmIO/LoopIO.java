@@ -45,6 +45,9 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.Attribute;
 import net.sf.orcc.util.util.EcoreHelper;
 
+import org.eclipse.emf.ecore.EObject;
+import org.xronos.orcc.ir.BlockMutex;
+
 public class LoopIO extends AbstractIrVisitor<Void> {
 
 	private BlockWhile blockWhile;
@@ -100,6 +103,25 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 			Attribute output = blockIf.getAttribute("outputs");
 			List<Var> branchOutput = (List<Var>) output.getObjectValue();
 			bodyBlocksOutputs.put(blockIf, branchOutput);
+		}
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	public Void caseBlockMutex(BlockMutex blockMutex) {
+		if (!blockMutex.hasAttribute("inputs")
+				&& !blockMutex.hasAttribute("outputs")) {
+			MutexIO mutexIO = new MutexIO(blockMutex);
+			bodyBlocksInputs.put(blockMutex, mutexIO.getInputs());
+			bodyBlocksOutputs.put(blockMutex, mutexIO.getOutputs());
+		} else {
+			Attribute input = blockMutex.getAttribute("inputs");
+			List<Var> loopInputs = (List<Var>) input.getObjectValue();
+			bodyBlocksInputs.put(blockMutex, loopInputs);
+
+			Attribute output = blockMutex.getAttribute("outputs");
+			List<Var> loopOutput = (List<Var>) output.getObjectValue();
+			bodyBlocksOutputs.put(blockMutex, loopOutput);
 		}
 		return null;
 	}
@@ -312,6 +334,14 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 		return contains;
 	}
 
+	@Override
+	public Void defaultCase(EObject object) {
+		if (object instanceof BlockMutex) {
+			caseBlockMutex((BlockMutex) object);
+		}
+		return super.defaultCase(object);
+	}
+
 	@SuppressWarnings("unchecked")
 	public List<Var> getBodyInputs() {
 		if (!blockWhile.hasAttribute("bodyInputs")) {
@@ -328,6 +358,10 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 		}
 		return (List<Var>) blockWhile.getAttribute("bodyOutputs")
 				.getObjectValue();
+	}
+
+	public Var getDecision() {
+		return ((ExprVar) blockWhile.getCondition()).getUse().getVariable();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -362,10 +396,6 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 		}
 		return (Map<Var, List<Var>>) blockWhile.getAttribute("phi")
 				.getObjectValue();
-	}
-
-	public Var getDecision() {
-		return ((ExprVar) blockWhile.getCondition()).getUse().getVariable();
 	}
 
 }

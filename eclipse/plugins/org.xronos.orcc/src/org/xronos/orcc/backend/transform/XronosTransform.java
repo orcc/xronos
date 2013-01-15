@@ -48,7 +48,6 @@ import net.sf.orcc.ir.transform.DeadCodeElimination;
 import net.sf.orcc.util.OrccLogger;
 
 import org.xronos.orcc.design.ResourceCache;
-import org.xronos.orcc.design.visitors.StmtIO;
 
 /**
  * This helper class transforms only a given procedure
@@ -65,10 +64,10 @@ public class XronosTransform {
 	}
 
 	public Procedure transformProcedure(ResourceCache resourceCache) {
-		// new XronosConstantPropagation();
-		// new ConstantPropagator();
-		// SSA
+		// Add SSA transformation
 		new XronosSSA().doSwitch(procedure);
+		// Add missing Phi values assign
+		new PhiFixer().doSwitch(procedure);
 		// Add Literal Integers
 		new XronosLiteralIntegersAdder().doSwitch(procedure);
 		// Three address Code
@@ -80,7 +79,7 @@ public class XronosTransform {
 		// Dead Phi Removal
 		new DeadPhiRemover().doSwitch(procedure);
 		// StmIO
-		new StmtIO(resourceCache).doSwitch(procedure);
+		// new StmtIO(resourceCache).doSwitch(procedure);
 		return procedure;
 	}
 
@@ -106,6 +105,7 @@ public class XronosTransform {
 			// DeadVariableRemoval()));
 			transformations.add(new RepeatPattern(resourceCache));
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
+			transformations.add(new DfVisitor<Void>(new PhiFixer()));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			transformations.add(new ScalarPortIO(resourceCache));

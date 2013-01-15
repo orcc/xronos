@@ -112,6 +112,9 @@ import org.xronos.orcc.design.ResourceDependecies;
 import org.xronos.orcc.design.util.DesignUtil;
 import org.xronos.orcc.design.util.ModuleUtil;
 import org.xronos.orcc.design.util.PortUtil;
+import org.xronos.orcc.design.visitors.stmIO.BranchIO;
+import org.xronos.orcc.design.visitors.stmIO.LoopIO;
+import org.xronos.orcc.design.visitors.stmIO.MutexIO;
 import org.xronos.orcc.ir.BlockMutex;
 import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.InstPortRead;
@@ -160,7 +163,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
 
-	private final boolean STM_DEBUG = false;
+	private final boolean STM_DEBUG = true;
 
 	public ComponentCreator(ResourceCache resources,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
@@ -188,9 +191,12 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	@Override
 	public List<Component> caseBlockIf(BlockIf blockIf) {
+		// test
+		BranchIO branchIO = new BranchIO(blockIf);
 		List<Component> oldComponents = new ArrayList<Component>(componentList);
 		// Create the decision
-		Var decisionVar = resources.getBlockDecisionInput(blockIf).get(0);
+		// Var decisionVar = resources.getBlockDecisionInput(blockIf).get(0);
+		Var decisionVar = branchIO.getDecision();
 		Decision decision = null;
 		String condName = "decision_" + procedure.getName() + "_"
 				+ decisionVar.getIndexedName();
@@ -204,8 +210,11 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		doSwitch(blockIf.getThenBlocks());
 
 		// Get the then Input Vars
-		List<Var> thenInputs = resources.getBranchThenInput(blockIf);
-		List<Var> thenOutputs = resources.getBranchThenOutput(blockIf);
+		// List<Var> thenInputs = resources.getBranchThenInput(blockIf);
+		// List<Var> thenOutputs = resources.getBranchThenOutput(blockIf);
+
+		List<Var> thenInputs = branchIO.getThenInputs();
+		List<Var> thenOutputs = branchIO.getThenOutputs();
 
 		Block thenBlock = (Block) ModuleUtil.createModule(componentList,
 				thenInputs, thenOutputs, "thenBlock", false, Exit.DONE, 0,
@@ -220,8 +229,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			componentList = new ArrayList<Component>();
 			doSwitch(blockIf.getElseBlocks());
 
-			List<Var> elseInputs = resources.getBranchElseInput(blockIf);
-			List<Var> elseOutputs = resources.getBranchElseOutput(blockIf);
+			List<Var> elseInputs = branchIO.getElseInputs();
+			List<Var> elseOutputs = branchIO.getElseOutputs();
 
 			elseBlock = (Block) ModuleUtil.createModule(componentList,
 					elseInputs, elseOutputs, "elseBlock", false, Exit.DONE, 1,
@@ -239,11 +248,11 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			elseBlock.setNonRemovable();
 		}
 		// Get All input Vars
-		List<Var> ifInputVars = resources.getBlockInput(blockIf);
-		List<Var> ifOutputVars = resources.getBlockOutput(blockIf);
+		List<Var> ifInputVars = branchIO.getInputs();
+		List<Var> ifOutputVars = branchIO.getOutputs();
 
 		// Get Phi target Vars, aka branchIf Outputs
-		Map<Var, List<Var>> phiOuts = resources.getBlockPhi(blockIf);
+		Map<Var, List<Var>> phiOuts = branchIO.getPhi();
 		Branch branch = (Branch) ModuleUtil.createBranch(decision, thenBlock,
 				elseBlock, ifInputVars, ifOutputVars, phiOuts, "ifBLOCK",
 				Exit.DONE, portDependency, busDependency, portGroupDependency,
@@ -278,14 +287,16 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	}
 
 	public List<Component> caseBlockMutex(BlockMutex blockMutex) {
+		MutexIO mutexIO = new MutexIO(blockMutex);
+
 		List<Component> oldComponents = new ArrayList<Component>(componentList);
 		componentList = new ArrayList<Component>();
 
 		doSwitch(blockMutex.getBlocks());
 
-		List<Var> inputs = resources.getBlockInput(blockMutex);
+		List<Var> inputs = mutexIO.getInputs();
 
-		List<Var> outputs = resources.getBlockOutput(blockMutex);
+		List<Var> outputs = mutexIO.getOutputs();
 
 		Module mutexModule = (Module) ModuleUtil.createModule(componentList,
 				inputs, outputs, "mutex_BranchBlock", true, Exit.DONE, 0,
@@ -301,13 +312,13 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	@Override
 	public List<Component> caseBlockWhile(BlockWhile blockWhile) {
+		LoopIO loopIO = new LoopIO(blockWhile);
 		List<Component> oldComponents = new ArrayList<Component>(componentList);
 		componentList = new ArrayList<Component>();
 
 		/** Get Decision Components **/
 		doSwitch(blockWhile.getJoinBlock());
-		Var decisionVar = ((ExprVar) blockWhile.getCondition()).getUse()
-				.getVariable();
+		Var decisionVar = loopIO.getDecision();
 
 		Component decisionComponent = ModuleUtil.findDecisionComponent(
 				componentList, decisionVar, busDependency);
@@ -332,13 +343,13 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		List<Component> bodyComponents = new ArrayList<Component>(componentList);
 
 		/** Create the Loop **/
-		List<Var> decisionInVars = resources.getBlockDecisionInput(blockWhile);
-		List<Var> loopInVars = resources.getBlockInput(blockWhile);
-		List<Var> loopOutVars = resources.getBlockOutput(blockWhile);
-		List<Var> loopBodyInVars = resources.getLoopBodyInput(blockWhile);
-		List<Var> loopBodyOutVars = resources.getLoopBodyOutput(blockWhile);
+		List<Var> decisionInVars = loopIO.getDecisionInputs();
+		List<Var> loopInVars = loopIO.getInputs();
+		List<Var> loopOutVars = loopIO.getOutputs();
+		List<Var> loopBodyInVars = loopIO.getBodyInputs();
+		List<Var> loopBodyOutVars = loopIO.getBodyOutputs();
 
-		Map<Var, List<Var>> loopPhi = resources.getBlockPhi(blockWhile);
+		Map<Var, List<Var>> loopPhi = loopIO.getPhi();
 
 		Loop loop = (Loop) ModuleUtil.createLoop(decisionComponent,
 				decisionBodyComponents, decisionInVars, bodyComponents,

@@ -300,8 +300,8 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 					// It is the blockWhile condition variable
 					return false;
 				} else {
-					throw new NullPointerException(
-							"Var not contained in a BlockBasic");
+					System.out.println("Var(" + var.getIndexedName()
+							+ ") not contained in a BlockBasic");
 				}
 			}
 		}
