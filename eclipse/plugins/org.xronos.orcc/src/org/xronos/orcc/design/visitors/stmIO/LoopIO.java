@@ -47,28 +47,18 @@ import net.sf.orcc.util.util.EcoreHelper;
 
 public class LoopIO extends AbstractIrVisitor<Void> {
 
-	private List<Var> inputs;
-
-	private List<Var> outputs;
-
-	private Map<BlockWhile, List<Var>> bodyInputs;
-
-	private Map<BlockWhile, List<Var>> bodyOutputs;
-
-	private Map<BlockWhile, List<Var>> decisionInputs;
-
-	private Map<BlockWhile, Map<Var, List<Var>>> loopPhi;
-
 	private BlockWhile blockWhile;
 
 	private Map<Block, List<Var>> bodyBlocksInputs;
+
 	private Map<Block, List<Var>> bodyBlocksOutputs;
+
+	private Map<BlockWhile, List<Var>> decisionInputs;
+	private Map<BlockWhile, Map<Var, List<Var>>> loopPhi;
 
 	public LoopIO(BlockWhile blockWhile) {
 		super(true);
 		this.blockWhile = blockWhile;
-		bodyInputs = new HashMap<BlockWhile, List<Var>>();
-		bodyOutputs = new HashMap<BlockWhile, List<Var>>();
 		decisionInputs = new HashMap<BlockWhile, List<Var>>();
 		bodyBlocksInputs = new HashMap<Block, List<Var>>();
 		bodyBlocksOutputs = new HashMap<Block, List<Var>>();
@@ -122,8 +112,7 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 
 			// Initialize the maps
 			decisionInputs.put(blockWhile, new ArrayList<Var>());
-			bodyInputs.put(blockWhile, new ArrayList<Var>());
-			bodyOutputs.put(blockWhile, new ArrayList<Var>());
+
 			loopPhi.put(blockWhile, new HashMap<Var, List<Var>>());
 
 			// Visit the Join Block
@@ -137,10 +126,33 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 			// Add the decision inputs from the joint Block
 			BlockBasicIO blockBasicIO = new BlockBasicIO(
 					blockWhile.getJoinBlock());
-			decisionInputs.get(blockWhile).addAll(blockBasicIO.getInputs());
+			for (Var usedDecisionVars : blockBasicIO.getInputs()) {
+				if (!decisionInputs.get(blockWhile).contains(usedDecisionVars)) {
+					decisionInputs.get(blockWhile).add(usedDecisionVars);
+				}
+			}
 
 			// Visit the OtherBlocks and get its IOs
 			doSwitch(blockWhile.getBlocks());
+
+			// Initialize the inputs and outputs of the BlochWhile
+			List<Var> inputs = new ArrayList<Var>();
+			List<Var> outputs = new ArrayList<Var>();
+			List<Var> bodyInputs = new ArrayList<Var>();
+			List<Var> bodyOutputs = new ArrayList<Var>();
+
+			// Input and Output from Phi
+			for (Var target : loopPhi.get(blockWhile).keySet()) {
+				Var valueZero = loopPhi.get(blockWhile).get(target).get(0);
+				Var valueOne = loopPhi.get(blockWhile).get(target).get(1);
+
+				// The input takes the zero value of Phi
+				inputs.add(valueZero);
+				// The body Input takes also the target of Phi
+				bodyInputs.add(target);
+				// The bodyOutput takes the target and the first value of Phi
+				bodyOutputs.add(valueOne);
+			}
 
 			// Resolve LoopBody Inputs
 			for (Block block : blockWhile.getBlocks()) {
@@ -156,7 +168,9 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 				for (Var var : inVars) {
 					if (!containsOutputVar(previousBlocks, var)) {
 						// block Inputs are also the input of the loopBody
-						bodyInputs.get(blockWhile).add(var);
+						if (!bodyInputs.contains(var)) {
+							bodyInputs.add(var);
+						}
 						if (loopPhi.get(blockWhile).keySet().contains(var)) {
 							Var valueZero = loopPhi.get(blockWhile).get(var)
 									.get(0);
@@ -164,16 +178,22 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 									.get(1);
 
 							// This is a LoopBody input and a Loop output
-							outputs.add(var);
-							inputs.add(valueZero);
-							if (!bodyOutputs.get(blockWhile).contains(valueOne)) {
-								bodyOutputs.get(blockWhile).add(valueOne);
+							if (!outputs.contains(var)) {
+								outputs.add(var);
+							}
+							if (!inputs.contains(valueZero)) {
+								inputs.add(valueZero);
+							}
+							if (!bodyOutputs.contains(valueOne)) {
+								bodyOutputs.add(valueOne);
 							}
 						} else {
 							// The input that has been left should just be
 							// latched, so add a direct
 							// connection
-							inputs.add(var);
+							if (!inputs.contains(var)) {
+								inputs.add(var);
+							}
 						}
 					}
 				}
@@ -185,8 +205,8 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 				for (Var var : outVars) {
 					if (!containsInputVar(restOfBlocks, var)) {
 						for (Var targetPhi : loopPhi.get(blockWhile).keySet()) {
-							List<Var> values = loopPhi.get(block)
-									.get(targetPhi);
+							List<Var> values = loopPhi.get(blockWhile).get(
+									targetPhi);
 							if (values.get(1) == var) {
 								if (!inputs.contains(values.get(0))) {
 									inputs.add(values.get(0));
@@ -194,8 +214,12 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 								if (!outputs.contains(targetPhi)) {
 									outputs.add(targetPhi);
 								}
-								bodyInputs.get(blockWhile).add(targetPhi);
-								bodyOutputs.get(blockWhile).add(var);
+								if (!bodyInputs.contains(targetPhi)) {
+									bodyInputs.add(targetPhi);
+								}
+								if (!bodyOutputs.contains(var)) {
+									bodyOutputs.add(var);
+								}
 							}
 						}
 					}
@@ -205,15 +229,28 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 			// Resolve Decision Inputs
 
 			for (Var var : decisionInputs.get(blockWhile)) {
-				if (!inputs.contains(var)) {
+				if (!inputs.contains(var) && !bodyInputs.contains(var)) {
+					// This is really an output variable
 					inputs.add(var);
+					bodyInputs.add(var);
 				}
+			}
+			// Delete the Condition Var from inputs and bodyInputs
+			decisionVar = ((ExprVar) blockWhile.getCondition()).getUse()
+					.getVariable();
+			if (inputs.contains(decisionVar)) {
+				inputs.remove(decisionVar);
+			}
+
+			if (bodyInputs.contains(decisionVar)) {
+				bodyInputs.remove(decisionVar);
 			}
 
 			// Add to the Attribute of the Block While
 			blockWhile.setAttribute("inputs", inputs);
 			blockWhile.setAttribute("outputs", outputs);
-			blockWhile.setAttribute("decision", inputs);
+			blockWhile.setAttribute("decisionInputs",
+					decisionInputs.get(blockWhile));
 			blockWhile.setAttribute("bodyInputs", bodyInputs);
 			blockWhile.setAttribute("bodyOutputs", bodyOutputs);
 			blockWhile.setAttribute("phi", loopPhi.get(blockWhile));
@@ -234,42 +271,6 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
-	private boolean containsInputVar(List<Block> blocks, Var var) {
-		boolean contains = false;
-
-		for (Block block : blocks) {
-			List<Var> blockInVars = bodyBlocksInputs.get(block);
-			if (blockInVars.contains(var)) {
-				return true;
-			}
-		}
-
-		return contains;
-	}
-
-	private boolean containsOutputVar(List<Block> blocks, Var var) {
-		boolean contains = false;
-
-		for (Block block : blocks) {
-			List<Var> blockInVars = bodyBlocksOutputs.get(block);
-			if (blockInVars.contains(var)) {
-				return true;
-			}
-		}
-
-		return contains;
-	}
-
-	public List<Var> getInputs() {
-		doSwitch(blockWhile);
-		return inputs;
-	}
-
-	public List<Var> getOutputs() {
-		doSwitch(blockWhile);
-		return outputs;
-	}
-
 	@Override
 	public Void caseInstPhi(InstPhi phi) {
 		List<Var> phiValues = new ArrayList<Var>();
@@ -283,6 +284,88 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 		BlockWhile loop = EcoreHelper.getContainerOfType(phi, BlockWhile.class);
 		loopPhi.get(loop).put(target, phiValues);
 		return null;
+	}
+
+	private boolean containsInputVar(List<Block> blocks, Var var) {
+		boolean contains = false;
+		if (!blocks.isEmpty()) {
+			for (Block block : blocks) {
+				List<Var> blockInVars = bodyBlocksInputs.get(block);
+				if (blockInVars.contains(var)) {
+					return true;
+				}
+			}
+		}
+		return contains;
+	}
+
+	private boolean containsOutputVar(List<Block> blocks, Var var) {
+		boolean contains = false;
+		if (!blocks.isEmpty()) {
+			for (Block block : blocks) {
+				List<Var> blockInVars = bodyBlocksOutputs.get(block);
+				if (blockInVars.contains(var)) {
+					return true;
+				}
+			}
+		}
+		return contains;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getBodyInputs() {
+		if (!blockWhile.hasAttribute("bodyInputs")) {
+			doSwitch(blockWhile);
+		}
+		return (List<Var>) blockWhile.getAttribute("bodyInputs")
+				.getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getBodyOutputs() {
+		if (!blockWhile.hasAttribute("bodyOutputs")) {
+			doSwitch(blockWhile);
+		}
+		return (List<Var>) blockWhile.getAttribute("bodyOutputs")
+				.getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getDecisionInputs() {
+		if (!blockWhile.hasAttribute("decisionInputs")) {
+			doSwitch(blockWhile);
+		}
+		return (List<Var>) blockWhile.getAttribute("decisionInputs")
+				.getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getInputs() {
+		if (!blockWhile.hasAttribute("inputs")) {
+			doSwitch(blockWhile);
+		}
+		return (List<Var>) blockWhile.getAttribute("inputs").getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getOutputs() {
+		if (!blockWhile.hasAttribute("outputs")) {
+			doSwitch(blockWhile);
+		}
+		return (List<Var>) blockWhile.getAttribute("outputs").getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public Map<Var, List<Var>> getPhi() {
+		if (!blockWhile.hasAttribute("phi")) {
+			doSwitch(blockWhile);
+		}
+		return (Map<Var, List<Var>>) blockWhile.getAttribute("phi")
+				.getObjectValue();
+	}
+
+	public Var getDecision() {
+		return ((ExprVar) blockWhile.getCondition()).getUse().getVariable();
 	}
 
 }

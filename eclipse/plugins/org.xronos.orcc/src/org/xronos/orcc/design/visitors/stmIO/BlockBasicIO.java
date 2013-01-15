@@ -33,6 +33,7 @@ import java.util.List;
 
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprVar;
@@ -257,10 +258,17 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 			if (blockBasic != null) {
 				if (blockBasic != block) {
 					return false;
+				} else {
+					// It is defined in the same Block Basic but is defined in
+					// Phi, this is an input for the loop decision
+					InstPhi instPhi = EcoreHelper.getContainerOfType(def,
+							InstPhi.class);
+					if (instPhi != null) {
+						if (instPhi.getTarget().getVariable() == var) {
+							return false;
+						}
+					}
 				}
-			} else {
-				throw new NullPointerException(
-						"Var not contained in a BlockBasic");
 			}
 		}
 		return defined;
@@ -286,11 +294,17 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 					return false;
 				}
 			} else {
-				throw new NullPointerException(
-						"Var not contained in a BlockBasic");
+				BlockWhile blockWhile = EcoreHelper.getContainerOfType(use,
+						BlockWhile.class);
+				if (blockWhile != null) {
+					// It is the blockWhile condition variable
+					return false;
+				} else {
+					throw new NullPointerException(
+							"Var not contained in a BlockBasic");
+				}
 			}
 		}
 		return used;
 	}
-
 }

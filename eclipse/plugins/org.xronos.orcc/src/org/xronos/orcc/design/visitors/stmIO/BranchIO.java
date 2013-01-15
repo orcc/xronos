@@ -59,10 +59,6 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 
 	private Map<BlockIf, List<Var>> elseOutputs;
 
-	private List<Var> inputs;
-
-	private List<Var> outputs;
-
 	private Map<BlockIf, List<Var>> thenInputs;
 
 	private Map<BlockIf, List<Var>> thenOutputs;
@@ -104,8 +100,7 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 	public Void caseBlockIf(BlockIf blockIf) {
 		if (!blockIf.hasAttribute("inputs") && !blockIf.hasAttribute("outputs")) {
 			// Initialize the maps
-			inputs = new ArrayList<Var>();
-			outputs = new ArrayList<Var>();
+
 			thenInputs.put(blockIf, new ArrayList<Var>());
 			thenOutputs.put(blockIf, new ArrayList<Var>());
 			elseInputs.put(blockIf, new ArrayList<Var>());
@@ -126,6 +121,9 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 
 			findBlocksIO(blockIf, blockIf.getElseBlocks(), elseInputs,
 					elseOutputs);
+
+			List<Var> inputs = new ArrayList<Var>();
+			List<Var> outputs = new ArrayList<Var>();
 
 			// Resolve the BlockIf IO
 
@@ -153,7 +151,6 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 			// Add attribute
 			blockIf.setAttribute("inputs", inputs);
 			blockIf.setAttribute("outputs", outputs);
-			blockIf.setAttribute("decision", decisionVar);
 			blockIf.setAttribute("thenInputs", thenInputs.get(blockIf));
 			blockIf.setAttribute("thenOutputs", thenOutputs.get(blockIf));
 			blockIf.setAttribute("elseInputs", elseInputs.get(blockIf));
@@ -174,47 +171,6 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 			bodyBlocksOutputs.put(blockIf, branchOutput);
 		}
 		return null;
-	}
-
-	private void findBlocksIO(BlockIf blockIf, List<Block> blocks,
-			Map<BlockIf, List<Var>> blockInputs,
-			Map<BlockIf, List<Var>> blockOutputs) {
-
-		for (Block block : blocks) {
-			int indexOfBlock = blocks.indexOf(block);
-			List<Block> previousBlocks = blocks.subList(0, indexOfBlock);
-			List<Block> restOfBlocks = blocks.subList(indexOfBlock + 1,
-					blocks.size());
-
-			// Inputs
-			List<Var> inVars = bodyBlocksInputs.get(block);
-			for (Var var : inVars) {
-				if (!containsVar(previousBlocks, bodyBlocksOutputs, var)) {
-					blockInputs.get(blockIf).add(var);
-				}
-			}
-			// Outputs
-			List<Var> outVars = bodyBlocksOutputs.get(block);
-			for (Var var : outVars) {
-				if (!containsVar(restOfBlocks, bodyBlocksInputs, var)) {
-					blockOutputs.get(blockIf).add(var);
-				}
-			}
-		}
-	}
-
-	private boolean containsVar(List<Block> blocks,
-			Map<Block, List<Var>> bodyBlocks, Var var) {
-		boolean contains = false;
-		if (!blocks.isEmpty()) {
-			for (Block block : blocks) {
-				List<Var> blockInVars = bodyBlocks.get(block);
-				if (blockInVars.contains(var)) {
-					return true;
-				}
-			}
-		}
-		return contains;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -253,13 +209,106 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
-	public List<Var> getInputs() {
-		doSwitch(blockIf);
-		return inputs;
+	private boolean containsVar(List<Block> blocks,
+			Map<Block, List<Var>> bodyBlocks, Var var) {
+		boolean contains = false;
+		if (!blocks.isEmpty()) {
+			for (Block block : blocks) {
+				List<Var> blockInVars = bodyBlocks.get(block);
+				if (blockInVars.contains(var)) {
+					return true;
+				}
+			}
+		}
+		return contains;
 	}
 
-	public List<Var> getOutputs() {
-		doSwitch(blockIf);
-		return outputs;
+	private void findBlocksIO(BlockIf blockIf, List<Block> blocks,
+			Map<BlockIf, List<Var>> blockInputs,
+			Map<BlockIf, List<Var>> blockOutputs) {
+
+		for (Block block : blocks) {
+			int indexOfBlock = blocks.indexOf(block);
+			List<Block> previousBlocks = blocks.subList(0, indexOfBlock);
+			List<Block> restOfBlocks = blocks.subList(indexOfBlock + 1,
+					blocks.size());
+
+			// Inputs
+			List<Var> inVars = bodyBlocksInputs.get(block);
+			for (Var var : inVars) {
+				if (!containsVar(previousBlocks, bodyBlocksOutputs, var)) {
+					blockInputs.get(blockIf).add(var);
+				}
+			}
+			// Outputs
+			List<Var> outVars = bodyBlocksOutputs.get(block);
+			for (Var var : outVars) {
+				if (!containsVar(restOfBlocks, bodyBlocksInputs, var)) {
+					blockOutputs.get(blockIf).add(var);
+				}
+			}
+		}
 	}
+
+	public Var getDecision() {
+		return ((ExprVar) blockIf.getCondition()).getUse().getVariable();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getElseInputs() {
+		if (!blockIf.hasAttribute("elseInputs")) {
+			doSwitch(blockIf);
+		}
+		return (List<Var>) blockIf.getAttribute("elseInputs").getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getElseOutputs() {
+		if (!blockIf.hasAttribute("thenOutputs")) {
+			doSwitch(blockIf);
+		}
+		return (List<Var>) blockIf.getAttribute("elseOutputs").getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getInputs() {
+		if (!blockIf.hasAttribute("inputs")) {
+			doSwitch(blockIf);
+		}
+		return (List<Var>) blockIf.getAttribute("inputs").getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getOutputs() {
+		if (!blockIf.hasAttribute("outputs")) {
+			doSwitch(blockIf);
+		}
+		return (List<Var>) blockIf.getAttribute("outputs").getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public Map<Var, List<Var>> getPhi() {
+		if (!blockIf.hasAttribute("phi")) {
+			doSwitch(blockIf);
+		}
+		return (Map<Var, List<Var>>) blockIf.getAttribute("phi")
+				.getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getThenInputs() {
+		if (!blockIf.hasAttribute("thenInputs")) {
+			doSwitch(blockIf);
+		}
+		return (List<Var>) blockIf.getAttribute("thenInputs").getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getThenOutputs() {
+		if (!blockIf.hasAttribute("thenOutputs")) {
+			doSwitch(blockIf);
+		}
+		return (List<Var>) blockIf.getAttribute("thenOutputs").getObjectValue();
+	}
+
 }
