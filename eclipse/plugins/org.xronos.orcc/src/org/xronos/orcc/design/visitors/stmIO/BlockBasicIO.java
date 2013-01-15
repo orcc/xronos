@@ -81,7 +81,11 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 		if (!block.hasAttribute("inputs") && !block.hasAttribute("outputs")) {
 			inputs = new ArrayList<Var>();
 			outputs = new ArrayList<Var>();
-			super.doSwitch(block);
+			super.caseBlockBasic(block);
+
+			// Add attributes
+			block.setAttribute("inputs", inputs);
+			block.setAttribute("outputs", outputs);
 		} else {
 			Attribute input = block.getAttribute("inputs");
 			inputs = (List<Var>) input.getObjectValue();

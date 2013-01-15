@@ -78,6 +78,7 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public Void caseBlockBasic(BlockBasic block) {
+		super.caseBlockBasic(block);
 		if (!block.hasAttribute("inputs") && !block.hasAttribute("outputs")) {
 			BlockBasicIO blockBasicIO = new BlockBasicIO(block);
 			bodyBlocksInputs.put(block, blockBasicIO.getInputs());
@@ -149,15 +150,13 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 				List<Block> restOfBlocks = blockWhile.getBlocks().subList(
 						indexOfBlock + 1, blockWhile.getBlocks().size());
 
-				if (previousBlocks != block) {
+				// Inputs
 
-				} else {
-					// Inputs
-
-					// First block Inputs are also the input of the loopBody
-					List<Var> inVars = bodyBlocksInputs.get(block);
-					bodyInputs.get(blockWhile).addAll(inVars);
-					for (Var var : inVars) {
+				List<Var> inVars = bodyBlocksInputs.get(block);
+				for (Var var : inVars) {
+					if (!containsOutputVar(previousBlocks, var)) {
+						// block Inputs are also the input of the loopBody
+						bodyInputs.get(blockWhile).add(var);
 						if (loopPhi.get(blockWhile).keySet().contains(var)) {
 							Var valueZero = loopPhi.get(blockWhile).get(var)
 									.get(0);
@@ -177,34 +176,51 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 							inputs.add(var);
 						}
 					}
-					// Outputs
+				}
 
-					List<Var> outVars = bodyBlocksOutputs.get(block);
+				// Outputs
 
-					for (Var var : outVars) {
-						if (!containsVar(restOfBlocks, var)) {
-							for (Var targetPhi : loopPhi.get(blockWhile)
-									.keySet()) {
-								List<Var> values = loopPhi.get(block).get(
-										targetPhi);
-								if (values.get(1) == var) {
-									if (!inputs.contains(values.get(0))) {
-										inputs.add(values.get(0));
-									}
-									if (!outputs.contains(targetPhi)) {
-										outputs.add(targetPhi);
-									}
-									bodyInputs.get(blockWhile).add(targetPhi);
-									bodyOutputs.get(blockWhile).add(var);
+				List<Var> outVars = bodyBlocksOutputs.get(block);
+
+				for (Var var : outVars) {
+					if (!containsInputVar(restOfBlocks, var)) {
+						for (Var targetPhi : loopPhi.get(blockWhile).keySet()) {
+							List<Var> values = loopPhi.get(block)
+									.get(targetPhi);
+							if (values.get(1) == var) {
+								if (!inputs.contains(values.get(0))) {
+									inputs.add(values.get(0));
 								}
-
+								if (!outputs.contains(targetPhi)) {
+									outputs.add(targetPhi);
+								}
+								bodyInputs.get(blockWhile).add(targetPhi);
+								bodyOutputs.get(blockWhile).add(var);
 							}
 						}
 					}
-
 				}
-
 			}
+
+			// Resolve Decision Inputs
+
+			for (Var var : decisionInputs.get(blockWhile)) {
+				if (!inputs.contains(var)) {
+					inputs.add(var);
+				}
+			}
+
+			// Add to the Attribute of the Block While
+			blockWhile.setAttribute("inputs", inputs);
+			blockWhile.setAttribute("outputs", outputs);
+			blockWhile.setAttribute("decision", inputs);
+			blockWhile.setAttribute("bodyInputs", bodyInputs);
+			blockWhile.setAttribute("bodyOutputs", bodyOutputs);
+			blockWhile.setAttribute("phi", loopPhi.get(blockWhile));
+
+			// Put it to the visited
+			bodyBlocksInputs.put(blockWhile, inputs);
+			bodyBlocksOutputs.put(blockWhile, outputs);
 
 		} else {
 			Attribute input = blockWhile.getAttribute("inputs");
@@ -218,11 +234,24 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
-	private boolean containsVar(List<Block> blocks, Var var) {
+	private boolean containsInputVar(List<Block> blocks, Var var) {
 		boolean contains = false;
 
 		for (Block block : blocks) {
 			List<Var> blockInVars = bodyBlocksInputs.get(block);
+			if (blockInVars.contains(var)) {
+				return true;
+			}
+		}
+
+		return contains;
+	}
+
+	private boolean containsOutputVar(List<Block> blocks, Var var) {
+		boolean contains = false;
+
+		for (Block block : blocks) {
+			List<Var> blockInVars = bodyBlocksOutputs.get(block);
 			if (blockInVars.contains(var)) {
 				return true;
 			}
