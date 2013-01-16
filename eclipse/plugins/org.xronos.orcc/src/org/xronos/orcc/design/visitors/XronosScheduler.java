@@ -136,59 +136,22 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			Expression exprSpaceAvailability = null;
 			Type typeBool = irFactory.createTypeBool();
 			for (Port port : pattern.getPorts()) {
-				if (outputCircularBuffer.get(port) != null) {
-					// Multiple token
-					CircularBuffer circularBuffer = outputCircularBuffer
-							.get(port);
-					Integer numTokens = pattern.getNumTokensMap().get(port);
-					portRequestSize.put(port, numTokens);
 
-					Var cbTmpCount = circularBuffer.getTmpCount();
+				// Get portStatus from Locals
+				Var portStatus = XronosIrUtil.getVarFromList("portStatus_"
+						+ port.getName(), xronosSchedulerLocals);
 
-					// Create Count equals ? 0 expression
-					ExprVar evTmpCount = irFactory.createExprVar(cbTmpCount);
-					ExprInt eiZero = irFactory.createExprInt(0);
-
-					Expression exprCountEmpty = irFactory.createExprBinary(
-							evTmpCount, OpBinary.EQ, eiZero, typeBool);
-
-					Var portSpaceAvailability = irFactory.createVar(typeBool,
-							"portTokenAvailability_" + action.getName() + "_"
-									+ port.getName(), true, 0);
-					xronosSchedulerLocals.add(portSpaceAvailability);
-
-					InstAssign instAssign = irFactory.createInstAssign(
-							portSpaceAvailability, exprCountEmpty);
-					block.add(instAssign);
-
-					// Update the final Expression
-					if (exprSpaceAvailability == null) {
-						exprSpaceAvailability = irFactory
-								.createExprVar(portSpaceAvailability);
-					} else {
-						ExprVar exprVar = irFactory
-								.createExprVar(portSpaceAvailability);
-						exprSpaceAvailability = irFactory.createExprBinary(
-								exprSpaceAvailability, OpBinary.LOGIC_AND,
-								exprVar, typeBool);
-					}
+				// Update the final Expression
+				if (exprSpaceAvailability == null) {
+					exprSpaceAvailability = irFactory.createExprVar(portStatus);
 				} else {
-					// Get portStatus from Locals
-					Var portStatus = XronosIrUtil.getVarFromList("portStatus_"
-							+ port.getName(), xronosSchedulerLocals);
-
-					// Update the final Expression
-					if (exprSpaceAvailability == null) {
-						exprSpaceAvailability = irFactory
-								.createExprVar(portStatus);
-					} else {
-						ExprVar exprVar = irFactory.createExprVar(portStatus);
-						exprSpaceAvailability = irFactory.createExprBinary(
-								exprSpaceAvailability, OpBinary.LOGIC_AND,
-								exprVar, typeBool);
-					}
+					ExprVar exprVar = irFactory.createExprVar(portStatus);
+					exprSpaceAvailability = irFactory.createExprBinary(
+							exprSpaceAvailability, OpBinary.LOGIC_AND, exprVar,
+							typeBool);
 				}
 			}
+
 			if (exprSpaceAvailability != null) {
 				spaceAvailability = irFactory.createVar(typeBool,
 						"tokenAvailability_" + action.getName(), true, 0);
@@ -352,8 +315,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 	private final IrFactory irFactory = IrFactory.eINSTANCE;
 
-	private Map<Port, CircularBuffer> outputCircularBuffer;
-
 	private final ResourceCache resourceCache;
 
 	private final List<Var> xronosSchedulerLocals;
@@ -373,16 +334,31 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 	@Override
 	public Procedure caseActor(Actor actor) {
 		this.actor = actor;
+
+		if (actor.getFsm() != null) {
+			// Add state Vars
+			for (State state : actor.getFsm().getStates()) {
+				Type typeBool = IrFactory.eINSTANCE.createTypeBool();
+				Var fsmState = IrFactory.eINSTANCE.createVar(typeBool, "state_"
+						+ state.getName(), true, 0);
+				if (state == actor.getFsm().getInitialState()) {
+					fsmState.setValue(true);
+				} else {
+					fsmState.setValue(false);
+				}
+				actor.getStateVars().add(fsmState);
+			}
+		}
+
 		// Initialize input/output circularBuffer
 		inputCircularBuffer = resourceCache.getActorInputCircularBuffer(actor);
-		outputCircularBuffer = resourceCache
-				.getActorOutputCircularBuffer(actor);
 
 		/** Create the Xronos scheduler procedure **/
 		Procedure xronosScheduler = irFactory.createProcedure();
 
 		// Set name
 		xronosScheduler.setName("scheduler");
+		xronosScheduler.addAttribute("scheduler");
 
 		/** populate the scheduler body **/
 		List<Block> blockWhileBody = new ArrayList<Block>();
@@ -433,6 +409,8 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		xronosScheduler.getBlocks().add(returnBlock);
 		Type returnType = irFactory.createTypeVoid();
 		xronosScheduler.setReturnType(returnType);
+
+		actor.getProcs().add(xronosScheduler);
 
 		return xronosScheduler;
 	}
@@ -535,33 +513,19 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		}
 
 		for (Port port : actor.getOutputs()) {
-			if (outputCircularBuffer.get(port) != null) {
-				CircularBuffer circularBuffer = outputCircularBuffer.get(port);
-				// Count
-				Var cbCount = circularBuffer.getCount();
-				Var cbTmpCount = circularBuffer.getTmpCount();
-				xronosSchedulerLocals.add(cbTmpCount);
-				InstLoad instLoadCount = irFactory.createInstLoad(cbTmpCount,
-						cbCount);
+			InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
+					.createInstPortStatus();
+			instPortStatus.setPort(port);
+			Type typeBool = irFactory.createTypeBool();
+			// Create the portStatus variable and add it to the locals
+			Var portStatus = irFactory.createVar(typeBool,
+					"portStatus_" + port.getName(), true, 0);
+			xronosSchedulerLocals.add(portStatus);
 
-				// Add all instructions
-				cbLoadBlock.add(instLoadCount);
-				// cbLoadBlock.add(instLoadStart);
-			} else {
-				InstPortStatus instPortStatus = XronosIrFactory.eINSTANCE
-						.createInstPortStatus();
-				instPortStatus.setPort(port);
-				Type typeBool = irFactory.createTypeBool();
-				// Create the portStatus variable and add it to the locals
-				Var portStatus = irFactory.createVar(typeBool, "portStatus_"
-						+ port.getName(), true, 0);
-				xronosSchedulerLocals.add(portStatus);
+			Def target = irFactory.createDef(portStatus);
+			instPortStatus.setTarget(target);
 
-				Def target = irFactory.createDef(portStatus);
-				instPortStatus.setTarget(target);
-
-				statusPeekBlock.add(instPortStatus);
-			}
+			statusPeekBlock.add(instPortStatus);
 		}
 
 		if (!cbLoadBlock.getInstructions().isEmpty()) {

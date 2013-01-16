@@ -138,8 +138,6 @@ public class ScalarPortIO extends DfVisitor<Void> {
 
 	private Map<Port, CircularBuffer> CircularBufferInput;
 
-	private Map<Port, CircularBuffer> CircularBufferOutput;
-
 	/** Change Load to portRead if true, change to portPeek otherwise **/
 	private Boolean portRead;
 
@@ -169,11 +167,9 @@ public class ScalarPortIO extends DfVisitor<Void> {
 			}
 
 			for (Port port : action.getOutputPattern().getPorts()) {
-				if (CircularBufferOutput.get(port) == null) {
-					Var portWriteVar = action.getOutputPattern()
-							.getPortToVarMap().get(port);
-					varToPortMap.put(portWriteVar, port);
-				}
+				Var portWriteVar = action.getOutputPattern().getPortToVarMap()
+						.get(port);
+				varToPortMap.put(portWriteVar, port);
 			}
 			// Visit the action
 			portRead = true;
@@ -188,8 +184,6 @@ public class ScalarPortIO extends DfVisitor<Void> {
 	public Void caseActor(Actor actor) {
 		this.actor = actor;
 		CircularBufferInput = resourceCache.getActorInputCircularBuffer(actor);
-		CircularBufferOutput = resourceCache
-				.getActorOutputCircularBuffer(actor);
 
 		for (Action action : actor.getActions()) {
 			doSwitch(action);

@@ -28,6 +28,8 @@
  */
 package org.xronos.orcc.backend.transform;
 
+import java.math.BigInteger;
+
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.util.DfVisitor;
@@ -73,12 +75,27 @@ public class XronosParameterPropagation extends DfVisitor<Void> {
 								.getInitialValue());
 					}
 				} else {
-					if (source.getValue() != null) {
-						exprValue = getValue((Expression) source.getValue());
-					} else {
+					if (source.getInitialValue() != null) {
 						exprValue = getValue((Expression) source
 								.getInitialValue());
+					} else {
+						if (source.getValue() != null) {
+							if (source.getType().isBool()) {
+								Boolean value = (Boolean) source.getValue();
+								exprValue = factory.createExprBool(value);
+							} else if (source.getType().isInt()
+									|| source.getType().isUint()) {
+								BigInteger value = (BigInteger) source
+										.getValue();
+								exprValue = factory.createExprInt(value);
+							}
+						} else {
+							throw new NullPointerException(
+									"source has no value on load line:"
+											+ load.getLineNumber());
+						}
 					}
+
 				}
 				InstAssign assign = factory.createInstAssign(target, exprValue);
 				BlockBasic block = load.getBlock();

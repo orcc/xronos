@@ -134,7 +134,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 	}
 
 	private class TransformCircularBufferLoadStore extends
-	AbstractIrVisitor<Object> {
+			AbstractIrVisitor<Object> {
 
 		public TransformCircularBufferLoadStore(Procedure procedure) {
 			super(true);
@@ -242,8 +242,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 			return null;
 		}
 
-
-
 	}
 
 	private class StoreToPortWrite extends AbstractIrVisitor<Object> {
@@ -261,10 +259,11 @@ public class RepeatPattern extends DfVisitor<Void> {
 			super.caseProcedure(procedure);
 
 			for (BlockWhile blockWhile : blockStore.keySet()) {
-				Map<InstStore,InstPortWrite> storePortWrite = blockStore.get(blockWhile);
+				Map<InstStore, InstPortWrite> storePortWrite = blockStore
+						.get(blockWhile);
 				Port port = null;
 				// Replace Stores with PortWrite
-				for(InstStore store: storePortWrite.keySet()){
+				for (InstStore store : storePortWrite.keySet()) {
 					InstPortWrite insPortWrite = storePortWrite.get(store);
 					port = (Port) insPortWrite.getPort();
 					BlockBasic block = store.getBlock();
@@ -274,9 +273,8 @@ public class RepeatPattern extends DfVisitor<Void> {
 				}
 				// Add Port Status and the portStatusIf block
 				List<Block> whileBlocks = blockWhile.getBlocks();
-				Var portStatus = IrFactory.eINSTANCE.createVar(
-						port.getType(), "portStatus_" + port.getName(),
-						true, 0);
+				Var portStatus = IrFactory.eINSTANCE.createVar(port.getType(),
+						"portStatus_" + port.getName(), true, 0);
 				procedure.getLocals().add(portStatus);
 				InstPortStatus instPortStatus = XronosIrUtil
 						.createInstPortStatus(portStatus, port);
@@ -285,8 +283,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 						.createBlockBasic();
 				portStatusBlock.add(instPortStatus);
 
-				Expression eFalse = IrFactory.eINSTANCE
-						.createExprBool(false);
+				Expression eFalse = IrFactory.eINSTANCE.createExprBool(false);
 				Expression statusWhileCondition = XronosIrUtil
 						.createExprBinaryNotEqual(portStatus, eFalse);
 
@@ -322,7 +319,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 					} else {
 						storePortWrite = new HashMap<InstStore, InstPortWrite>();
 					}
-
 					storePortWrite.put(store, insPortWrite);
 					blockStore.put(blockWhile, storePortWrite);
 				} else {
@@ -345,8 +341,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 	private Map<Port, Integer> portMaxRepeatSize = new HashMap<Port, Integer>();
 
 	private Map<Port, CircularBuffer> circularBufferInputs = new HashMap<Port, CircularBuffer>();
-
-	private Map<Port, CircularBuffer> circularBufferOutputs = new HashMap<Port, CircularBuffer>();
 
 	private ResourceCache resourceCache;
 
@@ -457,19 +451,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 			}
 		}
 
-		/** OutputPattern **/
-		for (Port port : action.getOutputPattern().getPorts()) {
-			if (circularBufferOutputs.get(port) != null) {
-				// Create Load instruction head
-				// Load(tmpHead, head)
-				CircularBuffer circularBuffer = circularBufferOutputs.get(port);
-				circularBuffer.addToLocals(action.getBody());
-				Var pinWriteVar = action.getOutputPattern().getPortToVarMap()
-						.get(port);
-				oldOutputMap.put(pinWriteVar, port);
-			}
-		}
-
 		// Now change the Loads of an action
 		TransformCircularBufferLoadStore circularBufferLoadStore = new TransformCircularBufferLoadStore(
 				action.getBody());
@@ -512,34 +493,12 @@ public class RepeatPattern extends DfVisitor<Void> {
 				}
 			}
 		}
-		for (Port port : actor.getOutputs()) {
-			if (portMaxRepeatSize.containsKey(port)) {
-				int size = portMaxRepeatSize.get(port);
-				if (size > 1) {
-					Type type = port.getType();
-					// Find the nearest Power of two
-					int sizePowTwo = XronosMathUtil.nearestPowTwo(size);
-					Type typeList = IrFactory.eINSTANCE.createTypeList(
-							sizePowTwo, type);
-					Var buffer = IrFactory.eINSTANCE.createVar(typeList,
-							"circularBufferOut_" + port.getName(), true, 0);
-					CircularBuffer circularBuffer = new CircularBuffer(port,
-							buffer, size);
-					circularBuffer.addToStateVars(actor, true);
-					circularBufferOutputs.put(port, circularBuffer);
-				} else {
-					circularBufferOutputs.put(port, null);
-				}
-			}
-		}
 
 		// Visit all actions
 		for (Action action : actor.getActions()) {
 			doSwitch(action);
 		}
 		resourceCache.setActorInputCircularBuffer(actor, circularBufferInputs);
-		resourceCache
-		.setActorOutputCircularBuffer(actor, circularBufferOutputs);
 		addFillBufferAction(actor);
 
 		return null;

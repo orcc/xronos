@@ -33,7 +33,6 @@ import org.xronos.openforge.lim.util.LoopEmulator;
 import org.xronos.openforge.lim.util.UnEmulatableLoopException;
 import org.xronos.openforge.util.SizedInteger;
 
-
 /**
  * @author gandhij
  * 
@@ -124,10 +123,12 @@ public class LoopVariableAnalysis {
 			LoopEmulator loopEmulator = new LoopEmulator(loop);
 			Map<Port, SizedInteger> inputMap = new HashMap<Port, SizedInteger>();
 			try {
-				/* Emulate the loop */
-				loopEmulator.emulate(inputMap);
-				feedbackVariableMap = getFeedbackVariableMap(loopEmulator
-						.getFeedbackRegisterValues());
+				if (!inputMap.isEmpty()) {
+					/* Emulate the loop */
+					loopEmulator.emulate(inputMap);
+					feedbackVariableMap = getFeedbackVariableMap(loopEmulator
+							.getFeedbackRegisterValues());
+				}
 			} catch (UnEmulatableLoopException ex) {
 				// System.out.println("UnEmulatable loop .." + loop);
 			}

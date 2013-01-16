@@ -36,11 +36,8 @@ import java.util.Map;
 
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
-import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
-import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 
 import org.xronos.openforge.lim.Block;
@@ -54,7 +51,6 @@ import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.Task;
 import org.xronos.openforge.lim.memory.LogicalValue;
 import org.xronos.orcc.backend.debug.DebugPrinter;
-import org.xronos.orcc.backend.transform.XronosTransform;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.DesignUtil;
 import org.xronos.orcc.design.util.ModuleUtil;
@@ -146,38 +142,6 @@ public class DesignActor extends DfVisitor<Object> {
 		PortUtil.createDesignPorts(design, actor.getInputs(), "in", resources);
 		PortUtil.createDesignPorts(design, actor.getOutputs(), "out", resources);
 
-		Var currentState = null;
-		// Add currentState stateVariable if the actor has an FSM
-		if (actor.getFsm() != null) {
-			currentState = IrFactory.eINSTANCE.createVarInt("currentState", 32,
-					true, 0);
-			int i = 0;
-			Map<State, Integer> stateIndex = new HashMap<State, Integer>();
-			// Add FSM states to the actors stateVar
-			for (State state : actor.getFsm().getStates()) {
-				stateIndex.put(state, i);
-				i++;
-			}
-			int index = stateIndex.get(actor.getFsm().getInitialState());
-			currentState.setInitialValue(IrFactory.eINSTANCE
-					.createExprInt(index));
-			currentState.setValue(index);
-			actor.getStateVars().add(currentState);
-
-			for (State state : actor.getFsm().getStates()) {
-				Type typeBool = IrFactory.eINSTANCE.createTypeBool();
-				Var fsmState = IrFactory.eINSTANCE.createVar(typeBool, "state_"
-						+ state.getName(), true, 0);
-				if (state == actor.getFsm().getInitialState()) {
-					fsmState.setValue(true);
-				} else {
-					fsmState.setValue(false);
-				}
-				actor.getStateVars().add(fsmState);
-			}
-
-		}
-
 		/** Visit the State Variables **/
 		for (Var stateVar : actor.getStateVars()) {
 			stateVarVisitor.doSwitch(stateVar);
@@ -195,11 +159,8 @@ public class DesignActor extends DfVisitor<Object> {
 		}
 		resources.setActionToTask(actorsTasks);
 
-		// Test new scheduler
-		XronosScheduler xronosScheduler = new XronosScheduler(resources);
-		Procedure procedure = xronosScheduler.doSwitch(actor);
-		XronosTransform xronosTransform = new XronosTransform(procedure);
-		xronosTransform.transformProcedure(resources);
+		// Get scheduler
+		Procedure procedure = actor.getProcedure("scheduler");
 
 		// Print Debug
 
