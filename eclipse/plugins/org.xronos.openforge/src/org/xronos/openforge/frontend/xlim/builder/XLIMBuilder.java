@@ -20,7 +20,6 @@ import static org.xronos.openforge.util.xml.Util.xpathEvalNode;
 
 import javax.xml.transform.Transformer;
 
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -80,23 +79,23 @@ public class XLIMBuilder extends org.xml.sax.helpers.DefaultHandler {
 	private final SLIMBuilder slimBuilder;
 
 	private final String[] xlimTransformPaths = {
-			"net/sf/openforge/frontend/xlim/transforms/XLIMLoopFix.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMFixSelector.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMTagify.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMMakePortNames.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMSizeAndType.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMAddVarReads.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMInsertCasts.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMAddVarReadScope.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMBuildControl.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMRoutePorts.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMFixNames.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMMakeDeps.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMProcessPHI.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMFixNames.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMCreateExits.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMTagify.xslt",
-			"net/sf/openforge/frontend/xlim/transforms/XLIMAddControlDeps.xslt" };
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMLoopFix.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMFixSelector.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMTagify.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMMakePortNames.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMSizeAndType.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMAddVarReads.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMInsertCasts.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMAddVarReadScope.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMBuildControl.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMRoutePorts.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMFixNames.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMMakeDeps.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMProcessPHI.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMFixNames.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMCreateExits.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMTagify.xslt",
+			"org/xronos/openforge/frontend/xlim/transforms/XLIMAddControlDeps.xslt" };
 
 	private final Transformer[] xlimTransforms = Util
 			.getTransformersAsResources(xlimTransformPaths, Util

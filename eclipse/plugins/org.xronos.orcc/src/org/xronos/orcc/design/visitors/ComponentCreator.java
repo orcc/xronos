@@ -158,8 +158,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	/** Design Resources **/
 	protected ResourceCache resources;
 
-	private Var returnVar;
-
 	/** Design stateVars **/
 	protected Map<LogicalValue, Var> stateVars;
 
@@ -517,9 +515,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	@Override
 	public List<Component> caseInstCall(InstCall call) {
 		Procedure procedure = call.getProcedure();
-		if (call.getTarget() != null) {
-			returnVar = call.getTarget().getVariable();
-		}
 		// Test if the container is an Action, visit
 		if (procedure.eContainer() instanceof Action) {
 			Action action = (Action) procedure.eContainer();
@@ -534,7 +529,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				taskCall.setIDSourceInfo(sinfo);
 				taskCall.setNonRemovable();
 				componentList.add(taskCall);
-				// resources.addTaskCall(call, (TaskCall) currentComponent);
 			}
 		}
 
@@ -708,16 +702,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	@Override
 	public List<Component> caseInstReturn(InstReturn returnInstr) {
-		if (returnInstr.getValue() != null) {
-			if (returnInstr.getValue().isExprVar()) {
-				Var instReturnVar = ((ExprVar) returnInstr.getValue()).getUse()
-						.getVariable();
-				InstAssign noop = IrFactory.eINSTANCE.createInstAssign(
-						returnVar,
-						IrFactory.eINSTANCE.createExprVar(instReturnVar));
-				doSwitch(noop);
-			}
-		}
+		// Do nothing
 		return null;
 	}
 

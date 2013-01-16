@@ -46,7 +46,6 @@ import org.xronos.openforge.optimize.nesting.NestedBlockOptimization;
 import org.xronos.openforge.optimize.replace.OperationReplacementVisitor;
 import org.xronos.openforge.util.Debug;
 
-
 /**
  * Optimizer supplies the entry point for performing optimizations on a
  * {@link Design}.

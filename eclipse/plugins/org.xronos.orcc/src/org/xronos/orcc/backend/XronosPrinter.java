@@ -51,6 +51,7 @@ import org.xronos.openforge.app.ForgeFatalException;
 import org.xronos.openforge.app.GenericJob;
 import org.xronos.openforge.app.NewJob;
 import org.xronos.openforge.app.OptionRegistry;
+import org.xronos.openforge.lim.CodeLabel;
 import org.xronos.openforge.verilog.model.Assign.UnbalancedAssignmentException;
 import org.xronos.orcc.backend.transform.XronosTransform;
 import org.xronos.orcc.design.DesignEngine;
@@ -166,6 +167,9 @@ public class XronosPrinter {
 		if (!actor.hasAttribute("no_generation")) {
 			try {
 				xronosMainJob.setOptionValues(xronosArgs);
+				// Set the Xilinx Part
+				xronosMainJob.getOption(OptionRegistry.XILINX_PART).setValue(
+						CodeLabel.UNSCOPED, "xc2vp30-7-ff1152");
 				f.preprocess(xronosMainJob);
 				OrccLogger.traceln("Compiling instance: "
 						+ actor.getSimpleName() + " (" + idxInstance + "/"
