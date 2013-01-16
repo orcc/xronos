@@ -95,10 +95,19 @@ class DebugPrinter extends InstancePrinter {
 		var BranchIO branchIO = new BranchIO(block);
 		var List<Var> inputs = branchIO.inputs;
 		var List<Var> outputs = branchIO.outputs;
+		var List<Var> thenInputs = branchIO.thenInputs;
+		var List<Var> thenOutputs = branchIO.thenOutputs;
+		var List<Var> elseInputs = branchIO.elseInputs;
+		var List<Var> elseOutputs = branchIO.elseOutputs;
+		
 	'''
 		// Block Branch : «block.lineNumber»
 		// Inputs[«FOR variable: inputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
 		// Outputs[«FOR variable: outputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		// thenInputs[«FOR variable: thenInputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		// thenOutputs[«FOR variable: thenOutputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		// elseInputs[«FOR variable: elseInputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		// elseOutputs[«FOR variable: elseOutputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
 		«super.caseBlockIf(block)»
 		«IF !block.joinBlock.instructions.empty»
 			// Branch PHI  : «block.lineNumber»

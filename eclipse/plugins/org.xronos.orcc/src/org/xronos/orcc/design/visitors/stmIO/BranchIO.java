@@ -155,6 +155,29 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 
 			outputs.addAll(branchPhi.get(blockIf).keySet());
 
+			for (Var target : branchPhi.get(blockIf).keySet()) {
+				Var valueZero = branchPhi.get(blockIf).get(target).get(0);
+				Var valueOne = branchPhi.get(blockIf).get(target).get(1);
+
+				if (!thenOutputs.get(blockIf).contains(valueZero)) {
+					if (!containsVar(valueZero, blockIf.getThenBlocks(),
+							bodyBlocksOutputs)) {
+						if (!inputs.contains(valueZero)) {
+							inputs.add(valueZero);
+						}
+					}
+				}
+
+				if (!elseOutputs.get(blockIf).contains(valueOne)) {
+					if (!containsVar(valueOne, blockIf.getElseBlocks(),
+							bodyBlocksOutputs)) {
+						if (!inputs.contains(valueOne)) {
+							inputs.add(valueOne);
+						}
+					}
+				}
+			}
+
 			// Add attribute
 			blockIf.setAttribute("inputs", inputs);
 			blockIf.setAttribute("outputs", outputs);
@@ -240,8 +263,8 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 		boolean contains = false;
 		if (!blocks.isEmpty()) {
 			for (Block block : blocks) {
-				List<Var> blockInVars = bodyBlocks.get(block);
-				if (blockInVars.contains(var)) {
+				List<Var> blockVars = bodyBlocks.get(block);
+				if (blockVars.contains(var)) {
 					return true;
 				}
 			}
@@ -252,6 +275,22 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 				return true;
 			}
 		}
+		return contains;
+	}
+
+	private boolean containsVar(Var var, List<Block> blocks,
+			Map<Block, List<Var>> bodyBlocks) {
+		boolean contains = false;
+
+		if (!blocks.isEmpty()) {
+			for (Block block : blocks) {
+				List<Var> blockVars = bodyBlocks.get(block);
+				if (blockVars.contains(var)) {
+					return true;
+				}
+			}
+		}
+
 		return contains;
 	}
 
@@ -285,9 +324,18 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 			// Outputs
 			List<Var> outVars = bodyBlocksOutputs.get(block);
 			for (Var var : outVars) {
+				// if it is only used on the Then or Else Block
 				if (!containsVar(block, restOfBlocks, bodyBlocksInputs, var)) {
 					if (!blockOutputs.get(blockIf).contains(var)) {
 						blockOutputs.get(blockIf).add(var);
+					}
+				}
+				// Add its an Output of a block and it is used as value on Phi
+				for (Var target : branchPhi.get(blockIf).keySet()) {
+					if (branchPhi.get(blockIf).get(target).contains(var)) {
+						if (!blockOutputs.get(blockIf).contains(var)) {
+							blockOutputs.get(blockIf).add(var);
+						}
 					}
 				}
 			}

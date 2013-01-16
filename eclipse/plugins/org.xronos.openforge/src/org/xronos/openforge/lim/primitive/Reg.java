@@ -38,7 +38,6 @@ import org.xronos.openforge.lim.Visitor;
 import org.xronos.openforge.report.FPGAResource;
 import org.xronos.openforge.util.SizedInteger;
 
-
 /**
  * Reg models a register and can be constructed to match any of the
  * configurations which are possible in a Xilinx FPGA. Specific accessor methods
@@ -145,22 +144,25 @@ public class Reg extends Primitive implements Emulatable {
 
 		regState = type;
 
-		if (((type & RESET) != 0) && ((type & CLEAR) != 0))
+		if (((type & RESET) != 0) && ((type & CLEAR) != 0)) {
 			throw new IllegalArgumentException(
 					"Cannot have a reg that is both RESET and CLEAR");
-		if (((type & SET) != 0) && ((type & PRESET) != 0))
+		}
+		if (((type & SET) != 0) && ((type & PRESET) != 0)) {
 			throw new IllegalArgumentException(
 					"Cannot have a reg that is both SET and PRESET");
+		}
 
 		// set the ports unused/used state based on the type
 		for (int i = 1; i < 4; i++) {
 			boolean state = false;
-			if ((i == 1) && ((type & (PRESET | SET)) != 0))
+			if ((i == 1) && ((type & (PRESET | SET)) != 0)) {
 				state = true;
-			else if ((i == 2) && ((type & (RESET | CLEAR)) != 0))
+			} else if ((i == 2) && ((type & (RESET | CLEAR)) != 0)) {
 				state = true;
-			else if ((i == 3) && ((type & ENABLE) != 0))
+			} else if ((i == 3) && ((type & ENABLE) != 0)) {
 				state = true;
+			}
 			getDataPorts().get(i).setUsed(state);
 		}
 
@@ -240,9 +242,10 @@ public class Reg extends Primitive implements Emulatable {
 	 *             if 'value' is null.
 	 */
 	public void setInitialValue(Value value) {
-		if (value == null)
+		if (value == null) {
 			throw new IllegalArgumentException(
 					"Illegal null initial value for reg");
+		}
 		initialValue = value;
 	}
 
@@ -412,6 +415,10 @@ public class Reg extends Primitive implements Emulatable {
 
 		// We need to take reset value into account
 		Value drivenValue = getDataPort().getValue();
+		if (drivenValue == null) {
+			throw new NullPointerException("drivenValue is null, owner: "
+					+ this.getOwner() + " " + this.getOwner().toString());
+		}
 		Value newValue;
 
 		// If the register has an initial value or reset value
@@ -496,29 +503,33 @@ public class Reg extends Primitive implements Emulatable {
 	private void validate() {
 		// Determine that the constructed type state matches the
 		// 'used' of the pins.
-		if (!getDataPort().isUsed())
+		if (!getDataPort().isUsed()) {
 			throw new IllegalRegisterConfiguration(
 					"Data Port must be used for Reg");
-		if (getSetPort().isUsed() != ((regState & (PRESET | SET)) != 0))
+		}
+		if (getSetPort().isUsed() != ((regState & (PRESET | SET)) != 0)) {
 			throw new IllegalRegisterConfiguration(
 					"Inconsistent internal state for Set Port of Reg "
 							+ hashCode());
-		if (getInternalResetPort().isUsed() != ((regState & (RESET | CLEAR)) != 0))
+		}
+		if (getInternalResetPort().isUsed() != ((regState & (RESET | CLEAR)) != 0)) {
 			throw new IllegalRegisterConfiguration(
 					"Inconsistent internal state for Reset/Clear Port of Reg "
 							+ hashCode());
-		if (getEnablePort().isUsed() != ((regState & ENABLE) != 0))
+		}
+		if (getEnablePort().isUsed() != ((regState & ENABLE) != 0)) {
 			throw new IllegalRegisterConfiguration(
 					"Inconsistent internal state for Enable Port of Reg "
 							+ hashCode());
-		// if (getPresetPort().isUsed() != ((regState & (PRESET|SET)) != 0))
-		// throw new
-		// IllegalRegisterConfiguration("Inconsistent internal state for Set/Preset port of Reg "
-		// + this.hashCode());
-		// if (getClearPort().isUsed() != ((regState & (RESET|CLEAR)) != 0))
-		// throw new
-		// IllegalRegisterConfiguration("Inconsistent internal state for Clear Port of Reg "
-		// + this.hashCode());
+			// if (getPresetPort().isUsed() != ((regState & (PRESET|SET)) != 0))
+			// throw new
+			// IllegalRegisterConfiguration("Inconsistent internal state for Set/Preset port of Reg "
+			// + this.hashCode());
+			// if (getClearPort().isUsed() != ((regState & (RESET|CLEAR)) != 0))
+			// throw new
+			// IllegalRegisterConfiguration("Inconsistent internal state for Clear Port of Reg "
+			// + this.hashCode());
+		}
 
 		// Ensure that we aren't both synchronous AND asynchronous
 		int isAsync = (regState & CLEAR) | (regState & PRESET);

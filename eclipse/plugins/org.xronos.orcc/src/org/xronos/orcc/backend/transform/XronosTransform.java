@@ -86,6 +86,12 @@ public class XronosTransform {
 		if (!actor.hasAttribute("no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
+			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
+			transformations.add(new RepeatPattern(resourceCache));
+			transformations.add(new ScalarPortIO(resourceCache));
+			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
+			transformations.add(new GlobalArrayInitializer(true));
+
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
 			// transformations.add(new StoreOnceTransformation());
@@ -96,8 +102,7 @@ public class XronosTransform {
 			// transformations.add(new DfVisitor<Void>(new
 			// ConstantPropagator()));
 			transformations.add(new DivisionSubstitution());
-			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
-			transformations.add(new RepeatPattern(resourceCache));
+
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
 
@@ -111,9 +116,6 @@ public class XronosTransform {
 			// transformations.add(new DfVisitor<Void>(new
 			// ConstantPropagator()));
 
-			transformations.add(new GlobalArrayInitializer(true));
-			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
-			transformations.add(new ScalarPortIO(resourceCache));
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
