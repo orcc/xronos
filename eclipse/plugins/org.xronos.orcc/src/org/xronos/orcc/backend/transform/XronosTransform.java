@@ -44,7 +44,6 @@ import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
-import net.sf.orcc.ir.transform.DeadCodeElimination;
 import net.sf.orcc.util.OrccLogger;
 
 import org.xronos.orcc.design.ResourceCache;
@@ -91,21 +90,27 @@ public class XronosTransform {
 			// LocalVarInitializer()));
 			// transformations.add(new StoreOnceTransformation());
 			transformations.add(new XronosParameterPropagation());
+
 			// transformations.add(new DfVisitor<Void>(
 			// new XronosConstantPropagation()));
 			// transformations.add(new DfVisitor<Void>(new
 			// ConstantPropagator()));
 			transformations.add(new DivisionSubstitution());
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
-			// transformations.add(new DeadGlobalElimination());
-			// transformations.add(new DfVisitor<Void>(new
-			// DeadVariableRemoval()));
-			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
-			// transformations.add(new DfVisitor<Void>(new
-			// DeadVariableRemoval()));
 			transformations.add(new RepeatPattern(resourceCache));
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
+
+			// transformations.add(new DeadGlobalElimination());
+			// transformations.add(new DfVisitor<Void>(new
+			// DeadCodeElimination()));
+			// transformations.add(new DfVisitor<Void>(new
+			// DeadVariableRemoval()));
+
+			// transformations.add(new DfVisitor<Void>(new CopyPropagator()));
+			// transformations.add(new DfVisitor<Void>(new
+			// ConstantPropagator()));
+
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new DfVisitor<Void>(new Inliner(true, true)));
 			transformations.add(new ScalarPortIO(resourceCache));

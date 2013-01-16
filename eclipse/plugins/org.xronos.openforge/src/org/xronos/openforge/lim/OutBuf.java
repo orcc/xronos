@@ -24,11 +24,9 @@ package org.xronos.openforge.lim;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.xronos.openforge.util.SizedInteger;
-
 
 /**
  * An OutBuf is used to bring a structural flow to the outside of a
@@ -177,7 +175,16 @@ public class OutBuf extends Component implements Emulatable {
 				 */
 			} else {
 				final Value pushedValue = port.getValue();
-
+				if (pushedValue == null) {
+					throw new NullPointerException(
+							"Null pointer on pusheValue: "
+									+ port.getPeer().showIDLogical()
+									+ " Owner: "
+									+ this.getOwner().getIDGlobalType()
+									+ " Line: "
+									+ this.getOwner().getIDSourceInfo()
+											.getSourceLine());
+				}
 				/*
 				 * If the Bus doesn't have a Value yet, create one.
 				 */
@@ -279,8 +286,7 @@ public class OutBuf extends Component implements Emulatable {
 	@Override
 	public String toString() {
 		String dataBuses = "";
-		for (Iterator<Bus> iter = getDataBuses().iterator(); iter.hasNext();) {
-			Bus bus = iter.next();
+		for (Bus bus : getDataBuses()) {
 			String busName = bus.showIDLogical();
 			if (dataBuses.equals("")) {
 				dataBuses = busName;

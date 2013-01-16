@@ -33,6 +33,7 @@ import java.util.List;
 
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprBinary;
@@ -300,8 +301,15 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 					// It is the blockWhile condition variable
 					return false;
 				} else {
-					System.out.println("Var(" + var.getIndexedName()
-							+ ") not contained in a BlockBasic");
+					BlockIf blockIf = EcoreHelper.getContainerOfType(use,
+							BlockIf.class);
+					if (blockIf != null) {
+						// It is the blockIf condition variable
+						return false;
+					} else {
+						System.out.println("Var(" + var.getIndexedName()
+								+ ") not contained in a BlockBasic");
+					}
 				}
 			}
 		}

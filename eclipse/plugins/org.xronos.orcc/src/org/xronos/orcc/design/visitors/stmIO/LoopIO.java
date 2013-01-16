@@ -170,6 +170,8 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 
 				// The input takes the zero value of Phi
 				inputs.add(valueZero);
+				// The output takes the target of Phi
+				outputs.add(target);
 				// The body Input takes also the target of Phi
 				bodyInputs.add(target);
 				// The bodyOutput takes the target and the first value of Phi
@@ -188,7 +190,7 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 
 				List<Var> inVars = bodyBlocksInputs.get(block);
 				for (Var var : inVars) {
-					if (!containsOutputVar(previousBlocks, var)) {
+					if (!containsOutputVar(block, previousBlocks, var)) {
 						// block Inputs are also the input of the loopBody
 						if (!bodyInputs.contains(var)) {
 							bodyInputs.add(var);
@@ -225,7 +227,7 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 				List<Var> outVars = bodyBlocksOutputs.get(block);
 
 				for (Var var : outVars) {
-					if (!containsInputVar(restOfBlocks, var)) {
+					if (!containsInputVar(block, restOfBlocks, var)) {
 						for (Var targetPhi : loopPhi.get(blockWhile).keySet()) {
 							List<Var> values = loopPhi.get(blockWhile).get(
 									targetPhi);
@@ -262,10 +264,6 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 					.getVariable();
 			if (inputs.contains(decisionVar)) {
 				inputs.remove(decisionVar);
-			}
-
-			if (bodyInputs.contains(decisionVar)) {
-				bodyInputs.remove(decisionVar);
 			}
 
 			// Add to the Attribute of the Block While
@@ -308,7 +306,8 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
-	private boolean containsInputVar(List<Block> blocks, Var var) {
+	private boolean containsInputVar(Block currentBlock, List<Block> blocks,
+			Var var) {
 		boolean contains = false;
 		if (!blocks.isEmpty()) {
 			for (Block block : blocks) {
@@ -317,11 +316,18 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 					return true;
 				}
 			}
+		} else {
+			// First or Last Block of Blocks
+			List<Var> vars = bodyBlocksInputs.get(currentBlock);
+			if (vars.contains(var)) {
+				return true;
+			}
 		}
 		return contains;
 	}
 
-	private boolean containsOutputVar(List<Block> blocks, Var var) {
+	private boolean containsOutputVar(Block currentBlock, List<Block> blocks,
+			Var var) {
 		boolean contains = false;
 		if (!blocks.isEmpty()) {
 			for (Block block : blocks) {
@@ -329,6 +335,12 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 				if (blockInVars.contains(var)) {
 					return true;
 				}
+			}
+		} else {
+			// First or Last Block of Blocks
+			List<Var> vars = bodyBlocksOutputs.get(currentBlock);
+			if (vars.contains(var)) {
+				return true;
 			}
 		}
 		return contains;

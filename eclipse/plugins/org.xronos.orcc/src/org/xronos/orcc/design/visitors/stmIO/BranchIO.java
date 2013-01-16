@@ -138,7 +138,11 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 			inputs.add(decisionVar);
 
 			// Add All then Inputs
-			inputs.addAll(thenInputs.get(blockIf));
+			for (Var var : thenInputs.get(blockIf)) {
+				if (!inputs.contains(var)) {
+					inputs.add(var);
+				}
+			}
 
 			// Add all else Inputs
 			for (Var elseInputVar : elseInputs.get(blockIf)) {
@@ -231,7 +235,7 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
-	private boolean containsVar(List<Block> blocks,
+	private boolean containsVar(Block currentBlock, List<Block> blocks,
 			Map<Block, List<Var>> bodyBlocks, Var var) {
 		boolean contains = false;
 		if (!blocks.isEmpty()) {
@@ -240,6 +244,12 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 				if (blockInVars.contains(var)) {
 					return true;
 				}
+			}
+		} else {
+			// First or Last Block of Blocks
+			List<Var> vars = bodyBlocks.get(currentBlock);
+			if (vars.contains(var)) {
+				return true;
 			}
 		}
 		return contains;
@@ -266,15 +276,19 @@ public class BranchIO extends AbstractIrVisitor<Void> {
 			// Inputs
 			List<Var> inVars = bodyBlocksInputs.get(block);
 			for (Var var : inVars) {
-				if (!containsVar(previousBlocks, bodyBlocksOutputs, var)) {
-					blockInputs.get(blockIf).add(var);
+				if (!containsVar(block, previousBlocks, bodyBlocksOutputs, var)) {
+					if (!blockInputs.get(blockIf).contains(var)) {
+						blockInputs.get(blockIf).add(var);
+					}
 				}
 			}
 			// Outputs
 			List<Var> outVars = bodyBlocksOutputs.get(block);
 			for (Var var : outVars) {
-				if (!containsVar(restOfBlocks, bodyBlocksInputs, var)) {
-					blockOutputs.get(blockIf).add(var);
+				if (!containsVar(block, restOfBlocks, bodyBlocksInputs, var)) {
+					if (!blockOutputs.get(blockIf).contains(var)) {
+						blockOutputs.get(blockIf).add(var);
+					}
 				}
 			}
 		}
