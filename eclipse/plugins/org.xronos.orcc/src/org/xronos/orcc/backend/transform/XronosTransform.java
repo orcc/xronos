@@ -88,6 +88,7 @@ public class XronosTransform {
 			transformations.add(new UnitImporter());
 			transformations.add(new DfVisitor<Void>(
 					new XronosConstantPropagation()));
+			transformations.add(new XronosParameterPropagation());
 			transformations.add(new DivisionSubstitution());
 			transformations.add(new RepeatPattern(resourceCache));
 			transformations.add(new ScalarPortIO(resourceCache));
@@ -99,7 +100,6 @@ public class XronosTransform {
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
 			// transformations.add(new StoreOnceTransformation());
-			transformations.add(new XronosParameterPropagation());
 
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
@@ -107,6 +107,8 @@ public class XronosTransform {
 			transformations.add(new DeadGlobalElimination());
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
+
+			transformations.add(new DeadActionEliminaton());
 
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
