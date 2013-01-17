@@ -86,6 +86,8 @@ public class XronosTransform {
 		if (!actor.hasAttribute("no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
+			transformations.add(new DfVisitor<Void>(
+					new XronosConstantPropagation()));
 			transformations.add(new DivisionSubstitution());
 			transformations.add(new RepeatPattern(resourceCache));
 			transformations.add(new ScalarPortIO(resourceCache));

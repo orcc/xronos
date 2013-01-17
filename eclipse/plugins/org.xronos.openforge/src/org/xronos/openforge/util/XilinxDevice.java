@@ -77,7 +77,7 @@ public class XilinxDevice {
 	static {
 		// Populate the knownParts array.
 
-		List<XilinxDevice> al = new ArrayList<XilinxDevice>(310);
+		List<XilinxDevice> al = new ArrayList<XilinxDevice>(451);
 
 		al.add(new XilinxDevice("3s50-5-pq208C"));
 		al.add(new XilinxDevice("3s50-4-pq208C"));
@@ -383,11 +383,152 @@ public class XilinxDevice {
 		al.add(new XilinxDevice("4vlx160-10-ff1513C"));
 		al.add(new XilinxDevice("4vlx200-11-ff1513C"));
 		al.add(new XilinxDevice("4vlx200-10-ff1513C"));
-
+		al.add(new XilinxDevice("xc5vlx20t-2-ff323C"));
+		al.add(new XilinxDevice("xc5vlx20t-1-ff323C"));
+		al.add(new XilinxDevice("xc5vlx30-3-ff324C"));
+		al.add(new XilinxDevice("xc5vlx30-2-ff324C"));
+		al.add(new XilinxDevice("xc5vlx30-1-ff324C"));
+		al.add(new XilinxDevice("xc5vlx30-3-ff676C"));
+		al.add(new XilinxDevice("xc5vlx30-2-ff676C"));
+		al.add(new XilinxDevice("xc5vlx30-1-ff676C"));
+		al.add(new XilinxDevice("xc5vfx30t-3-ff665C"));
+		al.add(new XilinxDevice("xc5vfx30t-2-ff665C"));
+		al.add(new XilinxDevice("xc5vfx30t-1-ff665C"));
+		al.add(new XilinxDevice("xc5vlx30t-3-ff323C"));
+		al.add(new XilinxDevice("xc5vlx30t-2-ff323C"));
+		al.add(new XilinxDevice("xc5vlx30t-1-ff323C"));
+		al.add(new XilinxDevice("xc5vlx30t-3-ff665C"));
+		al.add(new XilinxDevice("xc5vlx30t-2-ff665C"));
+		al.add(new XilinxDevice("xc5vlx30t-1-ff665C"));
+		al.add(new XilinxDevice("xc5vsx35t-3-ff665C"));
+		al.add(new XilinxDevice("xc5vsx35t-2-ff665C"));
+		al.add(new XilinxDevice("xc5vsx35t-1-ff665C"));
+		al.add(new XilinxDevice("xc5vlx50-3-ff324C"));
+		al.add(new XilinxDevice("xc5vlx50-2-ff324C"));
+		al.add(new XilinxDevice("xc5vlx50-1-ff324C"));
+		al.add(new XilinxDevice("xc5vlx50-3-ff676C"));
+		al.add(new XilinxDevice("xc5vlx50-2-ff676C"));
+		al.add(new XilinxDevice("xc5vlx50-1-ff676C"));
+		al.add(new XilinxDevice("xc5vlx50-3-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx50-2-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx50-1-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx50t-3-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx50t-2-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx50t-1-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx50t-3-ff665C"));
+		al.add(new XilinxDevice("xc5vlx50t-2-ff665C"));
+		al.add(new XilinxDevice("xc5vlx50t-1-ff665C"));
+		al.add(new XilinxDevice("xc5vsx50t-3-ff1136C"));
+		al.add(new XilinxDevice("xc5vsx50t-2-ff1136C"));
+		al.add(new XilinxDevice("xc5vsx50t-1-ff1136C"));
+		al.add(new XilinxDevice("xc5vsx50t-3-ff665C"));
+		al.add(new XilinxDevice("xc5vsx50t-2-ff665C"));
+		al.add(new XilinxDevice("xc5vsx50t-1-ff665C"));
+		al.add(new XilinxDevice("xc5vfx70t-3-ff1136C"));
+		al.add(new XilinxDevice("xc5vfx70t-2-ff1136C"));
+		al.add(new XilinxDevice("xc5vfx70t-1-ff1136C"));
+		al.add(new XilinxDevice("xc5vfx70t-3-ff665C"));
+		al.add(new XilinxDevice("xc5vfx70t-2-ff665C"));
+		al.add(new XilinxDevice("xc5vfx70t-1-ff665C"));
+		al.add(new XilinxDevice("xc5vlx85-3-ff676C"));
+		al.add(new XilinxDevice("xc5vlx85-2-ff676C"));
+		al.add(new XilinxDevice("xc5vlx85-1-ff676C"));
+		al.add(new XilinxDevice("xc5vlx85-3-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx85-2-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx85-1-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx85t-3-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx85t-2-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx85t-1-ff1136C"));
+		al.add(new XilinxDevice("xc5vsx95t-2-ff1136C"));
+		al.add(new XilinxDevice("xc5vsx95t-1-ff1136C"));
+		al.add(new XilinxDevice("xc5vfx100t-3-ff1738C"));
+		al.add(new XilinxDevice("xc5vfx100t-2-ff1738C"));
+		al.add(new XilinxDevice("xc5vfx100t-1-ff1738C"));
+		al.add(new XilinxDevice("xc5vfx100t-3-ff1136C"));
+		al.add(new XilinxDevice("xc5vfx100t-2-ff1136C"));
+		al.add(new XilinxDevice("xc5vfx100t-1-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx110-3-ff676C"));
+		al.add(new XilinxDevice("xc5vlx110-2-ff676C"));
+		al.add(new XilinxDevice("xc5vlx110-1-ff676C"));
+		al.add(new XilinxDevice("xc5vlx110-3-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx110-2-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx110-1-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx110-3-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx110-2-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx110-1-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx110t-3-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx110t-2-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx110t-1-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx110t-3-ff1738C"));
+		al.add(new XilinxDevice("xc5vlx110t-2-ff1738C"));
+		al.add(new XilinxDevice("xc5vlx110t-1-ff1738C"));
+		al.add(new XilinxDevice("xc5vfx130t-3-ff1738C"));
+		al.add(new XilinxDevice("xc5vfx130t-2-ff1738C"));
+		al.add(new XilinxDevice("xc5vfx130t-1-ff1738C"));
+		al.add(new XilinxDevice("xc5vtx150t-2-ff1156C"));
+		al.add(new XilinxDevice("xc5vtx150t-1-ff1156C"));
+		al.add(new XilinxDevice("xc5vtx150t-2-ff1759C"));
+		al.add(new XilinxDevice("xc5vtx150t-1-ff1759C"));
+		al.add(new XilinxDevice("xc5vlx155-3-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx155-2-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx155-1-ff1153C"));
+		al.add(new XilinxDevice("xc5vlx155-3-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx155-2-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx155-1-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx155t-3-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx155t-2-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx155t-1-ff1136C"));
+		al.add(new XilinxDevice("xc5vlx155t-3-ff1738C"));
+		al.add(new XilinxDevice("xc5vlx155t-2-ff1738C"));
+		al.add(new XilinxDevice("xc5vlx155t-1-ff1738C"));
+		al.add(new XilinxDevice("xc5vfx200t-2-ff1738C"));
+		al.add(new XilinxDevice("xc5vfx200t-1-ff1738C"));
+		al.add(new XilinxDevice("xc5vlx220-2-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx220-1-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx220t-2-ff1738C"));
+		al.add(new XilinxDevice("xc5vlx220t-1-ff1738C"));
+		al.add(new XilinxDevice("xc5vsx240t-2-ff1738C"));
+		al.add(new XilinxDevice("xc5vsx240t-1-ff1738C"));
+		al.add(new XilinxDevice("xc5vtx240t-2-ff1759C"));
+		al.add(new XilinxDevice("xc5vtx240t-1-ff1759C"));
+		al.add(new XilinxDevice("xc5vlx330-2-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx330-1-ff1760C"));
+		al.add(new XilinxDevice("xc5vlx330t-2-ff1738C"));
+		al.add(new XilinxDevice("xc5vlx330t-1-ff1738C"));
+		al.add(new XilinxDevice("xc5vlx330t-2-ZynqC"));
+		al.add(new XilinxDevice("xc5vlx330t-1-ZynqC"));
+		al.add(new XilinxDevice("xc7z010-3-clg400C"));
+		al.add(new XilinxDevice("xc7z010-2-clg400C"));
+		al.add(new XilinxDevice("xc7z010-1-clg400C"));
+		al.add(new XilinxDevice("xc7z020-3-clg400C"));
+		al.add(new XilinxDevice("xc7z020-2-clg400C"));
+		al.add(new XilinxDevice("xc7z020-1-clg400C"));
+		al.add(new XilinxDevice("xc7z020-3-clg484C"));
+		al.add(new XilinxDevice("xc7z020-2-clg484C"));
+		al.add(new XilinxDevice("xc7z020-1-clg484C"));
+		al.add(new XilinxDevice("xc7z030-3-fbg676C"));
+		al.add(new XilinxDevice("xc7z030-2-fbg676C"));
+		al.add(new XilinxDevice("xc7z030-1-fbg676C"));
+		al.add(new XilinxDevice("xc7z030-3-ffg676C"));
+		al.add(new XilinxDevice("xc7z030-2-ffg676C"));
+		al.add(new XilinxDevice("xc7z030-1-ffg676C"));
+		al.add(new XilinxDevice("xc7z030-3-fbg484C"));
+		al.add(new XilinxDevice("xc7z030-2-fbg484C"));
+		al.add(new XilinxDevice("xc7z030-1-fbg484C"));
+		al.add(new XilinxDevice("xc7z045-3-fbg676C"));
+		al.add(new XilinxDevice("xc7z045-2-fbg676C"));
+		al.add(new XilinxDevice("xc7z045-1-fbg676C"));
+		al.add(new XilinxDevice("xc7z045-3-ffg676C"));
+		al.add(new XilinxDevice("xc7z045-2-ffg676C"));
+		al.add(new XilinxDevice("xc7z045-1-ffg676C"));
+		al.add(new XilinxDevice("xc7z045-3-ffg900C"));
+		al.add(new XilinxDevice("xc7z045-2-ffg900C"));
+		al.add(new XilinxDevice("xc7z045-1-ffg900C"));
 		knownParts = new XilinxDevice[al.size()];
 
-		for (int i = 0; i < al.size(); i++)
+		for (int i = 0; i < al.size(); i++) {
 			knownParts[i] = al.get(i);
+		}
 	}
 
 	public XilinxDevice(String parseString) {
@@ -397,18 +538,20 @@ public class XilinxDevice {
 		String allcaps = parseString.toUpperCase();
 
 		for (int i = 0; i < families.length; i++) {
-			if (allcaps.equals(families[i]))
+			if (allcaps.equals(families[i])) {
 				family = i;
+			}
 		}
 
 		// If the device wasn't just family form, parse it
 		if (family < 0) {
 			// Trim the XC if the user supplied it
 			if (allcaps.startsWith("XC")) {
-				if (allcaps.length() > 2)
+				if (allcaps.length() > 2) {
 					allcaps = allcaps.substring(2);
-				else
+				} else {
 					allcaps = "";
+				}
 			}
 
 			for (int i = 0; i < abbreviations.length; i++) {
@@ -424,20 +567,22 @@ public class XilinxDevice {
 				// Trim off the named family, leaving just the device
 				// number
 
-				if (allcaps.length() > abbreviations[family].length())
+				if (allcaps.length() > abbreviations[family].length()) {
 					allcaps = allcaps.substring(abbreviations[family].length());
-				else
+				} else {
 					allcaps = "";
+				}
 
 				// extract the device number
 				while ((allcaps.length() > 0)
 						&& (Character.isDigit(allcaps.charAt(0)))) {
 					device += allcaps.charAt(0);
 
-					if (allcaps.length() > 1)
+					if (allcaps.length() > 1) {
 						allcaps = allcaps.substring(1);
-					else
+					} else {
 						allcaps = "";
+					}
 
 				}
 
@@ -451,10 +596,11 @@ public class XilinxDevice {
 						// Oops, the family had a suffix, update it
 						family = i;
 
-						if (allcaps.length() > suffixes[i].length())
+						if (allcaps.length() > suffixes[i].length()) {
 							allcaps = allcaps.substring(suffixes[i].length());
-						else
+						} else {
 							allcaps = "";
+						}
 
 						break;
 					}
@@ -473,10 +619,11 @@ public class XilinxDevice {
 								&& (Character.isDigit(allcaps.charAt(0)))) {
 							speedstr += allcaps.charAt(0);
 
-							if (allcaps.length() > 1)
+							if (allcaps.length() > 1) {
 								allcaps = allcaps.substring(1);
-							else
+							} else {
 								allcaps = "";
+							}
 						}
 
 						if (speedstr.length() > 0) {
@@ -525,10 +672,11 @@ public class XilinxDevice {
 	}
 
 	public String getFamilyAsString() {
-		if (family >= 0)
+		if (family >= 0) {
 			return (families[family]);
-		else
+		} else {
 			return ("");
+		}
 	}
 
 	public String getDevice() {
@@ -536,10 +684,11 @@ public class XilinxDevice {
 	}
 
 	public String getSuffix() {
-		if (family >= 0)
+		if (family >= 0) {
 			return suffixes[family];
-		else
+		} else {
 			return ("");
+		}
 	}
 
 	public int getSpeed() {
@@ -563,10 +712,11 @@ public class XilinxDevice {
 	}
 
 	public String getFullDeviceName() {
-		if (temp.length() > 0)
+		if (temp.length() > 0) {
 			return getFullDeviceNameNoTemp() + temp;
-		else
+		} else {
 			return getFullDeviceNameNoTemp();
+		}
 	}
 
 	public String getFullDeviceNameNoTemp() {
@@ -628,8 +778,9 @@ public class XilinxDevice {
 	public static void main(String[] args) {
 		XilinxDevice[] kp = XilinxDevice.getKnownParts();
 
-		for (int i = 0; i < kp.length; i++)
-			System.out.println(kp[i]);
+		for (XilinxDevice element : kp) {
+			System.out.println(element);
+		}
 
 		if (args.length > 0) {
 			XilinxDevice xd = new XilinxDevice(args[0]);
@@ -652,8 +803,9 @@ public class XilinxDevice {
 			System.out.println("isXilinxDevice: " + xd.isXilinxDevice());
 			System.out.println("isFullySpecified: " + xd.isFullySpecified());
 			System.out.println();
-		} else
+		} else {
 			System.out.println("please supply a string for parse testing");
+		}
 	}
 
 }
