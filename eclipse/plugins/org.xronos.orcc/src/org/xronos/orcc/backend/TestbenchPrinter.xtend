@@ -173,7 +173,7 @@ class TestbenchPrinter extends IrSwitch {
 			---------------------------------------------------------------------------
 			-- Constant and Clock, Reset declaration
 			--------------------------------------------------------------------------- 
-			constant PERIOD : time := 50 ns;
+			constant PERIOD : time := 100 ns;
 			constant DUTY_CYCLE : real := 0.5;
 			constant OFFSET : time := 100 ns;
 		
@@ -373,7 +373,7 @@ class TestbenchPrinter extends IrSwitch {
 		-----------------------------------------------------------------------
 		-- Achitecure signals & constants
 		-----------------------------------------------------------------------
-		constant PERIOD : time := 20 ns;
+		constant PERIOD : time := 100 ns;
 		constant DUTY_CYCLE : real := 0.5;
 		constant OFFSET : time := 100 ns;
 		
