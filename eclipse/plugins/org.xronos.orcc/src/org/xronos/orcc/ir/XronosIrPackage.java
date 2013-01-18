@@ -4,6 +4,7 @@ package org.xronos.orcc.ir;
 
 import net.sf.orcc.ir.IrPackage;
 
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
@@ -176,13 +177,22 @@ public interface XronosIrPackage extends EPackage {
 	int INST_PORT_READ__PORT = IrPackage.INSTRUCTION_FEATURE_COUNT + 1;
 
 	/**
+	 * The feature id for the '<em><b>Blocking</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_PORT_READ__BLOCKING = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
+
+	/**
 	 * The number of structural features of the '<em>Inst Port Read</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_READ_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
+	int INST_PORT_READ_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 3;
 
 	/**
 	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.InstPortWriteImpl <em>Inst Port Write</em>}' class.
@@ -240,13 +250,22 @@ public interface XronosIrPackage extends EPackage {
 	int INST_PORT_WRITE__VALUE = IrPackage.INSTRUCTION_FEATURE_COUNT + 1;
 
 	/**
+	 * The feature id for the '<em><b>Blocking</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_PORT_WRITE__BLOCKING = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
+
+	/**
 	 * The number of structural features of the '<em>Inst Port Write</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int INST_PORT_WRITE_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
+	int INST_PORT_WRITE_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 3;
 
 	/**
 	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.InstPortPeekImpl <em>Inst Port Peek</em>}' class.
@@ -424,6 +443,17 @@ public interface XronosIrPackage extends EPackage {
 	EReference getInstPortRead_Port();
 
 	/**
+	 * Returns the meta object for the attribute '{@link org.xronos.orcc.ir.InstPortRead#isBlocking <em>Blocking</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Blocking</em>'.
+	 * @see org.xronos.orcc.ir.InstPortRead#isBlocking()
+	 * @see #getInstPortRead()
+	 * @generated
+	 */
+	EAttribute getInstPortRead_Blocking();
+
+	/**
 	 * Returns the meta object for class '{@link org.xronos.orcc.ir.InstPortWrite <em>Inst Port Write</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -454,6 +484,17 @@ public interface XronosIrPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getInstPortWrite_Value();
+
+	/**
+	 * Returns the meta object for the attribute '{@link org.xronos.orcc.ir.InstPortWrite#isBlocking <em>Blocking</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Blocking</em>'.
+	 * @see org.xronos.orcc.ir.InstPortWrite#isBlocking()
+	 * @see #getInstPortWrite()
+	 * @generated
+	 */
+	EAttribute getInstPortWrite_Blocking();
 
 	/**
 	 * Returns the meta object for class '{@link org.xronos.orcc.ir.InstPortPeek <em>Inst Port Peek</em>}'.
@@ -583,6 +624,14 @@ public interface XronosIrPackage extends EPackage {
 		EReference INST_PORT_READ__PORT = eINSTANCE.getInstPortRead_Port();
 
 		/**
+		 * The meta object literal for the '<em><b>Blocking</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute INST_PORT_READ__BLOCKING = eINSTANCE.getInstPortRead_Blocking();
+
+		/**
 		 * The meta object literal for the '{@link org.xronos.orcc.ir.impl.InstPortWriteImpl <em>Inst Port Write</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -607,6 +656,14 @@ public interface XronosIrPackage extends EPackage {
 		 * @generated
 		 */
 		EReference INST_PORT_WRITE__VALUE = eINSTANCE.getInstPortWrite_Value();
+
+		/**
+		 * The meta object literal for the '<em><b>Blocking</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute INST_PORT_WRITE__BLOCKING = eINSTANCE.getInstPortWrite_Blocking();
 
 		/**
 		 * The meta object literal for the '{@link org.xronos.orcc.ir.impl.InstPortPeekImpl <em>Inst Port Peek</em>}' class.

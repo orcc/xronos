@@ -6,10 +6,12 @@ import net.sf.orcc.graph.GraphPackage;
 
 import net.sf.orcc.ir.IrPackage;
 
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 
+import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.impl.EPackageImpl;
 
 import org.xronos.orcc.ir.BlockMutex;
@@ -185,6 +187,15 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public EAttribute getInstPortRead_Blocking() {
+		return (EAttribute)instPortReadEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public EClass getInstPortWrite() {
 		return instPortWriteEClass;
 	}
@@ -205,6 +216,15 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 	 */
 	public EReference getInstPortWrite_Value() {
 		return (EReference)instPortWriteEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EAttribute getInstPortWrite_Blocking() {
+		return (EAttribute)instPortWriteEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -287,10 +307,12 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 		instPortReadEClass = createEClass(INST_PORT_READ);
 		createEReference(instPortReadEClass, INST_PORT_READ__TARGET);
 		createEReference(instPortReadEClass, INST_PORT_READ__PORT);
+		createEAttribute(instPortReadEClass, INST_PORT_READ__BLOCKING);
 
 		instPortWriteEClass = createEClass(INST_PORT_WRITE);
 		createEReference(instPortWriteEClass, INST_PORT_WRITE__PORT);
 		createEReference(instPortWriteEClass, INST_PORT_WRITE__VALUE);
+		createEAttribute(instPortWriteEClass, INST_PORT_WRITE__BLOCKING);
 
 		instPortPeekEClass = createEClass(INST_PORT_PEEK);
 		createEReference(instPortPeekEClass, INST_PORT_PEEK__TARGET);
@@ -326,6 +348,7 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 		// Obtain other dependent packages
 		IrPackage theIrPackage = (IrPackage)EPackage.Registry.INSTANCE.getEPackage(IrPackage.eNS_URI);
 		GraphPackage theGraphPackage = (GraphPackage)EPackage.Registry.INSTANCE.getEPackage(GraphPackage.eNS_URI);
+		EcorePackage theEcorePackage = (EcorePackage)EPackage.Registry.INSTANCE.getEPackage(EcorePackage.eNS_URI);
 
 		// Create type parameters
 
@@ -346,10 +369,12 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 		initEClass(instPortReadEClass, InstPortRead.class, "InstPortRead", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getInstPortRead_Target(), theIrPackage.getDef(), null, "target", null, 0, 1, InstPortRead.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getInstPortRead_Port(), theGraphPackage.getVertex(), null, "port", null, 0, 1, InstPortRead.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getInstPortRead_Blocking(), theEcorePackage.getEBoolean(), "blocking", "false", 0, 1, InstPortRead.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(instPortWriteEClass, InstPortWrite.class, "InstPortWrite", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getInstPortWrite_Port(), theGraphPackage.getVertex(), null, "port", null, 0, 1, InstPortWrite.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getInstPortWrite_Value(), theIrPackage.getExpression(), null, "value", null, 0, 1, InstPortWrite.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getInstPortWrite_Blocking(), theEcorePackage.getEBoolean(), "blocking", "false", 0, 1, InstPortWrite.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(instPortPeekEClass, InstPortPeek.class, "InstPortPeek", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getInstPortPeek_Target(), theIrPackage.getDef(), null, "target", null, 0, 1, InstPortPeek.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

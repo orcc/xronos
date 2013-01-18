@@ -13,10 +13,12 @@
     <genClasses ecoreClass="XronosIr.ecore#//InstPortRead">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortRead/target"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortRead/port"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute XronosIr.ecore#//InstPortRead/blocking"/>
     </genClasses>
     <genClasses ecoreClass="XronosIr.ecore#//InstPortWrite">
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortWrite/port"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortWrite/value"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute XronosIr.ecore#//InstPortWrite/blocking"/>
     </genClasses>
     <genClasses ecoreClass="XronosIr.ecore#//InstPortPeek">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortPeek/target"/>

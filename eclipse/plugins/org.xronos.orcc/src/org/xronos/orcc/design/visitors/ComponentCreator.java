@@ -585,15 +585,15 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			block.setNonRemovable();
 			Bus result = block.getExit(Exit.DONE).makeDataBus();
 			castOp.getEntries()
-					.get(0)
-					.addDependency(castOp.getDataPort(),
-							new DataDependency(read.getResultBus()));
+			.get(0)
+			.addDependency(castOp.getDataPort(),
+					new DataDependency(read.getResultBus()));
 			result.getPeer()
-					.getOwner()
-					.getEntries()
-					.get(0)
-					.addDependency(result.getPeer(),
-							new DataDependency(castOp.getResultBus()));
+			.getOwner()
+			.getEntries()
+			.get(0)
+			.addDependency(result.getPeer(),
+					new DataDependency(castOp.getResultBus()));
 
 			memPort.addAccess(read, targetLocation);
 
@@ -660,8 +660,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseInstPortRead(InstPortRead portRead) {
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portRead.getPort();
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
-
-		Component pinRead = ioHandler.getReadAccess(false);
+		Boolean blocking = portRead.isBlocking();
+		Component pinRead = ioHandler.getReadAccess(blocking);
 		pinRead.setNonRemovable();
 
 		Var pinReadVar = portRead.getTarget().getVariable();
@@ -687,7 +687,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseInstPortWrite(InstPortWrite portWrite) {
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portWrite.getPort();
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
-		Component pinWrite = ioHandler.getWriteAccess(true);
+		Boolean blocking = portWrite.isBlocking();
+		Component pinWrite = ioHandler.getWriteAccess(blocking);
 		pinWrite.setNonRemovable();
 
 		ExprVar value = (ExprVar) portWrite.getValue();
@@ -760,10 +761,10 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				block.setNonRemovable();
 				Port data = block.makeDataPort();
 				heapWrite
-						.getEntries()
-						.get(0)
-						.addDependency(heapWrite.getValuePort(),
-								new DataDependency(data.getPeer()));
+				.getEntries()
+				.get(0)
+				.addDependency(heapWrite.getValuePort(),
+						new DataDependency(data.getPeer()));
 
 				memPort.addAccess(heapWrite, targetLocation);
 

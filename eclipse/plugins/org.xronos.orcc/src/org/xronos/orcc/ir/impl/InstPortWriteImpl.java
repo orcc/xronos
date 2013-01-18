@@ -30,6 +30,7 @@ import org.xronos.orcc.ir.XronosIrPackage;
  * <ul>
  *   <li>{@link org.xronos.orcc.ir.impl.InstPortWriteImpl#getPort <em>Port</em>}</li>
  *   <li>{@link org.xronos.orcc.ir.impl.InstPortWriteImpl#getValue <em>Value</em>}</li>
+ *   <li>{@link org.xronos.orcc.ir.impl.InstPortWriteImpl#isBlocking <em>Blocking</em>}</li>
  * </ul>
  * </p>
  *
@@ -55,6 +56,26 @@ public class InstPortWriteImpl extends InstructionImpl implements InstPortWrite 
 	 * @ordered
 	 */
 	protected Expression value;
+
+	/**
+	 * The default value of the '{@link #isBlocking() <em>Blocking</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isBlocking()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean BLOCKING_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isBlocking() <em>Blocking</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isBlocking()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean blocking = BLOCKING_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -144,6 +165,27 @@ public class InstPortWriteImpl extends InstructionImpl implements InstPortWrite 
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public boolean isBlocking() {
+		return blocking;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setBlocking(boolean newBlocking) {
+		boolean oldBlocking = blocking;
+		blocking = newBlocking;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, XronosIrPackage.INST_PORT_WRITE__BLOCKING, oldBlocking, blocking));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
@@ -165,6 +207,8 @@ public class InstPortWriteImpl extends InstructionImpl implements InstPortWrite 
 				return getPort();
 			case XronosIrPackage.INST_PORT_WRITE__VALUE:
 				return getValue();
+			case XronosIrPackage.INST_PORT_WRITE__BLOCKING:
+				return isBlocking();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -182,6 +226,9 @@ public class InstPortWriteImpl extends InstructionImpl implements InstPortWrite 
 				return;
 			case XronosIrPackage.INST_PORT_WRITE__VALUE:
 				setValue((Expression)newValue);
+				return;
+			case XronosIrPackage.INST_PORT_WRITE__BLOCKING:
+				setBlocking((Boolean)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -201,6 +248,9 @@ public class InstPortWriteImpl extends InstructionImpl implements InstPortWrite 
 			case XronosIrPackage.INST_PORT_WRITE__VALUE:
 				setValue((Expression)null);
 				return;
+			case XronosIrPackage.INST_PORT_WRITE__BLOCKING:
+				setBlocking(BLOCKING_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -217,6 +267,8 @@ public class InstPortWriteImpl extends InstructionImpl implements InstPortWrite 
 				return port != null;
 			case XronosIrPackage.INST_PORT_WRITE__VALUE:
 				return value != null;
+			case XronosIrPackage.INST_PORT_WRITE__BLOCKING:
+				return blocking != BLOCKING_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}

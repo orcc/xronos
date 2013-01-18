@@ -134,7 +134,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 	}
 
 	private class TransformCircularBufferLoadStore extends
-			AbstractIrVisitor<Object> {
+	AbstractIrVisitor<Object> {
 
 		public TransformCircularBufferLoadStore(Procedure procedure) {
 			super(true);
@@ -308,7 +308,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 						.createInstPortWrite();
 				insPortWrite.setPort(port);
 				insPortWrite.setValue(value);
-
+				insPortWrite.setBlocking(true);
 				// Find the BlockWhile and store the InstStore and InstPortWrite
 				BlockWhile blockWhile = EcoreHelper.getContainerOfType(store,
 						BlockWhile.class);
@@ -621,7 +621,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 							+ port.getName(), true, 0);
 					body.getLocals().add(token);
 					InstPortRead portRead = XronosIrUtil.createInstPortRead(
-							token, port);
+							token, port, true);
 
 					// Store( circularBuffer[cbHead + cbCount &
 					// (cbSizePowTwo-1),

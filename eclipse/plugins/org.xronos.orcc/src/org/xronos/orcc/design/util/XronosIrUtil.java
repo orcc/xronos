@@ -182,21 +182,23 @@ public class XronosIrUtil {
 		return instStore;
 	}
 
-	public static InstPortRead createInstPortRead(Var target, Port port) {
+	public static InstPortRead createInstPortRead(Var target, Port port, Boolean blocking) {
 		InstPortRead instPortRead = XronosIrFactory.eINSTANCE
 				.createInstPortRead();
 		Def def = IrFactory.eINSTANCE.createDef(target);
 		instPortRead.setTarget(def);
 		instPortRead.setPort(port);
+		instPortRead.setBlocking(blocking);
 		return instPortRead;
 	}
 
-	public static InstPortWrite createInstPortWrite(Port port, Var source) {
+	public static InstPortWrite createInstPortWrite(Port port, Var source, Boolean blocking) {
 		InstPortWrite instPortWrite = XronosIrFactory.eINSTANCE
 				.createInstPortWrite();
 		ExprVar exprVar = IrFactory.eINSTANCE.createExprVar(source);
 		instPortWrite.setValue(exprVar);
 		instPortWrite.setPort(port);
+		instPortWrite.setBlocking(blocking);
 		return instPortWrite;
 	}
 

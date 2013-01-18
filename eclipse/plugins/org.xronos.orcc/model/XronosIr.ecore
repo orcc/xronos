@@ -12,12 +12,16 @@
         containment="true" resolveProxies="false"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="port" eType="ecore:EClass ../../net.sf.orcc.models/model/Graph.ecore#//Vertex"
         resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="blocking" eType="ecore:EDataType platform:/plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EBoolean"
+        defaultValueLiteral="false"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="InstPortWrite" eSuperTypes="../../net.sf.orcc.core/model/Ir.ecore#//Instruction">
     <eStructuralFeatures xsi:type="ecore:EReference" name="port" eType="ecore:EClass ../../net.sf.orcc.models/model/Graph.ecore#//Vertex"
         resolveProxies="false"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="value" eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Expression"
         containment="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="blocking" eType="ecore:EDataType platform:/plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EBoolean"
+        defaultValueLiteral="false"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="InstPortPeek" eSuperTypes="../../net.sf.orcc.core/model/Ir.ecore#//Instruction">
     <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Def"

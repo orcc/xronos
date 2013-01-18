@@ -29,6 +29,7 @@ import org.xronos.orcc.ir.XronosIrPackage;
  * <ul>
  *   <li>{@link org.xronos.orcc.ir.impl.InstPortReadImpl#getTarget <em>Target</em>}</li>
  *   <li>{@link org.xronos.orcc.ir.impl.InstPortReadImpl#getPort <em>Port</em>}</li>
+ *   <li>{@link org.xronos.orcc.ir.impl.InstPortReadImpl#isBlocking <em>Blocking</em>}</li>
  * </ul>
  * </p>
  *
@@ -54,6 +55,26 @@ public class InstPortReadImpl extends InstructionImpl implements InstPortRead {
 	 * @ordered
 	 */
 	protected Vertex port;
+
+	/**
+	 * The default value of the '{@link #isBlocking() <em>Blocking</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isBlocking()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean BLOCKING_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isBlocking() <em>Blocking</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isBlocking()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean blocking = BLOCKING_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -143,6 +164,27 @@ public class InstPortReadImpl extends InstructionImpl implements InstPortRead {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public boolean isBlocking() {
+		return blocking;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setBlocking(boolean newBlocking) {
+		boolean oldBlocking = blocking;
+		blocking = newBlocking;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, XronosIrPackage.INST_PORT_READ__BLOCKING, oldBlocking, blocking));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
@@ -164,6 +206,8 @@ public class InstPortReadImpl extends InstructionImpl implements InstPortRead {
 				return getTarget();
 			case XronosIrPackage.INST_PORT_READ__PORT:
 				return getPort();
+			case XronosIrPackage.INST_PORT_READ__BLOCKING:
+				return isBlocking();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -181,6 +225,9 @@ public class InstPortReadImpl extends InstructionImpl implements InstPortRead {
 				return;
 			case XronosIrPackage.INST_PORT_READ__PORT:
 				setPort((Vertex)newValue);
+				return;
+			case XronosIrPackage.INST_PORT_READ__BLOCKING:
+				setBlocking((Boolean)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -200,6 +247,9 @@ public class InstPortReadImpl extends InstructionImpl implements InstPortRead {
 			case XronosIrPackage.INST_PORT_READ__PORT:
 				setPort((Vertex)null);
 				return;
+			case XronosIrPackage.INST_PORT_READ__BLOCKING:
+				setBlocking(BLOCKING_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -216,6 +266,8 @@ public class InstPortReadImpl extends InstructionImpl implements InstPortRead {
 				return target != null;
 			case XronosIrPackage.INST_PORT_READ__PORT:
 				return port != null;
+			case XronosIrPackage.INST_PORT_READ__BLOCKING:
+				return blocking != BLOCKING_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}

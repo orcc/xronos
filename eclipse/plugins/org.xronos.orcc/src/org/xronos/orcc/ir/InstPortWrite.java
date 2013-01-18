@@ -17,6 +17,7 @@ import net.sf.orcc.ir.Instruction;
  * <ul>
  *   <li>{@link org.xronos.orcc.ir.InstPortWrite#getPort <em>Port</em>}</li>
  *   <li>{@link org.xronos.orcc.ir.InstPortWrite#getValue <em>Value</em>}</li>
+ *   <li>{@link org.xronos.orcc.ir.InstPortWrite#isBlocking <em>Blocking</em>}</li>
  * </ul>
  * </p>
  *
@@ -76,5 +77,32 @@ public interface InstPortWrite extends Instruction {
 	 * @generated
 	 */
 	void setValue(Expression value);
+
+	/**
+	 * Returns the value of the '<em><b>Blocking</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <p>
+	 * If the meaning of the '<em>Blocking</em>' attribute isn't clear,
+	 * there really should be more of a description here...
+	 * </p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Blocking</em>' attribute.
+	 * @see #setBlocking(boolean)
+	 * @see org.xronos.orcc.ir.XronosIrPackage#getInstPortWrite_Blocking()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isBlocking();
+
+	/**
+	 * Sets the value of the '{@link org.xronos.orcc.ir.InstPortWrite#isBlocking <em>Blocking</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Blocking</em>' attribute.
+	 * @see #isBlocking()
+	 * @generated
+	 */
+	void setBlocking(boolean value);
 
 } // InstPortWrite

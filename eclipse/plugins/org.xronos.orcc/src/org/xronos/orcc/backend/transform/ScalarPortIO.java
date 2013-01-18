@@ -76,6 +76,7 @@ public class ScalarPortIO extends DfVisitor<Void> {
 							.createInstPortRead();
 					portRead.setPort(port);
 					portRead.setTarget(def);
+					portRead.setBlocking(false);
 					portRead.setLineNumber(load.getLineNumber());
 
 					BlockBasic block = load.getBlock();
@@ -119,6 +120,7 @@ public class ScalarPortIO extends DfVisitor<Void> {
 						.createInstPortWrite();
 				portWrite.setPort(port);
 				portWrite.setValue(value);
+				portWrite.setBlocking(false);
 				portWrite.setLineNumber(store.getLineNumber());
 				BlockBasic block = store.getBlock();
 				int index = store.getBlock().indexOf(store);

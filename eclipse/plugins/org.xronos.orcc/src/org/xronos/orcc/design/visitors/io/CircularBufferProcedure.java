@@ -204,7 +204,7 @@ public class CircularBufferProcedure extends DfVisitor<Void> {
 		Var token = irFactory.createVar(port.getType(),
 				"token_" + port.getName(), true, 0);
 		read.getLocals().add(token);
-		InstPortRead portRead = XronosIrUtil.createInstPortRead(token, port);
+		InstPortRead portRead = XronosIrUtil.createInstPortRead(token, port, true);
 
 		// Store( circularBuffer[cbHead + cbCount & (cbSizePowTwo-1), token)
 		Integer cbSize = circularBuffer.getSizePowTwo();
