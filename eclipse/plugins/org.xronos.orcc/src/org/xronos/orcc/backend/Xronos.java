@@ -162,11 +162,11 @@ public class Xronos extends AbstractBackend {
 
 		if (exportLibrary) {
 			copyFileToFilesystem("/bundle/README.txt", path + File.separator
-					+ "README.txt");
+					+ "README.txt", debug);
 
 			OrccLogger.trace("Export libraries sources into " + libPath
 					+ "... ");
-			if (copyFolderToFileSystem("/bundle/lib", libPath)) {
+			if (copyFolderToFileSystem("/bundle/lib", libPath, debug)) {
 				OrccLogger.traceRaw("OK" + "\n");
 				return true;
 			} else {
