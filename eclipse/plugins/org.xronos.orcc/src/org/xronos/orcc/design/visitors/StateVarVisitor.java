@@ -69,7 +69,9 @@ public class StateVarVisitor extends AbstractIrVisitor<Object> {
 	@Override
 	public Object caseVar(Var var) {
 		if (var.isGlobal()) {
-			stateVars.put(makeLogicalValue(var), var);
+			if (var.getType().isList() || var.isAssignable()) {
+				stateVars.put(makeLogicalValue(var), var);
+			}
 		}
 		return null;
 	}
