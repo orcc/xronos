@@ -157,18 +157,18 @@ public class BitWidthFinder implements Visitor {
 	 * @return a Map of Integer to Set where the Integer stores the value of the
 	 *         bitwidth and the Set contains only those objects from comps.
 	 */
-	public static Map<Integer, Set<?>> sortByBitWidth(Set<?> comps) {
+	public static Map<Integer, Set<Object>> sortByBitWidth(Set<Object> comps) {
 		BitWidthFinder finder = new BitWidthFinder();
 
-		Map<Integer, Set<?>> widthToObject = new HashMap<Integer, Set<?>>();
+		Map<Integer, Set<Object>> widthToObject = new HashMap<Integer, Set<Object>>();
 		for (Object o : comps) {
 			finder.bitwidth = UNKNOWN;
 			if (o instanceof Visitable) {
 				((Visitable) o).accept(finder);
 			}
-			Set set = widthToObject.get(new Integer(finder.bitwidth));
+			Set<Object> set = widthToObject.get(new Integer(finder.bitwidth));
 			if (set == null) {
-				set = new HashSet();
+				set = new HashSet<Object>();
 				widthToObject.put(new Integer(finder.bitwidth), set);
 			}
 			set.add(o);
@@ -189,7 +189,7 @@ public class BitWidthFinder implements Visitor {
 				sortedBitWidths.add(width);
 		}
 
-		Map<Integer, Set<?>> sorted = new LinkedHashMap<Integer, Set<?>>();
+		Map<Integer, Set<Object>> sorted = new LinkedHashMap<Integer, Set<Object>>();
 		for (Integer width : sortedBitWidths) {
 			sorted.put(width, widthToObject.get(width));
 		}

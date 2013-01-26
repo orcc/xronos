@@ -220,7 +220,7 @@ public class ResourcePrinter {
 	private void printResource(Map resources) {
 		for (Iterator iter = resources.keySet().iterator(); iter.hasNext();) {
 			final Class<?> key = (Class<?>) iter.next();
-			final Set set = (Set) resources.get(key);
+			final Set<Object> set = (Set) resources.get(key);
 			if (getLimClassName(key) == null) {
 			} // must be something we arent interested in reporting
 			else {
@@ -234,7 +234,7 @@ public class ResourcePrinter {
 				else
 					writer.print(" ");
 				writer.print(getLimClassName(key));
-				final Map<Integer, Set<?>> sortedByBitWidth = BitWidthFinder
+				final Map<Integer, Set<Object>> sortedByBitWidth = BitWidthFinder
 						.sortByBitWidth(set);
 				String values = "";
 				for (Integer width : sortedByBitWidth.keySet()) {

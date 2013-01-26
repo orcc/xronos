@@ -39,7 +39,7 @@ public class ProcedureResource extends ResourceBank {
 	private Procedure procedure = null;
 
 	/** all resouces to counts including sub method resources */
-	private Map total_report = new HashMap();
+	private Map<Class<Object>, Set<Component>> total_report = new HashMap<Class<Object>, Set<Component>>();
 
 	public ProcedureResource(Procedure proc) {
 		super();

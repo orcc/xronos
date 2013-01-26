@@ -44,7 +44,7 @@ public class ResourceUtilizationReporter extends FilteredVisitor {
 	private String designID;
 
 	public ResourceUtilizationReporter(Design design,
-			FPGAResource designResource, Map procedureResourceUsageMap,
+			FPGAResource designResource, Map<Procedure, FPGAResource> procedureResourceUsageMap,
 			OutputStream os) {
 		super();
 
@@ -111,8 +111,8 @@ public class ResourceUtilizationReporter extends FilteredVisitor {
 		writer.println("<P>");
 	}
 
-	private void printTaskResourceUsage(Map procedureResourceUsageMap) {
-		for (Iterator procIter = procedureResourceUsageMap.keySet().iterator(); procIter
+	private void printTaskResourceUsage(Map<Procedure, FPGAResource> procedureResourceUsageMap) {
+		for (Iterator<Procedure> procIter = procedureResourceUsageMap.keySet().iterator(); procIter
 				.hasNext();) {
 			Procedure proc = (Procedure) procIter.next();
 			FPGAResource procResource = (FPGAResource) procedureResourceUsageMap
