@@ -37,9 +37,6 @@ public class Xronos extends AbstractBackend {
 	/** Debug Mode, no caching, generating always **/
 	private boolean debugMode;
 
-	/** A list which contains the given xronosFlags **/
-	private List<String> xronosFlags;
-
 	/** The used Xilinx FPGA Name **/
 	private String fpgaName;
 
@@ -48,10 +45,10 @@ public class Xronos extends AbstractBackend {
 
 	private boolean generateWeights;
 
-	/** Use Orcc as a fronted for OpenForge, No XLIM code generation **/
-
 	/** The path used for the RTL Go Done generation **/
 	private String rtlGoDonePath;
+
+	/** Use Orcc as a fronted for OpenForge, No XLIM code generation **/
 
 	/** The path used for the RTL generation **/
 	private String rtlPath;
@@ -59,19 +56,28 @@ public class Xronos extends AbstractBackend {
 	/** The path used for the simulation generation **/
 	private String simPath;
 
+	/** One verilog contains all the design **/
+	private boolean singleFileGeneration;
+
 	/** The path used for the testBench generation **/
 	private String testBenchPath;
 
+	/** Copy the Xilinx RAM/registers primitives **/
 	private boolean xilinxPrimitives;
+
+	/** A list which contains the given xronosFlags **/
+	private List<String> xronosFlags;
 
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
 		debugMode = getAttribute(DEBUG_MODE, true);
-		generateGoDone = getAttribute("net.sf.orc2hdl.generateGoDone", false);
-		generateWeights = getAttribute("net.sf.orc2hdl.generateWeights", false);
-		xilinxPrimitives = getAttribute("net.sf.orc2hdl.xilinxPrimitives",
+		generateGoDone = getAttribute("org.xronos.orcc.generateGoDone", false);
+		generateWeights = getAttribute("org.xronos.orcc.generateWeights", false);
+		xilinxPrimitives = getAttribute("org.xronos.orcc.xilinxPrimitives",
 				false);
+		singleFileGeneration = getAttribute(
+				"org.xronos.orcc.singleFileGeneration", false);
 
 		// Set Paths for RTL
 		rtlPath = path + File.separator + "rtl";
@@ -144,14 +150,18 @@ public class Xronos extends AbstractBackend {
 		// Compute the Network Template
 		network.computeTemplateMaps();
 
-		// Print Network
-		printNetwork(network);
+		if (singleFileGeneration) {
+			// Generate Network Design
+			generateNetwork(network);
+		} else {
+			// Print Network
+			printNetwork(network);
 
+			// Print Instances
+			generateInstances(network);
+		}
 		// Print Testbenches
 		printTestbenches(network);
-
-		// Print Instances
-		generateInstances(network);
 	}
 
 	@Override
@@ -271,6 +281,30 @@ public class Xronos extends AbstractBackend {
 		long t1 = System.currentTimeMillis();
 		OrccLogger.traceln("Xronos done in " + (float) (t1 - t0) / (float) 1000
 				+ "s");
+	}
+
+	private void generateNetwork(Network network) {
+		OrccLogger.traceln("Generating Network...");
+		OrccLogger
+				.traceln("-------------------------------------------------------------------------------");
+
+		ResourceCache resourceCache = new ResourceCache();
+		XronosPrinter printer = new XronosPrinter(!debugMode);
+		printer.getOptions().put("generateGoDone", generateGoDone);
+		printer.getOptions().put("fpgaType", fpgaName);
+		List<String> flags = new ArrayList<String>(xronosFlags);
+		flags.addAll(Arrays.asList("-d", rtlPath, "-o", network.getSimpleName()));
+		boolean failed = printer.printNetwork(flags.toArray(new String[0]),
+				rtlPath, network, resourceCache);
+		
+		if (failed) {
+			OrccLogger
+					.severeln("-------------------------------------------------------------------------------");
+			OrccLogger.severeln("Network:"+network.getName()+" failed to compile");
+			OrccLogger
+					.severeln("-------------------------------------------------------------------------------");
+		}
+
 	}
 
 	private void printNetwork(Network network) {

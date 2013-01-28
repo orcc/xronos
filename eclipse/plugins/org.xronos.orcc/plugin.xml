@@ -10,13 +10,16 @@
                id="net.sf.orcc.plugins.compileXDF">
          </option>
          <option
-               id="net.sf.orc2hdl.generateGoDone">
+               id="org.xronos.orcc.generateGoDone">
          </option>
          <option
-               id="net.sf.orc2hdl.xilinxPrimitives">
+               id="org.xronos.orcc.xilinxPrimitives">
          </option>
          <option
                id="net.sf.orcc.dontExportLibrary">
+         </option>
+         <option
+               id="org.xronos.orcc.singleFileGeneration">
          </option>
       </backend>
    </extension>
@@ -24,12 +27,19 @@
          point="net.sf.orcc.core.options">
       <option
             defaultValue="false"
-            id="net.sf.orc2hdl.generateGoDone"
+            description="One Verilog file generation for all the Network"
+            id="org.xronos.orcc.singleFileGeneration"
+            name="Single File Generation (Experimental)">
+         <checkBox></checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            id="org.xronos.orcc.generateGoDone"
             name="Generate Go/Done Signal for each Action">
          <checkBox>
             <option
                   defaultValue="false"
-                  id="net.sf.orc2hdl.generateWeights"
+                  id="org.xronos.orcc.generateWeights"
                   name="Generate the Go&amp;Done weights for each action">
                <checkBox></checkBox>
             </option>
@@ -37,7 +47,7 @@
       </option>
       <option
             defaultValue="false"
-            id="net.sf.orc2hdl.xilinxPrimitives"
+            id="org.xronos.orcc.xilinxPrimitives"
             name="Copy and compile Xilinx Primitives (Don&apos;t use unisim Lib)">
          <checkBox></checkBox>
       </option>

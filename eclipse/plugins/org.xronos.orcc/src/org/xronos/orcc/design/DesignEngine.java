@@ -30,6 +30,7 @@
 package org.xronos.orcc.design;
 
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.Network;
 
 import org.xronos.openforge.app.Engine;
 import org.xronos.openforge.app.GenericJob;
@@ -43,7 +44,11 @@ import org.xronos.openforge.lim.Design;
  * 
  */
 public class DesignEngine extends Engine {
+
 	Actor actor;
+	
+	Network network;
+	
 	ResourceCache resourceCache;
 
 	public DesignEngine(GenericJob genJob, Actor actor,
@@ -55,11 +60,33 @@ public class DesignEngine extends Engine {
 				+ actor.getSimpleName());
 	}
 
+	public DesignEngine(GenericJob genJob, Network network,
+			ResourceCache resourceCache) {
+		super(genJob);
+		this.network = network;
+		this.resourceCache = resourceCache;
+		this.jobHandler = new JobHandlerAdapter("Forging: "
+				+ actor.getSimpleName());
+	}
+
 	@Override
 	public Design buildLim() {
-		ActorToDesign instanceToDesign = new ActorToDesign(actor,
-				resourceCache);
-		Design design = instanceToDesign.buildDesign();
+		Design design = null;
+
+		// Single file generation
+		if (network != null) {
+			NetworkToDesign networkToDesign = new NetworkToDesign(network,
+					resourceCache);
+			design = networkToDesign.buildDesign();
+		}
+
+		// Multiple file generation
+		if (actor != null) {
+			ActorToDesign instanceToDesign = new ActorToDesign(actor,
+					resourceCache);
+			design = instanceToDesign.buildDesign();
+		}
+
 		return design;
 	}
 

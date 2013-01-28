@@ -38,6 +38,7 @@ import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
 import net.sf.orcc.backends.transform.LoopUnrolling;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.UnitImporter;
 import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.df.util.DfVisitor;
@@ -83,7 +84,15 @@ public class XronosTransform {
 		return procedure;
 	}
 
-	public static void transformActor(Actor actor, ResourceCache resourceCache) {
+	public static void transformNetworkActors(Network network,
+			ResourceCache resourceCache) {
+		for (Actor actor : network.getAllActors()) {
+			transformActor(actor, resourceCache, false);
+		}
+	}
+
+	public static void transformActor(Actor actor, ResourceCache resourceCache,
+			boolean portTransformation) {
 		if (!actor.hasAttribute("no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
@@ -92,8 +101,12 @@ public class XronosTransform {
 					new XronosConstantPropagation()));
 			transformations.add(new XronosParameterPropagation());
 			transformations.add(new DivisionSubstitution());
-			transformations.add(new RepeatPattern(resourceCache));
-			transformations.add(new ScalarPortIO(resourceCache));
+			
+			if (portTransformation) {
+				transformations.add(new RepeatPattern(resourceCache));
+				transformations.add(new ScalarPortIO(resourceCache));
+			}
+			
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new XronosScheduler(resourceCache));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Ecole Polytechnique Fédérale de Lausanne
+ * Copyright (c) 2013, Ecole Polytechnique Fédérale de Lausanne
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -29,41 +29,44 @@
 
 package org.xronos.orcc.design;
 
-import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.Network;
 
 import org.xronos.openforge.app.EngineThread;
 import org.xronos.openforge.app.GenericJob;
 import org.xronos.openforge.app.OptionRegistry;
 import org.xronos.openforge.lim.Design;
-import org.xronos.orcc.design.visitors.DesignActor;
+import org.xronos.orcc.design.visitors.DesignNetwork;
 
 /**
- * This class transforms an Orcc {@link Actor} Object to an OpenForge
+ * This class transforms an Orcc {@link Network} Object to an OpenForge
  * {@link Design} Object
  * 
  * @author Endri Bezati
  */
-public class ActorToDesign {
+public class NetworkToDesign {
+	
 	Design design;
-	Actor actor;
+	
+	Network network;
+	
 	ResourceCache resourceCache;
 
-	public ActorToDesign(Actor actor, ResourceCache resourceCache) {
-		this.actor = actor;
+	public NetworkToDesign(Network network, ResourceCache resourceCache) {
+		this.network = network;
 		this.resourceCache = resourceCache;
 		design = new Design();
 	}
 
 	public Design buildDesign() {
 		// Get Instance name
-		String designName = actor.getName();
+		String designName = network.getName();
 		design.setIDLogical(designName);
 		GenericJob job = EngineThread.getGenericJob();
 		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
 				design.getSearchLabel(), designName);
 
-		DesignActor designVisitor = new DesignActor(design, resourceCache);
-		designVisitor.doSwitch(actor);
+		DesignNetwork designVisitor = new DesignNetwork(design, resourceCache);
+		designVisitor.doSwitch(network);
 
 		return design;
 	}

@@ -29,7 +29,6 @@
 
 package org.xronos.orcc.design;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +37,10 @@ import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.Block;
-import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.Var;
 
 import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
 import org.xronos.openforge.lim.Task;
-import org.xronos.openforge.lim.TaskCall;
 import org.xronos.openforge.lim.memory.Location;
 import org.xronos.orcc.design.visitors.io.CircularBuffer;
 
@@ -63,18 +60,7 @@ public class ResourceCache {
 
 	private Map<Actor, Map<Port, CircularBuffer>> actorInputCircularBuffer = new HashMap<Actor, Map<Port, CircularBuffer>>();
 
-	private Map<Actor, Map<Port, CircularBuffer>> actorOutputCircularBuffer = new HashMap<Actor, Map<Port, CircularBuffer>>();
-
-	/** Map of a Branch Else Block Input Variables **/
-	private Map<Block, List<Var>> elseInputs = new HashMap<Block, List<Var>>();
-
-	/** Map of a Branch Else Block Output Variables **/
-	private Map<Block, List<Var>> elseOutputs = new HashMap<Block, List<Var>>();
-
 	private final Map<Port, ActionIOHandler> ioHandlers = new HashMap<Port, ActionIOHandler>();
-
-	/** Map containing the join node **/
-	private Map<Block, Map<Var, List<Var>>> joinVarMap = new HashMap<Block, Map<Var, List<Var>>>();
 
 	/** Map of a LoopBody Block Input Variables **/
 	private Map<Block, List<Var>> loopBodyInputs = new HashMap<Block, List<Var>>();
@@ -84,65 +70,11 @@ public class ResourceCache {
 
 	private final Map<Var, Location> memLocations = new HashMap<Var, Location>();
 
-	/** Map of a Decision Module Input Variables **/
-	private Map<Block, List<Var>> stmDecision = new HashMap<Block, List<Var>>();
-
-	/** Map of a Loop Module Input Variables **/
-	private Map<Block, List<Var>> stmInputs = new HashMap<Block, List<Var>>();
-
-	/** Map of a Loop Module Output Variables **/
-	private Map<Block, List<Var>> stmOutputs = new HashMap<Block, List<Var>>();
-
-	private final Map<InstCall, TaskCall> taskCalls = new HashMap<InstCall, TaskCall>();
-
-	/** Map of a Branch Then Block Input Variables **/
-	private Map<Block, List<Var>> thenInputs = new HashMap<Block, List<Var>>();
-
-	/** Map of a Branch Then Block Output Variables **/
-	private Map<Block, List<Var>> thenOutputs = new HashMap<Block, List<Var>>();
-
 	public ResourceCache() {
 	}
 
 	public void addActorContainsRepeat(Actor actor, Boolean contains) {
 		actorContainsRepeat.put(actor, contains);
-	}
-
-	public void addBranch(Block block, Map<Block, List<Var>> stmDecision,
-			Map<Block, List<Var>> stmInputs, Map<Block, List<Var>> stmOutputs,
-			Map<Block, List<Var>> thenInputs,
-			Map<Block, List<Var>> thenOutputs,
-			Map<Block, List<Var>> elseInputs,
-			Map<Block, List<Var>> elseOutputs,
-			Map<Block, Map<Var, List<Var>>> joinVarMap) {
-		// Initialize
-		this.stmDecision.put(block, new ArrayList<Var>());
-		this.stmInputs.put(block, new ArrayList<Var>());
-		this.stmOutputs.put(block, new ArrayList<Var>());
-		this.thenInputs.put(block, new ArrayList<Var>());
-		this.thenOutputs.put(block, new ArrayList<Var>());
-		this.elseInputs.put(block, new ArrayList<Var>());
-		this.elseOutputs.put(block, new ArrayList<Var>());
-
-		// Copy Vars
-		copyVars(block, this.stmDecision, stmDecision);
-		copyVars(block, this.stmInputs, stmInputs);
-		copyVars(block, this.stmOutputs, stmOutputs);
-		copyVars(block, this.thenInputs, thenInputs);
-		copyVars(block, this.thenOutputs, thenOutputs);
-		copyVars(block, this.elseInputs, elseInputs);
-		copyVars(block, this.elseOutputs, elseOutputs);
-
-		// Copy JoinVarMap
-		Map<Var, List<Var>> copyMap = new HashMap<Var, List<Var>>();
-		for (Var var : joinVarMap.get(block).keySet()) {
-			List<Var> listVars = new ArrayList<Var>();
-			for (Var groupVar : joinVarMap.get(block).get(var)) {
-				listVars.add(groupVar);
-			}
-			copyMap.put(var, listVars);
-		}
-		this.joinVarMap.put(block, copyMap);
 	}
 
 	public void addIOHandler(Port port, ActionIOHandler io) {
@@ -153,105 +85,8 @@ public class ResourceCache {
 		memLocations.put(var, location);
 	}
 
-	public void addLoop(Block block, Map<Block, List<Var>> stmDecision,
-			Map<Block, List<Var>> stmInputs, Map<Block, List<Var>> stmOutputs,
-			Map<Block, List<Var>> loopBodyInputs,
-			Map<Block, List<Var>> loopBodyOutputs,
-			Map<Block, Map<Var, List<Var>>> joinVarMap) {
-
-		// Initialize
-		this.stmDecision.put(block, new ArrayList<Var>());
-		this.stmInputs.put(block, new ArrayList<Var>());
-		this.stmOutputs.put(block, new ArrayList<Var>());
-		this.loopBodyInputs.put(block, new ArrayList<Var>());
-		this.loopBodyOutputs.put(block, new ArrayList<Var>());
-
-		// Copy Vars
-		copyVars(block, this.stmDecision, stmDecision);
-		copyVars(block, this.stmInputs, stmInputs);
-		copyVars(block, this.stmOutputs, stmOutputs);
-		copyVars(block, this.loopBodyInputs, loopBodyInputs);
-		copyVars(block, this.loopBodyOutputs, loopBodyOutputs);
-
-		// Copy JoinVarMap
-		Map<Var, List<Var>> copyMap = new HashMap<Var, List<Var>>();
-		for (Var var : joinVarMap.get(block).keySet()) {
-			List<Var> listVars = new ArrayList<Var>();
-			for (Var groupVar : joinVarMap.get(block).get(var)) {
-				listVars.add(groupVar);
-			}
-			copyMap.put(var, listVars);
-		}
-		this.joinVarMap.put(block, copyMap);
-	}
-
-	public void addMutex(Block block, Map<Block, List<Var>> stmInputs,
-			Map<Block, List<Var>> stmOutputs) {
-		this.stmInputs.put(block, new ArrayList<Var>());
-		this.stmOutputs.put(block, new ArrayList<Var>());
-		copyVars(block, this.stmInputs, stmInputs);
-		copyVars(block, this.stmOutputs, stmOutputs);
-	}
-
-	public void addTaskCall(InstCall instCall, TaskCall taskCall) {
-		taskCalls.put(instCall, taskCall);
-	}
-
-	public void copyVars(Block block, Map<Block, List<Var>> target,
-			Map<Block, List<Var>> source) {
-		for (Var var : source.get(block)) {
-			if (!target.get(block).contains(var)) {
-				target.get(block).add(var);
-			}
-		}
-	}
-
-	public Boolean getActorContainsRepeat(Actor actor) {
-		if (actorContainsRepeat.containsKey(actor)) {
-			return actorContainsRepeat.get(actor);
-		} else {
-			return false;
-		}
-	}
-
 	public Map<Port, CircularBuffer> getActorInputCircularBuffer(Actor actor) {
 		return actorInputCircularBuffer.get(actor);
-	}
-
-	public Map<Port, CircularBuffer> getActorOutputCircularBuffer(Actor actor) {
-		return actorOutputCircularBuffer.get(actor);
-	}
-
-	public List<Var> getBlockDecisionInput(Block block) {
-		return stmDecision.get(block);
-	}
-
-	public List<Var> getBlockInput(Block block) {
-		return stmInputs.get(block);
-	}
-
-	public List<Var> getBlockOutput(Block block) {
-		return stmOutputs.get(block);
-	}
-
-	public Map<Var, List<Var>> getBlockPhi(Block block) {
-		return joinVarMap.get(block);
-	}
-
-	public List<Var> getBranchElseInput(Block block) {
-		return elseInputs.get(block);
-	}
-
-	public List<Var> getBranchElseOutput(Block block) {
-		return elseOutputs.get(block);
-	}
-
-	public List<Var> getBranchThenInput(Block block) {
-		return thenInputs.get(block);
-	}
-
-	public List<Var> getBranchThenOutput(Block block) {
-		return thenOutputs.get(block);
 	}
 
 	public ActionIOHandler getIOHandler(Port port) {
@@ -283,8 +118,4 @@ public class ResourceCache {
 		this.actorInputCircularBuffer.put(actor, portBuffer);
 	}
 
-	public void setActorOutputCircularBuffer(Actor actor,
-			Map<Port, CircularBuffer> portBuffer) {
-		this.actorOutputCircularBuffer.put(actor, portBuffer);
-	}
 }

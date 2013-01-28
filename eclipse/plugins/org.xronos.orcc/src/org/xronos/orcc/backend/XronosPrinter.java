@@ -174,7 +174,7 @@ public class XronosPrinter {
 				OrccLogger.traceln("Compiling instance: "
 						+ actor.getSimpleName() + " (" + idxInstance + "/"
 						+ totalInstances + ")");
-				XronosTransform.transformActor(actor, resourceCache);
+				XronosTransform.transformActor(actor, resourceCache, true);
 				Engine engine = new DesignEngine(xronosMainJob, actor,
 						resourceCache);
 				engine.begin();
@@ -237,6 +237,69 @@ public class XronosPrinter {
 		}
 
 		return false;
+	}
+
+	public boolean printNetwork(String[] xronosArgs, String rtlPath,
+			Network network, ResourceCache resourceCache) {
+		Forge f = new Forge();
+		GenericJob xronosMainJob = new GenericJob();
+		boolean error = false;
+
+		long t0 = System.currentTimeMillis();
+
+		try {
+			xronosMainJob.setOptionValues(xronosArgs);
+			// Set the Xilinx Part
+			xronosMainJob.getOption(OptionRegistry.XILINX_PART).setValue(
+					CodeLabel.UNSCOPED, "xc2vp30-7-ff1152");
+			f.preprocess(xronosMainJob);
+
+			XronosTransform.transformNetworkActors(network, resourceCache);
+			Engine engine = new DesignEngine(xronosMainJob, network,
+					resourceCache);
+			engine.begin();
+		} catch (NewJob.ForgeOptionException foe) {
+			OrccLogger.severeln("\t command line option error: "
+					+ foe.getMessage());
+			OrccLogger.severeln("");
+			OrccLogger.severeln(OptionRegistry.usage(false));
+			error = true;
+		} catch (ForgeFatalException ffe) {
+			OrccLogger
+					.severeln("\t - failed to compile:Forge compilation ended with fatal error: "
+							+ ffe.getMessage());
+			error = true;
+		} catch (NullPointerException ex) {
+			OrccLogger
+					.severeln("\t - failed to compile: NullPointerException, "
+							+ ex.getMessage());
+			error = true;
+		} catch (NoSuchElementException ex) {
+			OrccLogger
+					.severeln("\t - failed to compile: NoSuchElementException, "
+							+ ex.getMessage());
+			error = true;
+		} catch (UnbalancedAssignmentException ex) {
+			OrccLogger
+					.severeln("\t - failed to compile: UnbalancedAssignmentException, "
+							+ ex.getMessage());
+			error = true;
+		} catch (ArrayIndexOutOfBoundsException ex) {
+			OrccLogger
+					.severeln("\t - failed to compile: ArrayIndexOutOfBoundsException, "
+							+ ex.getMessage());
+			error = true;
+		} catch (Throwable t) {
+			OrccLogger.severeln("\t - failed to compile: " + t.getMessage());
+			error = true;
+		}
+		if (!error) {
+			long t1 = System.currentTimeMillis();
+			OrccLogger.traceln("\t - Compiled in: " + (float) (t1 - t0) / 1000
+					+ "s");
+		}
+
+		return error;
 	}
 
 	/**
