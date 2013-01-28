@@ -36,6 +36,7 @@ import net.sf.orcc.backends.transform.DivisionSubstitution;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
+import net.sf.orcc.backends.transform.LoopUnrolling;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.transform.UnitImporter;
 import net.sf.orcc.df.util.DfSwitch;
@@ -86,6 +87,7 @@ public class XronosTransform {
 		if (!actor.hasAttribute("no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
+			transformations.add(new DfVisitor<Void>(new LoopUnrolling()));
 			transformations.add(new DfVisitor<Void>(
 					new XronosConstantPropagation()));
 			transformations.add(new XronosParameterPropagation());
@@ -107,8 +109,6 @@ public class XronosTransform {
 			transformations.add(new DeadGlobalElimination());
 			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
-
-			transformations.add(new DeadActionEliminaton());
 
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
