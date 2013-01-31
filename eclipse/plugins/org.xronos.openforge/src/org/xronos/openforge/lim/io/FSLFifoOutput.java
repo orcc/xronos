@@ -44,11 +44,11 @@ import org.xronos.openforge.lim.op.SimpleConstant;
 public class FSLFifoOutput extends FifoOutput {
 
 	private final String baseName;
+	private final SimplePin clk;
+	private final SimplePin ctrl;
 	private final SimplePin data;
 	private final SimplePin full;
 	private final SimplePin write;
-	private final SimplePin ctrl;
-	private final SimplePin clk;
 
 	/**
 	 * Constructs a new FSLFifoOutput instance, creating all the necessary pin
@@ -101,26 +101,21 @@ public class FSLFifoOutput extends FifoOutput {
 	}
 
 	/**
-	 * <code>getType</code> returns {@link FifoIF#TYPE_FSL_FIFO}
-	 * 
-	 * @return an <code>int</code> value
-	 */
-	@Override
-	public int getType() {
-		return FifoIF.TYPE_FSL_FIFO;
-	}
-
-	@Override
-	public String getPortBaseName() {
-		return baseName;
-	}
-
-	/**
 	 * Fifo output ports are master queues, this method returns portname_M
 	 */
 	@Override
 	protected String buildPortBaseName(String portName) {
 		return portName + "_M";
+	}
+
+	@Override
+	public SimplePin getAckPin() {
+		return full;
+	}
+
+	@Override
+	public SimplePin getDataPin() {
+		return data;
 	}
 
 	/**
@@ -138,13 +133,13 @@ public class FSLFifoOutput extends FifoOutput {
 	}
 
 	@Override
-	public SimplePin getDataPin() {
-		return data;
+	public String getPortBaseName() {
+		return baseName;
 	}
 
 	@Override
-	public SimplePin getAckPin() {
-		return full;
+	public SimplePin getReadyPin() {
+		return null;
 	}
 
 	@Override
@@ -152,9 +147,14 @@ public class FSLFifoOutput extends FifoOutput {
 		return write;
 	}
 
+	/**
+	 * <code>getType</code> returns {@link FifoIF#TYPE_FSL_FIFO}
+	 * 
+	 * @return an <code>int</code> value
+	 */
 	@Override
-	public SimplePin getReadyPin() {
-		return null;
+	public int getType() {
+		return FifoIF.TYPE_FSL_FIFO;
 	}
 
 }// FSLFifoOutput

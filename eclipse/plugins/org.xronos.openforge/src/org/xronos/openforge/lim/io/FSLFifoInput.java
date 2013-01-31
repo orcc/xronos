@@ -38,10 +38,10 @@ import java.util.Collections;
 public class FSLFifoInput extends FifoInput {
 
 	private final String baseName;
+	private final SimplePin clk;
+	private final SimplePin ctrl;
 	private final SimplePin data;
 	private final SimplePin exists;
-	private final SimplePin ctrl;
-	private final SimplePin clk;
 	private final SimplePin read;
 
 	/**
@@ -80,7 +80,7 @@ public class FSLFifoInput extends FifoInput {
 		read = new SimpleFifoPin(this, 1, pinBaseName + "_READ");
 
 		// The order that these are added here determines the order
-		// they show up in the translated inteface.
+		// they show up in the translated interface.
 		addPin(data);
 		addPin(exists);
 		addPin(read);
@@ -92,26 +92,21 @@ public class FSLFifoInput extends FifoInput {
 	}
 
 	/**
-	 * <code>getType</code> returns {@link FifoIF#TYPE_FSL_FIFO}
-	 * 
-	 * @return an <code>int</code> value
-	 */
-	@Override
-	public int getType() {
-		return FifoIF.TYPE_FSL_FIFO;
-	}
-
-	@Override
-	public String getPortBaseName() {
-		return baseName;
-	}
-
-	/**
 	 * Fifo input ports are slave queues, this method returns portname_S
 	 */
 	@Override
 	protected String buildPortBaseName(String portName) {
 		return portName + "_S";
+	}
+
+	@Override
+	public SimplePin getAckPin() {
+		return read;
+	}
+
+	@Override
+	public SimplePin getDataPin() {
+		return data;
 	}
 
 	/**
@@ -124,8 +119,8 @@ public class FSLFifoInput extends FifoInput {
 	}
 
 	@Override
-	public SimplePin getDataPin() {
-		return data;
+	public String getPortBaseName() {
+		return baseName;
 	}
 
 	@Override
@@ -133,9 +128,14 @@ public class FSLFifoInput extends FifoInput {
 		return exists;
 	}
 
+	/**
+	 * <code>getType</code> returns {@link FifoIF#TYPE_FSL_FIFO}
+	 * 
+	 * @return an <code>int</code> value
+	 */
 	@Override
-	public SimplePin getAckPin() {
-		return read;
+	public int getType() {
+		return FifoIF.TYPE_FSL_FIFO;
 	}
 
 }// FSLFifoInput

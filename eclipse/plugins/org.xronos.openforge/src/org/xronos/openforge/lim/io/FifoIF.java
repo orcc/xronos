@@ -29,7 +29,6 @@ import org.xronos.openforge.lim.Referenceable;
 import org.xronos.openforge.lim.Referencer;
 import org.xronos.openforge.lim.StateHolder;
 
-
 /**
  * FifoIF is a class representing an atomic FIFO interface to a Forged design.
  * The class ties together all the pins necessary to interact with fifo
@@ -47,6 +46,8 @@ public abstract class FifoIF implements Referenceable, StateHolder {
 
 	public static final int TYPE_FSL_FIFO = 1;
 	public static final int TYPE_ACTOR_QUEUE = 2;
+	public static final int TYPE_AXI4_STREAM_FIFO = 3;
+	public static final int TYPE_AXI4_STREAM_ACTOR_QUEUE = 4;
 
 	private int interfaceWidth = -1;
 
@@ -157,13 +158,14 @@ public abstract class FifoIF implements Referenceable, StateHolder {
 	 */
 	@Override
 	public int getSpacing(Referencer from, Referencer to) {
-		if (from instanceof FifoRead)
+		if (from instanceof FifoRead) {
 			return 1;
-		else if (from instanceof FifoWrite)
+		} else if (from instanceof FifoWrite) {
 			return 1;
-		else
+		} else {
 			throw new IllegalArgumentException("Source access to " + this
 					+ " is of unknown type " + from.getClass());
+		}
 	}
 
 	/**
