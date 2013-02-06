@@ -201,6 +201,7 @@ class TclScriptPrinter extends IrSwitch {
 		«ENDFOR» 
 		«FOR port : actor.outputs SEPARATOR "\n"»
 			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_DATA
+			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_ACK
 			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_SEND
 			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_RDY
 		«ENDFOR» 
@@ -240,6 +241,7 @@ class TclScriptPrinter extends IrSwitch {
 		add wave -noupdate -divider -height 20 "Outputs: i_«actor.simpleName»"
 		«FOR port : actor.outputs SEPARATOR "\n"»
 			add wave -label «port.name»_DATA sim:/«simName»/i_«actor.simpleName»/«port.name»_DATA 
+			add wave -label «port.name»_SEND sim:/«simName»/i_«actor.simpleName»/«port.name»_ACK
 			add wave -label «port.name»_SEND sim:/«simName»/i_«actor.simpleName»/«port.name»_SEND
 			add wave -label «port.name»_RDY sim:/«simName»/i_«actor.simpleName»/«port.name»_RDY
 		«ENDFOR» 

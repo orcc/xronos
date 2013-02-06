@@ -608,25 +608,25 @@ class TestbenchPrinter extends IrSwitch {
 							«IF port.type.bool || port.type.sizeInBits == 1»
 							if (input_bit = 1) then
 								assert («port.name»_data = '1')
-								report "on port «port.name» incorrectly value computed : '0' instead of : '1' sequence " & str(sequence_«port.name»)
+								report "on port «port.name» incorrect value computed : '0' instead of : '1' sequence " & str(sequence_«port.name»)
 								severity failure;
 								
 								assert («port.name»_data = '0')
-								report "on port «port.name» correctly value computed : '1' instead of : '1' sequence " & str(sequence_«port.name»)
+								report "on port «port.name» correct value computed : '1' instead of : '1' sequence " & str(sequence_«port.name»)
 								severity note;
 							else
 								assert («port.name»_data = '0')
-								report "on port «port.name» incorrectly value computed : '1' instead of : '0' sequence " & str(sequence_«port.name»)
+								report "on port «port.name» incorrect value computed : '1' instead of : '0' sequence " & str(sequence_«port.name»)
 								severity failure;
 								
 								assert («port.name»_data = '1')
-								report "on port «port.name» correctly value computed : '0' instead of : '0' sequence " & str(sequence_«port.name»)
+								report "on port «port.name» correct value computed : '0' instead of : '0' sequence " & str(sequence_«port.name»)
 								severity note;
 							end if;
 							sequence_«port.name» := sequence_«port.name» + 1;
 							«ELSEIF port.type.int»
 							assert («port.name»_data  = std_logic_vector(to_signed(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» incorrectly value computed : " & str(to_integer(signed(«port.name»_data))) & " instead of :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
+							report "on port «port.name» incorrect value computed : " & str(to_integer(signed(«port.name»_data))) & " instead of :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity failure;
 							
 							assert («port.name»_data /= std_logic_vector(to_signed(input_bit, «port.type.sizeInBits»)))
@@ -635,11 +635,11 @@ class TestbenchPrinter extends IrSwitch {
 							sequence_«port.name» := sequence_«port.name» + 1;
 							«ELSEIF port.type.uint»
 							assert («port.name»_data  = std_logic_vector(to_unsigned(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» incorrectly value computed : " & str(to_integer(signed(«port.name»_data))) & " instead of :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
+							report "on port «port.name» incorrect value computed : " & str(to_unsigned(signed(«port.name»_data))) & " instead of :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity failure;
 							
 							assert («port.name»_data /= std_logic_vector(to_unsigned(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» correct value computed : " & str(to_integer(signed(«port.name»_data))) & " equals :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
+							report "on port «port.name» correct value computed : " & str(to_unsigned(signed(«port.name»_data))) & " equals :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity note;
 							sequence_«port.name» := sequence_«port.name» + 1;
 							«ENDIF»

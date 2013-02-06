@@ -147,8 +147,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	/** Dependency between Components and Done Bus **/
 	protected Map<Bus, Integer> doneBusDependency;
 
-	private Integer listIndexes = 0;
-
 	/** Dependency between Components and Port-Var **/
 	protected Map<Port, Var> portDependency;
 
@@ -585,28 +583,19 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			block.setNonRemovable();
 			Bus result = block.getExit(Exit.DONE).makeDataBus();
 			castOp.getEntries()
-			.get(0)
-			.addDependency(castOp.getDataPort(),
-					new DataDependency(read.getResultBus()));
+					.get(0)
+					.addDependency(castOp.getDataPort(),
+							new DataDependency(read.getResultBus()));
 			result.getPeer()
-			.getOwner()
-			.getEntries()
-			.get(0)
-			.addDependency(result.getPeer(),
-					new DataDependency(castOp.getResultBus()));
+					.getOwner()
+					.getEntries()
+					.get(0)
+					.addDependency(result.getPeer(),
+							new DataDependency(castOp.getResultBus()));
 
 			memPort.addAccess(read, targetLocation);
 
-			Var indexVar = procedure.newTempLocalVariable(
-					IrFactory.eINSTANCE.createTypeInt(32), "index"
-							+ listIndexes);
-			listIndexes++;
-
-			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(indexVar,
-					loadIndexVar);
-			doSwitch(assign);
-
-			PortUtil.mapInDataPorts(block, indexVar, portDependency,
+			PortUtil.mapInDataPorts(block, loadIndexVar, portDependency,
 					portGroupDependency);
 
 			// Check if the load target should be casted
@@ -660,8 +649,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseInstPortRead(InstPortRead portRead) {
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portRead.getPort();
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
-		Boolean blocking = portRead.isBlocking();
-		Component pinRead = ioHandler.getReadAccess(blocking);
+		// Boolean blocking = portRead.isBlocking();
+		Component pinRead = ioHandler.getReadAccess(false);
 		pinRead.setNonRemovable();
 
 		Var pinReadVar = portRead.getTarget().getVariable();
@@ -761,34 +750,12 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 				block.setNonRemovable();
 				Port data = block.makeDataPort();
 				heapWrite
-				.getEntries()
-				.get(0)
-				.addDependency(heapWrite.getValuePort(),
-						new DataDependency(data.getPeer()));
+						.getEntries()
+						.get(0)
+						.addDependency(heapWrite.getValuePort(),
+								new DataDependency(data.getPeer()));
 
 				memPort.addAccess(heapWrite, targetLocation);
-
-				Var indexVar = procedure.newTempLocalVariable(
-						IrFactory.eINSTANCE.createTypeInt(32), "index"
-								+ listIndexes);
-				listIndexes++;
-				currentComponent = new CastOp(32, isSigned);
-
-				PortUtil.mapInDataPorts(currentComponent, storeIndexVar,
-						portDependency, portGroupDependency);
-				Var castedIndexVar = procedure.newTempLocalVariable(
-						IrFactory.eINSTANCE.createTypeInt(32),
-						"casted_" + castIndex + "_"
-								+ storeIndexVar.getIndexedName());
-
-				PortUtil.mapOutDataPorts(currentComponent, castedIndexVar,
-						busDependency, doneBusDependency);
-				componentList.add(currentComponent);
-				castIndex++;
-				// add the assign instruction for each index
-				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
-						indexVar, castedIndexVar);
-				doSwitch(assign);
 
 				IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 						store.getLineNumber());
@@ -796,7 +763,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 				currentComponent = block;
 				List<Var> inVars = new ArrayList<Var>();
-				inVars.add(indexVar);
+				inVars.add(storeIndexVar);
 				inVars.add(valueVar);
 				PortUtil.mapInDataPorts(currentComponent, inVars,
 						portDependency, portGroupDependency);

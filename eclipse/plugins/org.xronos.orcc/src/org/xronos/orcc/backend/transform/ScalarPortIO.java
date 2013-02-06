@@ -120,7 +120,15 @@ public class ScalarPortIO extends DfVisitor<Void> {
 						.createInstPortWrite();
 				portWrite.setPort(port);
 				portWrite.setValue(value);
-				portWrite.setBlocking(false);
+				if (portTokens.containsKey(port)) {
+					if (portTokens.get(port) > 1) {
+						portWrite.setBlocking(true);
+					} else {
+						portWrite.setBlocking(false);
+					}
+				} else {
+					portWrite.setBlocking(false);
+				}
 				portWrite.setLineNumber(store.getLineNumber());
 				BlockBasic block = store.getBlock();
 				int index = store.getBlock().indexOf(store);
@@ -139,6 +147,8 @@ public class ScalarPortIO extends DfVisitor<Void> {
 	private final Map<Var, Port> varToPortMap = new HashMap<Var, Port>();
 
 	private Map<Port, CircularBuffer> CircularBufferInput;
+
+	private Map<Port, Integer> portTokens;
 
 	/** Change Load to portRead if true, change to portPeek otherwise **/
 	private Boolean portRead;
@@ -167,8 +177,10 @@ public class ScalarPortIO extends DfVisitor<Void> {
 					varToPortMap.put(portReadVar, port);
 				}
 			}
-
+			portTokens = new HashMap<Port, Integer>();
 			for (Port port : action.getOutputPattern().getPorts()) {
+				portTokens.put(port,
+						action.getOutputPattern().getNumTokens(port));
 				Var portWriteVar = action.getOutputPattern().getPortToVarMap()
 						.get(port);
 				varToPortMap.put(portWriteVar, port);

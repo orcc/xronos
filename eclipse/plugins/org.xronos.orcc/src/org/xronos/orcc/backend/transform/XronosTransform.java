@@ -101,12 +101,12 @@ public class XronosTransform {
 					new XronosConstantPropagation()));
 			transformations.add(new XronosParameterPropagation());
 			transformations.add(new DivisionSubstitution());
-			
+
 			if (portTransformation) {
 				transformations.add(new RepeatPattern(resourceCache));
 				transformations.add(new ScalarPortIO(resourceCache));
 			}
-			
+
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new XronosScheduler(resourceCache));
@@ -114,7 +114,6 @@ public class XronosTransform {
 					true)));
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
-			// transformations.add(new StoreOnceTransformation());
 
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
@@ -132,6 +131,7 @@ public class XronosTransform {
 					new ControlFlowAnalyzer()));
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
+			// transformations.add(new TypeResizer(false, true, true, false));
 			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
 					true)));
 
