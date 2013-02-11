@@ -44,6 +44,7 @@ import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
+import net.sf.orcc.df.transform.TypeResizer;
 import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.util.OrccLogger;
 
@@ -106,6 +107,7 @@ public class Xronos extends AbstractBackend {
 				false);
 		singleFileGeneration = getAttribute(
 				"org.xronos.orcc.singleFileGeneration", false);
+		fifoSize = getAttribute("net.sf.orcc.fifoSize", 1);
 
 		// Set Paths for RTL
 		rtlPath = path + File.separator + "rtl";
@@ -172,9 +174,9 @@ public class Xronos extends AbstractBackend {
 	@Override
 	protected void doXdfCodeGeneration(Network network) {
 		// instantiate and flattens network
-		new Instantiator(true, 1).doSwitch(network);
+		new Instantiator(true, fifoSize).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
-
+		new TypeResizer(false, true, false, false).doSwitch(network);
 		// Compute the Network Template
 		network.computeTemplateMaps();
 

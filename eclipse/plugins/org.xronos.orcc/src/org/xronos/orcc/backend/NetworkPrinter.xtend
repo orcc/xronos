@@ -594,14 +594,9 @@ class NetworkPrinter extends IrSwitch {
 	
 	def addQeueu(Port srcPort, Port tgtPort, Actor srcInstance, Actor tgtInstance, Connection connection, String prefixIn, String prefixOut){
 		var Integer fifoSize = 1;
-		if (connection.size != null){
-			fifoSize = connection.size;
-		}else{
-			if (options.containsKey("fifoSize")){
-				fifoSize = options.get("fifoSize") as Integer;
-			}
+		if(!prefixIn.equals("no")){
+				fifoSize = connection.size;
 		}
-		
 		'''
 		q_«prefixIn»_«IF tgtInstance !=null»«tgtInstance.simpleName»_«ENDIF»«tgtPort.name» : entity SystemBuilder.Queue(behavioral)
 		generic map (length => «fifoSize», width => «tgtPort.type.sizeInBits»)

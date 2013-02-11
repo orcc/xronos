@@ -39,6 +39,7 @@ import net.sf.orcc.backends.transform.LocalArrayRemoval;
 import net.sf.orcc.backends.transform.LoopUnrolling;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.df.transform.TypeResizer;
 import net.sf.orcc.df.transform.UnitImporter;
 import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.df.util.DfVisitor;
@@ -96,6 +97,7 @@ public class XronosTransform {
 		if (!actor.hasAttribute("no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
+			// transformations.add(new StoreOnceTransformation());
 			transformations.add(new DfVisitor<Void>(new LoopUnrolling()));
 			transformations.add(new DfVisitor<Void>(
 					new XronosConstantPropagation()));
@@ -131,7 +133,7 @@ public class XronosTransform {
 					new ControlFlowAnalyzer()));
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
-			// transformations.add(new TypeResizer(false, true, true, false));
+			transformations.add(new TypeResizer(false, true, false, false));
 			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
 					true)));
 
