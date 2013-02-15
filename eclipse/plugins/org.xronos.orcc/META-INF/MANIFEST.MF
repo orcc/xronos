@@ -24,5 +24,10 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
 Export-Package: org.xronos.orcc.analysis,
  org.xronos.orcc.backend
-Bundle-ClassPath: .,libs/jcommon-1.0.17.jar,libs/jfreechart-1.0.14.jar,libs/junit.jar,libs/yaceb_protobuffer_v0.1.jar,libs/protobuf-java-2.4.1.jar
+Bundle-ClassPath: .,
+ libs/jcommon-1.0.17.jar,
+ libs/jfreechart-1.0.14.jar,
+ libs/junit.jar,
+ libs/protobuf-java-2.4.1.jar,
+ libs/stax-utils.jar
 

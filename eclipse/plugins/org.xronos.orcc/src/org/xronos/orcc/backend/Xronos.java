@@ -49,6 +49,7 @@ import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.util.OrccLogger;
 
 import org.eclipse.core.resources.IFile;
+import org.xronos.orcc.analysis.XronosStaticWeight;
 import org.xronos.orcc.design.ResourceCache;
 
 /**
@@ -192,6 +193,11 @@ public class Xronos extends AbstractBackend {
 		}
 		// Print Testbenches
 		printTestbenches(network);
+
+		// Weight Static Analysis
+		XronosStaticWeight staticWeight = new XronosStaticWeight(
+				network.getName(), rtlPath + File.separator + "report");
+		staticWeight.createStaticWeight();
 	}
 
 	@Override
