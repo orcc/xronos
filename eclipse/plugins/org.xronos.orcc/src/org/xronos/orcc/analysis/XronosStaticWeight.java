@@ -114,6 +114,7 @@ public class XronosStaticWeight {
 				writer.writeStartElement("actor");
 				writer.writeAttribute("name", actor.toLowerCase());
 				Map<String, Integer> actionWeight = weights.get(actor);
+				writer.writeStartElement("actions");
 				for (String action : actionWeight.keySet()) {
 					writer.writeStartElement("action");
 					writer.writeAttribute("name", action.toLowerCase());
@@ -121,6 +122,7 @@ public class XronosStaticWeight {
 							.get(action).toString());
 					writer.writeEndElement();
 				}
+				writer.writeEndElement();
 				writer.writeEndElement();
 			}
 			writer.writeEndElement();
