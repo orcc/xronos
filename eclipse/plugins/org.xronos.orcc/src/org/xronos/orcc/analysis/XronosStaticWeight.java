@@ -112,11 +112,11 @@ public class XronosStaticWeight {
 			writer.writeStartElement("actors");
 			for (String actor : weights.keySet()) {
 				writer.writeStartElement("actor");
-				writer.writeAttribute("name", actor);
+				writer.writeAttribute("name", actor.toLowerCase());
 				Map<String, Integer> actionWeight = weights.get(actor);
 				for (String action : actionWeight.keySet()) {
 					writer.writeStartElement("action");
-					writer.writeAttribute("name", action);
+					writer.writeAttribute("name", action.toLowerCase());
 					writer.writeAttribute("meanWeight", actionWeight
 							.get(action).toString());
 					writer.writeEndElement();

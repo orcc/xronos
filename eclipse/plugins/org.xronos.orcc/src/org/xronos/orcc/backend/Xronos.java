@@ -195,8 +195,8 @@ public class Xronos extends AbstractBackend {
 		printTestbenches(network);
 
 		// Weight Static Analysis
-		XronosStaticWeight staticWeight = new XronosStaticWeight(
-				network.getName(), rtlPath + File.separator + "report");
+		XronosStaticWeight staticWeight = new XronosStaticWeight("weights_"
+				+ network.getSimpleName(), rtlPath + File.separator + "report");
 		staticWeight.createStaticWeight();
 	}
 
