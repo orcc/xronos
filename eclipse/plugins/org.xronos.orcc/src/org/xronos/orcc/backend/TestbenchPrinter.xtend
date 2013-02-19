@@ -136,7 +136,7 @@ class TestbenchPrinter extends IrSwitch {
 		    «FOR port: outputPorts»
 		    «addComponentPort(port,"OUT","IN")»
 		    «ENDFOR»
-		    «IF goDone»
+		    «IF generateWeights»
 		    	«addGoDoneComponentPort((vertex as Network))»
 		    «ENDIF»
 		    CLK: IN std_logic;
