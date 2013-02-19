@@ -217,13 +217,17 @@ class TclScriptPrinter extends IrSwitch {
 	
 	def addNetworkSignalsToWave(Network network){
 		'''
+		«IF testbench»
+			«addNetworkInputSignals(network)»
+		«ENDIF»
+		
+		«addNetworkOuputSignals(network)»
+		
 		«FOR vertex : network.vertices SEPARATOR "\n"»
 		«IF vertex instanceof Actor»
 			«addInstanceIO(network,vertex as Actor)»
 		«ENDIF»
 		«ENDFOR»	
-		
-		«addNetworkOuputSignals(network)»
 		
 		«addNetworkFullFifoSignal(network)»
 		'''
@@ -253,6 +257,26 @@ class TclScriptPrinter extends IrSwitch {
 				add wave -label Done sim:/«simName»/i_«actor.simpleName»/«action.name»_done
 			«ENDFOR»
 		«ENDIF»
+		'''
+	}
+	
+	def addNetworkInputSignals(Network network){
+		var String name = network.simpleName;
+		var String simName;
+		if(testbench){
+			simName = name + "_tb";
+		}else{
+			simName = name;
+		}
+		'''
+		«FOR port : network.inputs SEPARATOR "\n"»
+			add wave -noupdate -divider -height 20 ni_«port.name»
+			add wave sim:/«simName»/«port.name»_DATA
+			«IF (!port.native)»
+				add wave sim:/«simName»/«port.name»_ACK
+				add wave sim:/«simName»/«port.name»_SEND
+			«ENDIF»
+		«ENDFOR»
 		'''
 	}
 	
