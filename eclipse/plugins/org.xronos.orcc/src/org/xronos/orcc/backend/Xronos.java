@@ -49,6 +49,7 @@ import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.util.OrccLogger;
 
 import org.eclipse.core.resources.IFile;
+import org.xronos.orcc.analysis.XronosDynamicWeights;
 import org.xronos.orcc.analysis.XronosStaticWeight;
 import org.xronos.orcc.design.ResourceCache;
 
@@ -198,6 +199,14 @@ public class Xronos extends AbstractBackend {
 		XronosStaticWeight staticWeight = new XronosStaticWeight("weights_"
 				+ network.getSimpleName(), rtlPath + File.separator + "report");
 		staticWeight.createStaticWeight();
+
+		if (generateWeights) {
+			XronosDynamicWeights xronosDynamicWeights = new XronosDynamicWeights(
+					network, testBenchPath);
+			xronosDynamicWeights.getMeanWeights(rtlPath + File.separator
+					+ "report");
+		}
+
 	}
 
 	@Override
@@ -385,11 +394,12 @@ public class Xronos extends AbstractBackend {
 			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
 			xronosPrinter.getOptions().put("generateWeights", generateWeights);
 			// Create the weights path
-			File weightsPath = new File(simPath + File.separator + "weights");
+			File weightsPath = new File(testBenchPath + File.separator
+					+ "weights");
 			if (!weightsPath.exists()) {
 				weightsPath.mkdir();
 			}
-			xronosPrinter.printWeightTclScript(simPath, network);
+			xronosPrinter.printWeightTclScript(testBenchPath, network);
 			xronosPrinter.printSimTclScript(simPath, true, network);
 		}
 

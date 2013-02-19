@@ -382,7 +382,7 @@ public class XronosPrinter {
 
 	public boolean printWeightTclScript(String path, Network network) {
 		try {
-			String file = path + File.separator + "generateWeights_"
+			String file = path + File.separator + "tcl_generate_weights_"
 					+ network.getSimpleName() + ".tcl";
 
 			CharSequence sequence = new TclScriptPrinter()
@@ -401,8 +401,6 @@ public class XronosPrinter {
 	 * 
 	 * @param path
 	 *            the testbench path
-	 * @param goDone
-	 *            generate a GoDone tracer testbench
 	 * @param network
 	 *            a Network
 	 * @return

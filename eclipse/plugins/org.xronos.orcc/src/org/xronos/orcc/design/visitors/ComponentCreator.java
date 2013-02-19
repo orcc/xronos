@@ -676,7 +676,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portWrite.getPort();
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 		// Boolean blocking = portWrite.isBlocking();
-		Component pinWrite = ioHandler.getWriteAccess(true);
+		Component pinWrite = ioHandler.getWriteAccess(false);
 		pinWrite.setNonRemovable();
 
 		ExprVar value = (ExprVar) portWrite.getValue();

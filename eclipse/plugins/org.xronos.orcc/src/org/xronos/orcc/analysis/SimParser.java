@@ -34,71 +34,88 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.df.Action;
-import net.sf.orcc.df.Instance;
+import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
-import net.sf.orcc.graph.Vertex;
+import net.sf.orcc.util.OrccLogger;
 
 public class SimParser {
 
 	private Network network;
 	private String path;
 
-	private Map<Instance, Map<Action, TimeGoDone>> execution;
+	private Map<Actor, Map<Action, List<Integer>>> execution;
 
 	public SimParser(Network network, String path) {
 		this.network = network;
 		this.path = path;
-		this.execution = new HashMap<Instance, Map<Action, TimeGoDone>>();
+		this.execution = new HashMap<Actor, Map<Action, List<Integer>>>();
 	}
 
 	public void createMaps() {
 
-		for (Vertex vertex : network.getVertices()) {
-			if (vertex instanceof Instance) {
-				Instance instance = (Instance) vertex;
-				Map<Action, TimeGoDone> actionsGoDone = new HashMap<Action, TimeGoDone>();
+		for (Actor actor : network.getAllActors()) {
+			Map<Action, List<Integer>> actionTimeGoDone = new HashMap<Action, List<Integer>>();
+			for (Action action : actor.getActions()) {
+				OrccLogger.noticeln("Parsing weight: " + actor.getSimpleName()
+						+ "_" + action.getName());
+				List<Integer> timeGoDone = new ArrayList<Integer>();
 
-				for (Action action : instance.getActor().getActions()) {
-					TimeGoDone timeGoDone = new TimeGoDone();
+				File actionFile = new File(path + File.separator
+						+ actor.getSimpleName() + "_" + action.getName()
+						+ ".txt");
+				try {
+					FileInputStream iStream = new FileInputStream(actionFile);
+					BufferedReader iBuffer = new BufferedReader(
+							new InputStreamReader(iStream));
+					String str;
+					int startTime = 0;
+					Boolean fromOneZero = false;
+					while ((str = iBuffer.readLine()) != null) {
 
-					File actionFile = new File(path + File.separator
-							+ instance.getSimpleName() + "_" + action.getName()
-							+ ".txt");
-					try {
-						FileInputStream iStream = new FileInputStream(
-								actionFile);
-						BufferedReader iBuffer = new BufferedReader(
-								new InputStreamReader(iStream));
-						String str;
-						while ((str = iBuffer.readLine()) != null) {
-							String Time;
-							String Go;
-							String Done;
-							int fIdx = str.indexOf(';', 0);
-							Time = str.substring(0, fIdx);
-							int sIdx = str.indexOf(';', fIdx + 1);
-							Go = str.substring(fIdx + 1, sIdx);
-							int tIdx = str.indexOf(';', sIdx + 1);
-							Done = str.substring(sIdx + 1, tIdx);
-							timeGoDone.put(Integer.decode(Time),
-									Integer.decode(Go), Integer.decode(Done));
+						int fIdx = str.indexOf(';', 0);
+						String stringTime = str.substring(0, fIdx);
+						int sIdx = str.indexOf(';', fIdx + 1);
+						String stringGo = str.substring(fIdx + 1, sIdx);
+						int tIdx = str.indexOf(';', sIdx + 1);
+						String stringDone = str.substring(sIdx + 1, tIdx);
+
+						int intTime = Integer.decode(stringTime);
+						int intGo = Integer.decode(stringGo);
+						int intDone = Integer.decode(stringDone);
+
+						if (intGo == 1 && intDone == 0) {
+							startTime = intTime;
+							fromOneZero = true;
+						} else if (intGo == 1 && intDone == 1) {
+							if (fromOneZero) {
+								timeGoDone.add((intTime - startTime) / 100);
+								startTime = intTime;
+							} else {
+								timeGoDone.add(0);
+							}
+						} else if (intGo == 0 && intDone == 1) {
+							fromOneZero = false;
+							timeGoDone.add((intTime - startTime) / 100);
 						}
-						iBuffer.close();
-						actionsGoDone.put(action, timeGoDone);
-					} catch (IOException e) {
-						e.printStackTrace();
+
 					}
+					iBuffer.close();
+					actionTimeGoDone.put(action, timeGoDone);
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-				execution.put(instance, actionsGoDone);
 			}
+			execution.put(actor, actionTimeGoDone);
 		}
 	}
 
-	public Map<Instance, Map<Action, TimeGoDone>> getExecutionMap() {
+	public Map<Actor, Map<Action, List<Integer>>> getExecutionMap() {
 		return this.execution;
 	}
 
