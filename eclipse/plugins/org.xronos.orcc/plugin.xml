@@ -22,6 +22,13 @@
                id="org.xronos.orcc.singleFileGeneration">
          </option>
       </backend>
+      <backend
+            class="org.xronos.orcc.backend.embedded.Embedded"
+            name="Xronos Embedded CPP">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+      </backend>
    </extension>
    <extension
          point="net.sf.orcc.core.options">
