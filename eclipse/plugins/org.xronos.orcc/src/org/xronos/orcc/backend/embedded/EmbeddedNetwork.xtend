@@ -107,9 +107,6 @@ class EmbeddedNetwork extends NetworkPrinter {
 		project («network.simpleName»)
 		
 		find_package(Threads REQUIRED)
-		if(NOT NO_DISPLAY)
-			find_package(SDL REQUIRED)
-		endif()
 		
 		if(MSVC)
 			set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /MTd /ZI /Ob0 /Od /RTC1")
@@ -128,9 +125,6 @@ class EmbeddedNetwork extends NetworkPrinter {
 		subdirs(./lib)
 
 		include_directories(${EMBEDDEDCPP_INCLUDE_DIR})
-		if(NOT NO_DISPLAY)
-			include_directories(${SDL_INCLUDE_DIR})
-		endif()
 
 		add_executable ( «network.simpleName»
 			src/main.cpp
@@ -142,9 +136,6 @@ class EmbeddedNetwork extends NetworkPrinter {
 
 		set(libraries EmbeddedCPP)
 		
-		if(NOT NO_DISPLAY)
-			set(libraries ${libraries} ${SDL_LIBRARY})
-		endif()
 		
 		set(libraries ${libraries} ${CMAKE_THREAD_LIBS_INIT})
 		target_link_libraries(«network.simpleName» ${libraries})
