@@ -32,7 +32,7 @@ class EmbeddedNetwork extends NetworkPrinter {
 		val content = compileMain
 		val file = new File(targetFolder + File::separator + "main.cpp")
 		
-		if(needToWriteFile(content, file)) {
+		if (!file.exists){
 			OrccUtil::printFile(content, file)
 			return 0
 		} else {
@@ -99,7 +99,7 @@ class EmbeddedNetwork extends NetworkPrinter {
 	'''
 	
 	def compileParameters()
-	'''«FOR param : network.parameters SEPARATOR ", "»«param.type.doSwitch» «param.indexedName»«FOR dim:param.type.dimensions»[«dim»]«ENDFOR»«ENDFOR»'''
+	'''«FOR param : network.parameters SEPARATOR ", "»«param.type.doSwitch» «FOR dim:param.type.dimensions»*«ENDFOR»«param.indexedName»«ENDFOR»'''
 	
 	override compileCmakeLists() '''
 		cmake_minimum_required (VERSION 2.8)
