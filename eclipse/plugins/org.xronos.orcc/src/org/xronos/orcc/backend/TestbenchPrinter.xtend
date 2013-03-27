@@ -545,6 +545,7 @@ class TestbenchPrinter extends IrSwitch {
 	
 	def printNetwork(Network network, Map<String,Object> options){
 		goDone = false
+		generateWeights = false
 		if (options.containsKey("generateWeights")) {
 			generateWeights = options.get("generateWeights") as Boolean
 			goDone = true
