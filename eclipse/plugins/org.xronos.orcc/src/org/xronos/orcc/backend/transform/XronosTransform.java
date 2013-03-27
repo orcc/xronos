@@ -37,6 +37,7 @@ import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
 import net.sf.orcc.backends.transform.LoopUnrolling;
+import net.sf.orcc.backends.transform.StoreOnceTransformation;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.TypeResizer;
@@ -94,10 +95,12 @@ public class XronosTransform {
 
 	public static void transformActor(Actor actor, ResourceCache resourceCache,
 			boolean portTransformation) {
-		if (!actor.hasAttribute("no_generation")) {
+		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
-			// transformations.add(new StoreOnceTransformation());
+			if(!actor.hasAttribute("xronos_no_store_once")){
+				transformations.add(new StoreOnceTransformation());
+			}
 			transformations.add(new DfVisitor<Void>(new LoopUnrolling()));
 			transformations.add(new DfVisitor<Void>(
 					new XronosConstantPropagation()));
