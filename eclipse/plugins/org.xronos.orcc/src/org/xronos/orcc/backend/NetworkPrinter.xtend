@@ -30,18 +30,18 @@
 package org.xronos.orcc.backend
 
 import java.text.SimpleDateFormat
+import java.util.ArrayList
 import java.util.Date
-import java.util.Map
-import net.sf.orcc.df.Network
-import net.sf.orcc.ir.util.IrSwitch
-import net.sf.orcc.df.Connection
+import java.util.HashMap
 import java.util.List
+import java.util.Map
+import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Connection
+import net.sf.orcc.df.Entity
+import net.sf.orcc.df.Network
 import net.sf.orcc.df.Port
 import net.sf.orcc.graph.Vertex
-import java.util.HashMap
-import java.util.ArrayList
-import net.sf.orcc.df.Actor
-import net.sf.orcc.df.Entity
+import net.sf.orcc.ir.util.IrSwitch
 
 /*
  * A VHDL Network printer
@@ -150,12 +150,12 @@ class NetworkPrinter extends IrSwitch {
 				var Actor actor = vertex as Actor;
 				if (!clockDomains.isEmpty()) {
 					if (clockDomains.keySet().contains(
-							actor.getName())) {
-						if (!clockDomains.get(actor.getName())
+							network.label+"_"+actor.getName())) {
+						if (!clockDomains.get(network.label+"_"+actor.getName())
 								.isEmpty()) {
 
 							instanceClockDomain.put(actor, clockDomains
-									.get(actor.getName()));
+									.get(network.label+"_"+actor.getName()));
 						}
 					} else {
 						instanceClockDomain.put(actor, DEFAULT_CLOCK_DOMAIN);
@@ -165,55 +165,54 @@ class NetworkPrinter extends IrSwitch {
 				}
 
 			}
-
-			if (clockDomainsIndex.size() > 1) {
-				connectionsClockDomain = new HashMap<Connection, List<Integer>>();
-				for (Connection connection : network.getConnections()) {
-					if (connection.getSource() instanceof Port) {
+		}	
+		if (clockDomainsIndex.size() > 1 && !instanceClockDomain.empty) {
+			connectionsClockDomain = new HashMap<Connection, List<Integer>>();
+			for (Connection connection : network.getConnections()) {
+				if (connection.getSource() instanceof Port) {
+					var List<Integer> sourceTarget = new ArrayList<Integer>();
+					var int srcIndex = clockDomainsIndex.get(portClockDomain
+							.get(connection.getSource()));
+					var int tgtIndex = clockDomainsIndex
+							.get(instanceClockDomain.get(connection
+									.getTarget()));
+					if (srcIndex != tgtIndex) {
+						sourceTarget.add(0, srcIndex);
+						sourceTarget.add(1, tgtIndex);
+						connectionsClockDomain
+								.put(connection, sourceTarget);
+					}
+				} else {
+					if (connection.getTarget() instanceof Port) {
 						var List<Integer> sourceTarget = new ArrayList<Integer>();
-						var int srcIndex = clockDomainsIndex.get(portClockDomain
-								.get(connection.getSource()));
+						var int srcIndex = clockDomainsIndex
+								.get(instanceClockDomain.get(connection
+										.getSource()));
+						var int tgtIndex = clockDomainsIndex
+								.get(portClockDomain.get(connection
+										.getTarget()));
+						if (srcIndex != tgtIndex) {
+							sourceTarget.add(0, srcIndex);
+							sourceTarget.add(1, tgtIndex);
+							connectionsClockDomain.put(connection,
+									sourceTarget);
+						}
+					} else {
+						var List<Integer> sourceTarget = new ArrayList<Integer>();
+						var int srcIndex = clockDomainsIndex
+								.get(instanceClockDomain.get(connection
+										.getSource()));
 						var int tgtIndex = clockDomainsIndex
 								.get(instanceClockDomain.get(connection
 										.getTarget()));
 						if (srcIndex != tgtIndex) {
 							sourceTarget.add(0, srcIndex);
 							sourceTarget.add(1, tgtIndex);
-							connectionsClockDomain
-									.put(connection, sourceTarget);
+							connectionsClockDomain.put(connection,
+									sourceTarget);
 						}
-					} else {
-						if (connection.getTarget() instanceof Port) {
-							var List<Integer> sourceTarget = new ArrayList<Integer>();
-							var int srcIndex = clockDomainsIndex
-									.get(instanceClockDomain.get(connection
-											.getSource()));
-							var int tgtIndex = clockDomainsIndex
-									.get(portClockDomain.get(connection
-											.getTarget()));
-							if (srcIndex != tgtIndex) {
-								sourceTarget.add(0, srcIndex);
-								sourceTarget.add(1, tgtIndex);
-								connectionsClockDomain.put(connection,
-										sourceTarget);
-							}
-						} else {
-							var List<Integer> sourceTarget = new ArrayList<Integer>();
-							var int srcIndex = clockDomainsIndex
-									.get(instanceClockDomain.get(connection
-											.getSource()));
-							var int tgtIndex = clockDomainsIndex
-									.get(instanceClockDomain.get(connection
-											.getTarget()));
-							if (srcIndex != tgtIndex) {
-								sourceTarget.add(0, srcIndex);
-								sourceTarget.add(1, tgtIndex);
-								connectionsClockDomain.put(connection,
-										sourceTarget);
-							}
-						}
-
 					}
+
 				}
 			}
 		}
