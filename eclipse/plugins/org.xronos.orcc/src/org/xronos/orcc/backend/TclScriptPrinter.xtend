@@ -36,6 +36,7 @@ import net.sf.orcc.df.Network
 import net.sf.orcc.ir.util.IrSwitch
 import net.sf.orcc.graph.Vertex
 import net.sf.orcc.df.Actor
+import java.util.HashMap
 
 /*
  * A ModelSim TCL script printer
@@ -48,6 +49,9 @@ class TclScriptPrinter extends IrSwitch {
 	var Boolean xilinxPrimitives = false;
 	var Boolean testbench = false;
 	var Boolean generateGoDone = false;
+	
+	var Map<String, Integer> clockDomainsIndex;
+	var String DEFAULT_CLOCK_DOMAIN = "CLK";	
 	
 	var Network network;
 	
@@ -176,7 +180,14 @@ class TclScriptPrinter extends IrSwitch {
 			
 		## Add clock(s) and reset signal
 		add wave -noupdate -divider -height 20 "CLK & RESET"
-		add wave sim:/«simName»/CLK
+		
+		«IF vertex instanceof Network»
+			«FOR string: clockDomainsIndex.keySet»
+				add wave sim:/«simName»/«string»
+		    «ENDFOR»
+		«ELSE»
+			add wave sim:/«simName»/CLK
+		«ENDIF»
 		add wave sim:/«simName»/RESET
 		
 		## Change radix to decimal
@@ -345,6 +356,13 @@ class TclScriptPrinter extends IrSwitch {
 		}else{
 			rtlPath = "$Rtl";
 		}
+		
+		var Map<String,String> clkDomains = new HashMap<String,String>(); 
+		
+		if (options.containsKey("clkDomains")) {
+			clkDomains = options.get("clkDomains") as Map<String,String>; 
+		}
+		computeNetworkClockDomains(network,clkDomains);
 		''' 			
 		«headerComments(network, "Simulation Launch")»
 		
@@ -391,6 +409,15 @@ class TclScriptPrinter extends IrSwitch {
 		}else{
 			rtlPath = "$Rtl";
 		}
+		
+		
+		var Map<String,String> clkDomains = new HashMap<String,String>(); 
+		
+		if (options.containsKey("clkDomains")) {
+			clkDomains = options.get("clkDomains") as Map<String,String>; 
+		}
+		computeNetworkClockDomains(network,clkDomains);
+		
 		''' 			
 		«headerComments(network,"Testbench")»
 		
@@ -434,4 +461,23 @@ class TclScriptPrinter extends IrSwitch {
 		«addInstanceSignalsToWave(actor)»
 		'''
 	}
+	
+	def void computeNetworkClockDomains(Network network,
+			Map<String, String> clockDomains) {
+		clockDomainsIndex = new HashMap<String, Integer>();
+		// For each instance on the network give the clock domain specified by
+		// the mapping configuration tab or if not give the default clock domain
+		var int clkIndex = 0;
+		clockDomainsIndex.put(DEFAULT_CLOCK_DOMAIN, clkIndex);
+		clkIndex = clkIndex + 1;
+
+		for (String string : clockDomains.values()) {
+			if (!string.isEmpty() && !clockDomainsIndex.containsKey(string)) {
+				clockDomainsIndex.put(string, clkIndex);
+				clkIndex = clkIndex + 1;
+			}
+		}
+	}
+	
+	
 }

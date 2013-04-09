@@ -37,6 +37,7 @@ import net.sf.orcc.graph.Vertex
 import net.sf.orcc.df.Port
 import java.util.List
 import net.sf.orcc.df.Actor
+import java.util.HashMap
 
 /*
  * A VHDL Testbench printer
@@ -46,6 +47,14 @@ import net.sf.orcc.df.Actor
 class TestbenchPrinter extends IrSwitch {
 	var Boolean goDone;
 	var Boolean generateWeights;
+	
+	/**
+	 * Contains a Map which indicates the index of the given clock
+	 */
+
+	var Map<String, Integer> clockDomainsIndex;
+	var String DEFAULT_CLOCK_DOMAIN = "CLK";	
+	
 	def headerComments(Object object, String string){
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
@@ -139,7 +148,13 @@ class TestbenchPrinter extends IrSwitch {
 		    «IF generateWeights»
 		    	«addGoDoneComponentPort((vertex as Network))»
 		    «ENDIF»
+		    «IF vertex instanceof Network»
+		    	«FOR string: clockDomainsIndex.keySet»
+		    		«string» : in std_logic;
+		    	«ENDFOR»
+		    «ELSE»
 		    CLK: IN std_logic;
+		    «ENDIF»
 		    RESET: IN std_logic);
 		end component «name»;
 		'''
@@ -194,10 +209,17 @@ class TestbenchPrinter extends IrSwitch {
 		-----------------------------------------------------------------------
 		-- Achitecure signals & constants
 		-----------------------------------------------------------------------
-		constant PERIOD : time := 100 ns;
-		constant DUTY_CYCLE : real := 0.5;
-		constant OFFSET : time := 100 ns;
-		
+		«IF vertex instanceof Network»
+			«FOR string: clockDomainsIndex.keySet SEPARATOR "\n"»
+				constant «string»_PERIOD : time := 100 ns;
+				constant «string»_DUTY_CYCLE : real := 0.5;
+			«ENDFOR»
+			constant OFFSET : time := 100 ns;
+		«ELSE»
+			constant PERIOD : time := 100 ns;
+			constant DUTY_CYCLE : real := 0.5;
+			constant OFFSET : time := 100 ns;
+		«ENDIF»
 		-- Severity level and testbench type types
 		type severity_level is (note, warning, error, failure);
 		type tb_type is (after_reset, read_file, CheckRead);
@@ -262,7 +284,13 @@ class TestbenchPrinter extends IrSwitch {
 		«ENDIF»
 		
 		signal count : integer range 255 downto 0 := 0;
-		signal clk : std_logic := '0';
+		«IF vertex instanceof Network»
+			«FOR string: clockDomainsIndex.keySet»
+				signal «string» : std_logic := '0';
+			«ENDFOR»
+		«ELSE»
+			signal CLK : std_logic := '0';
+		«ENDIF»
 		signal reset : std_logic := '0';
 		'''
 	}
@@ -313,7 +341,14 @@ class TestbenchPrinter extends IrSwitch {
 					«ENDFOR»
 				«ENDFOR»
 			«ENDIF»
-			clk => clk,
+			
+			«IF vertex instanceof Network»
+				«FOR string: clockDomainsIndex.keySet»
+					«string» => «string»,
+				«ENDFOR»
+		    «ELSE»
+				CLK => CLK,
+			«ENDIF»
 			reset => reset);
 		
 		-- Input(s) queues
@@ -340,40 +375,56 @@ class TestbenchPrinter extends IrSwitch {
 			IN_RDY => «port.name»_rdy,
 			IN_COUNT => «port.name»_count,
 
-			clk => clk,
+			CLK => CLK,
 			reset => reset);
 		«ENDFOR»
 	
 		-- Clock process
-		clockProcess : process
-		begin
-		wait for OFFSET;
-			clock_LOOP : loop
-				clk <= '0';
-				wait for (PERIOD - (PERIOD * DUTY_CYCLE));
-				clk <= '1';
-				wait for (PERIOD * DUTY_CYCLE);
-			end loop clock_LOOP;
-		end process;
-	
+		
+		«IF vertex instanceof Network»
+			«FOR string: clockDomainsIndex.keySet SEPARATOR "\n"»
+				«string»_clockProcess : process
+					begin
+					wait for OFFSET;
+						clockLOOP : loop
+							«string» <= '0';
+							wait for («string»_PERIOD - («string»_PERIOD * «string»_DUTY_CYCLE));
+							«string» <= '1';
+							wait for («string»_PERIOD * «string»_DUTY_CYCLE);
+						end loop clockLOOP;
+				end process;
+			«ENDFOR»
+		«ELSE»
+			clockProcess : process
+			begin
+			wait for OFFSET;
+				clockLOOP : loop
+					CLK <= '0';
+					wait for (PERIOD - (PERIOD * DUTY_CYCLE));
+					CLK <= '1';
+					wait for (PERIOD * DUTY_CYCLE);
+				end loop clockLOOP;
+			end process;
+		«ENDIF»
+		
 		-- Reset process
 		resetProcess : process
 		begin
 			wait for OFFSET;
 			-- reset state for 100 ns.
-			reset <= '1';
+			RESET <= '1';
 			wait for 100 ns;
-			reset <= '0';
+			RESET <= '0';
 			wait;
 		end process;
 	
 		
 		-- Input(s) Waveform Generation
-		WaveGen_Proc_In : process (clk)
+		WaveGen_Proc_In : process (CLK)
 			variable Input_bit : integer range 2147483647 downto - 2147483648;
 			variable line_number : line;
 		begin
-			if rising_edge(clk) then
+			if rising_edge(CLK) then
 			«FOR port: inputPorts SEPARATOR "\n"»
 			«IF (!port.native)»
 				-- Input port: «port.name» Waveform Generation
@@ -446,14 +497,14 @@ class TestbenchPrinter extends IrSwitch {
 			«ENDIF»
 		«ENDFOR»
 		
-		WaveGen_Proc_Out : process (clk)
+		WaveGen_Proc_Out : process (CLK)
 			variable Input_bit   : integer range 2147483647 downto - 2147483648;
 			variable line_number : line;
 			«FOR port_out: outputPorts SEPARATOR "\n"»
 			variable sequence_«port_out.name» : integer := 0;
 			«ENDFOR»
 		begin
-			if (rising_edge(clk)) then
+			if (rising_edge(CLK)) then
 			«FOR port: outputPorts SEPARATOR "\n"»
 			«IF (!port.native)»
 			-- Output port: «port.name» Waveform Generation
@@ -550,6 +601,13 @@ class TestbenchPrinter extends IrSwitch {
 			generateWeights = options.get("generateWeights") as Boolean
 			goDone = true
 		}
+		var Map<String,String> clkDomains = new HashMap<String,String>(); 
+		
+		if (options.containsKey("clkDomains")) {
+			clkDomains = options.get("clkDomains") as Map<String,String>; 
+		}
+		computeNetworkClockDomains(network,clkDomains);
+		
 		'''
 		«headerComments(network,"")»
 		
@@ -560,5 +618,23 @@ class TestbenchPrinter extends IrSwitch {
 		«addArchitecture(network)»
 		'''
 	}
+	
+	def void computeNetworkClockDomains(Network network,
+			Map<String, String> clockDomains) {
+		clockDomainsIndex = new HashMap<String, Integer>();
+		// For each instance on the network give the clock domain specified by
+		// the mapping configuration tab or if not give the default clock domain
+		var int clkIndex = 0;
+		clockDomainsIndex.put(DEFAULT_CLOCK_DOMAIN, clkIndex);
+		clkIndex = clkIndex + 1;
+
+		for (String string : clockDomains.values()) {
+			if (!string.isEmpty() && !clockDomainsIndex.containsKey(string)) {
+				clockDomainsIndex.put(string, clkIndex);
+				clkIndex = clkIndex + 1;
+			}
+		}
+	}
+	
 	
 }

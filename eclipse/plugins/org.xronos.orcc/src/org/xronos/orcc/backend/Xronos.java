@@ -404,6 +404,7 @@ public class Xronos extends AbstractBackend {
 		}
 
 		// print the network VHDL Testbech sourcefile
+		xronosPrinter.getOptions().put("clkDomains", clkDomains);
 		xronosPrinter.printTestbench(tbVhdPath, network);
 
 		// Print the network testbench TCL ModelSim simulation script
