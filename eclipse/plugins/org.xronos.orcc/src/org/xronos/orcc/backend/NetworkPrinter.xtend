@@ -151,11 +151,12 @@ class NetworkPrinter extends IrSwitch {
 				if (!clockDomains.isEmpty()) {
 					if (clockDomains.keySet().contains(
 							network.label+"_"+actor.getName())) {
-						if (!clockDomains.get(network.label+"_"+actor.getName())
-								.isEmpty()) {
-
-							instanceClockDomain.put(actor, clockDomains
-									.get(network.label+"_"+actor.getName()));
+						var String domain = clockDomains.get(network.label+"_"+actor.getName());
+							
+						if(domain.equals("")){
+							instanceClockDomain.put(actor, DEFAULT_CLOCK_DOMAIN);
+						}else{
+							instanceClockDomain.put(actor, domain);
 						}
 					} else {
 						instanceClockDomain.put(actor, DEFAULT_CLOCK_DOMAIN);
@@ -298,7 +299,7 @@ class NetworkPrinter extends IrSwitch {
 			 «ENDIF»
 			 -- Clock(s) and Reset
 			 «FOR string: clockDomainsIndex.keySet SEPARATOR "\n"»
-			 «string» : in std_logic;
+			 	«string» : in std_logic;
 			 «ENDFOR»
 			 RESET : in std_logic);
 		end entity «network.simpleName»;
@@ -595,9 +596,9 @@ class NetworkPrinter extends IrSwitch {
 		var Integer fifoSize = 1;
 		if(!prefixIn.equals("no")){
 				fifoSize = connection.size;
-		}
+		} 
 		'''
-		q_«prefixIn»_«IF tgtInstance !=null»«tgtInstance.simpleName»_«ENDIF»«tgtPort.name» : entity SystemBuilder.Queue(behavioral)
+		q_«prefixIn»_«IF tgtInstance !=null»«tgtInstance.simpleName»_«ENDIF»«tgtPort.name» : entity SystemBuilder.Queue«IF connectionsClockDomain.containsKey(connection)»_Async«ENDIF»(behavioral)
 		generic map (length => «fifoSize», width => «tgtPort.type.sizeInBits»)
 		port map(
 			-- Queue Out
