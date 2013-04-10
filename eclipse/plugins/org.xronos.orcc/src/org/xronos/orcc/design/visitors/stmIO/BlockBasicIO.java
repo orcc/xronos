@@ -42,7 +42,6 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstPhi;
-import net.sf.orcc.ir.InstSpecific;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
@@ -207,14 +206,6 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 	}
 
 	@Override
-	public Void caseInstSpecific(InstSpecific object) {
-		if (object instanceof InstCast) {
-			return caseInstCast((InstCast) object);
-		}
-		return null;
-	}
-
-	@Override
 	public Void caseInstStore(InstStore store) {
 		// Visit source
 		doSwitch(store.getValue());
@@ -247,6 +238,8 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 			return caseInstPortRead((InstPortRead) object);
 		} else if (object instanceof InstPortWrite) {
 			return caseInstPortWrite((InstPortWrite) object);
+		} else if (object instanceof InstCast) {
+			return caseInstCast((InstCast) object);
 		}
 		return null;
 	}

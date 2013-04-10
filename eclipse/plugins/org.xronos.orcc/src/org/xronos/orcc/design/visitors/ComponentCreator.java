@@ -51,7 +51,6 @@ import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstPhi;
 import net.sf.orcc.ir.InstReturn;
-import net.sf.orcc.ir.InstSpecific;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
@@ -696,15 +695,6 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	}
 
 	@Override
-	public List<Component> caseInstSpecific(InstSpecific object) {
-		if (object instanceof InstCast) {
-			return caseInstCast((InstCast) object);
-		}
-
-		return null;
-	}
-
-	@Override
 	public List<Component> caseInstStore(InstStore store) {
 		Var targetVar = store.getTarget().getVariable();
 
@@ -808,7 +798,10 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			return caseInstPortStatus((InstPortStatus) object);
 		} else if (object instanceof InstPortWrite) {
 			return caseInstPortWrite((InstPortWrite) object);
+		} else if (object instanceof InstCast) {
+			return caseInstCast((InstCast) object);
 		}
+
 		return super.defaultCase(object);
 	}
 

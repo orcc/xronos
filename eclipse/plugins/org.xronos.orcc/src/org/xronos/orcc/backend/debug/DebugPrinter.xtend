@@ -11,9 +11,9 @@ import net.sf.orcc.ir.BlockWhile
 import net.sf.orcc.ir.ExprVar
 import net.sf.orcc.ir.Expression
 import net.sf.orcc.ir.InstPhi
-import net.sf.orcc.ir.InstSpecific
 import net.sf.orcc.ir.Procedure
 import net.sf.orcc.ir.Var
+import net.sf.orcc.util.OrccUtil
 import org.eclipse.emf.ecore.EObject
 import org.xronos.orcc.design.ResourceCache
 import org.xronos.orcc.design.visitors.stmIO.BranchIO
@@ -23,7 +23,6 @@ import org.xronos.orcc.ir.InstPortPeek
 import org.xronos.orcc.ir.InstPortRead
 import org.xronos.orcc.ir.InstPortStatus
 import org.xronos.orcc.ir.InstPortWrite
-import net.sf.orcc.util.OrccUtil
 
 class DebugPrinter extends InstancePrinter {
 	
@@ -65,12 +64,6 @@ class DebugPrinter extends InstancePrinter {
 	'''	
 	}
 	
-	override caseInstSpecific(InstSpecific inst)'''
-	«IF inst instanceof InstCast»
-		«caseInstCast(inst as InstCast)»
-	«ENDIF»
-	'''
-	
 	def caseInstCast(InstCast instCast)'''
 	«instCast.target.variable.indexedName» = «instCast.source.variable.indexedName»;
 	'''
@@ -87,6 +80,8 @@ class DebugPrinter extends InstancePrinter {
 			«caseInstPortStatus(object as InstPortStatus)»
 		«ELSEIF (object instanceof InstPortWrite)»
 			«caseInstPortWrite(object as InstPortWrite)»
+		«ELSEIF object instanceof InstCast»
+			«caseInstCast(object as InstCast)»
 		«ENDIF»
 	'''
 	}
