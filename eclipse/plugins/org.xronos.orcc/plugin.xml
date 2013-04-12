@@ -4,8 +4,15 @@
    <extension
          point="net.sf.orcc.backends.backends">
       <backend
+            class="org.xronos.orcc.backend.embedded.Embedded"
+            name="Xronos Embedded CPP">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+      </backend>
+      <backend
             class="org.xronos.orcc.backend.Xronos"
-            name="Verilog (Xronos)">
+            name="Xronos Verilog">
          <option
                id="net.sf.orcc.plugins.compileXDF">
          </option>
@@ -20,13 +27,6 @@
          </option>
          <option
                id="org.xronos.orcc.singleFileGeneration">
-         </option>
-      </backend>
-      <backend
-            class="org.xronos.orcc.backend.embedded.Embedded"
-            name="Xronos Embedded CPP">
-         <option
-               id="net.sf.orcc.plugins.compileXDF">
          </option>
       </backend>
    </extension>

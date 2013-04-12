@@ -150,7 +150,7 @@ class TestbenchPrinter extends IrSwitch {
 		    «ENDIF»
 		    «IF vertex instanceof Network»
 		    	«FOR string: clockDomainsIndex.keySet»
-		    	«string» : in std_logic;
+		    		«string» : in std_logic;
 		    	«ENDFOR»
 		    «ELSE»
 		    CLK: IN std_logic;
