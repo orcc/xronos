@@ -66,15 +66,17 @@ import org.xronos.orcc.design.ResourceCache;
  */
 
 public class XronosPrinter {
-	/** The options given to the printer **/
-	protected Map<String, Object> options;
+	static public long getLastModifiedHierarchy(Actor actor) {
+		long actorModified = 0;
 
-	public XronosPrinter() {
-		options = new HashMap<String, Object>();
-	}
-
-	public XronosPrinter(Boolean keepUnchangedFiles) {
-		this();
+		if (actor.getFileName() == null) {
+			// if source file does not exist, force to generate
+			actorModified = Long.MAX_VALUE;
+		} else {
+			IFile file = actor.getFile();
+			actorModified = file.getLocalTimeStamp();
+		}
+		return actorModified;
 	}
 
 	/**
@@ -122,17 +124,15 @@ public class XronosPrinter {
 		}
 	}
 
-	static public long getLastModifiedHierarchy(Actor actor) {
-		long actorModified = 0;
+	/** The options given to the printer **/
+	protected Map<String, Object> options;
 
-		if (actor.getFileName() == null) {
-			// if source file does not exist, force to generate
-			actorModified = Long.MAX_VALUE;
-		} else {
-			IFile file = actor.getFile();
-			actorModified = file.getLocalTimeStamp();
-		}
-		return actorModified;
+	public XronosPrinter() {
+		options = new HashMap<String, Object>();
+	}
+
+	public XronosPrinter(Boolean keepUnchangedFiles) {
+		this();
 	}
 
 	/**
@@ -164,7 +164,7 @@ public class XronosPrinter {
 		boolean error = false;
 
 		long t0 = System.currentTimeMillis();
-		if (!actor.hasAttribute("no_generation")) {
+		if (!actor.hasAttribute("xronos_no_generation")) {
 			try {
 				xronosMainJob.setOptionValues(xronosArgs);
 				// Set the Xilinx Part
@@ -239,6 +239,30 @@ public class XronosPrinter {
 		return false;
 	}
 
+	/**
+	 * This method prints a VHDL representation of a network
+	 * 
+	 * @param rtlPath
+	 *            the RTL path
+	 * @param network
+	 *            a Network
+	 * @return
+	 */
+	public boolean printNetwork(String rtlPath, Network network) {
+		String file = rtlPath + File.separator + network.getSimpleName()
+				+ ".vhd";
+		CharSequence sequence = new NetworkPrinter().printNetwork(network,
+				options);
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		return false;
+	}
+
 	public boolean printNetwork(String[] xronosArgs, String rtlPath,
 			Network network, ResourceCache resourceCache) {
 		Forge f = new Forge();
@@ -302,21 +326,15 @@ public class XronosPrinter {
 		return error;
 	}
 
-	/**
-	 * This method prints a VHDL representation of a network
-	 * 
-	 * @param rtlPath
-	 *            the RTL path
-	 * @param network
-	 *            a Network
-	 * @return
-	 */
-	public boolean printNetwork(String rtlPath, Network network) {
-		String file = rtlPath + File.separator + network.getSimpleName()
-				+ ".vhd";
-		CharSequence sequence = new NetworkPrinter().printNetwork(network,
-				options);
+	public boolean printSimTclScript(String path, Boolean weights,
+			Network network) {
 		try {
+			String prefix = weights ? "sim_goDone_" : "sim_";
+			String file = path + File.separator + prefix
+					+ network.getSimpleName() + ".tcl";
+
+			CharSequence sequence = new TclScriptPrinter()
+					.printNetworkTclScript(network, options);
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
 			ps.close();
@@ -362,31 +380,20 @@ public class XronosPrinter {
 		return false;
 	}
 
-	public boolean printSimTclScript(String path, Boolean weights,
-			Network network) {
+	/**
+	 * This method prints a VHDL testbench for a given Instance
+	 * 
+	 * @param path
+	 *            the testbench path
+	 * @param instance
+	 *            a Instance
+	 * @return
+	 */
+	public boolean printTestbench(String path, Actor actor) {
+		String file = path + File.separator + actor.getSimpleName() + "_tb.vhd";
+		CharSequence sequence = new TestbenchPrinter().printInstance(actor,
+				options);
 		try {
-			String prefix = weights ? "sim_goDone_" : "sim_";
-			String file = path + File.separator + prefix
-					+ network.getSimpleName() + ".tcl";
-
-			CharSequence sequence = new TclScriptPrinter()
-					.printNetworkTclScript(network, options);
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		return false;
-	}
-
-	public boolean printWeightTclScript(String path, Network network) {
-		try {
-			String file = path + File.separator + "tcl_generate_weights_"
-					+ network.getSimpleName() + ".tcl";
-
-			CharSequence sequence = new TclScriptPrinter()
-					.printNetworkTclScript(network, options);
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
 			ps.close();
@@ -421,20 +428,13 @@ public class XronosPrinter {
 		return false;
 	}
 
-	/**
-	 * This method prints a VHDL testbench for a given Instance
-	 * 
-	 * @param path
-	 *            the testbench path
-	 * @param instance
-	 *            a Instance
-	 * @return
-	 */
-	public boolean printTestbench(String path, Actor actor) {
-		String file = path + File.separator + actor.getSimpleName() + "_tb.vhd";
-		CharSequence sequence = new TestbenchPrinter().printInstance(actor,
-				options);
+	public boolean printWeightTclScript(String path, Network network) {
 		try {
+			String file = path + File.separator + "tcl_generate_weights_"
+					+ network.getSimpleName() + ".tcl";
+
+			CharSequence sequence = new TclScriptPrinter()
+					.printNetworkTclScript(network, options);
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
 			ps.close();

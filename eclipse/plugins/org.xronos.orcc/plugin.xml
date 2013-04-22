@@ -28,6 +28,9 @@
          <option
                id="org.xronos.orcc.singleFileGeneration">
          </option>
+         <option
+               id="org.xronos.orcc.importBufferSize">
+         </option>
       </backend>
    </extension>
    <extension
@@ -57,6 +60,23 @@
             id="org.xronos.orcc.xilinxPrimitives"
             name="Copy and compile Xilinx Primitives (Don&apos;t use unisim Lib)">
          <checkBox></checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            description="Import network queue  size  from a file"
+            id="org.xronos.orcc.importBufferSize"
+            name="Import network queue  size  from a file">
+         <checkBox>
+            <option
+                  id="org.xronos.orcc.bufferSizeFile"
+                  name="File">
+               <browseFile
+                     extension="*.ybm"
+                     folder="false"
+                     workspace="false">
+               </browseFile>
+            </option>
+         </checkBox>
       </option>
    </extension>
 

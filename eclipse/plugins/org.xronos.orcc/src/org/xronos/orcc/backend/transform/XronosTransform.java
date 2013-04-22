@@ -64,41 +64,12 @@ import org.xronos.orcc.design.visitors.XronosScheduler;
  */
 public class XronosTransform {
 
-	private final Procedure procedure;
-
-	public XronosTransform(Procedure procedure) {
-		this.procedure = procedure;
-	}
-
-	public Procedure transformProcedure(ResourceCache resourceCache) {
-		// Add SSA transformation
-		new XronosSSA().doSwitch(procedure);
-		// Add missing Phi values assign
-		new PhiFixer().doSwitch(procedure);
-		// Add Literal Integers
-		new XronosLiteralIntegersAdder().doSwitch(procedure);
-		// Three address Code
-		new XronosTac().doSwitch(procedure);
-		// Add Literal Integers
-		new XronosLiteralIntegersAdder().doSwitch(procedure);
-		// Cast Adder
-		new CastAdder(false, false).doSwitch(procedure);
-		return procedure;
-	}
-
-	public static void transformNetworkActors(Network network,
-			ResourceCache resourceCache) {
-		for (Actor actor : network.getAllActors()) {
-			transformActor(actor, resourceCache, false);
-		}
-	}
-
 	public static void transformActor(Actor actor, ResourceCache resourceCache,
 			boolean portTransformation) {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
-			if(!actor.hasAttribute("xronos_no_store_once")){
+			if (!actor.hasAttribute("xronos_no_store_once")) {
 				transformations.add(new StoreOnceTransformation());
 			}
 			transformations.add(new DfVisitor<Void>(new LoopUnrolling()));
@@ -151,6 +122,35 @@ public class XronosTransform {
 			}
 		}
 
+	}
+
+	public static void transformNetworkActors(Network network,
+			ResourceCache resourceCache) {
+		for (Actor actor : network.getAllActors()) {
+			transformActor(actor, resourceCache, false);
+		}
+	}
+
+	private final Procedure procedure;
+
+	public XronosTransform(Procedure procedure) {
+		this.procedure = procedure;
+	}
+
+	public Procedure transformProcedure(ResourceCache resourceCache) {
+		// Add SSA transformation
+		new XronosSSA().doSwitch(procedure);
+		// Add missing Phi values assign
+		new PhiFixer().doSwitch(procedure);
+		// Add Literal Integers
+		new XronosLiteralIntegersAdder().doSwitch(procedure);
+		// Three address Code
+		new XronosTac().doSwitch(procedure);
+		// Add Literal Integers
+		new XronosLiteralIntegersAdder().doSwitch(procedure);
+		// Cast Adder
+		new CastAdder(false, false).doSwitch(procedure);
+		return procedure;
 	}
 
 }

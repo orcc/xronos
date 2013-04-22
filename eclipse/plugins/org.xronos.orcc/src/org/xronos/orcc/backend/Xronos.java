@@ -51,6 +51,7 @@ import net.sf.orcc.util.OrccLogger;
 import org.eclipse.core.resources.IFile;
 import org.xronos.orcc.analysis.XronosDynamicWeights;
 import org.xronos.orcc.analysis.XronosStaticWeight;
+import org.xronos.orcc.backend.transform.NetworkBufferSizeImporter;
 import org.xronos.orcc.design.ResourceCache;
 
 /**
@@ -70,6 +71,9 @@ public class Xronos extends AbstractBackend {
 
 	/** The used Xilinx FPGA Name **/
 	private String fpgaName;
+
+	/** Import buffer size file **/
+	private boolean importBufferSize;
 
 	/** Generate Verilog files with Go And Done signal on Top Module **/
 	private boolean generateGoDone;
@@ -109,6 +113,8 @@ public class Xronos extends AbstractBackend {
 				false);
 		singleFileGeneration = getAttribute(
 				"org.xronos.orcc.singleFileGeneration", false);
+		importBufferSize = getAttribute("org.xronos.orcc.importBufferSize",
+				false);
 		fifoSize = getAttribute("net.sf.orcc.fifoSize", 1);
 
 		// Set Paths for RTL
@@ -178,6 +184,13 @@ public class Xronos extends AbstractBackend {
 		// instantiate and flattens network
 		new Instantiator(true, fifoSize).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
+
+		if (importBufferSize) {
+			String bufferSzeFile = getAttribute(
+					"org.xronos.orcc.bufferSizeFile", "");
+			new NetworkBufferSizeImporter(bufferSzeFile).doSwitch(network);
+		}
+
 		new TypeResizer(false, true, false, false).doSwitch(network);
 		// Compute the Network Template
 		network.computeTemplateMaps();
