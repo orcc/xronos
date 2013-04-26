@@ -77,20 +77,39 @@ public abstract class FifoIF implements Referenceable, StateHolder {
 	}
 
 	/**
-	 * Returns a value which is one of the types represented by the type fields
-	 * of this class.
+	 * Adds the specified {@link SimplePin} to this interface.
 	 */
-	public abstract int getType();
+	protected void addPin(SimplePin pin) {
+		pins.add(pin);
+	}
 
 	/**
-	 * Returns a positive integer value indicating the BIT width of the data
-	 * path for this FIFO interface in bytes.
-	 * 
-	 * @return a non zero, positive int.
+	 * Returns a String, based upon the supplied port name, that is to be used
+	 * as the base name for all pins comprising this fifo interface.
 	 */
-	public int getWidth() {
-		return interfaceWidth;
+	protected abstract String buildPortBaseName(String portName);
+
+	/**
+	 * Returns a {@link FifoAccess} object that is used to either obtain data
+	 * from this FifoIF (if this is an input FIFO interface) or to write data to
+	 * this FifiIF (if this is an output FIFO interface)
+	 */
+	public abstract FifoAccess getAccess();
+
+	/**
+	 * Returns -1 indicating that the referencers must be scheduled using the
+	 * default DONE to GO spacing.
+	 */
+	@Override
+	public int getGoSpacing(Referencer from, Referencer to) {
+		return -1;
 	}
+
+	/**
+	 * Returns a subset of {@link #getPins} that are the output pins of the
+	 * interface.
+	 */
+	public abstract Collection<SimplePin> getOutputPins();
 
 	/**
 	 * Returns a Collection of {@link SimplePin} objects representing the
@@ -103,49 +122,9 @@ public abstract class FifoIF implements Referenceable, StateHolder {
 	}
 
 	/**
-	 * Returns a subset of {@link #getPins} that are the output pins of the
-	 * interface.
-	 */
-	public abstract Collection<SimplePin> getOutputPins();
-
-	/**
-	 * Adds the specified {@link SimplePin} to this interface.
-	 */
-	protected void addPin(SimplePin pin) {
-		pins.add(pin);
-	}
-
-	/**
-	 * Returns a {@link FifoAccess} object that is used to either obtain data
-	 * from this FifoIF (if this is an input FIFO interface) or to write data to
-	 * this FifiIF (if this is an output FIFO interface)
-	 */
-	public abstract FifoAccess getAccess();
-
-	/**
-	 * Returns true if the data port of this fifo interface is an input to the
-	 * generated core.
-	 */
-	public abstract boolean isInput();
-
-	/**
-	 * Returns a String, based upon the supplied port name, that is to be used
-	 * as the base name for all pins comprising this fifo interface.
-	 */
-	protected abstract String buildPortBaseName(String portName);
-
-	/**
 	 * Returns the String that is the base name of this interface.
 	 */
 	public abstract String getPortBaseName();
-
-	// ////////////////////////////////////////////////////////
-	// ////////////////////////////////////////////////////////
-	//
-	// Implementation of the Referenceable interface
-	//
-	// ////////////////////////////////////////////////////////
-	// ////////////////////////////////////////////////////////
 
 	/**
 	 * Tests the referencer types and then returns 1 or 0 depending on the types
@@ -169,12 +148,33 @@ public abstract class FifoIF implements Referenceable, StateHolder {
 	}
 
 	/**
-	 * Returns -1 indicating that the referencers must be scheduled using the
-	 * default DONE to GO spacing.
+	 * Returns a value which is one of the types represented by the type fields
+	 * of this class.
 	 */
-	@Override
-	public int getGoSpacing(Referencer from, Referencer to) {
-		return -1;
+	public abstract int getType();
+
+	// ////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////
+	//
+	// Implementation of the Referenceable interface
+	//
+	// ////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////
+
+	/**
+	 * Returns a positive integer value indicating the BIT width of the data
+	 * path for this FIFO interface in bytes.
+	 * 
+	 * @return a non zero, positive int.
+	 */
+	public int getWidth() {
+		return interfaceWidth;
 	}
+
+	/**
+	 * Returns true if the data port of this fifo interface is an input to the
+	 * generated core.
+	 */
+	public abstract boolean isInput();
 
 }// FifoIF

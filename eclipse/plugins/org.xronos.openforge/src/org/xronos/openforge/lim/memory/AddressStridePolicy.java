@@ -41,19 +41,6 @@ public class AddressStridePolicy {
 	/** positive integer, bits per address for this policy */
 	private int stride;
 
-	@Override
-	public int hashCode() {
-		return getStride();
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof AddressStridePolicy))
-			return false;
-
-		return ((AddressStridePolicy) o).getStride() == getStride();
-	}
-
 	/**
 	 * Constructs a new AddressStridePolicy with the given non-zero, positive
 	 * stride value.
@@ -65,12 +52,22 @@ public class AddressStridePolicy {
 	 *             if stride is negative or 0.
 	 */
 	public AddressStridePolicy(int stride) {
-		if (stride <= 0)
+		if (stride <= 0) {
 			throw new IllegalArgumentException(
 					"Cannot build address stride policy with stride of "
 							+ stride);
+		}
 
 		this.stride = stride;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof AddressStridePolicy)) {
+			return false;
+		}
+
+		return ((AddressStridePolicy) o).getStride() == getStride();
 	}
 
 	/**
@@ -79,6 +76,11 @@ public class AddressStridePolicy {
 	 */
 	public int getStride() {
 		return stride;
+	}
+
+	@Override
+	public int hashCode() {
+		return getStride();
 	}
 
 	@Override

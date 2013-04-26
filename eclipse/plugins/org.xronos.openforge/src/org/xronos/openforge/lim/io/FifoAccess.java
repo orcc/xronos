@@ -74,13 +74,6 @@ public abstract class FifoAccess extends Module implements Referencer,
 		visitor.visit(this);
 	}
 
-	@Override
-	public boolean replaceComponent(Component removed, Component inserted) {
-		// TBD
-		assert false;
-		return false;
-	}
-
 	/**
 	 * Returns the targetted {@link FifoIF}.
 	 * 
@@ -88,19 +81,6 @@ public abstract class FifoAccess extends Module implements Referencer,
 	 */
 	public FifoIF getFifoIF() {
 		return targetInterface;
-	}
-
-	/**
-	 * determines if this component can be scheduled to execute in fixed known
-	 * time (all paths through take same time), but because fifoaccesses may
-	 * block on an external flag (ef or ff) this overrides the one in component
-	 * to return false.
-	 * 
-	 * @return false
-	 */
-	@Override
-	public boolean isBalanceable() {
-		return false;
 	}
 
 	/**
@@ -122,6 +102,26 @@ public abstract class FifoAccess extends Module implements Referencer,
 	@Override
 	public StateHolder getStateHolder() {
 		return getFifoIF();
+	}
+
+	/**
+	 * determines if this component can be scheduled to execute in fixed known
+	 * time (all paths through take same time), but because fifoaccesses may
+	 * block on an external flag (ef or ff) this overrides the one in component
+	 * to return false.
+	 * 
+	 * @return false
+	 */
+	@Override
+	public boolean isBalanceable() {
+		return false;
+	}
+
+	@Override
+	public boolean replaceComponent(Component removed, Component inserted) {
+		// TBD
+		assert false;
+		return false;
 	}
 
 }// FifoAccess

@@ -39,9 +39,9 @@ package org.xronos.openforge.lim.memory;
  */
 public interface MemoryVisitor {
 
-	void visit(LogicalMemory mem);
-
 	void visit(Allocation alloc);
+
+	void visit(LogicalMemory mem);
 
 	void visit(Pointer ptr);
 

@@ -42,7 +42,6 @@ import org.xronos.openforge.util.graphviz.Node;
 import org.xronos.openforge.util.graphviz.Record;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * The {@link Node} that is created for a generic {@link Component} in an
  * {@link LXGraph}. In addition to itself, the ComponentNode may create
@@ -73,6 +72,14 @@ class ComponentNode extends Record {
 	protected static final String BUSES = "buses";
 
 	/**
+	 * Gets the brief name of a given object's class (e.g., "String").
+	 */
+	static String getShortClassName(Object object) {
+		String[] parts = object.getClass().getName().split("\\.");
+		return parts[parts.length - 1];
+	}
+
+	/**
 	 * Creates a ComponentNode.
 	 * 
 	 * @param component
@@ -92,58 +99,6 @@ class ComponentNode extends Record {
 		graphPorts(boundingBox);
 		graphBody(boundingBox);
 		graphExits(boundingBox);
-	}
-
-	/**
-	 * Gets the sub-node created for a given {@link Port} of the component. In
-	 * general, nodes are created for all data ports and for those control ports
-	 * that are connected.
-	 */
-	Node getNode(org.xronos.openforge.lim.Port port) {
-		return nodeMap.get(port);
-	}
-
-	/**
-	 * Gets the sub-node created for a given {@link Exit} of the component. If
-	 * there are multiple exits, then no sub-node is created; instead, external
-	 * Nodes are created for each and are obtained with
-	 * {@link ComponentNode#getExitNodes()}.
-	 */
-	Node getNode(Exit exit) {
-		return nodeMap.get(exit);
-	}
-
-	/**
-	 * Gets the sub-node created for a given {@link Bus} of the component. If
-	 * there are multiple exits, then no sub-node is created; instead, the bus
-	 * node should be retrieved from the external node returned by
-	 * {@link ComponentNode#getExitNodes}.
-	 */
-	Node getNode(Bus bus) {
-		return nodeMap.get(bus);
-	}
-
-	/**
-	 * Gets the component represented by this node.
-	 */
-	Component getComponent() {
-		return component;
-	}
-
-	/**
-	 * Gets the external Nodes for the Exits, which are created if there is more
-	 * than one Exit on the component.
-	 */
-	Collection<Node> getExitNodes() {
-		return exitNodes;
-	}
-
-	/**
-	 * Gets the brief name of a given object's class (e.g., "String").
-	 */
-	static String getShortClassName(Object object) {
-		String[] parts = object.getClass().getName().split("\\.");
-		return parts[parts.length - 1];
 	}
 
 	/**
@@ -169,6 +124,194 @@ class ComponentNode extends Record {
 			labelBuf.append(component.showIDLogical());
 		}
 		return labelBuf.toString();
+	}
+
+	/**
+	 * Gets the component represented by this node.
+	 */
+	Component getComponent() {
+		return component;
+	}
+
+	/**
+	 * Gets the external Nodes for the Exits, which are created if there is more
+	 * than one Exit on the component.
+	 */
+	Collection<Node> getExitNodes() {
+		return exitNodes;
+	}
+
+	/**
+	 * Gets the sub-node created for a given {@link Bus} of the component. If
+	 * there are multiple exits, then no sub-node is created; instead, the bus
+	 * node should be retrieved from the external node returned by
+	 * {@link ComponentNode#getExitNodes}.
+	 */
+	Node getNode(Bus bus) {
+		return nodeMap.get(bus);
+	}
+
+	/**
+	 * Gets the sub-node created for a given {@link Exit} of the component. If
+	 * there are multiple exits, then no sub-node is created; instead, external
+	 * Nodes are created for each and are obtained with
+	 * {@link ComponentNode#getExitNodes()}.
+	 */
+	Node getNode(Exit exit) {
+		return nodeMap.get(exit);
+	}
+
+	/**
+	 * Gets the sub-node created for a given {@link Port} of the component. In
+	 * general, nodes are created for all data ports and for those control ports
+	 * that are connected.
+	 */
+	Node getNode(org.xronos.openforge.lim.Port port) {
+		return nodeMap.get(port);
+	}
+
+	/**
+	 * Graphs the main body of the component in a given bounding box.
+	 */
+	protected void graphBody(Record.Port boundingBox) {
+		Record.Port bodyBox = boundingBox.getPort(BODY);
+		bodyBox.setSeparated(false);
+		bodyBox.setLabel(getBodyLabel());
+	}
+
+	/**
+	 * Creates a sub-node for a bus in a given bounding box.
+	 * 
+	 * @param bus
+	 *            the bus to be graphed
+	 * @param parentNode
+	 *            the bounding box in which the bus's node is created
+	 * @param id
+	 *            the node identifier
+	 * @param label
+	 *            the node label; the size will be appended
+	 */
+	protected void graphBus(Bus bus, Record.Port parentNode, String id,
+			String label) {
+		if (bus.isConnected() || !(bus.getOwner().getDoneBus() == bus)) {
+			Record.Port busNode = parentNode.getPort(id);
+
+			String size = "-";
+			Value value = bus.getValue();
+			if (value != null) {
+				size = Integer.toString(value.getSize());
+				if (value.isConstant()) {
+					size += "=" + Long.toHexString(value.getValueMask());
+				}
+			}
+
+			busNode.setLabel(label + "/" + size);
+			busNode.setSeparated(true);
+			nodeMap.put(bus, busNode);
+		}
+	}
+
+	/**
+	 * Creates a sub-node for each bus of an Exit in a given bounding box.
+	 */
+	protected void graphBuses(Exit exit, Record.Port busBox) {
+		graphBus(exit.getDoneBus(), busBox, "done", "D");
+		int index = 0;
+		for (Bus bus : exit.getDataBuses()) {
+			graphBus(bus, busBox, "dout" + index, "d" + index);
+			index++;
+		}
+	}
+
+	/**
+	 * Creates a sub-node in a given bounding box for an Exit.
+	 */
+	protected void graphExit(Exit exit, Record exitBox) {
+		if (!DO_SIDEBAND && exit.getTag().getType() == Exit.SIDEBAND) {
+			return;
+		}
+		Record.Port bodyBox = exitBox.getPort(BODY);
+		bodyBox.setSeparated(false);
+
+		StringBuffer labelBuf = new StringBuffer();
+		labelBuf.append("Exit\\n");
+		labelBuf.append("@");
+		labelBuf.append(Integer.toHexString(exit.hashCode()));
+		labelBuf.append("\\n");
+		labelBuf.append(exit.getTag());
+		bodyBox.setLabel(labelBuf.toString());
+
+		Record.Port busBox = exitBox.getPort(BUSES);
+		busBox.setSeparated(false);
+		graphBuses(exit, busBox);
+		nodeMap.put(exit, exitBox);
+	}
+
+	/**
+	 * Graphs the exits of the component in a given bounding box node. If there
+	 * are multiple exits, then a separate {@link Record} is created for each
+	 * and added to the list returned by {@link ComponentNode#getExitNodes()}.
+	 */
+	protected void graphExits(Record.Port boundingBox) {
+		if (!component.getExits().isEmpty()) {
+			Collection<Exit> exits = component.getExits();
+			if (exits.isEmpty()) {
+				return;
+			} else if (exits.size() == 1) {
+				/*
+				 * Rotate the bounding box.
+				 */
+				boundingBox = boundingBox.getPort(EXIT);
+				boundingBox.setSeparated(false);
+				Record.Port exitBox = boundingBox.getPort(EXIT);
+				exitBox.setSeparated(false);
+				graphExit(exits.iterator().next(), exitBox);
+			} else {
+				int index = 0;
+				for (Exit exit : exits) {
+					Record exitBox = new Record(getId() + "_exit" + index++);
+					graphExit(exit, exitBox.getPort(EXIT));
+					exitNodes.add(exitBox);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Creates a sub-node for a port in a given bounding box.
+	 * 
+	 * @param port
+	 *            the port to be graphed
+	 * @param parentNode
+	 *            the bounding box in which the port's node is created
+	 * @param id
+	 *            the node identifier
+	 * @param label
+	 *            the node label; the size will be appended
+	 */
+	protected void graphPort(org.xronos.openforge.lim.Port port,
+			Record.Port parentNode, String id, String label) {
+		if (!DO_SIDEBAND
+				&& port.getTag() == org.xronos.openforge.lim.Component.SIDEBAND) {
+			return;
+		}
+
+		if (port.isConnected() || port != port.getOwner().getGoPort()) {
+			Record.Port portNode = parentNode.getPort(id);
+
+			String size = "-";
+			Value value = port.getValue();
+			if (value != null) {
+				size = Integer.toString(value.getSize());
+				if (value.isConstant()) {
+					size += "=" + Long.toHexString(value.getValueMask());
+				}
+			}
+
+			portNode.setLabel(label + "/" + size);
+			portNode.setSeparated(true);
+			nodeMap.put(port, portNode);
+		}
 	}
 
 	/**
@@ -204,149 +347,5 @@ class ComponentNode extends Record {
 	protected boolean needPortGraph() {
 		return !component.getDataPorts().isEmpty()
 				|| component.getGoPort().isConnected();
-	}
-
-	/**
-	 * Graphs the exits of the component in a given bounding box node. If there
-	 * are multiple exits, then a separate {@link Record} is created for each
-	 * and added to the list returned by {@link ComponentNode#getExitNodes()}.
-	 */
-	protected void graphExits(Record.Port boundingBox) {
-		if (!component.getExits().isEmpty()) {
-			Collection<Exit> exits = component.getExits();
-			if (exits.isEmpty()) {
-				return;
-			} else if (exits.size() == 1) {
-				/*
-				 * Rotate the bounding box.
-				 */
-				boundingBox = boundingBox.getPort(EXIT);
-				boundingBox.setSeparated(false);
-				Record.Port exitBox = boundingBox.getPort(EXIT);
-				exitBox.setSeparated(false);
-				graphExit(exits.iterator().next(), exitBox);
-			} else {
-				int index = 0;
-				for (Exit exit : exits) {
-					Record exitBox = new Record(getId() + "_exit" + index++);
-					graphExit(exit, exitBox.getPort(EXIT));
-					exitNodes.add(exitBox);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Creates a sub-node in a given bounding box for an Exit.
-	 */
-	protected void graphExit(Exit exit, Record exitBox) {
-		if (!DO_SIDEBAND && exit.getTag().getType() == Exit.SIDEBAND) {
-			return;
-		}
-		Record.Port bodyBox = exitBox.getPort(BODY);
-		bodyBox.setSeparated(false);
-
-		StringBuffer labelBuf = new StringBuffer();
-		labelBuf.append("Exit\\n");
-		labelBuf.append("@");
-		labelBuf.append(Integer.toHexString(exit.hashCode()));
-		labelBuf.append("\\n");
-		labelBuf.append(exit.getTag());
-		bodyBox.setLabel(labelBuf.toString());
-
-		Record.Port busBox = exitBox.getPort(BUSES);
-		busBox.setSeparated(false);
-		graphBuses(exit, busBox);
-		nodeMap.put(exit, exitBox);
-	}
-
-	/**
-	 * Creates a sub-node for each bus of an Exit in a given bounding box.
-	 */
-	protected void graphBuses(Exit exit, Record.Port busBox) {
-		graphBus(exit.getDoneBus(), busBox, "done", "D");
-		int index = 0;
-		for (Bus bus : exit.getDataBuses()) {
-			graphBus(bus, busBox, "dout" + index, "d" + index);
-			index++;
-		}
-	}
-
-	/**
-	 * Creates a sub-node for a bus in a given bounding box.
-	 * 
-	 * @param bus
-	 *            the bus to be graphed
-	 * @param parentNode
-	 *            the bounding box in which the bus's node is created
-	 * @param id
-	 *            the node identifier
-	 * @param label
-	 *            the node label; the size will be appended
-	 */
-	protected void graphBus(Bus bus, Record.Port parentNode, String id,
-			String label) {
-		if (bus.isConnected() || !(bus.getOwner().getDoneBus() == bus)) {
-			Record.Port busNode = parentNode.getPort(id);
-
-			String size = "-";
-			Value value = bus.getValue();
-			if (value != null) {
-				size = Integer.toString(value.getSize());
-				if (value.isConstant()) {
-					size += ("=" + Long.toHexString(value.getValueMask()));
-				}
-			}
-
-			busNode.setLabel(label + "/" + size);
-			busNode.setSeparated(true);
-			nodeMap.put(bus, busNode);
-		}
-	}
-
-	/**
-	 * Creates a sub-node for a port in a given bounding box.
-	 * 
-	 * @param port
-	 *            the port to be graphed
-	 * @param parentNode
-	 *            the bounding box in which the port's node is created
-	 * @param id
-	 *            the node identifier
-	 * @param label
-	 *            the node label; the size will be appended
-	 */
-	protected void graphPort(org.xronos.openforge.lim.Port port,
-			Record.Port parentNode, String id, String label) {
-		if (!DO_SIDEBAND
-				&& port.getTag() == org.xronos.openforge.lim.Component.SIDEBAND) {
-			return;
-		}
-
-		if (port.isConnected() || (port != port.getOwner().getGoPort())) {
-			Record.Port portNode = parentNode.getPort(id);
-
-			String size = "-";
-			Value value = port.getValue();
-			if (value != null) {
-				size = Integer.toString(value.getSize());
-				if (value.isConstant()) {
-					size += ("=" + Long.toHexString(value.getValueMask()));
-				}
-			}
-
-			portNode.setLabel(label + "/" + size);
-			portNode.setSeparated(true);
-			nodeMap.put(port, portNode);
-		}
-	}
-
-	/**
-	 * Graphs the main body of the component in a given bounding box.
-	 */
-	protected void graphBody(Record.Port boundingBox) {
-		Record.Port bodyBox = boundingBox.getPort(BODY);
-		bodyBox.setSeparated(false);
-		bodyBox.setLabel(getBodyLabel());
 	}
 }

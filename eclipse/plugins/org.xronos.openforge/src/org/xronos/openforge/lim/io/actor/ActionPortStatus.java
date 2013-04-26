@@ -40,6 +40,15 @@ import org.xronos.openforge.lim.io.SimplePinRead;
  */
 public class ActionPortStatus extends FifoAccess {
 
+	public ActionPortStatus(ActorScalarInput targetInterface) {
+		// The send pin indicates that the port contains data.
+		this(targetInterface, targetInterface.getSendPin());
+	}
+
+	public ActionPortStatus(ActorScalarOutput targetInterface) {
+		this(targetInterface, targetInterface.getReadyPin());
+	}
+
 	private ActionPortStatus(FifoIF targetInterface, SimplePin statusPin) {
 		super(targetInterface);
 
@@ -58,15 +67,6 @@ public class ActionPortStatus extends FifoAccess {
 		addComponent(status);
 
 		result.getPeer().setBus(status.getResultBus());
-	}
-
-	public ActionPortStatus(ActorScalarInput targetInterface) {
-		// The send pin indicates that the port contains data.
-		this(targetInterface, targetInterface.getSendPin());
-	}
-
-	public ActionPortStatus(ActorScalarOutput targetInterface) {
-		this(targetInterface, targetInterface.getReadyPin());
 	}
 
 	/**

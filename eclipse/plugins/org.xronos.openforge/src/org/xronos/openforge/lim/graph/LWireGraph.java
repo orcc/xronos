@@ -104,7 +104,6 @@ import org.xronos.openforge.util.graphviz.Graph;
 import org.xronos.openforge.util.graphviz.Node;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * Yet another hack of {@link LGraph}, this time to draw only physical
  * connections (those between {@link Bus Buses} and {@link Port Ports}).
@@ -112,6 +111,48 @@ import org.xronos.openforge.util.naming.ID;
  * @version $Id: LWireGraph.java 88 2006-01-11 22:39:52Z imiller $
  */
 public class LWireGraph extends DefaultVisitor {
+
+	/**
+	 * holds unresolved edges, allows adding new edges to an existing bus (key
+	 * in the hashMap), and retrieval of the edges
+	 */
+	private static class Unresolved {
+		private final Bus bus;
+		private final List<Node> sources = new ArrayList<Node>();
+		private final List<Edge> edges = new ArrayList<Edge>();
+
+		@SuppressWarnings("unused")
+		Unresolved(Bus b, Node s, Edge e) {
+			bus = b;
+			sources.add(s);
+			edges.add(e);
+		}
+
+		@SuppressWarnings("unused")
+		public void addSource(Node s, Edge e) {
+			sources.add(s);
+			edges.add(e);
+		}
+
+		public Bus getBus() {
+			return bus;
+		}
+
+		public List<Edge> getEdges() {
+			return edges;
+		}
+
+		public List<Node> getSources() {
+			return sources;
+		}
+
+		@Override
+		public String toString() {
+			return "Unresolved: bus: " + bus + " owner: "
+					+ bus.getOwner().getOwner();
+		}
+
+	}
 
 	/** Use a scanner for traversing module contents */
 	private final org.xronos.openforge.lim.Scanner scanner;
@@ -124,7 +165,6 @@ public class LWireGraph extends DefaultVisitor {
 
 	/** The graph instance for the current level being visited */
 	private Graph graph;
-
 	/** True if the insides of Selectors and other primitive modules to be drawn */
 	private boolean isDetailed = false;
 	/** show clock and reset */
@@ -141,6 +181,7 @@ public class LWireGraph extends DefaultVisitor {
 	/** show data connections */
 	@SuppressWarnings("unused")
 	private boolean graphData = false;
+
 	/** show control connections */
 	@SuppressWarnings("unused")
 	private boolean graphControl = false;
@@ -156,15 +197,14 @@ public class LWireGraph extends DefaultVisitor {
 
 	/** The number of nodes so far, used to generate unique identifiers */
 	private int nodeCount = 0;
-
 	/**
 	 * Map of LIM object to graph Node - for dependencies and generic
 	 * connections (exits, etc)
 	 */
 	private final Map<Object, Object> nodeMapDeps = new HashMap<Object, Object>();
+
 	/** Map of LIM object to graph Node - for physical connections */
 	private final Map<Object, Object> nodeMapPhys = new HashMap<Object, Object>();
-
 	/** Weights for the various types of edges */
 	@SuppressWarnings("unused")
 	private static final int WT_ENTRY = 1200;
@@ -173,8 +213,8 @@ public class LWireGraph extends DefaultVisitor {
 	private static final int WT_DEP = 4;
 	@SuppressWarnings("unused")
 	private static final int WT_FEEDBK = 1;
-	private static final int WT_ENTRYFEEDBACK = 12;
 
+	private static final int WT_ENTRYFEEDBACK = 12;
 	/** show data connections */
 	public static final int DATA = 0x1;
 	/** show control connections */
@@ -183,9 +223,9 @@ public class LWireGraph extends DefaultVisitor {
 	public static final int LOGICAL = 0x4;
 	/** show structural connections */
 	public static final int STRUCTURAL = 0x8;
+
 	/** used internally to denote any of the above */
 	private static final int DEPENDENCY = DATA | CONTROL | LOGICAL | STRUCTURAL;
-
 	/** show clock & reset connections */
 	public static final int CLOCKRESET = 0x20;
 	/** show physical connections (bus/port) */
@@ -196,11 +236,42 @@ public class LWireGraph extends DefaultVisitor {
 	 * graphed as opaque boxes
 	 */
 	public static final int DETAIL = 0x80;
+
 	/** print in landscape mode */
 	public static final int LANDSCAPE = 0x100;
 
 	public static final int DEFAULT = DATA | CONTROL | LOGICAL | STRUCTURAL
 			| PHYSICAL;
+
+	private static String getName(Object o) {
+		return ID.showLogical(o); // getName(namedThing,
+									// namedThing.getClass().getName());
+	}
+
+	@SuppressWarnings("unused")
+	private static String getName(Object o, String defaultName) {
+		return ID.showLogical(o);
+		/*
+		 * String name = namedThing.getIDLogical(); if (name == null) { name =
+		 * namedThing.getIDGlobalType(); } return name == null ? defaultName :
+		 * name;
+		 */
+	}
+
+	/**
+	 * Constructs a new LWireGraph that will not draw the insides of
+	 * pass-through modules like Selector.
+	 * 
+	 * @param name
+	 *            a title for the graph
+	 * @param top
+	 *            the LIM element whose contents are to be graphed; typically a
+	 *            {@link Design}, but only the {@link Procedure Procedures} down
+	 *            will be depicted
+	 */
+	public LWireGraph(String name, Visitable top) {
+		this(name, top, DEFAULT);
+	}
 
 	/**
 	 * Constructs a new LWireGraph.
@@ -241,122 +312,144 @@ public class LWireGraph extends DefaultVisitor {
 		top.accept(this);
 	}
 
-	/** parse the flags, setting fields as appropriate */
-	private void parseFlags(int flags) {
-		if ((flags & DATA) == DATA) {
-			graphDependencies = true;
-			graphData = true;
+	/**
+	 * type defines which nodeMap to look into - DEPENDENCY==nodeMapDeps,
+	 * PHYSICAL==nodeMapPhys
+	 */
+	private void addToNodeMap(Object key, Object value, int type) {
+		assert type == PHYSICAL || type == DEPENDENCY : "Illegal type to addToNodeMap";
+		assert value != null;
+		assert key != null;
+
+		if (type == PHYSICAL) {
+			nodeMapPhys.put(key, value);
+		} else {
+			nodeMapDeps.put(key, value);
 		}
-		if ((flags & CONTROL) == CONTROL) {
-			graphDependencies = true;
-			graphControl = true;
-		}
-		if ((flags & LOGICAL) == LOGICAL) {
-			graphDependencies = true;
-			graphLogical = true;
-		}
-		if ((flags & STRUCTURAL) == STRUCTURAL) {
-			graphDependencies = true;
-			graphStructural = true;
-		}
-		if ((flags & CLOCKRESET) == CLOCKRESET) {
-			drawCR = true;
-		}
-		if ((flags & DETAIL) == DETAIL) {
-			isDetailed = true;
+
+		if (unresolvedNodes.containsKey(key)) {
+			Unresolved ur = unresolvedNodes.get(key);
+			Node target = (Node) nodeMapDeps.get(ur.getBus());
+			assert target != null : "How can the target still be null!";
+			List<Node> sources = ur.getSources();
+			List<Edge> edges = ur.getEdges();
+			for (int i = 0; i < sources.size(); i++) {
+				Node sourceNode = sources.get(i);
+				assert sourceNode != null : "null node for unresolved index "
+						+ i;
+				topGraph.connect(target, sourceNode, edges.get(i));
+			}
+			unresolvedNodes.remove(key);
 		}
 	}
 
 	/**
-	 * Constructs a new LWireGraph that will not draw the insides of
-	 * pass-through modules like Selector.
-	 * 
-	 * @param name
-	 *            a title for the graph
-	 * @param top
-	 *            the LIM element whose contents are to be graphed; typically a
-	 *            {@link Design}, but only the {@link Procedure Procedures} down
-	 *            will be depicted
+	 * Connects the Exits of the component. If the Exit has a peer, a dashed
+	 * line is drawn to it; else a solid line will be drawn to the component.
 	 */
-	public LWireGraph(String name, Visitable top) {
-		this(name, top, DEFAULT);
+	@SuppressWarnings("unused")
+	private void connectExits(Component component) {
+		connectExits(component, null);
 	}
 
 	/**
-	 * Prints a text representation of this graph readable by the <i>dotty</i>
-	 * viewer.
+	 * Connects the Exits of a Component.
 	 * 
-	 * @param writer
-	 *            the writer to receive the text
+	 * @param component
+	 *            the component whose exits are to be connected
+	 * @param target
+	 *            the node to which the exits are connected; if null and there
+	 *            is a peer, then a dashed line will be drawn to the peer;
+	 *            otherwise a solid line will be drawn to the component
 	 */
-	public void print(PrintWriter writer) {
-		// if there are any unresolved nodes at this point, they must have come
-		// from
-		// somewhere off the graph, so we add a circle node to the topgraph and
-		// connect them
-		if (unresolvedNodes.values().size() > 0) {
-			List<Unresolved> urList = new ArrayList<Unresolved>(
-					unresolvedNodes.values());
+	private void connectExits(Component component, Component target) {
+		int index = 0;
+		for (Exit exit : component.getExits()) {
+			Component workingTarget = target;
+			Node exitNode = (Node) nodeMapDeps.get(exit);
+			Edge edge = new Edge(WT_EXIT);
+			edge.setLabel("ex" + index++);
+			edge.setDirection(Edge.DIR_NONE);
 
-			for (Unresolved ur : urList) {
-				Node target = (Node) nodeMapDeps.get(ur.getBus());
-				if (target == null) {
-					target = (Node) nodeMapPhys.get(ur.getBus());
-				}
-
-				if (target != null) {
-					assert target != null : "Found an unresolved node in nodeMapDeps "
-							+ ur.getBus()
-							+ " "
-							+ ur.getBus().getOwner().getOwner();
-
-					Circle circle = new Circle("unknownSrc" + nodeCount++);
-					circle.setLabel(getName(ur.getBus().getOwner().getOwner())
-							+ "::"
-							+ Integer.toHexString(ur.getBus().getOwner()
-									.getOwner().hashCode()) + "::"
-							+ Integer.toHexString(ur.getBus().hashCode()));
-					topGraph.add(circle);
-					addToNodeMap(ur.getBus(), circle, DEPENDENCY);
+			if (workingTarget == null) {
+				workingTarget = exit.getPeer();
+				if (workingTarget == null) {
+					workingTarget = component;
 				}
 			}
+
+			Node targetNode = (Node) nodeMapDeps.get(workingTarget);
+			topGraph.connect(targetNode, exitNode, edge);
+
+			assert targetNode != null : "Couldn't find node for "
+					+ workingTarget + ", source is: " + component;
+			assert exitNode != null : "Couldn;t find exit node for "
+					+ component + ", exit: " + exit;
+		}
+	}
+
+	private void connectExits(Module module) {
+		connectExits(module, null);
+	}
+
+	private void connectPort(Port port, boolean isFeedback) {
+		if (port.isConnected()) {
+			final Node portNode = (Node) nodeMapDeps.get(port);
+			final Node busNode = (Node) nodeMapDeps.get(port.getBus());
+			final Edge edge = new Edge(isFeedback ? WT_ENTRYFEEDBACK : WT_EXIT);
+
+			assert port.getBus() != null : "no bus for port of "
+					+ port.getOwner();
+			assert busNode != null : "null busNode for bus of "
+					+ port.getBus().getOwner().getOwner();
+			assert portNode != null : "null portNode for port of "
+					+ port.getOwner();
+			topGraph.connect(busNode, portNode, edge);
+
+		}
+	}
+
+	private void connectPorts(Component component, boolean isFeedback) {
+		if (drawCR) {
+			connectPort(component.getClockPort(), isFeedback);
+			connectPort(component.getResetPort(), isFeedback);
 		}
 
-		graph.print(writer);
-		writer.flush();
+		connectPort(component.getGoPort(), isFeedback);
+		for (Port port : component.getDataPorts()) {
+			connectPort(port, isFeedback);
+		}
 	}
 
-	/**
-	 * causes the graph to be printed in landscape mode - this may or may not
-	 * use less paper - it depends on the graph. hence it is an option
-	 */
-	public void setLandscape() {
-		topGraph.setGVAttribute("rotate", "90");
+	private void drawFeedbackInput(Reg reg) {
+		connectPort(reg.getDataPort(), true);
 	}
 
-	private void pushGraph(Object obj) {
-		graphStack.addFirst(graph);
-		graph = graph.getSubgraph("cluster" + nodeCount++);
-		addToNodeMap(obj, graph, DEPENDENCY);
-	}
+	private void drawFeedbackRegister(Reg reg) {
+		org.xronos.openforge.util.graphviz.Record box = new org.xronos.openforge.util.graphviz.Record(
+				"component" + nodeCount++);
+		box.setLabel(getName(reg) + " (Cmp)");
 
-	private void popGraph() {
-		graph = graphStack.removeFirst();
-	}
+		org.xronos.openforge.util.graphviz.Record.Port main = box
+				.getPort("main");
+		org.xronos.openforge.util.graphviz.Record.Port entryPort = main
+				.getPort("entry");
+		entryPort.setSeparated(false);
 
-	@SuppressWarnings("unused")
-	private static String getName(Object o, String defaultName) {
-		return ID.showLogical(o);
-		/*
-		 * String name = namedThing.getIDLogical(); if (name == null) { name =
-		 * namedThing.getIDGlobalType(); } return name == null ? defaultName :
-		 * name;
-		 */
-	}
+		org.xronos.openforge.util.graphviz.Record.Port dataPort = entryPort
+				.getPort("din");
+		dataPort.setLabel("din");
+		addToNodeMap(reg.getDataPort(), dataPort, DEPENDENCY);
 
-	private static String getName(Object o) {
-		return ID.showLogical(o); // getName(namedThing,
-									// namedThing.getClass().getName());
+		org.xronos.openforge.util.graphviz.Record.Port bodyPort = main
+				.getPort("body");
+		bodyPort.setLabel(getName(reg));
+		bodyPort.setSeparated(false);
+
+		graphSingleExit(reg, main);
+
+		addToNodeMap(reg, box, DEPENDENCY);
+		graph.add(box);
 	}
 
 	/**
@@ -367,7 +460,8 @@ public class LWireGraph extends DefaultVisitor {
 				"component" + nodeCount++);
 		box.setLabel(getName(component) + " (Cmp)");
 
-		org.xronos.openforge.util.graphviz.Record.Port main = box.getPort("main");
+		org.xronos.openforge.util.graphviz.Record.Port main = box
+				.getPort("main");
 		org.xronos.openforge.util.graphviz.Record.Port entryPort = main
 				.getPort("entry");
 		entryPort.setSeparated(false);
@@ -443,7 +537,8 @@ public class LWireGraph extends DefaultVisitor {
 				"component" + nodeCount++);
 		box.setLabel(getName(inbuf) + " (Cmp)");
 
-		org.xronos.openforge.util.graphviz.Record.Port main = box.getPort("main");
+		org.xronos.openforge.util.graphviz.Record.Port main = box
+				.getPort("main");
 		org.xronos.openforge.util.graphviz.Record.Port entryPort = main
 				.getPort("entry");
 		entryPort.setSeparated(false);
@@ -505,31 +600,44 @@ public class LWireGraph extends DefaultVisitor {
 		}
 	}
 
-	private void graphSingleExit(Component component,
-			org.xronos.openforge.util.graphviz.Record node) {
-		final Exit exit = component.getExits().iterator().next();
-		org.xronos.openforge.util.graphviz.Record.Port exitPort = node
-				.getPort("exit");
-		addToNodeMap(exit, exitPort, DEPENDENCY);
+	private void graphExit(Exit exit, int id) {
+		// Component component = exit.getOwner();
 
-		if (exit.getDoneBus().isConnected()) {
-			org.xronos.openforge.util.graphviz.Record.Port donePort = exitPort
-					.getPort("done");
-			donePort.setLabel("D");
-			donePort.setSeparated(true);
-			addToNodeMap(exit.getDoneBus(), donePort, DEPENDENCY);
+		org.xronos.openforge.util.graphviz.Record record = new org.xronos.openforge.util.graphviz.Record(
+				"exit" + nodeCount++);
+		addToNodeMap(exit, record, DEPENDENCY);
+
+		org.xronos.openforge.util.graphviz.Record.Port done = record
+				.getPort("done");
+		done.setLabel("D");
+		done.setSeparated(true);
+		addToNodeMap(exit.getDoneBus(), done, DEPENDENCY);
+
+		int dindex = 0;
+		Collection<Bus> dataBuses = new LinkedHashSet<Bus>(exit.getDataBuses());
+		if (!drawCR) {
+			if (exit.getOwner() instanceof InBuf) {
+				// remove the clock and reset bus
+				dataBuses.remove(((InBuf) exit.getOwner()).getClockBus());
+				dataBuses.remove(((InBuf) exit.getOwner()).getResetBus());
+			}
+		}
+		for (Bus bus : dataBuses) {
+			String dname = "d" + dindex++;
+			org.xronos.openforge.util.graphviz.Record.Port data = record
+					.getPort(dname);
+			data.setLabel(dname);
+			data.setSeparated(true);
+			addToNodeMap(bus, data, DEPENDENCY);
 		}
 
-		for (int i = 0; i < exit.getDataBuses().size(); i++) {
-			final Bus bus = exit.getDataBuses().get(i);
-			if (bus.isConnected()) {
-				String label = "d" + i;
-				org.xronos.openforge.util.graphviz.Record.Port dataPort = exitPort
-						.getPort("b_" + label);
-				dataPort.setLabel(label);
-				dataPort.setSeparated(true);
-				addToNodeMap(bus, dataPort, DEPENDENCY);
-			}
+		graph.add(record);
+	}
+
+	private void graphExits(Component component) {
+		int index = 0;
+		for (Exit exit : component.getExits()) {
+			graphExit(exit, index++);
 		}
 	}
 
@@ -579,31 +687,21 @@ public class LWireGraph extends DefaultVisitor {
 		}
 	}
 
-	private void graphPreVisit(Module module) {
-		graphPreVisit(module, false);
+	/**
+	 * Graph connections outside of the component, unless the Component is the
+	 * top.
+	 */
+	private void graphOutside(Component component, boolean feedback) {
+		if (component != top) {
+			if (component.getExits().size() > 1) {
+				graphExits(component);
+			}
+			connectPorts(component, feedback);
+		}
 	}
 
-	/**
-	 * previsit for a module
-	 * 
-	 * @param module
-	 *            the module being visited
-	 * @param feedback
-	 *            true if the module has a feedback entry
-	 */
-	private void graphPreVisit(Module module, boolean feedback) {
-		/*
-		 * Graph external elements in the current graph.
-		 */
-		graphOutside(module, feedback);
-
-		/*
-		 * Push into a new graph for the module internals.
-		 */
-		pushGraph(module);
-		graph.setLabel(getName(module) + "::"
-				+ Integer.toHexString(module.hashCode()));
-		graph.setColor("red");
+	private void graphOutside(Module module, boolean feedback) {
+		graphExits(module);
 	}
 
 	private void graphPostVisit(Module module) {
@@ -646,336 +744,59 @@ public class LWireGraph extends DefaultVisitor {
 		}
 	}
 
-	private void connectPorts(Component component, boolean isFeedback) {
-		if (drawCR) {
-			connectPort(component.getClockPort(), isFeedback);
-			connectPort(component.getResetPort(), isFeedback);
-		}
-
-		connectPort(component.getGoPort(), isFeedback);
-		for (Port port : component.getDataPorts()) {
-			connectPort(port, isFeedback);
-		}
-	}
-
-	private void connectPort(Port port, boolean isFeedback) {
-		if (port.isConnected()) {
-			final Node portNode = (Node) nodeMapDeps.get(port);
-			final Node busNode = (Node) nodeMapDeps.get(port.getBus());
-			final Edge edge = new Edge(isFeedback ? WT_ENTRYFEEDBACK : WT_EXIT);
-
-			assert port.getBus() != null : "no bus for port of "
-					+ port.getOwner();
-			assert busNode != null : "null busNode for bus of "
-					+ port.getBus().getOwner().getOwner();
-			assert portNode != null : ("null portNode for port of " + port
-					.getOwner());
-			topGraph.connect(busNode, portNode, edge);
-
-		}
+	private void graphPreVisit(Module module) {
+		graphPreVisit(module, false);
 	}
 
 	/**
-	 * Connects the Exits of the component. If the Exit has a peer, a dashed
-	 * line is drawn to it; else a solid line will be drawn to the component.
-	 */
-	@SuppressWarnings("unused")
-	private void connectExits(Component component) {
-		connectExits(component, null);
-	}
-
-	private void connectExits(Module module) {
-		connectExits(module, null);
-	}
-
-	/**
-	 * Connects the Exits of a Component.
+	 * previsit for a module
 	 * 
-	 * @param component
-	 *            the component whose exits are to be connected
-	 * @param target
-	 *            the node to which the exits are connected; if null and there
-	 *            is a peer, then a dashed line will be drawn to the peer;
-	 *            otherwise a solid line will be drawn to the component
+	 * @param module
+	 *            the module being visited
+	 * @param feedback
+	 *            true if the module has a feedback entry
 	 */
-	private void connectExits(Component component, Component target) {
-		int index = 0;
-		for (Exit exit : component.getExits()) {
-			Component workingTarget = target;
-			Node exitNode = (Node) nodeMapDeps.get(exit);
-			Edge edge = new Edge(WT_EXIT);
-			edge.setLabel("ex" + index++);
-			edge.setDirection(Edge.DIR_NONE);
-
-			if (workingTarget == null) {
-				workingTarget = exit.getPeer();
-				if (workingTarget == null) {
-					workingTarget = component;
-				}
-			}
-
-			Node targetNode = (Node) nodeMapDeps.get(workingTarget);
-			topGraph.connect(targetNode, exitNode, edge);
-
-			assert targetNode != null : "Couldn't find node for "
-					+ workingTarget + ", source is: " + component;
-			assert exitNode != null : "Couldn;t find exit node for "
-					+ component + ", exit: " + exit;
-		}
-	}
-
-	/**
-	 * Graph connections outside of the component, unless the Component is the
-	 * top.
-	 */
-	private void graphOutside(Component component, boolean feedback) {
-		if (component != top) {
-			if (component.getExits().size() > 1) {
-				graphExits(component);
-			}
-			connectPorts(component, feedback);
-		}
-	}
-
-	private void graphOutside(Module module, boolean feedback) {
-		graphExits(module);
-	}
-
-	private void graphExits(Component component) {
-		int index = 0;
-		for (Exit exit : component.getExits()) {
-			graphExit(exit, index++);
-		}
-	}
-
-	private void graphExit(Exit exit, int id) {
-		// Component component = exit.getOwner();
-
-		org.xronos.openforge.util.graphviz.Record record = new org.xronos.openforge.util.graphviz.Record(
-				"exit" + nodeCount++);
-		addToNodeMap(exit, record, DEPENDENCY);
-
-		org.xronos.openforge.util.graphviz.Record.Port done = record
-				.getPort("done");
-		done.setLabel("D");
-		done.setSeparated(true);
-		addToNodeMap(exit.getDoneBus(), done, DEPENDENCY);
-
-		int dindex = 0;
-		Collection<Bus> dataBuses = new LinkedHashSet<Bus>(exit.getDataBuses());
-		if (!drawCR) {
-			if (exit.getOwner() instanceof InBuf) {
-				// remove the clock and reset bus
-				dataBuses.remove(((InBuf) exit.getOwner()).getClockBus());
-				dataBuses.remove(((InBuf) exit.getOwner()).getResetBus());
-			}
-		}
-		for (Bus bus : dataBuses) {
-			String dname = "d" + dindex++;
-			org.xronos.openforge.util.graphviz.Record.Port data = record
-					.getPort(dname);
-			data.setLabel(dname);
-			data.setSeparated(true);
-			addToNodeMap(bus, data, DEPENDENCY);
-		}
-
-		graph.add(record);
-	}
-
-	/**
-	 * type defines which nodeMap to look into - DEPENDENCY==nodeMapDeps,
-	 * PHYSICAL==nodeMapPhys
-	 */
-	private void addToNodeMap(Object key, Object value, int type) {
-		assert type == PHYSICAL || type == DEPENDENCY : "Illegal type to addToNodeMap";
-		assert value != null;
-		assert key != null;
-
-		if (type == PHYSICAL) {
-			nodeMapPhys.put(key, value);
-		} else {
-			nodeMapDeps.put(key, value);
-		}
-
-		if (unresolvedNodes.containsKey(key)) {
-			Unresolved ur = unresolvedNodes.get(key);
-			Node target = (Node) nodeMapDeps.get(ur.getBus());
-			assert target != null : "How can the target still be null!";
-			List<Node> sources = ur.getSources();
-			List<Edge> edges = ur.getEdges();
-			for (int i = 0; i < sources.size(); i++) {
-				Node sourceNode = sources.get(i);
-				assert sourceNode != null : "null node for unresolved index "
-						+ i;
-				topGraph.connect(target, sourceNode, edges.get(i));
-			}
-			unresolvedNodes.remove(key);
-		}
-	}
-
-	/**
-	 * holds unresolved edges, allows adding new edges to an existing bus (key
-	 * in the hashMap), and retrieval of the edges
-	 */
-	private static class Unresolved {
-		private final Bus bus;
-		private final List<Node> sources = new ArrayList<Node>();
-		private final List<Edge> edges = new ArrayList<Edge>();
-
-		@SuppressWarnings("unused")
-		Unresolved(Bus b, Node s, Edge e) {
-			bus = b;
-			sources.add(s);
-			edges.add(e);
-		}
-
-		public Bus getBus() {
-			return bus;
-		}
-
-		public List<Node> getSources() {
-			return sources;
-		}
-
-		public List<Edge> getEdges() {
-			return edges;
-		}
-
-		@SuppressWarnings("unused")
-		public void addSource(Node s, Edge e) {
-			sources.add(s);
-			edges.add(e);
-		}
-
-		@Override
-		public String toString() {
-			return "Unresolved: bus: " + bus + " owner: "
-					+ bus.getOwner().getOwner();
-		}
-
-	}
-
-	@Override
-	public void visit(Design design) {
+	private void graphPreVisit(Module module, boolean feedback) {
 		/*
-		 * XXX -- We don't do designs yet.
+		 * Graph external elements in the current graph.
 		 */
-		scanner.enter(design);
-	}
-
-	@Override
-	public void visit(Task task) {
-		/*
-		 * XXX -- nor tasks.
-		 */
-		scanner.enter(task);
-	}
-
-	@Override
-	public void visit(Call call) {
-		/*
-		 * XXX -- Calls are also tbd.
-		 */
-		scanner.enter(call);
-	}
-
-	@Override
-	public void visit(Procedure procedure) {
-		pushGraph(procedure);
-		graph.setLabel(getName(procedure));
-
-		procedure.getBody().accept(this);
-
-		popGraph();
-	}
-
-	@Override
-	public void visit(Block block) {
-		graphPreVisit(block);
-		visit(block.getComponents());
-		graphPostVisit(block);
-	}
-
-	@Override
-	public void visit(Branch branch) {
-		graphPreVisit(branch);
-		visit(branch.getComponents());
-		graphPostVisit(branch);
-	}
-
-	@Override
-	public void visit(Decision decision) {
-		graphPreVisit(decision);
-		visit(decision.getComponents());
-		graphPostVisit(decision);
-	}
-
-	@Override
-	public void visit(Loop loop) {
-		graphPreVisit(loop);
+		graphOutside(module, feedback);
 
 		/*
-		 * Draw the feedback registers and input latches.
+		 * Push into a new graph for the module internals.
 		 */
-		Collection<Reg> registers = new LinkedList<Reg>(loop.getDataRegisters());
-		registers.add(loop.getControlRegister());
-		for (Reg reg : registers) {
-			drawFeedbackRegister(reg);
-		}
-
-		final Collection<Component> components = new HashSet<Component>(
-				loop.getComponents());
-		components.removeAll(registers);
-		visit(components);
-
-		graphPostVisit(loop);
-
-		for (Reg reg : registers) {
-			drawFeedbackInput(reg);
-		}
+		pushGraph(module);
+		graph.setLabel(getName(module) + "::"
+				+ Integer.toHexString(module.hashCode()));
+		graph.setColor("red");
 	}
 
-	private void visit(Collection<Component> components) {
-		final LinkedList<Component> queue = new LinkedList<Component>(
-				components);
-		while (!queue.isEmpty()) {
-			final Component component = queue.removeFirst();
-			if (isInputReady(component)) {
-				component.accept(this);
-			} else {
-				queue.add(component);
+	private void graphSingleExit(Component component,
+			org.xronos.openforge.util.graphviz.Record node) {
+		final Exit exit = component.getExits().iterator().next();
+		org.xronos.openforge.util.graphviz.Record.Port exitPort = node
+				.getPort("exit");
+		addToNodeMap(exit, exitPort, DEPENDENCY);
+
+		if (exit.getDoneBus().isConnected()) {
+			org.xronos.openforge.util.graphviz.Record.Port donePort = exitPort
+					.getPort("done");
+			donePort.setLabel("D");
+			donePort.setSeparated(true);
+			addToNodeMap(exit.getDoneBus(), donePort, DEPENDENCY);
+		}
+
+		for (int i = 0; i < exit.getDataBuses().size(); i++) {
+			final Bus bus = exit.getDataBuses().get(i);
+			if (bus.isConnected()) {
+				String label = "d" + i;
+				org.xronos.openforge.util.graphviz.Record.Port dataPort = exitPort
+						.getPort("b_" + label);
+				dataPort.setLabel(label);
+				dataPort.setSeparated(true);
+				addToNodeMap(bus, dataPort, DEPENDENCY);
 			}
 		}
-	}
-
-	private void drawFeedbackRegister(Reg reg) {
-		org.xronos.openforge.util.graphviz.Record box = new org.xronos.openforge.util.graphviz.Record(
-				"component" + nodeCount++);
-		box.setLabel(getName(reg) + " (Cmp)");
-
-		org.xronos.openforge.util.graphviz.Record.Port main = box.getPort("main");
-		org.xronos.openforge.util.graphviz.Record.Port entryPort = main
-				.getPort("entry");
-		entryPort.setSeparated(false);
-
-		org.xronos.openforge.util.graphviz.Record.Port dataPort = entryPort
-				.getPort("din");
-		dataPort.setLabel("din");
-		addToNodeMap(reg.getDataPort(), dataPort, DEPENDENCY);
-
-		org.xronos.openforge.util.graphviz.Record.Port bodyPort = main
-				.getPort("body");
-		bodyPort.setLabel(getName(reg));
-		bodyPort.setSeparated(false);
-
-		graphSingleExit(reg, main);
-
-		addToNodeMap(reg, box, DEPENDENCY);
-		graph.add(box);
-	}
-
-	private void drawFeedbackInput(Reg reg) {
-		connectPort(reg.getDataPort(), true);
 	}
 
 	private boolean isInputReady(Component component) {
@@ -1007,65 +828,187 @@ public class LWireGraph extends DefaultVisitor {
 		return true;
 	}
 
-	@Override
-	public void visit(Switch sw) {
-		visit((Block) sw);
+	/** parse the flags, setting fields as appropriate */
+	private void parseFlags(int flags) {
+		if ((flags & DATA) == DATA) {
+			graphDependencies = true;
+			graphData = true;
+		}
+		if ((flags & CONTROL) == CONTROL) {
+			graphDependencies = true;
+			graphControl = true;
+		}
+		if ((flags & LOGICAL) == LOGICAL) {
+			graphDependencies = true;
+			graphLogical = true;
+		}
+		if ((flags & STRUCTURAL) == STRUCTURAL) {
+			graphDependencies = true;
+			graphStructural = true;
+		}
+		if ((flags & CLOCKRESET) == CLOCKRESET) {
+			drawCR = true;
+		}
+		if ((flags & DETAIL) == DETAIL) {
+			isDetailed = true;
+		}
+	}
+
+	private void popGraph() {
+		graph = graphStack.removeFirst();
+	}
+
+	/**
+	 * Prints a text representation of this graph readable by the <i>dotty</i>
+	 * viewer.
+	 * 
+	 * @param writer
+	 *            the writer to receive the text
+	 */
+	public void print(PrintWriter writer) {
+		// if there are any unresolved nodes at this point, they must have come
+		// from
+		// somewhere off the graph, so we add a circle node to the topgraph and
+		// connect them
+		if (unresolvedNodes.values().size() > 0) {
+			List<Unresolved> urList = new ArrayList<Unresolved>(
+					unresolvedNodes.values());
+
+			for (Unresolved ur : urList) {
+				Node target = (Node) nodeMapDeps.get(ur.getBus());
+				if (target == null) {
+					target = (Node) nodeMapPhys.get(ur.getBus());
+				}
+
+				if (target != null) {
+					assert target != null : "Found an unresolved node in nodeMapDeps "
+							+ ur.getBus()
+							+ " "
+							+ ur.getBus().getOwner().getOwner();
+
+					Circle circle = new Circle("unknownSrc" + nodeCount++);
+					circle.setLabel(getName(ur.getBus().getOwner().getOwner())
+							+ "::"
+							+ Integer.toHexString(ur.getBus().getOwner()
+									.getOwner().hashCode()) + "::"
+							+ Integer.toHexString(ur.getBus().hashCode()));
+					topGraph.add(circle);
+					addToNodeMap(ur.getBus(), circle, DEPENDENCY);
+				}
+			}
+		}
+
+		graph.print(writer);
+		writer.flush();
+	}
+
+	private void pushGraph(Object obj) {
+		graphStack.addFirst(graph);
+		graph = graph.getSubgraph("cluster" + nodeCount++);
+		addToNodeMap(obj, graph, DEPENDENCY);
+	}
+
+	/**
+	 * causes the graph to be printed in landscape mode - this may or may not
+	 * use less paper - it depends on the graph. hence it is an option
+	 */
+	public void setLandscape() {
+		topGraph.setGVAttribute("rotate", "90");
 	}
 
 	@Override
-	public void visit(WhileBody body) {
-		graphPreVisit(body);
-		visit(body.getComponents());
-		graphPostVisit(body);
+	public void visit(AddOp op) {
+		graph(op);
 	}
 
 	@Override
-	public void visit(UntilBody body) {
-		graphPreVisit(body);
-		visit(body.getComponents());
-		graphPostVisit(body);
+	public void visit(And and) {
+		graph(and);
 	}
 
 	@Override
-	public void visit(Latch l) {
-		if (isDetailed) {
-			graphPreVisit(l);
-			visit(l.getComponents());
-			graphPostVisit(l);
-		} else {
-			graph(l);
+	public void visit(AndOp op) {
+		graph(op);
+	}
+
+	@Override
+	public void visit(Block block) {
+		graphPreVisit(block);
+		visit(block.getComponents());
+		graphPostVisit(block);
+	}
+
+	@Override
+	public void visit(Branch branch) {
+		graphPreVisit(branch);
+		visit(branch.getComponents());
+		graphPostVisit(branch);
+	}
+
+	@Override
+	public void visit(Call call) {
+		/*
+		 * XXX -- Calls are also tbd.
+		 */
+		scanner.enter(call);
+	}
+
+	@Override
+	public void visit(CastOp op) {
+		graph(op);
+	}
+
+	private void visit(Collection<Component> components) {
+		final LinkedList<Component> queue = new LinkedList<Component>(
+				components);
+		while (!queue.isEmpty()) {
+			final Component component = queue.removeFirst();
+			if (isInputReady(component)) {
+				component.accept(this);
+			} else {
+				queue.add(component);
+			}
 		}
 	}
 
 	@Override
-	public void visit(Scoreboard sb) {
-		if (isDetailed) {
-			graphPreVisit(sb);
-			visit(sb.getComponents());
-			graphPostVisit(sb);
-		} else {
-			graph(sb);
-		}
+	public void visit(ComplementOp op) {
+		graph(op);
 	}
 
 	@Override
-	public void visit(InBuf buf) {
-		graph(buf);
+	public void visit(ConditionalAndOp op) {
+		graph(op);
 	}
 
 	@Override
-	public void visit(OutBuf buf) {
-		graph(buf);
+	public void visit(ConditionalOrOp op) {
+		graph(op);
 	}
 
 	@Override
-	public void visit(Reg reg) {
-		graph(reg);
+	public void visit(Constant op) {
+		graph(op);
 	}
 
 	@Override
-	public void visit(Mux mux) {
-		graph(mux);
+	public void visit(Decision decision) {
+		graphPreVisit(decision);
+		visit(decision.getComponents());
+		graphPostVisit(decision);
+	}
+
+	@Override
+	public void visit(Design design) {
+		/*
+		 * XXX -- We don't do designs yet.
+		 */
+		scanner.enter(design);
+	}
+
+	@Override
+	public void visit(DivideOp op) {
+		graph(op);
 	}
 
 	@Override
@@ -1074,30 +1017,8 @@ public class LWireGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(TimingOp op) {
+	public void visit(EqualsOp op) {
 		graph(op);
-	}
-
-	@Override
-	public void visit(TaskCall comp) {
-		if (isDetailed) {
-			graphPreVisit(comp);
-			scanner.enter(comp);
-			graphPostVisit(comp);
-		} else {
-			graph(comp);
-		}
-	}
-
-	@Override
-	public void visit(SimplePinAccess comp) {
-		if (isDetailed) {
-			graphPreVisit(comp);
-			scanner.enter(comp);
-			graphPostVisit(comp);
-		} else {
-			graph(comp);
-		}
 	}
 
 	@Override
@@ -1122,104 +1043,6 @@ public class LWireGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(PriorityMux pmux) {
-		if (isDetailed) {
-			graphPreVisit(pmux);
-			scanner.enter(pmux);
-			graphPostVisit(pmux);
-		} else {
-			graph(pmux);
-		}
-	}
-
-	@Override
-	public void visit(RegisterReferee regReferee) {
-		if (isDetailed) {
-			graphPreVisit(regReferee);
-			scanner.enter(regReferee);
-			graphPostVisit(regReferee);
-		} else {
-			graph(regReferee);
-		}
-	}
-
-	@Override
-	public void visit(MemoryReferee memReferee) {
-		if (isDetailed) {
-			graphPreVisit(memReferee);
-			scanner.enter(memReferee);
-			graphPostVisit(memReferee);
-		} else {
-			graph(memReferee);
-		}
-	}
-
-	@Override
-	public void visit(And and) {
-		graph(and);
-	}
-
-	@Override
-	public void visit(Not not) {
-		graph(not);
-	}
-
-	@Override
-	public void visit(Or or) {
-		graph(or);
-	}
-
-	@Override
-	public void visit(AddOp op) {
-		graph(op);
-	}
-
-	@Override
-	public void visit(AndOp op) {
-		graph(op);
-	}
-
-	@Override
-	public void visit(NumericPromotionOp op) {
-		graph(op);
-	}
-
-	@Override
-	public void visit(CastOp op) {
-		graph(op);
-	}
-
-	@Override
-	public void visit(ComplementOp op) {
-		graph(op);
-	}
-
-	@Override
-	public void visit(ConditionalAndOp op) {
-		graph(op);
-	}
-
-	@Override
-	public void visit(ConditionalOrOp op) {
-		graph(op);
-	}
-
-	@Override
-	public void visit(Constant op) {
-		graph(op);
-	}
-
-	@Override
-	public void visit(DivideOp op) {
-		graph(op);
-	}
-
-	@Override
-	public void visit(EqualsOp op) {
-		graph(op);
-	}
-
-	@Override
 	public void visit(GreaterThanEqualToOp op) {
 		graph(op);
 	}
@@ -1227,6 +1050,22 @@ public class LWireGraph extends DefaultVisitor {
 	@Override
 	public void visit(GreaterThanOp op) {
 		graph(op);
+	}
+
+	@Override
+	public void visit(InBuf buf) {
+		graph(buf);
+	}
+
+	@Override
+	public void visit(Latch l) {
+		if (isDetailed) {
+			graphPreVisit(l);
+			visit(l.getComponents());
+			graphPostVisit(l);
+		} else {
+			graph(l);
+		}
 	}
 
 	@Override
@@ -1245,6 +1084,42 @@ public class LWireGraph extends DefaultVisitor {
 	}
 
 	@Override
+	public void visit(Loop loop) {
+		graphPreVisit(loop);
+
+		/*
+		 * Draw the feedback registers and input latches.
+		 */
+		Collection<Reg> registers = new LinkedList<Reg>(loop.getDataRegisters());
+		registers.add(loop.getControlRegister());
+		for (Reg reg : registers) {
+			drawFeedbackRegister(reg);
+		}
+
+		final Collection<Component> components = new HashSet<Component>(
+				loop.getComponents());
+		components.removeAll(registers);
+		visit(components);
+
+		graphPostVisit(loop);
+
+		for (Reg reg : registers) {
+			drawFeedbackInput(reg);
+		}
+	}
+
+	@Override
+	public void visit(MemoryReferee memReferee) {
+		if (isDetailed) {
+			graphPreVisit(memReferee);
+			scanner.enter(memReferee);
+			graphPostVisit(memReferee);
+		} else {
+			graph(memReferee);
+		}
+	}
+
+	@Override
 	public void visit(MinusOp op) {
 		graph(op);
 	}
@@ -1260,8 +1135,8 @@ public class LWireGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(NotEqualsOp op) {
-		graph(op);
+	public void visit(Mux mux) {
+		graph(mux);
 	}
 
 	@Override
@@ -1285,12 +1160,12 @@ public class LWireGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(RegisterRead op) {
-		graph(op);
+	public void visit(Not not) {
+		graph(not);
 	}
 
 	@Override
-	public void visit(RegisterWrite op) {
+	public void visit(NotEqualsOp op) {
 		graph(op);
 	}
 
@@ -1300,12 +1175,74 @@ public class LWireGraph extends DefaultVisitor {
 	}
 
 	@Override
+	public void visit(NumericPromotionOp op) {
+		graph(op);
+	}
+
+	@Override
+	public void visit(Or or) {
+		graph(or);
+	}
+
+	@Override
 	public void visit(OrOp op) {
 		graph(op);
 	}
 
 	@Override
+	public void visit(OutBuf buf) {
+		graph(buf);
+	}
+
+	@Override
 	public void visit(PlusOp op) {
+		graph(op);
+	}
+
+	@Override
+	public void visit(PriorityMux pmux) {
+		if (isDetailed) {
+			graphPreVisit(pmux);
+			scanner.enter(pmux);
+			graphPostVisit(pmux);
+		} else {
+			graph(pmux);
+		}
+	}
+
+	@Override
+	public void visit(Procedure procedure) {
+		pushGraph(procedure);
+		graph.setLabel(getName(procedure));
+
+		procedure.getBody().accept(this);
+
+		popGraph();
+	}
+
+	@Override
+	public void visit(Reg reg) {
+		graph(reg);
+	}
+
+	@Override
+	public void visit(RegisterRead op) {
+		graph(op);
+	}
+
+	@Override
+	public void visit(RegisterReferee regReferee) {
+		if (isDetailed) {
+			graphPreVisit(regReferee);
+			scanner.enter(regReferee);
+			graphPostVisit(regReferee);
+		} else {
+			graph(regReferee);
+		}
+	}
+
+	@Override
+	public void visit(RegisterWrite op) {
 		graph(op);
 	}
 
@@ -1320,13 +1257,78 @@ public class LWireGraph extends DefaultVisitor {
 	}
 
 	@Override
+	public void visit(Scoreboard sb) {
+		if (isDetailed) {
+			graphPreVisit(sb);
+			visit(sb.getComponents());
+			graphPostVisit(sb);
+		} else {
+			graph(sb);
+		}
+	}
+
+	@Override
 	public void visit(ShortcutIfElseOp op) {
 		graph(op);
 	}
 
 	@Override
+	public void visit(SimplePinAccess comp) {
+		if (isDetailed) {
+			graphPreVisit(comp);
+			scanner.enter(comp);
+			graphPostVisit(comp);
+		} else {
+			graph(comp);
+		}
+	}
+
+	@Override
 	public void visit(SubtractOp op) {
 		graph(op);
+	}
+
+	@Override
+	public void visit(Switch sw) {
+		visit((Block) sw);
+	}
+
+	@Override
+	public void visit(Task task) {
+		/*
+		 * XXX -- nor tasks.
+		 */
+		scanner.enter(task);
+	}
+
+	@Override
+	public void visit(TaskCall comp) {
+		if (isDetailed) {
+			graphPreVisit(comp);
+			scanner.enter(comp);
+			graphPostVisit(comp);
+		} else {
+			graph(comp);
+		}
+	}
+
+	@Override
+	public void visit(TimingOp op) {
+		graph(op);
+	}
+
+	@Override
+	public void visit(UntilBody body) {
+		graphPreVisit(body);
+		visit(body.getComponents());
+		graphPostVisit(body);
+	}
+
+	@Override
+	public void visit(WhileBody body) {
+		graphPreVisit(body);
+		visit(body.getComponents());
+		graphPostVisit(body);
 	}
 
 	@Override

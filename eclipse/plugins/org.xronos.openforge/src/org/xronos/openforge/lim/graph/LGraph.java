@@ -56,7 +56,6 @@ import org.xronos.openforge.util.graphviz.Node;
 import org.xronos.openforge.util.graphviz.Record;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * LGraph uses <a
  * href="http://www.research.att.com/sw/tools/graphviz/">GraphViz</a> to
@@ -68,12 +67,79 @@ import org.xronos.openforge.util.naming.ID;
  */
 public class LGraph extends FilteredVisitor implements Visitor {
 
+	private static class EntryPort {
+		static EntryPort get(Entry entry, Port port) {
+			return new EntryPort(entry, port);
+		}
+
+		private Entry entry;
+
+		private Port port;
+
+		EntryPort(Entry entry, Port port) {
+			this.entry = entry;
+			this.port = port;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof EntryPort) {
+				EntryPort ep = (EntryPort) obj;
+				return ep.entry == entry && ep.port == port;
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return entry.hashCode() + port.hashCode();
+		}
+	}
+
+	/**
+	 * holds unresolved edges, allows adding new edges to an existing bus (key
+	 * in the hashMap), and retrieval of the edges
+	 */
+	private static class Unresolved {
+		private Bus bus;
+		private List<Node> sources = new ArrayList<Node>();
+		private List<Edge> edges = new ArrayList<Edge>();
+
+		Unresolved(Bus b, Node s, Edge e) {
+			bus = b;
+			sources.add(s);
+			edges.add(e);
+		}
+
+		public void addSource(Node s, Edge e) {
+			sources.add(s);
+			edges.add(e);
+		}
+
+		public Bus getBus() {
+			return bus;
+		}
+
+		public List<Edge> getEdges() {
+			return edges;
+		}
+
+		public List<Node> getSources() {
+			return sources;
+		}
+
+		@Override
+		public String toString() {
+			return "Unresolved: bus: " + bus + " owner: "
+					+ bus.getOwner().getOwner();
+		}
+
+	}
+
 	/** The top level Graph -- put all edges at this level */
 	private Graph topGraph;
-
 	/** The graph instance for the current level being visited */
 	private Graph graph;
-
 	/** True if the insides of Selectors and other primitive modules to be drawn */
 	@SuppressWarnings("unused")
 	private boolean isDetailed = false;
@@ -85,8 +151,10 @@ public class LGraph extends FilteredVisitor implements Visitor {
 	private boolean graphPhysical = false;
 	/** show logical connections */
 	private boolean graphLogical = false;
+
 	/** show data connections */
 	private boolean graphData = false;
+
 	/** show control connections */
 	private boolean graphControl = false;
 
@@ -98,7 +166,6 @@ public class LGraph extends FilteredVisitor implements Visitor {
 	 * level is exited.
 	 */
 	private LinkedList<Graph> graphStack = new LinkedList<Graph>();
-
 	/** The number of nodes so far, used to generate unique identifiers */
 	private int nodeCount = 0;
 
@@ -109,37 +176,61 @@ public class LGraph extends FilteredVisitor implements Visitor {
 	private Map<Object, Object> nodeMapDeps = new HashMap<Object, Object>();
 	/** Map of LIM object to graph Node - for physical connections */
 	private Map<Object, Object> nodeMapPhys = new HashMap<Object, Object>();
-
 	/** Weights for the various types of edges */
 	private static final int WT_ENTRY = 1200;
 	private static final int WT_EXIT = 800;
 	private static final int WT_DEP = 4;
+
 	private static final int WT_FEEDBK = 1;
 	private static final int WT_ENTRYFEEDBACK = 12;
-
 	/** show data connections */
 	public static final int DATA = 0x1;
 	/** show control connections */
 	public static final int CONTROL = 0x2;
+
 	/** show logical connections */
 	public static final int LOGICAL = 0x4;
 	/** used internally to denote any of the above */
 	private static final int DEPENDENCY = DATA | CONTROL | LOGICAL;
-
 	/** show clock & reset connections */
 	public static final int CLOCKRESET = 0x20;
 	/** show physical connections (bus/port) */
 	public static final int PHYSICAL = 0x40;
+
 	/**
 	 * show detailed primitive contents: if set the insides of Selectors and
 	 * other pass-through modules are to be graphed; if false, they will be
 	 * graphed as opaque boxes
 	 */
 	public static final int DETAIL = 0x80;
+
 	/** print in landscape mode */
 	public static final int LANDSCAPE = 0x100;
 
 	public static final int DEFAULT = DATA | CONTROL | LOGICAL | PHYSICAL;
+
+	private static String getName(Object o) {
+		return ID.showLogical(o);
+	}
+
+	private static String getName(Object o, String defaultName) {
+		return ID.showLogical(o);
+	}
+
+	/**
+	 * Constructs a new LGraph that will not draw the insides of pass-through
+	 * modules like Selector.
+	 * 
+	 * @param name
+	 *            a title for the graph
+	 * @param top
+	 *            the LIM element whose contents are to be graphed; typically a
+	 *            {@link Design}, but only the {@link Procedure Procedures} down
+	 *            will be depicted
+	 */
+	public LGraph(String name, Visitable top) {
+		this(name, top, DEFAULT);
+	}
 
 	/**
 	 * Constructs a new LGraph.
@@ -179,269 +270,32 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		}
 	}
 
-	/** parse the flags, setting fields as appropriate */
-	private void parseFlags(int flags) {
-		if ((flags & DATA) == DATA) {
-			graphDependencies = true;
-			graphData = true;
-		}
-		if ((flags & CONTROL) == CONTROL) {
-			graphDependencies = true;
-			graphControl = true;
-		}
-		if ((flags & LOGICAL) == LOGICAL) {
-			graphDependencies = true;
-			graphLogical = true;
-		}
-		if ((flags & CLOCKRESET) == CLOCKRESET) {
-			drawCR = true;
-		}
-		if ((flags & PHYSICAL) == PHYSICAL) {
-			graphPhysical = true;
-		}
-		if ((flags & DETAIL) == DETAIL) {
-			isDetailed = true;
-		}
-	}
-
 	/**
-	 * Constructs a new LGraph that will not draw the insides of pass-through
-	 * modules like Selector.
-	 * 
-	 * @param name
-	 *            a title for the graph
-	 * @param top
-	 *            the LIM element whose contents are to be graphed; typically a
-	 *            {@link Design}, but only the {@link Procedure Procedures} down
-	 *            will be depicted
+	 * type defines which nodeMap to look into - DEPENDENCY==nodeMapDeps,
+	 * PHYSICAL==nodeMapPhys
 	 */
-	public LGraph(String name, Visitable top) {
-		this(name, top, DEFAULT);
-	}
+	private void addToNodeMap(Object key, Object value, int type) {
+		assert type == PHYSICAL || type == DEPENDENCY : "Illegal type to addToNodeMap";
+		assert value != null;
+		assert key != null;
 
-	/**
-	 * Prints a text representation of this graph readable by the <i>dotty</i>
-	 * viewer.
-	 * 
-	 * @param writer
-	 *            the writer to receive the text
-	 */
-	public void print(PrintWriter writer) {
-		// if there are any unresolved nodes at this point, they must have come
-		// from
-		// somewhere off the graph, so we add a circle node to the topgraph and
-		// connect them
-		if (unresolvedNodes.values().size() > 0) {
-			List<Unresolved> urList = new ArrayList<Unresolved>(
-					unresolvedNodes.values());
-
-			for (Unresolved ur : urList) {
-				Node target = (Node) nodeMapDeps.get(ur.getBus());
-				if (target == null) {
-					target = (Node) nodeMapPhys.get(ur.getBus());
-				}
-
-				if (target != null) {
-					assert target != null : "Found an unresolved node in nodeMapDeps "
-							+ ur.getBus()
-							+ " "
-							+ ur.getBus().getOwner().getOwner();
-
-					Circle circle = new Circle("unknownSrc" + nodeCount++);
-					circle.setLabel(getName(ur.getBus().getOwner().getOwner())
-							+ "::"
-							+ Integer.toHexString(ur.getBus().getOwner()
-									.getOwner().hashCode()) + "::"
-							+ Integer.toHexString(ur.getBus().hashCode()));
-					topGraph.add(circle);
-					addToNodeMap(ur.getBus(), circle, DEPENDENCY);
-				}
-			}
-		}
-
-		graph.print(writer);
-		writer.flush();
-	}
-
-	/**
-	 * causes the graph to be printed in landscape mode - this may or may not
-	 * use less paper - it depends on the graph. hence it is an option
-	 */
-	public void setLandscape() {
-		topGraph.setGVAttribute("rotate", "90");
-	}
-
-	private void pushGraph(Object obj) {
-		graphStack.addFirst(graph);
-		graph = graph.getSubgraph("cluster" + nodeCount++);
-		addToNodeMap(obj, graph, DEPENDENCY);
-	}
-
-	private void popGraph() {
-		graph = graphStack.removeFirst();
-	}
-
-	private static String getName(Object o, String defaultName) {
-		return ID.showLogical(o);
-	}
-
-	private static String getName(Object o) {
-		return ID.showLogical(o);
-	}
-
-	/**
-	 * Draw the box for the component
-	 * 
-	 * if we are graphing physical connections, then draw the ports at the top
-	 * of the component, else draw just the component
-	 */
-	private void graph(Component component) {
-		if (graphPhysical) {
-			Component portOwner;
-			if (component instanceof InBuf) {
-				portOwner = component.getOwner();
-			} else {
-				portOwner = component;
-			}
-
-			Record record = new Record("portRecord" + nodeCount++);
-			record.setTitle(getName(component) + "::" + component.toString());
-			record.setColor("green");
-			addToNodeMap(component, record, DEPENDENCY);
-
-			if (portOwner instanceof Mux) {
-				int gindex = 0;
-				for (Port go_port : ((Mux) portOwner).getGoPorts()) {
-					String gname = "s" + gindex++;
-					Record.Port go = record.getPort(gname);
-					go.setLabel(gname);
-					addToNodeMap(go_port, go, PHYSICAL);
-				}
-			} else if (portOwner instanceof EncodedMux) {
-				Port selectPort = ((EncodedMux) portOwner).getSelectPort();
-				String name = "sel";
-				Record.Port sel = record.getPort(name);
-				sel.setLabel(name);
-				addToNodeMap(selectPort, sel, PHYSICAL);
-			} else {
-				Record.Port go = record.getPort("go");
-				go.setLabel("g");
-				addToNodeMap(portOwner.getGoPort(), go, PHYSICAL);
-			}
-			if (drawCR) {
-				Record.Port clock = record.getPort("clk");
-				clock.setLabel("c");
-				addToNodeMap(portOwner.getClockPort(), clock, PHYSICAL);
-
-				Record.Port reset = record.getPort("rst");
-				reset.setLabel("r");
-				addToNodeMap(portOwner.getResetPort(), reset, PHYSICAL);
-			}
-
-			int dindex = 0;
-
-			for (Port port : portOwner.getDataPorts()) {
-				String dname = "d" + dindex++;
-				Record.Port data = record.getPort(dname);
-				data.setLabel(dname);
-				addToNodeMap(port, data, PHYSICAL);
-			}
-
-			graph.add(record);
-			graphOutside(component, false);
-			if (!(component instanceof InBuf)) // don't graph connections to
-												// InBuf because the inbuf's
-												// owners will graph them
-			{
-				// graph from the buses that feed the port owners ports to the
-				// ports
-				for (Port port : portOwner.getPorts()) {
-					if (!drawCR
-							&& ((port == portOwner.getClockPort()) || (port == portOwner
-									.getResetPort()))) {
-						continue;
-					}
-					if (port.getBus() != null) {
-						graphPhysical(port.getBus(), port, false);
-					}
-				}
-			}
+		if (type == PHYSICAL) {
+			nodeMapPhys.put(key, value);
 		} else {
-			Box box = new Box("component" + nodeCount++);
-			box.setLabel(getName(component));
-			addToNodeMap(component, box, DEPENDENCY);
-			graph.add(box);
-
-			graphOutside(component, false);
-		}
-		if (graphDependencies) {
-			connectEntries(component, component);
-		}
-		connectExits(component, component);
-	}
-
-	private void graphPreVisit(Module module) {
-		graphPreVisit(module, false);
-	}
-
-	/**
-	 * previsit for a module
-	 * 
-	 * @param module
-	 *            the module being visited
-	 * @param feedback
-	 *            true if the module has a feedback entry
-	 */
-	private void graphPreVisit(Module module, boolean feedback) {
-		/*
-		 * Graph external elements in the current graph.
-		 */
-		graphOutside(module, feedback);
-
-		/*
-		 * Push into a new graph for the module internals.
-		 */
-		pushGraph(module);
-		graph.setLabel(getName(module) + "::"
-				+ Integer.toHexString(module.hashCode()));
-		graph.setColor("red");
-	}
-
-	private void graphPostVisit(Module module) {
-		graphPostVisit(module, false);
-	}
-
-	private void graphPostVisit(Module module, boolean feedback) {
-		InBuf inBuf = module.getInBuf();
-		if (drawCR) {
-			Node clock = (Node) nodeMapDeps.get(inBuf.getClockBus());
-			clock.setLabel("c");
-			Node reset = (Node) nodeMapDeps.get(inBuf.getResetBus());
-			reset.setLabel("r");
+			nodeMapDeps.put(key, value);
 		}
 
-		if (graphDependencies) {
-			Node go = (Node) nodeMapDeps.get(inBuf.getGoBus());
-			go.setLabel("g");
-
-			int index = 0;
-
-			for (Bus bus : inBuf.getDataBuses()) {
-				Node node = (Node) nodeMapDeps.get(bus);
-				node.setLabel("d" + index++);
+		if (unresolvedNodes.containsKey(key)) {
+			Unresolved ur = unresolvedNodes.get(key);
+			Node target = (Node) nodeMapDeps.get(ur.getBus());
+			assert target != null : "How can the target still be null!";
+			List<Node> sources = ur.getSources();
+			List<Edge> edges = ur.getEdges();
+			for (int i = 0; i < sources.size(); i++) {
+				topGraph.connect(target, sources.get(i), edges.get(i));
 			}
+			unresolvedNodes.remove(key);
 		}
-		/*
-		 * Pop back out to connect externals to internals.
-		 */
-		popGraph();
-		if (graphDependencies) {
-			connectEntries(module, module.getInBuf(), feedback);
-		}
-		if (graphPhysical) {
-			connectPorts(module, feedback);
-		}
-		connectExits(module);
 	}
 
 	private void connectEntries(Component component, Component target) {
@@ -539,14 +393,158 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		}
 	}
 
-	private void graphOutside(Component component, boolean feedback) {
-		if (graphDependencies) {
-			graphEntries(component, feedback);
+	private void connectPorts(Component component, boolean feedback) {
+		for (Port port : component.getPorts()) {
+			if (port.getBus() == null
+					|| !drawCR
+					&& (port == component.getClockPort() || port == component
+							.getResetPort())) {
+				continue;
+			}
+			graphPhysical(port.getBus(), port, feedback);
 		}
-		// don't need to do physical "entry" (ports) because they are drawn as a
-		// part of
-		// the component (or inbuf if a module)
-		graphExits(component);
+	}
+
+	@Override
+	public void filter(Module m) {
+		if (!(m instanceof Composable)) {
+			graphPostVisit(m);
+		}
+	}
+
+	@Override
+	public void filterAny(Component c) {
+		graph(c);
+	}
+
+	/**
+	 * Draw the box for the component
+	 * 
+	 * if we are graphing physical connections, then draw the ports at the top
+	 * of the component, else draw just the component
+	 */
+	private void graph(Component component) {
+		if (graphPhysical) {
+			Component portOwner;
+			if (component instanceof InBuf) {
+				portOwner = component.getOwner();
+			} else {
+				portOwner = component;
+			}
+
+			Record record = new Record("portRecord" + nodeCount++);
+			record.setTitle(getName(component) + "::" + component.toString());
+			record.setColor("green");
+			addToNodeMap(component, record, DEPENDENCY);
+
+			if (portOwner instanceof Mux) {
+				int gindex = 0;
+				for (Port go_port : ((Mux) portOwner).getGoPorts()) {
+					String gname = "s" + gindex++;
+					Record.Port go = record.getPort(gname);
+					go.setLabel(gname);
+					addToNodeMap(go_port, go, PHYSICAL);
+				}
+			} else if (portOwner instanceof EncodedMux) {
+				Port selectPort = ((EncodedMux) portOwner).getSelectPort();
+				String name = "sel";
+				Record.Port sel = record.getPort(name);
+				sel.setLabel(name);
+				addToNodeMap(selectPort, sel, PHYSICAL);
+			} else {
+				Record.Port go = record.getPort("go");
+				go.setLabel("g");
+				addToNodeMap(portOwner.getGoPort(), go, PHYSICAL);
+			}
+			if (drawCR) {
+				Record.Port clock = record.getPort("clk");
+				clock.setLabel("c");
+				addToNodeMap(portOwner.getClockPort(), clock, PHYSICAL);
+
+				Record.Port reset = record.getPort("rst");
+				reset.setLabel("r");
+				addToNodeMap(portOwner.getResetPort(), reset, PHYSICAL);
+			}
+
+			int dindex = 0;
+
+			for (Port port : portOwner.getDataPorts()) {
+				String dname = "d" + dindex++;
+				Record.Port data = record.getPort(dname);
+				data.setLabel(dname);
+				addToNodeMap(port, data, PHYSICAL);
+			}
+
+			graph.add(record);
+			graphOutside(component, false);
+			if (!(component instanceof InBuf)) // don't graph connections to
+												// InBuf because the inbuf's
+												// owners will graph them
+			{
+				// graph from the buses that feed the port owners ports to the
+				// ports
+				for (Port port : portOwner.getPorts()) {
+					if (!drawCR
+							&& (port == portOwner.getClockPort() || port == portOwner
+									.getResetPort())) {
+						continue;
+					}
+					if (port.getBus() != null) {
+						graphPhysical(port.getBus(), port, false);
+					}
+				}
+			}
+		} else {
+			Box box = new Box("component" + nodeCount++);
+			box.setLabel(getName(component));
+			addToNodeMap(component, box, DEPENDENCY);
+			graph.add(box);
+
+			graphOutside(component, false);
+		}
+		if (graphDependencies) {
+			connectEntries(component, component);
+		}
+		connectExits(component, component);
+	}
+
+	private void graphDependency(Dependency dep, boolean feedback) {
+		Object key = EntryPort.get(dep.getEntry(), dep.getPort());
+		Node source = (Node) nodeMapDeps.get(key);
+
+		Bus logicalBus = dep.getLogicalBus();
+		if (graphLogical
+				&& (graphControl && dep instanceof ControlDependency || graphData
+						&& dep instanceof DataDependency) && logicalBus != null) {
+			Node target = (Node) nodeMapDeps.get(logicalBus);
+			Edge edge;
+			if (feedback) {
+				edge = new Edge(WT_FEEDBK);
+				edge.setGVAttribute("constraint", "false");
+			} else {
+				edge = new Edge(WT_DEP);
+			}
+			edge.setLabel(getName(logicalBus, " "));
+			edge.setDirection(Edge.DIR_BACK);
+			edge.setStyle(Edge.STYLE_DOTTED);
+			// edge.setNodePorts("s","n");
+
+			if (target != null) {
+				topGraph.connect(target, source, edge);
+			} else {
+				Unresolved ur = unresolvedNodes.get(logicalBus);
+				if (ur == null) {
+					ur = new Unresolved(logicalBus, source, edge);
+					unresolvedNodes.put(logicalBus, ur);
+				} else// already exists in the unresolved list, just
+						// add our source and edge to the list
+				{
+					ur.addSource(source, edge);
+				}
+			}
+
+			assert source != null : "source: " + key;
+		}
 	}
 
 	private void graphEntries(Component component, boolean feedback) {
@@ -587,32 +585,13 @@ public class LGraph extends FilteredVisitor implements Visitor {
 
 		for (Port port : entry.getPorts()) {
 			if (!drawCR
-					&& ((port == component.getClockPort()) || (port == component
-							.getResetPort()))) {
+					&& (port == component.getClockPort() || port == component
+							.getResetPort())) {
 				continue;
 			}
 			for (Dependency dep : entry.getDependencies(port)) {
 				graphDependency(dep, feedback);
 			}
-		}
-	}
-
-	private void connectPorts(Component component, boolean feedback) {
-		for (Port port : component.getPorts()) {
-			if (port.getBus() == null
-					|| !drawCR
-					&& ((port == component.getClockPort()) || (port == component
-							.getResetPort()))) {
-				continue;
-			}
-			graphPhysical(port.getBus(), port, feedback);
-		}
-	}
-
-	private void graphExits(Component component) {
-		int index = 0;
-		for (Exit exit : component.getExits()) {
-			graphExit(exit, index++);
 		}
 	}
 
@@ -647,43 +626,21 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		graph.add(record);
 	}
 
-	private void graphDependency(Dependency dep, boolean feedback) {
-		Object key = EntryPort.get(dep.getEntry(), dep.getPort());
-		Node source = (Node) nodeMapDeps.get(key);
-
-		Bus logicalBus = dep.getLogicalBus();
-		if (graphLogical
-				&& ((graphControl && dep instanceof ControlDependency) || (graphData && dep instanceof DataDependency))
-				&& logicalBus != null) {
-			Node target = (Node) nodeMapDeps.get(logicalBus);
-			Edge edge;
-			if (feedback) {
-				edge = new Edge(WT_FEEDBK);
-				edge.setGVAttribute("constraint", "false");
-			} else {
-				edge = new Edge(WT_DEP);
-			}
-			edge.setLabel(getName(logicalBus, " "));
-			edge.setDirection(Edge.DIR_BACK);
-			edge.setStyle(Edge.STYLE_DOTTED);
-			// edge.setNodePorts("s","n");
-
-			if (target != null) {
-				topGraph.connect(target, source, edge);
-			} else {
-				Unresolved ur = unresolvedNodes.get(logicalBus);
-				if (ur == null) {
-					ur = new Unresolved(logicalBus, source, edge);
-					unresolvedNodes.put(logicalBus, ur);
-				} else// already exists in the unresolved list, just
-						// add our source and edge to the list
-				{
-					ur.addSource(source, edge);
-				}
-			}
-
-			assert source != null : "source: " + key;
+	private void graphExits(Component component) {
+		int index = 0;
+		for (Exit exit : component.getExits()) {
+			graphExit(exit, index++);
 		}
+	}
+
+	private void graphOutside(Component component, boolean feedback) {
+		if (graphDependencies) {
+			graphEntries(component, feedback);
+		}
+		// don't need to do physical "entry" (ports) because they are drawn as a
+		// part of
+		// the component (or inbuf if a module)
+		graphExits(component);
 	}
 
 	private void graphPhysical(Bus bus, Port port, boolean feedback) {
@@ -734,100 +691,162 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		}
 	}
 
-	/**
-	 * type defines which nodeMap to look into - DEPENDENCY==nodeMapDeps,
-	 * PHYSICAL==nodeMapPhys
-	 */
-	private void addToNodeMap(Object key, Object value, int type) {
-		assert type == PHYSICAL || type == DEPENDENCY : "Illegal type to addToNodeMap";
-		assert value != null;
-		assert key != null;
+	private void graphPostVisit(Module module) {
+		graphPostVisit(module, false);
+	}
 
-		if (type == PHYSICAL) {
-			nodeMapPhys.put(key, value);
-		} else {
-			nodeMapDeps.put(key, value);
+	private void graphPostVisit(Module module, boolean feedback) {
+		InBuf inBuf = module.getInBuf();
+		if (drawCR) {
+			Node clock = (Node) nodeMapDeps.get(inBuf.getClockBus());
+			clock.setLabel("c");
+			Node reset = (Node) nodeMapDeps.get(inBuf.getResetBus());
+			reset.setLabel("r");
 		}
 
-		if (unresolvedNodes.containsKey(key)) {
-			Unresolved ur = unresolvedNodes.get(key);
-			Node target = (Node) nodeMapDeps.get(ur.getBus());
-			assert target != null : "How can the target still be null!";
-			List<Node> sources = ur.getSources();
-			List<Edge> edges = ur.getEdges();
-			for (int i = 0; i < sources.size(); i++) {
-				topGraph.connect(target, sources.get(i), edges.get(i));
+		if (graphDependencies) {
+			Node go = (Node) nodeMapDeps.get(inBuf.getGoBus());
+			go.setLabel("g");
+
+			int index = 0;
+
+			for (Bus bus : inBuf.getDataBuses()) {
+				Node node = (Node) nodeMapDeps.get(bus);
+				node.setLabel("d" + index++);
 			}
-			unresolvedNodes.remove(key);
+		}
+		/*
+		 * Pop back out to connect externals to internals.
+		 */
+		popGraph();
+		if (graphDependencies) {
+			connectEntries(module, module.getInBuf(), feedback);
+		}
+		if (graphPhysical) {
+			connectPorts(module, feedback);
+		}
+		connectExits(module);
+	}
+
+	private void graphPreVisit(Module module) {
+		graphPreVisit(module, false);
+	}
+
+	/**
+	 * previsit for a module
+	 * 
+	 * @param module
+	 *            the module being visited
+	 * @param feedback
+	 *            true if the module has a feedback entry
+	 */
+	private void graphPreVisit(Module module, boolean feedback) {
+		/*
+		 * Graph external elements in the current graph.
+		 */
+		graphOutside(module, feedback);
+
+		/*
+		 * Push into a new graph for the module internals.
+		 */
+		pushGraph(module);
+		graph.setLabel(getName(module) + "::"
+				+ Integer.toHexString(module.hashCode()));
+		graph.setColor("red");
+	}
+
+	/** parse the flags, setting fields as appropriate */
+	private void parseFlags(int flags) {
+		if ((flags & DATA) == DATA) {
+			graphDependencies = true;
+			graphData = true;
+		}
+		if ((flags & CONTROL) == CONTROL) {
+			graphDependencies = true;
+			graphControl = true;
+		}
+		if ((flags & LOGICAL) == LOGICAL) {
+			graphDependencies = true;
+			graphLogical = true;
+		}
+		if ((flags & CLOCKRESET) == CLOCKRESET) {
+			drawCR = true;
+		}
+		if ((flags & PHYSICAL) == PHYSICAL) {
+			graphPhysical = true;
+		}
+		if ((flags & DETAIL) == DETAIL) {
+			isDetailed = true;
+		}
+	}
+
+	private void popGraph() {
+		graph = graphStack.removeFirst();
+	}
+
+	@Override
+	public void preFilter(Module m) {
+		if (!(m instanceof Composable)) {
+			graphPreVisit(m);
 		}
 	}
 
 	/**
-	 * holds unresolved edges, allows adding new edges to an existing bus (key
-	 * in the hashMap), and retrieval of the edges
+	 * Prints a text representation of this graph readable by the <i>dotty</i>
+	 * viewer.
+	 * 
+	 * @param writer
+	 *            the writer to receive the text
 	 */
-	private static class Unresolved {
-		private Bus bus;
-		private List<Node> sources = new ArrayList<Node>();
-		private List<Edge> edges = new ArrayList<Edge>();
+	public void print(PrintWriter writer) {
+		// if there are any unresolved nodes at this point, they must have come
+		// from
+		// somewhere off the graph, so we add a circle node to the topgraph and
+		// connect them
+		if (unresolvedNodes.values().size() > 0) {
+			List<Unresolved> urList = new ArrayList<Unresolved>(
+					unresolvedNodes.values());
 
-		Unresolved(Bus b, Node s, Edge e) {
-			bus = b;
-			sources.add(s);
-			edges.add(e);
+			for (Unresolved ur : urList) {
+				Node target = (Node) nodeMapDeps.get(ur.getBus());
+				if (target == null) {
+					target = (Node) nodeMapPhys.get(ur.getBus());
+				}
+
+				if (target != null) {
+					assert target != null : "Found an unresolved node in nodeMapDeps "
+							+ ur.getBus()
+							+ " "
+							+ ur.getBus().getOwner().getOwner();
+
+					Circle circle = new Circle("unknownSrc" + nodeCount++);
+					circle.setLabel(getName(ur.getBus().getOwner().getOwner())
+							+ "::"
+							+ Integer.toHexString(ur.getBus().getOwner()
+									.getOwner().hashCode()) + "::"
+							+ Integer.toHexString(ur.getBus().hashCode()));
+					topGraph.add(circle);
+					addToNodeMap(ur.getBus(), circle, DEPENDENCY);
+				}
+			}
 		}
 
-		public Bus getBus() {
-			return bus;
-		}
-
-		public List<Node> getSources() {
-			return sources;
-		}
-
-		public List<Edge> getEdges() {
-			return edges;
-		}
-
-		public void addSource(Node s, Edge e) {
-			sources.add(s);
-			edges.add(e);
-		}
-
-		@Override
-		public String toString() {
-			return "Unresolved: bus: " + bus + " owner: "
-					+ bus.getOwner().getOwner();
-		}
-
+		graph.print(writer);
+		writer.flush();
 	}
 
-	private static class EntryPort {
-		private Entry entry;
-		private Port port;
+	private void pushGraph(Object obj) {
+		graphStack.addFirst(graph);
+		graph = graph.getSubgraph("cluster" + nodeCount++);
+		addToNodeMap(obj, graph, DEPENDENCY);
+	}
 
-		static EntryPort get(Entry entry, Port port) {
-			return new EntryPort(entry, port);
-		}
-
-		EntryPort(Entry entry, Port port) {
-			this.entry = entry;
-			this.port = port;
-		}
-
-		@Override
-		public int hashCode() {
-			return entry.hashCode() + port.hashCode();
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof EntryPort) {
-				EntryPort ep = (EntryPort) obj;
-				return ep.entry == entry && ep.port == port;
-			}
-			return false;
-		}
+	/**
+	 * causes the graph to be printed in landscape mode - this may or may not
+	 * use less paper - it depends on the graph. hence it is an option
+	 */
+	public void setLandscape() {
+		topGraph.setGVAttribute("rotate", "90");
 	}
 
 	@Override
@@ -838,22 +857,5 @@ public class LGraph extends FilteredVisitor implements Visitor {
 		procedure.getBody().accept(this);
 
 		popGraph();
-	}
-
-	@Override
-	public void preFilter(Module m) {
-		if (!(m instanceof Composable))
-			graphPreVisit(m);
-	}
-
-	@Override
-	public void filter(Module m) {
-		if (!(m instanceof Composable))
-			graphPostVisit(m);
-	}
-
-	@Override
-	public void filterAny(Component c) {
-		graph(c);
 	}
 }

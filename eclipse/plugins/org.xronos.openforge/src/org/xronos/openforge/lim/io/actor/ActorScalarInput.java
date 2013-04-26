@@ -39,7 +39,6 @@ import org.xronos.openforge.lim.io.SimplePin;
 import org.xronos.openforge.lim.io.SimplePinRead;
 import org.xronos.openforge.lim.io.SimplePinWrite;
 
-
 /**
  * ActorScalarInput is a specialized fifo input interface which contains the
  * necessary infrastructure to support scalar data types. This includes:
@@ -81,6 +80,7 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 			return false;
 		}
 	}
+
 	private final SimplePin ack;
 	private final String baseName;
 	private final SimplePin data;
@@ -140,10 +140,11 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 	 */
 	@Override
 	public FifoAccess getAccess(boolean blocking) {
-		if (blocking)
+		if (blocking) {
 			return new FifoRead(this);
-		else
+		} else {
 			return new ActorScalarSimpleInputRead(this);
+		}
 	}
 
 	/**
@@ -217,9 +218,9 @@ public class ActorScalarInput extends FifoInput implements ActorPort {
 
 		if (from instanceof FifoRead) {
 			return 1;
-		} else if ((from instanceof ActionTokenCountRead)
-				|| (from instanceof ActionTokenPeek)
-				|| (from instanceof ActionPortStatus)) {
+		} else if (from instanceof ActionTokenCountRead
+				|| from instanceof ActionTokenPeek
+				|| from instanceof ActionPortStatus) {
 			return 0;
 		} else {
 			throw new IllegalArgumentException("Source access to " + this

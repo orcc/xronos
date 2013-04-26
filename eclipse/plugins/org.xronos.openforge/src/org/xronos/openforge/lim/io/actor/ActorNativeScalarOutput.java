@@ -45,94 +45,7 @@ import org.xronos.openforge.lim.io.SimpleFifoPin;
 import org.xronos.openforge.lim.io.SimplePin;
 import org.xronos.openforge.lim.io.SimplePinWrite;
 
-
 public class ActorNativeScalarOutput extends NativeOutput implements ActorPort {
-
-	private final String baseName;
-	private final SimplePin data;
-
-	public ActorNativeScalarOutput(FifoID fifoID) {
-		super(fifoID.getBitWidth());
-		baseName = fifoID.getName();
-		final String pinBaseName = buildPortBaseName(baseName);
-
-		data = new SimpleFifoPin(this, getWidth(), pinBaseName + "_DATA");
-		addPin(data);
-	}
-
-	/**
-	 * asserts false
-	 */
-	@Override
-	public void setAttribute(int type, String value) {
-		assert false : "No supported attributes";
-
-	}
-
-	/**
-	 * Returns a {@link FifoWrite} object that is used to obtain data from this
-	 * FifoIF.
-	 * 
-	 * @return a blocking {@link FifoAccess}
-	 */
-	@Override
-	public FifoAccess getAccess(boolean blocking) {
-		return new ActorScalarSimpleOutputWrite(this);
-	}
-
-	@Override
-	public Component getCountAccess() {
-		throw new UnsupportedOperationException(
-				"NativeOutput channels do not have token count facility");
-	}
-
-	@Override
-	public Component getPeekAccess() {
-		throw new UnsupportedOperationException(
-				"Peeking at output interface not supported");
-	}
-
-	@Override
-	public Component getStatusAccess() {
-		throw new UnsupportedOperationException(
-				"Status of NativeOutput interface not supported");
-	}
-
-	@Override
-	public SimplePin getDataPin() {
-		return data;
-	}
-
-	@Override
-	protected String buildPortBaseName(String portName) {
-		return portName;
-	}
-
-	@Override
-	public String getPortBaseName() {
-		return baseName;
-	}
-
-	/**
-	 * <code>getType</code> returns {@link FifoIF#TYPE_ACTOR_QUEUE}
-	 * 
-	 * @return an <code>int</code> value
-	 */
-	@Override
-	public int getType() {
-		return FifoIF.TYPE_ACTOR_QUEUE;
-	}
-
-	/**
-	 * Returns a subset of {@link #getPins} that are the output pins of the
-	 * interface, containing only the data SimplePin.
-	 */
-	@Override
-	public Collection<SimplePin> getOutputPins() {
-		List<SimplePin> list = new ArrayList<SimplePin>();
-		list.add(data);
-		return Collections.unmodifiableList(list);
-	}
 
 	private class ActorScalarSimpleOutputWrite extends FifoWrite {
 		// This class assumes that the output write will always
@@ -154,5 +67,92 @@ public class ActorNativeScalarOutput extends NativeOutput implements ActorPort {
 			dout.getGoPort().setBus(getGoPort().getPeer());
 
 		}
+	}
+
+	private final String baseName;
+
+	private final SimplePin data;
+
+	public ActorNativeScalarOutput(FifoID fifoID) {
+		super(fifoID.getBitWidth());
+		baseName = fifoID.getName();
+		final String pinBaseName = buildPortBaseName(baseName);
+
+		data = new SimpleFifoPin(this, getWidth(), pinBaseName + "_DATA");
+		addPin(data);
+	}
+
+	@Override
+	protected String buildPortBaseName(String portName) {
+		return portName;
+	}
+
+	/**
+	 * Returns a {@link FifoWrite} object that is used to obtain data from this
+	 * FifoIF.
+	 * 
+	 * @return a blocking {@link FifoAccess}
+	 */
+	@Override
+	public FifoAccess getAccess(boolean blocking) {
+		return new ActorScalarSimpleOutputWrite(this);
+	}
+
+	@Override
+	public Component getCountAccess() {
+		throw new UnsupportedOperationException(
+				"NativeOutput channels do not have token count facility");
+	}
+
+	@Override
+	public SimplePin getDataPin() {
+		return data;
+	}
+
+	/**
+	 * Returns a subset of {@link #getPins} that are the output pins of the
+	 * interface, containing only the data SimplePin.
+	 */
+	@Override
+	public Collection<SimplePin> getOutputPins() {
+		List<SimplePin> list = new ArrayList<SimplePin>();
+		list.add(data);
+		return Collections.unmodifiableList(list);
+	}
+
+	@Override
+	public Component getPeekAccess() {
+		throw new UnsupportedOperationException(
+				"Peeking at output interface not supported");
+	}
+
+	@Override
+	public String getPortBaseName() {
+		return baseName;
+	}
+
+	@Override
+	public Component getStatusAccess() {
+		throw new UnsupportedOperationException(
+				"Status of NativeOutput interface not supported");
+	}
+
+	/**
+	 * <code>getType</code> returns {@link FifoIF#TYPE_ACTOR_QUEUE}
+	 * 
+	 * @return an <code>int</code> value
+	 */
+	@Override
+	public int getType() {
+		return FifoIF.TYPE_ACTOR_QUEUE;
+	}
+
+	/**
+	 * asserts false
+	 */
+	@Override
+	public void setAttribute(int type, String value) {
+		assert false : "No supported attributes";
+
 	}
 }

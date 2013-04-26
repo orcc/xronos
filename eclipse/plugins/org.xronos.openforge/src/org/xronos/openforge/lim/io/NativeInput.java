@@ -47,9 +47,6 @@ public abstract class NativeInput extends FifoIF {
 		super(width);
 	}
 
-	/** Returns the input data pin */
-	public abstract SimplePin getDataPin();
-
 	/**
 	 * Returns a {@link FifoRead} object that is used to obtain data from this
 	 * FifoIF.
@@ -60,6 +57,9 @@ public abstract class NativeInput extends FifoIF {
 	public FifoAccess getAccess() {
 		return new FifoRead(this);
 	}
+
+	/** Returns the input data pin */
+	public abstract SimplePin getDataPin();
 
 	/**
 	 * Returns true due to the fact that the data pin for this interface is an

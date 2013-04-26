@@ -40,7 +40,6 @@ import org.xronos.openforge.lim.primitive.Or;
 import org.xronos.openforge.lim.primitive.Reg;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * A {@link MemoryPort} write access.
  * 
@@ -48,129 +47,6 @@ import org.xronos.openforge.util.naming.ID;
  * @version $Id: MemoryWrite.java 280 2006-08-11 17:00:32Z imiller $
  */
 public class MemoryWrite extends MemoryAccess implements StateAccessor {
-
-	/** The full physical implementation of the MemoryWrite. */
-	Physical physical = null;
-
-	public MemoryWrite(boolean isVolatile, int width, boolean isSigned) {
-		/*
-		 * One port for the address, one for the data.
-		 */
-		super(2, isVolatile, isSigned, width);
-		getGoPort().setUsed(true);
-		makeExit(0);
-	}
-
-	public Port getDataPort() {
-		return getDataPorts().get(1);
-	}
-
-	/**
-	 * Returns the targetted Register which is a StateHolder object.
-	 * 
-	 * @return the targetted Register
-	 */
-	@Override
-	public StateHolder getStateHolder() {
-		return getMemoryPort().getLogicalMemory();
-	}
-
-	/**
-	 * Performs forward constant propagation through this component. This
-	 * component will fetch the incoming {@link Value} from each {@link Port}
-	 * using {@link Port#_getValue()}. It will then compute a new outgoing
-	 * {@link Value} for each {@link Bus} and set it with
-	 * {@link Bus#pushValueForward(Value)}.
-	 * 
-	 * @return true if any of the bus values was modified, false otherwise
-	 */
-	@Override
-	protected boolean pushValuesForward() {
-		/*
-		 * The is really handled by the physical implementation.
-		 */
-		return false;
-	}
-
-	/**
-	 * Performs reverse constant propagation inside through component. This
-	 * component will fetch the incoming {@link Value} from each {@link Bus}
-	 * using {@link Bus#_getValue()}. It will then compute a new outgoing
-	 * {@link Value} for each {@link Port} and set it with
-	 * {@link Port#pushValueBackward(Value)}.
-	 * 
-	 * @return true if any of the port values was modified, false otherwise
-	 */
-	@Override
-	protected boolean pushValuesBackward() {
-		/*
-		 * This is really handled by the physical implementation.
-		 */
-		return false;
-	}
-
-	public Physical makePhysicalComponent() {
-		assert (physical == null) : "MemoryWrite.physical already exists";
-		physical = new Physical();
-		return physical;
-	}
-
-	@Override
-	public Module getPhysicalComponent() {
-		return physical;
-	}
-
-	/**
-	 * returns false
-	 */
-	@Override
-	public boolean isReadAccess() {
-		return false;
-	}
-
-	/**
-	 * returns true
-	 */
-	@Override
-	public boolean isWriteAccess() {
-		return true;
-	}
-
-	/**
-	 * Accept method for the Visitor interface
-	 */
-	@Override
-	public void accept(Visitor visitor) {
-		visitor.visit(this);
-	}
-
-	/**
-	 * This accessor modifies the {@link Referenceable} target state so it may
-	 * not execute in parallel with other accesses.
-	 */
-	@Override
-	public boolean isSequencingPoint() {
-		return true;
-	}
-
-	/**
-	 * Returns a copy of this MemoryWrite by creating a new memory write off of
-	 * the {@link MemoryPort} associated with this node. We create a new access
-	 * instead of cloning because of the way that the MemoryPort stores
-	 * references (not in Referent). Creating a new access correctly sets up the
-	 * Referent/Reference relationship.
-	 * 
-	 * @return a MemoryWrite object.
-	 */
-	@Override
-	public Object clone() {
-		assert physical == null : "Cloning Physical not implemented";
-		final MemoryWrite clone = new MemoryWrite(isVolatile(), getWidth(),
-				isSigned());
-		clone.setMemoryPort(getMemoryPort());
-		copyComponentAttributes(clone);
-		return clone;
-	}
 
 	/**
 	 * The full physical implementation of a MemoryWrite. Physical provides
@@ -202,7 +78,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			// one normal port for the address
 			Port addressIn = makeDataPort();
 			Port memWriteAddress = getAddressPort();
-			assert (memWriteAddress.getBus() != null) : "MemoryWrite's address port not attached to a bus.";
+			assert memWriteAddress.getBus() != null : "MemoryWrite's address port not attached to a bus.";
 
 			// addressIn.getPeer().setSize(memWriteAddress.getBus().getSize(),
 			// memWriteAddress.getBus().getValue().isSigned());
@@ -212,7 +88,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			// and one normal port for the data
 			Port dataIn = makeDataPort();
 			Port memWriteData = getDataPort();
-			assert (memWriteData.getBus() != null) : "MemoryWrite's address port not attached to a bus.";
+			assert memWriteData.getBus() != null : "MemoryWrite's address port not attached to a bus.";
 
 			// and another normal port for the size input.
 			Port sizeIn = makeDataPort();
@@ -229,7 +105,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			// appropriate the go signal
 			Port memWriteGo = MemoryWrite.this.getGoPort();
 			Port go = getGoPort();
-			assert (memWriteGo.getBus() != null) : "MemoryWrite's go port not attached to a bus.";
+			assert memWriteGo.getBus() != null : "MemoryWrite's go port not attached to a bus.";
 			// assert (memWriteGo.getBus().getValue() != null) :
 			// "Bus attached to MemoryWrite's go port has no value.";
 			// go.getPeer().setValue(new Value(go.getPeer(),
@@ -240,7 +116,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			// appropriate the clock signal
 			Port memWriteClock = MemoryWrite.this.getClockPort();
 			Port clk = getClockPort();
-			assert (memWriteClock.getBus() != null) : "MemoryWrite's clock port not attached to a bus.";
+			assert memWriteClock.getBus() != null : "MemoryWrite's clock port not attached to a bus.";
 			// assert (memWriteClock.getBus().getValue() != null) :
 			// "Bus attached to MemoryWrite's clock port has no value.";
 			// clk.getPeer().setValue(new Value(clk.getPeer(),
@@ -251,7 +127,7 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			// appropriate the reset signal
 			Port memWriteReset = MemoryWrite.this.getResetPort();
 			Port reset = getResetPort();
-			assert (memWriteReset.getBus() != null) : "MemoryWrite's reset port not attached to a bus.";
+			assert memWriteReset.getBus() != null : "MemoryWrite's reset port not attached to a bus.";
 			// assert (memWriteReset.getBus().getValue() != null) :
 			// "Bus attached to MemoryWrite's reset port has no value.";
 			// reset.getPeer().setValue(new Value(reset.getPeer(),
@@ -341,16 +217,21 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			done.getPeer().setBus(doneAndResult);
 		}
 
-		public Port getSideWriteFinishedPort() {
-			return sideWriteFinished;
+		@Override
+		public void accept(Visitor v) {
 		}
 
-		public Bus getSideDataBus() {
-			return sideData;
+		@Override
+		public Set<Component> getFeedbackPoints() {
+			return Collections.singleton((Component) goRegister);
 		}
 
 		public Bus getSideAddressBus() {
 			return sideAddress;
+		}
+
+		public Bus getSideDataBus() {
+			return sideData;
 		}
 
 		public Bus getSideEnableBus() {
@@ -361,13 +242,8 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 			return sideSize;
 		}
 
-		@Override
-		public Set<Component> getFeedbackPoints() {
-			return Collections.singleton((Component) goRegister);
-		}
-
-		@Override
-		public void accept(Visitor v) {
+		public Port getSideWriteFinishedPort() {
+			return sideWriteFinished;
 		}
 
 		@Override
@@ -383,4 +259,127 @@ public class MemoryWrite extends MemoryAccess implements StateAccessor {
 		}
 
 	} // class Physical
+
+	/** The full physical implementation of the MemoryWrite. */
+	Physical physical = null;
+
+	public MemoryWrite(boolean isVolatile, int width, boolean isSigned) {
+		/*
+		 * One port for the address, one for the data.
+		 */
+		super(2, isVolatile, isSigned, width);
+		getGoPort().setUsed(true);
+		makeExit(0);
+	}
+
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
+
+	/**
+	 * Returns a copy of this MemoryWrite by creating a new memory write off of
+	 * the {@link MemoryPort} associated with this node. We create a new access
+	 * instead of cloning because of the way that the MemoryPort stores
+	 * references (not in Referent). Creating a new access correctly sets up the
+	 * Referent/Reference relationship.
+	 * 
+	 * @return a MemoryWrite object.
+	 */
+	@Override
+	public Object clone() {
+		assert physical == null : "Cloning Physical not implemented";
+		final MemoryWrite clone = new MemoryWrite(isVolatile(), getWidth(),
+				isSigned());
+		clone.setMemoryPort(getMemoryPort());
+		copyComponentAttributes(clone);
+		return clone;
+	}
+
+	public Port getDataPort() {
+		return getDataPorts().get(1);
+	}
+
+	@Override
+	public Module getPhysicalComponent() {
+		return physical;
+	}
+
+	/**
+	 * Returns the targetted Register which is a StateHolder object.
+	 * 
+	 * @return the targetted Register
+	 */
+	@Override
+	public StateHolder getStateHolder() {
+		return getMemoryPort().getLogicalMemory();
+	}
+
+	/**
+	 * returns false
+	 */
+	@Override
+	public boolean isReadAccess() {
+		return false;
+	}
+
+	/**
+	 * This accessor modifies the {@link Referenceable} target state so it may
+	 * not execute in parallel with other accesses.
+	 */
+	@Override
+	public boolean isSequencingPoint() {
+		return true;
+	}
+
+	/**
+	 * returns true
+	 */
+	@Override
+	public boolean isWriteAccess() {
+		return true;
+	}
+
+	public Physical makePhysicalComponent() {
+		assert physical == null : "MemoryWrite.physical already exists";
+		physical = new Physical();
+		return physical;
+	}
+
+	/**
+	 * Performs reverse constant propagation inside through component. This
+	 * component will fetch the incoming {@link Value} from each {@link Bus}
+	 * using {@link Bus#_getValue()}. It will then compute a new outgoing
+	 * {@link Value} for each {@link Port} and set it with
+	 * {@link Port#pushValueBackward(Value)}.
+	 * 
+	 * @return true if any of the port values was modified, false otherwise
+	 */
+	@Override
+	protected boolean pushValuesBackward() {
+		/*
+		 * This is really handled by the physical implementation.
+		 */
+		return false;
+	}
+
+	/**
+	 * Performs forward constant propagation through this component. This
+	 * component will fetch the incoming {@link Value} from each {@link Port}
+	 * using {@link Port#_getValue()}. It will then compute a new outgoing
+	 * {@link Value} for each {@link Bus} and set it with
+	 * {@link Bus#pushValueForward(Value)}.
+	 * 
+	 * @return true if any of the bus values was modified, false otherwise
+	 */
+	@Override
+	protected boolean pushValuesForward() {
+		/*
+		 * The is really handled by the physical implementation.
+		 */
+		return false;
+	}
 }

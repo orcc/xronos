@@ -41,22 +41,6 @@ public interface ActorPort {
 	public static final int COUNT_PORT_WIDTH = 16;
 
 	/**
-	 * Mechanism for configuring the behavior of the ActorPort based on
-	 * attribute values.
-	 * 
-	 * @param type
-	 *            , an int value, one of the fields of the ActorPort class.
-	 * @param value
-	 *            , any String
-	 */
-	public void setAttribute(int type, String value);
-
-	/**
-	 * Returns true if the Actor Port is an input interface.
-	 */
-	public boolean isInput();
-
-	/**
 	 * Returns a data production/consumption access to the interface. If isInput
 	 * returns true the the access will be an data consumption access, otherwise
 	 * it will be a data production access.
@@ -83,5 +67,21 @@ public interface ActorPort {
 	 * Returns a component access to the status flag of the interface.
 	 */
 	public Component getStatusAccess();
+
+	/**
+	 * Returns true if the Actor Port is an input interface.
+	 */
+	public boolean isInput();
+
+	/**
+	 * Mechanism for configuring the behavior of the ActorPort based on
+	 * attribute values.
+	 * 
+	 * @param type
+	 *            , an int value, one of the fields of the ActorPort class.
+	 * @param value
+	 *            , any String
+	 */
+	public void setAttribute(int type, String value);
 
 }// ActorPort

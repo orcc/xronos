@@ -51,7 +51,6 @@ import org.xronos.openforge.lim.primitive.Not;
 import org.xronos.openforge.lim.primitive.Or;
 import org.xronos.openforge.lim.primitive.Reg;
 
-
 /**
  * ActorScalarOutput is a specialized fifo output interface which contains the
  * necessary infrastructure to support scalar data types. This includes:
@@ -72,193 +71,6 @@ import org.xronos.openforge.lim.primitive.Reg;
  * @version $Id: ActorScalarOutput.java 280 2006-08-11 17:00:32Z imiller $
  */
 public class ActorScalarOutput extends FifoOutput implements ActorPort {
-
-	private final String baseName;
-	private final SimplePin data;
-	private final SimplePin send;
-	private final SimplePin ack;
-	private final SimplePin rdy;
-	private final SimplePin tokenCount;
-
-	// public ActorScalarOutput (String idString, int width)
-	public ActorScalarOutput(FifoID fifoID) {
-		super(fifoID.getBitWidth());
-
-		baseName = fifoID.getName();
-		final String pinBaseName = buildPortBaseName(baseName);
-
-		data = new SimpleFifoPin(this, getWidth(), pinBaseName + "_DATA");
-		send = new SimpleFifoPin(this, 1, pinBaseName + "_SEND");
-		ack = new SimpleFifoPin(this, 1, pinBaseName + "_ACK");
-		rdy = new SimpleFifoPin(this, 1, pinBaseName + "_RDY");
-		tokenCount = new SimpleFifoPin(this, ActorPort.COUNT_PORT_WIDTH,
-				pinBaseName + "_COUNT");
-
-		addPin(data);
-		addPin(send);
-		addPin(ack);
-		addPin(rdy);
-		addPin(tokenCount);
-	}
-
-	/**
-	 * <code>getType</code> returns {@link FifoIF#TYPE_ACTOR_QUEUE}
-	 * 
-	 * @return an <code>int</code> value
-	 */
-	@Override
-	public int getType() {
-		return FifoIF.TYPE_ACTOR_QUEUE;
-	}
-
-	@Override
-	public String getPortBaseName() {
-		return baseName;
-	}
-
-	/**
-	 * ActorScalarOutput ports have no special naming requirements, this method
-	 * returns portname
-	 */
-	@Override
-	protected String buildPortBaseName(String portName) {
-		return portName;
-	}
-
-	/**
-	 * asserts false
-	 */
-	@Override
-	public void setAttribute(int type, String value) {
-		assert false : "No supported attributes";
-	}
-
-	/**
-	 * Returns a subset of {@link #getPins} that are the output pins of the
-	 * interface, containing only the data, write, and ctrl pins.
-	 */
-	@Override
-	public Collection<SimplePin> getOutputPins() {
-		List<SimplePin> list = new ArrayList<SimplePin>();
-		list.add(data);
-		list.add(send);
-		list.add(tokenCount);
-
-		return Collections.unmodifiableList(list);
-	}
-
-	/**
-	 * Returns a {@link FifoWrite} object that is used to obtain data from this
-	 * FifoIF.
-	 * 
-	 * @return a blocking {@link FifoAccess}
-	 */
-	@Override
-	public FifoAccess getAccess() {
-		return getAccess(true);
-	}
-
-	/**
-	 * Returns a {@link FifoWrite} object that is used to obtain data from this
-	 * FifoIF.
-	 * 
-	 * @param blocking
-	 *            if set true returns a blocking fifo write otherwise a
-	 *            non-blocking access.
-	 * @return a {@link FifoAccess}
-	 */
-	@Override
-	public FifoAccess getAccess(boolean blocking) {
-		if (blocking) {
-			return new ActorScalarOutputWrite(this);
-		} else {
-			return new ActorScalarSimpleOutputWrite(this);
-		}
-	}
-
-	/** Returns the output data pin for this interface */
-	@Override
-	public SimplePin getDataPin() {
-		return data;
-	}
-
-	/**
-	 * Returns the output send pin, indicating that the interface is outputting
-	 * valid data
-	 */
-	@Override
-	public SimplePin getSendPin() {
-		return send;
-	}
-
-	/**
-	 * Returns the input acknowledge pin, indicating that the queue that the
-	 * interface is sending to has acknowledged reciept of the data
-	 */
-	@Override
-	public SimplePin getAckPin() {
-		return ack;
-	}
-
-	/**
-	 * Returns the input ready pin, indicating that the queue is ready to accept
-	 * at least one token.
-	 */
-	@Override
-	public SimplePin getReadyPin() {
-		return rdy;
-	}
-
-	/**
-	 * Unsupported on output interface
-	 * 
-	 * @throws UnsupportedOperationException
-	 *             always
-	 */
-	@Override
-	public Component getCountAccess() {
-		throw new UnsupportedOperationException(
-				"Output channels do not have token count facility");
-	}
-
-	@Override
-	public Component getPeekAccess() {
-		throw new UnsupportedOperationException(
-				"Peeking at output interface not yet supported");
-		// return new ActionTokenPeek(this);
-	}
-
-	@Override
-	public Component getStatusAccess() {
-		// throw new
-		// UnsupportedOperationException("Status of output interface not yet supported");
-		return new ActionPortStatus(this);
-	}
-
-	/**
-	 * Tests the referencer types and then returns 1 or 0 depending on the types
-	 * of each accessor.
-	 * 
-	 * @param from
-	 *            the prior accessor in source document order.
-	 * @param to
-	 *            the latter accessor in source document order.
-	 */
-	@Override
-	public int getSpacing(Referencer from, Referencer to) {
-		// Options for accesses to an output are
-		// FifoWrite (ActorScalarOutputWrite)
-		// ActionPortStatus
-
-		if (from instanceof FifoWrite) {
-			return 1;
-		} else if (from instanceof ActionPortStatus) {
-			return 0;
-		} else {
-			throw new IllegalArgumentException("Source access to " + this
-					+ " is of unknown type " + from.getClass());
-		}
-	}
 
 	private class ActorScalarOutputWrite extends FifoWrite {
 		private ActorScalarOutputWrite(ActorScalarOutput aso) {
@@ -403,6 +215,195 @@ public class ActorScalarOutput extends FifoOutput implements ActorPort {
 			countWrite.getGoPort().setBus(index1_1.getValueBus()); // ALWAYS
 																	// enabled
 		}
+	}
+
+	private final String baseName;
+	private final SimplePin data;
+	private final SimplePin send;
+	private final SimplePin ack;
+
+	private final SimplePin rdy;
+
+	private final SimplePin tokenCount;
+
+	// public ActorScalarOutput (String idString, int width)
+	public ActorScalarOutput(FifoID fifoID) {
+		super(fifoID.getBitWidth());
+
+		baseName = fifoID.getName();
+		final String pinBaseName = buildPortBaseName(baseName);
+
+		data = new SimpleFifoPin(this, getWidth(), pinBaseName + "_DATA");
+		send = new SimpleFifoPin(this, 1, pinBaseName + "_SEND");
+		ack = new SimpleFifoPin(this, 1, pinBaseName + "_ACK");
+		rdy = new SimpleFifoPin(this, 1, pinBaseName + "_RDY");
+		tokenCount = new SimpleFifoPin(this, ActorPort.COUNT_PORT_WIDTH,
+				pinBaseName + "_COUNT");
+
+		addPin(data);
+		addPin(send);
+		addPin(ack);
+		addPin(rdy);
+		addPin(tokenCount);
+	}
+
+	/**
+	 * ActorScalarOutput ports have no special naming requirements, this method
+	 * returns portname
+	 */
+	@Override
+	protected String buildPortBaseName(String portName) {
+		return portName;
+	}
+
+	/**
+	 * Returns a {@link FifoWrite} object that is used to obtain data from this
+	 * FifoIF.
+	 * 
+	 * @return a blocking {@link FifoAccess}
+	 */
+	@Override
+	public FifoAccess getAccess() {
+		return getAccess(true);
+	}
+
+	/**
+	 * Returns a {@link FifoWrite} object that is used to obtain data from this
+	 * FifoIF.
+	 * 
+	 * @param blocking
+	 *            if set true returns a blocking fifo write otherwise a
+	 *            non-blocking access.
+	 * @return a {@link FifoAccess}
+	 */
+	@Override
+	public FifoAccess getAccess(boolean blocking) {
+		if (blocking) {
+			return new ActorScalarOutputWrite(this);
+		} else {
+			return new ActorScalarSimpleOutputWrite(this);
+		}
+	}
+
+	/**
+	 * Returns the input acknowledge pin, indicating that the queue that the
+	 * interface is sending to has acknowledged reciept of the data
+	 */
+	@Override
+	public SimplePin getAckPin() {
+		return ack;
+	}
+
+	/**
+	 * Unsupported on output interface
+	 * 
+	 * @throws UnsupportedOperationException
+	 *             always
+	 */
+	@Override
+	public Component getCountAccess() {
+		throw new UnsupportedOperationException(
+				"Output channels do not have token count facility");
+	}
+
+	/** Returns the output data pin for this interface */
+	@Override
+	public SimplePin getDataPin() {
+		return data;
+	}
+
+	/**
+	 * Returns a subset of {@link #getPins} that are the output pins of the
+	 * interface, containing only the data, write, and ctrl pins.
+	 */
+	@Override
+	public Collection<SimplePin> getOutputPins() {
+		List<SimplePin> list = new ArrayList<SimplePin>();
+		list.add(data);
+		list.add(send);
+		list.add(tokenCount);
+
+		return Collections.unmodifiableList(list);
+	}
+
+	@Override
+	public Component getPeekAccess() {
+		throw new UnsupportedOperationException(
+				"Peeking at output interface not yet supported");
+		// return new ActionTokenPeek(this);
+	}
+
+	@Override
+	public String getPortBaseName() {
+		return baseName;
+	}
+
+	/**
+	 * Returns the input ready pin, indicating that the queue is ready to accept
+	 * at least one token.
+	 */
+	@Override
+	public SimplePin getReadyPin() {
+		return rdy;
+	}
+
+	/**
+	 * Returns the output send pin, indicating that the interface is outputting
+	 * valid data
+	 */
+	@Override
+	public SimplePin getSendPin() {
+		return send;
+	}
+
+	/**
+	 * Tests the referencer types and then returns 1 or 0 depending on the types
+	 * of each accessor.
+	 * 
+	 * @param from
+	 *            the prior accessor in source document order.
+	 * @param to
+	 *            the latter accessor in source document order.
+	 */
+	@Override
+	public int getSpacing(Referencer from, Referencer to) {
+		// Options for accesses to an output are
+		// FifoWrite (ActorScalarOutputWrite)
+		// ActionPortStatus
+
+		if (from instanceof FifoWrite) {
+			return 1;
+		} else if (from instanceof ActionPortStatus) {
+			return 0;
+		} else {
+			throw new IllegalArgumentException("Source access to " + this
+					+ " is of unknown type " + from.getClass());
+		}
+	}
+
+	@Override
+	public Component getStatusAccess() {
+		// throw new
+		// UnsupportedOperationException("Status of output interface not yet supported");
+		return new ActionPortStatus(this);
+	}
+
+	/**
+	 * <code>getType</code> returns {@link FifoIF#TYPE_ACTOR_QUEUE}
+	 * 
+	 * @return an <code>int</code> value
+	 */
+	@Override
+	public int getType() {
+		return FifoIF.TYPE_ACTOR_QUEUE;
+	}
+
+	/**
+	 * asserts false
+	 */
+	@Override
+	public void setAttribute(int type, String value) {
+		assert false : "No supported attributes";
 	}
 
 }// ActorScalarOutput

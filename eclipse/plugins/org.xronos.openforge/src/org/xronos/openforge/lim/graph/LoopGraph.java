@@ -31,7 +31,6 @@ import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Loop;
 import org.xronos.openforge.lim.primitive.Reg;
 
-
 /**
  * A sub-graph for a {@link Loop} in an {@link LXGraph}. This specialization] of
  * {@link ModuleGraph} handles the cycles that appear in loop graphs. In

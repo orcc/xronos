@@ -40,7 +40,6 @@ import org.xronos.openforge.lim.primitive.Not;
 import org.xronos.openforge.lim.primitive.Or;
 import org.xronos.openforge.lim.primitive.Reg;
 
-
 /**
  * FifoRead is an atomic access to a given {@link FifoIF} which returns a single
  * element of data from that interface. It is, however, a subclass of Module so
@@ -62,36 +61,6 @@ public class FifoRead extends FifoAccess implements Visitable {
 
 	/** A set containing only the flop */
 	private Set<Reg> feedbackPoints = new HashSet<Reg>();
-
-	protected FifoRead(FifoInput targetInterface, Latency operationalLatency) {
-		super(targetInterface);
-
-		// Excluding 'sideband' ports/buses (those connecting to pins)
-		// there is a single result bus on this module, and a GO port
-		// and DONE bus.
-		Exit exit = makeExit(1);
-		Bus result = exit.getDataBuses().get(0);
-		Bus done = exit.getDoneBus();
-		done.setUsed(true);
-		result.setUsed(true);
-
-		exit.setLatency(operationalLatency);
-	}
-
-	protected FifoRead(NativeInput targetInterface, Latency operationalLatency) {
-		super(targetInterface);
-
-		// Excluding 'sideband' ports/buses (those connecting to pins)
-		// there is a single result bus on this module, and a GO port
-		// and DONE bus.
-		Exit exit = makeExit(1);
-		Bus result = exit.getDataBuses().get(0);
-		Bus done = exit.getDoneBus();
-		done.setUsed(true);
-		result.setUsed(true);
-
-		exit.setLatency(operationalLatency);
-	}
 
 	/**
 	 * Constructs a new FifoRead targeting the given FifoIF.
@@ -194,6 +163,21 @@ public class FifoRead extends FifoAccess implements Visitable {
 		feedbackPoints = Collections.singleton(flop);
 	}
 
+	protected FifoRead(FifoInput targetInterface, Latency operationalLatency) {
+		super(targetInterface);
+
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single result bus on this module, and a GO port
+		// and DONE bus.
+		Exit exit = makeExit(1);
+		Bus result = exit.getDataBuses().get(0);
+		Bus done = exit.getDoneBus();
+		done.setUsed(true);
+		result.setUsed(true);
+
+		exit.setLatency(operationalLatency);
+	}
+
 	public FifoRead(NativeInput targetInterface) {
 		super(targetInterface);
 		Exit exit = makeExit(1);
@@ -262,6 +246,21 @@ public class FifoRead extends FifoAccess implements Visitable {
 		feedbackPoints = Collections.singleton(flop);
 	}
 
+	protected FifoRead(NativeInput targetInterface, Latency operationalLatency) {
+		super(targetInterface);
+
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single result bus on this module, and a GO port
+		// and DONE bus.
+		Exit exit = makeExit(1);
+		Bus result = exit.getDataBuses().get(0);
+		Bus done = exit.getDoneBus();
+		done.setUsed(true);
+		result.setUsed(true);
+
+		exit.setLatency(operationalLatency);
+	}
+
 	/**
 	 * Accept the specified visitor
 	 * 
@@ -271,6 +270,27 @@ public class FifoRead extends FifoAccess implements Visitable {
 	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
+	}
+
+	@Override
+	protected void cloneNotify(Module clone, Map<Component, Component> cloneMap) {
+		super.cloneNotify(clone, cloneMap);
+		// Re-set the feedback points to point to the correct register
+		// in the clone instead of the register in the original IFF it
+		// exists... subclasses may have alternate structure
+		if (feedbackPoints.isEmpty()) {
+			((FifoRead) clone).feedbackPoints = Collections.emptySet();
+		} else {
+			Set<Reg> cloneSet = new HashSet<Reg>();
+			((FifoRead) clone).feedbackPoints = cloneSet;
+			for (Reg reg : feedbackPoints) {
+				cloneSet.add((Reg) cloneMap.get(reg));
+			}
+			assert !cloneSet.contains(null);
+		}
+
+		// ((FifoRead)clone).feedbackPoints =
+		// Collections.singleton(cloneMap.get(this.feedbackPoints.iterator().next()));
 	}
 
 	/**
@@ -297,13 +317,6 @@ public class FifoRead extends FifoAccess implements Visitable {
 	}
 
 	@Override
-	public boolean replaceComponent(Component removed, Component inserted) {
-		// TBD
-		assert false;
-		return false;
-	}
-
-	@Override
 	public Set<Component> getFeedbackPoints() {
 		Set<Component> feedback = new HashSet<Component>();
 		feedback.addAll(super.getFeedbackPoints());
@@ -322,23 +335,10 @@ public class FifoRead extends FifoAccess implements Visitable {
 	}
 
 	@Override
-	protected void cloneNotify(Module clone, Map<Component, Component> cloneMap) {
-		super.cloneNotify(clone, cloneMap);
-		// Re-set the feedback points to point to the correct register
-		// in the clone instead of the register in the original IFF it
-		// exists... subclasses may have alternate structure
-		if (feedbackPoints.isEmpty()) {
-			((FifoRead) clone).feedbackPoints = Collections.emptySet();
-		} else {
-			Set<Reg> cloneSet = new HashSet<Reg>();
-			((FifoRead) clone).feedbackPoints = cloneSet;
-			for (Reg reg : feedbackPoints)
-				cloneSet.add((Reg) cloneMap.get(reg));
-			assert !cloneSet.contains(null);
-		}
-
-		// ((FifoRead)clone).feedbackPoints =
-		// Collections.singleton(cloneMap.get(this.feedbackPoints.iterator().next()));
+	public boolean replaceComponent(Component removed, Component inserted) {
+		// TBD
+		assert false;
+		return false;
 	}
 
 }// FifoRead

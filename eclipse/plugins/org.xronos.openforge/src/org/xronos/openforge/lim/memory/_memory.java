@@ -25,7 +25,6 @@ import java.io.PrintStream;
 
 import org.xronos.openforge.util.Debug;
 
-
 /**
  * Use like this:
  * 
@@ -60,8 +59,8 @@ public class _memory {
 	public final static boolean VISIBLE = true;
 
 	private final static Debug debug = new Debug(
-			org.xronos.openforge.lim.memory._memory.class, TAG, db, VISIBLE, STRUCT
-					| BUILD);
+			org.xronos.openforge.lim.memory._memory.class, TAG, db, VISIBLE,
+			STRUCT | BUILD);
 	public final static Debug d = debug; // backwards compatibility with
 											// previous version
 
@@ -72,6 +71,78 @@ public class _memory {
 	 */
 	public static PrintStream getPrintStream() {
 		return debug.getPrintStream();
+	}
+
+	/**
+	 * Work-alike for PrintStream.println(); Uses the DEFAULT level.
+	 * 
+	 */
+	public static void ln() {
+		debug.ln();
+	}
+
+	/**
+	 * Work-alike for PrintStream.println();
+	 * 
+	 * @param level
+	 *            level of this debug statement
+	 */
+	public static void ln(int level) {
+		debug.ln(level);
+	}
+
+	/**
+	 * Work-alike for PrintStream.println(Object);
+	 * 
+	 * @param level
+	 *            level of this debug statement
+	 * @param v
+	 *            Object to print out.
+	 */
+	public static void ln(int level, Object v) {
+		debug.ln(level, v);
+	}
+
+	/**
+	 * Work-alike for PrintStream.println(Object); Uses the DEFAULT level.
+	 * 
+	 * @param v
+	 *            Object to print out.
+	 */
+	public static void ln(Object v) {
+		debug.ln(v);
+	}
+
+	/**
+	 * Work-alike for PrintStream.print(Object);
+	 * 
+	 * @param level
+	 *            level of this debug statement
+	 * @param v
+	 *            Object to print out.
+	 */
+	public static void o(int level, Object v) {
+		debug.o(level, v);
+	}
+
+	/**
+	 * Work-alike for PrintStream.print(); USes the DEFAULT level
+	 * 
+	 * @param v
+	 *            Object to print out.
+	 */
+	public static void o(Object v) {
+		debug.o(v);
+	}
+
+	/**
+	 * Set the debug bitmask levels
+	 * 
+	 * @param level
+	 *            a value of type 'int'
+	 */
+	public static void setLevels(int level) {
+		debug.setLevels(level);
 	}
 
 	/**
@@ -92,75 +163,16 @@ public class _memory {
 	}
 
 	/**
-	 * Set the debug bitmask levels
-	 * 
-	 * @param level
-	 *            a value of type 'int'
-	 */
-	public static void setLevels(int level) {
-		debug.setLevels(level);
-	}
-
-	/**
-	 * Work-alike for PrintStream.println(); Uses the DEFAULT level.
-	 * 
-	 */
-	public static void ln() {
-		debug.ln();
-	}
-
-	/**
-	 * Work-alike for PrintStream.print(); USes the DEFAULT level
+	 * Used to display a stack trace from the current location. Uses level
+	 * DEFAULT.
 	 * 
 	 * @param v
-	 *            Object to print out.
-	 */
-	public static void o(Object v) {
-		debug.o(v);
-	}
-
-	/**
-	 * Work-alike for PrintStream.println(Object); Uses the DEFAULT level.
-	 * 
-	 * @param v
-	 *            Object to print out.
-	 */
-	public static void ln(Object v) {
-		debug.ln(v);
-	}
-
-	/**
-	 * Work-alike for PrintStream.println();
-	 * 
+	 *            Displayable object to makr where you are
 	 * @param level
 	 *            level of this debug statement
 	 */
-	public static void ln(int level) {
-		debug.ln(level);
-	}
-
-	/**
-	 * Work-alike for PrintStream.print(Object);
-	 * 
-	 * @param level
-	 *            level of this debug statement
-	 * @param v
-	 *            Object to print out.
-	 */
-	public static void o(int level, Object v) {
-		debug.o(level, v);
-	}
-
-	/**
-	 * Work-alike for PrintStream.println(Object);
-	 * 
-	 * @param level
-	 *            level of this debug statement
-	 * @param v
-	 *            Object to print out.
-	 */
-	public static void ln(int level, Object v) {
-		debug.ln(level, v);
+	public static void whereAmI(int level, Object v) {
+		debug.whereAmI(level, v);
 	}
 
 	/**
@@ -172,18 +184,5 @@ public class _memory {
 	 */
 	public static void whereAmI(Object v) {
 		debug.whereAmI(v);
-	}
-
-	/**
-	 * Used to display a stack trace from the current location. Uses level
-	 * DEFAULT.
-	 * 
-	 * @param v
-	 *            Displayable object to makr where you are
-	 * @param level
-	 *            level of this debug statement
-	 */
-	public static void whereAmI(int level, Object v) {
-		debug.whereAmI(level, v);
 	}
 }

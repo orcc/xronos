@@ -100,6 +100,11 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 		// ((Bus)getExit(Exit.DONE).getDataBuses().get(0)).setUsed(false);
 	}
 
+	@Override
+	public void accept(Visitor vis) {
+		vis.visit(this);
+	}
+
 	/**
 	 * Override from Component to assert that we do in fact need a valid GO
 	 * supplied (so that this node can logicall AND that GO with the data port).
@@ -112,16 +117,6 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 	}
 
 	/**
-	 * Allows the use of the GO signal to be disabled in the case where this is
-	 * the only write to the target pin and no qualification of the data is
-	 * needed.
-	 */
-	public void setGoNeeded(boolean value) {
-		needsGo = value;
-		getGoPort().setUsed(value);
-	}
-
-	/**
 	 * Returns the data port which is the port whose input value is sent to the
 	 * pin.
 	 * 
@@ -129,11 +124,6 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 	 */
 	public Port getDataPort() {
 		return getDataPorts().get(0);
-	}
-
-	@Override
-	public void accept(Visitor vis) {
-		vis.visit(this);
 	}
 
 	/**
@@ -155,6 +145,21 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 	}
 
 	@Override
+	public boolean pushValuesBackward() {
+		Exit exit = getExit(Exit.DONE);
+		Bus sideband = exit.getDataBuses().isEmpty() ? null : (Bus) exit
+				.getDataBuses().get(0);
+		Value newValue;
+		if (sideband != null && sideband.isConnected()) {
+			newValue = sideband.getValue();
+		} else {
+			newValue = new Value(targetPin.getWidth(), false);
+		}
+
+		return getDataPort().pushValueBackward(newValue);
+	}
+
+	@Override
 	public boolean pushValuesForward() {
 		// Do nothing except ensure that the sideband write bus has a
 		// value as there is no push-forward to the pin.
@@ -169,19 +174,14 @@ public class SimplePinWrite extends Component implements Visitable, Referencer {
 		return false;
 	}
 
-	@Override
-	public boolean pushValuesBackward() {
-		Exit exit = getExit(Exit.DONE);
-		Bus sideband = exit.getDataBuses().isEmpty() ? null : (Bus) exit
-				.getDataBuses().get(0);
-		Value newValue;
-		if (sideband != null && sideband.isConnected()) {
-			newValue = sideband.getValue();
-		} else {
-			newValue = new Value(targetPin.getWidth(), false);
-		}
-
-		return getDataPort().pushValueBackward(newValue);
+	/**
+	 * Allows the use of the GO signal to be disabled in the case where this is
+	 * the only write to the target pin and no qualification of the data is
+	 * needed.
+	 */
+	public void setGoNeeded(boolean value) {
+		needsGo = value;
+		getGoPort().setUsed(value);
 	}
 
 }// SimplePinWrite

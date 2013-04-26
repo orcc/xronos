@@ -27,7 +27,6 @@ import java.util.HashSet;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.util.graphviz.Node;
 
-
 /**
  * A helper class to {@link LXGraph}, BlackBoxGraph is a sub-Graph for a
  * {@link BlackBox}. It draws each of its components as a black box {@link Node}
@@ -41,14 +40,14 @@ class BlackBoxGraph extends ModuleGraph {
 
 	// protected ArrayList components=new ArrayList();
 
-	BlackBoxGraph(String name, Object obj, int nodeCount, int fontSize) {
-		super(nodeCount, fontSize);
-		setLabel(name + " @" + Integer.toHexString(obj.hashCode()));
-	}
-
 	BlackBoxGraph(String name, int nodeCount, int fontSize) {
 		super(nodeCount, fontSize);
 		setLabel(name);
+	}
+
+	BlackBoxGraph(String name, Object obj, int nodeCount, int fontSize) {
+		super(nodeCount, fontSize);
+		setLabel(name + " @" + Integer.toHexString(obj.hashCode()));
 	}
 
 	void addComponent(Component c) {

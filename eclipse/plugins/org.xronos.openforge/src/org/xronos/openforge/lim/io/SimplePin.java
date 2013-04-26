@@ -34,7 +34,6 @@ import org.xronos.openforge.lim.Referencer;
 import org.xronos.openforge.lim.StateHolder;
 import org.xronos.openforge.lim.Visitor;
 
-
 /**
  * SimplePin represents nothing more than a sized and named port on the design.
  * It implements the {@link Referenceable} interface so it can be used in
@@ -58,11 +57,29 @@ import org.xronos.openforge.lim.Visitor;
 public abstract class SimplePin extends Component implements Referenceable,
 		StateHolder {
 
+	/**
+	 * Simple class used only to pass data to the translation engine.
+	 */
+	public class XLatData {
+		public Port getSink() {
+			return SimplePin.this.getSink();
+		}
+
+		public Bus getSource() {
+			return SimplePin.this.getSource();
+		}
+
+		public boolean isInput() {
+
+			return sink == null || !sink.isConnected();
+		}
+	}
+
 	/** The bit width of this pin. */
 	private int bitWidth = -1;
+
 	/** The string name of this pin. */
 	private String name = "";
-
 	/**
 	 * This is a 'dangling' port that is used only to keep track of any bus that
 	 * is used to write data to this pin. It is considered dangling because
@@ -71,6 +88,7 @@ public abstract class SimplePin extends Component implements Referenceable,
 	 * an error for this port and the 'source' bus to both have connections.
 	 */
 	private Port sink;
+
 	/**
 	 * This is a 'dangling' bus that is used to track any consumers of data from
 	 * this pin (readers). It is dangling because there is no accessible
@@ -91,11 +109,13 @@ public abstract class SimplePin extends Component implements Referenceable,
 	 *             if width <= 0 or if the pinName is empty.
 	 */
 	public SimplePin(int width, String pinName) {
-		if (width <= 0)
+		if (width <= 0) {
 			throw new IllegalArgumentException("Illegal pin width " + width);
-		if (pinName.length() <= 0)
+		}
+		if (pinName.length() <= 0) {
 			throw new IllegalArgumentException("Illegal pin name '" + pinName
 					+ "'");
+		}
 
 		bitWidth = width;
 		name = pinName;
@@ -109,45 +129,13 @@ public abstract class SimplePin extends Component implements Referenceable,
 		vis.visit(this);
 	}
 
-	/**
-	 * Allows sub-classes accesses to the source bus.
-	 */
-	protected Bus getSource() {
-		return source;
-	}
-
-	/**
-	 * Allows sub-classes accesses to the sink port.
-	 */
-	protected Port getSink() {
-		return sink;
-	}
-
-	/**
-	 * Retrieves the bitwidth of this simple pin.
-	 * 
-	 * @return an int, defined as the number of <b>bits</b> of this pin.
-	 */
-	public int getWidth() {
-		return bitWidth;
-	}
-
-	/**
-	 * Retrieves the name given to this simple pin at contstruction.
-	 */
-	public String getName() {
-		return name;
-	}
-
-	/**
-	 * Returns true if this SimplePin is to be published at the top level of the
-	 * implementation. A return of false means that this SimplePin is a top
-	 * level entity for routing signals in the design.
-	 * 
-	 * @return a value of type 'boolean'
-	 */
-	public boolean isPublished() {
-		return true;
+	protected void buildBus() {
+		if (getSource() == null) {
+			assert getExit(Exit.SIDEBAND) == null;
+			source = makeExit(0, Exit.SIDEBAND).makeDataBus(Component.SIDEBAND);
+			source.setSize(getWidth(), false);
+			source.setIDLogical(getName());
+		}
 	}
 
 	protected void buildPort() {
@@ -157,12 +145,35 @@ public abstract class SimplePin extends Component implements Referenceable,
 		}
 	}
 
-	protected void buildBus() {
-		if (getSource() == null) {
-			assert getExit(Exit.SIDEBAND) == null;
-			source = makeExit(0, Exit.SIDEBAND).makeDataBus(Component.SIDEBAND);
-			source.setSize(getWidth(), false);
-			source.setIDLogical(getName());
+	/**
+	 * Connects the data source bus of this pin to each {@link Port} in the
+	 * Collection of ports. An exception will be thrown if this pin already has
+	 * a data source bus defined (as specified by a call to the connectBus
+	 * method).
+	 * 
+	 * @param ports
+	 *            a Collection of {@link Port} objects.
+	 * @throws NullPointerException
+	 *             if ports is null
+	 * @throws UnsupportedOperationException
+	 *             if connectPort has already been called on this pin.
+	 */
+	public void connectBus(Collection<Port> ports) {
+		buildBus();
+		// The idea here is to have a 'dangling' Bus that can be
+		// connected to and used simply to enforce constant prop
+		// rules. No need to have this be a component with all that
+		// overhead
+		if (getSink() != null && getSink().isConnected()) {
+			throw new UnsupportedOperationException(
+					"Sink port is already connected.  Cannot hook up the source bus");
+		}
+
+		final List<Port> toConnect = new ArrayList<Port>(ports);
+		toConnect.removeAll(getSource().getPorts());
+		// connect up whats left.
+		for (Port port : toConnect) {
+			port.setBus(getSource());
 		}
 	}
 
@@ -199,35 +210,64 @@ public abstract class SimplePin extends Component implements Referenceable,
 	}
 
 	/**
-	 * Connects the data source bus of this pin to each {@link Port} in the
-	 * Collection of ports. An exception will be thrown if this pin already has
-	 * a data source bus defined (as specified by a call to the connectBus
-	 * method).
-	 * 
-	 * @param ports
-	 *            a Collection of {@link Port} objects.
-	 * @throws NullPointerException
-	 *             if ports is null
-	 * @throws UnsupportedOperationException
-	 *             if connectPort has already been called on this pin.
+	 * Returns -1 indicating that the referencers must be scheduled using the
+	 * default DONE to GO spacing.
 	 */
-	public void connectBus(Collection<Port> ports) {
-		buildBus();
-		// The idea here is to have a 'dangling' Bus that can be
-		// connected to and used simply to enforce constant prop
-		// rules. No need to have this be a component with all that
-		// overhead
-		if (getSink() != null && getSink().isConnected()) {
-			throw new UnsupportedOperationException(
-					"Sink port is already connected.  Cannot hook up the source bus");
-		}
+	@Override
+	public int getGoSpacing(Referencer from, Referencer to) {
+		return -1;
+	}
 
-		final List<Port> toConnect = new ArrayList<Port>(ports);
-		toConnect.removeAll(getSource().getPorts());
-		// connect up whats left.
-		for (Port port : toConnect) {
-			port.setBus(getSource());
+	/**
+	 * Retrieves the name given to this simple pin at contstruction.
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * Allows sub-classes accesses to the sink port.
+	 */
+	protected Port getSink() {
+		return sink;
+	}
+
+	/**
+	 * Allows sub-classes accesses to the source bus.
+	 */
+	protected Bus getSource() {
+		return source;
+	}
+
+	/**
+	 * Tests the referencer types for compatibility and then returns 1 or 0
+	 * depending on the type of accessor.
+	 * 
+	 * @param from
+	 *            the prior accessor in source document order.
+	 * @param to
+	 *            the latter accessor in source document order.
+	 */
+	@Override
+	public int getSpacing(Referencer from, Referencer to) {
+		if (from instanceof SimplePinWrite) {
+			return 1;
+		} else if (from instanceof SimplePinRead
+				|| from instanceof SimplePinStall) {
+			return 0;
+		} else {
+			throw new IllegalArgumentException("Source access to " + this
+					+ " is of unknown type " + from.getClass());
 		}
+	}
+
+	/**
+	 * Retrieves the bitwidth of this simple pin.
+	 * 
+	 * @return an int, defined as the number of <b>bits</b> of this pin.
+	 */
+	public int getWidth() {
+		return bitWidth;
 	}
 
 	/**
@@ -242,22 +282,23 @@ public abstract class SimplePin extends Component implements Referenceable,
 		return new XLatData();
 	}
 
+	// ///////////////////////////////////////////////////////
+	// ///////////////////////////////////////////////////////
+	//
+	// Referenceable interface
+	//
+	// ///////////////////////////////////////////////////////
+	// ///////////////////////////////////////////////////////
+
 	/**
-	 * Simple class used only to pass data to the translation engine.
+	 * Returns true if this SimplePin is to be published at the top level of the
+	 * implementation. A return of false means that this SimplePin is a top
+	 * level entity for routing signals in the design.
+	 * 
+	 * @return a value of type 'boolean'
 	 */
-	public class XLatData {
-		public Port getSink() {
-			return SimplePin.this.getSink();
-		}
-
-		public Bus getSource() {
-			return SimplePin.this.getSource();
-		}
-
-		public boolean isInput() {
-
-			return sink == null || !sink.isConnected();
-		}
+	public boolean isPublished() {
+		return true;
 	}
 
 	/**
@@ -269,48 +310,11 @@ public abstract class SimplePin extends Component implements Referenceable,
 	 */
 	@Override
 	protected boolean pushValuesForward() {
-		if (getSink() != null)
+		if (getSink() != null) {
 			return getSink().pushValueForward();
-		else
+		} else {
 			return false;
-	}
-
-	// ///////////////////////////////////////////////////////
-	// ///////////////////////////////////////////////////////
-	//
-	// Referenceable interface
-	//
-	// ///////////////////////////////////////////////////////
-	// ///////////////////////////////////////////////////////
-
-	/**
-	 * Tests the referencer types for compatibility and then returns 1 or 0
-	 * depending on the type of accessor.
-	 * 
-	 * @param from
-	 *            the prior accessor in source document order.
-	 * @param to
-	 *            the latter accessor in source document order.
-	 */
-	@Override
-	public int getSpacing(Referencer from, Referencer to) {
-		if (from instanceof SimplePinWrite)
-			return 1;
-		else if ((from instanceof SimplePinRead)
-				|| (from instanceof SimplePinStall))
-			return 0;
-		else
-			throw new IllegalArgumentException("Source access to " + this
-					+ " is of unknown type " + from.getClass());
-	}
-
-	/**
-	 * Returns -1 indicating that the referencers must be scheduled using the
-	 * default DONE to GO spacing.
-	 */
-	@Override
-	public int getGoSpacing(Referencer from, Referencer to) {
-		return -1;
+		}
 	}
 
 	/**

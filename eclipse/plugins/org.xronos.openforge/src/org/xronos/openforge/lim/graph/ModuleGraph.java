@@ -40,7 +40,6 @@ import org.xronos.openforge.util.graphviz.Edge;
 import org.xronos.openforge.util.graphviz.Graph;
 import org.xronos.openforge.util.graphviz.Node;
 
-
 /**
  * A helper class to {@link LXGraph}, ModuleGraph is a sub-Graph for a
  * {@link Module}. It draws each of its components as a black box {@link Node}.
@@ -67,16 +66,6 @@ class ModuleGraph extends Graph {
 	private static int color = 0;
 	private static String[] colors = { "black", "blue", "yellow", "cyan",
 			"red", "brown", "magenta", "bisque3" };
-
-	/**
-	 * Adds a child nod to this graph.
-	 */
-	@Override
-	public void add(Node node) {
-		super.add(node);
-		nodeCount++;
-		setGVAttribute("fontsize", "" + fontSize);
-	}
 
 	/**
 	 * For classes which extend ModuleGraph
@@ -112,11 +101,22 @@ class ModuleGraph extends Graph {
 	}
 
 	/**
-	 * Gets the current node count. This includes the nodes that have been added
-	 * to this graph.
+	 * Adds a child nod to this graph.
 	 */
-	int getNodeCount() {
-		return nodeCount;
+	@Override
+	public void add(Node node) {
+		super.add(node);
+		nodeCount++;
+		setGVAttribute("fontsize", "" + fontSize);
+	}
+
+	private void addComp(Component component, ComponentNode node) {
+		add(node);
+		for (Node exitNode : node.getExitNodes()) {
+			add(exitNode);
+			connect(node, exitNode, new Edge(100));
+		}
+		nodeMap.put(component, node);
 	}
 
 	/**
@@ -127,17 +127,11 @@ class ModuleGraph extends Graph {
 	}
 
 	/**
-	 * Creates a node for each component of the module. Also creates edges for
-	 * the port-to-bus connections.
+	 * Gets the current node count. This includes the nodes that have been added
+	 * to this graph.
 	 */
-	protected void graphComponents() {
-		for (Component comp : module.getComponents()) {
-			graph(comp, nodeCount);
-		}
-
-		for (Component comp : module.getComponents()) {
-			graphEdges(comp);
-		}
+	int getNodeCount() {
+		return nodeCount;
 	}
 
 	/**
@@ -198,29 +192,17 @@ class ModuleGraph extends Graph {
 		addComp(component, node);
 	}
 
-	private void addComp(Component component, ComponentNode node) {
-		add(node);
-		for (Node exitNode : node.getExitNodes()) {
-			add(exitNode);
-			connect(node, exitNode, new Edge(100));
-		}
-		nodeMap.put(component, node);
-	}
-
 	/**
-	 * Graphs the incoming connections to a component's ports.
+	 * Creates a node for each component of the module. Also creates edges for
+	 * the port-to-bus connections.
 	 */
-	protected void graphEdges(Component component) {
-		ComponentNode componentNode = (ComponentNode) nodeMap.get(component);
-		for (org.xronos.openforge.lim.Port port : component.getPorts()) {
-			graphEdge(componentNode, port);
+	protected void graphComponents() {
+		for (Component comp : module.getComponents()) {
+			graph(comp, nodeCount);
 		}
-		if (component instanceof MemoryRead) {
-			if (((MemoryRead) component).getPhysicalComponent() != null)
-				graphEdges(((MemoryRead) component).getPhysicalComponent());
-		} else if (component instanceof MemoryWrite) {
-			if (((MemoryWrite) component).getPhysicalComponent() != null)
-				graphEdges(((MemoryWrite) component).getPhysicalComponent());
+
+		for (Component comp : module.getComponents()) {
+			graphEdges(comp);
 		}
 	}
 
@@ -258,16 +240,36 @@ class ModuleGraph extends Graph {
 				}
 
 				// if added CRSS
-				if ((busNode != null) && (portNode != null)) {
+				if (busNode != null && portNode != null) {
 					Edge e = new Edge(1);
 					if (COLORIZE_EDGES) {
 						e.setColor(colors[color]);
 						color++;
-						if (color >= 8)
+						if (color >= 8) {
 							color = 0;
+						}
 					}
 					connect(busNode, portNode, e);
 				}
+			}
+		}
+	}
+
+	/**
+	 * Graphs the incoming connections to a component's ports.
+	 */
+	protected void graphEdges(Component component) {
+		ComponentNode componentNode = (ComponentNode) nodeMap.get(component);
+		for (org.xronos.openforge.lim.Port port : component.getPorts()) {
+			graphEdge(componentNode, port);
+		}
+		if (component instanceof MemoryRead) {
+			if (((MemoryRead) component).getPhysicalComponent() != null) {
+				graphEdges(((MemoryRead) component).getPhysicalComponent());
+			}
+		} else if (component instanceof MemoryWrite) {
+			if (((MemoryWrite) component).getPhysicalComponent() != null) {
+				graphEdges(((MemoryWrite) component).getPhysicalComponent());
 			}
 		}
 	}

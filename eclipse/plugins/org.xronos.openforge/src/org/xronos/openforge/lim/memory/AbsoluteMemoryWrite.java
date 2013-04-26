@@ -34,7 +34,6 @@ import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.Visitor;
 import org.xronos.openforge.lim.op.Constant;
 
-
 /**
  * AbsoluteMemoryWrite is a fixed access to a {@link LogicalMemory}, in which
  * the {@link Location} being accessed is fully specified at compile time and
@@ -93,10 +92,10 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 		// based on an index or other Location for which the direct
 		// initial value may not be available. There is always a
 		// valid initial value for the absolute base.
-		this(new MemoryWrite(false, (addressableLocations * target
-				.getAbsoluteBase().getInitialValue().getAddressStridePolicy()
-				.getStride()), isSigned), target, addressableLocations,
-				maxAddressWidth);
+		this(new MemoryWrite(false, addressableLocations
+				* target.getAbsoluteBase().getInitialValue()
+						.getAddressStridePolicy().getStride(), isSigned),
+				target, addressableLocations, maxAddressWidth);
 	}
 
 	/**
@@ -152,52 +151,6 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 	}
 
 	/**
-	 * Gets the input data {@link Port}.
-	 */
-	public Port getValuePort() {
-		return valuePort;
-	}
-
-	/**
-	 * Returns true
-	 */
-	@Override
-	public boolean isWrite() {
-		return true;
-	}
-
-	/**
-	 * Returns the {@link LocationConstant} used to source the actual address to
-	 * the memory.
-	 */
-	public LocationConstant getAddressConstant() {
-		return addrConst;
-	}
-
-	/**
-	 * Attempts to remove the given {@link Port} from this component.
-	 * 
-	 * @param port
-	 *            the port to remove
-	 * @return true if the port was removed.
-	 */
-	@Override
-	public boolean removeDataPort(Port port) {
-		final boolean isRemoved = super.removeDataPort(port);
-		if (isRemoved && (port == getValuePort())) {
-			valuePort = null;
-		}
-		return isRemoved;
-	}
-
-	/**
-	 * Gets the low level write operation contined in this module.
-	 */
-	public MemoryWrite getMemoryWrite() {
-		return (MemoryWrite) getMemoryAccess();
-	}
-
-	/**
 	 * Accepts a {@link Visitor}.
 	 * 
 	 * @param visitor
@@ -207,25 +160,6 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
-	}
-
-	/**
-	 * Remove the underlying {@link MemoryAccess} as a reference of the
-	 * targetted memory.
-	 */
-	@Override
-	public void removeFromMemory() {
-		super.removeFromMemory();
-		getLogicalMemoryPort().getLogicalMemory().removeLocationConstant(
-				addrConst);
-	}
-
-	@Override
-	public boolean removeComponent(Component component) {
-		boolean ret = super.removeComponent(component);
-		if (component == addrConst)
-			addrConst = null;
-		return ret;
 	}
 
 	/**
@@ -272,6 +206,72 @@ public class AbsoluteMemoryWrite extends MemoryAccessBlock {
 		AbsoluteMemoryWrite clone = (AbsoluteMemoryWrite) moduleClone;
 		clone.valuePort = getPortClone(valuePort, cloneMap);
 		clone.addrConst = (LocationConstant) cloneMap.get(addrConst);
+	}
+
+	/**
+	 * Returns the {@link LocationConstant} used to source the actual address to
+	 * the memory.
+	 */
+	public LocationConstant getAddressConstant() {
+		return addrConst;
+	}
+
+	/**
+	 * Gets the low level write operation contined in this module.
+	 */
+	public MemoryWrite getMemoryWrite() {
+		return (MemoryWrite) getMemoryAccess();
+	}
+
+	/**
+	 * Gets the input data {@link Port}.
+	 */
+	public Port getValuePort() {
+		return valuePort;
+	}
+
+	/**
+	 * Returns true
+	 */
+	@Override
+	public boolean isWrite() {
+		return true;
+	}
+
+	@Override
+	public boolean removeComponent(Component component) {
+		boolean ret = super.removeComponent(component);
+		if (component == addrConst) {
+			addrConst = null;
+		}
+		return ret;
+	}
+
+	/**
+	 * Attempts to remove the given {@link Port} from this component.
+	 * 
+	 * @param port
+	 *            the port to remove
+	 * @return true if the port was removed.
+	 */
+	@Override
+	public boolean removeDataPort(Port port) {
+		final boolean isRemoved = super.removeDataPort(port);
+		if (isRemoved && port == getValuePort()) {
+			valuePort = null;
+		}
+		return isRemoved;
+	}
+
+	/**
+	 * Remove the underlying {@link MemoryAccess} as a reference of the
+	 * targetted memory.
+	 */
+	@Override
+	public void removeFromMemory() {
+		super.removeFromMemory();
+		getLogicalMemoryPort().getLogicalMemory().removeLocationConstant(
+				addrConst);
 	}
 
 }// AbsoluteMemoryWrite

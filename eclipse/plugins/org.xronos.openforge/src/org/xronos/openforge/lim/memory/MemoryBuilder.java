@@ -39,7 +39,6 @@ import org.xronos.openforge.app.project.OptionInt;
 import org.xronos.openforge.lim.CodeLabel;
 import org.xronos.openforge.lim.Design;
 
-
 /**
  * MemoryBuilder is responsible for turning {@link Memory} and
  * {@link LogicalMemory} objects in a {@link Design} into their equivalent
@@ -69,268 +68,6 @@ import org.xronos.openforge.lim.Design;
  * @version $Id: MemoryBuilder.java 538 2007-11-21 06:22:39Z imiller $
  */
 public class MemoryBuilder {
-
-	/**
-	 * This is a limitation imposed by the fact that we use 'int' in
-	 * LogicalMemory.getAddress() and other places to represent an address.
-	 */
-	private static final int MAX_ADDR_SIZE = 32;
-
-	public MemoryBuilder() {
-	}
-
-	/**
-	 * Generates the {@link StructuralMemory} for each {@link Memory} and each
-	 * {@link LogicalMemory} in the design.
-	 */
-	public static void buildMemories(Design design) {
-		if (design.getLogicalMemories().size() == 0) {
-			return;
-		}
-
-		// We use this code to dynamically place the memory ID just
-		// above the largest address necessary so that we can support
-		// both designs with a few large memories, or lots of small
-		// memories.
-		int memCount = design.getLogicalMemories().size();
-		int addrBits = calcAddrBits(design.getLogicalMemories());
-		int idBits = org.xronos.openforge.util.MathStuff.log2(memCount);
-		if ((addrBits + idBits) > MAX_ADDR_SIZE) {
-			EngineThread.getEngine().fatalError(
-					"Could not encode memory addresses." + "  A "
-							+ (addrBits + idBits)
-							+ " bit minimum address size would be necessary."
-							+ "  Forge is currently limited to "
-							+ MAX_ADDR_SIZE);
-		}
-
-		// Build/pack memories in 2 seperate phases. We need to do
-		// this so that every LogicalMemory has a base address map
-		// established before we begin trying to get the contents of
-		// any memory. This allows all Pointers in any memory to have
-		// a valid address associated with the Location they target.
-		Map<LogicalMemory, PackedMemory> packedMemMap = new HashMap<LogicalMemory, PackedMemory>();
-		for (LogicalMemory logicalMemory : design.getLogicalMemories()) {
-			// packedMemMap.put(logicalMemory, buildMemory(logicalMemory,
-			// addrBits, design.getNextMemoryId()));
-			// For now, we'll just use '0' as the memory ID for all
-			// memories. This is not correct (as 2 allocations in
-			// seperate memories may have the same address but are not
-			// equal), however, random assignment of memory ID's isn't
-			// correct either, because 2 pointers to the same object
-			// may point to different memories in which case they need
-			// to be numerically equal.
-			packedMemMap.put(logicalMemory,
-					buildMemory(logicalMemory, addrBits, 0));
-		}
-		for (LogicalMemory logicalMemory : design.getLogicalMemories()) {
-			final PackedMemory packedMem = packedMemMap.get(logicalMemory);
-			if (!packMemory(logicalMemory, packedMem)) {
-				design.removeMemory(logicalMemory);
-			}
-		}
-		// _memory.d.launchXGraph(design, false);
-	}
-
-	/**
-	 * Determine the number of address bits needed to cover all addresses to all
-	 * memories in the design
-	 * 
-	 * @param logicalMems
-	 *            a 'Collection' of LogicalMemories
-	 * @return the minimum number of address bits necessary to cover the address
-	 *         space of all memories.
-	 */
-	protected static int calcAddrBits(Collection<LogicalMemory> logicalMems) {
-		// First determine the largest sized memory so that we know
-		// the largest address width needed.
-		int maxBytes = 0;
-		for (LogicalMemory logicalMemory : logicalMems) {
-			maxBytes = Math.max(maxBytes, (logicalMemory).getAddressableSize());
-		}
-		// The number of address bits needed then is Log2 of
-		// maxBytes+1 (plus 1 to account for padding bits which are
-		// guaranteed to never double the memory size)
-		int addrBits = org.xronos.openforge.util.MathStuff.log2(maxBytes) + 1;
-		return addrBits;
-	}
-
-	/**
-	 * Constructs a 'packed memory' representation of the given LogicalMemory
-	 * which is used to determine the exact layout and initial values needed for
-	 * the physical memory.
-	 * 
-	 * @param mem
-	 *            the 'LogicalMemory' to be packed
-	 * @param addrBits
-	 *            the number of bits necessary to represent any address in any
-	 *            memory of this design
-	 * @param memoryID
-	 *            a unique non-zero non-negative identifier for the generated
-	 *            packed memory.
-	 * @return a 'PackedMemory', the packed memory that was built.
-	 */
-	protected static PackedMemory buildMemory(LogicalMemory mem, int addrBits,
-			int memoryID) {
-		if (_memory.db) {
-			_memory.ln(_memory.BUILD, "Building Structural Memory for " + mem);
-		}
-
-		// The largest and smallest access in numbers of addresses
-		// accessed atomically.
-		int smallestAccess = Integer.MAX_VALUE;
-		int largestAccess = Integer.MIN_VALUE;
-		for (LValue lvalue : mem.getLValues()) {
-			final int lvalueAccessCount = lvalue.getAccessLocationCount();
-			if (lvalueAccessCount > 0) {
-				/*
-				 * Ignore byte counts of 0, which are pure addresses.
-				 */
-				smallestAccess = Math.min(smallestAccess, lvalueAccessCount);
-				largestAccess = Math.max(largestAccess, lvalueAccessCount);
-			}
-		}
-
-		if (_memory.db) {
-			_memory.ln(_memory.BUILD, "Largest Access: " + largestAccess
-					+ " Smallest Access: " + smallestAccess);
-		}
-
-		// Now build a model of the 'packed' memory which identifies
-		// how allocations/locations are stored in the memory and what
-		// is defined as a 'line'.
-		PackedMemory packedMem = new PackedMemory(largestAccess, addrBits,
-				memoryID);
-		for (Allocation allocation : mem.getAllocations()) {
-			packedMem.allocate(allocation);
-		}
-		/*
-		 * Lock the packed memory to allocate addresses for 0 length
-		 * Allocations.
-		 */
-		packedMem.lock();
-		if (_memory.db) {
-			_memory.ln(_memory.BUILD, "Packed Memory base Addresses: "
-					+ packedMem.getBaseAddressMap());
-		}
-
-		/*
-		 * The address map has to be computed regardless of whether any actual
-		 * storage is needed. This is because there may be operations that just
-		 * take the addresses of variables without actuall reading or writing
-		 * them (e.g., "&var" in C).
-		 */
-		mem.setBaseAddressMap(packedMem.getBaseAddressMap());
-		packedMem.setSmallestAccess(smallestAccess);
-		return packedMem;
-	}
-
-	/**
-	 * Constructs the actual StructuralMemory based on the data obtained in the
-	 * previous steps. This method uses the initial values (byte[][]) obtained
-	 * from the PackedMemory to initialize the StructuralMemory.
-	 * 
-	 * @return a 'boolean', true if a Structural representation was constructed,
-	 *         false otherwise.
-	 */
-	protected static boolean packMemory(LogicalMemory mem,
-			PackedMemory packedMem) {
-		/*
-		 * The memory may still be empty if the only accessors were those that
-		 * computed addresses without actually reading or writing any data.
-		 */
-		if (packedMem.getAddrsPerLine() > 0) {
-			// Now that the base address map has been specified, we can
-			// initialize the packed memory.
-			AddressableUnit[][] init = packedMem.getInitValues();
-			if (_memory.db) {
-				_memory.ln(_memory.BUILD,
-						"Initial Value map for logical memory " + mem);
-				for (int i = 0; i < init.length; i++) {
-					printArr(init[i]);
-				}
-			}
-
-			String name = "logicalMem_" + Integer.toHexString(mem.hashCode());
-
-			// The call to this method also causes the memory to
-			// verify that it has a consistent stride policy across
-			// all allocations.
-			final AddressStridePolicy memoryAddressStridePolicy = mem
-					.getAddressStridePolicy();
-
-			final int bitWidth = packedMem.getAddrsPerLine()
-					* memoryAddressStridePolicy.getStride();
-
-			// NumLines is the total number of addressable locations
-			// divided by # addressable locations per line
-			final int numLines = packedMem.getAddressCount()
-					/ packedMem.getAddrsPerLine();
-
-			final int addressableBytes = Math.max(mem.getSizeInBytes(),
-					(bitWidth / 8) * numLines);
-
-			// Bank width is in bits, access size is in addressable
-			// locations. The bank width is the size of the smallest
-			// access.
-			// We no longer ensure that bank width is 2^n * 8 because
-			// we support arbitrary sized memory banks.
-			final int bankWidth = bankWidthUserOverride(
-					packedMem.getSmallestAccess()
-							* memoryAddressStridePolicy.getStride(), false);
-
-			// Determine the implementation based on the final
-			// characteristics of the memory.
-			MemoryImplementation impl = MemoryImplementation
-					.getMemoryImplementation(addressableBytes, isReadOnly(mem),
-							mem.getLogicalMemoryPorts().size());
-			// Just in case it wasn't set previously, handle it here
-			if (mem.getImplementation() == null) {
-				mem.setImplementation(impl);
-			}
-
-			// Test to see if the previously determined configuration
-			// matches the final characteristics. If not that is OK.
-			GenericJob gj = EngineThread.getGenericJob();
-			if (!impl.equals(mem.getImplementation())) {
-				gj.warn("Selected memory implementation differs from final characteristics.  This warning is only for informational purposes");
-			}
-
-			_memory.ln(_memory.BUILD, "bitWidth " + bitWidth);
-			_memory.ln(_memory.BUILD, "numLines " + numLines);
-			_memory.ln(_memory.BUILD, "bankWidth " + bankWidth);
-			_memory.ln(_memory.BUILD, "impl " + impl);
-
-			StructuralMemory structMem = new StructuralMemory(bitWidth,
-					numLines, bankWidth, new ArrayList<LogicalMemoryPort>(
-							mem.getLogicalMemoryPorts()), name, impl,
-					memoryAddressStridePolicy, mem.getMaxAddressWidth());
-
-			structMem.setInitialValues(init);
-
-			mem.setStructuralImplementation(structMem);
-			mem.setImplementation(impl);
-			// Wait until we are connecting up the memory in
-			// MemoryConnectionVisitor before adding to the design.
-			// design.addComponentToDesign(structMem);
-
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	/**
-	 * Returns true if all {@link LogicalMemoryPort}s are read only.
-	 */
-	private static boolean isReadOnly(LogicalMemory mem) {
-		for (LogicalMemoryPort port : mem.getLogicalMemoryPorts()) {
-			if (!port.isReadOnly()) {
-				return false;
-			}
-		}
-		return true;
-	}
 
 	/**
 	 * This is a utility class used to pack Allocations into a memory of a set
@@ -399,18 +136,6 @@ public class MemoryBuilder {
 			this.addrBits = addrBits;
 		}
 
-		public void setSmallestAccess(int acc) {
-			if (acc <= 0) {
-				throw new IllegalArgumentException(
-						"illegal minimum access width " + acc);
-			}
-			smallestAccessWidth = acc;
-		}
-
-		public int getSmallestAccess() {
-			return smallestAccessWidth;
-		}
-
 		/**
 		 * Assigns the {@link Allocation} to the next available address,
 		 * skipping sufficient locations to ensure that the Allocation starts at
@@ -450,11 +175,15 @@ public class MemoryBuilder {
 		}
 
 		/**
-		 * Returns the number of addresses per line of memory. This is the
-		 * number of addressable locations that must be accessed contiguously.
+		 * Encode the given address with this memories memory ID.
+		 * 
+		 * @param addr
+		 *            a value of type 'int'
+		 * @return a value of type 'Integer'
 		 */
-		public int getAddrsPerLine() {
-			return addrsPerLine;
+		private Integer getAddress(int addr) {
+			addr |= memID << addrBits;
+			return new Integer(addr);
 		}
 
 		/**
@@ -465,20 +194,11 @@ public class MemoryBuilder {
 		}
 
 		/**
-		 * This method must be called after ALL Allocations have been allocated
-		 * in this memory in order to 'lock' the base address map. Until the
-		 * base address map is locked, no address can be correctly obtained.
+		 * Returns the number of addresses per line of memory. This is the
+		 * number of addressable locations that must be accessed contiguously.
 		 */
-		public void lock() {
-			locked = true;
-
-			// Cache the address locally so that we dont modify it,
-			// because it is used to determine the physical depth of
-			// this memory.
-			int addr = nextAddress;
-			for (Allocation alloc : zeroLengthAllocations) {
-				baseAddressMap.put(alloc, getAddress(addr++));
-			}
+		public int getAddrsPerLine() {
+			return addrsPerLine;
 		}
 
 		/**
@@ -565,18 +285,41 @@ public class MemoryBuilder {
 			return map;
 		}
 
+		public int getSmallestAccess() {
+			return smallestAccessWidth;
+		}
+
 		/**
-		 * Encode the given address with this memories memory ID.
-		 * 
-		 * @param addr
-		 *            a value of type 'int'
-		 * @return a value of type 'Integer'
+		 * This method must be called after ALL Allocations have been allocated
+		 * in this memory in order to 'lock' the base address map. Until the
+		 * base address map is locked, no address can be correctly obtained.
 		 */
-		private Integer getAddress(int addr) {
-			addr |= memID << addrBits;
-			return new Integer(addr);
+		public void lock() {
+			locked = true;
+
+			// Cache the address locally so that we dont modify it,
+			// because it is used to determine the physical depth of
+			// this memory.
+			int addr = nextAddress;
+			for (Allocation alloc : zeroLengthAllocations) {
+				baseAddressMap.put(alloc, getAddress(addr++));
+			}
+		}
+
+		public void setSmallestAccess(int acc) {
+			if (acc <= 0) {
+				throw new IllegalArgumentException(
+						"illegal minimum access width " + acc);
+			}
+			smallestAccessWidth = acc;
 		}
 	}
+
+	/**
+	 * This is a limitation imposed by the fact that we use 'int' in
+	 * LogicalMemory.getAddress() and other places to represent an address.
+	 */
+	private static final int MAX_ADDR_SIZE = 32;
 
 	/**
 	 * Determines if the user has specified an exact value to use for the memory
@@ -617,6 +360,164 @@ public class MemoryBuilder {
 	}
 
 	/**
+	 * Generates the {@link StructuralMemory} for each {@link Memory} and each
+	 * {@link LogicalMemory} in the design.
+	 */
+	public static void buildMemories(Design design) {
+		if (design.getLogicalMemories().size() == 0) {
+			return;
+		}
+
+		// We use this code to dynamically place the memory ID just
+		// above the largest address necessary so that we can support
+		// both designs with a few large memories, or lots of small
+		// memories.
+		int memCount = design.getLogicalMemories().size();
+		int addrBits = calcAddrBits(design.getLogicalMemories());
+		int idBits = org.xronos.openforge.util.MathStuff.log2(memCount);
+		if (addrBits + idBits > MAX_ADDR_SIZE) {
+			EngineThread.getEngine().fatalError(
+					"Could not encode memory addresses." + "  A "
+							+ (addrBits + idBits)
+							+ " bit minimum address size would be necessary."
+							+ "  Forge is currently limited to "
+							+ MAX_ADDR_SIZE);
+		}
+
+		// Build/pack memories in 2 seperate phases. We need to do
+		// this so that every LogicalMemory has a base address map
+		// established before we begin trying to get the contents of
+		// any memory. This allows all Pointers in any memory to have
+		// a valid address associated with the Location they target.
+		Map<LogicalMemory, PackedMemory> packedMemMap = new HashMap<LogicalMemory, PackedMemory>();
+		for (LogicalMemory logicalMemory : design.getLogicalMemories()) {
+			// packedMemMap.put(logicalMemory, buildMemory(logicalMemory,
+			// addrBits, design.getNextMemoryId()));
+			// For now, we'll just use '0' as the memory ID for all
+			// memories. This is not correct (as 2 allocations in
+			// seperate memories may have the same address but are not
+			// equal), however, random assignment of memory ID's isn't
+			// correct either, because 2 pointers to the same object
+			// may point to different memories in which case they need
+			// to be numerically equal.
+			packedMemMap.put(logicalMemory,
+					buildMemory(logicalMemory, addrBits, 0));
+		}
+		for (LogicalMemory logicalMemory : design.getLogicalMemories()) {
+			final PackedMemory packedMem = packedMemMap.get(logicalMemory);
+			if (!packMemory(logicalMemory, packedMem)) {
+				design.removeMemory(logicalMemory);
+			}
+		}
+		// _memory.d.launchXGraph(design, false);
+	}
+
+	/**
+	 * Constructs a 'packed memory' representation of the given LogicalMemory
+	 * which is used to determine the exact layout and initial values needed for
+	 * the physical memory.
+	 * 
+	 * @param mem
+	 *            the 'LogicalMemory' to be packed
+	 * @param addrBits
+	 *            the number of bits necessary to represent any address in any
+	 *            memory of this design
+	 * @param memoryID
+	 *            a unique non-zero non-negative identifier for the generated
+	 *            packed memory.
+	 * @return a 'PackedMemory', the packed memory that was built.
+	 */
+	protected static PackedMemory buildMemory(LogicalMemory mem, int addrBits,
+			int memoryID) {
+		if (_memory.db) {
+			_memory.ln(_memory.BUILD, "Building Structural Memory for " + mem);
+		}
+
+		// The largest and smallest access in numbers of addresses
+		// accessed atomically.
+		int smallestAccess = Integer.MAX_VALUE;
+		int largestAccess = Integer.MIN_VALUE;
+		for (LValue lvalue : mem.getLValues()) {
+			final int lvalueAccessCount = lvalue.getAccessLocationCount();
+			if (lvalueAccessCount > 0) {
+				/*
+				 * Ignore byte counts of 0, which are pure addresses.
+				 */
+				smallestAccess = Math.min(smallestAccess, lvalueAccessCount);
+				largestAccess = Math.max(largestAccess, lvalueAccessCount);
+			}
+		}
+
+		if (_memory.db) {
+			_memory.ln(_memory.BUILD, "Largest Access: " + largestAccess
+					+ " Smallest Access: " + smallestAccess);
+		}
+
+		// Now build a model of the 'packed' memory which identifies
+		// how allocations/locations are stored in the memory and what
+		// is defined as a 'line'.
+		PackedMemory packedMem = new PackedMemory(largestAccess, addrBits,
+				memoryID);
+		for (Allocation allocation : mem.getAllocations()) {
+			packedMem.allocate(allocation);
+		}
+		/*
+		 * Lock the packed memory to allocate addresses for 0 length
+		 * Allocations.
+		 */
+		packedMem.lock();
+		if (_memory.db) {
+			_memory.ln(_memory.BUILD, "Packed Memory base Addresses: "
+					+ packedMem.getBaseAddressMap());
+		}
+
+		/*
+		 * The address map has to be computed regardless of whether any actual
+		 * storage is needed. This is because there may be operations that just
+		 * take the addresses of variables without actuall reading or writing
+		 * them (e.g., "&var" in C).
+		 */
+		mem.setBaseAddressMap(packedMem.getBaseAddressMap());
+		packedMem.setSmallestAccess(smallestAccess);
+		return packedMem;
+	}
+
+	/**
+	 * Determine the number of address bits needed to cover all addresses to all
+	 * memories in the design
+	 * 
+	 * @param logicalMems
+	 *            a 'Collection' of LogicalMemories
+	 * @return the minimum number of address bits necessary to cover the address
+	 *         space of all memories.
+	 */
+	protected static int calcAddrBits(Collection<LogicalMemory> logicalMems) {
+		// First determine the largest sized memory so that we know
+		// the largest address width needed.
+		int maxBytes = 0;
+		for (LogicalMemory logicalMemory : logicalMems) {
+			maxBytes = Math.max(maxBytes, logicalMemory.getAddressableSize());
+		}
+		// The number of address bits needed then is Log2 of
+		// maxBytes+1 (plus 1 to account for padding bits which are
+		// guaranteed to never double the memory size)
+		int addrBits = org.xronos.openforge.util.MathStuff.log2(maxBytes) + 1;
+		return addrBits;
+	}
+
+	/**
+	 * Returns true if all {@link LogicalMemoryPort}s are read only.
+	 */
+	private static boolean isReadOnly(LogicalMemory mem) {
+		for (LogicalMemoryPort port : mem.getLogicalMemoryPorts()) {
+			if (!port.isReadOnly()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
 	 * Returns the power of 2 that is greater than or equal to the input value
 	 * with a lower bound of 8.
 	 * 
@@ -632,25 +533,122 @@ public class MemoryBuilder {
 		return normalized;
 	}
 
-	public static void printArr(AddressableUnit[][] arr) {
-		if (_memory.db) {
-			for (int i = 0; i < arr.length; i++) {
-				AddressableUnit[] b = arr[i];
-				printArr(b);
+	/**
+	 * Constructs the actual StructuralMemory based on the data obtained in the
+	 * previous steps. This method uses the initial values (byte[][]) obtained
+	 * from the PackedMemory to initialize the StructuralMemory.
+	 * 
+	 * @return a 'boolean', true if a Structural representation was constructed,
+	 *         false otherwise.
+	 */
+	protected static boolean packMemory(LogicalMemory mem,
+			PackedMemory packedMem) {
+		/*
+		 * The memory may still be empty if the only accessors were those that
+		 * computed addresses without actually reading or writing any data.
+		 */
+		if (packedMem.getAddrsPerLine() > 0) {
+			// Now that the base address map has been specified, we can
+			// initialize the packed memory.
+			AddressableUnit[][] init = packedMem.getInitValues();
+			if (_memory.db) {
+				_memory.ln(_memory.BUILD,
+						"Initial Value map for logical memory " + mem);
+				for (AddressableUnit[] element : init) {
+					printArr(element);
+				}
 			}
+
+			String name = "logicalMem_" + Integer.toHexString(mem.hashCode());
+
+			// The call to this method also causes the memory to
+			// verify that it has a consistent stride policy across
+			// all allocations.
+			final AddressStridePolicy memoryAddressStridePolicy = mem
+					.getAddressStridePolicy();
+
+			final int bitWidth = packedMem.getAddrsPerLine()
+					* memoryAddressStridePolicy.getStride();
+
+			// NumLines is the total number of addressable locations
+			// divided by # addressable locations per line
+			final int numLines = packedMem.getAddressCount()
+					/ packedMem.getAddrsPerLine();
+
+			final int addressableBytes = Math.max(mem.getSizeInBytes(),
+					bitWidth / 8 * numLines);
+
+			// Bank width is in bits, access size is in addressable
+			// locations. The bank width is the size of the smallest
+			// access.
+			// We no longer ensure that bank width is 2^n * 8 because
+			// we support arbitrary sized memory banks.
+			final int bankWidth = bankWidthUserOverride(
+					packedMem.getSmallestAccess()
+							* memoryAddressStridePolicy.getStride(), false);
+
+			// Determine the implementation based on the final
+			// characteristics of the memory.
+			MemoryImplementation impl = MemoryImplementation
+					.getMemoryImplementation(addressableBytes, isReadOnly(mem),
+							mem.getLogicalMemoryPorts().size());
+			// Just in case it wasn't set previously, handle it here
+			if (mem.getImplementation() == null) {
+				mem.setImplementation(impl);
+			}
+
+			// Test to see if the previously determined configuration
+			// matches the final characteristics. If not that is OK.
+			GenericJob gj = EngineThread.getGenericJob();
+			if (!impl.equals(mem.getImplementation())) {
+				gj.warn("Selected memory implementation differs from final characteristics.  This warning is only for informational purposes");
+			}
+
+			_memory.ln(_memory.BUILD, "bitWidth " + bitWidth);
+			_memory.ln(_memory.BUILD, "numLines " + numLines);
+			_memory.ln(_memory.BUILD, "bankWidth " + bankWidth);
+			_memory.ln(_memory.BUILD, "impl " + impl);
+
+			StructuralMemory structMem = new StructuralMemory(bitWidth,
+					numLines, bankWidth, new ArrayList<LogicalMemoryPort>(
+							mem.getLogicalMemoryPorts()), name, impl,
+					memoryAddressStridePolicy, mem.getMaxAddressWidth());
+
+			structMem.setInitialValues(init);
+
+			mem.setStructuralImplementation(structMem);
+			mem.setImplementation(impl);
+			// Wait until we are connecting up the memory in
+			// MemoryConnectionVisitor before adding to the design.
+			// design.addComponentToDesign(structMem);
+
+			return true;
+		} else {
+			return false;
 		}
 	}
 
 	public static void printArr(AddressableUnit[] arr) {
 		if (_memory.db) {
-			for (int i = 0; i < arr.length; i++) {
+			for (AddressableUnit element : arr) {
 				// _memory.o(_memory.BUILD, "0x" + Integer.toHexString(arr[i]) +
 				// " ");
-				_memory.o(_memory.BUILD, "0x" + arr[i].getValue().toString(16)
+				_memory.o(_memory.BUILD, "0x" + element.getValue().toString(16)
 						+ " ");
 			}
 			_memory.ln(_memory.BUILD);
 		}
+	}
+
+	public static void printArr(AddressableUnit[][] arr) {
+		if (_memory.db) {
+			for (AddressableUnit[] b : arr) {
+				printArr(b);
+			}
+		}
+	}
+
+	public MemoryBuilder() {
 	}
 
 } // MemoryBuilder

@@ -50,7 +50,6 @@ import org.xronos.openforge.lim.primitive.Reg;
 import org.xronos.openforge.schedule.GlobalConnector;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * MemoryReferee is a {@link Module} which controls access to a
  * {@link MemoryPort}.
@@ -75,419 +74,6 @@ import org.xronos.openforge.util.naming.ID;
  * @version $Id: MemoryReferee.java 280 2006-08-11 17:00:32Z imiller $
  */
 public class MemoryReferee extends Referee {
-
-	private List<TaskSlot> taskSlots = new ArrayList<TaskSlot>();
-	private GlobalSlot globalSlot;
-
-	/**
-	 * A Set of Components which represent the points of feedback in this
-	 * MemoryReferee, populated from the sets contained in TaskCapture and
-	 * StateMachine
-	 */
-	Set<Component> feedbackPoints = new HashSet<Component>(11);
-
-	Constant zeroConstant;
-	Constant zeroDataConstant;
-	Constant oneConstant;
-
-	private int dataWidth = -1;
-
-	protected MemoryReferee(Arbitratable resource) {
-		super();
-		dataWidth = resource.getDataPathWidth();
-		@SuppressWarnings("unused")
-		Exit mainExit = makeExit(0, Exit.DONE);
-
-		// Make the global side interface
-		globalSlot = new GlobalSlot(this);
-	}
-
-	/**
-	 * create a referee to control access to the memory port
-	 * 
-	 * @param memoryPort
-	 *            what the referee is controlling access to
-	 * @param readList
-	 *            list of reads - null if task doesn't read
-	 * @param writeList
-	 *            list of writes - null if task doesn't writes
-	 */
-	// public MemoryReferee (LogicalMemoryPort memoryPort, List readList, List
-	// writeList)
-	public MemoryReferee(Arbitratable resource,
-			List<GlobalConnector.Connection> readList,
-			List<GlobalConnector.Connection> writeList) {
-		// super(memoryPort);
-		this(resource);
-		assert readList.size() == writeList.size() : "readList must match writeList size";
-
-		int numTaskSlots = readList.size();
-
-		final int memoryWidth = resource.getDataPathWidth();
-		final int addressWidth = resource.getAddrPathWidth();
-		final boolean isAddressable = resource.isAddressable();
-		final boolean combinationalMemoryReads = resource
-				.allowsCombinationalReads();
-		globalSlot
-				.setSizes(memoryWidth, addressWidth, LogicalMemory.SIZE_WIDTH);
-		getClockPort().setUsed(true);
-		getResetPort().setUsed(true);
-
-		zeroConstant = new SimpleConstant(0, 1, false);
-		zeroConstant.setIDLogical(this, "zeroConstant");
-		addComponent(zeroConstant);
-
-		zeroDataConstant = new SimpleConstant(0, memoryWidth, false);
-		zeroDataConstant.setIDLogical(this, "zeroDataConstant");
-		addComponent(zeroDataConstant);
-
-		oneConstant = new SimpleConstant(1, 1, false);
-		oneConstant.setIDLogical(this, "oneConstant");
-		addComponent(oneConstant);
-
-		int stateWidth = 0;
-		// find number of bits required to hold state
-		for (int i = numTaskSlots; i > 0; i = i >> 1) {
-			stateWidth++;
-		}
-
-		for (int i = 0; i < numTaskSlots; i++) {
-			boolean doesRead = readList.get(i) != null;
-			boolean doesWrite = writeList.get(i) != null;
-			TaskSlot ts = new TaskSlot(this, memoryWidth, addressWidth,
-					doesRead, doesWrite);
-			addTaskSlot(ts);
-		}
-
-		// if one accessor, then wire straight thru:
-		// globalGo=goR | goW
-		// globalAddr=addr
-		// globalDataIn = dataIn
-		// dataOut = globalDataOut
-		// done = globalDone
-		final int taskCount = getTaskSlots().size();
-		if (taskCount == 1) {
-			TaskSlot ts = getTaskSlots().get(0);
-
-			boolean readUsed = ts.getGoRPort() != null;
-			boolean writeUsed = ts.getGoWPort() != null;
-
-			// first allocate the components & size
-			Or goOr = null;
-			if (readUsed && writeUsed) {
-				goOr = new Or(2);
-				addComponent(goOr);
-				goOr.setIDLogical(this, "goOr");
-				// now connect the components
-				goOr.getDataPorts().get(0).setBus(ts.getGoRPort().getPeer());
-				goOr.getDataPorts().get(1).setBus(ts.getGoWPort().getPeer());
-
-				globalSlot.getGoBus().getPeer().setBus(goOr.getResultBus());
-				globalSlot.getWriteEnableBus().getPeer()
-						.setBus(ts.getGoWPort().getPeer());
-			} else if (readUsed) // read only
-			{
-				globalSlot.getGoBus().getPeer()
-						.setBus(ts.getGoRPort().getPeer());
-				globalSlot.getWriteEnableBus().getPeer()
-						.setBus(getZeroConstant().getValueBus());
-			} else // write only. now why would a single task be write only?
-			{
-				globalSlot.getGoBus().getPeer()
-						.setBus(ts.getGoWPort().getPeer());
-				globalSlot.getWriteEnableBus().getPeer()
-						.setBus(ts.getGoWPort().getPeer());
-			}
-
-			globalSlot.getAddressBus().getPeer()
-					.setBus(ts.getAddressPort().getPeer());
-			globalSlot.getSizeBus().getPeer()
-					.setBus(ts.getSizePort().getPeer());
-
-			if (writeUsed) {
-				globalSlot.getWriteDataBus().getPeer()
-						.setBus(ts.getDataInPort().getPeer());
-			} else {
-				// globalSlot.getWriteDataBus().getPeer().setBus(getZeroConstant().getValueBus());
-				globalSlot.getWriteDataBus().getPeer()
-						.setBus(zeroDataConstant.getValueBus());
-			}
-			if (readUsed) {
-				ts.getDataOutBus().getPeer()
-						.setBus(globalSlot.getReadDataPort().getPeer());
-			}
-
-			ts.getDoneBus().getPeer()
-					.setBus(globalSlot.getDonePort().getPeer());
-
-			return;
-		}
-		// else there are multiple tasks... so build the full, arbitrated
-		// referee...
-		EncodedMux goMux = new EncodedMux(taskCount);
-		addComponent(goMux);
-		goMux.setIDLogical(this, "goMux");
-
-		EncodedMux addrMux = null;
-		// if (memoryDepth > 1)
-		if (isAddressable) {
-			addrMux = new EncodedMux(taskCount);
-			addComponent(addrMux);
-			addrMux.setIDLogical(this, "addrMux");
-		}
-
-		EncodedMux sizeMux = new EncodedMux(taskCount);
-		addComponent(sizeMux);
-		sizeMux.setIDLogical(this, "sizeMux");
-
-		EncodedMux dataInMux = new EncodedMux(taskCount);
-		addComponent(dataInMux);
-		dataInMux.setIDLogical(this, "dataInMux");
-
-		EncodedMux writeEnableMux = new EncodedMux(taskCount);
-		addComponent(writeEnableMux);
-		writeEnableMux.setIDLogical(this, "writeEnableMux");
-
-		Or advanceOr = new Or(taskCount);
-		addComponent(advanceOr);
-		advanceOr.setIDLogical(this, "advanceOr");
-
-		// make the state machine
-		StateMachine stateMachine = new StateMachine(getClockPort().getPeer(),
-				getResetPort().getPeer(), advanceOr.getResultBus(), stateWidth);
-		// and hook up the state to the mux select ports
-		goMux.getSelectPort().setBus(stateMachine.getResultBus());
-		if (addrMux != null) {
-			addrMux.getSelectPort().setBus(stateMachine.getResultBus());
-		}
-		sizeMux.getSelectPort().setBus(stateMachine.getResultBus());
-		dataInMux.getSelectPort().setBus(stateMachine.getResultBus());
-		writeEnableMux.getSelectPort().setBus(stateMachine.getResultBus());
-
-		// make the task captures, populate the global muxes/or
-		// (goMux, advanceOr, addrMux, sizeMux dataInMux, writeEnableMux)
-		List<TaskCapture> taskCaptures = new ArrayList<TaskCapture>();
-
-		for (int i = 0; i < taskCount; i++) {
-			DoneFilter df = new DoneFilter(globalSlot.getDonePort().getPeer(),
-					stateMachine.getDelayStateBus(), i, stateWidth);
-
-			TaskCapture tc = new TaskCapture(stateWidth, addressWidth,
-					memoryWidth, getResetPort().getPeer(), df.getResultBus(),
-					globalSlot.getReadDataPort().getPeer(), getTaskSlots().get(
-							i), i, combinationalMemoryReads);
-			taskCaptures.add(tc);
-			feedbackPoints.addAll(tc.getFeedbackPoints());
-			// hook up the task capture to the mux ports
-			goMux.getDataPort(i).setBus(tc.getTaskMemGoBus());
-			advanceOr.getDataPorts().get(i).setBus(tc.getTaskMemGoBus());
-			if (addrMux != null) {
-				addrMux.getDataPort(i).setBus(tc.getTaskMemAddrBus());
-			}
-			sizeMux.getDataPort(i).setBus(tc.getTaskMemSizeBus());
-
-			/*
-			 * Cast all data inputs to the memory width.
-			 */
-			final CastOp castOp = new CastOp(memoryWidth, false);
-			addComponent(castOp);
-			castOp.getDataPort().setBus(tc.getTaskMemDataInBus());
-			dataInMux.getDataPort(i).setBus(castOp.getResultBus());
-
-			writeEnableMux.getDataPort(i).setBus(tc.getTaskMemWrBus());
-		}
-
-		// update the state machine with the task captures
-		stateMachine.setTaskCaptures(taskCaptures);
-		feedbackPoints.addAll(stateMachine.getFeedbackPoints());
-
-		// update the global slot with the mux outputs
-		globalSlot.getGoBus().getPeer().setBus(goMux.getResultBus());
-		if (addrMux != null) {
-			globalSlot.getAddressBus().getPeer().setBus(addrMux.getResultBus());
-		} else {
-			Constant addrConst = new SimpleConstant(0, addressWidth, false);
-			globalSlot.getAddressBus().getPeer()
-					.setBus(addrConst.getValueBus());
-		}
-		globalSlot.getSizeBus().getPeer().setBus(sizeMux.getResultBus());
-		globalSlot.getWriteDataBus().getPeer().setBus(dataInMux.getResultBus());
-		globalSlot.getWriteEnableBus().getPeer()
-				.setBus(writeEnableMux.getResultBus());
-	}
-
-	private Constant getZeroConstant() {
-		return zeroConstant;
-	}
-
-	private Constant getOneConstant() {
-		return oneConstant;
-	}
-
-	/**
-	 * Tests whether this component is opaque. If true, then this component is
-	 * to be treated as a self-contained entity. This means that its internal
-	 * definition can make no direct references to external entitities. In
-	 * particular, external {@link Bit Bits} are not pushed into this component
-	 * during constant propagation, nor are any of its internal {@link Bit Bits}
-	 * propagated to its external {@link Bus Buses}.
-	 * <P>
-	 * Typically this implies that the translator will either generate a
-	 * primitive definition or an instantiatable module for this component.
-	 * 
-	 * @return true if this component is opaque, false otherwise
-	 */
-	@Override
-	public boolean isOpaque() {
-		return true;
-	}
-
-	protected void addTaskSlot(TaskSlot slot) {
-		taskSlots.add(slot);
-	}
-
-	public List<TaskSlot> getTaskSlots() {
-		return Collections.unmodifiableList(taskSlots);
-	}
-
-	protected GlobalSlot getGlobalSlot() {
-		return globalSlot;
-	}
-
-	public void connectImplementation(StructuralMemory.StructuralMemoryPort port) {
-		GlobalSlot globalSlot = getGlobalSlot();
-		port.getAddressPort().setBus(globalSlot.getAddressBus());
-
-		if (port.isWrite()) {
-			port.getDataInPort().setBus(globalSlot.getWriteDataBus());
-			port.getWriteEnablePort().setBus(globalSlot.getWriteEnableBus());
-		}
-
-		if (port.isRead()) {
-			port.getEnablePort().setBus(globalSlot.getGoBus());
-			globalSlot.getReadDataPort().setBus(port.getDataOutBus());
-		} else {
-			/*
-			 * The reason a Constant object is created here is because the read
-			 * data port needs to be tied to something which is outside of
-			 * MemoryReferee; Otherwise, it will cause the const prop looping
-			 * infinitely.
-			 */
-			Constant zeroCon = new SimpleConstant(0, dataWidth, false);
-			if (getOwner() != null)
-				getOwner().addComponent(zeroCon);
-			globalSlot.getReadDataPort().setBus(zeroCon.getValueBus());
-		}
-
-		port.getSizePort().setBus(globalSlot.getSizeBus());
-		globalSlot.getDonePort().setBus(port.getDoneBus());
-	}
-
-	/**
-	 * Returns a Set of {@link Component Components} that represent the feedback
-	 * points in this Module. This set is populated from the components created
-	 * by the TaskCapture and StateMachine classes.
-	 * 
-	 * @return a 'Set' of {@link Component Components}
-	 */
-	@Override
-	public Set<Component> getFeedbackPoints() {
-		Set<Component> feedback = new HashSet<Component>();
-		feedback.addAll(super.getFeedbackPoints());
-		feedback.addAll(feedbackPoints);
-		return Collections.unmodifiableSet(feedback);
-	}
-
-	/**
-	 * Accept method for the Visitor interface
-	 */
-	@Override
-	public void accept(Visitor visitor) {
-		visitor.visit(this);
-	}
-
-	@Override
-	public boolean removeDataBus(Bus bus) {
-		assert false : "remove data bus not supported on " + this;
-		return false;
-	}
-
-	@Override
-	public boolean removeDataPort(Port port) {
-		assert false : "remove data port not supported on " + this;
-		return false;
-	}
-
-	@Override
-	public String show() {
-		String ret = toString();
-		for (Port port : getPorts()) {
-			if (port == getGoPort())
-				ret = ret + " go:" + port + "/" + port.getPeer();
-			else if (port == getClockPort())
-				ret = ret + " ck:" + port + "/" + port.getPeer();
-			else if (port == getResetPort())
-				ret = ret + " rs:" + port + "/" + port.getPeer() + "\n";
-			else if (port == globalSlot.getDonePort())
-				ret = ret + " GL_done:" + port + "/" + port.getPeer();
-			else if (port == globalSlot.getReadDataPort())
-				ret = ret + " GL_read:" + port + "/" + port.getPeer() + "\n";
-			else {
-				String id = null;
-				for (TaskSlot ts : taskSlots) {
-					if (port == ts.getGoRPort()) {
-						id = " task go R: " + port + "/" + port.getPeer();
-					} else if (port == ts.getGoWPort()) {
-						id = " task go W: " + port + "/" + port.getPeer();
-					} else if (port == ts.getAddressPort()) {
-						id = " task ad: " + port + "/" + port.getPeer();
-					} else if (port == ts.getDataInPort()) {
-						id = " task data in: " + port + "/" + port.getPeer()
-								+ "\n";
-					} else if (port == ts.getSizePort()) {
-						id = " size in: " + port + "/" + port.getPeer() + "\n";
-					}
-				}
-
-				if (id == null)
-					id = " p:" + port + "/" + port.getPeer();
-				ret += id;
-			}
-		}
-		for (Exit exit : getExits()) {
-			for (Bus bus : exit.getBuses()) {
-				if (bus == exit.getDoneBus())
-					ret = ret + " done:" + bus + "/" + bus.getPeer();
-				else if (bus == globalSlot.getWriteDataBus())
-					ret = ret + " GS_wd_bus:" + bus + "/" + bus.getPeer();
-				else if (bus == globalSlot.getAddressBus())
-					ret = ret + " GS_ad_bus:" + bus + "/" + bus.getPeer();
-				else if (bus == globalSlot.getWriteEnableBus())
-					ret = ret + " GS_we_bus:" + bus + "/" + bus.getPeer();
-				else if (bus == globalSlot.getGoBus())
-					ret = ret + " GS_go_bus:" + bus + "/" + bus.getPeer()
-							+ "\n";
-				else if (bus == globalSlot.getSizeBus())
-					ret = ret + " GS_size_bus:" + bus + "/" + bus.getPeer()
-							+ "\n";
-				else {
-					String id = null;
-					for (TaskSlot ts : taskSlots) {
-						if (bus == ts.getDataOutBus()) {
-							id = " task data out bus:" + bus + "/"
-									+ bus.getPeer();
-						} else if (bus == ts.getDoneBus()) {
-							id = " task done bus: " + bus + "/" + bus.getPeer();
-						}
-					}
-					if (id == null)
-						id = " data:" + bus;
-					ret += id;
-				}
-			}
-		}
-		return ret;
-	}
 
 	/**
 	 * a DoneFilter encapsulates the hardware to filter the global done signal
@@ -529,6 +115,282 @@ public class MemoryReferee extends Referee {
 
 		Bus getResultBus() {
 			return and.getResultBus();
+		}
+	}
+
+	public class GlobalSlot {
+		private Port done;
+		private Port readData;
+		private Bus writeData;
+		private Bus address;
+		private Bus writeEnable;
+		private Bus go;
+		private Bus size;
+
+		public GlobalSlot(MemoryReferee parent) {
+			done = parent.makeDataPort();
+			readData = parent.makeDataPort();
+
+			Exit exit = parent.getExit(Exit.DONE);
+			writeData = exit.makeDataBus();
+			address = exit.makeDataBus();
+			writeEnable = exit.makeDataBus();
+			go = exit.makeDataBus();
+			size = exit.makeDataBus();
+		}
+
+		public Bus getAddressBus() {
+			return address;
+		}
+
+		public Port getDonePort() {
+			return done;
+		}
+
+		public Bus getGoBus() {
+			return go;
+		}
+
+		public Port getReadDataPort() {
+			return readData;
+		}
+
+		public Bus getSizeBus() {
+			return size;
+		}
+
+		public Bus getWriteDataBus() {
+			return writeData;
+		}
+
+		public Bus getWriteEnableBus() {
+			return writeEnable;
+		}
+
+		public void setSizes(int dataWidth, int addrWidth, int sizeWidth) {
+			done.setSize(1, false);
+			readData.setSize(dataWidth, false);
+			writeData.setSize(dataWidth, false);
+			address.setSize(addrWidth, false);
+			writeEnable.setSize(1, false);
+			go.setSize(1, false);
+			size.setSize(sizeWidth, false);
+		}
+
+		@Override
+		public String toString() {
+			String ret = super.toString();
+			ret += " donep: " + getDonePort() + "/" + getDonePort().getPeer();
+			ret += " rdp: " + getReadDataPort() + "/"
+					+ getReadDataPort().getPeer();
+			ret += " wdb: " + getWriteDataBus() + "/"
+					+ getWriteDataBus().getPeer();
+			ret += " addr: " + getAddressBus() + "/"
+					+ getAddressBus().getPeer();
+			ret += " wen: " + getWriteEnableBus() + "/"
+					+ getWriteEnableBus().getPeer();
+			ret += " go: " + getGoBus() + "/" + getGoBus().getPeer();
+			ret += " size: " + getSizeBus() + "/" + getSizeBus().getPeer();
+			return ret;
+		}
+	}
+
+	/**
+	 * StateMachine encapsulates the selection of the appropriate go signal to
+	 * propagate to the global resource, in a fair (round-robbin) priority
+	 * scheme. It is implemented as follows: <img
+	 * src="doc-files/MemoryReferee-StateMachine.png"> where gcX is defined as
+	 * the oputput of the Ors in the go capture module {@link MemoryReferee
+	 * shown} here.
+	 */
+	class StateMachine {
+		Or stateOr;
+
+		AndOp stateAndOp;
+		And stateAnd;
+
+		EncodedMux stateMux;
+		Reg stateReg;
+		// list of 2 input muxes for the feedback ring
+		List<EncodedMux> stateMuxList;
+		Bus resetBus;
+		Bus advanceStateBus;
+		Not stateNot;
+		Reg delayStateReg;
+		int stateWidth;
+
+		/**
+		 * A Set of Components which represent the points of feedback in this
+		 * statemachine
+		 */
+		Set<Component> feedbackPoints = new HashSet<Component>(7);
+
+		/**
+		 * create the state machine
+		 * 
+		 * @param reset
+		 *            bus is the global reset
+		 * @param advanceStateBus
+		 *            is the advance state signal
+		 */
+		StateMachine(Bus clockBus, Bus resetBus, Bus advanceStateBus,
+				int stateWidth) {
+			assert resetBus != null;
+			assert advanceStateBus != null;
+			assert stateWidth > 0;
+
+			this.stateWidth = stateWidth;
+
+			stateReg = Reg.getConfigurableReg(Reg.REGRE, ID.showLogical(this)
+					+ "stateReg");
+			stateReg.getClockPort().setBus(getClockPort().getPeer());
+			stateReg.getInternalResetPort().setBus(getResetPort().getPeer());
+			feedbackPoints.add(stateReg);
+			stateReg.getResultBus().setSize(stateWidth, false);
+
+			delayStateReg = Reg.getConfigurableReg(Reg.REGR,
+					ID.showLogical(this) + "delayStateReg");
+			delayStateReg.getClockPort().setBus(getClockPort().getPeer());
+			delayStateReg.getInternalResetPort().setBus(
+					getResetPort().getPeer());
+
+			addComponent(stateReg);
+			addComponent(delayStateReg);
+
+			this.resetBus = resetBus;
+			this.advanceStateBus = advanceStateBus;
+
+		}
+
+		Bus getDelayStateBus() {
+			return delayStateReg.getResultBus();
+		}
+
+		public Set<Component> getFeedbackPoints() {
+			return feedbackPoints;
+		}
+
+		Bus getResultBus() {
+			return stateReg.getResultBus();
+		}
+
+		/**
+		 * instantiate its components and wire it up as shown above
+		 * 
+		 * @param taskCaptures
+		 *            is the list of inputs to the state machine
+		 */
+		void setTaskCaptures(List<TaskCapture> taskCaptures) {
+			int size = taskCaptures.size();
+			stateNot = new Not();
+			addComponent(stateNot);
+			stateNot.setIDLogical(this, "stateNot");
+
+			stateOr = new Or(size);
+			addComponent(stateOr);
+			stateOr.setIDLogical(this, "stateOr");
+
+			stateAnd = new And(2);
+			addComponent(stateAnd);
+			stateAnd.setIDLogical(this, "stateAnd");
+
+			stateAndOp = new AndOp();
+			addComponent(stateAndOp);
+			stateAndOp.setIDLogical(this, "stateAndOp");
+			stateAndOp.getResultBus().setIDLogical("stateAndOp");
+
+			stateMux = new EncodedMux(size);
+
+			addComponent(stateMux);
+			stateMux.setIDLogical(this, "stateMux");
+			stateMuxList = new ArrayList<EncodedMux>(size);
+
+			// stateAnd gets inverted global reset, stateOr and last mux (done
+			// below)
+			stateNot.getDataPort().setBus(resetBus);
+			stateAnd.getDataPorts().get(0).setBus(stateNot.getResultBus());
+			stateAnd.getDataPorts().get(1).setBus(stateOr.getResultBus());
+
+			/*
+			 * stateAnd only produces 1 bit, so it has to be extended to the
+			 * state width. Make it signed so the bit will be replicated. Then
+			 * cast it to be unsigned before plugging it into the stateAndOp.
+			 */
+			final CastOp stateAndSignChange = new CastOp(1, true);
+			stateAndSignChange.getDataPort().setBus(stateAnd.getResultBus());
+			addComponent(stateAndSignChange);
+
+			final CastOp stateAndCast = new CastOp(stateWidth, false);
+			stateAndCast.getDataPort()
+					.setBus(stateAndSignChange.getResultBus());
+			addComponent(stateAndCast);
+
+			stateAndOp.getDataPorts().get(0)
+					.setBus(stateAndCast.getResultBus());
+
+			Bus mux0Input = stateAndOp.getResultBus();
+			for (int i = 0; i < size; i++) {
+				EncodedMux m = new EncodedMux(2);
+				// m.setIDLogical("state inner mux "+i);
+				addComponent(m);
+				m.setIDLogical(this, "stateMux_" + i);
+				stateMuxList.add(m);
+
+				TaskCapture tc = taskCaptures.get(i);
+				Bus tcResultBus = tc.getTaskMemGoBus();
+
+				// first mux port is the output of the previous mux, or the
+				// stateAnd
+				Port port = m.getDataPort(0);
+				port.setBus(mux0Input);
+
+				Constant stateValue = new SimpleConstant(i, stateWidth, false);
+				// stateValue.setIDLogical("state constant "+i);
+				addComponent(stateValue);
+				stateValue.setIDLogical(this, "stateValue_" + i);
+				port = m.getDataPort(1);
+				port.setBus(stateValue.getValueBus());
+
+				port = m.getSelectPort();
+				port.setBus(tcResultBus);
+
+				// update the mux0Input to the output of this mux
+				mux0Input = m.getResultBus();
+
+				// add the output to the i+1 port of the statemux
+				if (i < size - 1) {
+					port = stateMux.getDataPort(i + 1);
+					port.setBus(mux0Input);
+				} else // this is the last mux, its output feeds the 0th port of
+						// stateMux
+				{
+					port = stateMux.getDataPort(0);
+					port.setBus(mux0Input);
+					// and the last input to the stateAnd
+					port = stateAndOp.getDataPorts().get(1);
+					port.setBus(mux0Input);
+
+					feedbackPoints.add(m);
+					m.getResultBus().setSize(stateWidth, false);
+				}
+
+				port = stateOr.getDataPorts().get(i);
+				port.setBus(tcResultBus);
+			}
+
+			// stateReg gets D from the state mux, enable from the global done
+			Port port = stateReg.getDataPort();
+			port.setBus(stateMux.getResultBus());
+
+			port = stateReg.getEnablePort();
+			port.setBus(advanceStateBus);
+
+			// stateMux gets its select signal from the stateReg
+			port = stateMux.getSelectPort();
+			port.setBus(stateReg.getResultBus());
+
+			// delayStateReg gets its output from stateReg
+			delayStateReg.getDataPort().setBus(stateReg.getResultBus());
 		}
 	}
 
@@ -839,23 +701,12 @@ public class MemoryReferee extends Referee {
 			}
 		}
 
-		Bus getTaskMemGoBus() {
-			return readOr.getResultBus();
-		}
-
-		Bus getTaskMemWrBus() {
-			if (writeOr == null) {
-				return getZeroConstant().getValueBus();
-			}
-			return writeOr.getResultBus();
+		public Set<Component> getFeedbackPoints() {
+			return feedbackPoints;
 		}
 
 		Bus getTaskMemAddrBus() {
 			return addrRegMux.getResultBus();
-		}
-
-		Bus getTaskMemSizeBus() {
-			return sizeRegMux.getResultBus();
 		}
 
 		Bus getTaskMemDataInBus() {
@@ -866,207 +717,19 @@ public class MemoryReferee extends Referee {
 			return dinMux.getResultBus();
 		}
 
-		public Set<Component> getFeedbackPoints() {
-			return feedbackPoints;
-		}
-	}
-
-	/**
-	 * StateMachine encapsulates the selection of the appropriate go signal to
-	 * propagate to the global resource, in a fair (round-robbin) priority
-	 * scheme. It is implemented as follows: <img
-	 * src="doc-files/MemoryReferee-StateMachine.png"> where gcX is defined as
-	 * the oputput of the Ors in the go capture module {@link MemoryReferee
-	 * shown} here.
-	 */
-	class StateMachine {
-		Or stateOr;
-
-		AndOp stateAndOp;
-		And stateAnd;
-
-		EncodedMux stateMux;
-		Reg stateReg;
-		// list of 2 input muxes for the feedback ring
-		List<EncodedMux> stateMuxList;
-		Bus resetBus;
-		Bus advanceStateBus;
-		Not stateNot;
-		Reg delayStateReg;
-		int stateWidth;
-
-		/**
-		 * A Set of Components which represent the points of feedback in this
-		 * statemachine
-		 */
-		Set<Component> feedbackPoints = new HashSet<Component>(7);
-
-		/**
-		 * create the state machine
-		 * 
-		 * @param reset
-		 *            bus is the global reset
-		 * @param advanceStateBus
-		 *            is the advance state signal
-		 */
-		StateMachine(Bus clockBus, Bus resetBus, Bus advanceStateBus,
-				int stateWidth) {
-			assert (resetBus != null);
-			assert (advanceStateBus != null);
-			assert stateWidth > 0;
-
-			this.stateWidth = stateWidth;
-
-			stateReg = Reg.getConfigurableReg(Reg.REGRE, ID.showLogical(this)
-					+ "stateReg");
-			stateReg.getClockPort().setBus(getClockPort().getPeer());
-			stateReg.getInternalResetPort().setBus(getResetPort().getPeer());
-			feedbackPoints.add(stateReg);
-			stateReg.getResultBus().setSize(stateWidth, false);
-
-			delayStateReg = Reg.getConfigurableReg(Reg.REGR,
-					ID.showLogical(this) + "delayStateReg");
-			delayStateReg.getClockPort().setBus(getClockPort().getPeer());
-			delayStateReg.getInternalResetPort().setBus(
-					getResetPort().getPeer());
-
-			addComponent(stateReg);
-			addComponent(delayStateReg);
-
-			this.resetBus = resetBus;
-			this.advanceStateBus = advanceStateBus;
-
+		Bus getTaskMemGoBus() {
+			return readOr.getResultBus();
 		}
 
-		Bus getResultBus() {
-			return stateReg.getResultBus();
+		Bus getTaskMemSizeBus() {
+			return sizeRegMux.getResultBus();
 		}
 
-		Bus getDelayStateBus() {
-			return delayStateReg.getResultBus();
-		}
-
-		/**
-		 * instantiate its components and wire it up as shown above
-		 * 
-		 * @param taskCaptures
-		 *            is the list of inputs to the state machine
-		 */
-		void setTaskCaptures(List<TaskCapture> taskCaptures) {
-			int size = taskCaptures.size();
-			stateNot = new Not();
-			addComponent(stateNot);
-			stateNot.setIDLogical(this, "stateNot");
-
-			stateOr = new Or(size);
-			addComponent(stateOr);
-			stateOr.setIDLogical(this, "stateOr");
-
-			stateAnd = new And(2);
-			addComponent(stateAnd);
-			stateAnd.setIDLogical(this, "stateAnd");
-
-			stateAndOp = new AndOp();
-			addComponent(stateAndOp);
-			stateAndOp.setIDLogical(this, "stateAndOp");
-			stateAndOp.getResultBus().setIDLogical("stateAndOp");
-
-			stateMux = new EncodedMux(size);
-
-			addComponent(stateMux);
-			stateMux.setIDLogical(this, "stateMux");
-			stateMuxList = new ArrayList<EncodedMux>(size);
-
-			// stateAnd gets inverted global reset, stateOr and last mux (done
-			// below)
-			stateNot.getDataPort().setBus(resetBus);
-			stateAnd.getDataPorts().get(0).setBus(stateNot.getResultBus());
-			stateAnd.getDataPorts().get(1).setBus(stateOr.getResultBus());
-
-			/*
-			 * stateAnd only produces 1 bit, so it has to be extended to the
-			 * state width. Make it signed so the bit will be replicated. Then
-			 * cast it to be unsigned before plugging it into the stateAndOp.
-			 */
-			final CastOp stateAndSignChange = new CastOp(1, true);
-			stateAndSignChange.getDataPort().setBus(stateAnd.getResultBus());
-			addComponent(stateAndSignChange);
-
-			final CastOp stateAndCast = new CastOp(stateWidth, false);
-			stateAndCast.getDataPort()
-					.setBus(stateAndSignChange.getResultBus());
-			addComponent(stateAndCast);
-
-			stateAndOp.getDataPorts().get(0)
-					.setBus(stateAndCast.getResultBus());
-
-			Bus mux0Input = stateAndOp.getResultBus();
-			for (int i = 0; i < size; i++) {
-				EncodedMux m = new EncodedMux(2);
-				// m.setIDLogical("state inner mux "+i);
-				addComponent(m);
-				m.setIDLogical(this, "stateMux_" + i);
-				stateMuxList.add(m);
-
-				TaskCapture tc = taskCaptures.get(i);
-				Bus tcResultBus = tc.getTaskMemGoBus();
-
-				// first mux port is the output of the previous mux, or the
-				// stateAnd
-				Port port = m.getDataPort(0);
-				port.setBus(mux0Input);
-
-				Constant stateValue = new SimpleConstant(i, stateWidth, false);
-				// stateValue.setIDLogical("state constant "+i);
-				addComponent(stateValue);
-				stateValue.setIDLogical(this, "stateValue_" + i);
-				port = m.getDataPort(1);
-				port.setBus(stateValue.getValueBus());
-
-				port = m.getSelectPort();
-				port.setBus(tcResultBus);
-
-				// update the mux0Input to the output of this mux
-				mux0Input = m.getResultBus();
-
-				// add the output to the i+1 port of the statemux
-				if (i < (size - 1)) {
-					port = stateMux.getDataPort(i + 1);
-					port.setBus(mux0Input);
-				} else // this is the last mux, its output feeds the 0th port of
-						// stateMux
-				{
-					port = stateMux.getDataPort(0);
-					port.setBus(mux0Input);
-					// and the last input to the stateAnd
-					port = stateAndOp.getDataPorts().get(1);
-					port.setBus(mux0Input);
-
-					feedbackPoints.add(m);
-					m.getResultBus().setSize(stateWidth, false);
-				}
-
-				port = stateOr.getDataPorts().get(i);
-				port.setBus(tcResultBus);
+		Bus getTaskMemWrBus() {
+			if (writeOr == null) {
+				return getZeroConstant().getValueBus();
 			}
-
-			// stateReg gets D from the state mux, enable from the global done
-			Port port = stateReg.getDataPort();
-			port.setBus(stateMux.getResultBus());
-
-			port = stateReg.getEnablePort();
-			port.setBus(advanceStateBus);
-
-			// stateMux gets its select signal from the stateReg
-			port = stateMux.getSelectPort();
-			port.setBus(stateReg.getResultBus());
-
-			// delayStateReg gets its output from stateReg
-			delayStateReg.getDataPort().setBus(stateReg.getResultBus());
-		}
-
-		public Set<Component> getFeedbackPoints() {
-			return feedbackPoints;
+			return writeOr.getResultBus();
 		}
 	}
 
@@ -1120,6 +783,34 @@ public class MemoryReferee extends Referee {
 			setSizes(dataWidth, addrWidth, LogicalMemory.SIZE_WIDTH);
 		}
 
+		public Port getAddressPort() {
+			return address;
+		}
+
+		public Port getDataInPort() {
+			return dataIn;
+		}
+
+		public Bus getDataOutBus() {
+			return dataOut;
+		}
+
+		public Bus getDoneBus() {
+			return done;
+		}
+
+		public Port getGoRPort() {
+			return goR;
+		}
+
+		public Port getGoWPort() {
+			return goW;
+		}
+
+		public Port getSizePort() {
+			return size;
+		}
+
 		private void setSizes(int dataWidth, int addrWidth, int sizeWidth) {
 			if (goR != null) {
 				goR.setSize(1, false);
@@ -1132,34 +823,6 @@ public class MemoryReferee extends Referee {
 			address.setSize(addrWidth, false);
 			size.setSize(sizeWidth, false);
 			done.setSize(1, false);
-		}
-
-		public Port getGoRPort() {
-			return goR;
-		}
-
-		public Port getGoWPort() {
-			return goW;
-		}
-
-		public Port getAddressPort() {
-			return address;
-		}
-
-		public Port getDataInPort() {
-			return dataIn;
-		}
-
-		public Port getSizePort() {
-			return size;
-		}
-
-		public Bus getDataOutBus() {
-			return dataOut;
-		}
-
-		public Bus getDoneBus() {
-			return done;
 		}
 
 		@Override
@@ -1204,80 +867,422 @@ public class MemoryReferee extends Referee {
 		}
 	}
 
-	public class GlobalSlot {
-		private Port done;
-		private Port readData;
-		private Bus writeData;
-		private Bus address;
-		private Bus writeEnable;
-		private Bus go;
-		private Bus size;
+	private List<TaskSlot> taskSlots = new ArrayList<TaskSlot>();
 
-		public GlobalSlot(MemoryReferee parent) {
-			done = parent.makeDataPort();
-			readData = parent.makeDataPort();
+	private GlobalSlot globalSlot;
 
-			Exit exit = parent.getExit(Exit.DONE);
-			writeData = exit.makeDataBus();
-			address = exit.makeDataBus();
-			writeEnable = exit.makeDataBus();
-			go = exit.makeDataBus();
-			size = exit.makeDataBus();
+	/**
+	 * A Set of Components which represent the points of feedback in this
+	 * MemoryReferee, populated from the sets contained in TaskCapture and
+	 * StateMachine
+	 */
+	Set<Component> feedbackPoints = new HashSet<Component>(11);
+
+	Constant zeroConstant;
+
+	Constant zeroDataConstant;
+
+	Constant oneConstant;
+
+	private int dataWidth = -1;
+
+	protected MemoryReferee(Arbitratable resource) {
+		super();
+		dataWidth = resource.getDataPathWidth();
+		@SuppressWarnings("unused")
+		Exit mainExit = makeExit(0, Exit.DONE);
+
+		// Make the global side interface
+		globalSlot = new GlobalSlot(this);
+	}
+
+	/**
+	 * create a referee to control access to the memory port
+	 * 
+	 * @param memoryPort
+	 *            what the referee is controlling access to
+	 * @param readList
+	 *            list of reads - null if task doesn't read
+	 * @param writeList
+	 *            list of writes - null if task doesn't writes
+	 */
+	// public MemoryReferee (LogicalMemoryPort memoryPort, List readList, List
+	// writeList)
+	public MemoryReferee(Arbitratable resource,
+			List<GlobalConnector.Connection> readList,
+			List<GlobalConnector.Connection> writeList) {
+		// super(memoryPort);
+		this(resource);
+		assert readList.size() == writeList.size() : "readList must match writeList size";
+
+		int numTaskSlots = readList.size();
+
+		final int memoryWidth = resource.getDataPathWidth();
+		final int addressWidth = resource.getAddrPathWidth();
+		final boolean isAddressable = resource.isAddressable();
+		final boolean combinationalMemoryReads = resource
+				.allowsCombinationalReads();
+		globalSlot
+				.setSizes(memoryWidth, addressWidth, LogicalMemory.SIZE_WIDTH);
+		getClockPort().setUsed(true);
+		getResetPort().setUsed(true);
+
+		zeroConstant = new SimpleConstant(0, 1, false);
+		zeroConstant.setIDLogical(this, "zeroConstant");
+		addComponent(zeroConstant);
+
+		zeroDataConstant = new SimpleConstant(0, memoryWidth, false);
+		zeroDataConstant.setIDLogical(this, "zeroDataConstant");
+		addComponent(zeroDataConstant);
+
+		oneConstant = new SimpleConstant(1, 1, false);
+		oneConstant.setIDLogical(this, "oneConstant");
+		addComponent(oneConstant);
+
+		int stateWidth = 0;
+		// find number of bits required to hold state
+		for (int i = numTaskSlots; i > 0; i = i >> 1) {
+			stateWidth++;
 		}
 
-		public void setSizes(int dataWidth, int addrWidth, int sizeWidth) {
-			done.setSize(1, false);
-			readData.setSize(dataWidth, false);
-			writeData.setSize(dataWidth, false);
-			address.setSize(addrWidth, false);
-			writeEnable.setSize(1, false);
-			go.setSize(1, false);
-			size.setSize(sizeWidth, false);
+		for (int i = 0; i < numTaskSlots; i++) {
+			boolean doesRead = readList.get(i) != null;
+			boolean doesWrite = writeList.get(i) != null;
+			TaskSlot ts = new TaskSlot(this, memoryWidth, addressWidth,
+					doesRead, doesWrite);
+			addTaskSlot(ts);
 		}
 
-		public Port getDonePort() {
-			return done;
+		// if one accessor, then wire straight thru:
+		// globalGo=goR | goW
+		// globalAddr=addr
+		// globalDataIn = dataIn
+		// dataOut = globalDataOut
+		// done = globalDone
+		final int taskCount = getTaskSlots().size();
+		if (taskCount == 1) {
+			TaskSlot ts = getTaskSlots().get(0);
+
+			boolean readUsed = ts.getGoRPort() != null;
+			boolean writeUsed = ts.getGoWPort() != null;
+
+			// first allocate the components & size
+			Or goOr = null;
+			if (readUsed && writeUsed) {
+				goOr = new Or(2);
+				addComponent(goOr);
+				goOr.setIDLogical(this, "goOr");
+				// now connect the components
+				goOr.getDataPorts().get(0).setBus(ts.getGoRPort().getPeer());
+				goOr.getDataPorts().get(1).setBus(ts.getGoWPort().getPeer());
+
+				globalSlot.getGoBus().getPeer().setBus(goOr.getResultBus());
+				globalSlot.getWriteEnableBus().getPeer()
+						.setBus(ts.getGoWPort().getPeer());
+			} else if (readUsed) // read only
+			{
+				globalSlot.getGoBus().getPeer()
+						.setBus(ts.getGoRPort().getPeer());
+				globalSlot.getWriteEnableBus().getPeer()
+						.setBus(getZeroConstant().getValueBus());
+			} else // write only. now why would a single task be write only?
+			{
+				globalSlot.getGoBus().getPeer()
+						.setBus(ts.getGoWPort().getPeer());
+				globalSlot.getWriteEnableBus().getPeer()
+						.setBus(ts.getGoWPort().getPeer());
+			}
+
+			globalSlot.getAddressBus().getPeer()
+					.setBus(ts.getAddressPort().getPeer());
+			globalSlot.getSizeBus().getPeer()
+					.setBus(ts.getSizePort().getPeer());
+
+			if (writeUsed) {
+				globalSlot.getWriteDataBus().getPeer()
+						.setBus(ts.getDataInPort().getPeer());
+			} else {
+				// globalSlot.getWriteDataBus().getPeer().setBus(getZeroConstant().getValueBus());
+				globalSlot.getWriteDataBus().getPeer()
+						.setBus(zeroDataConstant.getValueBus());
+			}
+			if (readUsed) {
+				ts.getDataOutBus().getPeer()
+						.setBus(globalSlot.getReadDataPort().getPeer());
+			}
+
+			ts.getDoneBus().getPeer()
+					.setBus(globalSlot.getDonePort().getPeer());
+
+			return;
+		}
+		// else there are multiple tasks... so build the full, arbitrated
+		// referee...
+		EncodedMux goMux = new EncodedMux(taskCount);
+		addComponent(goMux);
+		goMux.setIDLogical(this, "goMux");
+
+		EncodedMux addrMux = null;
+		// if (memoryDepth > 1)
+		if (isAddressable) {
+			addrMux = new EncodedMux(taskCount);
+			addComponent(addrMux);
+			addrMux.setIDLogical(this, "addrMux");
 		}
 
-		public Port getReadDataPort() {
-			return readData;
+		EncodedMux sizeMux = new EncodedMux(taskCount);
+		addComponent(sizeMux);
+		sizeMux.setIDLogical(this, "sizeMux");
+
+		EncodedMux dataInMux = new EncodedMux(taskCount);
+		addComponent(dataInMux);
+		dataInMux.setIDLogical(this, "dataInMux");
+
+		EncodedMux writeEnableMux = new EncodedMux(taskCount);
+		addComponent(writeEnableMux);
+		writeEnableMux.setIDLogical(this, "writeEnableMux");
+
+		Or advanceOr = new Or(taskCount);
+		addComponent(advanceOr);
+		advanceOr.setIDLogical(this, "advanceOr");
+
+		// make the state machine
+		StateMachine stateMachine = new StateMachine(getClockPort().getPeer(),
+				getResetPort().getPeer(), advanceOr.getResultBus(), stateWidth);
+		// and hook up the state to the mux select ports
+		goMux.getSelectPort().setBus(stateMachine.getResultBus());
+		if (addrMux != null) {
+			addrMux.getSelectPort().setBus(stateMachine.getResultBus());
+		}
+		sizeMux.getSelectPort().setBus(stateMachine.getResultBus());
+		dataInMux.getSelectPort().setBus(stateMachine.getResultBus());
+		writeEnableMux.getSelectPort().setBus(stateMachine.getResultBus());
+
+		// make the task captures, populate the global muxes/or
+		// (goMux, advanceOr, addrMux, sizeMux dataInMux, writeEnableMux)
+		List<TaskCapture> taskCaptures = new ArrayList<TaskCapture>();
+
+		for (int i = 0; i < taskCount; i++) {
+			DoneFilter df = new DoneFilter(globalSlot.getDonePort().getPeer(),
+					stateMachine.getDelayStateBus(), i, stateWidth);
+
+			TaskCapture tc = new TaskCapture(stateWidth, addressWidth,
+					memoryWidth, getResetPort().getPeer(), df.getResultBus(),
+					globalSlot.getReadDataPort().getPeer(), getTaskSlots().get(
+							i), i, combinationalMemoryReads);
+			taskCaptures.add(tc);
+			feedbackPoints.addAll(tc.getFeedbackPoints());
+			// hook up the task capture to the mux ports
+			goMux.getDataPort(i).setBus(tc.getTaskMemGoBus());
+			advanceOr.getDataPorts().get(i).setBus(tc.getTaskMemGoBus());
+			if (addrMux != null) {
+				addrMux.getDataPort(i).setBus(tc.getTaskMemAddrBus());
+			}
+			sizeMux.getDataPort(i).setBus(tc.getTaskMemSizeBus());
+
+			/*
+			 * Cast all data inputs to the memory width.
+			 */
+			final CastOp castOp = new CastOp(memoryWidth, false);
+			addComponent(castOp);
+			castOp.getDataPort().setBus(tc.getTaskMemDataInBus());
+			dataInMux.getDataPort(i).setBus(castOp.getResultBus());
+
+			writeEnableMux.getDataPort(i).setBus(tc.getTaskMemWrBus());
 		}
 
-		public Bus getWriteDataBus() {
-			return writeData;
+		// update the state machine with the task captures
+		stateMachine.setTaskCaptures(taskCaptures);
+		feedbackPoints.addAll(stateMachine.getFeedbackPoints());
+
+		// update the global slot with the mux outputs
+		globalSlot.getGoBus().getPeer().setBus(goMux.getResultBus());
+		if (addrMux != null) {
+			globalSlot.getAddressBus().getPeer().setBus(addrMux.getResultBus());
+		} else {
+			Constant addrConst = new SimpleConstant(0, addressWidth, false);
+			globalSlot.getAddressBus().getPeer()
+					.setBus(addrConst.getValueBus());
+		}
+		globalSlot.getSizeBus().getPeer().setBus(sizeMux.getResultBus());
+		globalSlot.getWriteDataBus().getPeer().setBus(dataInMux.getResultBus());
+		globalSlot.getWriteEnableBus().getPeer()
+				.setBus(writeEnableMux.getResultBus());
+	}
+
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
+
+	protected void addTaskSlot(TaskSlot slot) {
+		taskSlots.add(slot);
+	}
+
+	public void connectImplementation(StructuralMemory.StructuralMemoryPort port) {
+		GlobalSlot globalSlot = getGlobalSlot();
+		port.getAddressPort().setBus(globalSlot.getAddressBus());
+
+		if (port.isWrite()) {
+			port.getDataInPort().setBus(globalSlot.getWriteDataBus());
+			port.getWriteEnablePort().setBus(globalSlot.getWriteEnableBus());
 		}
 
-		public Bus getAddressBus() {
-			return address;
+		if (port.isRead()) {
+			port.getEnablePort().setBus(globalSlot.getGoBus());
+			globalSlot.getReadDataPort().setBus(port.getDataOutBus());
+		} else {
+			/*
+			 * The reason a Constant object is created here is because the read
+			 * data port needs to be tied to something which is outside of
+			 * MemoryReferee; Otherwise, it will cause the const prop looping
+			 * infinitely.
+			 */
+			Constant zeroCon = new SimpleConstant(0, dataWidth, false);
+			if (getOwner() != null) {
+				getOwner().addComponent(zeroCon);
+			}
+			globalSlot.getReadDataPort().setBus(zeroCon.getValueBus());
 		}
 
-		public Bus getWriteEnableBus() {
-			return writeEnable;
-		}
+		port.getSizePort().setBus(globalSlot.getSizeBus());
+		globalSlot.getDonePort().setBus(port.getDoneBus());
+	}
 
-		public Bus getGoBus() {
-			return go;
-		}
+	/**
+	 * Returns a Set of {@link Component Components} that represent the feedback
+	 * points in this Module. This set is populated from the components created
+	 * by the TaskCapture and StateMachine classes.
+	 * 
+	 * @return a 'Set' of {@link Component Components}
+	 */
+	@Override
+	public Set<Component> getFeedbackPoints() {
+		Set<Component> feedback = new HashSet<Component>();
+		feedback.addAll(super.getFeedbackPoints());
+		feedback.addAll(feedbackPoints);
+		return Collections.unmodifiableSet(feedback);
+	}
 
-		public Bus getSizeBus() {
-			return size;
-		}
+	protected GlobalSlot getGlobalSlot() {
+		return globalSlot;
+	}
 
-		@Override
-		public String toString() {
-			String ret = super.toString();
-			ret += " donep: " + getDonePort() + "/" + getDonePort().getPeer();
-			ret += " rdp: " + getReadDataPort() + "/"
-					+ getReadDataPort().getPeer();
-			ret += " wdb: " + getWriteDataBus() + "/"
-					+ getWriteDataBus().getPeer();
-			ret += " addr: " + getAddressBus() + "/"
-					+ getAddressBus().getPeer();
-			ret += " wen: " + getWriteEnableBus() + "/"
-					+ getWriteEnableBus().getPeer();
-			ret += " go: " + getGoBus() + "/" + getGoBus().getPeer();
-			ret += " size: " + getSizeBus() + "/" + getSizeBus().getPeer();
-			return ret;
+	private Constant getOneConstant() {
+		return oneConstant;
+	}
+
+	public List<TaskSlot> getTaskSlots() {
+		return Collections.unmodifiableList(taskSlots);
+	}
+
+	private Constant getZeroConstant() {
+		return zeroConstant;
+	}
+
+	/**
+	 * Tests whether this component is opaque. If true, then this component is
+	 * to be treated as a self-contained entity. This means that its internal
+	 * definition can make no direct references to external entitities. In
+	 * particular, external {@link Bit Bits} are not pushed into this component
+	 * during constant propagation, nor are any of its internal {@link Bit Bits}
+	 * propagated to its external {@link Bus Buses}.
+	 * <P>
+	 * Typically this implies that the translator will either generate a
+	 * primitive definition or an instantiatable module for this component.
+	 * 
+	 * @return true if this component is opaque, false otherwise
+	 */
+	@Override
+	public boolean isOpaque() {
+		return true;
+	}
+
+	@Override
+	public boolean removeDataBus(Bus bus) {
+		assert false : "remove data bus not supported on " + this;
+		return false;
+	}
+
+	@Override
+	public boolean removeDataPort(Port port) {
+		assert false : "remove data port not supported on " + this;
+		return false;
+	}
+
+	@Override
+	public String show() {
+		String ret = toString();
+		for (Port port : getPorts()) {
+			if (port == getGoPort()) {
+				ret = ret + " go:" + port + "/" + port.getPeer();
+			} else if (port == getClockPort()) {
+				ret = ret + " ck:" + port + "/" + port.getPeer();
+			} else if (port == getResetPort()) {
+				ret = ret + " rs:" + port + "/" + port.getPeer() + "\n";
+			} else if (port == globalSlot.getDonePort()) {
+				ret = ret + " GL_done:" + port + "/" + port.getPeer();
+			} else if (port == globalSlot.getReadDataPort()) {
+				ret = ret + " GL_read:" + port + "/" + port.getPeer() + "\n";
+			} else {
+				String id = null;
+				for (TaskSlot ts : taskSlots) {
+					if (port == ts.getGoRPort()) {
+						id = " task go R: " + port + "/" + port.getPeer();
+					} else if (port == ts.getGoWPort()) {
+						id = " task go W: " + port + "/" + port.getPeer();
+					} else if (port == ts.getAddressPort()) {
+						id = " task ad: " + port + "/" + port.getPeer();
+					} else if (port == ts.getDataInPort()) {
+						id = " task data in: " + port + "/" + port.getPeer()
+								+ "\n";
+					} else if (port == ts.getSizePort()) {
+						id = " size in: " + port + "/" + port.getPeer() + "\n";
+					}
+				}
+
+				if (id == null) {
+					id = " p:" + port + "/" + port.getPeer();
+				}
+				ret += id;
+			}
 		}
+		for (Exit exit : getExits()) {
+			for (Bus bus : exit.getBuses()) {
+				if (bus == exit.getDoneBus()) {
+					ret = ret + " done:" + bus + "/" + bus.getPeer();
+				} else if (bus == globalSlot.getWriteDataBus()) {
+					ret = ret + " GS_wd_bus:" + bus + "/" + bus.getPeer();
+				} else if (bus == globalSlot.getAddressBus()) {
+					ret = ret + " GS_ad_bus:" + bus + "/" + bus.getPeer();
+				} else if (bus == globalSlot.getWriteEnableBus()) {
+					ret = ret + " GS_we_bus:" + bus + "/" + bus.getPeer();
+				} else if (bus == globalSlot.getGoBus()) {
+					ret = ret + " GS_go_bus:" + bus + "/" + bus.getPeer()
+							+ "\n";
+				} else if (bus == globalSlot.getSizeBus()) {
+					ret = ret + " GS_size_bus:" + bus + "/" + bus.getPeer()
+							+ "\n";
+				} else {
+					String id = null;
+					for (TaskSlot ts : taskSlots) {
+						if (bus == ts.getDataOutBus()) {
+							id = " task data out bus:" + bus + "/"
+									+ bus.getPeer();
+						} else if (bus == ts.getDoneBus()) {
+							id = " task done bus: " + bus + "/" + bus.getPeer();
+						}
+					}
+					if (id == null) {
+						id = " data:" + bus;
+					}
+					ret += id;
+				}
+			}
+		}
+		return ret;
 	}
 }

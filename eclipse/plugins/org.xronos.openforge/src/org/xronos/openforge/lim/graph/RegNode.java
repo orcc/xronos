@@ -34,8 +34,8 @@ public class RegNode extends ComponentNode {
 	protected String getBodyLabel() {
 		String label = super.getBodyLabel();
 		final int type = ((Reg) getComponent()).getType();
-		final String syncLabel = (((type & Reg.CLEAR) != 0) || ((type & Reg.PRESET) != 0)) ? "async"
-				: "sync";
+		final String syncLabel = (type & Reg.CLEAR) != 0
+				|| (type & Reg.PRESET) != 0 ? "async" : "sync";
 
 		label += "\\n" + syncLabel;
 		return label;

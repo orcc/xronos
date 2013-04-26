@@ -34,7 +34,6 @@ import org.xronos.openforge.lim.OutBuf;
 import org.xronos.openforge.lim.Visitor;
 import org.xronos.openforge.lim.op.Constant;
 
-
 /**
  * AbsoluteMemoryRead is a fixed access to a {@link LogicalMemory}, in which the
  * {@link Location} being accessed is fully specified at compile time and does
@@ -88,10 +87,10 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 		// based on an index or other Location for which the direct
 		// initial value may not be available. There is always a
 		// valid initial value for the absolute base.
-		this(new MemoryRead(false, (addressableLocations * location
-				.getAbsoluteBase().getInitialValue().getAddressStridePolicy()
-				.getStride()), isSigned), location, addressableLocations,
-				maxAddressWidth);
+		this(new MemoryRead(false, addressableLocations
+				* location.getAbsoluteBase().getInitialValue()
+						.getAddressStridePolicy().getStride(), isSigned),
+				location, addressableLocations, maxAddressWidth);
 	}
 
 	/**
@@ -147,52 +146,6 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 	}
 
 	/**
-	 * Gets the data {@link Bus}.
-	 */
-	public Bus getResultBus() {
-		return resultBus;
-	}
-
-	/**
-	 * Returns the {@link LocationConstant} used to source the actual address to
-	 * the memory.
-	 */
-	public LocationConstant getAddressConstant() {
-		return addrConst;
-	}
-
-	/**
-	 * Attempts to remove the given {@link Bus} from this component.
-	 * 
-	 * @param bus
-	 *            the bus to remove
-	 * @return true if the bus was removed.
-	 */
-	@Override
-	public boolean removeDataBus(Bus bus) {
-		final boolean isRemoved = super.removeDataBus(bus);
-		if (isRemoved && (bus == resultBus)) {
-			resultBus = null;
-		}
-		return isRemoved;
-	}
-
-	/**
-	 * Returns false
-	 */
-	@Override
-	public boolean isWrite() {
-		return false;
-	}
-
-	/**
-	 * Gets the low level read operation contined in this module.
-	 */
-	public MemoryRead getMemoryRead() {
-		return (MemoryRead) getMemoryAccess();
-	}
-
-	/**
 	 * Accepts a {@link Visitor}.
 	 * 
 	 * @param visitor
@@ -202,25 +155,6 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
-	}
-
-	/**
-	 * Remove the underlying {@link MemoryAccess} as a reference of the
-	 * targetted memory.
-	 */
-	@Override
-	public void removeFromMemory() {
-		super.removeFromMemory();
-		getLogicalMemoryPort().getLogicalMemory().removeLocationConstant(
-				addrConst);
-	}
-
-	@Override
-	public boolean removeComponent(Component component) {
-		boolean ret = super.removeComponent(component);
-		if (component == addrConst)
-			addrConst = null;
-		return ret;
 	}
 
 	/**
@@ -266,6 +200,72 @@ public class AbsoluteMemoryRead extends MemoryAccessBlock {
 		AbsoluteMemoryRead clone = (AbsoluteMemoryRead) moduleClone;
 		clone.resultBus = getBusClone(resultBus, cloneMap);
 		clone.addrConst = (LocationConstant) cloneMap.get(addrConst);
+	}
+
+	/**
+	 * Returns the {@link LocationConstant} used to source the actual address to
+	 * the memory.
+	 */
+	public LocationConstant getAddressConstant() {
+		return addrConst;
+	}
+
+	/**
+	 * Gets the low level read operation contined in this module.
+	 */
+	public MemoryRead getMemoryRead() {
+		return (MemoryRead) getMemoryAccess();
+	}
+
+	/**
+	 * Gets the data {@link Bus}.
+	 */
+	public Bus getResultBus() {
+		return resultBus;
+	}
+
+	/**
+	 * Returns false
+	 */
+	@Override
+	public boolean isWrite() {
+		return false;
+	}
+
+	@Override
+	public boolean removeComponent(Component component) {
+		boolean ret = super.removeComponent(component);
+		if (component == addrConst) {
+			addrConst = null;
+		}
+		return ret;
+	}
+
+	/**
+	 * Attempts to remove the given {@link Bus} from this component.
+	 * 
+	 * @param bus
+	 *            the bus to remove
+	 * @return true if the bus was removed.
+	 */
+	@Override
+	public boolean removeDataBus(Bus bus) {
+		final boolean isRemoved = super.removeDataBus(bus);
+		if (isRemoved && bus == resultBus) {
+			resultBus = null;
+		}
+		return isRemoved;
+	}
+
+	/**
+	 * Remove the underlying {@link MemoryAccess} as a reference of the
+	 * targetted memory.
+	 */
+	@Override
+	public void removeFromMemory() {
+		super.removeFromMemory();
+		getLogicalMemoryPort().getLogicalMemory().removeLocationConstant(
+				addrConst);
 	}
 
 }// AbsoluteMemoryRead

@@ -40,6 +40,36 @@ import org.xronos.openforge.lim.op.Constant;
  */
 public abstract class MemoryConstant extends Constant {
 
+	/**
+	 * Reverses the endianness of the array of bytes, returning a new array
+	 * populated with the endian swapped contents of the input array.
+	 * 
+	 * @param rep
+	 *            a non null, non zero length array of ByteRep objects
+	 * @return a non null, non zero length array of the ByteRep objects from the
+	 *         input array in the opposite endian order
+	 * @throws NullPointerException
+	 *             if rep is null
+	 * @throws IllegalArgumentException
+	 *             if rep legnth is zero
+	 */
+	protected static AddressableUnit[] swapEndian(AddressableUnit[] rep) {
+		if (rep == null) {
+			throw new NullPointerException(
+					"Null byte representation in constant");
+		}
+		if (rep.length == 0) {
+			throw new IllegalArgumentException(
+					"Cannot swap endianness of zero length constant");
+		}
+
+		AddressableUnit result[] = new AddressableUnit[rep.length];
+		for (int i = 0; i < rep.length; i++) {
+			result[i] = rep[rep.length - i - 1];
+		}
+		return result;
+	}
+
 	/** Tracks the state of this compilation. */
 	private boolean bigEndian;
 
@@ -70,6 +100,41 @@ public abstract class MemoryConstant extends Constant {
 		return bigEndian;
 	}
 
+	protected Value pushValue(int width, boolean isSigned, AURepBundle thisRep) {
+		Value newValue = new Value(width, isSigned);
+
+		for (int i = 0; i < width; i++) {
+			// int byteIndex = i / 8;
+			// int bitIndex = i % 8;
+			int unitIndex = i / thisRep.getBitsPerUnit();
+			int bitIndex = i % thisRep.getBitsPerUnit();
+			AddressableUnit unitRep = thisRep.getRep()[unitIndex];
+			Bit bit;
+			if (!unitRep.isLocked()) {
+				bit = Bit.CARE;
+			} else {
+				// if (((unitRep.value() >>> bitIndex) & 0x1) != 0)
+				if (unitRep.getBit(bitIndex) != 0) {
+					bit = Bit.ONE;
+				} else {
+					bit = Bit.ZERO;
+				}
+			}
+			newValue.setBit(i, bit);
+		}
+		return newValue;
+	}
+
+	/**
+	 * Does nothing.
+	 * 
+	 * @return false
+	 */
+	@Override
+	public boolean pushValuesBackward() {
+		return false;
+	}
+
 	/**
 	 * Get the rep. If the compilation is big endian, then switch the rep so
 	 * that it is now little endian. Then, simply propagate each bit out of the
@@ -87,7 +152,7 @@ public abstract class MemoryConstant extends Constant {
 
 		// A sanity check here. I would not expect the rep to be
 		// larger than we need.
-		int unitsNeeded = (int) Math.ceil(((double) oldValue.getSize())
+		int unitsNeeded = (int) Math.ceil((double) oldValue.getSize()
 				/ thisRep.getBitsPerUnit());
 		if (thisRep.getLength() > unitsNeeded) {
 			getGenericJob()
@@ -107,68 +172,6 @@ public abstract class MemoryConstant extends Constant {
 
 		mod |= getValueBus().pushValueForward(newValue);
 		return mod;
-	}
-
-	protected Value pushValue(int width, boolean isSigned, AURepBundle thisRep) {
-		Value newValue = new Value(width, isSigned);
-
-		for (int i = 0; i < width; i++) {
-			// int byteIndex = i / 8;
-			// int bitIndex = i % 8;
-			int unitIndex = i / thisRep.getBitsPerUnit();
-			int bitIndex = i % thisRep.getBitsPerUnit();
-			AddressableUnit unitRep = thisRep.getRep()[unitIndex];
-			Bit bit;
-			if (!unitRep.isLocked()) {
-				bit = Bit.CARE;
-			} else {
-				// if (((unitRep.value() >>> bitIndex) & 0x1) != 0)
-				if (unitRep.getBit(bitIndex) != 0)
-					bit = Bit.ONE;
-				else
-					bit = Bit.ZERO;
-			}
-			newValue.setBit(i, bit);
-		}
-		return newValue;
-	}
-
-	/**
-	 * Does nothing.
-	 * 
-	 * @return false
-	 */
-	@Override
-	public boolean pushValuesBackward() {
-		return false;
-	}
-
-	/**
-	 * Reverses the endianness of the array of bytes, returning a new array
-	 * populated with the endian swapped contents of the input array.
-	 * 
-	 * @param rep
-	 *            a non null, non zero length array of ByteRep objects
-	 * @return a non null, non zero length array of the ByteRep objects from the
-	 *         input array in the opposite endian order
-	 * @throws NullPointerException
-	 *             if rep is null
-	 * @throws IllegalArgumentException
-	 *             if rep legnth is zero
-	 */
-	protected static AddressableUnit[] swapEndian(AddressableUnit[] rep) {
-		if (rep == null)
-			throw new NullPointerException(
-					"Null byte representation in constant");
-		if (rep.length == 0)
-			throw new IllegalArgumentException(
-					"Cannot swap endianness of zero length constant");
-
-		AddressableUnit result[] = new AddressableUnit[rep.length];
-		for (int i = 0; i < rep.length; i++) {
-			result[i] = rep[rep.length - i - 1];
-		}
-		return result;
 	}
 
 }// MemoryConstant

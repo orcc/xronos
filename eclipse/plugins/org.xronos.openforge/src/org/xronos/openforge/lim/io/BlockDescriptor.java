@@ -29,6 +29,30 @@ package org.xronos.openforge.lim.io;
 public abstract class BlockDescriptor {
 
 	/**
+	 * Returns a list of BlockElement objects
+	 */
+	public abstract BlockElement[] getBlockElements();
+
+	/**
+	 * Returns an array which encodes the organization of data within the block.
+	 * Each position represents 1 transfer on the fifo, and the value identifies
+	 * the BlockElement transferred on that 'cycle'. The block organization is
+	 * derived from the position of the BlockElement in the List returned from
+	 * getBlockElements(). Thus a return of [0,0,0,0,1,1,1,1,2,2] would indicate
+	 * 4 transfers from getBlockElements().get(0) followed by 4 transfers from
+	 * getBlockElements().get(1) followed by 2 transfers from
+	 * getBlockElements().get(2), etc. An alternative might be a return of
+	 * [0,1,2,0,1,2,0,1,0,1] in which case the transfers are all interleaved,
+	 * etc.
+	 */
+	public abstract int[] getBlockOrganization();
+
+	/**
+	 * Returns the width of the interface data path in bytes.
+	 */
+	public abstract int getByteWidth();
+
+	/**
 	 * Gets a {@link DeclarationGenerator} capable of declaring a variable to
 	 * store the return value of the function described by this descriptor.
 	 */
@@ -51,29 +75,5 @@ public abstract class BlockDescriptor {
 	 * output interface.
 	 */
 	public abstract boolean isSlave();
-
-	/**
-	 * Returns an array which encodes the organization of data within the block.
-	 * Each position represents 1 transfer on the fifo, and the value identifies
-	 * the BlockElement transferred on that 'cycle'. The block organization is
-	 * derived from the position of the BlockElement in the List returned from
-	 * getBlockElements(). Thus a return of [0,0,0,0,1,1,1,1,2,2] would indicate
-	 * 4 transfers from getBlockElements().get(0) followed by 4 transfers from
-	 * getBlockElements().get(1) followed by 2 transfers from
-	 * getBlockElements().get(2), etc. An alternative might be a return of
-	 * [0,1,2,0,1,2,0,1,0,1] in which case the transfers are all interleaved,
-	 * etc.
-	 */
-	public abstract int[] getBlockOrganization();
-
-	/**
-	 * Returns a list of BlockElement objects
-	 */
-	public abstract BlockElement[] getBlockElements();
-
-	/**
-	 * Returns the width of the interface data path in bytes.
-	 */
-	public abstract int getByteWidth();
 
 }

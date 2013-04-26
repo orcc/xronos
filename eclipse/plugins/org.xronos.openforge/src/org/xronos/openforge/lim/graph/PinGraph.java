@@ -37,16 +37,6 @@ import org.xronos.openforge.util.naming.ID;
  * @version $Id: PinGraph.java 2 2005-06-09 20:00:48Z imiller $
  */
 class PinGraph extends BlackBoxGraph {
-	/**
-	 * For classes which extend PinGraph
-	 * 
-	 * @param nodeCount
-	 *            a value of type 'int'
-	 */
-	PinGraph(String name, int nodeCount, int fontSize) {
-		super(name, nodeCount, fontSize);
-	}
-
 	static final class Input extends PinGraph {
 		Input(InputPin ipin, int nodeCount, int fontSize) {
 			super(ID.showLogical(ipin), nodeCount, fontSize);
@@ -69,8 +59,9 @@ class PinGraph extends BlackBoxGraph {
 					.get(component);
 			graphEdge(componentNode, component.getGoPort());
 			for (org.xronos.openforge.lim.Port port : component.getDataPorts()) {
-				if (port.getBus() == src)
+				if (port.getBus() == src) {
 					graphEdge(componentNode, port);
+				}
 			}
 		}
 	}
@@ -86,5 +77,15 @@ class PinGraph extends BlackBoxGraph {
 
 			graphEdges(opin);
 		}
+	}
+
+	/**
+	 * For classes which extend PinGraph
+	 * 
+	 * @param nodeCount
+	 *            a value of type 'int'
+	 */
+	PinGraph(String name, int nodeCount, int fontSize) {
+		super(name, nodeCount, fontSize);
 	}
 }

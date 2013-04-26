@@ -48,7 +48,6 @@ import org.xronos.openforge.lim.primitive.Not;
 import org.xronos.openforge.lim.primitive.Or;
 import org.xronos.openforge.lim.primitive.Reg;
 
-
 /**
  * StructuralMemory is a Module which contains a structural representation of a
  * given memory. The structure is built out of sufficient {@link MemoryBank
@@ -79,10 +78,166 @@ import org.xronos.openforge.lim.primitive.Reg;
 public class StructuralMemory extends Module {
 
 	/**
+	 * A simple class used to associate and identify all the ports and buses for
+	 * one interface to the memory.
+	 */
+	public class StructuralMemoryPort {
+		public Port addr;
+		public Port din;
+		public Port en;
+		public Port we;
+		public Port size;
+
+		public Bus dout;
+		public Bus done;
+
+		public boolean read;
+		public boolean write;
+
+		public StructuralMemoryPort(Port a, Port d, Port e, Port w, Port s,
+				Bus b, Bus dn, boolean rd, boolean wr) {
+			addr = a;
+			din = d;
+			en = e;
+			we = w;
+			size = s;
+			dout = b;
+			done = dn;
+			read = rd;
+			write = wr;
+		}
+
+		public Port getAddressPort() {
+			return addr;
+		}
+
+		public Port getDataInPort() {
+			return din;
+		}
+
+		public Bus getDataOutBus() {
+			return dout;
+		}
+
+		public Bus getDoneBus() {
+			return done;
+		}
+
+		public Port getEnablePort() {
+			return en;
+		}
+
+		public Port getSizePort() {
+			return size;
+		}
+
+		public Port getWriteEnablePort() {
+			return we;
+		}
+
+		public boolean isRead() {
+			return read;
+		}
+
+		public boolean isWrite() {
+			return write;
+		}
+
+		public void remove() {
+			if (addr != null) {
+				removeDataPort(addr);
+			}
+
+			if (din != null) {
+				removeDataPort(din);
+			}
+
+			if (en != null) {
+				removeDataPort(en);
+			}
+
+			if (we != null) {
+				removeDataPort(we);
+			}
+
+			if (size != null) {
+				removeDataPort(size);
+			}
+
+			if (dout != null) {
+				StructuralMemory.this.getExit(Exit.DONE).removeDataBus(dout);
+			}
+
+			if (done != null) {
+				StructuralMemory.this.getExit(Exit.DONE).removeDataBus(done);
+			}
+		}
+	}
+
+	/**
 	 * The width of the Bus used to represent the 1-hot encoded bank selects.
 	 */
 	@SuppressWarnings("unused")
 	private static final int SELECT_BITS = 9;
+
+	/**
+	 * Calculates the equation:
+	 * <p>
+	 * log2(width / divisor)
+	 * 
+	 * @param width
+	 *            a value of type 'int'
+	 * @param divisor
+	 *            a value of type 'int'
+	 * @return a value of type 'int'
+	 */
+	private static int calculateAddrOffsetBits(int width, int divisor) {
+		return log2(Math.ceil((double) width / (double) divisor));
+	}
+
+	/**
+	 * Retrieves the {@link Constant} value used to refer to the given number of
+	 * bytes being accessed.
+	 * 
+	 * @param accessCount
+	 *            , the number of addressable locations being accessed.
+	 * @return a {@link Constant} whose value is suitable for sending to the
+	 *         Memory on the size port.
+	 */
+	public static Constant encodeAccessCount(int accessCount) {
+		//
+		// NOTE, if you change this encoding, you MUST change the
+		// getSelectBus method above to correlate.
+		//
+		int size = 0;
+		switch (accessCount) {
+		case 1:
+			size = 1;
+			break;
+		case 2:
+			size = 2;
+			break;
+		case 4:
+			size = 0;
+			break;
+		case 8:
+			size = 3;
+			break;
+		default:
+			assert false : "Unknown number of addressable locations accessed "
+					+ accessCount;
+			size = -1;
+			break;
+		}
+		return new SimpleConstant(size, LogicalMemory.SIZE_WIDTH, false);
+	}
+
+	/**
+	 * Returns the base 2 log of the value.
+	 */
+	public static int log2(double a) {
+		return org.xronos.openforge.util.MathStuff.log2((int) a);
+	}
 
 	/**
 	 * The bit width of the memory implementation banks in this memory, {@see
@@ -102,6 +257,7 @@ public class StructuralMemory extends Module {
 
 	/** A 1-bit Constant representing the value 0. */
 	private Constant zero = new SimpleConstant(0, 1, false);
+
 	/**
 	 * A Constant representing 0, with the same width as the data path
 	 */
@@ -139,18 +295,6 @@ public class StructuralMemory extends Module {
 	private MemoryImplementation memImpl = null;
 
 	/**
-	 * Builds a structural memory whose Addressing policy is
-	 * {@link AddressStridePolicy#BYTE_ADDRESSING}, thus each addressable
-	 * location is a byte.
-	 */
-	public StructuralMemory(int memoryWidth, int memDepth, int bankWidth,
-			List<LogicalMemoryPort> memoryPorts, String baseName,
-			MemoryImplementation impl, int maxAddressWidth) {
-		this(memoryWidth, memDepth, bankWidth, memoryPorts, baseName, impl,
-				AddressStridePolicy.BYTE_ADDRESSING, maxAddressWidth);
-	}
-
-	/**
 	 * Generate a structural memory based on the parameters.
 	 * 
 	 * @param memoryWidth
@@ -183,8 +327,8 @@ public class StructuralMemory extends Module {
 		//
 		// assert ((bankWidth % 8 == 0) || (memoryWidth == bankWidth)):
 		// "Memory Bank width must be power of 8, or width of memory";
-		assert ((bankWidth % bitsPerAddress == 0) || (memoryWidth == bankWidth)) : "Memory Bank width must be power of 8, or width of memory";
-		assert ((memoryWidth % bitsPerAddress) == 0) : "Memory width ("
+		assert bankWidth % bitsPerAddress == 0 || memoryWidth == bankWidth : "Memory Bank width must be power of 8, or width of memory";
+		assert memoryWidth % bitsPerAddress == 0 : "Memory width ("
 				+ memoryWidth + ") must be multiple of addressable size ("
 				+ bitsPerAddress + ")";
 
@@ -192,8 +336,8 @@ public class StructuralMemory extends Module {
 		addrShiftBits = calculateAddrOffsetBits(memoryWidth, bitsPerAddress);
 
 		// In case the banks are larger than the memory width do the Math.min
-		final int locationsPerLine = (int) Math.ceil(((double) memoryWidth)
-				/ ((double) Math.min(bitsPerAddress, memoryWidth)));
+		final int locationsPerLine = (int) Math.ceil((double) memoryWidth
+				/ (double) Math.min(bitsPerAddress, memoryWidth));
 		// Note that we are asserting here that there are 1, 2, 4, or
 		// 8 addressable locations per line. This is to remain
 		// compatible with the logic below for generating the select
@@ -201,8 +345,8 @@ public class StructuralMemory extends Module {
 		// 'lane enables' and moves the input and output data buses to
 		// the appropriate lanes, but is only designed to support 1,
 		// 2, 4, or 8 location accesses.
-		assert (locationsPerLine == 1) || (locationsPerLine == 2)
-				|| (locationsPerLine == 4) || (locationsPerLine == 8) : "Structural memory only supports 1, 2, 4, or 8 addressable locations per line of memory";
+		assert locationsPerLine == 1 || locationsPerLine == 2
+				|| locationsPerLine == 4 || locationsPerLine == 8 : "Structural memory only supports 1, 2, 4, or 8 addressable locations per line of memory";
 
 		totalAddressableLocations = locationsPerLine * memDepth;
 
@@ -220,8 +364,8 @@ public class StructuralMemory extends Module {
 		addComponent(bankWidthConst);
 
 		DATA_SHIFT_STAGES = log2(memoryWidth);
-		final int bankCount = (int) Math.ceil(((double) memoryWidth)
-				/ ((double) this.bankWidth));
+		final int bankCount = (int) Math.ceil((double) memoryWidth
+				/ (double) this.bankWidth);
 
 		if (_memory.db) {
 			_memory.ln(_memory.STRUCT, "\tmem width " + memoryWidth);
@@ -324,16 +468,17 @@ public class StructuralMemory extends Module {
 				// Create the n-bit select bus
 				selectBus = getSelectBus(structMemPort.getSizePort().getPeer(),
 						structMemPort.getAddressPort().getPeer(),
-						(locationsPerLine / bankCount));
+						locationsPerLine / bankCount);
 			} else {
 				// There is only one bank being instantiated so we
 				// don't need to worry about moving data or generating
 				// selects
 
-				if (structMemPort.isWrite())
+				if (structMemPort.isWrite()) {
 					shiftedDataIn = structMemPort.getDataInPort().getPeer();
-				else
+				} else {
 					shiftedDataIn = dataZero.getValueBus();
+				}
 
 				// If only 1 it is always selected.
 				Constant select = new SimpleConstant(1, 1, false);
@@ -388,46 +533,122 @@ public class StructuralMemory extends Module {
 	}
 
 	/**
-	 * Sets the initial values of each bank in this memory according to the map
-	 * of values established by the values array.
+	 * Builds a structural memory whose Addressing policy is
+	 * {@link AddressStridePolicy#BYTE_ADDRESSING}, thus each addressable
+	 * location is a byte.
 	 */
-	public void setInitialValues(AddressableUnit[][] values) {
-		for (int i = 0; i < getBankCount(); i++) {
-			getBanks().get(i).setInitValues(values, i);
-		}
+	public StructuralMemory(int memoryWidth, int memDepth, int bankWidth,
+			List<LogicalMemoryPort> memoryPorts, String baseName,
+			MemoryImplementation impl, int maxAddressWidth) {
+		this(memoryWidth, memDepth, bankWidth, memoryPorts, baseName, impl,
+				AddressStridePolicy.BYTE_ADDRESSING, maxAddressWidth);
 	}
 
-	public void showInitValues() {
-		System.out.println("Banks: " + getBankCount());
-		for (int i = 0; i < getBankCount(); i++) {
-			AddressableUnit[][] vals = getBanks().get(i).getInitValues();
-			int q = vals.length;
-			int r = q > 0 ? vals[0].length : -1;
-			System.out.println("Bank " + i + "[" + q + "][" + r + "]");
-			MemoryBuilder.printArr(vals);
-		}
+	@Override
+	public void accept(Visitor vis) {
+		throw new UnexpectedVisitationException(
+				"Unexepected visitation of StructuralMemory");
+	}
+
+	public boolean allowsCombinationalReads() {
+		return memImpl.getReadLatency().getMinClocks() == 0;
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		throw new CloneNotSupportedException("Cannot clone Structural Memories");
 	}
 
 	/**
-	 * Calculates the equation:
-	 * <p>
-	 * log2(width / divisor)
+	 * The Done signal for a memory port is the logical OR of read done and
+	 * write done. The read/write dones are calculated by delaying the read and
+	 * write enable signals by the number of cycles specified by the
+	 * {@link MemoryImplementation}.
 	 * 
-	 * @param width
-	 *            a value of type 'int'
-	 * @param divisor
-	 *            a value of type 'int'
-	 * @return a value of type 'int'
+	 * @param re
+	 *            the read enable {@link Bus}
+	 * @param we
+	 *            the write enable {@link Bus}
+	 * @param clk
+	 *            the clock {@link Bus}
+	 * @param rst
+	 *            the reset {@link Bus}
+	 * @param imp
+	 *            the {@link MemoryImplementation}
+	 * @param baseName
+	 *            the String to which new signal names are appended.
+	 * @return the generated 'done' {@link Bus}
 	 */
-	private static int calculateAddrOffsetBits(int width, int divisor) {
-		return log2(Math.ceil(((double) width) / ((double) divisor)));
+	private Bus createDone(StructuralMemoryPort memPort, Bus clk, Bus rst,
+			MemoryImplementation imp, String baseName) {
+		assert memPort.isRead() || memPort.isWrite() : "Must be either read or written";
+
+		final Bus done;
+		// if (re != null && we != null)
+		if (memPort.isRead() && memPort.isWrite()) {
+			Bus readDelayed = delayBus(memPort.getEnablePort().getPeer(),
+					baseName + "_re_delay",
+					imp.getReadLatency().getMaxClocks(), clk, rst);
+			Bus writeDelayed = delayBus(memPort.getWriteEnablePort().getPeer(),
+					baseName + "_we_delay", imp.getWriteLatency()
+							.getMaxClocks(), clk, rst);
+
+			if (imp.getReadLatency().getMaxClocks() == 0) {
+				// Equation for done is (en && !we) || (we_done)
+				And and = new And(2);
+				addComponent(and);
+				Not not = new Not();
+				addComponent(not);
+				not.getDataPort()
+						.setBus(memPort.getWriteEnablePort().getPeer());
+				and.getDataPorts().get(0).setBus(readDelayed);
+				and.getDataPorts().get(1).setBus(not.getResultBus());
+				readDelayed = and.getResultBus();
+			}
+
+			Or or = new Or(2);
+			addComponent(or);
+			or.getDataPorts().get(0).setBus(readDelayed);
+			or.getDataPorts().get(1).setBus(writeDelayed);
+			done = or.getResultBus();
+		} else if (memPort.isRead()) {
+			done = delayBus(memPort.getEnablePort().getPeer(), baseName
+					+ "_re_delay", imp.getReadLatency().getMaxClocks(), clk,
+					rst);
+		} else {
+			done = delayBus(memPort.getWriteEnablePort().getPeer(), baseName
+					+ "_we_delay", imp.getWriteLatency().getMaxClocks(), clk,
+					rst);
+		}
+		return done;
 	}
 
 	/**
-	 * Returns the base 2 log of the value.
+	 * Generates the enable signal to the memory banks. This signal is the read
+	 * enable (en signal to the structural memory) logically ORed with the write
+	 * enable to ensure that the memory is enabled during read or write
+	 * operations.
 	 */
-	public static int log2(double a) {
-		return org.xronos.openforge.util.MathStuff.log2((int) a);
+	private Bus createEnableBus(StructuralMemoryPort structMemPort) {
+		final Bus enBus;
+		if (structMemPort.isRead() && structMemPort.isWrite()) {
+			Or enOr = new Or(2);
+			addComponent(enOr);
+			enOr.getDataPorts().get(0)
+					.setBus(structMemPort.getEnablePort().getPeer());
+			enOr.getDataPorts().get(1)
+					.setBus(structMemPort.getWriteEnablePort().getPeer());
+			enBus = enOr.getResultBus();
+		} else if (structMemPort.isRead()) {
+			// In case of read only the bank enables are simply the
+			// read enables
+			enBus = structMemPort.getEnablePort().getPeer();
+		} else {
+			// In case of write only the bank enables are simply the
+			// write enables.
+			enBus = structMemPort.getWriteEnablePort().getPeer();
+		}
+		return enBus;
 	}
 
 	/**
@@ -485,53 +706,31 @@ public class StructuralMemory extends Module {
 	}
 
 	/**
-	 * Returns the {@link StructuralMemoryPort} which was created based on the
-	 * given {@link MemoryPort}
+	 * Delays the specified bus by the given number of stages. Adds all
+	 * necessary logic to this module.
 	 */
-	public StructuralMemoryPort getStructuralMemoryPort(LogicalMemoryPort port) {
-		return memPorts.get(port);
-	}
-
-	/**
-	 * Returns a List of all the structural memory ports for this memory.
-	 */
-	public List<StructuralMemoryPort> getStructuralMemoryPorts() {
-		return new LinkedList<StructuralMemoryPort>(memPorts.values());
-	}
-
-	/**
-	 * Removes the {@link StructuralMemoryPort} that was created as a result of
-	 * the given {@link MemoryPort}.
-	 */
-	public void removePort(LogicalMemoryPort port) {
-		StructuralMemoryPort structPort = getStructuralMemoryPort(port);
-		if (structPort == null) {
-			return;
+	private Bus delayBus(Bus bus, String id, int stages, Bus clk, Bus rst) {
+		Bus delayed = bus;
+		for (int i = 0; i < stages; i++) {
+			// Needs RESET b/c some delayed buses are factored into
+			// the control path
+			Reg sync = Reg.getConfigurableReg(Reg.REGR, id + i);
+			sync.getDataPort().setBus(delayed);
+			sync.getClockPort().setBus(clk);
+			sync.getResetPort().setBus(rst);
+			sync.getInternalResetPort().setBus(rst);
+			delayed = sync.getResultBus();
+			addComponent(sync);
 		}
-
-		// Remove the interface allocated on the MemoryBank based on
-		// the given memory port.
-		List<MemoryBank.BankPort> bankPorts = portToBankPorts.get(structPort);
-		for (MemoryBank.BankPort mb : bankPorts) {
-			mb.remove();
-		}
-
-		memPorts.remove(port);
-		structPort.remove();
+		return delayed;
 	}
 
-	/**
-	 * Returns the 1-bit wide (control) zero constant.
-	 */
-	Constant getZero() {
-		return zero;
+	public int getAddressableLocations() {
+		return totalAddressableLocations;
 	}
 
-	/**
-	 * Returns the number of bits per bank used in this StructuralMemory.
-	 */
-	int getBankWidth() {
-		return bankWidth;
+	public int getAddrWidth() {
+		return addrWidth;
 	}
 
 	/**
@@ -545,83 +744,183 @@ public class StructuralMemory extends Module {
 		return banks;
 	}
 
-	public int getDataWidth() {
-		return dataWidth;
-	}
-
-	public int getAddrWidth() {
-		return addrWidth;
-	}
-
-	public int getAddressableLocations() {
-		return totalAddressableLocations;
-	}
-
-	public boolean allowsCombinationalReads() {
-		return memImpl.getReadLatency().getMinClocks() == 0;
+	/**
+	 * Returns the number of bits per bank used in this StructuralMemory.
+	 */
+	int getBankWidth() {
+		return bankWidth;
 	}
 
 	/**
-	 * Shifts the address right by the number of bits to account for the number
-	 * of banks that make this memory. This generates an address to be supplied
-	 * to each bank.
+	 * Generates a Bus which is used as the magnitude by which to shift the data
+	 * on both reads and writes.
 	 * 
-	 * @param address
+	 * @param addrBus
 	 *            a value of type 'Bus'
 	 * @return a value of type 'Bus'
 	 */
-	private Bus getShiftedAddress(Bus address) {
-		final Bus addressBus;
-		if (addrShiftBits > 0) {
-			// Generate the address. Shift it right by addrShiftBits
-			// which is the number of LSB address bits used to move data
-			// to the correct byte lanes.
-			// int addrStages =
-			// (int)Math.ceil(Math.log(this.addrShiftBits)/Math.log(2.0));
-			final Constant addrConst = new SimpleConstant(addrShiftBits, 32,
-					false);
-			final int stages = addrConst.getValueBus().getValue().getSize();
-			final RightShiftUnsignedOp addrShift = new RightShiftUnsignedOp(
-					stages);
-			addrShift.getLeftDataPort().setBus(address);
-			addrShift.getRightDataPort().setBus(addrConst.getValueBus());
+	private Bus getBigEndianDataShiftMagnitude(Bus size, Bus addrBus,
+			int locationWidth) {
+		final double locationsPerLine = (double) getDataWidth()
+				/ (double) locationWidth;
+		// final double dataBytes = ((double)this.getDataWidth()) / ((double)8);
 
-			addComponent(addrConst);
-			addComponent(addrShift);
-
-			addressBus = addrShift.getResultBus();
+		Constant s0 = null;
+		Constant s1 = null;
+		Constant s2 = null;
+		Constant s3 = null;
+		if (locationsPerLine == 8) {
+			s0 = new SimpleConstant(4, addrBus.getSize(), false);
+			s1 = new SimpleConstant(7, addrBus.getSize(), false);
+			s2 = new SimpleConstant(6, addrBus.getSize(), false);
+			s3 = new SimpleConstant(0, addrBus.getSize(), false);
+		} else if (locationsPerLine == 4) {
+			s0 = new SimpleConstant(0, addrBus.getSize(), false);
+			s1 = new SimpleConstant(3, addrBus.getSize(), false);
+			s2 = new SimpleConstant(2, addrBus.getSize(), false);
+			s3 = new SimpleConstant(0, addrBus.getSize(), false);
+		} else if (locationsPerLine == 2) {
+			s0 = new SimpleConstant(0, addrBus.getSize(), false);
+			s1 = new SimpleConstant(1, addrBus.getSize(), false);
+			s2 = new SimpleConstant(0, addrBus.getSize(), false);
+			s3 = new SimpleConstant(0, addrBus.getSize(), false);
 		} else {
-			addressBus = address;
+			throw new IllegalArgumentException(
+					"In big endian compilations, memory must be laid out with 8, 4, 2, or 1 address per line");
 		}
-		return addressBus;
+
+		EncodedMux mux = new EncodedMux(4);
+		mux.getDataPort(0).setBus(s0.getValueBus());
+		mux.getDataPort(1).setBus(s1.getValueBus());
+		mux.getDataPort(2).setBus(s2.getValueBus());
+		mux.getDataPort(3).setBus(s3.getValueBus());
+		mux.getSelectPort().setBus(size);
+
+		SubtractOp subtract = new SubtractOp();
+		subtract.getLeftDataPort().setBus(mux.getResultBus());
+		subtract.getRightDataPort().setBus(addrBus);
+
+		addComponent(mux);
+		addComponent(subtract);
+
+		// The data bus is shifted by Addr[x:0] * bitsPerAddress where
+		// Addr[x:0] must be re-arranged to account for the reversed
+		// ordering of bytes in the memory (the memory is in little
+		// endian order)
+		final Bus shiftMagnitude;
+		final int log2_width = log2(locationWidth);
+		if (2 << log2_width == locationWidth) {
+			final Constant powerConstant = new SimpleConstant(log2_width, 32,
+					false);
+			final int stages = powerConstant.getValueBus().getValue().getSize();
+			LeftShiftOp addrShift = new LeftShiftOp(stages);
+			addrShift.getLeftDataPort().setBus(subtract.getResultBus());
+			addrShift.getRightDataPort().setBus(powerConstant.getValueBus());
+			addComponent(powerConstant);
+			addComponent(addrShift);
+			shiftMagnitude = addrShift.getResultBus();
+		} else {
+			final Constant locSizeConstant = new SimpleConstant(locationWidth,
+					32, false);
+			final MultiplyOp multiply = new MultiplyOp(32);
+			multiply.getLeftDataPort().setBus(subtract.getResultBus());
+			multiply.getRightDataPort().setBus(locSizeConstant.getValueBus());
+
+			addComponent(locSizeConstant);
+			addComponent(multiply);
+			shiftMagnitude = multiply.getResultBus();
+		}
+
+		return shiftMagnitude;
+	}
+
+	private Bus getBigEndianShiftedDataIn(StructuralMemoryPort structMemPort,
+			Bus shiftMagnitude, int memWidth, boolean noShifter,
+			int bitsPerAddress) {
+		Bus shiftedDataIn;
+		if (structMemPort.isWrite()) {
+			final EndianSwapper swap = new EndianSwapper(memWidth,
+					bitsPerAddress);
+			swap.getInputPort().setBus(structMemPort.getDataInPort().getPeer());
+			addComponent(swap);
+			if (noShifter) {
+				shiftedDataIn = swap.getOutputBus();
+			} else {
+				// Create the data in shifter.
+				RightShiftUnsignedOp dataShift = new RightShiftUnsignedOp(
+						DATA_SHIFT_STAGES);
+				final Bus dataBus = dataShift.getResultBus();
+				dataShift.getLeftDataPort().setBus(swap.getOutputBus());
+				dataShift.getRightDataPort().setBus(shiftMagnitude);
+				addComponent(dataShift);
+				shiftedDataIn = dataBus;
+			}
+		} else {
+			shiftedDataIn = dataZero.getValueBus();
+		}
+
+		return shiftedDataIn;
+
+	}
+
+	private Bus getBigEndianShiftedDataOut(StructuralMemoryPort structMemPort,
+			Bus dataBus, Bus shiftMagnitude, int memWidth, boolean noShifter,
+			int bitsPerAddress) {
+		Bus dataOut;
+		if (structMemPort.isRead()) {
+			final EndianSwapper swap = new EndianSwapper(memWidth,
+					bitsPerAddress);
+			dataOut = swap.getOutputBus();
+			if (noShifter) {
+				swap.getInputPort().setBus(dataBus);
+				addComponent(swap);
+			} else {
+				// If the latency of the memory banks is greater than
+				// 0, then we need to delay the shift magnitude bus
+				// (derived from the address bus) by that many cycles
+				// to keep it in line with the right address
+				final Bus delayedShiftMagnitude = delayBus(shiftMagnitude,
+						"shiftDelay", memImpl.getReadLatency().getMinClocks(),
+						getClockPort().getPeer(), getResetPort().getPeer());
+
+				// Create the data out shifter.
+				LeftShiftOp dataOutShift = new LeftShiftOp(DATA_SHIFT_STAGES);
+				swap.getInputPort().setBus(dataOutShift.getResultBus());
+				dataOutShift.getLeftDataPort().setBus(dataBus);
+				dataOutShift.getRightDataPort().setBus(delayedShiftMagnitude);
+				addComponent(dataOutShift);
+				addComponent(swap);
+			}
+		} else {
+			dataOut = dataZero.getValueBus();
+		}
+
+		return dataOut;
 	}
 
 	/**
-	 * Generates the enable signal to the memory banks. This signal is the read
-	 * enable (en signal to the structural memory) logically ORed with the write
-	 * enable to ensure that the memory is enabled during read or write
-	 * operations.
+	 * Creates, adds to this module, and returns a Constant value with the
+	 * specified number of bits set to 1 in the LSB positions of the value. Thus
+	 * getConstant(4) would return a Constant whose value is 0xF. getConstant(8)
+	 * would return a Constant whose value is 0xFF.
+	 * 
+	 * @param numOneBits
+	 *            the number of 1 bits to set in the LSB positions
+	 * @return a {@link Constant}
 	 */
-	private Bus createEnableBus(StructuralMemoryPort structMemPort) {
-		final Bus enBus;
-		if (structMemPort.isRead() && structMemPort.isWrite()) {
-			Or enOr = new Or(2);
-			addComponent(enOr);
-			enOr.getDataPorts().get(0)
-					.setBus(structMemPort.getEnablePort().getPeer());
-			enOr.getDataPorts().get(1)
-					.setBus(structMemPort.getWriteEnablePort().getPeer());
-			enBus = enOr.getResultBus();
-		} else if (structMemPort.isRead()) {
-			// In case of read only the bank enables are simply the
-			// read enables
-			enBus = structMemPort.getEnablePort().getPeer();
-		} else {
-			// In case of write only the bank enables are simply the
-			// write enables.
-			enBus = structMemPort.getWriteEnablePort().getPeer();
+	private Constant getConstant(int numOneBits) {
+		long value = 0;
+		for (int i = 0; i < numOneBits; i++) {
+			value <<= 1;
+			value |= 1;
 		}
-		return enBus;
+		Constant constant = new SimpleConstant(value, 8, false);
+		addComponent(constant);
+		return constant;
+	}
+
+	public int getDataWidth() {
+		return dataWidth;
 	}
 
 	/**
@@ -636,7 +935,7 @@ public class StructuralMemory extends Module {
 		// The data bus is shifted by Addr[x:0] * bitsPerAddress
 		final Bus shiftMagnitude;
 		final int log2_width = log2(locationWidth);
-		if ((2 << log2_width) == locationWidth) {
+		if (2 << log2_width == locationWidth) {
 			final Constant powerConstant = new SimpleConstant(log2_width, 32,
 					false);
 			final int stages = powerConstant.getValueBus().getValue().getSize();
@@ -728,153 +1027,6 @@ public class StructuralMemory extends Module {
 	}
 
 	/**
-	 * Generates a Bus which is used as the magnitude by which to shift the data
-	 * on both reads and writes.
-	 * 
-	 * @param addrBus
-	 *            a value of type 'Bus'
-	 * @return a value of type 'Bus'
-	 */
-	private Bus getBigEndianDataShiftMagnitude(Bus size, Bus addrBus,
-			int locationWidth) {
-		final double locationsPerLine = ((double) getDataWidth())
-				/ ((double) locationWidth);
-		// final double dataBytes = ((double)this.getDataWidth()) / ((double)8);
-
-		Constant s0 = null;
-		Constant s1 = null;
-		Constant s2 = null;
-		Constant s3 = null;
-		if (locationsPerLine == 8) {
-			s0 = new SimpleConstant(4, addrBus.getSize(), false);
-			s1 = new SimpleConstant(7, addrBus.getSize(), false);
-			s2 = new SimpleConstant(6, addrBus.getSize(), false);
-			s3 = new SimpleConstant(0, addrBus.getSize(), false);
-		} else if (locationsPerLine == 4) {
-			s0 = new SimpleConstant(0, addrBus.getSize(), false);
-			s1 = new SimpleConstant(3, addrBus.getSize(), false);
-			s2 = new SimpleConstant(2, addrBus.getSize(), false);
-			s3 = new SimpleConstant(0, addrBus.getSize(), false);
-		} else if (locationsPerLine == 2) {
-			s0 = new SimpleConstant(0, addrBus.getSize(), false);
-			s1 = new SimpleConstant(1, addrBus.getSize(), false);
-			s2 = new SimpleConstant(0, addrBus.getSize(), false);
-			s3 = new SimpleConstant(0, addrBus.getSize(), false);
-		} else {
-			throw new IllegalArgumentException(
-					"In big endian compilations, memory must be laid out with 8, 4, 2, or 1 address per line");
-		}
-
-		EncodedMux mux = new EncodedMux(4);
-		mux.getDataPort(0).setBus(s0.getValueBus());
-		mux.getDataPort(1).setBus(s1.getValueBus());
-		mux.getDataPort(2).setBus(s2.getValueBus());
-		mux.getDataPort(3).setBus(s3.getValueBus());
-		mux.getSelectPort().setBus(size);
-
-		SubtractOp subtract = new SubtractOp();
-		subtract.getLeftDataPort().setBus(mux.getResultBus());
-		subtract.getRightDataPort().setBus(addrBus);
-
-		addComponent(mux);
-		addComponent(subtract);
-
-		// The data bus is shifted by Addr[x:0] * bitsPerAddress where
-		// Addr[x:0] must be re-arranged to account for the reversed
-		// ordering of bytes in the memory (the memory is in little
-		// endian order)
-		final Bus shiftMagnitude;
-		final int log2_width = log2(locationWidth);
-		if ((2 << log2_width) == locationWidth) {
-			final Constant powerConstant = new SimpleConstant(log2_width, 32,
-					false);
-			final int stages = powerConstant.getValueBus().getValue().getSize();
-			LeftShiftOp addrShift = new LeftShiftOp(stages);
-			addrShift.getLeftDataPort().setBus(subtract.getResultBus());
-			addrShift.getRightDataPort().setBus(powerConstant.getValueBus());
-			addComponent(powerConstant);
-			addComponent(addrShift);
-			shiftMagnitude = addrShift.getResultBus();
-		} else {
-			final Constant locSizeConstant = new SimpleConstant(locationWidth,
-					32, false);
-			final MultiplyOp multiply = new MultiplyOp(32);
-			multiply.getLeftDataPort().setBus(subtract.getResultBus());
-			multiply.getRightDataPort().setBus(locSizeConstant.getValueBus());
-
-			addComponent(locSizeConstant);
-			addComponent(multiply);
-			shiftMagnitude = multiply.getResultBus();
-		}
-
-		return shiftMagnitude;
-	}
-
-	private Bus getBigEndianShiftedDataIn(StructuralMemoryPort structMemPort,
-			Bus shiftMagnitude, int memWidth, boolean noShifter,
-			int bitsPerAddress) {
-		Bus shiftedDataIn;
-		if (structMemPort.isWrite()) {
-			final EndianSwapper swap = new EndianSwapper(memWidth,
-					bitsPerAddress);
-			swap.getInputPort().setBus(structMemPort.getDataInPort().getPeer());
-			addComponent(swap);
-			if (noShifter) {
-				shiftedDataIn = swap.getOutputBus();
-			} else {
-				// Create the data in shifter.
-				RightShiftUnsignedOp dataShift = new RightShiftUnsignedOp(
-						DATA_SHIFT_STAGES);
-				final Bus dataBus = dataShift.getResultBus();
-				dataShift.getLeftDataPort().setBus(swap.getOutputBus());
-				dataShift.getRightDataPort().setBus(shiftMagnitude);
-				addComponent(dataShift);
-				shiftedDataIn = dataBus;
-			}
-		} else {
-			shiftedDataIn = dataZero.getValueBus();
-		}
-
-		return shiftedDataIn;
-
-	}
-
-	private Bus getBigEndianShiftedDataOut(StructuralMemoryPort structMemPort,
-			Bus dataBus, Bus shiftMagnitude, int memWidth, boolean noShifter,
-			int bitsPerAddress) {
-		Bus dataOut;
-		if (structMemPort.isRead()) {
-			final EndianSwapper swap = new EndianSwapper(memWidth,
-					bitsPerAddress);
-			dataOut = swap.getOutputBus();
-			if (noShifter) {
-				swap.getInputPort().setBus(dataBus);
-				addComponent(swap);
-			} else {
-				// If the latency of the memory banks is greater than
-				// 0, then we need to delay the shift magnitude bus
-				// (derived from the address bus) by that many cycles
-				// to keep it in line with the right address
-				final Bus delayedShiftMagnitude = delayBus(shiftMagnitude,
-						"shiftDelay", memImpl.getReadLatency().getMinClocks(),
-						getClockPort().getPeer(), getResetPort().getPeer());
-
-				// Create the data out shifter.
-				LeftShiftOp dataOutShift = new LeftShiftOp(DATA_SHIFT_STAGES);
-				swap.getInputPort().setBus(dataOutShift.getResultBus());
-				dataOutShift.getLeftDataPort().setBus(dataBus);
-				dataOutShift.getRightDataPort().setBus(delayedShiftMagnitude);
-				addComponent(dataOutShift);
-				addComponent(swap);
-			}
-		} else {
-			dataOut = dataZero.getValueBus();
-		}
-
-		return dataOut;
-	}
-
-	/**
 	 * Generates an n-bit select bus, in which there is one bit for each bank of
 	 * this memory, and where bit 0 is the select for the LSB bank, bit 1 the
 	 * next, etc. These selects do NOT account for the read enable or write
@@ -904,14 +1056,14 @@ public class StructuralMemory extends Module {
 		// mux is selected. Thus, this mux is selecting the number of
 		// active enables. This will then be sub-sampled if there are
 		// more than 1 bank per addressable location.
-		Constant s0 = getConstant((int) Math.ceil(((double) 4)
-				/ locationsPerBank));
-		Constant s1 = getConstant((int) Math.ceil(((double) 1)
-				/ locationsPerBank));
-		Constant s2 = getConstant((int) Math.ceil(((double) 2)
-				/ locationsPerBank));
-		Constant s3 = getConstant((int) Math.ceil(((double) 8)
-				/ locationsPerBank));
+		Constant s0 = getConstant((int) Math
+				.ceil((double) 4 / locationsPerBank));
+		Constant s1 = getConstant((int) Math
+				.ceil((double) 1 / locationsPerBank));
+		Constant s2 = getConstant((int) Math
+				.ceil((double) 2 / locationsPerBank));
+		Constant s3 = getConstant((int) Math
+				.ceil((double) 8 / locationsPerBank));
 		mux.getDataPort(0).setBus(s0.getValueBus());
 		mux.getDataPort(1).setBus(s1.getValueBus());
 		mux.getDataPort(2).setBus(s2.getValueBus());
@@ -954,117 +1106,65 @@ public class StructuralMemory extends Module {
 	}
 
 	/**
-	 * The Done signal for a memory port is the logical OR of read done and
-	 * write done. The read/write dones are calculated by delaying the read and
-	 * write enable signals by the number of cycles specified by the
-	 * {@link MemoryImplementation}.
+	 * Shifts the address right by the number of bits to account for the number
+	 * of banks that make this memory. This generates an address to be supplied
+	 * to each bank.
 	 * 
-	 * @param re
-	 *            the read enable {@link Bus}
-	 * @param we
-	 *            the write enable {@link Bus}
-	 * @param clk
-	 *            the clock {@link Bus}
-	 * @param rst
-	 *            the reset {@link Bus}
-	 * @param imp
-	 *            the {@link MemoryImplementation}
-	 * @param baseName
-	 *            the String to which new signal names are appended.
-	 * @return the generated 'done' {@link Bus}
+	 * @param address
+	 *            a value of type 'Bus'
+	 * @return a value of type 'Bus'
 	 */
-	private Bus createDone(StructuralMemoryPort memPort, Bus clk, Bus rst,
-			MemoryImplementation imp, String baseName) {
-		assert memPort.isRead() || memPort.isWrite() : "Must be either read or written";
+	private Bus getShiftedAddress(Bus address) {
+		final Bus addressBus;
+		if (addrShiftBits > 0) {
+			// Generate the address. Shift it right by addrShiftBits
+			// which is the number of LSB address bits used to move data
+			// to the correct byte lanes.
+			// int addrStages =
+			// (int)Math.ceil(Math.log(this.addrShiftBits)/Math.log(2.0));
+			final Constant addrConst = new SimpleConstant(addrShiftBits, 32,
+					false);
+			final int stages = addrConst.getValueBus().getValue().getSize();
+			final RightShiftUnsignedOp addrShift = new RightShiftUnsignedOp(
+					stages);
+			addrShift.getLeftDataPort().setBus(address);
+			addrShift.getRightDataPort().setBus(addrConst.getValueBus());
 
-		final Bus done;
-		// if (re != null && we != null)
-		if (memPort.isRead() && memPort.isWrite()) {
-			Bus readDelayed = delayBus(memPort.getEnablePort().getPeer(),
-					baseName + "_re_delay",
-					imp.getReadLatency().getMaxClocks(), clk, rst);
-			Bus writeDelayed = delayBus(memPort.getWriteEnablePort().getPeer(),
-					baseName + "_we_delay", imp.getWriteLatency()
-							.getMaxClocks(), clk, rst);
+			addComponent(addrConst);
+			addComponent(addrShift);
 
-			if (imp.getReadLatency().getMaxClocks() == 0) {
-				// Equation for done is (en && !we) || (we_done)
-				And and = new And(2);
-				addComponent(and);
-				Not not = new Not();
-				addComponent(not);
-				not.getDataPort()
-						.setBus(memPort.getWriteEnablePort().getPeer());
-				and.getDataPorts().get(0).setBus(readDelayed);
-				and.getDataPorts().get(1).setBus(not.getResultBus());
-				readDelayed = and.getResultBus();
-			}
-
-			Or or = new Or(2);
-			addComponent(or);
-			or.getDataPorts().get(0).setBus(readDelayed);
-			or.getDataPorts().get(1).setBus(writeDelayed);
-			done = or.getResultBus();
-		} else if (memPort.isRead()) {
-			done = delayBus(memPort.getEnablePort().getPeer(), baseName
-					+ "_re_delay", imp.getReadLatency().getMaxClocks(), clk,
-					rst);
+			addressBus = addrShift.getResultBus();
 		} else {
-			done = delayBus(memPort.getWriteEnablePort().getPeer(), baseName
-					+ "_we_delay", imp.getWriteLatency().getMaxClocks(), clk,
-					rst);
+			addressBus = address;
 		}
-		return done;
+		return addressBus;
 	}
 
 	/**
-	 * Delays the specified bus by the given number of stages. Adds all
-	 * necessary logic to this module.
+	 * Returns the {@link StructuralMemoryPort} which was created based on the
+	 * given {@link MemoryPort}
 	 */
-	private Bus delayBus(Bus bus, String id, int stages, Bus clk, Bus rst) {
-		Bus delayed = bus;
-		for (int i = 0; i < stages; i++) {
-			// Needs RESET b/c some delayed buses are factored into
-			// the control path
-			Reg sync = Reg.getConfigurableReg(Reg.REGR, id + i);
-			sync.getDataPort().setBus(delayed);
-			sync.getClockPort().setBus(clk);
-			sync.getResetPort().setBus(rst);
-			sync.getInternalResetPort().setBus(rst);
-			delayed = sync.getResultBus();
-			addComponent(sync);
-		}
-		return delayed;
+	public StructuralMemoryPort getStructuralMemoryPort(LogicalMemoryPort port) {
+		return memPorts.get(port);
 	}
 
 	/**
-	 * Creates, adds to this module, and returns a Constant value with the
-	 * specified number of bits set to 1 in the LSB positions of the value. Thus
-	 * getConstant(4) would return a Constant whose value is 0xF. getConstant(8)
-	 * would return a Constant whose value is 0xFF.
-	 * 
-	 * @param numOneBits
-	 *            the number of 1 bits to set in the LSB positions
-	 * @return a {@link Constant}
+	 * Returns a List of all the structural memory ports for this memory.
 	 */
-	private Constant getConstant(int numOneBits) {
-		long value = 0;
-		for (int i = 0; i < numOneBits; i++) {
-			value <<= 1;
-			value |= 1;
-		}
-		Constant constant = new SimpleConstant(value, 8, false);
-		addComponent(constant);
-		return constant;
+	public List<StructuralMemoryPort> getStructuralMemoryPorts() {
+		return new LinkedList<StructuralMemoryPort>(memPorts.values());
+	}
+
+	/**
+	 * Returns the 1-bit wide (control) zero constant.
+	 */
+	Constant getZero() {
+		return zero;
 	}
 
 	@Override
-	public boolean replaceComponent(Component removed, Component inserted) {
-		if (super.removeComponent(removed)) {
-			addComponent(inserted);
-			return true;
-		}
-		return false;
+	public boolean isOpaque() {
+		return true;
 	}
 
 	/**
@@ -1092,146 +1192,54 @@ public class StructuralMemory extends Module {
 		return true;
 	}
 
-	@Override
-	public boolean isOpaque() {
-		return true;
+	/**
+	 * Removes the {@link StructuralMemoryPort} that was created as a result of
+	 * the given {@link MemoryPort}.
+	 */
+	public void removePort(LogicalMemoryPort port) {
+		StructuralMemoryPort structPort = getStructuralMemoryPort(port);
+		if (structPort == null) {
+			return;
+		}
+
+		// Remove the interface allocated on the MemoryBank based on
+		// the given memory port.
+		List<MemoryBank.BankPort> bankPorts = portToBankPorts.get(structPort);
+		for (MemoryBank.BankPort mb : bankPorts) {
+			mb.remove();
+		}
+
+		memPorts.remove(port);
+		structPort.remove();
 	}
 
 	@Override
-	public void accept(Visitor vis) {
-		throw new UnexpectedVisitationException(
-				"Unexepected visitation of StructuralMemory");
-	}
-
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		throw new CloneNotSupportedException("Cannot clone Structural Memories");
+	public boolean replaceComponent(Component removed, Component inserted) {
+		if (super.removeComponent(removed)) {
+			addComponent(inserted);
+			return true;
+		}
+		return false;
 	}
 
 	/**
-	 * Retrieves the {@link Constant} value used to refer to the given number of
-	 * bytes being accessed.
-	 * 
-	 * @param accessCount
-	 *            , the number of addressable locations being accessed.
-	 * @return a {@link Constant} whose value is suitable for sending to the
-	 *         Memory on the size port.
+	 * Sets the initial values of each bank in this memory according to the map
+	 * of values established by the values array.
 	 */
-	public static Constant encodeAccessCount(int accessCount) {
-		//
-		// NOTE, if you change this encoding, you MUST change the
-		// getSelectBus method above to correlate.
-		//
-		int size = 0;
-		switch (accessCount) {
-		case 1:
-			size = 1;
-			break;
-		case 2:
-			size = 2;
-			break;
-		case 4:
-			size = 0;
-			break;
-		case 8:
-			size = 3;
-			break;
-		default:
-			assert false : "Unknown number of addressable locations accessed "
-					+ accessCount;
-			size = -1;
-			break;
+	public void setInitialValues(AddressableUnit[][] values) {
+		for (int i = 0; i < getBankCount(); i++) {
+			getBanks().get(i).setInitValues(values, i);
 		}
-		return new SimpleConstant(size, LogicalMemory.SIZE_WIDTH, false);
 	}
 
-	/**
-	 * A simple class used to associate and identify all the ports and buses for
-	 * one interface to the memory.
-	 */
-	public class StructuralMemoryPort {
-		public Port addr;
-		public Port din;
-		public Port en;
-		public Port we;
-		public Port size;
-
-		public Bus dout;
-		public Bus done;
-
-		public boolean read;
-		public boolean write;
-
-		public StructuralMemoryPort(Port a, Port d, Port e, Port w, Port s,
-				Bus b, Bus dn, boolean rd, boolean wr) {
-			addr = a;
-			din = d;
-			en = e;
-			we = w;
-			size = s;
-			dout = b;
-			done = dn;
-			read = rd;
-			write = wr;
-		}
-
-		public Port getAddressPort() {
-			return addr;
-		}
-
-		public Port getDataInPort() {
-			return din;
-		}
-
-		public Port getEnablePort() {
-			return en;
-		}
-
-		public Port getWriteEnablePort() {
-			return we;
-		}
-
-		public Port getSizePort() {
-			return size;
-		}
-
-		public Bus getDataOutBus() {
-			return dout;
-		}
-
-		public Bus getDoneBus() {
-			return done;
-		}
-
-		public boolean isRead() {
-			return read;
-		}
-
-		public boolean isWrite() {
-			return write;
-		}
-
-		public void remove() {
-			if (addr != null)
-				removeDataPort(addr);
-
-			if (din != null)
-				removeDataPort(din);
-
-			if (en != null)
-				removeDataPort(en);
-
-			if (we != null)
-				removeDataPort(we);
-
-			if (size != null)
-				removeDataPort(size);
-
-			if (dout != null)
-				StructuralMemory.this.getExit(Exit.DONE).removeDataBus(dout);
-
-			if (done != null)
-				StructuralMemory.this.getExit(Exit.DONE).removeDataBus(done);
+	public void showInitValues() {
+		System.out.println("Banks: " + getBankCount());
+		for (int i = 0; i < getBankCount(); i++) {
+			AddressableUnit[][] vals = getBanks().get(i).getInitValues();
+			int q = vals.length;
+			int r = q > 0 ? vals[0].length : -1;
+			System.out.println("Bank " + i + "[" + q + "][" + r + "]");
+			MemoryBuilder.printArr(vals);
 		}
 	}
 

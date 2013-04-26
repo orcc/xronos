@@ -39,22 +39,6 @@ public class Offset extends Variable {
 	 */
 	private int delta;
 
-	@Override
-	public boolean equals(Object object) {
-		if (object instanceof Offset) {
-			final Offset offset = (Offset) object;
-			return (delta == offset.delta
-					&& baseLocation.equals(offset.baseLocation) && offset
-						.getAddressableSize() == getAddressableSize());
-		}
-		return false;
-	}
-
-	@Override
-	public int hashCode() {
-		return baseLocation.hashCode() + delta + getAddressableSize();
-	}
-
 	/**
 	 * Constructs a new Offset.
 	 * 
@@ -80,6 +64,27 @@ public class Offset extends Variable {
 	}
 
 	/**
+	 * If the specified Location <code>loc</code> is the base location of this
+	 * Offset, then the min/max delta of this Location will be reduced by the
+	 * <code>units</code> parameter, otherwise this method does nothing.
+	 */
+	@Override
+	public void chopStart(Location loc, int units) {
+		super.chopStart(loc, units); // tests for null
+		Location base = getBaseLocation();
+		if (loc.getAbsoluteBase() == base.getAbsoluteBase()
+				&& loc.getAbsoluteMinDelta() == base.getAbsoluteMinDelta()
+				&& loc.getAbsoluteMaxDelta() == loc.getAbsoluteMaxDelta()
+				&& loc.getAddressableSize() == base.getAddressableSize()) {
+			if (units > delta) {
+				throw new IllegalArgumentException(
+						"Cannot shift location by more addressable units than in its base");
+			}
+			delta = delta - units;
+		}
+	}
+
+	/**
 	 * Creates a Location that represents an offset from this Location.
 	 * 
 	 * @param size
@@ -92,8 +97,18 @@ public class Offset extends Variable {
 	 */
 	@Override
 	public Location createOffset(int size, int delta) {
-		return ((size == getAddressableSize()) && (delta == 0) ? this
-				: getBaseLocation().createOffset(size, (getMinDelta() + delta)));
+		return size == getAddressableSize() && delta == 0 ? this
+				: getBaseLocation().createOffset(size, getMinDelta() + delta);
+	}
+
+	@Override
+	public String debug() {
+		String ret = "";
+		ret += "<" + getAbsoluteBase().debug() + ">";
+		ret += " min: " + getAbsoluteMinDelta();
+		ret += " max: " + getAbsoluteMaxDelta();
+		ret += " siz: " + getAddressableSize();
+		return ret;
 	}
 
 	/**
@@ -109,6 +124,17 @@ public class Offset extends Variable {
 		return baseLocation.createOffset(getAddressableSize(), delta);
 	}
 
+	@Override
+	public boolean equals(Object object) {
+		if (object instanceof Offset) {
+			final Offset offset = (Offset) object;
+			return delta == offset.delta
+					&& baseLocation.equals(offset.baseLocation)
+					&& offset.getAddressableSize() == getAddressableSize();
+		}
+		return false;
+	}
+
 	/**
 	 * Gets the base location.
 	 * 
@@ -118,28 +144,6 @@ public class Offset extends Variable {
 	@Override
 	public Location getBaseLocation() {
 		return baseLocation;
-	}
-
-	/**
-	 * Gets the minmum delta.
-	 * 
-	 * @return the minimum number of addressable units beyond the start of the
-	 *         base to which this location refers
-	 */
-	@Override
-	public int getMinDelta() {
-		return getMaxDelta();
-	}
-
-	/**
-	 * Gets the maximum delta.
-	 * 
-	 * @return the maximum number of addressable units beyond the start of the
-	 *         base to which this location refers
-	 */
-	@Override
-	public int getMaxDelta() {
-		return delta;
 	}
 
 	/**
@@ -164,24 +168,30 @@ public class Offset extends Variable {
 	}
 
 	/**
-	 * If the specified Location <code>loc</code> is the base location of this
-	 * Offset, then the min/max delta of this Location will be reduced by the
-	 * <code>units</code> parameter, otherwise this method does nothing.
+	 * Gets the maximum delta.
+	 * 
+	 * @return the maximum number of addressable units beyond the start of the
+	 *         base to which this location refers
 	 */
 	@Override
-	public void chopStart(Location loc, int units) {
-		super.chopStart(loc, units); // tests for null
-		Location base = getBaseLocation();
-		if (loc.getAbsoluteBase() == base.getAbsoluteBase()
-				&& loc.getAbsoluteMinDelta() == base.getAbsoluteMinDelta()
-				&& loc.getAbsoluteMaxDelta() == loc.getAbsoluteMaxDelta()
-				&& loc.getAddressableSize() == base.getAddressableSize()) {
-			if (units > delta) {
-				throw new IllegalArgumentException(
-						"Cannot shift location by more addressable units than in its base");
-			}
-			delta = delta - units;
-		}
+	public int getMaxDelta() {
+		return delta;
+	}
+
+	/**
+	 * Gets the minmum delta.
+	 * 
+	 * @return the minimum number of addressable units beyond the start of the
+	 *         base to which this location refers
+	 */
+	@Override
+	public int getMinDelta() {
+		return getMaxDelta();
+	}
+
+	@Override
+	public int hashCode() {
+		return baseLocation.hashCode() + delta + getAddressableSize();
 	}
 
 	@Override
@@ -197,16 +207,6 @@ public class Offset extends Variable {
 		buf.append(getMaxDelta());
 		buf.append("}");
 		return buf.toString();
-	}
-
-	@Override
-	public String debug() {
-		String ret = "";
-		ret += "<" + getAbsoluteBase().debug() + ">";
-		ret += " min: " + getAbsoluteMinDelta();
-		ret += " max: " + getAbsoluteMaxDelta();
-		ret += " siz: " + getAddressableSize();
-		return ret;
 	}
 
 }

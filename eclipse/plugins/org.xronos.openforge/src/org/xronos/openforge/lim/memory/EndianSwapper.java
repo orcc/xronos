@@ -77,7 +77,7 @@ public class EndianSwapper extends Module {
 
 		// Width in addressable locations, rounded up to the nearest
 		// power of 2.
-		while (memWidth > (byteWidth * strideBits)) {
+		while (memWidth > byteWidth * strideBits) {
 			byteWidth <<= 1;
 		}
 
@@ -95,13 +95,13 @@ public class EndianSwapper extends Module {
 			ShiftOp shiftOp = null;
 
 			if (i < byteWidth / 2) {
-				shiftMagnitude = (byteWidth - (2 * i) - 1);
-				shiftConstant = new SimpleConstant((8 * shiftMagnitude),
+				shiftMagnitude = byteWidth - 2 * i - 1;
+				shiftConstant = new SimpleConstant(8 * shiftMagnitude,
 						maxShiftStage, false);
 				shiftOp = new RightShiftUnsignedOp(maxShiftStage);
 			} else {
-				shiftMagnitude = (2 * (i + 1) - byteWidth - 1);
-				shiftConstant = new SimpleConstant((8 * shiftMagnitude),
+				shiftMagnitude = 2 * (i + 1) - byteWidth - 1;
+				shiftConstant = new SimpleConstant(8 * shiftMagnitude,
 						maxShiftStage, false);
 				shiftOp = new LeftShiftOp(maxShiftStage);
 			}
@@ -112,7 +112,7 @@ public class EndianSwapper extends Module {
 
 			// long mask = 0xFFL << (8 * i);
 			// This will fail if (strideBits * i-1) > 64
-			long mask = maskValue << (strideBits * i);
+			long mask = maskValue << strideBits * i;
 			Constant maskConst = new SimpleConstant(mask, memWidth, false);
 			AndOp andOp = new AndOp();
 			andOp.getLeftDataPort().setBus(maskConst.getValueBus());
@@ -126,12 +126,22 @@ public class EndianSwapper extends Module {
 		getOutputBus().getPeer().setBus(orOpMulti.getResultBus());
 	}
 
+	@Override
+	public void accept(Visitor vis) {
+		vis.visit(this);
+	}
+
 	public Port getInputPort() {
 		return getDataPorts().iterator().next();
 	}
 
 	public Bus getOutputBus() {
 		return getDataBuses().iterator().next();
+	}
+
+	@Override
+	public boolean isOpaque() {
+		return true;
 	}
 
 	/**
@@ -151,15 +161,5 @@ public class EndianSwapper extends Module {
 			return true;
 		}
 		return false;
-	}
-
-	@Override
-	public void accept(Visitor vis) {
-		vis.visit(this);
-	}
-
-	@Override
-	public boolean isOpaque() {
-		return true;
 	}
 }

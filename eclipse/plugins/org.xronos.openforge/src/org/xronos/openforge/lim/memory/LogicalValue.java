@@ -32,18 +32,13 @@ package org.xronos.openforge.lim.memory;
 public interface LogicalValue extends MemoryVisitable {
 
 	/**
-	 * Gets the size in addressable units of this LogicalValue.
+	 * Returns a new LogicalValue object which has been deep copied from the
+	 * current LogicalValue
 	 * 
-	 * @return the number of addressable units needed to represent this value;
-	 *         this number may be 0 in the case of an empty data item, such as
-	 *         an array of 0 elements
+	 * @return a new LogicalValue with the same structure and initial values as
+	 *         this LogicalValue.
 	 */
-	public int getSize();
-
-	/**
-	 * Returns the number of bits allocated in this logical value
-	 */
-	public int getBitSize();
+	public LogicalValue copy();
 
 	/**
 	 * Returns the address stride policy governing this logical value.
@@ -60,6 +55,11 @@ public interface LogicalValue extends MemoryVisitable {
 	public int getAlignmentSize();
 
 	/**
+	 * Returns the number of bits allocated in this logical value
+	 */
+	public int getBitSize();
+
+	/**
 	 * Gets the bitwise representation of this value.
 	 * 
 	 * @return an array of {@link AddressableUnit} objects, ordered in Least
@@ -71,13 +71,28 @@ public interface LogicalValue extends MemoryVisitable {
 	public AddressableUnit[] getRep();
 
 	/**
-	 * Returns a new LogicalValue object which has been deep copied from the
-	 * current LogicalValue
+	 * Gets the size in addressable units of this LogicalValue.
 	 * 
-	 * @return a new LogicalValue with the same structure and initial values as
-	 *         this LogicalValue.
+	 * @return the number of addressable units needed to represent this value;
+	 *         this number may be 0 in the case of an empty data item, such as
+	 *         an array of 0 elements
 	 */
-	public LogicalValue copy();
+	public int getSize();
+
+	/**
+	 * Gets a {@link LogicalValue} that represents a specific portion of this
+	 * value.
+	 * 
+	 * @param delta
+	 *            the number of addressable units from the beginning of this
+	 *            value at which the returned value starts
+	 * @param size
+	 *            the size of the returned value
+	 * @return a new value that represents the contents of this value starting
+	 *         at <code>delta</code> units from the beginning of this value and
+	 *         extending for <code>size</code> bytes
+	 */
+	public LogicalValue getValueAtOffset(int delta, int size);
 
 	/**
 	 * Returns a copy of this LogicalValue in which the range of addressable
@@ -118,19 +133,4 @@ public interface LogicalValue extends MemoryVisitable {
 	 *         denote a valid location
 	 */
 	public Location toLocation();
-
-	/**
-	 * Gets a {@link LogicalValue} that represents a specific portion of this
-	 * value.
-	 * 
-	 * @param delta
-	 *            the number of addressable units from the beginning of this
-	 *            value at which the returned value starts
-	 * @param size
-	 *            the size of the returned value
-	 * @return a new value that represents the contents of this value starting
-	 *         at <code>delta</code> units from the beginning of this value and
-	 *         extending for <code>size</code> bytes
-	 */
-	public LogicalValue getValueAtOffset(int delta, int size);
 }

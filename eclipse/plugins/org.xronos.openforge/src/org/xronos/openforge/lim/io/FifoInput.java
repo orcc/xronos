@@ -56,15 +56,10 @@ public abstract class FifoInput extends FifoIF {
 	}
 
 	/**
-	 * Returns true due to the fact that the data pin for this interface is an
-	 * input to the design.
-	 * 
-	 * @return true
+	 * Returns the output ack pin which indicates that this interface is
+	 * acknowledging reciept of the current send value
 	 */
-	@Override
-	public boolean isInput() {
-		return true;
-	}
+	public abstract SimplePin getAckPin();
 
 	/** Returns the input data pin */
 	public abstract SimplePin getDataPin();
@@ -76,10 +71,15 @@ public abstract class FifoInput extends FifoIF {
 	public abstract SimplePin getSendPin();
 
 	/**
-	 * Returns the output ack pin which indicates that this interface is
-	 * acknowledging reciept of the current send value
+	 * Returns true due to the fact that the data pin for this interface is an
+	 * input to the design.
+	 * 
+	 * @return true
 	 */
-	public abstract SimplePin getAckPin();
+	@Override
+	public boolean isInput() {
+		return true;
+	}
 
 	@Override
 	public String toString() {

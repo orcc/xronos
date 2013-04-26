@@ -86,8 +86,7 @@ public abstract class FifoID {
 		}
 
 		String tokens[] = encoded.split(DELIMITER);
-		for (int i = 0; i < tokens.length; i++) {
-			String token = tokens[i];
+		for (String token : tokens) {
 			if (token.equals(READ_PREFIX) || token.equals(WRITE_PREFIX)) {
 				// Skip the read and write prefixes that may be applied.
 				continue;
@@ -115,46 +114,6 @@ public abstract class FifoID {
 	}
 
 	/**
-	 * Sets the specified value as the width (in bytes) of the Fifo interface.
-	 * 
-	 * @param width
-	 *            a positive int value.
-	 * @throws IllegalArgumentException
-	 *             if width is 0 or negative.
-	 */
-	public void setByteWidth(int width) {
-		if (width <= 0) {
-			throw new IllegalArgumentException("Fifo byte width must be > 0");
-		}
-
-		// this.interfaceByteWidth = width;
-		setBitWidth(width * 8);
-	}
-
-	/**
-	 * Returns the defined width of the Fifo interface in bytes.
-	 * 
-	 * @return a positive int, the byte width of the interface.
-	 */
-	public int getByteWidth() {
-		return interfaceWidth / 8;
-	}
-
-	/**
-	 * Sets the width in bits.
-	 * 
-	 * @param width
-	 *            a value of type 'int'
-	 */
-	public void setBitWidth(int width) {
-		if (width <= 0) {
-			throw new IllegalArgumentException("Fifo bit width must be > 0");
-		}
-
-		interfaceWidth = width;
-	}
-
-	/**
 	 * Gets the width in bits.
 	 * 
 	 * @param width
@@ -165,73 +124,12 @@ public abstract class FifoID {
 	}
 
 	/**
-	 * Sets the id number of this FifoID. ID numbers are used to uniquely
-	 * identify one fifo interface from another in the design.
+	 * Returns the defined width of the Fifo interface in bytes.
 	 * 
-	 * @param id
-	 *            any String
+	 * @return a positive int, the byte width of the interface.
 	 */
-	public void setID(String id) {
-		interfaceName = id;
-	}
-
-	/**
-	 * Returns the unique interface identifying name for this identifier.
-	 * 
-	 * @return a 'String'
-	 */
-	public String getID() {
-		return interfaceName;
-	}
-
-	public void setType(int type) {
-		if ((type != TYPE_FSL) && (type != TYPE_ACTION_SCALAR)
-				&& (type != TYPE_ACTION_NATIVE_SCALAR)
-				&& (type != TYPE_ACTION_OBJECT)
-				&& (type != TYPE_ACTION_CIRCULAR_BUFFER)) {
-			throw new IllegalArgumentException(
-					"Unknown interface type specified " + type);
-		}
-		interfaceType = type;
-	}
-
-	/**
-	 * Returns the type of fifo interface represented by this id class.
-	 * 
-	 * @return an int, matching one of the public static final ints in this
-	 *         class.
-	 */
-	public int getType() {
-		return interfaceType;
-	}
-
-	/**
-	 * Return the unique name (prefix) for this identified interface, eg FSLnum,
-	 * etc.
-	 * 
-	 * @return a value of type 'String'
-	 */
-	public abstract String getName();
-
-	/**
-	 * Sets the direction of the identified Fifo interface, true if the Fifo
-	 * interface is an input to the design, false otherwise.
-	 * 
-	 * @param read
-	 *            a value of type 'boolean'
-	 */
-	public void setDirection(boolean read) {
-		isInput = read;
-	}
-
-	/**
-	 * Returns true if this identifier specifies an input (read) fifo interface
-	 * .
-	 * 
-	 * @return a 'boolean'
-	 */
-	public boolean isInputFifo() {
-		return isInput;
+	public int getByteWidth() {
+		return interfaceWidth / 8;
 	}
 
 	/**
@@ -252,6 +150,23 @@ public abstract class FifoID {
 	}
 
 	/**
+	 * Returns the unique interface identifying name for this identifier.
+	 * 
+	 * @return a 'String'
+	 */
+	public String getID() {
+		return interfaceName;
+	}
+
+	/**
+	 * Return the unique name (prefix) for this identified interface, eg FSLnum,
+	 * etc.
+	 * 
+	 * @return a value of type 'String'
+	 */
+	public abstract String getName();
+
+	/**
 	 * Returns a String which fully encodes all the properties of a read access
 	 * to the Fifo indicated by this FifoID
 	 * 
@@ -268,6 +183,16 @@ public abstract class FifoID {
 	}
 
 	/**
+	 * Returns the type of fifo interface represented by this id class.
+	 * 
+	 * @return an int, matching one of the public static final ints in this
+	 *         class.
+	 */
+	public int getType() {
+		return interfaceType;
+	}
+
+	/**
 	 * Returns a String which fully encodes all the properties of a write access
 	 * to the Fifo indicated by this FifoID
 	 * 
@@ -281,6 +206,80 @@ public abstract class FifoID {
 					"Cannot write to an input fifo interface");
 		}
 		return WRITE_PREFIX + getEncodedID();
+	}
+
+	/**
+	 * Returns true if this identifier specifies an input (read) fifo interface
+	 * .
+	 * 
+	 * @return a 'boolean'
+	 */
+	public boolean isInputFifo() {
+		return isInput;
+	}
+
+	/**
+	 * Sets the width in bits.
+	 * 
+	 * @param width
+	 *            a value of type 'int'
+	 */
+	public void setBitWidth(int width) {
+		if (width <= 0) {
+			throw new IllegalArgumentException("Fifo bit width must be > 0");
+		}
+
+		interfaceWidth = width;
+	}
+
+	/**
+	 * Sets the specified value as the width (in bytes) of the Fifo interface.
+	 * 
+	 * @param width
+	 *            a positive int value.
+	 * @throws IllegalArgumentException
+	 *             if width is 0 or negative.
+	 */
+	public void setByteWidth(int width) {
+		if (width <= 0) {
+			throw new IllegalArgumentException("Fifo byte width must be > 0");
+		}
+
+		// this.interfaceByteWidth = width;
+		setBitWidth(width * 8);
+	}
+
+	/**
+	 * Sets the direction of the identified Fifo interface, true if the Fifo
+	 * interface is an input to the design, false otherwise.
+	 * 
+	 * @param read
+	 *            a value of type 'boolean'
+	 */
+	public void setDirection(boolean read) {
+		isInput = read;
+	}
+
+	/**
+	 * Sets the id number of this FifoID. ID numbers are used to uniquely
+	 * identify one fifo interface from another in the design.
+	 * 
+	 * @param id
+	 *            any String
+	 */
+	public void setID(String id) {
+		interfaceName = id;
+	}
+
+	public void setType(int type) {
+		if (type != TYPE_FSL && type != TYPE_ACTION_SCALAR
+				&& type != TYPE_ACTION_NATIVE_SCALAR
+				&& type != TYPE_ACTION_OBJECT
+				&& type != TYPE_ACTION_CIRCULAR_BUFFER) {
+			throw new IllegalArgumentException(
+					"Unknown interface type specified " + type);
+		}
+		interfaceType = type;
 	}
 
 }// FifoID

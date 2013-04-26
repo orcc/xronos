@@ -41,6 +41,14 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	public static final int NULL_ADDRESS = -1;
 
 	/**
+	 * Constructs a null <code>Pointer</code>. A target may be set later with
+	 * {@link Pointer#setTarget(Location)}.
+	 */
+	public Pointer() {
+		this((Location) null);
+	}
+
+	/**
 	 * Creates a new <code>Pointer</code> instance with
 	 * {@link AddressStridePolicy#BYTE_ADDRESSING} addressing policy
 	 */
@@ -64,14 +72,6 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	}
 
 	/**
-	 * Constructs a null <code>Pointer</code>. A target may be set later with
-	 * {@link Pointer#setTarget(Location)}.
-	 */
-	public Pointer() {
-		this((Location) null);
-	}
-
-	/**
 	 * Implementation of the MemoryVisitable interface.
 	 * 
 	 * @param memVis
@@ -85,18 +85,14 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	}
 
 	/**
-	 * Gets the size in addressable units of a Pointer.
+	 * Returns a new LogicalValue object (Pointer) which points to the same
+	 * Location object as the current LogicalValue.
 	 * 
-	 * @return the number of addressable units needed to represent this pointer.
+	 * @return a new LogicalValue which points to the same Location object.
 	 */
 	@Override
-	public int getSize() {
-		return getBitSize() / stridePolicy.getStride();
-	}
-
-	@Override
-	public int getBitSize() {
-		return org.xronos.openforge.app.TypeLimits.C.getPointerSize();
+	public LogicalValue copy() {
+		return new Pointer(target);
 	}
 
 	/**
@@ -117,6 +113,11 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 		return getSize();
 	}
 
+	@Override
+	public int getBitSize() {
+		return org.xronos.openforge.app.TypeLimits.C.getPointerSize();
+	}
+
 	/**
 	 * Gets the bitwise representation of this value, which is the address of
 	 * the target location in the containing memory.
@@ -134,19 +135,21 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 		// assert rep.length <= 4 : "Pointer size too wide";
 		assert getBitSize() <= 32 : "Pointer size too wide";
 		int address;
-		if (target == null)
+		if (target == null) {
 			address = NULL_ADDRESS;
-		else
+		} else {
 			address = target.getLogicalMemory().getAddress(target);
+		}
 
 		assert stridePolicy.getStride() <= 64;
 		int stride = stridePolicy.getStride();
 		int mask = 0;
-		for (int i = 0; i < stride; i++)
-			mask |= (1 << i);
+		for (int i = 0; i < stride; i++) {
+			mask |= 1 << i;
+		}
 
 		for (int i = 0; i < rep.length; i++) {
-			int currentValue = (address >>> (stride * i)) & mask;
+			int currentValue = address >>> stride * i & mask;
 			rep[i] = new AddressableUnit(currentValue);
 		}
 
@@ -164,6 +167,16 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	}
 
 	/**
+	 * Gets the size in addressable units of a Pointer.
+	 * 
+	 * @return the number of addressable units needed to represent this pointer.
+	 */
+	@Override
+	public int getSize() {
+		return getBitSize() / stridePolicy.getStride();
+	}
+
+	/**
 	 * Gets the target {@link Location} of this pointer.
 	 * 
 	 * @return the symbolic location which this pointer references
@@ -173,15 +186,14 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 		return target;
 	}
 
-	/**
-	 * Sets the target {@link Location} of this pointer.
-	 * 
-	 * @param location
-	 *            the symbolic location which this pointer references
-	 */
+	/** @inheritDoc */
 	@Override
-	public void setTarget(Location location) {
-		target = location;
+	public LogicalValue getValueAtOffset(int delta, int size) {
+		if (delta == 0 && size == getSize()) {
+			return this;
+		}
+
+		return new Slice(this, delta, size);
 	}
 
 	/**
@@ -191,17 +203,6 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	 */
 	public boolean isNull() {
 		return target == null;
-	}
-
-	/**
-	 * Returns a new LogicalValue object (Pointer) which points to the same
-	 * Location object as the current LogicalValue.
-	 * 
-	 * @return a new LogicalValue which points to the same Location object.
-	 */
-	@Override
-	public LogicalValue copy() {
-		return new Pointer(target);
 	}
 
 	/**
@@ -229,6 +230,17 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	}
 
 	/**
+	 * Sets the target {@link Location} of this pointer.
+	 * 
+	 * @param location
+	 *            the symbolic location which this pointer references
+	 */
+	@Override
+	public void setTarget(Location location) {
+		target = location;
+	}
+
+	/**
 	 * Returns a LocationConstant for this pointer.
 	 * 
 	 * @see org.xronos.openforge.lim.memory.LogicalValue#toConstant()
@@ -248,16 +260,6 @@ public class Pointer implements LogicalValue, MemoryVisitable,
 	@Override
 	public Location toLocation() {
 		return getTarget();
-	}
-
-	/** @inheritDoc */
-	@Override
-	public LogicalValue getValueAtOffset(int delta, int size) {
-		if ((delta == 0) && (size == getSize())) {
-			return this;
-		}
-
-		return new Slice(this, delta, size);
 	}
 
 	@Override

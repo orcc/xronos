@@ -36,7 +36,6 @@ import org.xronos.openforge.lim.primitive.Mux;
 import org.xronos.openforge.lim.primitive.Or;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * Acts as a gateway for Memory read/writes into and out of a procedure
  * 
@@ -54,18 +53,97 @@ import org.xronos.openforge.util.naming.ID;
  */
 public class MemoryGateway extends Gateway {
 
-	private List<ReadSlot> readSlots;
-	private List<WriteSlot> writeSlots;
+	public class ReadSlot {
+		Port enable;
+		Port address;
+		Port size;
+		Bus ready;
+		Bus data;
+
+		public ReadSlot(Port enable, Port address, Port size, Bus ready,
+				Bus data) {
+			this.enable = enable;
+			this.address = address;
+			this.size = size;
+			this.ready = ready;
+			this.data = data;
+		}
+
+		public Port getAddress() {
+			return address;
+		}
+
+		public Bus getData() {
+			return data;
+		}
+
+		public Port getEnable() {
+			return enable;
+		}
+
+		public Bus getReady() {
+			return ready;
+		}
+
+		public Port getSizePort() {
+			return size;
+		}
+	}
+
+	public class WriteSlot {
+		Port enable;
+		Port address;
+		Port size;
+		Bus done;
+		Port data;
+
+		public WriteSlot(Port enable, Port address, Port data, Port size,
+				Bus done) {
+			this.enable = enable;
+			this.address = address;
+			this.done = done;
+			this.data = data;
+			this.size = size;
+		}
+
+		public Port getAddress() {
+			return address;
+		}
+
+		public Port getData() {
+			return data;
+		}
+
+		public Bus getDone() {
+			return done;
+		}
+
+		public Port getEnable() {
+			return enable;
+		}
+
+		public Port getSizePort() {
+			return size;
+		}
+	}
 
 	// private List localDataPorts;
 
+	private List<ReadSlot> readSlots;
+	private List<WriteSlot> writeSlots;
 	private Port memoryDonePort;
 	private Port memoryDataReadPort;
 	private Bus memoryReadEnableBus;
 	private Bus memoryWriteEnableBus;
 	private Bus memoryAddressBus;
+
 	private Bus memorySizeBus;
+
 	private Bus memoryDataWriteBus;
+
+	// public List getLocalDataPorts() {
+	// return localDataPorts;
+	// }
 
 	/**
 	 * Creates a MemoryGateway with size entries (one per MemoryWrite)
@@ -86,9 +164,9 @@ public class MemoryGateway extends Gateway {
 	public MemoryGateway(LogicalMemoryPort resource, int reads, int writes,
 			int maxAddressWidth) {
 		super(resource);
-		assert (writes + reads) > 0 : "Illegal number of accesses: "
+		assert writes + reads > 0 : "Illegal number of accesses: "
 				+ Integer.toString(writes + reads) + " for memory gateway";
-		assert (resource != null) : "Can't create a gateway for a null LogicalMemoryPort";
+		assert resource != null : "Can't create a gateway for a null LogicalMemoryPort";
 
 		final StructuralMemory structMem = resource.getStructuralMemory();
 		final int dataWidth = structMem.getDataWidth();
@@ -147,7 +225,7 @@ public class MemoryGateway extends Gateway {
 			internalReadEnable = readOrBus;
 		}
 
-		if ((reads + writes) > 1) {
+		if (reads + writes > 1) {
 			addressMux = new Mux(reads + writes);
 			addressMux.setIDLogical(baseName + "_amux");
 			Bus addressMuxBus = addressMux.getResultBus();
@@ -167,15 +245,15 @@ public class MemoryGateway extends Gateway {
 		readSlots = new ArrayList<ReadSlot>(reads);
 		writeSlots = new ArrayList<WriteSlot>(writes);
 
-		Iterator<Port> addressMuxPorts = (addressMux != null) ? addressMux
+		Iterator<Port> addressMuxPorts = addressMux != null ? addressMux
 				.getGoPorts().iterator() : null;
-		Iterator<Port> sizeMuxPorts = (sizeMux != null) ? sizeMux.getGoPorts()
+		Iterator<Port> sizeMuxPorts = sizeMux != null ? sizeMux.getGoPorts()
 				.iterator() : null;
 
 		if (writes > 0) {
-			Iterator<Port> dataMuxPorts = (dataMux != null) ? dataMux
+			Iterator<Port> dataMuxPorts = dataMux != null ? dataMux
 					.getGoPorts().iterator() : null;
-			Iterator<Port> writeOrPorts = (writeOr != null) ? writeOr
+			Iterator<Port> writeOrPorts = writeOr != null ? writeOr
 					.getDataPorts().iterator() : null;
 
 			for (int i = 0; i < writes; i++) {
@@ -236,8 +314,8 @@ public class MemoryGateway extends Gateway {
 		}
 
 		if (reads > 0) {
-			Iterator<Port> readOrPorts = (readOr != null) ? readOr
-					.getDataPorts().iterator() : null;
+			Iterator<Port> readOrPorts = readOr != null ? readOr.getDataPorts()
+					.iterator() : null;
 
 			for (int i = 0; i < reads; i++) {
 				Port localReadEnablePort = makeDataPort();
@@ -326,16 +404,12 @@ public class MemoryGateway extends Gateway {
 		visitor.visit(this);
 	}
 
-	// public List getLocalDataPorts() {
-	// return localDataPorts;
-	// }
-
 	/**
-	 * Returns the port which receives the done signal for the current memory
-	 * operation. Should be attached to the MemoryPort's Done bus.
+	 * Returns the bus which provides the address for the current read or write
+	 * operation. This should get attached to the MemoryPort's address port.
 	 */
-	public Port getMemoryDonePort() {
-		return memoryDonePort;
+	public Bus getMemoryAddressBus() {
+		return memoryAddressBus;
 	}
 
 	/**
@@ -347,30 +421,6 @@ public class MemoryGateway extends Gateway {
 	}
 
 	/**
-	 * Returns the bus which is used to assert a read operation. Should be
-	 * attached to the read enable port of the MemoryPort.
-	 */
-	public Bus getMemoryReadEnableBus() {
-		return memoryReadEnableBus;
-	}
-
-	/**
-	 * Returns the bus which is used to assert a write operation. Should be
-	 * attached to the write enable port of the MemoryPort.
-	 */
-	public Bus getMemoryWriteEnableBus() {
-		return memoryWriteEnableBus;
-	}
-
-	/**
-	 * Returns the bus which provides the address for the current read or write
-	 * operation. This should get attached to the MemoryPort's address port.
-	 */
-	public Bus getMemoryAddressBus() {
-		return memoryAddressBus;
-	}
-
-	/**
 	 * Returns the bus which provides data for the current write. This should
 	 * get attached to the MemoryPort's data in port.
 	 */
@@ -379,11 +429,35 @@ public class MemoryGateway extends Gateway {
 	}
 
 	/**
+	 * Returns the port which receives the done signal for the current memory
+	 * operation. Should be attached to the MemoryPort's Done bus.
+	 */
+	public Port getMemoryDonePort() {
+		return memoryDonePort;
+	}
+
+	/**
+	 * Returns the bus which is used to assert a read operation. Should be
+	 * attached to the read enable port of the MemoryPort.
+	 */
+	public Bus getMemoryReadEnableBus() {
+		return memoryReadEnableBus;
+	}
+
+	/**
 	 * Returns the bus which provides the size value for the access to the
 	 * memory.
 	 */
 	public Bus getMemorySizeBus() {
 		return memorySizeBus;
+	}
+
+	/**
+	 * Returns the bus which is used to assert a write operation. Should be
+	 * attached to the write enable port of the MemoryPort.
+	 */
+	public Bus getMemoryWriteEnableBus() {
+		return memoryWriteEnableBus;
 	}
 
 	/**
@@ -400,80 +474,6 @@ public class MemoryGateway extends Gateway {
 	 */
 	public List<WriteSlot> getWriteSlots() {
 		return writeSlots;
-	}
-
-	public class ReadSlot {
-		Port enable;
-		Port address;
-		Port size;
-		Bus ready;
-		Bus data;
-
-		public ReadSlot(Port enable, Port address, Port size, Bus ready,
-				Bus data) {
-			this.enable = enable;
-			this.address = address;
-			this.size = size;
-			this.ready = ready;
-			this.data = data;
-		}
-
-		public Port getEnable() {
-			return enable;
-		}
-
-		public Port getAddress() {
-			return address;
-		}
-
-		public Port getSizePort() {
-			return size;
-		}
-
-		public Bus getReady() {
-			return ready;
-		}
-
-		public Bus getData() {
-			return data;
-		}
-	}
-
-	public class WriteSlot {
-		Port enable;
-		Port address;
-		Port size;
-		Bus done;
-		Port data;
-
-		public WriteSlot(Port enable, Port address, Port data, Port size,
-				Bus done) {
-			this.enable = enable;
-			this.address = address;
-			this.done = done;
-			this.data = data;
-			this.size = size;
-		}
-
-		public Port getEnable() {
-			return enable;
-		}
-
-		public Port getAddress() {
-			return address;
-		}
-
-		public Bus getDone() {
-			return done;
-		}
-
-		public Port getData() {
-			return data;
-		}
-
-		public Port getSizePort() {
-			return size;
-		}
 	}
 
 }

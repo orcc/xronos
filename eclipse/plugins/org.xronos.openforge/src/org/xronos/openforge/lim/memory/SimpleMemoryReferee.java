@@ -37,7 +37,6 @@ import org.xronos.openforge.lim.primitive.Or;
 import org.xronos.openforge.lim.primitive.Reg;
 import org.xronos.openforge.schedule.GlobalConnector;
 
-
 /**
  * SimpleMemoryReferee is an implementation of the memory referee in which the
  * multiple memory accessors are simply 'merged' together by muxes and or gates.
@@ -74,10 +73,12 @@ public class SimpleMemoryReferee extends MemoryReferee {
 		for (int i = 0; i < numTaskSlots; i++) {
 			boolean doesRead = readList.get(i) != null;
 			boolean doesWrite = writeList.get(i) != null;
-			if (doesRead)
+			if (doesRead) {
 				readCount++;
-			if (doesWrite)
+			}
+			if (doesWrite) {
 				writeCount++;
+			}
 			TaskSlot ts = new TaskSlot(this, memoryWidth, addressWidth,
 					doesRead, doesWrite);
 			addTaskSlot(ts);
@@ -187,9 +188,10 @@ public class SimpleMemoryReferee extends MemoryReferee {
 					if (wenOr != null) {
 						wenOrPorts.next().setBus(wen);
 					}
-					if (wenResult == null)
+					if (wenResult == null) {
 						wenResult = wen;// in case of 1 write slot, pick up the
-										// wen here
+					}
+					// wen here
 					Port goPort = writeMuxGo.next();
 					Port dataPort = writeDataMux.getDataPort(goPort);
 					goPort.setBus(slot.getGoWPort().getPeer());

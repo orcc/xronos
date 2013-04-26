@@ -56,6 +56,27 @@ public abstract class FifoOutput extends FifoIF {
 	}
 
 	/**
+	 * Returns the input acknowledge pin, indicating that the queue that the
+	 * interface is sending to has acknowledged reciept of the data
+	 */
+	public abstract SimplePin getAckPin();
+
+	/** Returns the output data pin for this interface */
+	public abstract SimplePin getDataPin();
+
+	/**
+	 * If available, returns the input pin indicating that the output WILL
+	 * immediately ack a send token. May be null.
+	 */
+	public abstract SimplePin getReadyPin();
+
+	/**
+	 * Returns the output send pin, indicating that the interface is outputting
+	 * valid data
+	 */
+	public abstract SimplePin getSendPin();
+
+	/**
 	 * Returns false due to the fact that the data pin for this interface is an
 	 * output to the design.
 	 * 
@@ -65,27 +86,6 @@ public abstract class FifoOutput extends FifoIF {
 	public boolean isInput() {
 		return false;
 	}
-
-	/** Returns the output data pin for this interface */
-	public abstract SimplePin getDataPin();
-
-	/**
-	 * Returns the output send pin, indicating that the interface is outputting
-	 * valid data
-	 */
-	public abstract SimplePin getSendPin();
-
-	/**
-	 * Returns the input acknowledge pin, indicating that the queue that the
-	 * interface is sending to has acknowledged reciept of the data
-	 */
-	public abstract SimplePin getAckPin();
-
-	/**
-	 * If available, returns the input pin indicating that the output WILL
-	 * immediately ack a send token. May be null.
-	 */
-	public abstract SimplePin getReadyPin();
 
 	@Override
 	public String toString() {

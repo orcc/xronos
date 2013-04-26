@@ -73,7 +73,6 @@ import org.xronos.openforge.lim.memory.StructuralMemory;
 import org.xronos.openforge.util.graphviz.Graph;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * LXGraph produces an expanded LIM {@link Graph}. It creates a separate
  * subgraph for each {@link Module} in a {@link Visitable} hierarchy. Every
@@ -84,6 +83,24 @@ import org.xronos.openforge.util.naming.ID;
  * @version $Id: LXGraph.java 108 2006-02-23 15:53:48Z imiller $
  */
 public class LXGraph extends DefaultVisitor {
+
+	public static void graphTo(Design design, String filename) {
+		try {
+			LXGraph lxg = new LXGraph(design, 10);
+			lxg.print(new PrintWriter(new FileOutputStream(filename)));
+		} catch (IOException ioe) {
+			throw new RuntimeException(ioe);
+		}
+	}
+
+	public static void graphTo(Visitable module, String filename, int layers) {
+		try {
+			LXGraph lxg = new LXGraph(module.toString(), module, 10, layers);
+			lxg.print(new PrintWriter(new FileOutputStream(filename)));
+		} catch (IOException ioe) {
+			throw new RuntimeException(ioe);
+		}
+	}
 
 	/** The top level graph */
 	private Graph graph;
@@ -96,10 +113,48 @@ public class LXGraph extends DefaultVisitor {
 
 	private int fontSize;
 
+	private int layersToGraph = -1;
+
+	/**
+	 * Designed to graph a design
+	 * 
+	 * @param design
+	 *            a value of type 'Design'
+	 */
+	public LXGraph(Design design, int fontSize) {
+		super();
+		this.fontSize = fontSize;
+		graph = new Graph(ID.showLogical(design));
+		graph.setLabel(ID.showLogical(design));
+
+		/*
+		 * Some attributes to make the graph smaller, and to print to several
+		 * pages when printed via: dot -Tps file.dot | lpr
+		 */
+		graph.setGVAttribute("ratio", "auto");
+		graph.setGVAttribute("ranksep", ".5");
+		graph.setGVAttribute("nodesep", ".12");
+		graph.setGVAttribute("fontsize", "" + fontSize);
+		// this.graph.setGVAttribute("fontname","Courier");
+		// this.graph.setGVAttribute("page","8.5,11.0");
+
+		design.accept(this);
+	}
+
 	public LXGraph(String name, Visitable topModule, int fontSize) {
 		// graph all layers
 		this(name, topModule, fontSize, -1);
 	}
+
+	// public static void graphTo (Module module, String filename)
+	// {
+	// graphTo(module, filename, -1); // all layers
+	// }
+
+	// public static void graphTo (Module module, String filename, int layers)
+	// {
+	// graphTo((Visitable)module, filename, layers);
+	// }
 
 	/**
 	 * Constructs a new LXGraph.
@@ -131,34 +186,28 @@ public class LXGraph extends DefaultVisitor {
 		if (topModule instanceof StructuralMemory
 				|| topModule instanceof Register.Physical) {
 			doSubgraph((Module) topModule);
-		} else
+		} else {
 			topModule.accept(this);
+		}
 	}
 
-	/**
-	 * Designed to graph a design
-	 * 
-	 * @param design
-	 *            a value of type 'Design'
-	 */
-	public LXGraph(Design design, int fontSize) {
-		super();
-		this.fontSize = fontSize;
-		graph = new Graph(ID.showLogical(design));
-		graph.setLabel(ID.showLogical(design));
+	// ////////////////////////////////
+	// ////////////////////////////////
+	//
+	// Visitor methods
+	//
+	// ////////////////////////////////
+	// ////////////////////////////////
 
-		/*
-		 * Some attributes to make the graph smaller, and to print to several
-		 * pages when printed via: dot -Tps file.dot | lpr
-		 */
-		graph.setGVAttribute("ratio", "auto");
-		graph.setGVAttribute("ranksep", ".5");
-		graph.setGVAttribute("nodesep", ".12");
-		graph.setGVAttribute("fontsize", "" + fontSize);
-		// this.graph.setGVAttribute("fontname","Courier");
-		// this.graph.setGVAttribute("page","8.5,11.0");
-
-		design.accept(this);
+	private void doSubgraph(Module mod) {
+		BlackBoxGraph physGraph = new BlackBoxGraph(ID.showLogical(mod), mod,
+				nodeCount++, fontSize);
+		for (Component comp : mod.getComponents()) {
+			physGraph.addComponent(comp);
+			nodeCount++;
+		}
+		physGraph.graphAddedComponents();
+		graph.addSubgraph(physGraph);
 	}
 
 	/**
@@ -173,41 +222,55 @@ public class LXGraph extends DefaultVisitor {
 		writer.flush();
 	}
 
-	public static void graphTo(Design design, String filename) {
-		try {
-			LXGraph lxg = new LXGraph(design, 10);
-			lxg.print(new PrintWriter(new FileOutputStream(filename)));
-		} catch (IOException ioe) {
-			throw new RuntimeException(ioe);
+	/**
+	 * 
+	 * Adds the given graph as a subgraph of the current graph, but allows for a
+	 * hierarchical limit. The trigger is set to true on the first pass through
+	 * this method (when we've graphed one module) which has the effect of
+	 * hiding any sub-modules
+	 */
+	private void pushSubgraph(Graph graph) {
+		if (layersToGraph != 0) {
+			layersToGraph -= 1;
+			this.graph.addSubgraph(graph);
 		}
 	}
 
-	// public static void graphTo (Module module, String filename)
-	// {
-	// graphTo(module, filename, -1); // all layers
-	// }
-
-	// public static void graphTo (Module module, String filename, int layers)
-	// {
-	// graphTo((Visitable)module, filename, layers);
-	// }
-
-	public static void graphTo(Visitable module, String filename, int layers) {
-		try {
-			LXGraph lxg = new LXGraph(module.toString(), module, 10, layers);
-			lxg.print(new PrintWriter(new FileOutputStream(filename)));
-		} catch (IOException ioe) {
-			throw new RuntimeException(ioe);
-		}
+	@Override
+	public void visit(AbsoluteMemoryRead block) {
+		_graph.ln("Visit: " + block);
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(block);
 	}
 
-	// ////////////////////////////////
-	// ////////////////////////////////
-	//
-	// Visitor methods
-	//
-	// ////////////////////////////////
-	// ////////////////////////////////
+	@Override
+	public void visit(AbsoluteMemoryWrite block) {
+		_graph.ln("Visit: " + block);
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(block);
+	}
+
+	@Override
+	public void visit(ArrayRead block) {
+		_graph.ln("Visit: " + block);
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(block);
+	}
+
+	@Override
+	public void visit(ArrayWrite block) {
+		_graph.ln("Visit: " + block);
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(block);
+	}
 
 	@Override
 	public void visit(Block block) {
@@ -216,6 +279,15 @@ public class LXGraph extends DefaultVisitor {
 		pushSubgraph(subgraph);
 		nodeCount = subgraph.getNodeCount();
 		super.visit(block);
+	}
+
+	@Override
+	public void visit(Branch branch) {
+		_graph.ln("Visit: " + branch);
+		ModuleGraph subgraph = new ModuleGraph(branch, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(branch);
 	}
 
 	@Override
@@ -234,30 +306,49 @@ public class LXGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(Latch block) {
-		_graph.ln("Visit: " + block);
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+	public void visit(Decision decision) {
+		_graph.ln("Visit: " + decision);
+		ModuleGraph subgraph = new ModuleGraph(decision, nodeCount++, fontSize);
 		pushSubgraph(subgraph);
 		nodeCount = subgraph.getNodeCount();
-		super.visit(block);
+		super.visit(decision);
 	}
 
 	@Override
-	public void visit(TaskCall block) {
-		_graph.ln("Visit: " + block);
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(block);
+	public void visit(Design design) {
+		_graph.ln("Visit: " + design);
+
+		Module designMod = design.getDesignModule();
+		BlackBoxGraph designModuleGraph = new BlackBoxGraph(
+				ID.showLogical(design) + "_designModule", designMod,
+				nodeCount++, fontSize);
+		Set<Component> moduleComps = new HashSet<Component>();
+		for (Component comp : designMod.getComponents()) {
+			designModuleGraph.addComponent(comp);
+			if (comp instanceof Module) {
+				moduleComps.add(comp);
+			}
+			nodeCount++;
+		}
+		designModuleGraph.graphAddedComponents();
+		pushSubgraph(designModuleGraph);
+		nodeCount = designModuleGraph.getNodeCount();
+
+		for (Component comp : moduleComps) {
+			Module mod = (Module) comp;
+			doSubgraph(mod);
+		}
+		super.visit(design);
 	}
 
 	@Override
-	public void visit(SimplePinAccess block) {
-		_graph.ln("Visit: " + block);
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+	public void visit(EndianSwapper endianSwapper) {
+		_graph.ln("Visit: " + endianSwapper);
+		ModuleGraph subgraph = new ModuleGraph(endianSwapper, nodeCount++,
+				fontSize);
 		pushSubgraph(subgraph);
 		nodeCount = subgraph.getNodeCount();
-		super.visit(block);
+		super.visit(endianSwapper);
 	}
 
 	@Override
@@ -288,12 +379,12 @@ public class LXGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(Kicker block) {
-		_graph.ln("Visit: " + block);
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+	public void visit(ForBody body) {
+		_graph.ln("Visit: " + body);
+		ModuleGraph subgraph = new ModuleGraph(body, nodeCount++, fontSize);
 		pushSubgraph(subgraph);
 		nodeCount = subgraph.getNodeCount();
-		super.visit(block);
+		super.visit(body);
 	}
 
 	@Override
@@ -321,86 +412,6 @@ public class LXGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(MemoryReferee block) {
-		_graph.ln("Visit: " + block);
-		String id = ComponentNode.getShortClassName(block) + " @"
-				+ Integer.toHexString(block.hashCode());
-		id += ": " + block.showIDLogical();
-		BlackBoxGraph subgraph = new BlackBoxGraph(id, nodeCount++, fontSize);
-
-		for (Component comp : block.getComponents()) {
-			subgraph.addComponent(comp);
-		}
-
-		subgraph.graphAddedComponents();
-		graph.addSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(block);
-	}
-
-	@Override
-	public void visit(RegisterReferee block) {
-		_graph.ln("Visit: " + block);
-
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
-		graph.addSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-
-		super.visit(block);
-	}
-
-	@Override
-	public void visit(PinReferee block) {
-		_graph.ln("Visit: " + block);
-
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
-		graph.addSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-
-		super.visit(block);
-	}
-
-	@Override
-	public void visit(MemoryGateway block) {
-		_graph.ln("Visit: " + block);
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(block);
-	}
-
-	@Override
-	public void visit(RegisterGateway block) {
-		_graph.ln("Visit: " + block);
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(block);
-	}
-
-	@Override
-	public void visit(MemoryWrite mw) {
-		_graph.ln("Visit: " + mw);
-		if (mw.getPhysicalComponent() != null) {
-			ModuleGraph subgraph = new ModuleGraph(mw.getPhysicalComponent(),
-					nodeCount++, fontSize);
-			pushSubgraph(subgraph);
-			nodeCount = subgraph.getNodeCount();
-		}
-	}
-
-	@Override
-	public void visit(MemoryRead mr) {
-		_graph.ln("Visit: " + mr);
-		if (mr.getPhysicalComponent() != null) {
-			ModuleGraph subgraph = new ModuleGraph(mr.getPhysicalComponent(),
-					nodeCount++, fontSize);
-			pushSubgraph(subgraph);
-			nodeCount = subgraph.getNodeCount();
-		}
-	}
-
-	@Override
 	public void visit(HeapWrite block) {
 		_graph.ln("Visit: " + block);
 		// ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
@@ -419,7 +430,7 @@ public class LXGraph extends DefaultVisitor {
 			for (Port p : mw.getPhysicalComponent().getDataPorts()) {
 				Bus b = p.getBus();
 				@SuppressWarnings("unused")
-				Component owner = (b == null) ? null : b.getOwner().getOwner();
+				Component owner = b == null ? null : b.getOwner().getOwner();
 			}
 		}
 		subgraph.graphAddedComponents();
@@ -431,7 +442,7 @@ public class LXGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(ArrayRead block) {
+	public void visit(Kicker block) {
 		_graph.ln("Visit: " + block);
 		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
 		pushSubgraph(subgraph);
@@ -440,48 +451,12 @@ public class LXGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(ArrayWrite block) {
+	public void visit(Latch block) {
 		_graph.ln("Visit: " + block);
 		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
 		pushSubgraph(subgraph);
 		nodeCount = subgraph.getNodeCount();
 		super.visit(block);
-	}
-
-	@Override
-	public void visit(AbsoluteMemoryRead block) {
-		_graph.ln("Visit: " + block);
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(block);
-	}
-
-	@Override
-	public void visit(AbsoluteMemoryWrite block) {
-		_graph.ln("Visit: " + block);
-		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(block);
-	}
-
-	@Override
-	public void visit(Branch branch) {
-		_graph.ln("Visit: " + branch);
-		ModuleGraph subgraph = new ModuleGraph(branch, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(branch);
-	}
-
-	@Override
-	public void visit(Decision decision) {
-		_graph.ln("Visit: " + decision);
-		ModuleGraph subgraph = new ModuleGraph(decision, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(decision);
 	}
 
 	@Override
@@ -494,60 +469,52 @@ public class LXGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(ForBody body) {
-		_graph.ln("Visit: " + body);
-		ModuleGraph subgraph = new ModuleGraph(body, nodeCount++, fontSize);
+	public void visit(MemoryGateway block) {
+		_graph.ln("Visit: " + block);
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
 		pushSubgraph(subgraph);
 		nodeCount = subgraph.getNodeCount();
-		super.visit(body);
+		super.visit(block);
 	}
 
 	@Override
-	public void visit(WhileBody body) {
-		_graph.ln("Visit: " + body);
-		ModuleGraph subgraph = new ModuleGraph(body, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(body);
-	}
-
-	@Override
-	public void visit(UntilBody body) {
-		_graph.ln("Visit: " + body);
-		ModuleGraph subgraph = new ModuleGraph(body, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(body);
-	}
-
-	@Override
-	public void visit(Switch swich) {
-		_graph.ln("Visit: " + swich);
-		ModuleGraph subgraph = new ModuleGraph(swich, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(swich);
-	}
-
-	@Override
-	public void visit(PriorityMux pmux) {
-		_graph.ln("Visit: " + pmux);
-		ModuleGraph subgraph = new ModuleGraph(pmux, nodeCount++, fontSize);
-		pushSubgraph(subgraph);
-		nodeCount = subgraph.getNodeCount();
-		super.visit(pmux);
-	}
-
-	@Override
-	public void visit(PinWrite pwrite) {
-		_graph.ln("Visit: " + pwrite);
-		if (pwrite.getPhysicalComponent() != null) {
-			ModuleGraph subgraph = new ModuleGraph(
-					pwrite.getPhysicalComponent(), nodeCount++, fontSize);
+	public void visit(MemoryRead mr) {
+		_graph.ln("Visit: " + mr);
+		if (mr.getPhysicalComponent() != null) {
+			ModuleGraph subgraph = new ModuleGraph(mr.getPhysicalComponent(),
+					nodeCount++, fontSize);
 			pushSubgraph(subgraph);
 			nodeCount = subgraph.getNodeCount();
 		}
-		super.visit(pwrite);
+	}
+
+	@Override
+	public void visit(MemoryReferee block) {
+		_graph.ln("Visit: " + block);
+		String id = ComponentNode.getShortClassName(block) + " @"
+				+ Integer.toHexString(block.hashCode());
+		id += ": " + block.showIDLogical();
+		BlackBoxGraph subgraph = new BlackBoxGraph(id, nodeCount++, fontSize);
+
+		for (Component comp : block.getComponents()) {
+			subgraph.addComponent(comp);
+		}
+
+		subgraph.graphAddedComponents();
+		graph.addSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(block);
+	}
+
+	@Override
+	public void visit(MemoryWrite mw) {
+		_graph.ln("Visit: " + mw);
+		if (mw.getPhysicalComponent() != null) {
+			ModuleGraph subgraph = new ModuleGraph(mw.getPhysicalComponent(),
+					nodeCount++, fontSize);
+			pushSubgraph(subgraph);
+			nodeCount = subgraph.getNodeCount();
+		}
 	}
 
 	@Override
@@ -563,67 +530,100 @@ public class LXGraph extends DefaultVisitor {
 	}
 
 	@Override
-	public void visit(EndianSwapper endianSwapper) {
-		_graph.ln("Visit: " + endianSwapper);
-		ModuleGraph subgraph = new ModuleGraph(endianSwapper, nodeCount++,
-				fontSize);
-		pushSubgraph(subgraph);
+	public void visit(PinReferee block) {
+		_graph.ln("Visit: " + block);
+
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+		graph.addSubgraph(subgraph);
 		nodeCount = subgraph.getNodeCount();
-		super.visit(endianSwapper);
+
+		super.visit(block);
 	}
 
 	@Override
-	public void visit(Design design) {
-		_graph.ln("Visit: " + design);
-
-		Module designMod = design.getDesignModule();
-		BlackBoxGraph designModuleGraph = new BlackBoxGraph(
-				ID.showLogical(design) + "_designModule", designMod,
-				nodeCount++, fontSize);
-		Set<Component> moduleComps = new HashSet<Component>();
-		for (Component comp : designMod.getComponents()) {
-			designModuleGraph.addComponent(comp);
-			if (comp instanceof Module) {
-				moduleComps.add(comp);
-			}
-			nodeCount++;
+	public void visit(PinWrite pwrite) {
+		_graph.ln("Visit: " + pwrite);
+		if (pwrite.getPhysicalComponent() != null) {
+			ModuleGraph subgraph = new ModuleGraph(
+					pwrite.getPhysicalComponent(), nodeCount++, fontSize);
+			pushSubgraph(subgraph);
+			nodeCount = subgraph.getNodeCount();
 		}
-		designModuleGraph.graphAddedComponents();
-		pushSubgraph(designModuleGraph);
-		nodeCount = designModuleGraph.getNodeCount();
-
-		for (Component comp : moduleComps) {
-			Module mod = (Module) comp;
-			doSubgraph(mod);
-		}
-		super.visit(design);
+		super.visit(pwrite);
 	}
 
-	private void doSubgraph(Module mod) {
-		BlackBoxGraph physGraph = new BlackBoxGraph(ID.showLogical(mod), mod,
-				nodeCount++, fontSize);
-		for (Component comp : mod.getComponents()) {
-			physGraph.addComponent(comp);
-			nodeCount++;
-		}
-		physGraph.graphAddedComponents();
-		graph.addSubgraph(physGraph);
+	@Override
+	public void visit(PriorityMux pmux) {
+		_graph.ln("Visit: " + pmux);
+		ModuleGraph subgraph = new ModuleGraph(pmux, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(pmux);
 	}
 
-	private int layersToGraph = -1;
+	@Override
+	public void visit(RegisterGateway block) {
+		_graph.ln("Visit: " + block);
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(block);
+	}
 
-	/**
-	 * 
-	 * Adds the given graph as a subgraph of the current graph, but allows for a
-	 * hierarchical limit. The trigger is set to true on the first pass through
-	 * this method (when we've graphed one module) which has the effect of
-	 * hiding any sub-modules
-	 */
-	private void pushSubgraph(Graph graph) {
-		if (layersToGraph != 0) {
-			layersToGraph -= 1;
-			this.graph.addSubgraph(graph);
-		}
+	@Override
+	public void visit(RegisterReferee block) {
+		_graph.ln("Visit: " + block);
+
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+		graph.addSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+
+		super.visit(block);
+	}
+
+	@Override
+	public void visit(SimplePinAccess block) {
+		_graph.ln("Visit: " + block);
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(block);
+	}
+
+	@Override
+	public void visit(Switch swich) {
+		_graph.ln("Visit: " + swich);
+		ModuleGraph subgraph = new ModuleGraph(swich, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(swich);
+	}
+
+	@Override
+	public void visit(TaskCall block) {
+		_graph.ln("Visit: " + block);
+		ModuleGraph subgraph = new ModuleGraph(block, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(block);
+	}
+
+	@Override
+	public void visit(UntilBody body) {
+		_graph.ln("Visit: " + body);
+		ModuleGraph subgraph = new ModuleGraph(body, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(body);
+	}
+
+	@Override
+	public void visit(WhileBody body) {
+		_graph.ln("Visit: " + body);
+		ModuleGraph subgraph = new ModuleGraph(body, nodeCount++, fontSize);
+		pushSubgraph(subgraph);
+		nodeCount = subgraph.getNodeCount();
+		super.visit(body);
 	}
 
 }

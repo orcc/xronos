@@ -35,21 +35,6 @@ package org.xronos.openforge.lim.memory;
 public class Index extends Variable {
 	private Location baseLocation;
 
-	@Override
-	public boolean equals(Object object) {
-		if (object instanceof Index) {
-			final Index index = (Index) object;
-			return baseLocation.equals(index.baseLocation)
-					&& (getAddressableSize() == index.getAddressableSize());
-		}
-		return false;
-	}
-
-	@Override
-	public int hashCode() {
-		return baseLocation.hashCode() + getAddressableSize();
-	}
-
 	/**
 	 * Constructs a new Index.
 	 * 
@@ -61,6 +46,32 @@ public class Index extends Variable {
 	Index(int size, Location baseLocation) {
 		super(baseLocation.getLogicalMemory(), size);
 		this.baseLocation = baseLocation;
+	}
+
+	/**
+	 * Throws a NullPointerException if <code>loc</code> is null or an
+	 * UnsupportedOperationException otherwise.
+	 */
+	@Override
+	public void chopStart(Location loc, int units) {
+		super.chopStart(loc, units);
+		throw new UnsupportedOperationException(
+				"cannot modify the base of a variably indexed access");
+	}
+
+	/** @inheritDoc */
+	@Override
+	public Location createIndex(int size) {
+		/*
+		 * Defer to the base location to reduce unnecessary indirection.
+		 */
+		return getBaseLocation().createIndex(size);
+	}
+
+	@Override
+	public String debug() {
+		return "<" + getAbsoluteBase().debug() + "> index siz: "
+				+ getAddressableSize();
 	}
 
 	/**
@@ -76,13 +87,14 @@ public class Index extends Variable {
 		return baseLocation.createIndex(getAddressableSize());
 	}
 
-	/** @inheritDoc */
 	@Override
-	public Location createIndex(int size) {
-		/*
-		 * Defer to the base location to reduce unnecessary indirection.
-		 */
-		return getBaseLocation().createIndex(size);
+	public boolean equals(Object object) {
+		if (object instanceof Index) {
+			final Index index = (Index) object;
+			return baseLocation.equals(index.baseLocation)
+					&& getAddressableSize() == index.getAddressableSize();
+		}
+		return false;
 	}
 
 	/**
@@ -97,15 +109,19 @@ public class Index extends Variable {
 	}
 
 	/**
-	 * Gets the minmum delta.
+	 * Returns the LogicalValue that represents the initial value for this
+	 * Location, throws UnsupportedOperationException because there is no
+	 * defined LogicalValue for an Index Location because the offset is
+	 * undetermined.
 	 * 
-	 * @return the minimum number of addressable units beyond the start of the
-	 *         base to which this location refers
+	 * @return none throws an UnsupportedOperationException when called.
+	 * @throws {@link Location#IllegalInitialValueContextException} because the
+	 *         initial value of a variable index access is undefined.
 	 */
 	@Override
-	public int getMinDelta() {
-		// slide by base's absolute min delta..
-		return 0 - getBaseLocation().getAbsoluteMinDelta();
+	public LogicalValue getInitialValue() {
+		throw new Location.IllegalInitialValueContextException(
+				"Variable index access");
 	}
 
 	/**
@@ -133,36 +149,20 @@ public class Index extends Variable {
 	}
 
 	/**
-	 * Returns the LogicalValue that represents the initial value for this
-	 * Location, throws UnsupportedOperationException because there is no
-	 * defined LogicalValue for an Index Location because the offset is
-	 * undetermined.
+	 * Gets the minmum delta.
 	 * 
-	 * @return none throws an UnsupportedOperationException when called.
-	 * @throws {@link Location#IllegalInitialValueContextException} because the
-	 *         initial value of a variable index access is undefined.
+	 * @return the minimum number of addressable units beyond the start of the
+	 *         base to which this location refers
 	 */
 	@Override
-	public LogicalValue getInitialValue() {
-		throw new Location.IllegalInitialValueContextException(
-				"Variable index access");
-	}
-
-	/**
-	 * Throws a NullPointerException if <code>loc</code> is null or an
-	 * UnsupportedOperationException otherwise.
-	 */
-	@Override
-	public void chopStart(Location loc, int units) {
-		super.chopStart(loc, units);
-		throw new UnsupportedOperationException(
-				"cannot modify the base of a variably indexed access");
+	public int getMinDelta() {
+		// slide by base's absolute min delta..
+		return 0 - getBaseLocation().getAbsoluteMinDelta();
 	}
 
 	@Override
-	public String debug() {
-		return "<" + getAbsoluteBase().debug() + "> index siz: "
-				+ getAddressableSize();
+	public int hashCode() {
+		return baseLocation.hashCode() + getAddressableSize();
 	}
 
 	@Override

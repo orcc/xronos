@@ -46,6 +46,14 @@ import org.xronos.openforge.lim.io.SimplePinRead;
  */
 public class ActionTokenPeek extends FifoAccess {
 
+	public ActionTokenPeek(ActorNativeScalarInput fifoIF) {
+		this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
+	}
+
+	public ActionTokenPeek(ActorScalarInput fifoIF) {
+		this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
+	}
+
 	private ActionTokenPeek(FifoIF fifoIF, SimplePin indexPin, SimplePin dataPin) {
 		super(fifoIF);
 
@@ -82,14 +90,6 @@ public class ActionTokenPeek extends FifoAccess {
 
 		// Hook the peek pin read to the result bus.
 		result.getPeer().setBus(peek.getResultBus());
-	}
-
-	public ActionTokenPeek(ActorScalarInput fifoIF) {
-		this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
-	}
-
-	public ActionTokenPeek(ActorNativeScalarInput fifoIF) {
-		this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
 	}
 
 	// public ActionTokenPeek (ActorScalarOutput fifoIF)

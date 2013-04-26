@@ -43,14 +43,34 @@ import org.xronos.openforge.lim.io.SimpleFifoPin;
 import org.xronos.openforge.lim.io.SimplePin;
 import org.xronos.openforge.lim.io.SimplePinRead;
 
-
 /**
  * @author Endri Bezati
  * 
  */
 public class ActorNativeScalarInput extends NativeInput implements ActorPort {
 
+	private class ActorNativeInputRead extends FifoRead {
+		private ActorNativeInputRead(ActorNativeScalarInput asi) {
+			super(asi, Latency.ZERO);
+
+			Bus done = getExit(Exit.DONE).getDoneBus();
+			Bus result = getExit(Exit.DONE).getDataBuses().get(0);
+
+			final SimplePinRead din = new SimplePinRead(asi.getDataPin());
+			addComponent(din);
+
+			result.getPeer().setBus(din.getResultBus());
+			done.getPeer().setBus(getGoPort().getPeer());
+		}
+
+		@Override
+		public boolean consumesClock() {
+			return false;
+		}
+	}
+
 	private final String baseName;
+
 	private final SimplePin data;
 
 	/**
@@ -66,13 +86,12 @@ public class ActorNativeScalarInput extends NativeInput implements ActorPort {
 	}
 
 	/**
-	 * 
-	 * Asserts false
+	 * ActorNativeScalarInput ports have no special naming requirements, this
+	 * method returns portName
 	 */
 	@Override
-	public void setAttribute(int type, String value) {
-		assert false : "No supported attributes";
-
+	protected String buildPortBaseName(String portName) {
+		return portName;
 	}
 
 	@Override
@@ -94,9 +113,34 @@ public class ActorNativeScalarInput extends NativeInput implements ActorPort {
 				"Cannot get the Count from an native port");
 	}
 
+	/**
+	 * 
+	 * Return the DATA Pin
+	 */
+	@Override
+	public SimplePin getDataPin() {
+		return data;
+	}
+
+	/**
+	 * Returns a null, a Native Input port has only the DATA pin.
+	 */
+	@Override
+	public Collection<SimplePin> getOutputPins() {
+		return null;
+	}
+
 	@Override
 	public Component getPeekAccess() {
 		return new ActionTokenPeek(this);
+	}
+
+	/**
+	 * Returns the Ports base name
+	 */
+	@Override
+	public String getPortBaseName() {
+		return baseName;
 	}
 
 	/**
@@ -110,15 +154,6 @@ public class ActorNativeScalarInput extends NativeInput implements ActorPort {
 	}
 
 	/**
-	 * 
-	 * Return the DATA Pin
-	 */
-	@Override
-	public SimplePin getDataPin() {
-		return data;
-	}
-
-	/**
 	 * <code>getType</code> returns {@link FifoIF#TYPE_ACTOR_QUEUE}
 	 * 
 	 * @return an <code>int</code> value
@@ -129,48 +164,13 @@ public class ActorNativeScalarInput extends NativeInput implements ActorPort {
 	}
 
 	/**
-	 * ActorNativeScalarInput ports have no special naming requirements, this
-	 * method returns portName
+	 * 
+	 * Asserts false
 	 */
 	@Override
-	protected String buildPortBaseName(String portName) {
-		return portName;
-	}
+	public void setAttribute(int type, String value) {
+		assert false : "No supported attributes";
 
-	/**
-	 * Returns the Ports base name
-	 */
-	@Override
-	public String getPortBaseName() {
-		return baseName;
-	}
-
-	/**
-	 * Returns a null, a Native Input port has only the DATA pin.
-	 */
-	@Override
-	public Collection<SimplePin> getOutputPins() {
-		return null;
-	}
-
-	private class ActorNativeInputRead extends FifoRead {
-		private ActorNativeInputRead(ActorNativeScalarInput asi) {
-			super(asi, Latency.ZERO);
-
-			Bus done = getExit(Exit.DONE).getDoneBus();
-			Bus result = getExit(Exit.DONE).getDataBuses().get(0);
-
-			final SimplePinRead din = new SimplePinRead(asi.getDataPin());
-			addComponent(din);
-
-			result.getPeer().setBus(din.getResultBus());
-			done.getPeer().setBus(getGoPort().getPeer());
-		}
-
-		@Override
-		public boolean consumesClock() {
-			return false;
-		}
 	}
 
 }

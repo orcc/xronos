@@ -37,11 +37,6 @@ class FeedbackRegSourceNode extends ComponentNode {
 	}
 
 	@Override
-	protected boolean needPortGraph() {
-		return false;
-	}
-
-	@Override
 	protected String getBodyLabel() {
 		StringBuffer labelBuf = new StringBuffer();
 		labelBuf.append(getShortClassName(getComponent()));
@@ -49,5 +44,10 @@ class FeedbackRegSourceNode extends ComponentNode {
 		labelBuf.append("@");
 		labelBuf.append(Integer.toHexString(getComponent().hashCode()));
 		return labelBuf.toString();
+	}
+
+	@Override
+	protected boolean needPortGraph() {
+		return false;
 	}
 }

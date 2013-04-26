@@ -38,16 +38,13 @@ class FeedbackRegSinkNode extends ComponentNode {
 	}
 
 	@Override
-	protected void graphPorts(Record.Port boundingBox) {
-		Reg reg = (Reg) getComponent();
-
-		Record.Port entryBox = boundingBox.getPort(ENTRY);
-		entryBox.setSeparated(false);
-
-		if (reg.getEnablePort().isConnected()) {
-			graphPort(reg.getEnablePort(), entryBox, "en", "en");
-		}
-		graphPort(reg.getDataPort(), entryBox, "din", "d");
+	protected String getBodyLabel() {
+		StringBuffer labelBuf = new StringBuffer();
+		labelBuf.append(getShortClassName(getComponent()));
+		labelBuf.append("-FB\\n");
+		labelBuf.append("@");
+		labelBuf.append(Integer.toHexString(getComponent().hashCode()));
+		return labelBuf.toString();
 	}
 
 	@Override
@@ -58,12 +55,15 @@ class FeedbackRegSinkNode extends ComponentNode {
 	}
 
 	@Override
-	protected String getBodyLabel() {
-		StringBuffer labelBuf = new StringBuffer();
-		labelBuf.append(getShortClassName(getComponent()));
-		labelBuf.append("-FB\\n");
-		labelBuf.append("@");
-		labelBuf.append(Integer.toHexString(getComponent().hashCode()));
-		return labelBuf.toString();
+	protected void graphPorts(Record.Port boundingBox) {
+		Reg reg = (Reg) getComponent();
+
+		Record.Port entryBox = boundingBox.getPort(ENTRY);
+		entryBox.setSeparated(false);
+
+		if (reg.getEnablePort().isConnected()) {
+			graphPort(reg.getEnablePort(), entryBox, "en", "en");
+		}
+		graphPort(reg.getDataPort(), entryBox, "din", "d");
 	}
 }

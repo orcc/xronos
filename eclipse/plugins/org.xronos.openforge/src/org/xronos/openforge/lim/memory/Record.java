@@ -28,7 +28,6 @@ import java.util.List;
 
 import org.xronos.openforge.lim.op.Constant;
 
-
 /**
  * Record is the mechanism for describing aggregate {@link LogicalValue}
  * initializers. It is simply an ordered container for zero or more constituent
@@ -42,6 +41,14 @@ import org.xronos.openforge.lim.op.Constant;
  * @version $Id: Record.java 70 2005-12-01 17:43:11Z imiller $
  */
 public class Record implements LogicalValue, MemoryVisitable {
+
+	@SuppressWarnings("serial")
+	private static class MixedAddressStridePolicyException extends
+			RuntimeException {
+		public MixedAddressStridePolicyException(String msg) {
+			super(msg);
+		}
+	}
 
 	/** List of component LogicalValues */
 	private List<LogicalValue> values;
@@ -88,23 +95,27 @@ public class Record implements LogicalValue, MemoryVisitable {
 	}
 
 	/**
-	 * Gets the size in addressable units of this value.
+	 * Returns a new LogicalValue object (Record) which has been deep copied
+	 * from this. Each component LogicalValue of this Record is similarly copied
+	 * to generate a deep copy of this Record.
 	 * 
-	 * @return the number of addressable needed to represent this value, always
-	 *         greater than or equal to 0 (&gt;=0)
+	 * <p>
+	 * requires : none
+	 * <p>
+	 * modifies : none
+	 * <p>
+	 * effects : creates a new Record which is a deep copy of this record.
+	 * 
+	 * @return a new Record with the same structure and initial values as this.
 	 */
 	@Override
-	public int getSize() {
-		return size;
-	}
-
-	/**
-	 * Returns the number of bits allocated based on analysis of the
-	 * AddressableUnit representation.
-	 */
-	@Override
-	public int getBitSize() {
-		return bitSize;
+	public LogicalValue copy() {
+		List<LogicalValue> copiedList = new ArrayList<LogicalValue>(
+				values.size());
+		for (LogicalValue lv : values) {
+			copiedList.add(lv.copy());
+		}
+		return new Record(copiedList);
 	}
 
 	/**
@@ -113,14 +124,15 @@ public class Record implements LogicalValue, MemoryVisitable {
 	@Override
 	public AddressStridePolicy getAddressStridePolicy() {
 		assert !values.isEmpty();
-		if (values.isEmpty())
+		if (values.isEmpty()) {
 			return null;
+		}
 
 		// Test that the stride policy is consistent throughout this
 		// record
 		AddressStridePolicy policy = values.get(0).getAddressStridePolicy();
 		for (LogicalValue logicalValue : getComponentValues()) {
-			if (!(logicalValue.getAddressStridePolicy().equals(policy))) {
+			if (!logicalValue.getAddressStridePolicy().equals(policy)) {
 				throw new MixedAddressStridePolicyException(policy
 						+ " not equivalent to "
 						+ logicalValue.getAddressStridePolicy());
@@ -140,9 +152,28 @@ public class Record implements LogicalValue, MemoryVisitable {
 	public int getAlignmentSize() {
 		int max = 0;
 		for (LogicalValue logicalValue : getComponentValues()) {
-			max = Math.max(max, (logicalValue).getAlignmentSize());
+			max = Math.max(max, logicalValue.getAlignmentSize());
 		}
 		return max;
+	}
+
+	/**
+	 * Returns the number of bits allocated based on analysis of the
+	 * AddressableUnit representation.
+	 */
+	@Override
+	public int getBitSize() {
+		return bitSize;
+	}
+
+	/**
+	 * Gets the component values.
+	 * 
+	 * @return the ordered list of component {@link LogicalValue LogicalValues}
+	 *         as provided in the constructor
+	 */
+	public List<LogicalValue> getComponentValues() {
+		return Collections.unmodifiableList(values);
 	}
 
 	/**
@@ -167,37 +198,24 @@ public class Record implements LogicalValue, MemoryVisitable {
 	}
 
 	/**
-	 * Gets the component values.
+	 * Gets the size in addressable units of this value.
 	 * 
-	 * @return the ordered list of component {@link LogicalValue LogicalValues}
-	 *         as provided in the constructor
-	 */
-	public List<LogicalValue> getComponentValues() {
-		return Collections.unmodifiableList(values);
-	}
-
-	/**
-	 * Returns a new LogicalValue object (Record) which has been deep copied
-	 * from this. Each component LogicalValue of this Record is similarly copied
-	 * to generate a deep copy of this Record.
-	 * 
-	 * <p>
-	 * requires : none
-	 * <p>
-	 * modifies : none
-	 * <p>
-	 * effects : creates a new Record which is a deep copy of this record.
-	 * 
-	 * @return a new Record with the same structure and initial values as this.
+	 * @return the number of addressable needed to represent this value, always
+	 *         greater than or equal to 0 (&gt;=0)
 	 */
 	@Override
-	public LogicalValue copy() {
-		List<LogicalValue> copiedList = new ArrayList<LogicalValue>(
-				values.size());
-		for (LogicalValue lv : values) {
-			copiedList.add(lv.copy());
+	public int getSize() {
+		return size;
+	}
+
+	/** @inheritDoc */
+	@Override
+	public LogicalValue getValueAtOffset(int delta, int size) {
+		if (delta == 0 && size == getSize()) {
+			return this;
 		}
-		return new Record(copiedList);
+
+		return new Slice(this, delta, size);
 	}
 
 	/**
@@ -259,25 +277,25 @@ public class Record implements LogicalValue, MemoryVisitable {
 			int inspectedSize = processedUnits + chunkSize;
 
 			LogicalValue newValue = null;
-			if ((min >= 0) && (max == (getSize() - 1))) {
+			if (min >= 0 && max == getSize() - 1) {
 				// Truncates the tail or the entire range
-				if ((inspectedSize <= min)) {
+				if (inspectedSize <= min) {
 					newValue = value.copy();
 				} else {
 					localMin = Math.max(0, min - processedUnits);
-					if ((inspectedSize - 1) <= max) {
+					if (inspectedSize - 1 <= max) {
 
 						localMax = Math
 								.min(chunkSize - 1, max - processedUnits);
 					}
 					newValue = value.removeRange(localMin, localMax);
 				}
-			} else if ((min == 0) && (max < (getSize() - 1))) {
+			} else if (min == 0 && max < getSize() - 1) {
 				// Chops off the head
-				if ((processedUnits - 1) >= max) {
+				if (processedUnits - 1 >= max) {
 					newValue = value.copy();
 				} else {
-					if ((inspectedSize - 1) > max) {
+					if (inspectedSize - 1 > max) {
 						localMax = Math
 								.min(chunkSize - 1, max - processedUnits);
 					} else {
@@ -297,17 +315,6 @@ public class Record implements LogicalValue, MemoryVisitable {
 	}
 
 	/**
-	 * Gets the {@link Location} denoted by this value.
-	 * 
-	 * @return the location, or {@link Location#INVALID} if this value does not
-	 *         denote a valid location
-	 */
-	@Override
-	public Location toLocation() {
-		return Location.INVALID;
-	}
-
-	/**
 	 * Returns an AggregateConstant.
 	 * 
 	 * @see org.xronos.openforge.lim.memory.LogicalValue#toConstant()
@@ -320,6 +327,17 @@ public class Record implements LogicalValue, MemoryVisitable {
 			constants.add(lv.toConstant());
 		}
 		return new AggregateConstant(constants, bitSize);
+	}
+
+	/**
+	 * Gets the {@link Location} denoted by this value.
+	 * 
+	 * @return the location, or {@link Location#INVALID} if this value does not
+	 *         denote a valid location
+	 */
+	@Override
+	public Location toLocation() {
+		return Location.INVALID;
 	}
 
 	@Override
@@ -337,24 +355,6 @@ public class Record implements LogicalValue, MemoryVisitable {
 		}
 		buf.append("}");
 		return buf.toString();
-	}
-
-	/** @inheritDoc */
-	@Override
-	public LogicalValue getValueAtOffset(int delta, int size) {
-		if ((delta == 0) && (size == getSize())) {
-			return this;
-		}
-
-		return new Slice(this, delta, size);
-	}
-
-	@SuppressWarnings("serial")
-	private static class MixedAddressStridePolicyException extends
-			RuntimeException {
-		public MixedAddressStridePolicyException(String msg) {
-			super(msg);
-		}
 	}
 
 }

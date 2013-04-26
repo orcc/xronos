@@ -28,7 +28,6 @@ import java.util.Set;
 import org.xronos.openforge.lim.Visitor;
 import org.xronos.openforge.lim.op.Constant;
 
-
 /**
  * LocationConstant is a {@link MemoryConstant} whose value is deferred (
  * {@link #isLocked} is false) which is based on accessing a particular
@@ -80,7 +79,7 @@ public class LocationConstant extends MemoryConstant implements
 		super(width, false); // unsigned. Addresses are always unsigned
 		setTarget(loc);
 		// int repLength = (int)Math.ceil(((double)width) / 8.0);
-		int repLength = (int) Math.ceil(((double) width) / policy.getStride());
+		int repLength = (int) Math.ceil((double) width / policy.getStride());
 		assert repLength > 0;
 		AddressableUnit[] aurep = new AddressableUnit[repLength];
 		for (int i = 0; i < repLength; i++) {
@@ -90,6 +89,24 @@ public class LocationConstant extends MemoryConstant implements
 		rep = new AURepBundle(aurep, policy.getStride());
 
 		pushValuesForward();
+	}
+
+	/**
+	 * Accept method for the Visitor interface
+	 */
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		LocationConstant clone = (LocationConstant) super.clone();
+		if (clone.getTarget() != null) {
+			LogicalMemory mem = clone.getTarget().getLogicalMemory();
+			mem.addLocationConstant(clone);
+		}
+		return clone;
 	}
 
 	/**
@@ -133,83 +150,12 @@ public class LocationConstant extends MemoryConstant implements
 	}
 
 	/**
-	 * Modifies the location to which this constant points and removes this
-	 * LocationConstant from the old logical memory and adds it to the new
-	 * logical memory.
-	 * 
-	 * @param newLoc
-	 *            a non-null 'Location'
-	 * @throws IllegalArgumentException
-	 *             if newLoc is null
-	 * @throws UnsupportedOperationException
-	 *             if this constant is locked.
-	 */
-	@Override
-	public void setTarget(Location newLoc) {
-		if (newLoc == null) {
-			throw new IllegalArgumentException(
-					"Cannot change target location to null");
-		}
-		if (isLocked()) {
-			throw new UnsupportedOperationException(
-					"Cannot change target location of a locked constant");
-		}
-
-		removeFromMemory();
-		location = newLoc;
-		newLoc.getLogicalMemory().addLocationConstant(this);
-	}
-
-	/**
-	 * Derives, if necessary, the numeric value represented by this constant.
-	 */
-	@Override
-	public void lock() {
-		isLocked = true;
-		final Location location = getTarget();
-
-		final long addr = location.getLogicalMemory().getAddress(location);
-
-		// The address is in 'little endian' format, so if this is a
-		// big endian compilation, byte swap.
-		AddressableUnit[] fixedRep = new AddressableUnit[rep.getLength()];
-		int bitsPerUnit = rep.getBitsPerUnit();
-		long mask = 0;
-		for (int i = 0; i < bitsPerUnit; i++) {
-			mask = (mask << 1) | 1L;
-		}
-		// first, populate in little endian order
-		for (int i = 0; i < fixedRep.length; i++) {
-			// fixedRep[i] = new AURep((byte)((addr >>> (8 * i)) & 0xFF));
-			fixedRep[i] = new AddressableUnit(
-					(int) ((addr >>> (bitsPerUnit * i)) & mask), true);
-		}
-		if (isBigEndian()) {
-			fixedRep = swapEndian(fixedRep);
-		}
-
-		rep = new AURepBundle(fixedRep, rep.getBitsPerUnit());
-
-		pushValuesForward();
-	}
-
-	/**
 	 * Returns true if this symbolic constant has been resolved to a true
 	 * constant.
 	 */
 	@Override
 	public boolean isLocked() {
 		return isLocked;
-	}
-
-	/**
-	 * Remove the underlying {@link LocationConstant} as a reference of the
-	 * targetted memory.
-	 */
-	public void removeFromMemory() {
-		if (getTarget() != null) {
-			getTarget().getLogicalMemory().removeLocationConstant(this);
-		}
 	}
 
 	/**
@@ -274,27 +220,80 @@ public class LocationConstant extends MemoryConstant implements
 		final int thatSize = constant.getValueBus().getSize();
 
 		// all must match
-		return ((thisAbsMinDelta == thatAbsMinDelta)
-				&& (thisAbsMaxDelta == thatAbsMaxDelta) && (thisSize == thatSize));
+		return thisAbsMinDelta == thatAbsMinDelta
+				&& thisAbsMaxDelta == thatAbsMaxDelta && thisSize == thatSize;
 
 	}
 
 	/**
-	 * Accept method for the Visitor interface
+	 * Derives, if necessary, the numeric value represented by this constant.
 	 */
 	@Override
-	public void accept(Visitor visitor) {
-		visitor.visit(this);
+	public void lock() {
+		isLocked = true;
+		final Location location = getTarget();
+
+		final long addr = location.getLogicalMemory().getAddress(location);
+
+		// The address is in 'little endian' format, so if this is a
+		// big endian compilation, byte swap.
+		AddressableUnit[] fixedRep = new AddressableUnit[rep.getLength()];
+		int bitsPerUnit = rep.getBitsPerUnit();
+		long mask = 0;
+		for (int i = 0; i < bitsPerUnit; i++) {
+			mask = mask << 1 | 1L;
+		}
+		// first, populate in little endian order
+		for (int i = 0; i < fixedRep.length; i++) {
+			// fixedRep[i] = new AURep((byte)((addr >>> (8 * i)) & 0xFF));
+			fixedRep[i] = new AddressableUnit(
+					(int) (addr >>> bitsPerUnit * i & mask), true);
+		}
+		if (isBigEndian()) {
+			fixedRep = swapEndian(fixedRep);
+		}
+
+		rep = new AURepBundle(fixedRep, rep.getBitsPerUnit());
+
+		pushValuesForward();
 	}
 
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		LocationConstant clone = (LocationConstant) super.clone();
-		if (clone.getTarget() != null) {
-			LogicalMemory mem = clone.getTarget().getLogicalMemory();
-			mem.addLocationConstant(clone);
+	/**
+	 * Remove the underlying {@link LocationConstant} as a reference of the
+	 * targetted memory.
+	 */
+	public void removeFromMemory() {
+		if (getTarget() != null) {
+			getTarget().getLogicalMemory().removeLocationConstant(this);
 		}
-		return clone;
+	}
+
+	/**
+	 * Modifies the location to which this constant points and removes this
+	 * LocationConstant from the old logical memory and adds it to the new
+	 * logical memory.
+	 * 
+	 * @param newLoc
+	 *            a non-null 'Location'
+	 * @throws IllegalArgumentException
+	 *             if newLoc is null
+	 * @throws UnsupportedOperationException
+	 *             if this constant is locked.
+	 */
+	@Override
+	public void setTarget(Location newLoc) {
+		if (newLoc == null) {
+			throw new IllegalArgumentException(
+					"Cannot change target location to null");
+		}
+		if (isLocked()) {
+			throw new UnsupportedOperationException(
+					"Cannot change target location of a locked constant");
+		}
+
+		removeFromMemory();
+		location = newLoc;
+		newLoc.getLogicalMemory().addLocationConstant(this);
 	}
 
 }// LocationConstant

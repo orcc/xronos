@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * Variable is an implementation of {@link Location} which describes a memory
  * region that is named by a variable in the user application.
@@ -33,6 +32,66 @@ import org.xronos.openforge.util.naming.ID;
  * @version $Id: Variable.java 107 2006-02-23 15:46:07Z imiller $
  */
 public abstract class Variable extends ID implements Location {
+
+	/**
+	 * This method generates or retrieves a 'correlated' Location for the given
+	 * Location, meaning that the correlated Location has exactly the same
+	 * structure and 'base' hierarchy as the given Location, but is based off of
+	 * a different base Location as specified by the correlation Map. The 'base'
+	 * hierarchy of the given 'oldLoc' Location is traversed until a Location is
+	 * found that is a valid key into the correlation map. The value stored in
+	 * the map for that key is the new base on which to build the correlated
+	 * Location. From that new base a sequence of Offset and Index Locations is
+	 * created that parallels the structure found in the old location. Thus the
+	 * returned correlated Location is identical to the old location in every
+	 * respect except for the 'base' location.
+	 * 
+	 * <p>
+	 * The Map and oldLoc are not modified by this method.
+	 * 
+	 * @param correlation
+	 *            a non-null Map of Location to Location
+	 * @param oldLoc
+	 *            a non-null Location
+	 * @return a correlated Location
+	 * @throws NullPointerException
+	 *             if oldLoc is null
+	 * @throws IllegalArgumentException
+	 *             if at least one Location of the 'base' hierarchy of 'oldLoc'
+	 *             is not contained in correlation. Or thrown if any Location is
+	 *             found in which the maxDelta is less than the minDelta.
+	 */
+	public static Location getCorrelatedLocation(
+			Map<Location, Location> correlation, Location oldLoc) {
+		if (oldLoc == null) {
+			throw new NullPointerException(
+					"Null Location not allowed in this context");
+		}
+
+		// If the map contains the correlated location already the
+		// simply return that one to avoid creating too many copies of
+		// the same thing.
+		if (correlation.containsKey(oldLoc)) {
+			return correlation.get(oldLoc);
+		}
+
+		Location baseLocation = oldLoc.getBaseLocation();
+		Location correlatedBase = correlation.get(baseLocation);
+
+		if (correlatedBase == null) {
+			if (baseLocation == oldLoc) {
+				throw new IllegalArgumentException(
+						"Correlation map for location correlation does not "
+								+ "contain a necessary base location.");
+			} else {
+				correlatedBase = getCorrelatedLocation(correlation,
+						baseLocation);
+			}
+		}
+		assert correlatedBase != null : "No base correlation found for location";
+
+		return oldLoc.duplicateForBaseLocation(correlatedBase);
+	}
 
 	/** The size, in addressable units, of this variable */
 	private int size;
@@ -64,41 +123,18 @@ public abstract class Variable extends ID implements Location {
 	}
 
 	/**
-	 * Gets the size of this location in memory.
-	 * 
-	 * @return the number of continguous addressable units in memory that this
-	 *         location represents
+	 * Does nothing except throw a NullPointerException if <code>loc</code> is
+	 * null, or an IllegalArgumentException if units is < 0.
 	 */
 	@Override
-	public int getAddressableSize() {
-		return size;
-	}
-
-	/**
-	 * Gets the {@link LogicalMemory} to which this Location refers.
-	 * 
-	 * @return the logical memory containing this location
-	 */
-	@Override
-	public LogicalMemory getLogicalMemory() {
-		return logicalMemory;
-	}
-
-	/**
-	 * Creates a Location that represents an offset from this Location.
-	 * 
-	 * @param size
-	 *            the size in addressable units of the new location
-	 * @param delta
-	 *            the number of addressable units beyond the start of this
-	 *            location at which the offset location begins
-	 * @throws IllegalArgumentException
-	 *             if <code>size</code> is negative
-	 */
-	@Override
-	public Location createOffset(int size, int delta) {
-		return ((size == getAddressableSize()) && (delta == 0)) ? this
-				: new Offset(size, this, delta);
+	public void chopStart(Location loc, int units) {
+		if (loc == null) {
+			throw new NullPointerException("null location not allowed");
+		}
+		if (units < 0) {
+			throw new IllegalArgumentException(
+					"cannot chop a negative number of addressable units from an allocation");
+		}
 	}
 
 	/**
@@ -118,13 +154,20 @@ public abstract class Variable extends ID implements Location {
 	}
 
 	/**
-	 * Gets the original Location from which this Location was derived.
+	 * Creates a Location that represents an offset from this Location.
 	 * 
-	 * @return the base location, possibly <code>this</code>
+	 * @param size
+	 *            the size in addressable units of the new location
+	 * @param delta
+	 *            the number of addressable units beyond the start of this
+	 *            location at which the offset location begins
+	 * @throws IllegalArgumentException
+	 *             if <code>size</code> is negative
 	 */
 	@Override
-	public Location getBaseLocation() {
-		return this;
+	public Location createOffset(int size, int delta) {
+		return size == getAddressableSize() && delta == 0 ? this : new Offset(
+				size, this, delta);
 	}
 
 	/**
@@ -152,13 +195,18 @@ public abstract class Variable extends ID implements Location {
 	}
 
 	/**
-	 * Gets the minmum delta.
+	 * Gets the maximum delta in terms of the absolute base
 	 * 
-	 * @return the minimum number of addressable units beyond the start of the
-	 *         base to which this location refers
+	 * @return the maximum number of addressable units beyond the start of the
+	 *         absolute base Location to which this location refers
 	 */
 	@Override
-	public int getMinDelta() {
+	public int getAbsoluteMaxDelta() {
+		// if the absolute is different from this location, then recursive call
+		if (getAbsoluteBase() != this) {
+			// my max data, plus my parent locs absolute max delta
+			return getMaxDelta() + getBaseLocation().getAbsoluteMaxDelta();
+		}
 		return getMaxDelta();
 	}
 
@@ -179,6 +227,37 @@ public abstract class Variable extends ID implements Location {
 	}
 
 	/**
+	 * Gets the size of this location in memory.
+	 * 
+	 * @return the number of continguous addressable units in memory that this
+	 *         location represents
+	 */
+	@Override
+	public int getAddressableSize() {
+		return size;
+	}
+
+	/**
+	 * Gets the original Location from which this Location was derived.
+	 * 
+	 * @return the base location, possibly <code>this</code>
+	 */
+	@Override
+	public Location getBaseLocation() {
+		return this;
+	}
+
+	/**
+	 * Gets the {@link LogicalMemory} to which this Location refers.
+	 * 
+	 * @return the logical memory containing this location
+	 */
+	@Override
+	public LogicalMemory getLogicalMemory() {
+		return logicalMemory;
+	}
+
+	/**
 	 * Gets the maximum delta.
 	 * 
 	 * @return the maximum number of addressable units beyond the start of the
@@ -190,18 +269,13 @@ public abstract class Variable extends ID implements Location {
 	}
 
 	/**
-	 * Gets the maximum delta in terms of the absolute base
+	 * Gets the minmum delta.
 	 * 
-	 * @return the maximum number of addressable units beyond the start of the
-	 *         absolute base Location to which this location refers
+	 * @return the minimum number of addressable units beyond the start of the
+	 *         base to which this location refers
 	 */
 	@Override
-	public int getAbsoluteMaxDelta() {
-		// if the absolute is different from this location, then recursive call
-		if (getAbsoluteBase() != this) {
-			// my max data, plus my parent locs absolute max delta
-			return getMaxDelta() + getBaseLocation().getAbsoluteMaxDelta();
-		}
+	public int getMinDelta() {
 		return getMaxDelta();
 	}
 
@@ -262,81 +336,6 @@ public abstract class Variable extends ID implements Location {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Does nothing except throw a NullPointerException if <code>loc</code> is
-	 * null, or an IllegalArgumentException if units is < 0.
-	 */
-	@Override
-	public void chopStart(Location loc, int units) {
-		if (loc == null) {
-			throw new NullPointerException("null location not allowed");
-		}
-		if (units < 0) {
-			throw new IllegalArgumentException(
-					"cannot chop a negative number of addressable units from an allocation");
-		}
-	}
-
-	/**
-	 * This method generates or retrieves a 'correlated' Location for the given
-	 * Location, meaning that the correlated Location has exactly the same
-	 * structure and 'base' hierarchy as the given Location, but is based off of
-	 * a different base Location as specified by the correlation Map. The 'base'
-	 * hierarchy of the given 'oldLoc' Location is traversed until a Location is
-	 * found that is a valid key into the correlation map. The value stored in
-	 * the map for that key is the new base on which to build the correlated
-	 * Location. From that new base a sequence of Offset and Index Locations is
-	 * created that parallels the structure found in the old location. Thus the
-	 * returned correlated Location is identical to the old location in every
-	 * respect except for the 'base' location.
-	 * 
-	 * <p>
-	 * The Map and oldLoc are not modified by this method.
-	 * 
-	 * @param correlation
-	 *            a non-null Map of Location to Location
-	 * @param oldLoc
-	 *            a non-null Location
-	 * @return a correlated Location
-	 * @throws NullPointerException
-	 *             if oldLoc is null
-	 * @throws IllegalArgumentException
-	 *             if at least one Location of the 'base' hierarchy of 'oldLoc'
-	 *             is not contained in correlation. Or thrown if any Location is
-	 *             found in which the maxDelta is less than the minDelta.
-	 */
-	public static Location getCorrelatedLocation(
-			Map<Location, Location> correlation, Location oldLoc) {
-		if (oldLoc == null) {
-			throw new NullPointerException(
-					"Null Location not allowed in this context");
-		}
-
-		// If the map contains the correlated location already the
-		// simply return that one to avoid creating too many copies of
-		// the same thing.
-		if (correlation.containsKey(oldLoc)) {
-			return correlation.get(oldLoc);
-		}
-
-		Location baseLocation = oldLoc.getBaseLocation();
-		Location correlatedBase = correlation.get(baseLocation);
-
-		if (correlatedBase == null) {
-			if (baseLocation == oldLoc) {
-				throw new IllegalArgumentException(
-						"Correlation map for location correlation does not "
-								+ "contain a necessary base location.");
-			} else {
-				correlatedBase = getCorrelatedLocation(correlation,
-						baseLocation);
-			}
-		}
-		assert correlatedBase != null : "No base correlation found for location";
-
-		return oldLoc.duplicateForBaseLocation(correlatedBase);
 	}
 
 }

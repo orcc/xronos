@@ -29,7 +29,6 @@ import java.util.Set;
 
 import org.xronos.openforge.lim.op.Constant;
 
-
 /**
  * <code>Slice</code> is a {@link LogicalValue} that denotes a contiguous
  * portion of another source {@link LogicalValue}.
@@ -89,13 +88,8 @@ public class Slice implements LogicalValue {
 
 	/** @inheritDoc */
 	@Override
-	public int getSize() {
-		return size;
-	}
-
-	@Override
-	public int getBitSize() {
-		return bitSize;
+	public LogicalValue copy() {
+		return new Slice(targetValue.copy(), delta, size);
 	}
 
 	/**
@@ -105,16 +99,6 @@ public class Slice implements LogicalValue {
 	@Override
 	public AddressStridePolicy getAddressStridePolicy() {
 		return targetValue.getAddressStridePolicy();
-	}
-
-	/**
-	 * Returns the number of addressable units offset from the source logical
-	 * value that this slice selects.
-	 * 
-	 * @return the addressable unit offset.
-	 */
-	public int getDelta() {
-		return delta;
 	}
 
 	/**
@@ -128,8 +112,19 @@ public class Slice implements LogicalValue {
 		return getSourceValue().getAlignmentSize();
 	}
 
-	public LogicalValue getSourceValue() {
-		return targetValue;
+	@Override
+	public int getBitSize() {
+		return bitSize;
+	}
+
+	/**
+	 * Returns the number of addressable units offset from the source logical
+	 * value that this slice selects.
+	 * 
+	 * @return the addressable unit offset.
+	 */
+	public int getDelta() {
+		return delta;
 	}
 
 	/** @inheritDoc */
@@ -142,15 +137,25 @@ public class Slice implements LogicalValue {
 
 	/** @inheritDoc */
 	@Override
-	public LogicalValue copy() {
-		return new Slice(targetValue.copy(), delta, size);
+	public int getSize() {
+		return size;
+	}
+
+	public LogicalValue getSourceValue() {
+		return targetValue;
+	}
+
+	/** @inheritDoc */
+	@Override
+	public LogicalValue getValueAtOffset(int delta, int size) {
+		return targetValue.getValueAtOffset(delta + this.delta, size);
 	}
 
 	/** @inheritDoc */
 	@Override
 	public LogicalValue removeRange(int min, int max)
 			throws NonRemovableRangeException {
-		if ((min < 0) || (min >= size) || (max >= size) || (max <= min)) {
+		if (min < 0 || min >= size || max >= size || max <= min) {
 			throw new NonRemovableRangeException("invalid range");
 		}
 
@@ -158,9 +163,8 @@ public class Slice implements LogicalValue {
 			/*
 			 * Remove from the lower end.
 			 */
-			return targetValue.getValueAtOffset((max + 1),
-					(getSize() - max - 1));
-		} else if (max == (getSize() - 1)) {
+			return targetValue.getValueAtOffset(max + 1, getSize() - max - 1);
+		} else if (max == getSize() - 1) {
 			/*
 			 * Remove from the upper end.
 			 */
@@ -171,8 +175,8 @@ public class Slice implements LogicalValue {
 			 */
 			final List<LogicalValue> elements = new ArrayList<LogicalValue>(2);
 			elements.add(targetValue.getValueAtOffset(delta, min));
-			elements.add(targetValue.getValueAtOffset((delta + max + 1),
-					(getSize() - max - 1)));
+			elements.add(targetValue.getValueAtOffset(delta + max + 1,
+					getSize() - max - 1));
 			return new Record(elements);
 		}
 	}
@@ -188,12 +192,6 @@ public class Slice implements LogicalValue {
 	@Override
 	public Location toLocation() {
 		return Location.INVALID;
-	}
-
-	/** @inheritDoc */
-	@Override
-	public LogicalValue getValueAtOffset(int delta, int size) {
-		return targetValue.getValueAtOffset(delta + this.delta, size);
 	}
 
 	@Override
@@ -234,7 +232,7 @@ class SliceConstant extends MemoryConstant {
 	 */
 	SliceConstant(MemoryConstant sourceConstant, int delta, int size) {
 		// super((size * 8), false);
-		super((size * sourceConstant.getRepBundle().getBitsPerUnit()), false);
+		super(size * sourceConstant.getRepBundle().getBitsPerUnit(), false);
 		this.sourceConstant = sourceConstant;
 		sliceUnits = size;
 		this.delta = delta;
@@ -285,10 +283,11 @@ class SliceConstant extends MemoryConstant {
 			// If the slice falls off the end of the backing constant,
 			// just fill with zeros.
 			int index = i + delta;
-			if (index < 0 || index >= backing.getRep().length)
+			if (index < 0 || index >= backing.getRep().length) {
 				ourRep[i] = new AddressableUnit(0, true);
-			else
+			} else {
 				ourRep[i] = backing.getRep()[index];
+			}
 		}
 		return new AURepBundle(ourRep, backing.getBitsPerUnit());
 	}

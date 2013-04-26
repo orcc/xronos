@@ -45,43 +45,281 @@ import org.xronos.openforge.verilog.mapping.memory.Ram;
  */
 public abstract class MemoryImplementation {
 
-	public MemoryImplementation() {
-	}
-
-	public abstract Latency getReadLatency();
-
-	public abstract Latency getWriteLatency();
-
-	public abstract boolean isLUT();
-
-	public abstract boolean isROM();
-
-	/**
-	 * Returns true if this memory, in dual port mode, resolves address
-	 * conflicts by a read-first strategy. Returns false if the strategy is
-	 * write-first. NOTE that this is the behavior across the two ports, NOT
-	 * single port behavior.
-	 */
-	public abstract boolean isDPReadFirst();
-
-	public abstract boolean isDefault();
-
-	public static void setMemoryImplementation(LogicalMemory mem) {
-		boolean readOnly = true;
-		for (LogicalMemoryPort port : mem.getLogicalMemoryPorts()) {
-			readOnly = readOnly & port.isReadOnly();
+	private static class BlockRAM extends MemoryImplementation {
+		@Override
+		public Latency getReadLatency() {
+			return Latency.ONE;
 		}
 
-		// Note that the way in which the memory is packed may affect
-		// the final number of bytes allocated. If structures need to
-		// fall on specific byte alignments then there may be bytes
-		// allocated only for address alignment, effectively
-		// increasing the size of the memory over the actual bytes
-		// stored. However, the type of implementation needs to be
-		// known for some optimizations prior to fixating the
-		// structure and packing of the memory.
-		mem.setImplementation(getMemoryImplementation(mem.getSizeInBytes(),
-				readOnly, mem.getLogicalMemoryPorts().size()));
+		@Override
+		public Latency getWriteLatency() {
+			return Latency.ONE;
+		}
+
+		@Override
+		public boolean isDefault() {
+			return false;
+		}
+
+		// Intentionally set to always read first. Otherwise caution
+		// must be exercised b/c the write-first mode returns corrupt
+		// data on the read port, as per V4 user guide. If this is
+		// changed, then the parameter setting in DualPortBlockRam
+		// must also be changed.
+		@Override
+		public boolean isDPReadFirst() {
+			return true;
+		}
+
+		@Override
+		public boolean isLUT() {
+			return false;
+		}
+
+		@Override
+		public boolean isROM() {
+			return false;
+		}
+	}
+
+	private static class BlockROM extends MemoryImplementation {
+		@Override
+		public Latency getReadLatency() {
+			return Latency.ONE;
+		}
+
+		@Override
+		public Latency getWriteLatency() {
+			throw new UnsupportedOperationException("Cannot write to a ROM");
+		}
+
+		@Override
+		public boolean isDefault() {
+			return false;
+		}
+
+		// Intentionally set to always read first. Otherwise caution
+		// must be exercised b/c the write-first mode returns corrupt
+		// data on the read port, as per V4 user guide. If this is
+		// changed, then the parameter setting in DualPortBlockRam
+		// must also be changed.
+		@Override
+		public boolean isDPReadFirst() {
+			return true;
+		}
+
+		@Override
+		public boolean isLUT() {
+			return false;
+		}
+
+		@Override
+		public boolean isROM() {
+			return true;
+		}
+	}
+
+	// Default implementations are simply non-part specific memory
+	// structures with combinational reads and single cycle writes.
+	// These structures are only implementable in distributed RAM.
+	private static class DefaultRAM extends MemoryImplementation {
+		@Override
+		public Latency getReadLatency() {
+			return Latency.ZERO;
+		}
+
+		@Override
+		public Latency getWriteLatency() {
+			return Latency.ONE;
+		}
+
+		@Override
+		public boolean isDefault() {
+			return true;
+		}
+
+		@Override
+		public boolean isDPReadFirst() {
+			return true;
+		}
+
+		@Override
+		public boolean isLUT() {
+			return false;
+		}
+
+		@Override
+		public boolean isROM() {
+			return false;
+		}
+	}
+
+	private static class DefaultROM extends MemoryImplementation {
+		@Override
+		public Latency getReadLatency() {
+			return Latency.ZERO;
+		}
+
+		@Override
+		public Latency getWriteLatency() {
+			throw new UnsupportedOperationException("Cannot write to a ROM");
+		}
+
+		@Override
+		public boolean isDefault() {
+			return true;
+		}
+
+		@Override
+		public boolean isDPReadFirst() {
+			return true;
+		}
+
+		@Override
+		public boolean isLUT() {
+			return false;
+		}
+
+		@Override
+		public boolean isROM() {
+			return true;
+		}
+	}
+
+	private static class LutRAM extends MemoryImplementation {
+		@Override
+		public Latency getReadLatency() {
+			return Latency.ZERO;
+		}
+
+		@Override
+		public Latency getWriteLatency() {
+			return Latency.ONE;
+		}
+
+		@Override
+		public boolean isDefault() {
+			return false;
+		}
+
+		@Override
+		public boolean isDPReadFirst() {
+			return true;
+		}
+
+		@Override
+		public boolean isLUT() {
+			return true;
+		}
+
+		@Override
+		public boolean isROM() {
+			return false;
+		}
+	}
+
+	private static class LutROM extends MemoryImplementation {
+		@Override
+		public Latency getReadLatency() {
+			return Latency.ZERO;
+		}
+
+		@Override
+		public Latency getWriteLatency() {
+			throw new UnsupportedOperationException("Cannot write to a ROM");
+		}
+
+		@Override
+		public boolean isDefault() {
+			return false;
+		}
+
+		@Override
+		public boolean isDPReadFirst() {
+			return true;
+		}
+
+		@Override
+		public boolean isLUT() {
+			return true;
+		}
+
+		@Override
+		public boolean isROM() {
+			return true;
+		}
+	}
+
+	private static class RegisteredLutRAM extends MemoryImplementation {
+		@Override
+		public Latency getReadLatency() {
+			return Latency.ONE;
+		}
+
+		@Override
+		public Latency getWriteLatency() {
+			return Latency.ONE;
+		}
+
+		@Override
+		public boolean isDefault() {
+			return false;
+		}
+
+		@Override
+		public boolean isDPReadFirst() {
+			return true;
+		}
+
+		@Override
+		public boolean isLUT() {
+			return true;
+		}
+
+		@Override
+		public boolean isROM() {
+			return false;
+		}
+	}
+
+	private static class RegisteredLutROM extends MemoryImplementation {
+		@Override
+		public Latency getReadLatency() {
+			return Latency.ONE;
+		}
+
+		@Override
+		public Latency getWriteLatency() {
+			throw new UnsupportedOperationException("Cannot write to a ROM");
+		}
+
+		@Override
+		public boolean isDefault() {
+			return false;
+		}
+
+		@Override
+		public boolean isDPReadFirst() {
+			return true;
+		}
+
+		@Override
+		public boolean isLUT() {
+			return true;
+		}
+
+		@Override
+		public boolean isROM() {
+			return true;
+		}
+	}
+
+	public static final MemoryImplementation __getTestImplementation(String type) {
+		if (type.equals("lutram")) {
+			return new LutRAM();
+		}
+
+		return new DefaultRAM();
 	}
 
 	/**
@@ -152,70 +390,45 @@ public abstract class MemoryImplementation {
 							+ portCount);
 		}
 
-		return (isROM ? ((MemoryImplementation) new DefaultROM())
-				: ((MemoryImplementation) new DefaultRAM()));
+		return isROM ? (MemoryImplementation) new DefaultROM()
+				: (MemoryImplementation) new DefaultRAM();
 	}
 
 	private static MemoryImplementation getType(boolean isROM, boolean isLUT,
 			boolean combLutRead) {
 		if (isLUT) {
 			if (combLutRead) {
-				return (isROM ? ((MemoryImplementation) new LutROM())
-						: ((MemoryImplementation) new LutRAM()));
+				return isROM ? (MemoryImplementation) new LutROM()
+						: (MemoryImplementation) new LutRAM();
 			} else {
-				return (isROM ? ((MemoryImplementation) new RegisteredLutROM())
-						: ((MemoryImplementation) new RegisteredLutRAM()));
+				return isROM ? (MemoryImplementation) new RegisteredLutROM()
+						: (MemoryImplementation) new RegisteredLutRAM();
 			}
 		} else {
-			return (isROM ? ((MemoryImplementation) new BlockROM())
-					: ((MemoryImplementation) new BlockRAM()));
+			return isROM ? (MemoryImplementation) new BlockROM()
+					: (MemoryImplementation) new BlockRAM();
 		}
 	}
 
-	@Override
-	public String toString() {
-		return super.toString().replaceAll("net.sf.openforge.lim.memory.", "");
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof MemoryImplementation))
-			return false;
-		MemoryImplementation test = (MemoryImplementation) o;
-
-		if (!getReadLatency().equals(test.getReadLatency()))
-			return false;
-		if (isROM() != test.isROM())
-			return false;
-		if (!isROM()) {
-			if (!getWriteLatency().equals(test.getWriteLatency()))
-				return false;
+	public static void setMemoryImplementation(LogicalMemory mem) {
+		boolean readOnly = true;
+		for (LogicalMemoryPort port : mem.getLogicalMemoryPorts()) {
+			readOnly = readOnly & port.isReadOnly();
 		}
-		if (isLUT() != test.isLUT())
-			return false;
-		if (isDPReadFirst() != test.isDPReadFirst())
-			return false;
-		if (isDefault() != test.isDefault())
-			return false;
 
-		return true;
+		// Note that the way in which the memory is packed may affect
+		// the final number of bytes allocated. If structures need to
+		// fall on specific byte alignments then there may be bytes
+		// allocated only for address alignment, effectively
+		// increasing the size of the memory over the actual bytes
+		// stored. However, the type of implementation needs to be
+		// known for some optimizations prior to fixating the
+		// structure and packing of the memory.
+		mem.setImplementation(getMemoryImplementation(mem.getSizeInBytes(),
+				readOnly, mem.getLogicalMemoryPorts().size()));
 	}
 
-	@Override
-	public int hashCode() {
-		int base = 103598574;
-		base += getReadLatency().hashCode();
-		if (!isROM())
-			base += getWriteLatency().hashCode();
-		if (isLUT())
-			base += 285;
-		if (isROM())
-			base += 385;
-		if (isDPReadFirst())
-			base += 485;
-		if (isDefault())
-			base += 585;
-		return base;
+	public MemoryImplementation() {
 	}
 
 	// These classes are closely tied to the
@@ -225,280 +438,80 @@ public abstract class MemoryImplementation {
 	// visit each type of implementation and create the appropriate
 	// writer from that.
 
-	private static class LutRAM extends MemoryImplementation {
-		@Override
-		public Latency getReadLatency() {
-			return Latency.ZERO;
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof MemoryImplementation)) {
+			return false;
 		}
+		MemoryImplementation test = (MemoryImplementation) o;
 
-		@Override
-		public Latency getWriteLatency() {
-			return Latency.ONE;
+		if (!getReadLatency().equals(test.getReadLatency())) {
+			return false;
 		}
-
-		@Override
-		public boolean isLUT() {
-			return true;
+		if (isROM() != test.isROM()) {
+			return false;
 		}
-
-		@Override
-		public boolean isROM() {
+		if (!isROM()) {
+			if (!getWriteLatency().equals(test.getWriteLatency())) {
+				return false;
+			}
+		}
+		if (isLUT() != test.isLUT()) {
+			return false;
+		}
+		if (isDPReadFirst() != test.isDPReadFirst()) {
+			return false;
+		}
+		if (isDefault() != test.isDefault()) {
 			return false;
 		}
 
-		@Override
-		public boolean isDPReadFirst() {
-			return true;
-		}
-
-		@Override
-		public boolean isDefault() {
-			return false;
-		}
+		return true;
 	}
 
-	private static class RegisteredLutRAM extends MemoryImplementation {
-		@Override
-		public Latency getReadLatency() {
-			return Latency.ONE;
-		}
+	public abstract Latency getReadLatency();
 
-		@Override
-		public Latency getWriteLatency() {
-			return Latency.ONE;
-		}
+	public abstract Latency getWriteLatency();
 
-		@Override
-		public boolean isLUT() {
-			return true;
+	@Override
+	public int hashCode() {
+		int base = 103598574;
+		base += getReadLatency().hashCode();
+		if (!isROM()) {
+			base += getWriteLatency().hashCode();
 		}
-
-		@Override
-		public boolean isROM() {
-			return false;
+		if (isLUT()) {
+			base += 285;
 		}
-
-		@Override
-		public boolean isDPReadFirst() {
-			return true;
+		if (isROM()) {
+			base += 385;
 		}
-
-		@Override
-		public boolean isDefault() {
-			return false;
+		if (isDPReadFirst()) {
+			base += 485;
 		}
+		if (isDefault()) {
+			base += 585;
+		}
+		return base;
 	}
 
-	private static class LutROM extends MemoryImplementation {
-		@Override
-		public Latency getReadLatency() {
-			return Latency.ZERO;
-		}
+	public abstract boolean isDefault();
 
-		@Override
-		public Latency getWriteLatency() {
-			throw new UnsupportedOperationException("Cannot write to a ROM");
-		}
+	/**
+	 * Returns true if this memory, in dual port mode, resolves address
+	 * conflicts by a read-first strategy. Returns false if the strategy is
+	 * write-first. NOTE that this is the behavior across the two ports, NOT
+	 * single port behavior.
+	 */
+	public abstract boolean isDPReadFirst();
 
-		@Override
-		public boolean isLUT() {
-			return true;
-		}
+	public abstract boolean isLUT();
 
-		@Override
-		public boolean isROM() {
-			return true;
-		}
+	public abstract boolean isROM();
 
-		@Override
-		public boolean isDPReadFirst() {
-			return true;
-		}
-
-		@Override
-		public boolean isDefault() {
-			return false;
-		}
-	}
-
-	private static class RegisteredLutROM extends MemoryImplementation {
-		@Override
-		public Latency getReadLatency() {
-			return Latency.ONE;
-		}
-
-		@Override
-		public Latency getWriteLatency() {
-			throw new UnsupportedOperationException("Cannot write to a ROM");
-		}
-
-		@Override
-		public boolean isLUT() {
-			return true;
-		}
-
-		@Override
-		public boolean isROM() {
-			return true;
-		}
-
-		@Override
-		public boolean isDPReadFirst() {
-			return true;
-		}
-
-		@Override
-		public boolean isDefault() {
-			return false;
-		}
-	}
-
-	private static class BlockRAM extends MemoryImplementation {
-		@Override
-		public Latency getReadLatency() {
-			return Latency.ONE;
-		}
-
-		@Override
-		public Latency getWriteLatency() {
-			return Latency.ONE;
-		}
-
-		@Override
-		public boolean isLUT() {
-			return false;
-		}
-
-		@Override
-		public boolean isROM() {
-			return false;
-		}
-
-		// Intentionally set to always read first. Otherwise caution
-		// must be exercised b/c the write-first mode returns corrupt
-		// data on the read port, as per V4 user guide. If this is
-		// changed, then the parameter setting in DualPortBlockRam
-		// must also be changed.
-		@Override
-		public boolean isDPReadFirst() {
-			return true;
-		}
-
-		@Override
-		public boolean isDefault() {
-			return false;
-		}
-	}
-
-	private static class BlockROM extends MemoryImplementation {
-		@Override
-		public Latency getReadLatency() {
-			return Latency.ONE;
-		}
-
-		@Override
-		public Latency getWriteLatency() {
-			throw new UnsupportedOperationException("Cannot write to a ROM");
-		}
-
-		@Override
-		public boolean isLUT() {
-			return false;
-		}
-
-		@Override
-		public boolean isROM() {
-			return true;
-		}
-
-		// Intentionally set to always read first. Otherwise caution
-		// must be exercised b/c the write-first mode returns corrupt
-		// data on the read port, as per V4 user guide. If this is
-		// changed, then the parameter setting in DualPortBlockRam
-		// must also be changed.
-		@Override
-		public boolean isDPReadFirst() {
-			return true;
-		}
-
-		@Override
-		public boolean isDefault() {
-			return false;
-		}
-	}
-
-	// Default implementations are simply non-part specific memory
-	// structures with combinational reads and single cycle writes.
-	// These structures are only implementable in distributed RAM.
-	private static class DefaultRAM extends MemoryImplementation {
-		@Override
-		public Latency getReadLatency() {
-			return Latency.ZERO;
-		}
-
-		@Override
-		public Latency getWriteLatency() {
-			return Latency.ONE;
-		}
-
-		@Override
-		public boolean isLUT() {
-			return false;
-		}
-
-		@Override
-		public boolean isROM() {
-			return false;
-		}
-
-		@Override
-		public boolean isDPReadFirst() {
-			return true;
-		}
-
-		@Override
-		public boolean isDefault() {
-			return true;
-		}
-	}
-
-	private static class DefaultROM extends MemoryImplementation {
-		@Override
-		public Latency getReadLatency() {
-			return Latency.ZERO;
-		}
-
-		@Override
-		public Latency getWriteLatency() {
-			throw new UnsupportedOperationException("Cannot write to a ROM");
-		}
-
-		@Override
-		public boolean isLUT() {
-			return false;
-		}
-
-		@Override
-		public boolean isROM() {
-			return true;
-		}
-
-		@Override
-		public boolean isDPReadFirst() {
-			return true;
-		}
-
-		@Override
-		public boolean isDefault() {
-			return true;
-		}
-	}
-
-	public static final MemoryImplementation __getTestImplementation(String type) {
-		if (type.equals("lutram"))
-			return new LutRAM();
-
-		return new DefaultRAM();
+	@Override
+	public String toString() {
+		return super.toString().replaceAll("net.sf.openforge.lim.memory.", "");
 	}
 
 }// MemoryImplementation

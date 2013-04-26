@@ -26,7 +26,6 @@ import java.math.BigInteger;
 import org.xronos.openforge.app.EngineThread;
 import org.xronos.openforge.app.OptionRegistry;
 
-
 /**
  * A Scalar is an implementation of {@link LogicalValue} for scalar numeric
  * values that represent pure numbers, i.e. not pointers. The internal
@@ -37,8 +36,68 @@ import org.xronos.openforge.app.OptionRegistry;
  */
 public class Scalar implements LogicalValue, MemoryVisitable {
 
+	public static final Scalar buildByteScalar(BigInteger value,
+			boolean isSigned, int byteLength, AddressStridePolicy policy) {
+		assert policy == AddressStridePolicy.BYTE_ADDRESSING;
+
+		// First we need to convert the value to a byte
+		// representation.
+		byte byteRep[] = new byte[byteLength];
+
+		/*
+		 * Copy the bits from the value to the rep, up to but not including the
+		 * sign bit.
+		 */
+		int byteIndex = 0;
+		int bitOffset = 0;
+		final int valueBitLength = value.bitLength();
+		for (int i = 0; i < valueBitLength; i++) {
+			byteIndex = i / 8;
+			bitOffset = i % 8;
+			if (value.testBit(i) && byteIndex < byteRep.length) {
+				byteRep[byteIndex] |= 1 << bitOffset;
+			}
+		}
+
+		/*
+		 * If the type is signed and the value is negative, perform sign
+		 * extension to the end of the rep.
+		 */
+		if (isSigned && value.testBit(valueBitLength + 1)) {
+			byteIndex = valueBitLength / 8;
+			bitOffset = valueBitLength % 8;
+			while (bitOffset < 8 && byteIndex < byteRep.length) {
+				byteRep[byteIndex] |= 1 << bitOffset++;
+			}
+
+			while (++byteIndex < byteRep.length) {
+				byteRep[byteIndex] |= 0xff;
+			}
+		}
+
+		AddressableUnit[] rep = new AddressableUnit[byteRep.length];
+		for (int i = 0; i < rep.length; i++) {
+			rep[i] = new AddressableUnit(byteRep[i]);
+		}
+
+		return new Scalar(rep, policy);
+	}
+
+	public static final Scalar buildScalar(byte[] rep,
+			AddressStridePolicy policy) {
+		AddressableUnit[] units = new AddressableUnit[rep.length];
+		for (int i = 0; i < units.length; i++) {
+			// units[i] = new AddressableUnit(BigInteger.valueOf(rep[i]));
+			units[i] = new AddressableUnit(rep[i]);
+		}
+
+		return new Scalar(units, policy);
+	}
+
 	private AddressableUnit[] rep;
+
 	private boolean isLittleEndian;
+
 	private AddressStridePolicy stridePolicy;
 
 	/**
@@ -89,8 +148,9 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 			AddressStridePolicy policy) {
 		this.rep = new AddressableUnit[rep.length];
 		stridePolicy = policy;
-		if (policy == null)
+		if (policy == null) {
 			throw new IllegalArgumentException("Cannot have null stride policy");
+		}
 
 		isLittleEndian = EngineThread.getGenericJob()
 				.getUnscopedBooleanOptionValue(OptionRegistry.LITTLE_ENDIAN);
@@ -118,23 +178,15 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	}
 
 	/**
-	 * Gets the size in addressable units of this value.
+	 * Returns a new LogicalValue object (Scalar) which has the same numerical
+	 * representation as this Scalar object.
 	 * 
-	 * @return the number of addresses needed to represent this value; this
-	 *         number is at least 1 for a scalar value
+	 * @return a new LogicalValue with the same structure and initial values as
+	 *         this LogicalValue.
 	 */
 	@Override
-	public int getSize() {
-		return rep.length;
-	}
-
-	/**
-	 * Returns the number of bits allocated based on analysis of the
-	 * AddressableUnit representation.
-	 */
-	@Override
-	public int getBitSize() {
-		return getSize() * stridePolicy.getStride();
+	public LogicalValue copy() {
+		return new Scalar(rep, false, stridePolicy);
 	}
 
 	/**
@@ -157,6 +209,15 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	}
 
 	/**
+	 * Returns the number of bits allocated based on analysis of the
+	 * AddressableUnit representation.
+	 */
+	@Override
+	public int getBitSize() {
+		return getSize() * stridePolicy.getStride();
+	}
+
+	/**
 	 * Gets the bitwise representation of this value.
 	 * 
 	 * @return an array of {@link AddressableUnit}s, ordered in Least
@@ -173,15 +234,24 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 	}
 
 	/**
-	 * Returns a new LogicalValue object (Scalar) which has the same numerical
-	 * representation as this Scalar object.
+	 * Gets the size in addressable units of this value.
 	 * 
-	 * @return a new LogicalValue with the same structure and initial values as
-	 *         this LogicalValue.
+	 * @return the number of addresses needed to represent this value; this
+	 *         number is at least 1 for a scalar value
 	 */
 	@Override
-	public LogicalValue copy() {
-		return new Scalar(rep, false, stridePolicy);
+	public int getSize() {
+		return rep.length;
+	}
+
+	/** @inheritDoc */
+	@Override
+	public LogicalValue getValueAtOffset(int delta, int size) {
+		if (delta == 0 && size == getSize()) {
+			return this;
+		}
+
+		return new Slice(this, delta, size);
 	}
 
 	/**
@@ -214,7 +284,7 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 		} else if (min > max) {
 			throw new NonRemovableRangeException(
 					"Illegal range: min is greater than max.");
-		} else if ((min > rep.length - 1) || (max > rep.length - 1)) {
+		} else if (min > rep.length - 1 || max > rep.length - 1) {
 			throw new NonRemovableRangeException(
 					"Illegal range: range out of bound.");
 		}
@@ -230,6 +300,18 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 		}
 
 		return new Scalar(newRep, false, stridePolicy);
+	}
+
+	/**
+	 * Returns a Constant which is little endian in representation.
+	 * 
+	 * @see org.xronos.openforge.lim.memory.LogicalValue#toConstant()
+	 */
+	@Override
+	public MemoryConstant toConstant() {
+		AddressableUnit[] rep = getRep();
+		return new ScalarConstant(rep, getBitSize(), false,
+				getAddressStridePolicy());
 	}
 
 	/**
@@ -249,91 +331,11 @@ public class Scalar implements LogicalValue, MemoryVisitable {
 		for (int i = 0; i < rep.length; i++) {
 			// buf.append(Integer.toHexString(0xff & rep[i]));
 			buf.append(rep[i].getValue().toString(16));
-			if (i < (rep.length - 1)) {
+			if (i < rep.length - 1) {
 				buf.append(".");
 			}
 		}
 		return buf.toString();
-	}
-
-	/**
-	 * Returns a Constant which is little endian in representation.
-	 * 
-	 * @see org.xronos.openforge.lim.memory.LogicalValue#toConstant()
-	 */
-	@Override
-	public MemoryConstant toConstant() {
-		AddressableUnit[] rep = getRep();
-		return new ScalarConstant(rep, getBitSize(), false,
-				getAddressStridePolicy());
-	}
-
-	/** @inheritDoc */
-	@Override
-	public LogicalValue getValueAtOffset(int delta, int size) {
-		if ((delta == 0) && (size == getSize())) {
-			return this;
-		}
-
-		return new Slice(this, delta, size);
-	}
-
-	public static final Scalar buildScalar(byte[] rep,
-			AddressStridePolicy policy) {
-		AddressableUnit[] units = new AddressableUnit[rep.length];
-		for (int i = 0; i < units.length; i++) {
-			// units[i] = new AddressableUnit(BigInteger.valueOf(rep[i]));
-			units[i] = new AddressableUnit(rep[i]);
-		}
-
-		return new Scalar(units, policy);
-	}
-
-	public static final Scalar buildByteScalar(BigInteger value,
-			boolean isSigned, int byteLength, AddressStridePolicy policy) {
-		assert policy == AddressStridePolicy.BYTE_ADDRESSING;
-
-		// First we need to convert the value to a byte
-		// representation.
-		byte byteRep[] = new byte[byteLength];
-
-		/*
-		 * Copy the bits from the value to the rep, up to but not including the
-		 * sign bit.
-		 */
-		int byteIndex = 0;
-		int bitOffset = 0;
-		final int valueBitLength = value.bitLength();
-		for (int i = 0; i < valueBitLength; i++) {
-			byteIndex = i / 8;
-			bitOffset = i % 8;
-			if (value.testBit(i) && byteIndex < byteRep.length) {
-				byteRep[byteIndex] |= (1 << bitOffset);
-			}
-		}
-
-		/*
-		 * If the type is signed and the value is negative, perform sign
-		 * extension to the end of the rep.
-		 */
-		if (isSigned && value.testBit(valueBitLength + 1)) {
-			byteIndex = valueBitLength / 8;
-			bitOffset = valueBitLength % 8;
-			while (bitOffset < 8 && byteIndex < byteRep.length) {
-				byteRep[byteIndex] |= (1 << bitOffset++);
-			}
-
-			while (++byteIndex < byteRep.length) {
-				byteRep[byteIndex] |= 0xff;
-			}
-		}
-
-		AddressableUnit[] rep = new AddressableUnit[byteRep.length];
-		for (int i = 0; i < rep.length; i++) {
-			rep[i] = new AddressableUnit(byteRep[i]);
-		}
-
-		return new Scalar(rep, policy);
 	}
 
 }

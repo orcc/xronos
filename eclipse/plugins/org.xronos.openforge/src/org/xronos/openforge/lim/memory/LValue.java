@@ -52,7 +52,7 @@ import org.xronos.openforge.lim.io.BlockElement;
  * <P>
  * An lvalue need not be a simple identifier. Here are some other examples of
  * lvalue expressions: <code>
- * <ul>
+ * <ul> 
  * <li>*p   // pointer indirection
  * <li>a[i] // array subscript
  * <li>(l)  // parenthesized lvalue
@@ -79,6 +79,23 @@ public interface LValue extends Visitable {
 	public int getAccessLocationCount();
 
 	/**
+	 * Retrieves the {@link BlockElement} associated with this LValue or null if
+	 * none has been defined. A non null value means that this LValue is part of
+	 * the interface wrapper logic for the design.
+	 * 
+	 * @return a BlockElement, may be null
+	 */
+	public BlockElement getBlockElement();
+
+	/**
+	 * Gets the {@link LogicalMemoryPort} that is referenced by this
+	 * <code>LValue</code>.
+	 * 
+	 * @return the referenced port, or null if there is none
+	 */
+	public LogicalMemoryPort getLogicalMemoryPort();
+
+	/**
 	 * Tests whether the context of the LValue is a write or a read.
 	 * 
 	 * @return true if this lvalue is used in an assignment to memory, false if
@@ -95,23 +112,6 @@ public interface LValue extends Visitable {
 	 *            a BlockElement
 	 */
 	public void setBlockElement(BlockElement element);
-
-	/**
-	 * Retrieves the {@link BlockElement} associated with this LValue or null if
-	 * none has been defined. A non null value means that this LValue is part of
-	 * the interface wrapper logic for the design.
-	 * 
-	 * @return a BlockElement, may be null
-	 */
-	public BlockElement getBlockElement();
-
-	/**
-	 * Gets the {@link LogicalMemoryPort} that is referenced by this
-	 * <code>LValue</code>.
-	 * 
-	 * @return the referenced port, or null if there is none
-	 */
-	public LogicalMemoryPort getLogicalMemoryPort();
 
 	/**
 	 * Sets the {@link LogicalMemoryPort} that is referenced by this

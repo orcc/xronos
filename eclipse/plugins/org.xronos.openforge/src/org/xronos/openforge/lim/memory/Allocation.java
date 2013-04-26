@@ -27,7 +27,6 @@ import java.util.Set;
 
 import org.xronos.openforge.lim.io.BlockElement;
 
-
 /**
  * An Allocation is a region of memory that has been allocated by the
  * declaration of a variable in the user application. It is defined by the
@@ -65,19 +64,6 @@ public class Allocation extends Variable implements MemoryVisitable {
 	}
 
 	/**
-	 * Creates and returns a <code>Location</code> that is a duplicate of this
-	 * one using a given <code>Location</code> as a base.
-	 * 
-	 * @param baseLocation
-	 *            the base for the duplicate location
-	 * @return the duplicated location
-	 */
-	@Override
-	public Location duplicateForBaseLocation(Location baseLocation) {
-		return baseLocation;
-	}
-
-	/**
 	 * Implementation of the MemoryVisitable interface.
 	 * 
 	 * @param memVis
@@ -88,35 +74,6 @@ public class Allocation extends Variable implements MemoryVisitable {
 	@Override
 	public void accept(MemoryVisitor memVis) {
 		memVis.visit(this);
-	}
-
-	/**
-	 * Gets the initial value.
-	 * 
-	 * @return the value that was used to initialize this memory location
-	 */
-	@Override
-	public LogicalValue getInitialValue() {
-		return initialValue;
-	}
-
-	/**
-	 * Copies the Set of {@link BlockElements} from the given Location, which
-	 * must be an Allocation (protected with an assert).
-	 * 
-	 * @param loc
-	 *            a 'Location' which must be an Allocation
-	 */
-	public void copyBlockElements(Location loc) {
-		assert (loc instanceof Allocation);
-		if (!(loc instanceof Allocation)) {
-			return;
-		}
-
-		Allocation template = (Allocation) loc;
-		for (BlockElement blockElement : template.getBlockElements()) {
-			addBlockElement(blockElement);
-		}
 	}
 
 	/**
@@ -143,6 +100,66 @@ public class Allocation extends Variable implements MemoryVisitable {
 	}
 
 	/**
+	 * Copies the Set of {@link BlockElements} from the given Location, which
+	 * must be an Allocation (protected with an assert).
+	 * 
+	 * @param loc
+	 *            a 'Location' which must be an Allocation
+	 */
+	public void copyBlockElements(Location loc) {
+		assert loc instanceof Allocation;
+		if (!(loc instanceof Allocation)) {
+			return;
+		}
+
+		Allocation template = (Allocation) loc;
+		for (BlockElement blockElement : template.getBlockElements()) {
+			addBlockElement(blockElement);
+		}
+	}
+
+	@Override
+	public String debug() {
+		return toString().replaceAll("net.sf.openforge.", "") + " <"
+				+ getInitialValue().toString() + ">";
+	}
+
+	/**
+	 * Creates and returns a <code>Location</code> that is a duplicate of this
+	 * one using a given <code>Location</code> as a base.
+	 * 
+	 * @param baseLocation
+	 *            the base for the duplicate location
+	 * @return the duplicated location
+	 */
+	@Override
+	public Location duplicateForBaseLocation(Location baseLocation) {
+		return baseLocation;
+	}
+
+	/**
+	 * Returns the set of {@link BlockElement} objects that have been associated
+	 * with this Allocation, or the empty set if this Allocation is not related
+	 * to the block IO interface of the design.
+	 * 
+	 * @return an unmodifiable Set of {@link BlockElement} objects, which may be
+	 *         the empty set.
+	 */
+	public Set<BlockElement> getBlockElements() {
+		return Collections.unmodifiableSet(blockElements);
+	}
+
+	/**
+	 * Gets the initial value.
+	 * 
+	 * @return the value that was used to initialize this memory location
+	 */
+	@Override
+	public LogicalValue getInitialValue() {
+		return initialValue;
+	}
+
+	/**
 	 * Removes the specified {@link BlockElement} from this Allocation,
 	 * indicating that this Allocation is no longer the backing memory for that
 	 * BlockElement (or that the element has been removed from all interfaces
@@ -164,27 +181,9 @@ public class Allocation extends Variable implements MemoryVisitable {
 		}
 	}
 
-	/**
-	 * Returns the set of {@link BlockElement} objects that have been associated
-	 * with this Allocation, or the empty set if this Allocation is not related
-	 * to the block IO interface of the design.
-	 * 
-	 * @return an unmodifiable Set of {@link BlockElement} objects, which may be
-	 *         the empty set.
-	 */
-	public Set<BlockElement> getBlockElements() {
-		return Collections.unmodifiableSet(blockElements);
-	}
-
 	@Override
 	public String toString() {
 		return "[Allocation@" + Integer.toHexString(hashCode()) + "="
 				+ initialValue + "]";
-	}
-
-	@Override
-	public String debug() {
-		return toString().replaceAll("net.sf.openforge.", "") + " <"
-				+ getInitialValue().toString() + ">";
 	}
 }

@@ -41,6 +41,23 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	}
 
 	/**
+	 * Visits the given {@link Allocation} and continues the traversal by
+	 * calling the accept method of its {@link LogicalValue}
+	 * 
+	 * @param alloc
+	 *            a non null {@link Allocation} object
+	 * @throws NullPointerException
+	 *             if alloc is null
+	 */
+	@Override
+	public void visit(Allocation alloc) {
+		_memory.ln(_memory.MEMVISIT, "Visiting " + alloc);
+		assert alloc.getInitialValue() != null : "Illegal internal structure.  An allocation has null initial value";
+		MemoryVisitable value = alloc.getInitialValue();
+		value.accept(this);
+	}
+
+	/**
 	 * Visits the given {@link LogicalMemory} and all of its constituent
 	 * {@link Allocation Allocations}
 	 * 
@@ -59,23 +76,6 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	}
 
 	/**
-	 * Visits the given {@link Allocation} and continues the traversal by
-	 * calling the accept method of its {@link LogicalValue}
-	 * 
-	 * @param alloc
-	 *            a non null {@link Allocation} object
-	 * @throws NullPointerException
-	 *             if alloc is null
-	 */
-	@Override
-	public void visit(Allocation alloc) {
-		_memory.ln(_memory.MEMVISIT, "Visiting " + alloc);
-		assert alloc.getInitialValue() != null : "Illegal internal structure.  An allocation has null initial value";
-		MemoryVisitable value = alloc.getInitialValue();
-		value.accept(this);
-	}
-
-	/**
 	 * Visits the given {@link Pointer}.
 	 * 
 	 * @param ptr
@@ -86,8 +86,9 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	@Override
 	public void visit(Pointer ptr) {
 		_memory.ln(_memory.MEMVISIT, "Visiting " + ptr);
-		if (ptr == null)
+		if (ptr == null) {
 			throw new NullPointerException("Null visit to pointer");
+		}
 	}
 
 	/**
@@ -119,8 +120,9 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	@Override
 	public void visit(Scalar sclr) {
 		_memory.ln(_memory.MEMVISIT, "Visiting " + sclr);
-		if (sclr == null)
+		if (sclr == null) {
 			throw new NullPointerException("Null visit to scalar");
+		}
 	}
 
 	/**
@@ -134,8 +136,9 @@ public class DefaultMemoryVisitor implements MemoryVisitor {
 	@Override
 	public void visit(Slice slice) {
 		_memory.ln(_memory.MEMVISIT, "Visiting " + slice);
-		if (slice == null)
+		if (slice == null) {
 			throw new NullPointerException("Null visit to Slice");
+		}
 	}
 
 }// DefaultMemoryVisitor

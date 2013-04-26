@@ -29,7 +29,6 @@ import java.util.List;
 import org.xronos.openforge.lim.op.Constant;
 import org.xronos.openforge.lim.op.SimpleConstant;
 
-
 /**
  * FSLFifoOutput creates pins necessary for obtaining data from an output FIFO
  * interface that is FSL compliant.

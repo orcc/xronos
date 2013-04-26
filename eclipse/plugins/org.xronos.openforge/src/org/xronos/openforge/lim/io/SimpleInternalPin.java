@@ -28,7 +28,6 @@ import java.util.List;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Port;
 
-
 /**
  * SimpleInternalPin is a type of SimplePin which is only used for communication
  * between 2 concurrent tasks. This pin is never published on the top level
@@ -45,28 +44,6 @@ public class SimpleInternalPin extends SimplePin {
 
 	public SimpleInternalPin(int width, String name) {
 		super(width, name);
-	}
-
-	/**
-	 * Overrides the super to allow for both the source and sink to be
-	 * connected.
-	 * 
-	 * @param valueBus
-	 *            a value of type 'Bus'
-	 * @throws IllegalArgumentException
-	 *             if valueBus is null
-	 */
-	@Override
-	public void connectPort(Bus valueBus) {
-		buildPort();
-		if (valueBus == null)
-			throw new IllegalArgumentException("Cannot connect null to port");
-
-		if (getSink().isConnected()) {
-			throw new UnsupportedOperationException(
-					"Sink port is already connected");
-		}
-		getSink().setBus(valueBus);
 	}
 
 	/**
@@ -92,8 +69,31 @@ public class SimpleInternalPin extends SimplePin {
 		toConnect.removeAll(getSource().getPorts());
 		// connect up what's left.
 		for (Port port : toConnect) {
-			(port).setBus(getSource());
+			port.setBus(getSource());
 		}
+	}
+
+	/**
+	 * Overrides the super to allow for both the source and sink to be
+	 * connected.
+	 * 
+	 * @param valueBus
+	 *            a value of type 'Bus'
+	 * @throws IllegalArgumentException
+	 *             if valueBus is null
+	 */
+	@Override
+	public void connectPort(Bus valueBus) {
+		buildPort();
+		if (valueBus == null) {
+			throw new IllegalArgumentException("Cannot connect null to port");
+		}
+
+		if (getSink().isConnected()) {
+			throw new UnsupportedOperationException(
+					"Sink port is already connected");
+		}
+		getSink().setBus(valueBus);
 	}
 
 	/**

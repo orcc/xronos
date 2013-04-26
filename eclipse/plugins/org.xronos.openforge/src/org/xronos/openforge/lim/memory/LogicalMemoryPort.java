@@ -33,7 +33,6 @@ import org.xronos.openforge.lim.MemoryAccessBlock;
 import org.xronos.openforge.lim.Referencer;
 import org.xronos.openforge.lim.Storage;
 
-
 /**
  * LogicalMemoryPort is an access point for a {@link LogicalMemory}, which may
  * have one or more instances of it. Each LogicalMemoryPort supports one
@@ -86,104 +85,9 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 						OptionRegistry.SIMPLE_STATE_ARBITRATION);
 	}
 
-	/**
-	 * Gets the {@link LogicalMemory}.
-	 * 
-	 * @return the memory which owns this port
-	 */
-	public LogicalMemory getLogicalMemory() {
-		return logicalMemory;
-	}
-
-	/**
-	 * Tests the referencer types for compatibility and then returns 1 always.
-	 * 
-	 * @param from
-	 *            the prior accessor in source document order.
-	 * @param to
-	 *            the latter accessor in source document order.
-	 */
-	@Override
-	public int getSpacing(Referencer from, Referencer to) {
-		if ((from instanceof MemoryRead) || (from instanceof MemoryWrite)) {
-			if (((MemoryAccess) from).getLatency().getMinClocks() == 0) {
-				return 1;
-			} else {
-				return 0;
-			}
-		} else
-			throw new IllegalArgumentException("Source access to " + this
-					+ " is of unknown type " + from.getClass());
-	}
-
-	/**
-	 * Returns -1 indicating that the referencers must be scheduled using the
-	 * default DONE to GO spacing.
-	 */
-	@Override
-	public int getGoSpacing(Referencer from, Referencer to) {
-		return -1;
-	}
-
-	/**
-	 * Returns true if this memory port is going to be arbitrated and
-	 * consequently have indeterminate timing in the final implementation.
-	 */
-	public boolean isArbitrated() {
-		// return this.arbitrated && !this.doSimpleArbiter;
-		return arbitrated;
-	}
-
-	/**
-	 * Returns the write mode for this port. Always returns READ_FIRST. LUT
-	 * based memories are always read first, only block rams have the capability
-	 * of selection of mode. Thus, if this method returns anything other than
-	 * READ_FIRST, then the code allocating dual ports, and the resource
-	 * sequencer must account for the difference between LUT and block rams (and
-	 * the decision on which this memory is must be made much earlier).
-	 * 
-	 * @return {@see #READ_FIRST}
-	 */
-	public String getWriteMode() {
-		return LogicalMemoryPort.READ_FIRST;
-	}
-
-	/**
-	 * Sets whether this memory port is to be arbitrated.
-	 * 
-	 * @param value
-	 *            true if this memory port needs to be arbitrated.
-	 */
-	public void setArbitrated(boolean value) {
-		arbitrated = value;
-	}
-
-	/**
-	 * Gets the MemoryReferee for this port (created with
-	 * makePhysicalComponent).
-	 */
-	public MemoryReferee getReferee() {
-		return referee;
-	}
-
-	/**
-	 * Makes the MemoryReferee which provides the physical implementation for
-	 * access to this MemoryPort.
-	 * 
-	 * @param readList
-	 *            list with MemoryReadConnections for each task.
-	 * @param writeList
-	 *            list with MemoryReadConnections for each task. null reads or
-	 *            writes mean there is no read or write for that task
-	 */
-	public MemoryReferee makePhysicalComponent(List readList, List writeList) {
-		if (doSimpleArbiter) {
-			referee = new SimpleMemoryReferee(this, readList, writeList);
-		} else {
-			referee = new MemoryReferee(this, readList, writeList);
-		}
-
-		return referee;
+	public void addAccess(LValue lvalue) {
+		getLogicalMemory().addAccess(lvalue, this);
+		lvalue.setLogicalMemoryPort(this);
 	}
 
 	/**
@@ -209,45 +113,28 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 		lvalue.setLogicalMemoryPort(this);
 	}
 
-	public void addAccess(LValue lvalue) {
-		getLogicalMemory().addAccess(lvalue, this);
-		lvalue.setLogicalMemoryPort(this);
+	@Override
+	public boolean allowsCombinationalReads() {
+		return getStructuralMemory().allowsCombinationalReads();
+	}
+
+	@Override
+	public int getAddrPathWidth() {
+		return getStructuralMemory().getAddrWidth();
+	}
+
+	@Override
+	public int getDataPathWidth() {
+		return getStructuralMemory().getDataWidth();
 	}
 
 	/**
-	 * Gets the accesses which read from this port.
-	 * 
-	 * @return a collection of {@link LValue LValues} which read from this port
+	 * Returns -1 indicating that the referencers must be scheduled using the
+	 * default DONE to GO spacing.
 	 */
-	public List<LValue> getReadAccesses() {
-		return getLogicalMemory().getReadLValues(this);
-	}
-
-	/**
-	 * Gets the accesses which write to this port.
-	 * 
-	 * @return a collection of {@link LValue LValues} which write to port
-	 */
-	public List<LValue> getWriteAccesses() {
-		return getLogicalMemory().getWriteLValues(this);
-	}
-
-	/**
-	 * Tests whether there are any write accesses to this port.
-	 * 
-	 * @return false if there are write accesses to this port, true otherwise
-	 */
-	public boolean isReadOnly() {
-		return getWriteAccesses().isEmpty();
-	}
-
-	/**
-	 * Tests whether there are any read accesses to this port.
-	 * 
-	 * @return false if there are read accesses to this port, true otherwise
-	 */
-	public boolean isWriteOnly() {
-		return getReadAccesses().isEmpty();
+	@Override
+	public int getGoSpacing(Referencer from, Referencer to) {
+		return -1;
 	}
 
 	/**
@@ -272,16 +159,6 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 		}
 	}
 
-	/**
-	 * Gets the maximum possible number of bits in an address for this port's
-	 * {@link LogicalMemory}.
-	 * 
-	 * @return the nonzero number of bits
-	 */
-	public int getMaxAddressWidth() {
-		return getLogicalMemory().getMaxAddressWidth();
-	}
-
 	private Latency getLatency(MemoryAccess access) {
 		Latency lat = null;
 
@@ -292,15 +169,15 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 				.getImplementation();
 
 		if (access.isReadAccess()) {
-			lat = (impl != null) ? impl.getReadLatency() : null;
+			lat = impl != null ? impl.getReadLatency() : null;
 		} else if (access.isWriteAccess()) {
-			lat = (impl != null) ? impl.getWriteLatency() : null;
+			lat = impl != null ? impl.getWriteLatency() : null;
 		} else {
 			throw new IllegalArgumentException(
 					"Unknown access type to memory port " + access);
 		}
 
-		if ((lat != null) && isArbitrated() && !doSimpleArbiter) {
+		if (lat != null && isArbitrated() && !doSimpleArbiter) {
 			// lat = lat.open(this);
 			lat = lat.open(access.getExit(Exit.DONE));
 		}
@@ -308,8 +185,147 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 		return lat;
 	}
 
+	/**
+	 * Gets the {@link LogicalMemory}.
+	 * 
+	 * @return the memory which owns this port
+	 */
+	public LogicalMemory getLogicalMemory() {
+		return logicalMemory;
+	}
+
+	/**
+	 * Gets the maximum possible number of bits in an address for this port's
+	 * {@link LogicalMemory}.
+	 * 
+	 * @return the nonzero number of bits
+	 */
+	public int getMaxAddressWidth() {
+		return getLogicalMemory().getMaxAddressWidth();
+	}
+
+	/**
+	 * Gets the accesses which read from this port.
+	 * 
+	 * @return a collection of {@link LValue LValues} which read from this port
+	 */
+	public List<LValue> getReadAccesses() {
+		return getLogicalMemory().getReadLValues(this);
+	}
+
+	/**
+	 * Gets the MemoryReferee for this port (created with
+	 * makePhysicalComponent).
+	 */
+	public MemoryReferee getReferee() {
+		return referee;
+	}
+
+	/**
+	 * Tests the referencer types for compatibility and then returns 1 always.
+	 * 
+	 * @param from
+	 *            the prior accessor in source document order.
+	 * @param to
+	 *            the latter accessor in source document order.
+	 */
+	@Override
+	public int getSpacing(Referencer from, Referencer to) {
+		if (from instanceof MemoryRead || from instanceof MemoryWrite) {
+			if (((MemoryAccess) from).getLatency().getMinClocks() == 0) {
+				return 1;
+			} else {
+				return 0;
+			}
+		} else {
+			throw new IllegalArgumentException("Source access to " + this
+					+ " is of unknown type " + from.getClass());
+		}
+	}
+
 	public StructuralMemory getStructuralMemory() {
 		return getLogicalMemory().getStructuralMemory();
+	}
+
+	/**
+	 * Gets the accesses which write to this port.
+	 * 
+	 * @return a collection of {@link LValue LValues} which write to port
+	 */
+	public List<LValue> getWriteAccesses() {
+		return getLogicalMemory().getWriteLValues(this);
+	}
+
+	/**
+	 * Returns the write mode for this port. Always returns READ_FIRST. LUT
+	 * based memories are always read first, only block rams have the capability
+	 * of selection of mode. Thus, if this method returns anything other than
+	 * READ_FIRST, then the code allocating dual ports, and the resource
+	 * sequencer must account for the difference between LUT and block rams (and
+	 * the decision on which this memory is must be made much earlier).
+	 * 
+	 * @return {@see #READ_FIRST}
+	 */
+	public String getWriteMode() {
+		return LogicalMemoryPort.READ_FIRST;
+	}
+
+	@Override
+	public boolean isAddressable() {
+		return getStructuralMemory().getAddressableLocations() > 1;
+	}
+
+	/**
+	 * Returns true if this memory port is going to be arbitrated and
+	 * consequently have indeterminate timing in the final implementation.
+	 */
+	public boolean isArbitrated() {
+		// return this.arbitrated && !this.doSimpleArbiter;
+		return arbitrated;
+	}
+
+	/**
+	 * Tests whether there are any write accesses to this port.
+	 * 
+	 * @return false if there are write accesses to this port, true otherwise
+	 */
+	public boolean isReadOnly() {
+		return getWriteAccesses().isEmpty();
+	}
+
+	// //////////////////////////////////////////////////
+	//
+	// Implementation of the Arbitratable interface
+	//
+	// //////////////////////////////////////////////////
+
+	/**
+	 * Tests whether there are any read accesses to this port.
+	 * 
+	 * @return false if there are read accesses to this port, true otherwise
+	 */
+	public boolean isWriteOnly() {
+		return getReadAccesses().isEmpty();
+	}
+
+	/**
+	 * Makes the MemoryReferee which provides the physical implementation for
+	 * access to this MemoryPort.
+	 * 
+	 * @param readList
+	 *            list with MemoryReadConnections for each task.
+	 * @param writeList
+	 *            list with MemoryReadConnections for each task. null reads or
+	 *            writes mean there is no read or write for that task
+	 */
+	public MemoryReferee makePhysicalComponent(List readList, List writeList) {
+		if (doSimpleArbiter) {
+			referee = new SimpleMemoryReferee(this, readList, writeList);
+		} else {
+			referee = new MemoryReferee(this, readList, writeList);
+		}
+
+		return referee;
 	}
 
 	/**
@@ -338,30 +354,14 @@ public class LogicalMemoryPort extends Storage implements Arbitratable {
 		getLogicalMemory().removeAccessor(lvalue);
 	}
 
-	// //////////////////////////////////////////////////
-	//
-	// Implementation of the Arbitratable interface
-	//
-	// //////////////////////////////////////////////////
-
-	@Override
-	public int getDataPathWidth() {
-		return getStructuralMemory().getDataWidth();
-	}
-
-	@Override
-	public int getAddrPathWidth() {
-		return getStructuralMemory().getAddrWidth();
-	}
-
-	@Override
-	public boolean isAddressable() {
-		return getStructuralMemory().getAddressableLocations() > 1;
-	}
-
-	@Override
-	public boolean allowsCombinationalReads() {
-		return getStructuralMemory().allowsCombinationalReads();
+	/**
+	 * Sets whether this memory port is to be arbitrated.
+	 * 
+	 * @param value
+	 *            true if this memory port needs to be arbitrated.
+	 */
+	public void setArbitrated(boolean value) {
+		arbitrated = value;
 	}
 
 }

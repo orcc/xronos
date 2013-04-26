@@ -30,7 +30,6 @@ import java.util.Set;
 import org.xronos.openforge.lim.Value;
 import org.xronos.openforge.lim.op.Constant;
 
-
 /**
  * AggregateConstant is a {@link Constant} that represents a concatentation of
  * other Constants, typically derived from a {@link Record}.
@@ -118,19 +117,21 @@ public class AggregateConstant extends MemoryConstant {
 		for (Constant memConst : getConstituents()) {
 			AURepBundle repBundle = memConst.getRepBundle();
 
-			if (size < 0)
+			if (size < 0) {
 				size = repBundle.getBitsPerUnit();
-			if (repBundle.getBitsPerUnit() != size)
+			}
+			if (repBundle.getBitsPerUnit() != size) {
 				throw new UnsupportedOperationException(
 						"Unexpected aggregated constant structure.  Mismatched addressable sizes.  Expected "
 								+ size + " found " + repBundle.getBitsPerUnit());
+			}
 
 			AddressableUnit cRep[] = repBundle.getRep();
 			if (swapEndian) {
 				cRep = swapEndian(cRep);
 			}
-			for (int i = 0; i < cRep.length; i++) {
-				rep.add(cRep[i]);
+			for (AddressableUnit element : cRep) {
+				rep.add(element);
 			}
 		}
 		final AddressableUnit flatRep[] = new AddressableUnit[rep.size()];

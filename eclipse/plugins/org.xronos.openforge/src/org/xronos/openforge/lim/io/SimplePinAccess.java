@@ -74,11 +74,25 @@ public abstract class SimplePinAccess extends Module implements Referencer,
 		visitor.visit(this);
 	}
 
+	/**
+	 * Returns the {@link Referenceable} {@link SimplePin} which this access
+	 * targets.
+	 * 
+	 * @return a non-null {@link Referenceable}
+	 */
 	@Override
-	public boolean replaceComponent(Component removed, Component inserted) {
-		// TBD
-		assert false;
-		return false;
+	public Referenceable getReferenceable() {
+		return getTargetPin();
+	}
+
+	/**
+	 * Returns the {@link SimplePin} object that this access targets.
+	 * 
+	 * @return a non-null StateHolder
+	 */
+	@Override
+	public StateHolder getStateHolder() {
+		return getTargetPin();
 	}
 
 	/**
@@ -102,25 +116,11 @@ public abstract class SimplePinAccess extends Module implements Referencer,
 		return false;
 	}
 
-	/**
-	 * Returns the {@link Referenceable} {@link SimplePin} which this access
-	 * targets.
-	 * 
-	 * @return a non-null {@link Referenceable}
-	 */
 	@Override
-	public Referenceable getReferenceable() {
-		return getTargetPin();
-	}
-
-	/**
-	 * Returns the {@link SimplePin} object that this access targets.
-	 * 
-	 * @return a non-null StateHolder
-	 */
-	@Override
-	public StateHolder getStateHolder() {
-		return getTargetPin();
+	public boolean replaceComponent(Component removed, Component inserted) {
+		// TBD
+		assert false;
+		return false;
 	}
 
 }// SimplePinAccess

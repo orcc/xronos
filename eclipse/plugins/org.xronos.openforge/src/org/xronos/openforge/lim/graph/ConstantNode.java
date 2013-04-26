@@ -26,7 +26,6 @@ import java.math.BigInteger;
 import org.xronos.openforge.lim.memory.AddressableUnit;
 import org.xronos.openforge.lim.op.Constant;
 
-
 /**
  * ConstantNode is used to represent a {@link Constant} in a {@link LXGraph}. It
  * adds its value to its body label.
@@ -34,21 +33,11 @@ import org.xronos.openforge.lim.op.Constant;
  * @version $Id: ConstantNode.java 568 2008-03-31 17:23:31Z imiller $
  */
 class ConstantNode extends ComponentNode {
-	ConstantNode(Constant constant, String id, int fontSize) {
-		super(constant, id, fontSize);
-	}
-
-	@Override
-	protected String getBodyLabel() {
-		String label = super.getBodyLabel();
-		Constant constant = (Constant) getComponent();
-		return label + "\\n" + value(constant);
-	}
-
 	public static String value(Constant con) {
 		AddressableUnit[] rep = con.getRepBundle().getRep();
-		if (rep == null)
+		if (rep == null) {
 			return "null rep";
+		}
 
 		int[] simpleRep = new int[rep.length];
 		for (int i = 0; i < rep.length; i++) {
@@ -62,20 +51,22 @@ class ConstantNode extends ComponentNode {
 
 		int bpu = con.getRepBundle().getBitsPerUnit();
 		long mask = 0;
-		for (int i = 0; i < bpu; i++)
-			mask = (mask << 1) | 1L;
+		for (int i = 0; i < bpu; i++) {
+			mask = mask << 1 | 1L;
+		}
 		BigInteger biValue = BigInteger.valueOf(0);
-		for (int i = 0; i < littleRep.length; i++) {
+		for (int element : littleRep) {
 			biValue = biValue.shiftLeft(bpu);
-			biValue = biValue.or(BigInteger.valueOf(littleRep[i]));
+			biValue = biValue.or(BigInteger.valueOf(element));
 		}
 		String hexUnModified = biValue.toString(16); // (new
 														// BigInteger(littleRep)).toString(16);
 
 		String hex = hexUnModified;
 		// Make sure the string is 2*length bytes long
-		for (int i = hex.length(); i < (rep.length * 2); i++)
+		for (int i = hex.length(); i < rep.length * 2; i++) {
 			hex = "0" + hex;
+		}
 		// Now put in 'UU' for any non-locked byte
 		String masked = "";
 		boolean someNotLocked = false;
@@ -87,10 +78,22 @@ class ConstantNode extends ComponentNode {
 			}
 			masked = masked + next2;
 		}
-		if (someNotLocked)
+		if (someNotLocked) {
 			return "0x" + masked;
-		else
+		} else {
 			return "0x" + hexUnModified;
+		}
+	}
+
+	ConstantNode(Constant constant, String id, int fontSize) {
+		super(constant, id, fontSize);
+	}
+
+	@Override
+	protected String getBodyLabel() {
+		String label = super.getBodyLabel();
+		Constant constant = (Constant) getComponent();
+		return label + "\\n" + value(constant);
 	}
 
 }

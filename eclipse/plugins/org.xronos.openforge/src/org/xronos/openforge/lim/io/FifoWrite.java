@@ -43,7 +43,6 @@ import org.xronos.openforge.lim.primitive.Not;
 import org.xronos.openforge.lim.primitive.Or;
 import org.xronos.openforge.lim.primitive.Reg;
 
-
 /**
  * FifoWrite is an atomic access to a given {@link FifoIF} which sends a single
  * element of data to that interface. It is, however, a subclass of Module so
@@ -65,42 +64,6 @@ public class FifoWrite extends FifoAccess implements Visitable {
 
 	/** A set containing only the flop if applicable */
 	private Set<Reg> feedbackPoints = Collections.emptySet();
-
-	protected FifoWrite(FifoOutput targetInterface, Latency operationalLatency) {
-		super(targetInterface);
-		// Excluding 'sideband' ports/buses (those connecting to pins)
-		// there is a single data port on this module, and a GO port
-		// and DONE bus.
-		Exit exit = makeExit(0);
-		Bus done = exit.getDoneBus();
-		done.setUsed(true);
-		// Because we register the DONE signal (and no data is
-		// produced by this node) the component is guaranteed to take
-		// at least one clock cycle, but could take more if the write
-		// is blocked by the full status flag.
-		exit.setLatency(operationalLatency);
-
-		Port data = makeDataPort();
-		data.setUsed(true);
-	}
-
-	protected FifoWrite(NativeOutput targetInterface, Latency operationalLatency) {
-		super(targetInterface);
-		// Excluding 'sideband' ports/buses (those connecting to pins)
-		// there is a single data port on this module, and a GO port
-		// and DONE bus.
-		Exit exit = makeExit(0);
-		Bus done = exit.getDoneBus();
-		done.setUsed(true);
-		// Because we register the DONE signal (and no data is
-		// produced by this node) the component is guaranteed to take
-		// at least one clock cycle, but could take more if the write
-		// is blocked by the full status flag.
-		exit.setLatency(operationalLatency);
-
-		Port data = makeDataPort();
-		data.setUsed(true);
-	}
 
 	/**
 	 * Constructs a new FifoWrite targetting the given FifoIF.
@@ -226,8 +189,44 @@ public class FifoWrite extends FifoAccess implements Visitable {
 		feedbackPoints = Collections.singleton(flop);
 	}
 
+	protected FifoWrite(FifoOutput targetInterface, Latency operationalLatency) {
+		super(targetInterface);
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single data port on this module, and a GO port
+		// and DONE bus.
+		Exit exit = makeExit(0);
+		Bus done = exit.getDoneBus();
+		done.setUsed(true);
+		// Because we register the DONE signal (and no data is
+		// produced by this node) the component is guaranteed to take
+		// at least one clock cycle, but could take more if the write
+		// is blocked by the full status flag.
+		exit.setLatency(operationalLatency);
+
+		Port data = makeDataPort();
+		data.setUsed(true);
+	}
+
 	public FifoWrite(NativeOutput targetInterface) {
 		this(targetInterface, null);
+	}
+
+	protected FifoWrite(NativeOutput targetInterface, Latency operationalLatency) {
+		super(targetInterface);
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single data port on this module, and a GO port
+		// and DONE bus.
+		Exit exit = makeExit(0);
+		Bus done = exit.getDoneBus();
+		done.setUsed(true);
+		// Because we register the DONE signal (and no data is
+		// produced by this node) the component is guaranteed to take
+		// at least one clock cycle, but could take more if the write
+		// is blocked by the full status flag.
+		exit.setLatency(operationalLatency);
+
+		Port data = makeDataPort();
+		data.setUsed(true);
 	}
 
 	/**
@@ -239,6 +238,26 @@ public class FifoWrite extends FifoAccess implements Visitable {
 	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
+	}
+
+	@Override
+	protected void cloneNotify(Module clone, Map<Component, Component> cloneMap) {
+		super.cloneNotify(clone, cloneMap);
+		// Re-set the feedback points to point to the correct register
+		// in the clone instead of the register in the original IFF it
+		// exists... subclasses may have alternate structure
+		if (feedbackPoints.isEmpty()) {
+			((FifoWrite) clone).feedbackPoints = Collections.emptySet();
+		} else {
+			Set<Reg> cloneSet = new HashSet<Reg>();
+			((FifoWrite) clone).feedbackPoints = cloneSet;
+			for (Reg reg : feedbackPoints) {
+				cloneSet.add((Reg) cloneMap.get(reg));
+			}
+			assert !cloneSet.contains(null);
+		}
+		// ((FifoWrite)clone).feedbackPoints =
+		// Collections.singleton(cloneMap.get(this.feedbackPoints.iterator().next()));
 	}
 
 	/**
@@ -265,13 +284,6 @@ public class FifoWrite extends FifoAccess implements Visitable {
 	}
 
 	@Override
-	public boolean replaceComponent(Component removed, Component inserted) {
-		// TBD
-		assert false;
-		return false;
-	}
-
-	@Override
 	public Set<Component> getFeedbackPoints() {
 		Set<Component> feedback = new HashSet<Component>();
 		feedback.addAll(super.getFeedbackPoints());
@@ -290,23 +302,10 @@ public class FifoWrite extends FifoAccess implements Visitable {
 	}
 
 	@Override
-	protected void cloneNotify(Module clone, Map<Component, Component> cloneMap) {
-		super.cloneNotify(clone, cloneMap);
-		// Re-set the feedback points to point to the correct register
-		// in the clone instead of the register in the original IFF it
-		// exists... subclasses may have alternate structure
-		if (feedbackPoints.isEmpty()) {
-			((FifoWrite) clone).feedbackPoints = Collections.emptySet();
-		} else {
-			Set<Reg> cloneSet = new HashSet<Reg>();
-			((FifoWrite) clone).feedbackPoints = cloneSet;
-			for (Reg reg : feedbackPoints) {
-				cloneSet.add((Reg) cloneMap.get(reg));
-			}
-			assert !cloneSet.contains(null);
-		}
-		// ((FifoWrite)clone).feedbackPoints =
-		// Collections.singleton(cloneMap.get(this.feedbackPoints.iterator().next()));
+	public boolean replaceComponent(Component removed, Component inserted) {
+		// TBD
+		assert false;
+		return false;
 	}
 
 }// FifoWrite

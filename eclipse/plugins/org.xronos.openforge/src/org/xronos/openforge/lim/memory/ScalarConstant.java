@@ -29,7 +29,6 @@ import java.util.Set;
 import org.xronos.openforge.app.EngineThread;
 import org.xronos.openforge.lim.op.Constant;
 
-
 /**
  * ScalarConstant is a MemoryConstant whose value is a simple scalar value,
  * created as an ordered sequence of bytes. The value of this constant is
@@ -63,24 +62,28 @@ public class ScalarConstant extends MemoryConstant {
 			AddressStridePolicy policy) {
 		super(width, isSigned);
 
-		final int units = (int) Math.ceil((width * 1.0) / policy.getStride());
-		if (units != bytes.length)
+		final int units = (int) Math.ceil(width * 1.0 / policy.getStride());
+		if (units != bytes.length) {
 			EngineThread
 					.getGenericJob()
 					.warn("Constant specified with incorrect number of units.  Endianness of platform may cause discrepancies. Required: "
 							+ units + " actual: " + bytes.length);
+		}
 
 		final AddressableUnit aurep[] = new AddressableUnit[units];
-		for (int i = 0; i < units; i++)
+		for (int i = 0; i < units; i++) {
 			aurep[i] = new AddressableUnit(bytes[i].getValue().intValue(), true);
+		}
 
 		// Mask the top value to the specified number of bits
 		int topBits = width % policy.getStride();
-		if (topBits == 0)
+		if (topBits == 0) {
 			topBits = policy.getStride();
+		}
 		BigInteger mask = BigInteger.ZERO;
-		for (int i = 0; i < topBits; i++)
+		for (int i = 0; i < topBits; i++) {
 			mask = mask.shiftLeft(1).or(BigInteger.ONE);
+		}
 		aurep[aurep.length - 1] = new AddressableUnit(bytes[aurep.length - 1]
 				.getValue().and(mask).intValue(), true);
 
