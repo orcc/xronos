@@ -434,6 +434,7 @@ class NetworkPrinter extends IrSwitch {
 				ni_«port.name»_data <= «port.name»_data;
 				ni_«port.name»_send <= «port.name»_send;
 				«port.name»_ack <= ni_«port.name»_ack;
+				«port.name»_rdy <= ni_«port.name»_rdy;
 				ni_«port.name»_count <= «port.name»_count;
 			«ENDFOR»
 		end architecture rtl;
