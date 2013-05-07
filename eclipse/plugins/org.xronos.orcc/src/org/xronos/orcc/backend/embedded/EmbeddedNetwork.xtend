@@ -89,10 +89,11 @@ class EmbeddedNetwork extends NetworkPrinter {
 		
 			EStatus status = None;
 			do{
+				status = None;
 				«FOR instance : network.children.filter(typeof(Instance))»
 					inst_«instance.name»->schedule(status);
 				«ENDFOR»
-			}while(status = None);
+			}while(status != None);
 		
 			return 0; 
 		}
