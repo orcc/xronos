@@ -34,7 +34,6 @@ import static net.sf.orcc.OrccLaunchConstants.NO_LIBRARY_EXPORT;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,9 +99,6 @@ public class Xronos extends AbstractBackend {
 	/** Copy the Xilinx RAM/registers primitives **/
 	private boolean xilinxPrimitives;
 
-	/** A list which contains the given xronosFlags **/
-	private List<String> xronosFlags;
-
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
@@ -148,25 +144,6 @@ public class Xronos extends AbstractBackend {
 
 		// Set FPGA name and forge flags
 		fpgaName = "xc2vp30-7-ff1152";
-
-		// Set Forge Flags
-		xronosFlags = new ArrayList<String>();
-		xronosFlags.add("-vv");
-		xronosFlags.add("-pipeline");
-		xronosFlags.add("-noblockio");
-		xronosFlags.add("-no_block_sched");
-		xronosFlags.add("-simple_arbitration");
-		xronosFlags.add("-noedk");
-		xronosFlags.add("-loopbal");
-		// xronosFlags.add("-unroll");
-		xronosFlags.add("-multdecomplimit");
-		xronosFlags.add("2");
-		xronosFlags.add("-comb_lut_mem_read");
-		xronosFlags.add("-dplut");
-		xronosFlags.add("-nolog");
-		xronosFlags.add("-noinclude");
-		xronosFlags.add("-report");
-		xronosFlags.add("-Xdetailed_report");
 	}
 
 	@Override
@@ -313,12 +290,12 @@ public class Xronos extends AbstractBackend {
 			XronosPrinter printer = new XronosPrinter(!debugMode);
 			printer.getOptions().put("generateGoDone", generateGoDone);
 			printer.getOptions().put("fpgaType", fpgaName);
-			List<String> flags = new ArrayList<String>(xronosFlags);
-			flags.addAll(Arrays.asList("-d", rtlPath, "-o",
-					actor.getSimpleName()));
-			boolean failed = printer.printInstance(
-					flags.toArray(new String[0]), rtlPath, actor,
-					resourceCache, numInstance, toBeCompiled);
+			// List<String> flags = new ArrayList<String>(xronosFlags);
+			// flags.addAll(Arrays.asList("-d", rtlPath, "-o",
+			// actor.getSimpleName()));
+			XronosFlags flags = new XronosFlags(rtlPath, actor.getSimpleName());
+			boolean failed = printer.printInstance(flags.getStringFlag(),
+					rtlPath, actor, resourceCache, numInstance, toBeCompiled);
 			if (failed) {
 				failedToCompile++;
 			}
@@ -350,10 +327,9 @@ public class Xronos extends AbstractBackend {
 		XronosPrinter printer = new XronosPrinter(!debugMode);
 		printer.getOptions().put("generateGoDone", generateGoDone);
 		printer.getOptions().put("fpgaType", fpgaName);
-		List<String> flags = new ArrayList<String>(xronosFlags);
-		flags.addAll(Arrays.asList("-d", rtlPath, "-o", network.getSimpleName()));
-		boolean failed = printer.printNetwork(flags.toArray(new String[0]),
-				rtlPath, network, resourceCache);
+		XronosFlags flags = new XronosFlags(rtlPath, network.getSimpleName());
+		boolean failed = printer.printNetwork(flags.getStringFlag(), rtlPath,
+				network, resourceCache);
 
 		if (failed) {
 			OrccLogger
