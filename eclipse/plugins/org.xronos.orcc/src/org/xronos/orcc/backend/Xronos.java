@@ -290,10 +290,18 @@ public class Xronos extends AbstractBackend {
 			XronosPrinter printer = new XronosPrinter(!debugMode);
 			printer.getOptions().put("generateGoDone", generateGoDone);
 			printer.getOptions().put("fpgaType", fpgaName);
-			// List<String> flags = new ArrayList<String>(xronosFlags);
-			// flags.addAll(Arrays.asList("-d", rtlPath, "-o",
-			// actor.getSimpleName()));
 			XronosFlags flags = new XronosFlags(rtlPath, actor.getSimpleName());
+			if (actor.hasAttribute("xronos_pipeline")) {
+				if (actor.getAttribute("xronos_pipeline").hasAttribute("gd")) {
+					Integer gateDepth = Integer.parseInt(actor
+							.getAttribute("xronos_pipeline").getAttribute("gd")
+							.getStringValue());
+					flags.activatePipelining(gateDepth);
+				} else {
+					OrccLogger
+							.warnln("PIPELINING: gd attribute missing, example: @xronos_pipeline(gd=\"100\")");
+				}
+			}
 			boolean failed = printer.printInstance(flags.getStringFlag(),
 					rtlPath, actor, resourceCache, numInstance, toBeCompiled);
 			if (failed) {

@@ -174,6 +174,7 @@ public class XronosFlags {
 
 	public void activatePipelining(Integer gateDepth) {
 		pipelineFlag = true;
+		gateDepthPipelineFlag = true;
 		gateDepthPipelineValue = gateDepth;
 	}
 
@@ -191,12 +192,16 @@ public class XronosFlags {
 
 		if (pipelineFlag) {
 			xronosFlags.add("-pipeline");
-			if (gateDepthPipelineFlag) {
-				xronosFlags.add(gateDepthPipelineValue.toString());
-			}
+			xronosFlags.add("-apl");
+			xronosFlags.add("5");
 			if (autoPipelineLevelFlag) {
 				xronosFlags.add(autoPipelineLevelValue.toString());
 			}
+			if (gateDepthPipelineFlag) {
+				xronosFlags.add("-gd");
+				xronosFlags.add(gateDepthPipelineValue.toString());
+			}
+
 		}
 
 		if (noBlockIOFlag) {
