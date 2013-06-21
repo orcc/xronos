@@ -63,9 +63,9 @@
       </option>
       <option
             defaultValue="false"
-            description="Import network queue  size  from a file"
+            description="Import network queue size from a file"
             id="org.xronos.orcc.importBufferSize"
-            name="Import network queue  size  from a file">
+            name="Import network queue size from a file">
          <checkBox>
             <option
                   id="org.xronos.orcc.bufferSizeFile"

@@ -140,18 +140,18 @@ public class ScalarPortIO extends DfVisitor<Void> {
 		}
 	}
 
-	private final ResourceCache resourceCache;
+	private Map<Port, CircularBuffer> CircularBufferInput;
 
 	private final InnerVisitor innerVisitor = new InnerVisitor();
 
-	private final Map<Var, Port> varToPortMap = new HashMap<Var, Port>();
-
-	private Map<Port, CircularBuffer> CircularBufferInput;
+	/** Change Load to portRead if true, change to portPeek otherwise **/
+	private Boolean portRead;
 
 	private Map<Port, Integer> portTokens;
 
-	/** Change Load to portRead if true, change to portPeek otherwise **/
-	private Boolean portRead;
+	private final ResourceCache resourceCache;
+
+	private final Map<Var, Port> varToPortMap = new HashMap<Var, Port>();
 
 	public ScalarPortIO(ResourceCache resourceCache) {
 		super();

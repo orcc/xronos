@@ -95,6 +95,18 @@ class EmbeddedNetwork extends NetworkPrinter {
 				«ENDFOR»
 			}while(status != None);
 		
+		// Clean Actors
+		«FOR instance : network.children.filter(typeof(Instance))»
+				delete «instance.name»;
+		«ENDFOR»
+		
+		// Clean FIFOs
+		«FOR instance : network.children.filter(typeof(Instance))»
+				«FOR edges : instance.outgoingPortMap.values»
+					delete fifo_«edges.get(0).getAttribute("idNoBcast").objectValue»;
+				«ENDFOR»
+		«ENDFOR»
+		
 			return 0; 
 		}
 	'''
@@ -134,7 +146,7 @@ class EmbeddedNetwork extends NetworkPrinter {
 				src/«instance.name».h
 			«ENDFOR»
 		)
-
+	
 		set(libraries EmbeddedCPP)
 		
 		

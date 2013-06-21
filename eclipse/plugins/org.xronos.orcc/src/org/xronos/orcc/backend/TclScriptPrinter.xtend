@@ -173,9 +173,9 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 		## Start VSIM
 		«IF(xilinxPrimitives)»
-			vsim -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
+			vsim -novopt -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
 		«ELSE»
-			vsim -L unisims_ver -L simprims_ver -t ns «workName».glbl «workName».«simName»
+			vsim -novopt -L unisims_ver -L simprims_ver -t ns «workName».glbl «workName».«simName»
 		«ENDIF»	
 			
 		## Add clock(s) and reset signal
