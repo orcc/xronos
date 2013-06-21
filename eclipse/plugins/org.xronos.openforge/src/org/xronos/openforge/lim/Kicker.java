@@ -36,6 +36,156 @@ import org.xronos.openforge.util.naming.ID;
  */
 public class Kicker extends Module implements Composable {
 
+	/**
+	 * A KickerContinuous is a Module which takes in Clock and generates a
+	 * single cycle pulse on the done output shortly after device power-up
+	 * (de-assertion of GSR) and once asserted, maintains that done signal in
+	 * the true state until the device Reset signal is asserted.
+	 */
+	public static class KickerContinuous extends Kicker {
+		private Port repeatPort;
+
+		public KickerContinuous() {
+			super();
+
+			// Grab the done and put the logical OR in front of it.
+			Bus doneDriver = getDoneBus().getPeer().getBus();
+			assert doneDriver != null;
+
+			Or or = new Or(2);
+			addComponent(or);
+			or.setIDLogical(ID.showLogical(this) + "_or1");
+
+			//
+			// The delay register is needed to ensure that we do not
+			// have a combinational feedback path here.
+			//
+			// Needs RESET b/c it is in the control path
+			Reg delay = Reg.getConfigurableReg(Reg.REGR, ID.showLogical(this)
+					+ "_fb_delay");
+			delay.getClockPort().setBus(getClockPort().getPeer()); // connect
+																	// clock
+			delay.getResetPort().setBus(getResetPort().getPeer()); // connect
+																	// reset
+			delay.getInternalResetPort().setBus(getResetPort().getPeer()); // connect
+																			// reset
+			delay.getResultBus().setSize(1, false);
+			addComponent(delay);
+			addFeedbackPoint(delay);
+
+			delay.getDataPort().setBus(or.getResultBus());
+			or.getDataPorts().get(0).setBus(doneDriver);
+			or.getDataPorts().get(1).setBus(delay.getResultBus());
+
+			getDoneBus().getPeer().setBus(or.getResultBus());
+			getDoneBus().setUsed(true);
+		}
+
+		/**
+		 * Returns the port which when set high will cause the output (done bus)
+		 * of this KickerContinuous to go high, ie it causes the kicker to fire
+		 * again.
+		 * 
+		 * @return a non null Port
+		 */
+		@Override
+		public Port getRepeatPort() {
+			return repeatPort;
+		}
+
+	}
+
+	/**
+	 * A KickerPerpetual is a Module which takes in Clock and generates a single
+	 * cycle pulse on the done output shortly after device power-up
+	 * (de-assertion of GSR). Additionally, there is a 'repeat' port which is
+	 * delayed by one cycle and then logically ORed with this post-powerup
+	 * signal. When the repeat port is connected to the DONE of an entry method
+	 * and the output of the kicker to the GO, this will cause the circuit
+	 * (entry method) to run forever as it will be continuously restarted
+	 * immediately after completing.
+	 */
+	public static class KickerPerpetual extends Kicker {
+		private Port repeatPort;
+
+		public KickerPerpetual() {
+			this(true);
+		}
+
+		public KickerPerpetual(boolean fbFlopRequired) {
+			super();
+
+			repeatPort = this.makeDataPort();
+			repeatPort.setUsed(true);
+			repeatPort.setSize(1, false);
+			final Bus repeatBus = repeatPort.getPeer();
+			repeatBus.setSize(1, false);
+
+			// Now grab the done bus and put the logical OR in front
+			// of it.
+			Bus doneDriver = getDoneBus().getPeer().getBus();
+			assert doneDriver != null;
+
+			Or or = new Or(2);
+			addComponent(or);
+			or.setIDLogical(ID.showLogical(this) + "_or1");
+
+			final Bus rptBus;
+			if (fbFlopRequired) {
+				//
+				// The delay register is needed because of a corner
+				// condition case in which the function being wrapped in
+				// the block IO code generates a constant return value
+				// (and no params are modified). In this case, the 'read'
+				// loops and the 'write' loops can execute simultaneously
+				// and when both are complete there will exist through the
+				// design a combinational path from GO to DONE that is
+				// being taken (from GO through the 'if' statements of the
+				// loops, through the AND's in the scoreboards, to the
+				// DONE of the block IO wrapper). If the kicker does not
+				// insert a delay, then this loop hangs simulations.
+				// Basically it gives the loops a 'finishing' cycle to
+				// reset for the next execution
+				//
+				// Needs RESET b/c it is in the control path
+				Reg delay = Reg.getConfigurableReg(Reg.REGR,
+						ID.showLogical(this) + "_fb_delay");
+				addComponent(delay);
+
+				delay.getDataPort().setBus(repeatBus);
+				delay.getClockPort().setBus(getClockPort().getPeer()); // connect
+																		// clock
+				delay.getResetPort().setBus(getResetPort().getPeer()); // connect
+																		// reset
+				delay.getInternalResetPort().setBus(getResetPort().getPeer()); // connect
+																				// reset
+				rptBus = delay.getResultBus();
+			} else {
+				rptBus = repeatBus;
+			}
+
+			// ((Port)or.getDataPorts().get(1)).setBus(delay.getResultBus());
+			or.getDataPorts().get(1).setBus(rptBus);
+			or.getDataPorts().get(0).setBus(doneDriver);
+
+			getDoneBus().getPeer().setBus(or.getResultBus());
+			getDoneBus().setUsed(true);
+		}
+
+		/**
+		 * Returns the port which when set high will cause the output (done bus)
+		 * of this KickerPerpetual to go high, ie it causes the kicker to fire
+		 * again.
+		 * 
+		 * @return a non null Port
+		 */
+		@Override
+		public Port getRepeatPort() {
+			return repeatPort;
+		}
+
+	}
+
 	private static final int GATE_DEPTH = 0;
 
 	/** Keep all instances of Kickers uniquely named */
@@ -144,45 +294,9 @@ public class Kicker extends Module implements Composable {
 		getDoneBus().getPeer().setBus(regFinal.getResultBus());
 	}
 
-	/**
-	 * Throws an exception, replacement in this class not supported.
-	 */
-	@Override
-	public boolean replaceComponent(Component removed, Component inserted) {
-		throw new UnsupportedOperationException("Cannot replace components in "
-				+ getClass());
-	}
-
-	/**
-	 * <code>getRepeatPort</code> will return a non-null port if this kicker has
-	 * an input port for causing the kicker to repeat, or null if no such port
-	 * exists.
-	 * 
-	 * @return a <code>Port</code> value, can be null
-	 */
-	public Port getRepeatPort() {
-		return null;
-	}
-
-	public Bus getDoneBus() {
-		return getExit(Exit.DONE).getDoneBus();
-	}
-
 	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
-	}
-
-	/**
-	 * Gets the gate depth of this component. This is the maximum number of
-	 * gates that any input signal must traverse before reaching an {@link Exit}
-	 * .
-	 * 
-	 * @return a non-negative integer
-	 */
-	@Override
-	public int getGateDepth() {
-		return GATE_DEPTH;
 	}
 
 	/**
@@ -204,6 +318,41 @@ public class Kicker extends Module implements Composable {
 		return true;
 	}
 
+	public Bus getDoneBus() {
+		return getExit(Exit.DONE).getDoneBus();
+	}
+
+	/**
+	 * Gets the gate depth of this component. This is the maximum number of
+	 * gates that any input signal must traverse before reaching an {@link Exit}
+	 * .
+	 * 
+	 * @return a non-negative integer
+	 */
+	@Override
+	public int getGateDepth() {
+		return GATE_DEPTH;
+	}
+
+	/**
+	 * <code>getRepeatPort</code> will return a non-null port if this kicker has
+	 * an input port for causing the kicker to repeat, or null if no such port
+	 * exists.
+	 * 
+	 * @return a <code>Port</code> value, can be null
+	 */
+	public Port getRepeatPort() {
+		return null;
+	}
+
+	/**
+	 * @return false
+	 */
+	@Override
+	public boolean isBalanceable() {
+		return false;
+	}
+
 	/**
 	 * Indicates that this module will be instantiated as its own module in HDL,
 	 * ie signal names cannot propagate across its boundary.
@@ -216,161 +365,12 @@ public class Kicker extends Module implements Composable {
 	}
 
 	/**
-	 * @return false
+	 * Throws an exception, replacement in this class not supported.
 	 */
 	@Override
-	public boolean isBalanceable() {
-		return false;
-	}
-
-	/**
-	 * A KickerPerpetual is a Module which takes in Clock and generates a single
-	 * cycle pulse on the done output shortly after device power-up
-	 * (de-assertion of GSR). Additionally, there is a 'repeat' port which is
-	 * delayed by one cycle and then logically ORed with this post-powerup
-	 * signal. When the repeat port is connected to the DONE of an entry method
-	 * and the output of the kicker to the GO, this will cause the circuit
-	 * (entry method) to run forever as it will be continuously restarted
-	 * immediately after completing.
-	 */
-	public static class KickerPerpetual extends Kicker {
-		private Port repeatPort;
-
-		public KickerPerpetual() {
-			this(true);
-		}
-
-		public KickerPerpetual(boolean fbFlopRequired) {
-			super();
-
-			repeatPort = this.makeDataPort();
-			repeatPort.setUsed(true);
-			repeatPort.setSize(1, false);
-			final Bus repeatBus = repeatPort.getPeer();
-			repeatBus.setSize(1, false);
-
-			// Now grab the done bus and put the logical OR in front
-			// of it.
-			Bus doneDriver = getDoneBus().getPeer().getBus();
-			assert doneDriver != null;
-
-			Or or = new Or(2);
-			addComponent(or);
-			or.setIDLogical(ID.showLogical(this) + "_or1");
-
-			final Bus rptBus;
-			if (fbFlopRequired) {
-				//
-				// The delay register is needed because of a corner
-				// condition case in which the function being wrapped in
-				// the block IO code generates a constant return value
-				// (and no params are modified). In this case, the 'read'
-				// loops and the 'write' loops can execute simultaneously
-				// and when both are complete there will exist through the
-				// design a combinational path from GO to DONE that is
-				// being taken (from GO through the 'if' statements of the
-				// loops, through the AND's in the scoreboards, to the
-				// DONE of the block IO wrapper). If the kicker does not
-				// insert a delay, then this loop hangs simulations.
-				// Basically it gives the loops a 'finishing' cycle to
-				// reset for the next execution
-				//
-				// Needs RESET b/c it is in the control path
-				Reg delay = Reg.getConfigurableReg(Reg.REGR,
-						ID.showLogical(this) + "_fb_delay");
-				addComponent(delay);
-
-				delay.getDataPort().setBus(repeatBus);
-				delay.getClockPort().setBus(getClockPort().getPeer()); // connect
-																		// clock
-				delay.getResetPort().setBus(getResetPort().getPeer()); // connect
-																		// reset
-				delay.getInternalResetPort().setBus(getResetPort().getPeer()); // connect
-																				// reset
-				rptBus = delay.getResultBus();
-			} else {
-				rptBus = repeatBus;
-			}
-
-			// ((Port)or.getDataPorts().get(1)).setBus(delay.getResultBus());
-			or.getDataPorts().get(1).setBus(rptBus);
-			or.getDataPorts().get(0).setBus(doneDriver);
-
-			getDoneBus().getPeer().setBus(or.getResultBus());
-			getDoneBus().setUsed(true);
-		}
-
-		/**
-		 * Returns the port which when set high will cause the output (done bus)
-		 * of this KickerPerpetual to go high, ie it causes the kicker to fire
-		 * again.
-		 * 
-		 * @return a non null Port
-		 */
-		@Override
-		public Port getRepeatPort() {
-			return repeatPort;
-		}
-
-	}
-
-	/**
-	 * A KickerContinuous is a Module which takes in Clock and generates a
-	 * single cycle pulse on the done output shortly after device power-up
-	 * (de-assertion of GSR) and once asserted, maintains that done signal in
-	 * the true state until the device Reset signal is asserted.
-	 */
-	public static class KickerContinuous extends Kicker {
-		private Port repeatPort;
-
-		public KickerContinuous() {
-			super();
-
-			// Grab the done and put the logical OR in front of it.
-			Bus doneDriver = getDoneBus().getPeer().getBus();
-			assert doneDriver != null;
-
-			Or or = new Or(2);
-			addComponent(or);
-			or.setIDLogical(ID.showLogical(this) + "_or1");
-
-			//
-			// The delay register is needed to ensure that we do not
-			// have a combinational feedback path here.
-			//
-			// Needs RESET b/c it is in the control path
-			Reg delay = Reg.getConfigurableReg(Reg.REGR, ID.showLogical(this)
-					+ "_fb_delay");
-			delay.getClockPort().setBus(getClockPort().getPeer()); // connect
-																	// clock
-			delay.getResetPort().setBus(getResetPort().getPeer()); // connect
-																	// reset
-			delay.getInternalResetPort().setBus(getResetPort().getPeer()); // connect
-																			// reset
-			delay.getResultBus().setSize(1, false);
-			addComponent(delay);
-			addFeedbackPoint(delay);
-
-			delay.getDataPort().setBus(or.getResultBus());
-			or.getDataPorts().get(0).setBus(doneDriver);
-			or.getDataPorts().get(1).setBus(delay.getResultBus());
-
-			getDoneBus().getPeer().setBus(or.getResultBus());
-			getDoneBus().setUsed(true);
-		}
-
-		/**
-		 * Returns the port which when set high will cause the output (done bus)
-		 * of this KickerContinuous to go high, ie it causes the kicker to fire
-		 * again.
-		 * 
-		 * @return a non null Port
-		 */
-		@Override
-		public Port getRepeatPort() {
-			return repeatPort;
-		}
-
+	public boolean replaceComponent(Component removed, Component inserted) {
+		throw new UnsupportedOperationException("Cannot replace components in "
+				+ getClass());
 	}
 
 }

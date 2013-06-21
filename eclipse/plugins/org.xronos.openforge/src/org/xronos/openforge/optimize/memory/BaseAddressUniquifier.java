@@ -46,7 +46,6 @@ import org.xronos.openforge.lim.memory.LogicalValue;
 import org.xronos.openforge.optimize.ComponentSwapVisitor;
 import org.xronos.openforge.optimize.Optimization;
 
-
 /**
  * BaseAddressUniquifier is used to find all ({@link LValue}) memory accesses
  * which are {@link OffsetMemoryAccess} and which are based off of a single
@@ -77,24 +76,70 @@ public class BaseAddressUniquifier extends DefaultVisitor implements
 	public BaseAddressUniquifier() {
 	}
 
+	/**
+	 * The clear method is called after each complete visit to the optimization
+	 * and should free up as much memory as possible, and reset any per run
+	 * status gathering.
+	 */
 	@Override
-	public void visit(HeapRead lvalue) {
-		uniquifyBaseAddressPort(lvalue);
+	public void clear() {
+		resolver = null;
+		isModified = false;
+		uniquifiedBaseAddressCount = 0;
 	}
 
+	/**
+	 * Should return true if the optimization modified the LIM <b>and</b> that
+	 * other optimizations in its grouping should be re-run
+	 */
 	@Override
-	public void visit(HeapWrite lvalue) {
-		uniquifyBaseAddressPort(lvalue);
+	public boolean didModify() {
+		return isModified;
 	}
 
+	/**
+	 * Method called after performing the optimization, should use Job (info,
+	 * verbose, etc) to report to the user the results (if any) of running the
+	 * optimization
+	 */
 	@Override
-	public void visit(ArrayRead lvalue) {
-		uniquifyBaseAddressPort(lvalue);
+	public void postStatus() {
+		EngineThread.getGenericJob().verbose(
+				"uniquified " + uniquifiedBaseAddressCount
+						+ " memory base addresses");
 	}
 
+	/**
+	 * Method called prior to performing the optimization, should use Job (info,
+	 * verbose, etc) to report to the user what action is being performed.
+	 */
 	@Override
-	public void visit(ArrayWrite lvalue) {
-		uniquifyBaseAddressPort(lvalue);
+	public void preStatus() {
+		EngineThread.getGenericJob().info(
+				"uniquifying memory base addresses...");
+	}
+
+	/**
+	 * Applies this optimization to a given target.
+	 * 
+	 * @param target
+	 *            the target on which to run this optimization
+	 */
+	@Override
+	public void run(Visitable target) {
+		// Call the object resolver and save the returned resolver
+		// handle.
+		assert target instanceof Design : "BaseAddressUniquifier.run() only runs on a Design";
+		final Design design = (Design) target;
+		resolver = ObjectResolver.resolve(design);
+
+		// Visit all OffsetMemoryAccess objects (heap/array
+		// read/write)
+		for (LogicalMemory memory : design.getLogicalMemories()) {
+			for (LValue lvalue : memory.getLValues()) {
+				lvalue.accept(this);
+			}
+		}
 	}
 
 	/**
@@ -130,7 +175,7 @@ public class BaseAddressUniquifier extends DefaultVisitor implements
 		// 6. Remove the existing dependency to the base address port
 		// 7. Create a new dependency to the base address port from
 		// the constant.
-		// 8. set the ismodified flag for this pass of the
+		// 8. set the is modified flag for this pass of the
 		// optimization to true.
 
 		final Port addressPort = acc.getBaseAddressPort();
@@ -144,7 +189,7 @@ public class BaseAddressUniquifier extends DefaultVisitor implements
 				Entry entry = entries.iterator().next();
 				final Collection<Dependency> dependencies = entry
 						.getDependencies(addressPort);
-				if ((dependencies.size() == 1) && !addressPort.isConnected()) {
+				if (dependencies.size() == 1 && !addressPort.isConnected()) {
 					DataDependency dataDep = (DataDependency) dependencies
 							.iterator().next();
 					if (!dataDep.getLogicalBus().getOwner().getOwner()
@@ -184,70 +229,24 @@ public class BaseAddressUniquifier extends DefaultVisitor implements
 		}
 	}
 
-	/**
-	 * Applies this optimization to a given target.
-	 * 
-	 * @param target
-	 *            the target on which to run this optimization
-	 */
 	@Override
-	public void run(Visitable target) {
-		// Call the object resolver and save the returned resolver
-		// handle.
-		assert (target instanceof Design) : "BaseAddressUniquifier.run() only runs on a Design";
-		final Design design = (Design) target;
-		resolver = ObjectResolver.resolve(design);
-
-		// Visit all OffsetMemoryAccess objects (heap/array
-		// read/write)
-		for (LogicalMemory memory : design.getLogicalMemories()) {
-			for (LValue lvalue : memory.getLValues()) {
-				lvalue.accept(this);
-			}
-		}
+	public void visit(ArrayRead lvalue) {
+		uniquifyBaseAddressPort(lvalue);
 	}
 
-	/**
-	 * Method called prior to performing the optimization, should use Job (info,
-	 * verbose, etc) to report to the user what action is being performed.
-	 */
 	@Override
-	public void preStatus() {
-		EngineThread.getGenericJob().info(
-				"uniquifying memory base addresses...");
+	public void visit(ArrayWrite lvalue) {
+		uniquifyBaseAddressPort(lvalue);
 	}
 
-	/**
-	 * Method called after performing the optimization, should use Job (info,
-	 * verbose, etc) to report to the user the results (if any) of running the
-	 * optimization
-	 */
 	@Override
-	public void postStatus() {
-		EngineThread.getGenericJob().verbose(
-				"uniquified " + uniquifiedBaseAddressCount
-						+ " memory base addresses");
+	public void visit(HeapRead lvalue) {
+		uniquifyBaseAddressPort(lvalue);
 	}
 
-	/**
-	 * Should return true if the optimization modified the LIM <b>and</b> that
-	 * other optimizations in its grouping should be re-run
-	 */
 	@Override
-	public boolean didModify() {
-		return isModified;
-	}
-
-	/**
-	 * The clear method is called after each complete visit to the optimization
-	 * and should free up as much memory as possible, and reset any per run
-	 * status gathering.
-	 */
-	@Override
-	public void clear() {
-		resolver = null;
-		isModified = false;
-		uniquifiedBaseAddressCount = 0;
+	public void visit(HeapWrite lvalue) {
+		uniquifyBaseAddressPort(lvalue);
 	}
 
 }// BaseAddressUniquifier

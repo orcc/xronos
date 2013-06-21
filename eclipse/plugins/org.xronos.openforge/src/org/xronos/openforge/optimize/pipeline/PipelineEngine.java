@@ -112,7 +112,6 @@ import org.xronos.openforge.lim.primitive.Reg;
 import org.xronos.openforge.lim.primitive.SRL16;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * PipelineEngine is the visitor for pipelining a design. PipelineEngine only
  * attempts to pipeline within a Module.
@@ -141,7 +140,22 @@ import org.xronos.openforge.util.naming.ID;
  */
 class PipelineEngine extends DataFlowVisitor implements _pipeline.Debug {
 
+	/**
+	 * Gets the collection of buses upon which the port depends.
+	 */
+	private static Collection<Bus> getDependentBuses(Port port) {
+		final Set<Bus> set = new HashSet<Bus>();
+		final Component component = port.getOwner();
+		for (Entry entry : component.getEntries()) {
+			for (Dependency dep : entry.getDependencies(port)) {
+				set.add(dep.getLogicalBus());
+			}
+		}
+		return set;
+	}
+
 	private boolean doPipeline = false;
+
 	private int targetGateDepth;
 
 	/** Map of Exit to cumulative gate depth Integer */
@@ -164,25 +178,6 @@ class PipelineEngine extends DataFlowVisitor implements _pipeline.Debug {
 		doPipeline = false;
 	}
 
-	public void pipeline(Design d) {
-		clear();
-		doPipeline = false;
-		if (_d) {
-			_dbg.pushPreface(" P1");
-		}
-		d.accept(this);
-	}
-
-	public void pipeline(Design d, int targetGateDepth) {
-		clear();
-		doPipeline = true;
-		this.targetGateDepth = targetGateDepth;
-		if (_d) {
-			_dbg.pushPreface(" P2");
-		}
-		d.accept(this);
-	}
-
 	private void clear() {
 		exitToGateDepthMap.clear();
 		atomicModules.clear();
@@ -190,789 +185,6 @@ class PipelineEngine extends DataFlowVisitor implements _pipeline.Debug {
 		designMaxGateDepth = 0;
 		unbreakableGateDepth = 0;
 		pipelineCount = 0;
-	}
-
-	public int getPipelineCount() {
-		return pipelineCount;
-	}
-
-	/**
-	 * Responsible for traversing within a Module
-	 */
-	@Override
-	protected void traverse(Module module) {
-		if (_d) {
-			_dbg.ln("Module Traversal " + module);
-		}
-		zeroFeedbackExits(module);
-
-		// Allow the target gate depth to be specified on a module by
-		// module basis
-		final int oldTargetGateDepth = targetGateDepth;
-		final int spec_level = ((OptionInt) EngineThread.getGenericJob()
-				.getOption(OptionRegistry.SCHEDULE_PIPELINE_GATE_DEPTH))
-				.getValueAsInt(module.getSearchLabel());
-		targetGateDepth = spec_level;
-		if (_d) {
-			_dbg.ln("Module " + module + " TGD set to " + targetGateDepth);
-		}
-		super.traverse(module);
-		targetGateDepth = oldTargetGateDepth;
-	}
-
-	@Override
-	public void visit(Design design) {
-		preFilter(design);
-
-		// initialize a design's gate depth
-		designMaxGateDepth = 0;
-		unbreakableGateDepth = 0;
-
-		traverse(design);
-
-		// set a design's max gate depth
-		design.setMaxGateDepth(designMaxGateDepth);
-		design.setUnbreakableGateDepth(unbreakableGateDepth);
-
-		postFilter(design);
-
-		if (_d) {
-			_dbg.ln(design + ", maximum gate depth: "
-					+ design.getMaxGateDepth());
-		}
-		if (_d) {
-			_dbg.ln(design + ", unbreakable gate depth: "
-					+ design.getUnbreakableGateDepth());
-		}
-	}
-
-	@Override
-	public void visit(Task task) {
-		preFilter(task);
-
-		// clear the field variables which store information within a task
-		// scope.
-		exitToGateDepthMap.clear();
-		atomicModules.clear();
-		taskMaxGateDepth = 0;
-
-		traverse(task);
-
-		// set a task's max gate depth
-		task.setMaxGateDepth(taskMaxGateDepth);
-
-		// set design's gate depth to be the largest gate depth among it's
-		// tasks.
-		if (taskMaxGateDepth >= designMaxGateDepth) {
-			designMaxGateDepth = taskMaxGateDepth;
-		}
-
-		postFilter(task);
-
-		if (_d) {
-			_dbg.ln(task + ", maximum gate depth: " + task.getMaxGateDepth());
-		}
-	}
-
-	@Override
-	public void visit(Call call) {
-		preFilter(call);
-
-		// propagate the gate depth to the procedure ports peer
-		// buses which belong to a procedure body's inBuf.
-		// int maxInputDepth = (call.getOwner() != null) ?
-		// getMaxInputGateDepth(call) : 0;
-		// IDM. Ugly hack, but there is no way to be sure we will have
-		// traversed the top level design.
-		int maxInputDepth = (call.getOwner() instanceof Design.DesignModule) ? 0
-				: getMaxInputGateDepth(call);
-		if (call.getProcedure() != null
-				&& call.getProcedure().getBody() != null) {
-			// Add in the inbuf exit depth. Always 0 except at top
-			// level (task) call to account for input buffer depth.
-			maxInputDepth += call.getProcedure().getBody().getInBuf()
-					.getExitGateDepth();
-		}
-		final Integer currentInputGateDepth = new Integer(maxInputDepth);
-		for (Port callPort : call.getDataPorts()) {
-			Bus peerBus = call.getProcedurePort(callPort).getPeer();
-			exitToGateDepthMap.put(peerBus.getOwner(), currentInputGateDepth);
-		}
-
-		if (_d) {
-			_dbg.ln("\t*** " + call + ", current input gate depth: "
-					+ currentInputGateDepth);
-		}
-
-		final int oldTargetGateDepth = targetGateDepth;
-		final int spec_level = ((OptionInt) EngineThread.getGenericJob()
-				.getOption(OptionRegistry.SCHEDULE_PIPELINE_GATE_DEPTH))
-				.getValueAsInt(call.getProcedure().getSearchLabel());
-		targetGateDepth = spec_level;
-		if (_d) {
-			_dbg.ln("For Call " + call + " the gate depth level is "
-					+ targetGateDepth);
-		}
-		traverse(call);
-		targetGateDepth = oldTargetGateDepth;
-
-		for (Exit callExit : call.getExits()) {
-			Integer currentOutputGateDepth = exitToGateDepthMap.get(call
-					.getProcedureExit(callExit));
-			exitToGateDepthMap.put(callExit, currentOutputGateDepth);
-		}
-
-		postFilter(call);
-
-		if (_d) {
-			_dbg.ln("\t*** " + call + ", current output gate depth: "
-					+ exitToGateDepthMap.get(call.getAnyExit()).intValue());
-		}
-	}
-
-	@Override
-	public void visit(Loop loop) {
-		visit((Component) loop);
-		super.visit(loop);
-	}
-
-	@Override
-	public void visit(InBuf inBuf) {
-		preFilter(inBuf);
-
-		if (_d) {
-			_dbg.ln("\tinbuf " + inBuf + " gateDepth: "
-					+ inBuf.getExitGateDepth() + "");
-		}
-		// final Integer currentGateDepth = new
-		// Integer(getMaxInputGateDepth(inBuf)+inBuf.getExitGateDepth());
-		final Integer currentGateDepth = new Integer(inBuf.getExitGateDepth());
-		for (Exit exit : inBuf.getExits()) {
-			exitToGateDepthMap.put(exit, currentGateDepth);
-		}
-		if (currentGateDepth.intValue() >= taskMaxGateDepth) {
-			taskMaxGateDepth = currentGateDepth.intValue();
-		}
-
-		postFilter(inBuf);
-
-		if (_d) {
-			_dbg.ln("\t*** " + inBuf + ", current gate depth: "
-					+ currentGateDepth.intValue());
-		}
-	}
-
-	@Override
-	public void visit(OutBuf outBuf) {
-		visit((Component) outBuf);
-
-		final Integer currentGateDepth = new Integer(
-				getMaxInputGateDepth(outBuf) + outBuf.getExitGateDepth());
-		for (Port port : outBuf.getPorts()) {
-			final Bus moduleBus = port.getPeer();
-			if (moduleBus != null) {
-				exitToGateDepthMap.put(moduleBus.getOwner(), currentGateDepth);
-			}
-		}
-
-		postFilter(outBuf);
-
-		if (_d) {
-			_dbg.ln("\t*** " + outBuf + ", current gate depth: "
-					+ currentGateDepth.intValue());
-		}
-	}
-
-	@Override
-	public void visit(Reg reg) {
-		// For any enabled reg make sure that the enable signal and
-		// the data port have been delayed by the same amount. I have
-		// no test case for this as of yet, but I found a bug in the
-		// old java version that was fixed by this visit line.
-		// IDM 06/10/2004
-		visit((Component) reg);
-
-		preFilter(reg);
-		traverse(reg);
-		// this reset the gate depth to 0 for the result bus -- makes sense;-)
-		exitToGateDepthMap.put(reg.getBuses().iterator().next().getOwner(),
-				new Integer(0));
-
-		postFilter(reg);
-	}
-
-	@Override
-	public void visit(Latch latch) {
-		visitAtomic(latch);
-	}
-
-	@Override
-	public void visit(Constant constant) {
-		visit((Component) constant);
-	}
-
-	@Override
-	public void visit(EncodedMux encodedMux) {
-		visit((Component) encodedMux);
-	}
-
-	@Override
-	public void visit(And and) {
-		visit((Component) and);
-	}
-
-	@Override
-	public void visit(Not not) {
-		visit((Component) not);
-	}
-
-	@Override
-	public void visit(Or or) {
-		visit((Component) or);
-	}
-
-	@Override
-	public void visit(AddOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(AndOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(CastOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(ComplementOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(ConditionalAndOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(ConditionalOrOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(DivideOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(EqualsOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(GreaterThanEqualToOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(GreaterThanOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(LeftShiftOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(LessThanEqualToOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(LessThanOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(MinusOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(ModuloOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(MultiplyOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(NotEqualsOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(NoOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(TimingOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(NotOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(OrOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(PlusOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(ReductionOrOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(RightShiftOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(RightShiftUnsignedOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(ShortcutIfElseOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(SubtractOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(NumericPromotionOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(XorOp op) {
-		visit((Component) op);
-	}
-
-	@Override
-	public void visit(Mux mux) {
-		visit((Component) mux);
-	}
-
-	@Override
-	public void visit(RegisterRead regRead) {
-		visit((Component) regRead);
-	}
-
-	@Override
-	public void visit(RegisterWrite regWrite) {
-		visit((Component) regWrite);
-	}
-
-	@Override
-	public void visit(MemoryRead memoryRead) {
-		visit((Component) memoryRead);
-	}
-
-	@Override
-	public void visit(MemoryWrite memoryWrite) {
-		visit((Component) memoryWrite);
-	}
-
-	@Override
-	public void visit(PinRead pinRead) {
-		visit((Component) pinRead);
-	}
-
-	@Override
-	public void visit(PinWrite pinWrite) {
-		visit((Component) pinWrite);
-	}
-
-	@Override
-	public void visit(PinStateChange pinStateChange) {
-		visit((Component) pinStateChange);
-	}
-
-	@Override
-	public void visit(SRL16 srl16) {
-		visit((Component) srl16);
-	}
-
-	@Override
-	public void visit(TriBuf triBuf) {
-		visit((Component) triBuf);
-	}
-
-	/**
-	 * TaskCall is a module that is pre-constructed internally, and as such we
-	 * do not want any registers inserted into it. Visit it as a component and
-	 * it will be treated atomically.
-	 */
-	@Override
-	public void visit(TaskCall comp) {
-		visitAtomic(comp);
-	}
-
-	/**
-	 * SimplePinAccess is a module that is pre-constructed internally, and as
-	 * such we do not want any registers inserted into it. Visit it as a
-	 * component and it will be treated atomically.
-	 */
-	@Override
-	public void visit(SimplePinAccess comp) {
-		visitAtomic(comp);
-	}
-
-	@Override
-	public void visit(SimplePinRead comp) {
-		visit((Component) comp);
-	}
-
-	@Override
-	public void visit(SimplePinWrite comp) {
-		visit((Component) comp);
-	}
-
-	/**
-	 * FifoAccess is a module that is pre-constructed internally, and as such we
-	 * do not want any registers inserted into it. Visit it as a component and
-	 * it will be treated atomically.
-	 */
-	@Override
-	public void visit(FifoAccess comp) {
-		visitAtomic(comp);
-	}
-
-	/**
-	 * FifoRead is a module that is pre-constructed internally, and as such we
-	 * do not want any registers inserted into it. Visit it as a component and
-	 * it will be treated atomically.
-	 */
-	@Override
-	public void visit(FifoRead comp) {
-		visitAtomic(comp);
-	}
-
-	/**
-	 * FifoWrite is a module that is pre-constructed internally, and as such we
-	 * do not want any registers inserted into it. Visit it as a component and
-	 * it will be treated atomically.
-	 */
-	@Override
-	public void visit(FifoWrite comp) {
-		visitAtomic(comp);
-	}
-
-	/**
-	 * Scoreboard is a module that is pre-constructed internally, and as such we
-	 * do not want any registers inserted into it. Visit it as a component and
-	 * it will be treated atomically.
-	 */
-	@Override
-	public void visit(Scoreboard comp) {
-		visitAtomic(comp);
-	}
-
-	// CRSS XXX put hese back int -- ask IDM
-	@Override
-	public void visit(ArrayRead comp) {
-		visitAtomic(comp);
-	}
-
-	@Override
-	public void visit(ArrayWrite comp) {
-		visitAtomic(comp);
-	}
-
-	@Override
-	public void visit(HeapRead comp) {
-		visitAtomic(comp);
-	}
-
-	@Override
-	public void visit(HeapWrite comp) {
-		visitAtomic(comp);
-	}
-
-	private void visitAtomic(Module module) {
-		atomicModules.add(module);
-		visit(module);
-	}
-
-	public void visit(Component component) {
-		preFilter(component);
-
-		insertPipelineRegister(component);
-		unbreakableGateDepth = Math.max(unbreakableGateDepth,
-				component.getExitGateDepth());
-
-		// reset this...
-		int maxInputGateDepth = getMaxInputGateDepth(component);
-		final Integer currentGateDepth = new Integer(maxInputGateDepth
-				+ component.getExitGateDepth());
-		for (Exit exit : component.getExits()) {
-			exitToGateDepthMap.put(exit, currentGateDepth);
-		}
-		if (currentGateDepth.intValue() >= taskMaxGateDepth) {
-			taskMaxGateDepth = currentGateDepth.intValue();
-		}
-		postFilter(component);
-		if (_d) {
-			_dbg.ln("\t*** " + component + ", current gate depth: "
-					+ currentGateDepth.intValue());
-		}
-	}
-
-	/**
-	 * Record all feedback compoenents's exits as gate depth 0. Loop has to stop
-	 * somewhere, right?
-	 * 
-	 * @param m
-	 *            a value of type 'Module'
-	 */
-	private void zeroFeedbackExits(Module m) {
-		for (Component c : m.getFeedbackPoints()) {
-			for (Exit ex : c.getExits()) {
-				exitToGateDepthMap.put(ex, new Integer(0));
-			}
-		}
-	}
-
-	/**
-	 * Find the max input gate depth to this compoenent, relying solely on
-	 * dependencies. Basically, the worst input gate depth to this component
-	 * 
-	 * @param component
-	 *            a value of type 'Component'
-	 * @return a value of type 'int' 0-N for known gate depth
-	 */
-	private int getMaxInputGateDepth(Component component) {
-		int maxGateDepth = 0;
-		// component = (component instanceof InBuf) ? component.getOwner() :
-		// component;
-		if (_d) {
-			_dbg.ln("getting MaxInputDepth of " + component);
-		}
-		// for each input (data) port of the component
-		for (Port port : component.getDataPorts()) {
-			if (_d) {
-				_dbg.ln("\tport " + port);
-			}
-			maxGateDepth = Math.max(maxGateDepth, getMaxInputGateDepth(port));
-		}
-		if (_d) {
-			_dbg.ln("got " + maxGateDepth);
-		}
-		return maxGateDepth;
-	}
-
-	private int getMaxInputGateDepth(Port port) {
-		int maxGateDepth = 0;
-		// for each dependent bus...
-		for (Bus b : getDependentBuses(port)) {
-			if (_d) {
-				_dbg.ln("\t\tbus " + b + " " + b.getOwner() + " "
-						+ b.getOwner().getOwner());
-			}
-			int gateDepth;
-			// If the source bus comes from an inbuf or outbuf, then
-			// get the gatedepth from the corresponding peer. Unless
-			// of course, we did not traverse inside the source module.
-			if (b.getPeer() != null
-					&& !atomicModules.contains(b.getOwner().getOwner())) {
-				gateDepth = getMaxInputGateDepth(b.getPeer());
-			} else {
-				gateDepth = exitToGateDepthMap.get(b.getOwner()).intValue();
-			}
-			maxGateDepth = Math.max(maxGateDepth, gateDepth);
-		}
-		return maxGateDepth;
-	}
-
-	/**
-	 * Gets the collection of buses upon which the port depends.
-	 */
-	private static Collection<Bus> getDependentBuses(Port port) {
-		final Set<Bus> set = new HashSet<Bus>();
-		final Component component = port.getOwner();
-		for (Entry entry : component.getEntries()) {
-			for (Dependency dep : entry.getDependencies(port)) {
-				set.add(dep.getLogicalBus());
-			}
-		}
-		return set;
-	}
-
-	private void insertPipelineRegister(Component c) {
-		//
-		// When comparing against the target depth we need to consider
-		// the depth of the path up to this component PLUS the entry
-		// depth of the component. If the SUM of those two would take
-		// us over the limit, then we need to put a register on that
-		// input to break the path. This ensures that NO path in the
-		// design exceeds the target, unless caused by a component
-		// whose internal depth exceeds the target.
-		//
-
-		// get the depth of the entry into this compoenent
-		final int entryDepth = c.getEntryGateDepth();
-		// Module parent = c.getOwner();
-		assert (!(c instanceof InBuf)); // should never happen
-
-		if (_d) {
-			_dbg.ln("pipelining " + c);
-		}
-
-		// for each input (data) port of the component
-		for (Port port : c.getDataPorts()) {
-			if (_d) {
-				_dbg.ln("\tport " + port);
-			}
-			// across each entry
-			for (Entry entry : c.getEntries()) {
-				// for each dependency
-				for (Dependency dep : entry.getDependencies(port)) {
-					// get the bus
-					final Bus bus = dep.getLogicalBus();
-
-					if (_d) {
-						_dbg.ln("\t\tbus " + bus + " owner " + bus.getOwner()
-								+ " " + bus.getOwner().getOwner());
-					}
-					// get the gatedepth for this port's bus...
-					final int gateDepth = exitToGateDepthMap
-							.get(bus.getOwner()).intValue();
-					// get the cum depth
-					final int cumInputDepth = gateDepth + entryDepth;
-					if (_d) {
-						_dbg.ln("Comp: " + c + " entryDepth " + entryDepth
-								+ " inputDepth " + gateDepth + " cum "
-								+ cumInputDepth + " target " + targetGateDepth);
-					}
-
-					// if above the targetdepth, and gatedepth and entrydepth
-					// are non zero, go for it...
-					if ((cumInputDepth > targetGateDepth) && (gateDepth > 0)
-							&& (entryDepth > 0) && (targetGateDepth > 0)) {
-						// Don't pipeline incoming buses that are constants.
-						if (!bus.getValue().isConstant()
-								&& !bus.getOwner().getOwner().isConstant()) {
-							if (_d) {
-								_dbg.ln("\tBingo!");
-							}
-							if (doPipeline) {
-								insertPipelineRegister(entry, dep, port, bus);
-							}
-							pipelineCount++;// increment number of registers
-											// added
-						}
-					}
-				}
-			}
-		}
-
-	}
-
-	/**
-	 * Put a register at the connected inputs of this component
-	 * 
-	 * @param component
-	 *            a component
-	 */
-	private void insertPipelineRegister(Entry entry, Dependency dep,
-			Port inputPort, Bus drivingBus) {
-		if (_d) {
-			_dbg.ln("Registering port " + inputPort + " "
-					+ inputPort.getOwner());
-		}
-
-		Module parent = inputPort.getOwner().getOwner();
-
-		if (_d) {
-			_dbg.ln("\tnew reg: ");
-		}
-		// create it.... Needs a reset if it is in the control path
-		// (which could mean that it is not on a go port OR some
-		// non-operation type logic)
-		final Reg reg;
-		final int type;
-		if (inputPort == inputPort.getOwner().getGoPort()
-				|| !(inputPort.getOwner() instanceof Operation)) {
-			type = Reg.REGR;
-		} else {
-			type = Reg.REG;
-		}
-		reg = Reg.getConfigurableReg(type, ID.showLogical(drivingBus)
-				+ "_pipeline");
-
-		// I think these are needed
-		reg.makeEntry();
-		reg.getDataPort().setUsed(true);
-		// here we have to insert reg into lim
-		// add it as a comp
-		// be clever, it might be a block
-		if (parent instanceof Block) {
-			Block bParent = (Block) parent;
-			// first find the offset
-			int offset = bParent.getSequence().indexOf(inputPort.getOwner());
-			assert (offset >= 0);
-			// insert the new comp
-			bParent.insertComponent(reg, offset);
-		} else {
-			inputPort.getOwner().getOwner().addComponent(reg);
-		}
-
-		// now connect the reg...
-		// so:
-		// 1) remove current data dependency of inputPort on drivingBus
-		// 2) add data dependency of 'inputPort' on resultbus of reg
-		// 3) add data dependency of reg.dataPort on driving bus
-		// 4) add control dependencies
-
-		// create 2 dependencies, 1 to input to the reg, one to the port
-		DataDependency regInDep = new DataDependency(drivingBus);
-		Dependency portInDep = dep.createSameType(reg.getResultBus());
-		// wax old dep
-		dep.zap();
-
-		// connect reg to old driving bus dep
-		reg.getMainEntry().addDependency(reg.getDataPort(), regInDep);
-		// connect old port to result bus dep
-		entry.addDependency(inputPort, portInDep);
-
-		// control dep time
-		echoControlDependencies(reg, entry.getOwner());
-
-		// size it
-		reg.getResultBus().setSize(inputPort.getValue().getSize(),
-				inputPort.getValue().isSigned());
-
-		// visit it
-		reg.accept(this);
-
 	}
 
 	/**
@@ -1055,5 +267,793 @@ class PipelineEngine extends DataFlowVisitor implements _pipeline.Debug {
 		// }
 		// }
 		// }
+	}
+
+	/**
+	 * Find the max input gate depth to this compoenent, relying solely on
+	 * dependencies. Basically, the worst input gate depth to this component
+	 * 
+	 * @param component
+	 *            a value of type 'Component'
+	 * @return a value of type 'int' 0-N for known gate depth
+	 */
+	private int getMaxInputGateDepth(Component component) {
+		int maxGateDepth = 0;
+		// component = (component instanceof InBuf) ? component.getOwner() :
+		// component;
+		if (_d) {
+			_dbg.ln("getting MaxInputDepth of " + component);
+		}
+		// for each input (data) port of the component
+		for (Port port : component.getDataPorts()) {
+			if (_d) {
+				_dbg.ln("\tport " + port);
+			}
+			maxGateDepth = Math.max(maxGateDepth, getMaxInputGateDepth(port));
+		}
+		if (_d) {
+			_dbg.ln("got " + maxGateDepth);
+		}
+		return maxGateDepth;
+	}
+
+	private int getMaxInputGateDepth(Port port) {
+		int maxGateDepth = 0;
+		// for each dependent bus...
+		for (Bus b : getDependentBuses(port)) {
+			if (_d) {
+				_dbg.ln("\t\tbus " + b + " " + b.getOwner() + " "
+						+ b.getOwner().getOwner());
+			}
+			int gateDepth;
+			// If the source bus comes from an inbuf or outbuf, then
+			// get the gatedepth from the corresponding peer. Unless
+			// of course, we did not traverse inside the source module.
+			if (b.getPeer() != null
+					&& !atomicModules.contains(b.getOwner().getOwner())) {
+				gateDepth = getMaxInputGateDepth(b.getPeer());
+			} else {
+				gateDepth = exitToGateDepthMap.get(b.getOwner()).intValue();
+			}
+			maxGateDepth = Math.max(maxGateDepth, gateDepth);
+		}
+		return maxGateDepth;
+	}
+
+	public int getPipelineCount() {
+		return pipelineCount;
+	}
+
+	private void insertPipelineRegister(Component c) {
+		//
+		// When comparing against the target depth we need to consider
+		// the depth of the path up to this component PLUS the entry
+		// depth of the component. If the SUM of those two would take
+		// us over the limit, then we need to put a register on that
+		// input to break the path. This ensures that NO path in the
+		// design exceeds the target, unless caused by a component
+		// whose internal depth exceeds the target.
+		//
+
+		// get the depth of the entry into this compoenent
+		final int entryDepth = c.getEntryGateDepth();
+		// Module parent = c.getOwner();
+		assert !(c instanceof InBuf); // should never happen
+
+		if (_d) {
+			_dbg.ln("pipelining " + c);
+		}
+
+		// for each input (data) port of the component
+		for (Port port : c.getDataPorts()) {
+			if (_d) {
+				_dbg.ln("\tport " + port);
+			}
+			// across each entry
+			for (Entry entry : c.getEntries()) {
+				// for each dependency
+				for (Dependency dep : entry.getDependencies(port)) {
+					// get the bus
+					final Bus bus = dep.getLogicalBus();
+
+					if (_d) {
+						_dbg.ln("\t\tbus " + bus + " owner " + bus.getOwner()
+								+ " " + bus.getOwner().getOwner());
+					}
+					// get the gatedepth for this port's bus...
+					final int gateDepth = exitToGateDepthMap
+							.get(bus.getOwner()).intValue();
+					// get the cum depth
+					final int cumInputDepth = gateDepth + entryDepth;
+					if (_d) {
+						_dbg.ln("Comp: " + c + " entryDepth " + entryDepth
+								+ " inputDepth " + gateDepth + " cum "
+								+ cumInputDepth + " target " + targetGateDepth);
+					}
+
+					// if above the targetdepth, and gatedepth and entrydepth
+					// are non zero, go for it...
+					if (cumInputDepth > targetGateDepth && gateDepth > 0
+							&& entryDepth > 0 && targetGateDepth > 0) {
+						// Don't pipeline incoming buses that are constants.
+						if (!bus.getValue().isConstant()
+								&& !bus.getOwner().getOwner().isConstant()) {
+							if (_d) {
+								_dbg.ln("\tBingo!");
+							}
+							if (doPipeline) {
+								insertPipelineRegister(entry, dep, port, bus);
+							}
+							pipelineCount++;// increment number of registers
+											// added
+						}
+					}
+				}
+			}
+		}
+
+	}
+
+	/**
+	 * Put a register at the connected inputs of this component
+	 * 
+	 * @param component
+	 *            a component
+	 */
+	private void insertPipelineRegister(Entry entry, Dependency dep,
+			Port inputPort, Bus drivingBus) {
+		if (_d) {
+			_dbg.ln("Registering port " + inputPort + " "
+					+ inputPort.getOwner());
+		}
+
+		Module parent = inputPort.getOwner().getOwner();
+
+		if (_d) {
+			_dbg.ln("\tnew reg: ");
+		}
+		// create it.... Needs a reset if it is in the control path
+		// (which could mean that it is not on a go port OR some
+		// non-operation type logic)
+		final Reg reg;
+		final int type;
+		if (inputPort == inputPort.getOwner().getGoPort()
+				|| !(inputPort.getOwner() instanceof Operation)) {
+			type = Reg.REGR;
+		} else {
+			type = Reg.REG;
+		}
+		reg = Reg.getConfigurableReg(type, ID.showLogical(drivingBus)
+				+ "_pipeline");
+
+		// I think these are needed
+		reg.makeEntry();
+		reg.getDataPort().setUsed(true);
+		// here we have to insert reg into lim
+		// add it as a comp
+		// be clever, it might be a block
+		if (parent instanceof Block) {
+			Block bParent = (Block) parent;
+			// first find the offset
+			int offset = bParent.getSequence().indexOf(inputPort.getOwner());
+			assert offset >= 0;
+			// insert the new comp
+			bParent.insertComponent(reg, offset);
+		} else {
+			inputPort.getOwner().getOwner().addComponent(reg);
+		}
+
+		// now connect the reg...
+		// so:
+		// 1) remove current data dependency of inputPort on drivingBus
+		// 2) add data dependency of 'inputPort' on resultbus of reg
+		// 3) add data dependency of reg.dataPort on driving bus
+		// 4) add control dependencies
+
+		// create 2 dependencies, 1 to input to the reg, one to the port
+		DataDependency regInDep = new DataDependency(drivingBus);
+		Dependency portInDep = dep.createSameType(reg.getResultBus());
+		// wax old dep
+		dep.zap();
+
+		// connect reg to old driving bus dep
+		reg.getMainEntry().addDependency(reg.getDataPort(), regInDep);
+		// connect old port to result bus dep
+		entry.addDependency(inputPort, portInDep);
+
+		// control dep time
+		echoControlDependencies(reg, entry.getOwner());
+
+		// size it
+		reg.getResultBus().setSize(inputPort.getValue().getSize(),
+				inputPort.getValue().isSigned());
+
+		// visit it
+		reg.accept(this);
+
+	}
+
+	public void pipeline(Design d) {
+		clear();
+		doPipeline = false;
+		if (_d) {
+			_dbg.pushPreface(" P1");
+		}
+		d.accept(this);
+	}
+
+	public void pipeline(Design d, int targetGateDepth) {
+		clear();
+		doPipeline = true;
+		this.targetGateDepth = targetGateDepth;
+		if (_d) {
+			_dbg.pushPreface(" P2");
+		}
+		d.accept(this);
+	}
+
+	/**
+	 * Responsible for traversing within a Module
+	 */
+	@Override
+	protected void traverse(Module module) {
+		if (_d) {
+			_dbg.ln("Module Traversal " + module);
+		}
+		zeroFeedbackExits(module);
+
+		// Allow the target gate depth to be specified on a module by
+		// module basis
+		final int oldTargetGateDepth = targetGateDepth;
+		final int spec_level = ((OptionInt) EngineThread.getGenericJob()
+				.getOption(OptionRegistry.SCHEDULE_PIPELINE_GATE_DEPTH))
+				.getValueAsInt(module.getSearchLabel());
+		targetGateDepth = spec_level;
+		if (_d) {
+			_dbg.ln("Module " + module + " TGD set to " + targetGateDepth);
+		}
+		super.traverse(module);
+		targetGateDepth = oldTargetGateDepth;
+	}
+
+	@Override
+	public void visit(AddOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(And and) {
+		visit((Component) and);
+	}
+
+	@Override
+	public void visit(AndOp op) {
+		visit((Component) op);
+	}
+
+	// CRSS XXX put hese back int -- ask IDM
+	@Override
+	public void visit(ArrayRead comp) {
+		visitAtomic(comp);
+	}
+
+	@Override
+	public void visit(ArrayWrite comp) {
+		visitAtomic(comp);
+	}
+
+	@Override
+	public void visit(Call call) {
+		preFilter(call);
+
+		// propagate the gate depth to the procedure ports peer
+		// buses which belong to a procedure body's inBuf.
+		// int maxInputDepth = (call.getOwner() != null) ?
+		// getMaxInputGateDepth(call) : 0;
+		// IDM. Ugly hack, but there is no way to be sure we will have
+		// traversed the top level design.
+		int maxInputDepth = call.getOwner() instanceof Design.DesignModule ? 0
+				: getMaxInputGateDepth(call);
+		if (call.getProcedure() != null
+				&& call.getProcedure().getBody() != null) {
+			// Add in the inbuf exit depth. Always 0 except at top
+			// level (task) call to account for input buffer depth.
+			maxInputDepth += call.getProcedure().getBody().getInBuf()
+					.getExitGateDepth();
+		}
+		final Integer currentInputGateDepth = new Integer(maxInputDepth);
+		for (Port callPort : call.getDataPorts()) {
+			Bus peerBus = call.getProcedurePort(callPort).getPeer();
+			exitToGateDepthMap.put(peerBus.getOwner(), currentInputGateDepth);
+		}
+
+		if (_d) {
+			_dbg.ln("\t*** " + call + ", current input gate depth: "
+					+ currentInputGateDepth);
+		}
+
+		final int oldTargetGateDepth = targetGateDepth;
+		final int spec_level = ((OptionInt) EngineThread.getGenericJob()
+				.getOption(OptionRegistry.SCHEDULE_PIPELINE_GATE_DEPTH))
+				.getValueAsInt(call.getProcedure().getSearchLabel());
+		targetGateDepth = spec_level;
+		if (_d) {
+			_dbg.ln("For Call " + call + " the gate depth level is "
+					+ targetGateDepth);
+		}
+		traverse(call);
+		targetGateDepth = oldTargetGateDepth;
+
+		for (Exit callExit : call.getExits()) {
+			Integer currentOutputGateDepth = exitToGateDepthMap.get(call
+					.getProcedureExit(callExit));
+			exitToGateDepthMap.put(callExit, currentOutputGateDepth);
+		}
+
+		postFilter(call);
+
+		if (_d) {
+			_dbg.ln("\t*** " + call + ", current output gate depth: "
+					+ exitToGateDepthMap.get(call.getAnyExit()).intValue());
+		}
+	}
+
+	@Override
+	public void visit(CastOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(ComplementOp op) {
+		visit((Component) op);
+	}
+
+	public void visit(Component component) {
+		preFilter(component);
+
+		insertPipelineRegister(component);
+		unbreakableGateDepth = Math.max(unbreakableGateDepth,
+				component.getExitGateDepth());
+
+		// reset this...
+		int maxInputGateDepth = getMaxInputGateDepth(component);
+		final Integer currentGateDepth = new Integer(maxInputGateDepth
+				+ component.getExitGateDepth());
+		for (Exit exit : component.getExits()) {
+			exitToGateDepthMap.put(exit, currentGateDepth);
+		}
+		if (currentGateDepth.intValue() >= taskMaxGateDepth) {
+			taskMaxGateDepth = currentGateDepth.intValue();
+		}
+		postFilter(component);
+		if (_d) {
+			_dbg.ln("\t*** " + component + ", current gate depth: "
+					+ currentGateDepth.intValue());
+		}
+	}
+
+	@Override
+	public void visit(ConditionalAndOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(ConditionalOrOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(Constant constant) {
+		visit((Component) constant);
+	}
+
+	@Override
+	public void visit(Design design) {
+		preFilter(design);
+
+		// initialize a design's gate depth
+		designMaxGateDepth = 0;
+		unbreakableGateDepth = 0;
+
+		traverse(design);
+
+		// set a design's max gate depth
+		design.setMaxGateDepth(designMaxGateDepth);
+		design.setUnbreakableGateDepth(unbreakableGateDepth);
+
+		postFilter(design);
+
+		if (_d) {
+			_dbg.ln(design + ", maximum gate depth: "
+					+ design.getMaxGateDepth());
+		}
+		if (_d) {
+			_dbg.ln(design + ", unbreakable gate depth: "
+					+ design.getUnbreakableGateDepth());
+		}
+	}
+
+	@Override
+	public void visit(DivideOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(EncodedMux encodedMux) {
+		visit((Component) encodedMux);
+	}
+
+	@Override
+	public void visit(EqualsOp op) {
+		visit((Component) op);
+	}
+
+	/**
+	 * FifoAccess is a module that is pre-constructed internally, and as such we
+	 * do not want any registers inserted into it. Visit it as a component and
+	 * it will be treated atomically.
+	 */
+	@Override
+	public void visit(FifoAccess comp) {
+		visitAtomic(comp);
+	}
+
+	/**
+	 * FifoRead is a module that is pre-constructed internally, and as such we
+	 * do not want any registers inserted into it. Visit it as a component and
+	 * it will be treated atomically.
+	 */
+	@Override
+	public void visit(FifoRead comp) {
+		visitAtomic(comp);
+	}
+
+	/**
+	 * FifoWrite is a module that is pre-constructed internally, and as such we
+	 * do not want any registers inserted into it. Visit it as a component and
+	 * it will be treated atomically.
+	 */
+	@Override
+	public void visit(FifoWrite comp) {
+		visitAtomic(comp);
+	}
+
+	@Override
+	public void visit(GreaterThanEqualToOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(GreaterThanOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(HeapRead comp) {
+		visitAtomic(comp);
+	}
+
+	@Override
+	public void visit(HeapWrite comp) {
+		visitAtomic(comp);
+	}
+
+	@Override
+	public void visit(InBuf inBuf) {
+		preFilter(inBuf);
+
+		if (_d) {
+			_dbg.ln("\tinbuf " + inBuf + " gateDepth: "
+					+ inBuf.getExitGateDepth() + "");
+		}
+		// final Integer currentGateDepth = new
+		// Integer(getMaxInputGateDepth(inBuf)+inBuf.getExitGateDepth());
+		final Integer currentGateDepth = new Integer(inBuf.getExitGateDepth());
+		for (Exit exit : inBuf.getExits()) {
+			exitToGateDepthMap.put(exit, currentGateDepth);
+		}
+		if (currentGateDepth.intValue() >= taskMaxGateDepth) {
+			taskMaxGateDepth = currentGateDepth.intValue();
+		}
+
+		postFilter(inBuf);
+
+		if (_d) {
+			_dbg.ln("\t*** " + inBuf + ", current gate depth: "
+					+ currentGateDepth.intValue());
+		}
+	}
+
+	@Override
+	public void visit(Latch latch) {
+		visitAtomic(latch);
+	}
+
+	@Override
+	public void visit(LeftShiftOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(LessThanEqualToOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(LessThanOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(Loop loop) {
+		visit((Component) loop);
+		super.visit(loop);
+	}
+
+	@Override
+	public void visit(MemoryRead memoryRead) {
+		visit((Component) memoryRead);
+	}
+
+	@Override
+	public void visit(MemoryWrite memoryWrite) {
+		visit((Component) memoryWrite);
+	}
+
+	@Override
+	public void visit(MinusOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(ModuloOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(MultiplyOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(Mux mux) {
+		visit((Component) mux);
+	}
+
+	@Override
+	public void visit(NoOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(Not not) {
+		visit((Component) not);
+	}
+
+	@Override
+	public void visit(NotEqualsOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(NotOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(NumericPromotionOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(Or or) {
+		visit((Component) or);
+	}
+
+	@Override
+	public void visit(OrOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(OutBuf outBuf) {
+		visit((Component) outBuf);
+
+		final Integer currentGateDepth = new Integer(
+				getMaxInputGateDepth(outBuf) + outBuf.getExitGateDepth());
+		for (Port port : outBuf.getPorts()) {
+			final Bus moduleBus = port.getPeer();
+			if (moduleBus != null) {
+				exitToGateDepthMap.put(moduleBus.getOwner(), currentGateDepth);
+			}
+		}
+
+		postFilter(outBuf);
+
+		if (_d) {
+			_dbg.ln("\t*** " + outBuf + ", current gate depth: "
+					+ currentGateDepth.intValue());
+		}
+	}
+
+	@Override
+	public void visit(PinRead pinRead) {
+		visit((Component) pinRead);
+	}
+
+	@Override
+	public void visit(PinStateChange pinStateChange) {
+		visit((Component) pinStateChange);
+	}
+
+	@Override
+	public void visit(PinWrite pinWrite) {
+		visit((Component) pinWrite);
+	}
+
+	@Override
+	public void visit(PlusOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(ReductionOrOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(Reg reg) {
+		// For any enabled reg make sure that the enable signal and
+		// the data port have been delayed by the same amount. I have
+		// no test case for this as of yet, but I found a bug in the
+		// old java version that was fixed by this visit line.
+		// IDM 06/10/2004
+		visit((Component) reg);
+
+		preFilter(reg);
+		traverse(reg);
+		// this reset the gate depth to 0 for the result bus -- makes sense;-)
+		exitToGateDepthMap.put(reg.getBuses().iterator().next().getOwner(),
+				new Integer(0));
+
+		postFilter(reg);
+	}
+
+	@Override
+	public void visit(RegisterRead regRead) {
+		visit((Component) regRead);
+	}
+
+	@Override
+	public void visit(RegisterWrite regWrite) {
+		visit((Component) regWrite);
+	}
+
+	@Override
+	public void visit(RightShiftOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(RightShiftUnsignedOp op) {
+		visit((Component) op);
+	}
+
+	/**
+	 * Scoreboard is a module that is pre-constructed internally, and as such we
+	 * do not want any registers inserted into it. Visit it as a component and
+	 * it will be treated atomically.
+	 */
+	@Override
+	public void visit(Scoreboard comp) {
+		visitAtomic(comp);
+	}
+
+	@Override
+	public void visit(ShortcutIfElseOp op) {
+		visit((Component) op);
+	}
+
+	/**
+	 * SimplePinAccess is a module that is pre-constructed internally, and as
+	 * such we do not want any registers inserted into it. Visit it as a
+	 * component and it will be treated atomically.
+	 */
+	@Override
+	public void visit(SimplePinAccess comp) {
+		visitAtomic(comp);
+	}
+
+	@Override
+	public void visit(SimplePinRead comp) {
+		visit((Component) comp);
+	}
+
+	@Override
+	public void visit(SimplePinWrite comp) {
+		visit((Component) comp);
+	}
+
+	@Override
+	public void visit(SRL16 srl16) {
+		visit((Component) srl16);
+	}
+
+	@Override
+	public void visit(SubtractOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(Task task) {
+		preFilter(task);
+
+		// clear the field variables which store information within a task
+		// scope.
+		exitToGateDepthMap.clear();
+		atomicModules.clear();
+		taskMaxGateDepth = 0;
+
+		traverse(task);
+
+		// set a task's max gate depth
+		task.setMaxGateDepth(taskMaxGateDepth);
+
+		// set design's gate depth to be the largest gate depth among it's
+		// tasks.
+		if (taskMaxGateDepth >= designMaxGateDepth) {
+			designMaxGateDepth = taskMaxGateDepth;
+		}
+
+		postFilter(task);
+
+		if (_d) {
+			_dbg.ln(task + ", maximum gate depth: " + task.getMaxGateDepth());
+		}
+	}
+
+	/**
+	 * TaskCall is a module that is pre-constructed internally, and as such we
+	 * do not want any registers inserted into it. Visit it as a component and
+	 * it will be treated atomically.
+	 */
+	@Override
+	public void visit(TaskCall comp) {
+		visitAtomic(comp);
+	}
+
+	@Override
+	public void visit(TimingOp op) {
+		visit((Component) op);
+	}
+
+	@Override
+	public void visit(TriBuf triBuf) {
+		visit((Component) triBuf);
+	}
+
+	@Override
+	public void visit(XorOp op) {
+		visit((Component) op);
+	}
+
+	private void visitAtomic(Module module) {
+		atomicModules.add(module);
+		visit(module);
+	}
+
+	/**
+	 * Record all feedback compoenents's exits as gate depth 0. Loop has to stop
+	 * somewhere, right?
+	 * 
+	 * @param m
+	 *            a value of type 'Module'
+	 */
+	private void zeroFeedbackExits(Module m) {
+		for (Component c : m.getFeedbackPoints()) {
+			for (Exit ex : c.getExits()) {
+				exitToGateDepthMap.put(ex, new Integer(0));
+			}
+		}
 	}
 }

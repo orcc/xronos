@@ -51,7 +51,6 @@ import org.xronos.openforge.app.project.SearchLabel;
 import org.xronos.openforge.optimize.replace.ReplacementCorrelation;
 import org.xronos.openforge.schedule.loop.LoopFlopConflictSet;
 
-
 /**
  * 
  * Option Registry is the centralized database of all the preferences and
@@ -490,6 +489,11 @@ public class OptionRegistry {
 	//
 	public static final SearchLabel ORIGINAL_USER_ENTRY_FXN = new SearchLabel() {
 		@Override
+		public String getLabel() {
+			return null;
+		}
+
+		@Override
 		public List<String> getSearchList() {
 			return Collections.singletonList("ORIGINAL_USER_ENTRY_FXN");
 		}
@@ -497,11 +501,6 @@ public class OptionRegistry {
 		@Override
 		public List<String> getSearchList(String postFix) {
 			return Collections.singletonList("ORIGINAL_USER_ENTRY_FXN");
-		}
-
-		@Override
-		public String getLabel() {
-			return null;
 		}
 	};
 
@@ -618,6 +617,31 @@ public class OptionRegistry {
 		OPTION_KEYS.add(X_WRITE_CYCLE_C_VPGEN); // Xxlat_c_vpgen
 		OPTION_KEYS.add(CLOCK_DOMAIN);
 	}
+
+	private static final int MAX_COLUMN_WIDTH = 80;
+
+	private static final String usageDescription = "Passing in c source files will cause them to be compiled. If a .forge "
+			+ "project file is passed in using the '-pfile' switch, forge will compile "
+			+ "using the settings of the project, any of which may be overridden by "
+			+ "command line options.  Any files of type .ucf that need to be used for "
+			+ "xflow should be given using the -ucf switch. Multiple ucf files, if needed, "
+			+ "should each be given by a separate -ucf switch. ";
+
+	private static final String optDetail = "This option may be repeated on the command line as many times as necessary.  "
+			+ "-opt overrides a named option.  The Forge option of the name supplied is "
+			+ "replaced with the given value (i.e. optimize.loop_unrolling.enable=true).  "
+			+ "-opt used without the scope or label qualifiers sets the option at the global level (applicable to the entire design.  "
+			+ "The option can be scoped by appending the '@' symbol followed by the scope to the option "
+			+ "(i.e. optimize.loop_unrolling.enable@test_source.test_function=true).  "
+			+ "A scope can also be further qualified by including a label (i.e. source.function#label).  "
+			+ "Labels may be specified for different levels of scope (function, source file, global). "
+			+ "When using a scope that includes a function, you can simply include the function name without a "
+			+ "signature as a shortcut or include the full function specification. Here are some examples of "
+			+ "various scoped labels...\n"
+			+ "\toptimize.loop_unrolling.enable@test_source.function(ZCIL)#LABEL=true\n"
+			+ "\toptimize.loop_unrolling.enable@test_source.function#LABEL=true\n"
+			+ "\toptimize.loop_unrolling.enable@test_source#LABEL=true\n"
+			+ "\toptimize.loop_unrolling.enable@LABEL=true\n";
 
 	public static HashMap<OptionKey, Option> getDefaults() {
 		HashMap<OptionKey, Option> defaults = new HashMap<OptionKey, Option>();
@@ -1098,7 +1122,59 @@ public class OptionRegistry {
 		return defaults;
 	}
 
-	private static final int MAX_COLUMN_WIDTH = 80;
+	private static String msgFormat(String msg, String linePrefix, int maxLen) {
+		if (msg.length() <= maxLen) {
+			return msg;
+		}
+
+		// If the message already has line breaks, then preserve those
+		StringTokenizer lineTokenizer = new StringTokenizer(msg, "\n");
+		if (lineTokenizer.countTokens() > 1) {
+			String formatted = "";
+			while (lineTokenizer.hasMoreTokens()) {
+				formatted += msgFormat((String) lineTokenizer.nextElement(),
+						linePrefix, maxLen) + "\n";
+			}
+			return formatted;
+		}
+
+		// If there is only one toke (no whitespace) return it unbroken
+		StringTokenizer st = new StringTokenizer(msg, " \t", true);
+		if (st.countTokens() < 1) {
+			return msg;
+		}
+
+		// Break a the first whitespace before the max length.
+		String formatted = (String) st.nextElement();
+		int lineCount = formatted.length();
+		while (st.hasMoreElements()) {
+			String token = (String) st.nextElement();
+			if (lineCount + token.length() > maxLen) {
+				lineCount = token.length() + linePrefix.length();
+				formatted += "\n" + linePrefix + token.trim();
+			} else {
+				lineCount += token.length();
+				formatted += token;
+			}
+		}
+		return formatted;
+	}
+
+	private static String pad(String f1, int f1size) {
+		int pad = f1size - f1.length();
+
+		if (pad < 0) {
+			pad = 0;
+		}
+
+		String result = "";
+
+		for (int i = 0; i < pad; i++) {
+			result += " ";
+		}
+
+		return f1 + result;
+	} // pad()
 
 	/**
 	 * Method used to print the usage of Forge. This is called when invalid CLAs
@@ -1144,8 +1220,9 @@ public class OptionRegistry {
 		// nicely formatted text.
 		maxLength += 4;
 		String secondLinePad = "";
-		for (int i = 0; i < maxLength; i++)
+		for (int i = 0; i < maxLength; i++) {
 			secondLinePad += " ";
+		}
 
 		for (Entry<String, String> entry : items.entrySet()) {
 			String msg = pad(entry.getKey().toString(), maxLength)
@@ -1173,77 +1250,4 @@ public class OptionRegistry {
 
 		return usage.toString();
 	} // usage()
-
-	private static final String usageDescription = ("Passing in c source files will cause them to be compiled. If a .forge "
-			+ "project file is passed in using the '-pfile' switch, forge will compile "
-			+ "using the settings of the project, any of which may be overridden by "
-			+ "command line options.  Any files of type .ucf that need to be used for "
-			+ "xflow should be given using the -ucf switch. Multiple ucf files, if needed, "
-			+ "should each be given by a separate -ucf switch. ");
-
-	private static final String optDetail = ("This option may be repeated on the command line as many times as necessary.  "
-			+ "-opt overrides a named option.  The Forge option of the name supplied is "
-			+ "replaced with the given value (i.e. optimize.loop_unrolling.enable=true).  "
-			+ "-opt used without the scope or label qualifiers sets the option at the global level (applicable to the entire design.  "
-			+ "The option can be scoped by appending the '@' symbol followed by the scope to the option "
-			+ "(i.e. optimize.loop_unrolling.enable@test_source.test_function=true).  "
-			+ "A scope can also be further qualified by including a label (i.e. source.function#label).  "
-			+ "Labels may be specified for different levels of scope (function, source file, global). "
-			+ "When using a scope that includes a function, you can simply include the function name without a "
-			+ "signature as a shortcut or include the full function specification. Here are some examples of "
-			+ "various scoped labels...\n"
-			+ "\toptimize.loop_unrolling.enable@test_source.function(ZCIL)#LABEL=true\n"
-			+ "\toptimize.loop_unrolling.enable@test_source.function#LABEL=true\n"
-			+ "\toptimize.loop_unrolling.enable@test_source#LABEL=true\n"
-			+ "\toptimize.loop_unrolling.enable@LABEL=true\n");
-
-	private static String pad(String f1, int f1size) {
-		int pad = f1size - f1.length();
-
-		if (pad < 0)
-			pad = 0;
-
-		String result = "";
-
-		for (int i = 0; i < pad; i++)
-			result += " ";
-
-		return (f1 + result);
-	} // pad()
-
-	private static String msgFormat(String msg, String linePrefix, int maxLen) {
-		if (msg.length() <= maxLen)
-			return msg;
-
-		// If the message already has line breaks, then preserve those
-		StringTokenizer lineTokenizer = new StringTokenizer(msg, "\n");
-		if (lineTokenizer.countTokens() > 1) {
-			String formatted = "";
-			while (lineTokenizer.hasMoreTokens()) {
-				formatted += msgFormat((String) lineTokenizer.nextElement(),
-						linePrefix, maxLen) + "\n";
-			}
-			return formatted;
-		}
-
-		// If there is only one toke (no whitespace) return it unbroken
-		StringTokenizer st = new StringTokenizer(msg, " \t", true);
-		if (st.countTokens() < 1)
-			return msg;
-
-		// Break a the first whitespace before the max length.
-		String formatted = (String) st.nextElement();
-		int lineCount = formatted.length();
-		while (st.hasMoreElements()) {
-			String token = (String) st.nextElement();
-			if ((lineCount + token.length()) > maxLen) {
-				lineCount = token.length() + linePrefix.length();
-				formatted += "\n" + linePrefix + token.trim();
-			} else {
-				lineCount += token.length();
-				formatted += token;
-			}
-		}
-		return formatted;
-	}
 }

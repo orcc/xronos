@@ -28,7 +28,6 @@ import java.util.Set;
 import org.xronos.openforge.lim.Design;
 import org.xronos.openforge.util.Stoppable;
 
-
 /**
  * @author sb
  * 
@@ -50,14 +49,43 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 	public static final int ERROR = 2;
 
 	/**
+	 * Allow for graceful termination of the task
+	 * 
+	 */
+	public static void breathe() {
+		engine().takeBreath();
+	}
+
+	/**
+	 * Return the current engine of the currently executing thread.
+	 * 
+	 * @return current engine
+	 */
+	public static Engine engine() {
+		return EngineThread.getEngine();
+	}
+
+	/**
+	 * Return the current GenericJob of the current Engine for the current
+	 * thread.
+	 * 
+	 * @return Current Project
+	 */
+	public static GenericJob genericJob() {
+		return EngineThread.getGenericJob();
+	}
+
+	/**
 	 * The LIM design produced by this job. The design may be null, or the
 	 * result of any stage of compilation.
 	 */
-	private Design design;
-
+	protected Design design;
 	private final Set<JobListener> listeners = new HashSet<JobListener>();
+
 	private final GenericJob gj;
+
 	protected JobHandler jobHandler;
+
 	protected volatile int status = STOPPED;
 
 	public Engine(GenericJob genJob) {
@@ -69,29 +97,9 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 		}
 	}
 
-	/**
-	 * Get the Generic Job being processed by this Engine.
-	 * 
-	 * @return the GenericJob being processed
-	 */
-	public GenericJob getGenericJob() {
-		return gj;
+	public void addJobListener(JobListener listener) {
+		listeners.add(listener);
 	}
-
-	/**
-	 * Gets the design produced by this Engine. May be null, or the result of
-	 * any stage of compilation.
-	 */
-	public Design getDesign() {
-		return design;
-	}
-
-	/**
-	 * If this returns a non-null Design object, the lim will be processed.
-	 * 
-	 * @return a value of type 'Design'
-	 */
-	public abstract Design buildLim();
 
 	/**
 	 * Tell the Engine to start processing. The Engine status should only change
@@ -116,8 +124,8 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 				long t0 = System.currentTimeMillis();
 				new LIMCompiler().processLim(design);
 				long t1 = System.currentTimeMillis();
-				System.out.println("LIM Compiled in: "
-						+ ((float) (t1 - t0) / (float) 1000) + "s\n");
+				System.out.println("LIM Compiled in: " + (float) (t1 - t0)
+						/ (float) 1000 + "s\n");
 			} else {
 				gj.info("Skipping Lim Processing -- no Lim produced.");
 			}
@@ -131,6 +139,13 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 	}
 
 	/**
+	 * If this returns a non-null Design object, the lim will be processed.
+	 * 
+	 * @return a value of type 'Design'
+	 */
+	public abstract Design buildLim();
+
+	/**
 	 * Stop the processing of the current job by passing on the stop request to
 	 * the current job handler. This returns immediately, regardless of whether
 	 * the handler has actually stopped or not. Use status() to determine if the
@@ -141,50 +156,14 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 	}
 
 	/**
-	 * Runs this Job by calling begin(). Allows this Job to be attached to a
-	 * Thread.
-	 */
-	@Override
-	public void run() {
-		begin();
-	}
-
-	/**
-	 * update the Engine :: thread relationship
+	 * Log an error level message, then cease processing and exit the engine.
+	 * This is a duplicate of GenericJob.fatalError(String s); so call that
 	 * 
+	 * @param s
+	 *            a value of type 'String'
 	 */
-	public void updateJobThread() {
-		EngineThread.addThread(this);
-	}
-
-	public void kill() {
-		status = STOPPED;
-		EngineThread.removeJob(this);
-	}
-
-	/**
-	 * Return the current GenericJob of the current Engine for the current
-	 * thread.
-	 * 
-	 * @return Current Project
-	 */
-	public static GenericJob genericJob() {
-		return EngineThread.getGenericJob();
-	}
-
-	/**
-	 * gets the current JobHandler.
-	 * 
-	 */
-	public JobHandler getCurrentHandler() {
-		return jobHandler;
-	}
-
-	/**
-	 * Get the current status of job handling.
-	 */
-	public int status() {
-		return status;
+	public void fatalError(String s) {
+		gj.fatalError(s);
 	}
 
 	/**
@@ -199,15 +178,9 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 		}
 	} // fireEvent()
 
-	/**
-	 * Fires a new JobEvent.started for a JobHandler.
-	 * 
-	 * @param handler
-	 *            the JobHandler which is starting
-	 */
-	public void fireHandlerStart(JobHandler hand) {
-		status = IN_PROGRESS;
-		fireEvent(new JobEvent.Started(hand));
+	public void fireHandlerError(JobHandler hand) {
+		status = ERROR;
+		fireEvent(new JobEvent.Error(hand));
 	}
 
 	/**
@@ -225,44 +198,72 @@ public abstract class Engine extends Stoppable.Adapter implements Runnable {
 		// EngineThread.removeJob(this);
 	}
 
-	public void fireHandlerError(JobHandler hand) {
-		status = ERROR;
-		fireEvent(new JobEvent.Error(hand));
+	/**
+	 * Fires a new JobEvent.started for a JobHandler.
+	 * 
+	 * @param handler
+	 *            the JobHandler which is starting
+	 */
+	public void fireHandlerStart(JobHandler hand) {
+		status = IN_PROGRESS;
+		fireEvent(new JobEvent.Started(hand));
 	}
 
 	/**
-	 * Allow for graceful termination of the task
+	 * gets the current JobHandler.
 	 * 
 	 */
-	public static void breathe() {
-		engine().takeBreath();
+	public JobHandler getCurrentHandler() {
+		return jobHandler;
 	}
 
 	/**
-	 * Return the current engine of the currently executing thread.
-	 * 
-	 * @return current engine
+	 * Gets the design produced by this Engine. May be null, or the result of
+	 * any stage of compilation.
 	 */
-	public static Engine engine() {
-		return EngineThread.getEngine();
+	public Design getDesign() {
+		return design;
 	}
 
 	/**
-	 * Log an error level message, then cease processing and exit the engine.
-	 * This is a duplicate of GenericJob.fatalError(String s); so call that
+	 * Get the Generic Job being processed by this Engine.
 	 * 
-	 * @param s
-	 *            a value of type 'String'
+	 * @return the GenericJob being processed
 	 */
-	public void fatalError(String s) {
-		gj.fatalError(s);
+	public GenericJob getGenericJob() {
+		return gj;
 	}
 
-	public void addJobListener(JobListener listener) {
-		listeners.add(listener);
+	public void kill() {
+		status = STOPPED;
+		EngineThread.removeJob(this);
 	}
 
 	public void removeJobListener(JobListener listener) {
 		listeners.remove(listener);
+	}
+
+	/**
+	 * Runs this Job by calling begin(). Allows this Job to be attached to a
+	 * Thread.
+	 */
+	@Override
+	public void run() {
+		begin();
+	}
+
+	/**
+	 * Get the current status of job handling.
+	 */
+	public int status() {
+		return status;
+	}
+
+	/**
+	 * update the Engine :: thread relationship
+	 * 
+	 */
+	public void updateJobThread() {
+		EngineThread.addThread(this);
 	}
 }

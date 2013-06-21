@@ -65,6 +65,49 @@ public class PipelineOptimization implements Optimization, _pipeline.Debug {
 	int pipelineCount = 0;
 
 	/**
+	 * The clear method is called after each complete visit to the optimization
+	 * and should free up as much memory as possible, and reset any per run
+	 * status gathering.
+	 */
+	@Override
+	public void clear() {
+		pipelineCount = 0;
+	}
+
+	/**
+	 * Should return true if the optimization modified the LIM <b>and</b> that
+	 * other optimizations in its grouping should be re-run
+	 */
+	@Override
+	public boolean didModify() {
+		return pipelineCount > 0;
+	}
+
+	public int getCount() {
+		return pipelineCount;
+	}
+
+	/**
+	 * Method called after performing the optimization, should use Job (info,
+	 * verbose, etc) to report to the user the results (if any) of running the
+	 * optimization
+	 */
+	@Override
+	public void postStatus() {
+		EngineThread.getGenericJob().dec();
+	}
+
+	/**
+	 * Method called prior to performing the optimization, should use Job (info,
+	 * verbose, etc) to report to the user what action is being performed.
+	 */
+	@Override
+	public void preStatus() {
+		EngineThread.getGenericJob().info("pipelining...");
+		EngineThread.getGenericJob().inc();
+	}
+
+	/**
 	 * Applies this optimization to a given target.
 	 * 
 	 * @param target
@@ -131,7 +174,7 @@ public class PipelineOptimization implements Optimization, _pipeline.Debug {
 			// there may still be specific pipeline targets for
 			// sub-scopes. In this case the predicted count will
 			// indicate that some pipelining should be done.
-			if ((targetGateDepth > 0) || (predictedRegCount > 0)) {
+			if (targetGateDepth > 0 || predictedRegCount > 0) {
 				if (targetGateDepth > 0) {
 					gj.info("Target post-pipelining combinational complexity: "
 							+ targetGateDepth);
@@ -150,49 +193,6 @@ public class PipelineOptimization implements Optimization, _pipeline.Debug {
 			}
 		}
 		gj.dec();
-	}
-
-	public int getCount() {
-		return pipelineCount;
-	}
-
-	/**
-	 * Method called prior to performing the optimization, should use Job (info,
-	 * verbose, etc) to report to the user what action is being performed.
-	 */
-	@Override
-	public void preStatus() {
-		EngineThread.getGenericJob().info("pipelining...");
-		EngineThread.getGenericJob().inc();
-	}
-
-	/**
-	 * Method called after performing the optimization, should use Job (info,
-	 * verbose, etc) to report to the user the results (if any) of running the
-	 * optimization
-	 */
-	@Override
-	public void postStatus() {
-		EngineThread.getGenericJob().dec();
-	}
-
-	/**
-	 * Should return true if the optimization modified the LIM <b>and</b> that
-	 * other optimizations in its grouping should be re-run
-	 */
-	@Override
-	public boolean didModify() {
-		return pipelineCount > 0;
-	}
-
-	/**
-	 * The clear method is called after each complete visit to the optimization
-	 * and should free up as much memory as possible, and reset any per run
-	 * status gathering.
-	 */
-	@Override
-	public void clear() {
-		pipelineCount = 0;
 	}
 
 }

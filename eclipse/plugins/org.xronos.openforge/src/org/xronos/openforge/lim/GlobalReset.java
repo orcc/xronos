@@ -29,17 +29,7 @@ import org.xronos.openforge.lim.primitive.Not;
 import org.xronos.openforge.lim.primitive.Or;
 import org.xronos.openforge.lim.primitive.Reg;
 
-
 public class GlobalReset extends HiddenPin {
-
-	public GlobalReset() {
-		super(1, false);
-
-	}
-
-	public Physical makePhysical() {
-		return new GlobalReset.Physical(false);
-	}
 
 	// public static class Physical extends PhysicalImplementationModule
 	public static class Physical extends Block {
@@ -208,13 +198,28 @@ public class GlobalReset extends HiddenPin {
 		// return false;
 		// }
 
-		@Override
-		public boolean isOpaque() {
-			return true;
+		public And getAndGate() {
+			return andGate;
 		}
 
 		public Port getClockInput() {
 			return clock;
+		}
+
+		public Reg getCrossReg() {
+			return crossReg;
+		}
+
+		public Reg getFinalReg() {
+			return finalReg;
+		}
+
+		public Reg getGlitchReg() {
+			return glitchReg;
+		}
+
+		public Not getInverter() {
+			return inverter;
 		}
 
 		public Port getResetInput() {
@@ -229,24 +234,18 @@ public class GlobalReset extends HiddenPin {
 			return sampleReg;
 		}
 
-		public Reg getCrossReg() {
-			return crossReg;
+		@Override
+		public boolean isOpaque() {
+			return true;
 		}
+	}
 
-		public Reg getGlitchReg() {
-			return glitchReg;
-		}
+	public GlobalReset() {
+		super(1, false);
 
-		public And getAndGate() {
-			return andGate;
-		}
+	}
 
-		public Not getInverter() {
-			return inverter;
-		}
-
-		public Reg getFinalReg() {
-			return finalReg;
-		}
+	public Physical makePhysical() {
+		return new GlobalReset.Physical(false);
 	}
 }

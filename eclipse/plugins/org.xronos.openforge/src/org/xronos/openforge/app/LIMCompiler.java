@@ -65,7 +65,6 @@ import org.xronos.openforge.schedule.Scheduler;
 import org.xronos.openforge.verilog.testbench.GenericTestbenchWriter;
 import org.xronos.openforge.verilog.translate.PassThroughComponentRemover;
 
-
 /**
  * LIMCompiler is responsible for handling optimization, scheduling and
  * translation of a JCompilationUnit into a JDesign and LIM Design based on the
@@ -76,9 +75,139 @@ import org.xronos.openforge.verilog.translate.PassThroughComponentRemover;
  */
 public class LIMCompiler {
 
+	/**
+	 * Gets a descriptive string for a number of clocks. {@link Latency#UNKNOWN}
+	 * is reported as "*".
+	 */
+	private static String getClocksString(int clocks) {
+		if (clocks == Latency.UNKNOWN) {
+			return "unknown";
+		}
+
+		StringBuffer buf = new StringBuffer();
+		buf.append(clocks);
+		buf.append(" clock");
+		if (clocks != 1) {
+			buf.append("s");
+		}
+		return buf.toString();
+	}
+
 	private File reportDirectory;
 
 	public LIMCompiler() {
+	}
+
+	private void clearAPIRuntime() {
+		// clear out the api RunTime class in case this is a multi
+		// file compilation
+		try {
+			Class<RunTime> runtime = org.xronos.openforge.forge.api.runtime.RunTime.class;
+
+			// init all fields
+			// FIXME
+			@SuppressWarnings("rawtypes")
+			Class[] args = { java.lang.Integer.TYPE, java.io.File.class,
+					java.io.File.class, java.io.File.class };
+
+			Method method = runtime.getDeclaredMethod("setValues", args);
+
+			// allow ourselves to call the private method
+			method.setAccessible(true);
+
+			Object[] params = new Object[4];
+
+			params[0] = new Integer(0);
+			params[1] = null;
+			params[2] = null;
+			params[3] = null;
+
+			method.invoke(null, params);
+		} catch (Throwable t) {
+			// Fail silently. We no longer use/maintain the API
+			// classes. Message removed 03/24/2005 IDM.
+			// EngineThread.getGenericJob().error("internal problem configuring RunTime api class: "
+			// + t.getMessage());
+		}
+	}
+
+	private void closeFile(File file, FileOutputStream fos) {
+		String nextFile = null;
+		try {
+			nextFile = file.getAbsolutePath();
+			fos.flush();
+			fos.close();
+		} catch (Exception e) {
+			EngineThread.getGenericJob().warn(
+					"could not close output file " + nextFile);
+		}
+	}
+
+	private List<OutputEngine> generateOutputEngines() {
+		List<OutputEngine> engines = new ArrayList<OutputEngine>();
+		// Option op;
+		GenericJob gj = EngineThread.getGenericJob();
+
+		// Cycle C handled seperately because of where it has to run
+		// if (gj.getUnscopedBooleanOptionValue(OptionRegistry.WRITE_CYCLE_C))
+		// engines.add(new CycleCTranslateEngine());
+
+		if (!gj.getUnscopedBooleanOptionValue(OptionRegistry.NO_EDK)) // DO EDK
+		{
+			// The ForgeCoreDescriptor engine MUST run before the
+			// verilog translate engine in order to set up the
+			// destinations correctly
+			engines.add(new ForgeCoreDescriptor());
+		}
+
+		if (!gj.getUnscopedBooleanOptionValue(OptionRegistry.SHOULD_NOT_TRANSLATE)) // SHOULD
+																					// translate..
+		{
+			engines.add(new VerilogTranslateEngine());
+		}
+
+		if (gj.getUnscopedBooleanOptionValue(OptionRegistry.AUTO_TEST_BENCH)
+				|| PinSimData.exists()) {
+			// deprecated
+			// if (PinSimData.exists())
+			// engines.add(CycleSimTestBench);
+			// else
+			if (!gj.getUnscopedBooleanOptionValue(OptionRegistry.NO_BLOCK_IO))// if
+																				// Do
+																				// BlockIO
+			{
+				engines.add(new TestBenchEngine.BlockIOTestBenchEngine());
+			} else if (ForgeFileTyper.isXLIMSource(gj.getTargetFiles()[0]
+					.getName())) {
+				engines.add(new TestBenchEngine.GenericTBEngine());
+			} else {
+				engines.add(new TestBenchEngine.SimpleTestBenchEngine());
+			}
+		}
+
+		if (gj.getUnscopedBooleanOptionValue(OptionRegistry.SYSGEN)) {
+			engines.add(new SysgenSimApi());
+		}
+
+		if (gj.getOption(OptionRegistry.UCF_FILE).getValue(CodeLabel.UNSCOPED)
+				.toString() != null
+				&& !gj.getOption(OptionRegistry.UCF_FILE)
+						.getValue(CodeLabel.UNSCOPED).toString().equals("")) {
+			engines.add(new DesignUCFDocument());
+		}
+
+		return engines;
+	}
+
+	private FileOutputStream openFile(File file) {
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(file);
+		} catch (Exception e) {
+			EngineThread.getEngine().fatalError(
+					"could not create output file " + file.getAbsolutePath());
+		}
+		return fos;
 	}
 
 	/**
@@ -221,175 +350,6 @@ public class LIMCompiler {
 		return design;
 	}
 
-	private List<OutputEngine> generateOutputEngines() {
-		List<OutputEngine> engines = new ArrayList<OutputEngine>();
-		// Option op;
-		GenericJob gj = EngineThread.getGenericJob();
-
-		// Cycle C handled seperately because of where it has to run
-		// if (gj.getUnscopedBooleanOptionValue(OptionRegistry.WRITE_CYCLE_C))
-		// engines.add(new CycleCTranslateEngine());
-
-		if (!gj.getUnscopedBooleanOptionValue(OptionRegistry.NO_EDK)) // DO EDK
-		{
-			// The ForgeCoreDescriptor engine MUST run before the
-			// verilog translate engine in order to set up the
-			// destinations correctly
-			engines.add(new ForgeCoreDescriptor());
-		}
-
-		if (!gj.getUnscopedBooleanOptionValue(OptionRegistry.SHOULD_NOT_TRANSLATE)) // SHOULD
-																					// translate..
-		{
-			engines.add(new VerilogTranslateEngine());
-		}
-
-		if (gj.getUnscopedBooleanOptionValue(OptionRegistry.AUTO_TEST_BENCH)
-				|| PinSimData.exists()) {
-			// deprecated
-			// if (PinSimData.exists())
-			// engines.add(CycleSimTestBench);
-			// else
-			if (!gj.getUnscopedBooleanOptionValue(OptionRegistry.NO_BLOCK_IO))// if
-																				// Do
-																				// BlockIO
-			{
-				engines.add(new TestBenchEngine.BlockIOTestBenchEngine());
-			} else if (ForgeFileTyper.isXLIMSource(gj.getTargetFiles()[0]
-					.getName())) {
-				engines.add(new TestBenchEngine.GenericTBEngine());
-			} else {
-				engines.add(new TestBenchEngine.SimpleTestBenchEngine());
-			}
-		}
-
-		if (gj.getUnscopedBooleanOptionValue(OptionRegistry.SYSGEN)) {
-			engines.add(new SysgenSimApi());
-		}
-
-		if ((gj.getOption(OptionRegistry.UCF_FILE).getValue(CodeLabel.UNSCOPED)
-				.toString() != null)
-				&& !gj.getOption(OptionRegistry.UCF_FILE)
-						.getValue(CodeLabel.UNSCOPED).toString().equals("")) {
-			engines.add(new DesignUCFDocument());
-		}
-
-		return engines;
-	}
-
-	private void clearAPIRuntime() {
-		// clear out the api RunTime class in case this is a multi
-		// file compilation
-		try {
-			Class<RunTime> runtime = org.xronos.openforge.forge.api.runtime.RunTime.class;
-
-			// init all fields
-			// FIXME
-			@SuppressWarnings("rawtypes")
-			Class[] args = { java.lang.Integer.TYPE, java.io.File.class,
-					java.io.File.class, java.io.File.class };
-
-			Method method = runtime.getDeclaredMethod("setValues", args);
-
-			// allow ourselves to call the private method
-			method.setAccessible(true);
-
-			Object[] params = new Object[4];
-
-			params[0] = new Integer(0);
-			params[1] = null;
-			params[2] = null;
-			params[3] = null;
-
-			method.invoke(null, params);
-		} catch (Throwable t) {
-			// Fail silently. We no longer use/maintain the API
-			// classes. Message removed 03/24/2005 IDM.
-			// EngineThread.getGenericJob().error("internal problem configuring RunTime api class: "
-			// + t.getMessage());
-		}
-	}
-
-	/**
-	 * Reports the user the latency and control characteristics of each top
-	 * level module.
-	 */
-	private void reportDesignCharacteristics(Design design) {
-		(new InterfaceReporter()).reportStreams();
-		GenericJob gj = EngineThread.getGenericJob();
-		for (Task task : design.getTasks()) {
-			final Call topCall = task.getCall();
-			if (topCall instanceof IPCoreCall) {
-				continue;
-			}
-			final Latency latency = topCall.getLatency();
-			// final StringBuffer stringBuffer = new StringBuffer();
-
-			gj.inc();
-			gj.info("entry module \"" + topCall.showIDLogical() + "\":");
-			gj.inc();
-			gj.info("max gate depth = " + task.getMaxGateDepth());
-			gj.info("min latency = " + getClocksString(latency.getMinClocks()));
-			gj.info("max latency = " + getClocksString(latency.getMaxClocks()));
-			gj.info((topCall.consumesGo() ? "requires " : "does not require ")
-					+ "go input");
-			gj.info((topCall.producesDone() ? "produces " : "does not produce ")
-					+ "done output");
-			// Job.info("module is " + (!topCall.isBalanceable() ||
-			// !latency.isFixed() ? "not " : "") + "balanced");
-			String spacing = "";
-			int space = task.getGoSpacing();
-			if (space == Task.INDETERMINATE_GO_SPACING) {
-				spacing = "indeterminate";
-			} else {
-				spacing = Integer.toString(space) + " clock";
-				if (space != 1) {
-					spacing += "s";
-				}
-			}
-			gj.info("min go spacing is " + spacing);
-			gj.dec();
-			gj.dec();
-		}
-
-	}
-
-	/**
-	 * Gets a descriptive string for a number of clocks. {@link Latency#UNKNOWN}
-	 * is reported as "*".
-	 */
-	private static String getClocksString(int clocks) {
-		if (clocks == Latency.UNKNOWN) {
-			return "unknown";
-		}
-
-		StringBuffer buf = new StringBuffer();
-		buf.append(clocks);
-		buf.append(" clock");
-		if (clocks != 1) {
-			buf.append("s");
-		}
-		return buf.toString();
-	}
-
-	/**
-	 * <code>simulate</code> performs a cycle accurate simulation of the LIM
-	 * data structure.
-	 * 
-	 * @see Design
-	 * 
-	 * @param design
-	 *            a <code>Design</code> value
-	 */
-	private void simulate(Design design) {
-		EngineThread
-				.getGenericJob()
-				.warn("Forge data model simulation not available.  -sim command line argument is deprecated.");
-		/*
-		 * Simulator simulator = new Simulator(design); simulator.simulate();
-		 */
-	} // simulate()
-
 	/**
 	 * Generates reports for this design.
 	 * 
@@ -471,6 +431,68 @@ public class LIMCompiler {
 		// Job.dec();
 	}
 
+	/**
+	 * Reports the user the latency and control characteristics of each top
+	 * level module.
+	 */
+	private void reportDesignCharacteristics(Design design) {
+		new InterfaceReporter().reportStreams();
+		GenericJob gj = EngineThread.getGenericJob();
+		for (Task task : design.getTasks()) {
+			final Call topCall = task.getCall();
+			if (topCall instanceof IPCoreCall) {
+				continue;
+			}
+			final Latency latency = topCall.getLatency();
+			// final StringBuffer stringBuffer = new StringBuffer();
+
+			gj.inc();
+			gj.info("entry module \"" + topCall.showIDLogical() + "\":");
+			gj.inc();
+			gj.info("max gate depth = " + task.getMaxGateDepth());
+			gj.info("min latency = " + getClocksString(latency.getMinClocks()));
+			gj.info("max latency = " + getClocksString(latency.getMaxClocks()));
+			gj.info((topCall.consumesGo() ? "requires " : "does not require ")
+					+ "go input");
+			gj.info((topCall.producesDone() ? "produces " : "does not produce ")
+					+ "done output");
+			// Job.info("module is " + (!topCall.isBalanceable() ||
+			// !latency.isFixed() ? "not " : "") + "balanced");
+			String spacing = "";
+			int space = task.getGoSpacing();
+			if (space == Task.INDETERMINATE_GO_SPACING) {
+				spacing = "indeterminate";
+			} else {
+				spacing = Integer.toString(space) + " clock";
+				if (space != 1) {
+					spacing += "s";
+				}
+			}
+			gj.info("min go spacing is " + spacing);
+			gj.dec();
+			gj.dec();
+		}
+
+	}
+
+	/**
+	 * <code>simulate</code> performs a cycle accurate simulation of the LIM
+	 * data structure.
+	 * 
+	 * @see Design
+	 * 
+	 * @param design
+	 *            a <code>Design</code> value
+	 */
+	private void simulate(Design design) {
+		EngineThread
+				.getGenericJob()
+				.warn("Forge data model simulation not available.  -sim command line argument is deprecated.");
+		/*
+		 * Simulator simulator = new Simulator(design); simulator.simulate();
+		 */
+	} // simulate()
+
 	private void xflow(Design design) {
 		GenericJob gj = EngineThread.getGenericJob();
 		gj.info("Running xflow ...");
@@ -489,10 +511,10 @@ public class LIMCompiler {
 			synthFile = gj.getFileHandler().getFile(
 					VerilogTranslateEngine.VERILOG);
 		}
-		String subFileName = (synthFile.getName()).substring(0,
-				((synthFile.getName()).lastIndexOf("_synth.v")));
-		File workingDir = new File(synthFile.getParent(),
-				(subFileName + "_xflow"));
+		String subFileName = synthFile.getName().substring(0,
+				synthFile.getName().lastIndexOf("_synth.v"));
+		File workingDir = new File(synthFile.getParent(), subFileName
+				+ "_xflow");
 
 		if (!workingDir.exists()) {
 			workingDir.mkdirs();
@@ -535,29 +557,6 @@ public class LIMCompiler {
 		gj.dec();
 		gj.info("DONE");
 		gj.info("");
-	}
-
-	private FileOutputStream openFile(File file) {
-		FileOutputStream fos = null;
-		try {
-			fos = new FileOutputStream(file);
-		} catch (Exception e) {
-			EngineThread.getEngine().fatalError(
-					"could not create output file " + file.getAbsolutePath());
-		}
-		return fos;
-	}
-
-	private void closeFile(File file, FileOutputStream fos) {
-		String nextFile = null;
-		try {
-			nextFile = file.getAbsolutePath();
-			fos.flush();
-			fos.close();
-		} catch (Exception e) {
-			EngineThread.getGenericJob().warn(
-					"could not close output file " + nextFile);
-		}
 	}
 
 }

@@ -55,7 +55,6 @@ import org.xronos.openforge.lim.io.actor.ActorScalarOutput;
 import org.xronos.openforge.lim.memory.LogicalMemory;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * Design is the top level representation of a an implementation in hardware. It
  * consists of one or more parallel {@link Task Tasks} and zero or more global
@@ -66,7 +65,115 @@ import org.xronos.openforge.util.naming.ID;
  */
 public class Design extends ID implements Visitable, Cloneable {
 
+	public static class ClockDomain {
+		private static class ControlPin extends SimplePin {
+			private ControlPin(String name) {
+				super(1, name);
+			}
+		}
+
+		public static String[] parse(String spec) {
+			String[] result = { "", "" };
+			String[] split = spec.split(":");
+			if (split.length > 0) {
+				result[0] = split[0];
+			} else {
+				throw new IllegalArgumentException("Cannot parse clock domain");
+			}
+			if (split.length > 1) {
+				result[1] = split[1];
+			}
+			return result;
+		}
+
+		private final SimplePin clock;
+		private SimplePin reset;
+
+		private final GlobalReset.Physical gsr;
+
+		private final String domainSpec;
+
+		private ClockDomain(String domainSpec) {
+			this.domainSpec = domainSpec;
+			String[] parsed = parse(domainSpec);
+			String clk = parsed[0];
+			String rst = parsed[1];
+			clock = new ControlPin(clk);
+			if (rst != null && rst.length() > 0) {
+				reset = new ControlPin(rst);
+			}
+			gsr = new GlobalReset.Physical(reset != null);
+			clock.connectBus(Collections.singleton(gsr.getClockInput()));
+			if (reset != null) {
+				reset.connectBus(Collections.singleton(gsr.getResetInput()));
+			}
+		}
+
+		public void connectComponentToDomain(Component comp) {
+			if (comp.getClockPort().isUsed()) {
+				clock.connectBus(Collections.singleton(comp.getClockPort()));
+			}
+			if (comp.getResetPort().isUsed()) {
+				comp.getResetPort().setBus(gsr.getResetOutput());
+			}
+		}
+
+		// Private methods are accessible to Design
+		public SimplePin getClockPin() {
+			return clock;
+		}
+
+		public String getDomainKeyString() {
+			return domainSpec;
+		}
+
+		private GlobalReset.Physical getGSR() {
+			return gsr;
+		}
+
+		public SimplePin getResetPin() {
+			return reset;
+		}
+	}
+
+	/**
+	 * This is a specific module type used to hold all the top level components
+	 * for the design.
+	 */
+	public static class DesignModule extends Module {
+		@Override
+		public void accept(Visitor vis) {
+			throw new UnsupportedOperationException(
+					"Cannot directly visit a design Module");
+		}
+
+		@Override
+		public void addComponent(Component comp) {
+			super.addComponent(comp);
+		}
+
+		@Override
+		public Collection<Component> getComponents() {
+			LinkedHashSet<Component> comps = new LinkedHashSet<Component>(
+					super.getComponents());
+			comps.remove(getInBuf());
+			comps.remove(getOutBufs());
+			return comps;
+		}
+
+		@Override
+		public boolean replaceComponent(Component removed, Component inserted) {
+			if (!removeComponent(removed)) {
+				return false;
+			}
+			addComponent(inserted);
+			return true;
+		}
+
+	}
+
 	private List<Task> taskList = Collections.emptyList();
+
 	private Collection<Register> registers = Collections.emptyList();
 
 	/**
@@ -74,7 +181,6 @@ public class Design extends ID implements Visitable, Cloneable {
 	 * is reserved for the Null object.
 	 */
 	private int memoryId = 1;
-
 	/**
 	 * This is a map of String (the fifo ID) to an instance of FifoIF which
 	 * contains all the necessary pins for the fifo interface. Uses a linked
@@ -84,6 +190,7 @@ public class Design extends ID implements Visitable, Cloneable {
 	private final Map<String, FifoIF> fifoInterfaces = new LinkedHashMap<String, FifoIF>();
 
 	private Collection<Pin> inputPins = Collections.emptyList();
+
 	private Collection<Pin> outputPins = Collections.emptyList();
 	// private Collection bidirectionalPins=Collections.EMPTY_LIST;
 
@@ -123,6 +230,14 @@ public class Design extends ID implements Visitable, Cloneable {
 
 	private final CodeLabel searchLabel;
 
+	private Set<EntryMethod> entryData;
+
+	private Map<Buffer, SequentialPinData> pinSimDriveMap;
+
+	private Map<Buffer, SequentialPinData> pinSimTestMap;
+
+	private final DesignModule designModule;
+
 	public Design() {
 		super();
 		apiClockNameToLIMClockMap.clear();
@@ -136,35 +251,75 @@ public class Design extends ID implements Visitable, Cloneable {
 		vis.visit(this);
 	}
 
-	public void addTask(Task tk) {
-		if (taskList == Collections.EMPTY_LIST) {
-			taskList = new ArrayList<Task>(3);
-		}
-		taskList.add(tk);
-		addComponentToDesign(tk.getCall());
+	/**
+	 * Adds the specified components to the design module. This method does NOT
+	 * update any of the Design 'get' methods.
+	 * 
+	 * @param comp
+	 *            a value of type 'Component'
+	 */
+	public void addComponentToDesign(Collection<Component> comps) {
+		getDesignModule().addComponents(comps);
 	}
 
 	/**
-	 * Add a Register in the list of Register for this Design
+	 * Adds the specified component to the design module. This method does NOT
+	 * update any of the Design 'get' methods.
 	 * 
-	 * @param reg
-	 *            {@link Register Register}
+	 * @param comp
+	 *            a value of type 'Component'
 	 */
-	public void addRegister(Register reg) {
-		if (registers == Collections.EMPTY_LIST) {
-			registers = new ArrayList<Register>(3);
-		}
-		registers.add(reg);
+	public void addComponentToDesign(Component comp) {
+		getDesignModule().addComponent(comp);
 	}
 
 	/**
-	 * Removes the specified register from this design.
+	 * Mainly for use with IPCore. Sets the include statement in a Design
+	 * header.
 	 * 
-	 * @param register
-	 *            true if removed, false if not found
+	 * @param include
+	 *            the HDL source to be included
 	 */
-	public boolean removeRegister(Register register) {
-		return registers.remove(register);
+	public void addIncludeStatement(String include) {
+		if (includeStatements.isEmpty()) {
+			includeStatements = new ArrayList<String>(1);
+		}
+
+		if (!includeStatements.contains(include)) {
+			includeStatements.add(include);
+		}
+	}
+
+	/**
+	 * Add an InputPin in the list of InputPins for this Design
+	 * 
+	 * @param pin
+	 *            {@link InputPin}
+	 */
+	public void addInputPin(InputPin pin) {
+		if (inputPins == Collections.EMPTY_LIST) {
+			inputPins = new ArrayList<Pin>(3);
+		}
+		inputPins.add(pin);
+	}
+
+	/**
+	 * Adds a {@link BidirectionalPin} to this Design.
+	 */
+	// public void addBidirectionalPin (BidirectionalPin pin)
+	// {
+	// if (this.bidirectionalPins == Collections.EMPTY_LIST)
+	// {
+	// this.bidirectionalPins = new LinkedList();
+	// }
+	// this.bidirectionalPins.add(pin);
+	// }
+
+	public void addInputPin(InputPin pin, Port port) {
+		addInputPin(pin);
+
+		pinPortBusMap.put(pin, port);
+		pinPortBusMap.put(port, pin);
 	}
 
 	/**
@@ -184,50 +339,16 @@ public class Design extends ID implements Visitable, Cloneable {
 	}
 
 	/**
-	 * Removes the given {@link LogicalMemory} from this design
-	 */
-	public void removeMemory(LogicalMemory mem) {
-		logicalMemories.remove(mem);
-		if (logicalMemories.size() == 0) {
-			logicalMemories = Collections.emptyList();
-		}
-	}
-
-	/**
-	 * Retrieves the next non-allocated memory ID.
-	 */
-	public int getNextMemoryId() {
-		int id = memoryId;
-		memoryId += 1;
-		if (id < 0) {
-			EngineThread.getEngine().fatalError(
-					"Too many memory objects allocated in design");
-		}
-		if (id == 0) {
-			EngineThread.getEngine().fatalError(
-					"Memory id 0 is reserved for the null object");
-		}
-		return id;
-	}
-
-	public void addInputPin(InputPin pin, Port port) {
-		addInputPin(pin);
-
-		pinPortBusMap.put(pin, port);
-		pinPortBusMap.put(port, pin);
-	}
-
-	/**
-	 * Add an InputPin in the list of InputPins for this Design
+	 * Add an OutputPin in the list of OutputPins for this Design
 	 * 
 	 * @param pin
-	 *            {@link InputPin}
+	 *            {@link OutputPin}
 	 */
-	public void addInputPin(InputPin pin) {
-		if (inputPins == Collections.EMPTY_LIST) {
-			inputPins = new ArrayList<Pin>(3);
+	public void addOutputPin(OutputPin pin) {
+		if (outputPins == Collections.EMPTY_LIST) {
+			outputPins = new ArrayList<Pin>(3);
 		}
-		inputPins.add(pin);
+		outputPins.add(pin);
 	}
 
 	/**
@@ -243,379 +364,38 @@ public class Design extends ID implements Visitable, Cloneable {
 	}
 
 	/**
-	 * Add an OutputPin in the list of OutputPins for this Design
+	 * Add a Register in the list of Register for this Design
 	 * 
-	 * @param pin
-	 *            {@link OutputPin}
+	 * @param reg
+	 *            {@link Register Register}
 	 */
-	public void addOutputPin(OutputPin pin) {
-		if (outputPins == Collections.EMPTY_LIST) {
-			outputPins = new ArrayList<Pin>(3);
+	public void addRegister(Register reg) {
+		if (registers == Collections.EMPTY_LIST) {
+			registers = new ArrayList<Register>(3);
 		}
-		outputPins.add(pin);
+		registers.add(reg);
 	}
 
-	/**
-	 * Adds a {@link BidirectionalPin} to this Design.
-	 */
-	// public void addBidirectionalPin (BidirectionalPin pin)
-	// {
-	// if (this.bidirectionalPins == Collections.EMPTY_LIST)
-	// {
-	// this.bidirectionalPins = new LinkedList();
-	// }
-	// this.bidirectionalPins.add(pin);
-	// }
-
-	/**
-	 * Tests whether or not this design is clocked.
-	 * 
-	 * @return true if this design contains any elements that require a clock
-	 */
-	public boolean consumesClock() {
-		for (Component component : getDesignModule().getComponents()) {
-			if (component.consumesClock())
-				return true;
+	public void addTask(Task tk) {
+		if (taskList == Collections.EMPTY_LIST) {
+			taskList = new ArrayList<Task>(3);
 		}
-		for (Pin pin : getPins()) {
-			if (pin.consumesClock()) {
-				return true;
-			}
-		}
-
-		return (!getRegisters().isEmpty() || !getLogicalMemories().isEmpty());
+		taskList.add(tk);
+		addComponentToDesign(tk.getCall());
 	}
 
 	/**
-	 * Tests whether or not this design is resettable.
-	 * 
-	 * @return true if this design contains any elements that require a reset
-	 */
-	public boolean consumesReset() {
-		for (Component component : getDesignModule().getComponents()) {
-			if (component.consumesReset())
-				return true;
-		}
-
-		// this adds logic for pins FIXME for all the other things!
-		for (Pin pin : getPins()) {
-			if (pin.consumesReset()) {
-				return true;
-			}
-		}
-		return !getRegisters().isEmpty() || !getLogicalMemories().isEmpty();
-	}
-
-	public Collection<Task> getTasks() {
-		return taskList;
-	}
-
-	public Collection<Register> getRegisters() {
-		return registers;
-	}
-
-	public Collection<LogicalMemory> getLogicalMemories() {
-		return Collections.unmodifiableCollection(logicalMemories);
-	}
-
-	/**
-	 * Old way of getting the input pins, still used for clock and reset, and
-	 * non-blockio pins.
-	 * 
-	 * @return a value of type 'Collection'
+	 * Clear Core, Entry, PinSim
 	 * 
 	 */
-	public Collection<Pin> getInputPins() {
-		return inputPins;
-	}
+	public void clearAPIContext() {
+		// ipcore - see saveAPIContext comments above.
 
-	/**
-	 * Old way of getting the output pins, still used for done and result, and
-	 * non-blockio pins.
-	 * 
-	 * @return a value of type 'Collection'
-	 * 
-	 */
-	public Collection<Pin> getOutputPins() {
-		return outputPins;
-	}
+		// entry
+		EntryMethods.clearEntryMethods();
 
-	/**
-	 * Old way of getting the inout pins, not used any longer???
-	 * 
-	 * @return a value of type 'Collection'
-	 * @deprecated
-	 */
-	@Deprecated
-	public Collection<Pin> getBidirectionalPins() {
-		// return bidirectionalPins;
-		return Collections.emptyList();
-	}
-
-	/**
-	 * Retrieves the Pin created for the given Port or Bus
-	 * 
-	 * @param o
-	 *            a Port or Bus
-	 * @return a value of type 'Pin'
-	 */
-	public Pin getPin(Object o) {
-		return (Pin) pinPortBusMap.get(o);
-	}
-
-	/**
-	 * method to return an InputPin representing a clock. If not already
-	 * defined, define it first.
-	 * 
-	 * @param apiClockPin
-	 *            api ClockPin corresponding to the requested lim clock pin
-	 * @return the InputPin representing clockName calls Job.fatalError() if the
-	 *         name is already defined as a reset pin
-	 */
-	public InputPin getClockPin(ClockPin apiClockPin) {
-		String name = apiClockPin.getName();
-
-		if (apiResetNameToLIMResetMap.containsKey(name)) {
-			EngineThread.getEngine().fatalError(
-					"Can't have clock and reset share a pin name: "
-							+ apiClockPin);
-		}
-
-		Pin clockPin = apiClockNameToLIMClockMap.get(name);
-		// if not defined, then define a clock pin & store it
-		if (clockPin == null) {
-			clockPin = new InputPin(1, false);
-			clockPin.setApiPin(apiClockPin);
-			clockPin.setIDLogical(name);
-			addInputPin((InputPin) clockPin);
-			apiClockNameToLIMClockMap.put(name, clockPin);
-		}
-		return (InputPin) clockPin;
-	}
-
-	/**
-	 * method to return an InputPin representing a reset. If not already
-	 * defined, define it first.
-	 * 
-	 * @param apiResetPin
-	 *            api ResetPin corresponding to the requested lim reset pin
-	 * @return the InputPin representing resetName calls Job.fatalError() if the
-	 *         name is already defined as a clock pin
-	 */
-	public GlobalReset getResetPin(ResetPin apiResetPin) {
-		String name = apiResetPin.getName();
-		if (apiClockNameToLIMClockMap.containsKey(name)) {
-			EngineThread.getEngine().fatalError(
-					"Can't have clock and reset share a pin name: "
-							+ apiResetPin);
-		}
-
-		GlobalReset resetPin = apiResetNameToLIMResetMap.get(name);
-		// if not defined, then define a reset pin & store it
-		if (resetPin == null) {
-			resetPin = new GlobalReset();
-			resetPin.setApiPin(apiResetPin);
-			resetPin.setIDLogical(name);
-			apiResetNameToLIMResetMap.put(name, resetPin);
-
-			// wire the input of the reset to the output of the paired
-			// clock
-			ClockPin apiClockPin = apiResetPin.getDomain().getClockPin();
-			InputPin clockPin = getClockPin(apiClockPin);
-			resetPin.getPort().setBus(clockPin.getBus());
-		}
-		return resetPin;
-	}
-
-	/**
-	 * return the LIM Clock Pins
-	 */
-	public Collection<Pin> getClockPins() {
-		return apiClockNameToLIMClockMap.values();
-	}
-
-	/**
-	 * return the LIM reset pins
-	 */
-	public Collection<GlobalReset> getResetPins() {
-		return apiResetNameToLIMResetMap.values();
-	}
-
-	public Collection<Pin> getPins() {
-		Collection<Pin> pins = new LinkedHashSet<Pin>();
-		pins.addAll(getInputPins());
-		pins.addAll(getOutputPins());
-		// pins.addAll(getBidirectionalPins());
-		return pins;
-	}
-
-	/**
-	 * Retrieves the specific FifoIF object that exists in this design for the
-	 * attributes contained in the specified {@link FifoID} object. If a
-	 * matching {@link FifoIF} object has not yet been allocated on this design,
-	 * then one will be created and returned. Subsequent calls to getFifoIF with
-	 * a fifoID with the same criteria will return the same FifoIF object.
-	 * 
-	 * @param fifoID
-	 *            a non null {@link FifoID}
-	 * @return a value of type 'FifoIF'
-	 * @throws IllegalArgumentException
-	 *             if the fifoID contains criteria that conflict with an already
-	 *             allocated fifo interface. Including, for example, requesting
-	 *             a fifo interface with the same ID but a different data path
-	 *             width.
-	 */
-	public FifoIF getFifoIF(FifoID fifoID) {
-		// This method must look at the ID number specified in the id class
-		// and return the FifoIF that has been allocated for that ID number.
-		// Thus all fifoID instances with ID with matching number and
-		// direction must return the same FifoIF. Some rudimentary checking
-		// should be performed to try to catch configuration errors early on,
-		// such as returning a FifoIF for a given ID number when the fifoID
-		// instances data width does not match the FifoIF, direction does not
-		// match, etc. If a FifoIF has not yet been created for the given ID
-		// number, then create a new FifoIF (of the right direction input or
-		// output), add all of its pins to this design, and then return the
-		// FifoIF object.
-
-		String key = fifoID.getName() + "" + fifoID.isInputFifo();
-		FifoIF fifoIF = fifoInterfaces.get(key);
-
-		if (fifoIF == null) {
-			String id = fifoID.getName();
-
-			switch (fifoID.getType()) {
-			case FifoID.TYPE_FSL:
-				if (fifoID.isInputFifo())
-					fifoIF = new FSLFifoInput(id, fifoID.getBitWidth());
-				else
-					fifoIF = new FSLFifoOutput(id, fifoID.getBitWidth());
-				break;
-			case FifoID.TYPE_ACTION_SCALAR:
-				if (fifoID.isInputFifo())
-					fifoIF = new ActorScalarInput(fifoID);
-				else
-					fifoIF = new ActorScalarOutput(fifoID);
-				break;
-			case FifoID.TYPE_ACTION_NATIVE_SCALAR:
-				if (fifoID.isInputFifo())
-					fifoIF = new ActorNativeScalarInput(fifoID);
-				else
-					fifoIF = new ActorNativeScalarOutput(fifoID);
-				break;
-			case FifoID.TYPE_ACTION_CIRCULAR_BUFFER:
-				if (fifoID.isInputFifo())
-					fifoIF = new ActorScalarInput(fifoID);
-				else
-					fifoIF = new ActorScalarOutput(fifoID);
-				break;
-			case FifoID.TYPE_ACTION_OBJECT:
-				throw new UnsupportedOperationException(
-						"Object fifos not yet supported");
-				// break;
-			}
-
-			fifoInterfaces.put(key, fifoIF);
-		} else {
-			// Rule checking
-			if (fifoIF.getWidth() != fifoID.getBitWidth())
-				throw new IllegalArgumentException(
-						"Attempt to redefine fifo interaface "
-								+ fifoID.getName() + " width from "
-								+ fifoIF.getWidth() + " to "
-								+ fifoID.getBitWidth());
-		}
-
-		addComponentToDesign(new LinkedHashSet<Component>(fifoIF.getPins()));
-
-		return fifoIF;
-	}
-
-	/**
-	 * Returns a Collection of the defined FifoIF objects for this design.
-	 * 
-	 * @return a Collection of {@link FifoIF} objects
-	 */
-	public Collection<FifoIF> getFifoInterfaces() {
-		// Jump through these hoops so that the fifo interfaces come
-		// back in the same order each time.
-		List<FifoIF> interfaces = new LinkedList<FifoIF>();
-		for (Map.Entry<String, FifoIF> entry : fifoInterfaces.entrySet()) {
-			interfaces.add(entry.getValue());
-		}
-
-		return interfaces;
-	}
-
-	/**
-	 * <code>getClockDomain</code> returns the appropriate {@link ClockDomain}
-	 * for the specified clk/reset string. The String takes the form of
-	 * clkname:resetname or simply clkname if there is no (published) reset for
-	 * that clock domain.
-	 * 
-	 * @param domainSpec
-	 *            a <code>String</code> value
-	 * @return a <code>ClockDomain</code> value
-	 */
-	public ClockDomain getClockDomain(String domainSpec) {
-		ClockDomain domain = clockDomains.get(domainSpec);
-		if (domain == null) {
-			domain = new ClockDomain(domainSpec);
-			addComponentToDesign(domain.getClockPin());
-			if (domain.getResetPin() != null) {
-
-				addComponentToDesign(domain.getResetPin());
-			}
-			addComponentToDesign(domain.getGSR());
-			clockDomains.put(domainSpec, domain);
-		}
-		return domain;
-	}
-
-	/**
-	 * Retrieves a collection of all the allocated clock domains for this
-	 * design.
-	 */
-	public Collection<ClockDomain> getAllocatedClockDomains() {
-		return Collections.unmodifiableCollection(clockDomains.values());
-	}
-
-	/**
-	 * Sets the {@link Tester} for this <code>Design</code>.
-	 * 
-	 * @param tester
-	 *            the <code>Tester</code> that can generate arguments and
-	 *            expected results for this <code>Design</code>
-	 */
-	public void setTester(Tester tester) {
-		this.tester = tester;
-	}
-
-	/**
-	 * @return The {@link Tester} for this <code>Design</code>. From the
-	 *         {@link Tester} all the information necessary for generating a
-	 *         self verifying automatic test bench can be gleaned. A return
-	 *         value of <code>null</code> is valid if this <code>Design</code>
-	 *         doesn't have a {@link Tester}.
-	 */
-	public Tester getTester() {
-		return (tester);
-	}
-
-	public int getMaxGateDepth() {
-		return maxGateDepth;
-	}
-
-	public void setMaxGateDepth(int maxGateDepth) {
-		this.maxGateDepth = maxGateDepth;
-	}
-
-	public int getUnbreakableGateDepth() {
-		return unbreakableGateDepth;
-	}
-
-	public void setUnbreakableGateDepth(int unbreakableGateDepth) {
-		this.unbreakableGateDepth = unbreakableGateDepth;
+		// pinsim
+		PinSimData.clear();
 	}
 
 	/**
@@ -716,6 +496,294 @@ public class Design extends ID implements Visitable, Cloneable {
 		// clone.resources = cloneResources(this.resources);
 
 		// return clone;
+	}
+
+	/**
+	 * Tests whether or not this design is clocked.
+	 * 
+	 * @return true if this design contains any elements that require a clock
+	 */
+	public boolean consumesClock() {
+		for (Component component : getDesignModule().getComponents()) {
+			if (component.consumesClock()) {
+				return true;
+			}
+		}
+		for (Pin pin : getPins()) {
+			if (pin.consumesClock()) {
+				return true;
+			}
+		}
+
+		return !getRegisters().isEmpty() || !getLogicalMemories().isEmpty();
+	}
+
+	/**
+	 * Tests whether or not this design is resettable.
+	 * 
+	 * @return true if this design contains any elements that require a reset
+	 */
+	public boolean consumesReset() {
+		for (Component component : getDesignModule().getComponents()) {
+			if (component.consumesReset()) {
+				return true;
+			}
+		}
+
+		// this adds logic for pins FIXME for all the other things!
+		for (Pin pin : getPins()) {
+			if (pin.consumesReset()) {
+				return true;
+			}
+		}
+		return !getRegisters().isEmpty() || !getLogicalMemories().isEmpty();
+	}
+
+	/**
+	 * Retrieves a collection of all the allocated clock domains for this
+	 * design.
+	 */
+	public Collection<ClockDomain> getAllocatedClockDomains() {
+		return Collections.unmodifiableCollection(clockDomains.values());
+	}
+
+	/**
+	 * Old way of getting the inout pins, not used any longer???
+	 * 
+	 * @return a value of type 'Collection'
+	 * @deprecated
+	 */
+	@Deprecated
+	public Collection<Pin> getBidirectionalPins() {
+		// return bidirectionalPins;
+		return Collections.emptyList();
+	}
+
+	/**
+	 * <code>getClockDomain</code> returns the appropriate {@link ClockDomain}
+	 * for the specified clk/reset string. The String takes the form of
+	 * clkname:resetname or simply clkname if there is no (published) reset for
+	 * that clock domain.
+	 * 
+	 * @param domainSpec
+	 *            a <code>String</code> value
+	 * @return a <code>ClockDomain</code> value
+	 */
+	public ClockDomain getClockDomain(String domainSpec) {
+		ClockDomain domain = clockDomains.get(domainSpec);
+		if (domain == null) {
+			domain = new ClockDomain(domainSpec);
+			addComponentToDesign(domain.getClockPin());
+			if (domain.getResetPin() != null) {
+
+				addComponentToDesign(domain.getResetPin());
+			}
+			addComponentToDesign(domain.getGSR());
+			clockDomains.put(domainSpec, domain);
+		}
+		return domain;
+	}
+
+	/**
+	 * method to return an InputPin representing a clock. If not already
+	 * defined, define it first.
+	 * 
+	 * @param apiClockPin
+	 *            api ClockPin corresponding to the requested lim clock pin
+	 * @return the InputPin representing clockName calls Job.fatalError() if the
+	 *         name is already defined as a reset pin
+	 */
+	public InputPin getClockPin(ClockPin apiClockPin) {
+		String name = apiClockPin.getName();
+
+		if (apiResetNameToLIMResetMap.containsKey(name)) {
+			EngineThread.getEngine().fatalError(
+					"Can't have clock and reset share a pin name: "
+							+ apiClockPin);
+		}
+
+		Pin clockPin = apiClockNameToLIMClockMap.get(name);
+		// if not defined, then define a clock pin & store it
+		if (clockPin == null) {
+			clockPin = new InputPin(1, false);
+			clockPin.setApiPin(apiClockPin);
+			clockPin.setIDLogical(name);
+			addInputPin((InputPin) clockPin);
+			apiClockNameToLIMClockMap.put(name, clockPin);
+		}
+		return (InputPin) clockPin;
+	}
+
+	/**
+	 * return the LIM Clock Pins
+	 */
+	public Collection<Pin> getClockPins() {
+		return apiClockNameToLIMClockMap.values();
+	}
+
+	public DesignModule getDesignModule() {
+		return designModule;
+	}
+
+	public Engine getEngine() {
+		return EngineThread.getEngine();
+	}
+
+	/**
+	 * Retrieves the specific FifoIF object that exists in this design for the
+	 * attributes contained in the specified {@link FifoID} object. If a
+	 * matching {@link FifoIF} object has not yet been allocated on this design,
+	 * then one will be created and returned. Subsequent calls to getFifoIF with
+	 * a fifoID with the same criteria will return the same FifoIF object.
+	 * 
+	 * @param fifoID
+	 *            a non null {@link FifoID}
+	 * @return a value of type 'FifoIF'
+	 * @throws IllegalArgumentException
+	 *             if the fifoID contains criteria that conflict with an already
+	 *             allocated fifo interface. Including, for example, requesting
+	 *             a fifo interface with the same ID but a different data path
+	 *             width.
+	 */
+	public FifoIF getFifoIF(FifoID fifoID) {
+		// This method must look at the ID number specified in the id class
+		// and return the FifoIF that has been allocated for that ID number.
+		// Thus all fifoID instances with ID with matching number and
+		// direction must return the same FifoIF. Some rudimentary checking
+		// should be performed to try to catch configuration errors early on,
+		// such as returning a FifoIF for a given ID number when the fifoID
+		// instances data width does not match the FifoIF, direction does not
+		// match, etc. If a FifoIF has not yet been created for the given ID
+		// number, then create a new FifoIF (of the right direction input or
+		// output), add all of its pins to this design, and then return the
+		// FifoIF object.
+
+		String key = fifoID.getName() + "" + fifoID.isInputFifo();
+		FifoIF fifoIF = fifoInterfaces.get(key);
+
+		if (fifoIF == null) {
+			String id = fifoID.getName();
+
+			switch (fifoID.getType()) {
+			case FifoID.TYPE_FSL:
+				if (fifoID.isInputFifo()) {
+					fifoIF = new FSLFifoInput(id, fifoID.getBitWidth());
+				} else {
+					fifoIF = new FSLFifoOutput(id, fifoID.getBitWidth());
+				}
+				break;
+			case FifoID.TYPE_ACTION_SCALAR:
+				if (fifoID.isInputFifo()) {
+					fifoIF = new ActorScalarInput(fifoID);
+				} else {
+					fifoIF = new ActorScalarOutput(fifoID);
+				}
+				break;
+			case FifoID.TYPE_ACTION_NATIVE_SCALAR:
+				if (fifoID.isInputFifo()) {
+					fifoIF = new ActorNativeScalarInput(fifoID);
+				} else {
+					fifoIF = new ActorNativeScalarOutput(fifoID);
+				}
+				break;
+			case FifoID.TYPE_ACTION_CIRCULAR_BUFFER:
+				if (fifoID.isInputFifo()) {
+					fifoIF = new ActorScalarInput(fifoID);
+				} else {
+					fifoIF = new ActorScalarOutput(fifoID);
+				}
+				break;
+			case FifoID.TYPE_ACTION_OBJECT:
+				throw new UnsupportedOperationException(
+						"Object fifos not yet supported");
+				// break;
+			}
+
+			fifoInterfaces.put(key, fifoIF);
+		} else {
+			// Rule checking
+			if (fifoIF.getWidth() != fifoID.getBitWidth()) {
+				throw new IllegalArgumentException(
+						"Attempt to redefine fifo interaface "
+								+ fifoID.getName() + " width from "
+								+ fifoIF.getWidth() + " to "
+								+ fifoID.getBitWidth());
+			}
+		}
+
+		addComponentToDesign(new LinkedHashSet<Component>(fifoIF.getPins()));
+
+		return fifoIF;
+	}
+
+	/**
+	 * Returns a Collection of the defined FifoIF objects for this design.
+	 * 
+	 * @return a Collection of {@link FifoIF} objects
+	 */
+	public Collection<FifoIF> getFifoInterfaces() {
+		// Jump through these hoops so that the fifo interfaces come
+		// back in the same order each time.
+		List<FifoIF> interfaces = new LinkedList<FifoIF>();
+		for (Map.Entry<String, FifoIF> entry : fifoInterfaces.entrySet()) {
+			interfaces.add(entry.getValue());
+		}
+
+		return interfaces;
+	}
+
+	/**
+	 * @return a list of included source file paths
+	 */
+	public List<String> getIncludeStatements() {
+		return includeStatements;
+	}
+
+	/**
+	 * Old way of getting the input pins, still used for clock and reset, and
+	 * non-blockio pins.
+	 * 
+	 * @return a value of type 'Collection'
+	 * 
+	 */
+	public Collection<Pin> getInputPins() {
+		return inputPins;
+	}
+
+	public Collection<LogicalMemory> getLogicalMemories() {
+		return Collections.unmodifiableCollection(logicalMemories);
+	}
+
+	public int getMaxGateDepth() {
+		return maxGateDepth;
+	}
+
+	/**
+	 * Retrieves the next non-allocated memory ID.
+	 */
+	public int getNextMemoryId() {
+		int id = memoryId;
+		memoryId += 1;
+		if (id < 0) {
+			EngineThread.getEngine().fatalError(
+					"Too many memory objects allocated in design");
+		}
+		if (id == 0) {
+			EngineThread.getEngine().fatalError(
+					"Memory id 0 is reserved for the null object");
+		}
+		return id;
+	}
+
+	/**
+	 * Old way of getting the output pins, still used for done and result, and
+	 * non-blockio pins.
+	 * 
+	 * @return a value of type 'Collection'
+	 * 
+	 */
+	public Collection<Pin> getOutputPins() {
+		return outputPins;
 	}
 
 	// private List clonePins(Collection pinsToBeCloned, Design clone, Map
@@ -868,8 +936,68 @@ public class Design extends ID implements Visitable, Cloneable {
 	// }
 	// }
 
-	public Engine getEngine() {
-		return EngineThread.getEngine();
+	/**
+	 * Retrieves the Pin created for the given Port or Bus
+	 * 
+	 * @param o
+	 *            a Port or Bus
+	 * @return a value of type 'Pin'
+	 */
+	public Pin getPin(Object o) {
+		return (Pin) pinPortBusMap.get(o);
+	}
+
+	public Collection<Pin> getPins() {
+		Collection<Pin> pins = new LinkedHashSet<Pin>();
+		pins.addAll(getInputPins());
+		pins.addAll(getOutputPins());
+		// pins.addAll(getBidirectionalPins());
+		return pins;
+	}
+
+	public Collection<Register> getRegisters() {
+		return registers;
+	}
+
+	/**
+	 * method to return an InputPin representing a reset. If not already
+	 * defined, define it first.
+	 * 
+	 * @param apiResetPin
+	 *            api ResetPin corresponding to the requested lim reset pin
+	 * @return the InputPin representing resetName calls Job.fatalError() if the
+	 *         name is already defined as a clock pin
+	 */
+	public GlobalReset getResetPin(ResetPin apiResetPin) {
+		String name = apiResetPin.getName();
+		if (apiClockNameToLIMClockMap.containsKey(name)) {
+			EngineThread.getEngine().fatalError(
+					"Can't have clock and reset share a pin name: "
+							+ apiResetPin);
+		}
+
+		GlobalReset resetPin = apiResetNameToLIMResetMap.get(name);
+		// if not defined, then define a reset pin & store it
+		if (resetPin == null) {
+			resetPin = new GlobalReset();
+			resetPin.setApiPin(apiResetPin);
+			resetPin.setIDLogical(name);
+			apiResetNameToLIMResetMap.put(name, resetPin);
+
+			// wire the input of the reset to the output of the paired
+			// clock
+			ClockPin apiClockPin = apiResetPin.getDomain().getClockPin();
+			InputPin clockPin = getClockPin(apiClockPin);
+			resetPin.getPort().setBus(clockPin.getBus());
+		}
+		return resetPin;
+	}
+
+	/**
+	 * return the LIM reset pins
+	 */
+	public Collection<GlobalReset> getResetPins() {
+		return apiResetNameToLIMResetMap.values();
 	}
 
 	public SearchLabel getSearchLabel() {
@@ -877,28 +1005,23 @@ public class Design extends ID implements Visitable, Cloneable {
 		return searchLabel;
 	}
 
-	/**
-	 * Mainly for use with IPCore. Sets the include statement in a Design
-	 * header.
-	 * 
-	 * @param include
-	 *            the HDL source to be included
-	 */
-	public void addIncludeStatement(String include) {
-		if (includeStatements.isEmpty()) {
-			includeStatements = new ArrayList<String>(1);
-		}
-
-		if (!includeStatements.contains(include)) {
-			includeStatements.add(include);
-		}
+	public Collection<Task> getTasks() {
+		return taskList;
 	}
 
 	/**
-	 * @return a list of included source file paths
+	 * @return The {@link Tester} for this <code>Design</code>. From the
+	 *         {@link Tester} all the information necessary for generating a
+	 *         self verifying automatic test bench can be gleaned. A return
+	 *         value of <code>null</code> is valid if this <code>Design</code>
+	 *         doesn't have a {@link Tester}.
 	 */
-	public List<String> getIncludeStatements() {
-		return includeStatements;
+	public Tester getTester() {
+		return tester;
+	}
+
+	public int getUnbreakableGateDepth() {
+		return unbreakableGateDepth;
 	}
 
 	/**
@@ -967,9 +1090,46 @@ public class Design extends ID implements Visitable, Cloneable {
 		}
 	}
 
-	private Set<EntryMethod> entryData;
-	private Map<Buffer, SequentialPinData> pinSimDriveMap;
-	private Map<Buffer, SequentialPinData> pinSimTestMap;
+	/**
+	 * Removes the given {@link LogicalMemory} from this design
+	 */
+	public void removeMemory(LogicalMemory mem) {
+		logicalMemories.remove(mem);
+		if (logicalMemories.size() == 0) {
+			logicalMemories = Collections.emptyList();
+		}
+	}
+
+	// ///////////////////
+	//
+	// Implementation of a design module to contain the resources.
+	//
+	// ///////////////////
+
+	/**
+	 * Removes the specified register from this design.
+	 * 
+	 * @param register
+	 *            true if removed, false if not found
+	 */
+	public boolean removeRegister(Register register) {
+		return registers.remove(register);
+	}
+
+	/**
+	 * Restore Core, Entry, PinSim
+	 * 
+	 */
+	public void restoreAPIContext() {
+		// ipcore - see saveAPIContext comments above.
+
+		// entry
+		EntryMethods.setEntryMethods(entryData);
+
+		// pinsim data
+		PinSimData.setDriveData(pinSimDriveMap);
+		PinSimData.setTestData(pinSimTestMap);
+	}
 
 	/**
 	 * This will save off the static info in forge.api.ipcore.Core,
@@ -992,167 +1152,23 @@ public class Design extends ID implements Visitable, Cloneable {
 		pinSimTestMap = PinSimData.cloneTestMap();
 	}
 
+	public void setMaxGateDepth(int maxGateDepth) {
+		this.maxGateDepth = maxGateDepth;
+	}
+
 	/**
-	 * Clear Core, Entry, PinSim
+	 * Sets the {@link Tester} for this <code>Design</code>.
 	 * 
+	 * @param tester
+	 *            the <code>Tester</code> that can generate arguments and
+	 *            expected results for this <code>Design</code>
 	 */
-	public void clearAPIContext() {
-		// ipcore - see saveAPIContext comments above.
-
-		// entry
-		EntryMethods.clearEntryMethods();
-
-		// pinsim
-		PinSimData.clear();
+	public void setTester(Tester tester) {
+		this.tester = tester;
 	}
 
-	/**
-	 * Restore Core, Entry, PinSim
-	 * 
-	 */
-	public void restoreAPIContext() {
-		// ipcore - see saveAPIContext comments above.
-
-		// entry
-		EntryMethods.setEntryMethods(entryData);
-
-		// pinsim data
-		PinSimData.setDriveData(pinSimDriveMap);
-		PinSimData.setTestData(pinSimTestMap);
-	}
-
-	// ///////////////////
-	//
-	// Implementation of a design module to contain the resources.
-	//
-	// ///////////////////
-
-	private final DesignModule designModule;
-
-	public DesignModule getDesignModule() {
-		return designModule;
-	}
-
-	/**
-	 * Adds the specified component to the design module. This method does NOT
-	 * update any of the Design 'get' methods.
-	 * 
-	 * @param comp
-	 *            a value of type 'Component'
-	 */
-	public void addComponentToDesign(Component comp) {
-		getDesignModule().addComponent(comp);
-	}
-
-	/**
-	 * Adds the specified components to the design module. This method does NOT
-	 * update any of the Design 'get' methods.
-	 * 
-	 * @param comp
-	 *            a value of type 'Component'
-	 */
-	public void addComponentToDesign(Collection<Component> comps) {
-		getDesignModule().addComponents(comps);
-	}
-
-	/**
-	 * This is a specific module type used to hold all the top level components
-	 * for the design.
-	 */
-	public static class DesignModule extends Module {
-		@Override
-		public boolean replaceComponent(Component removed, Component inserted) {
-			if (!removeComponent(removed))
-				return false;
-			addComponent(inserted);
-			return true;
-		}
-
-		@Override
-		public void accept(Visitor vis) {
-			throw new UnsupportedOperationException(
-					"Cannot directly visit a design Module");
-		}
-
-		@Override
-		public void addComponent(Component comp) {
-			super.addComponent(comp);
-		}
-
-		@Override
-		public Collection<Component> getComponents() {
-			LinkedHashSet<Component> comps = new LinkedHashSet<Component>(
-					super.getComponents());
-			comps.remove(getInBuf());
-			comps.remove(getOutBufs());
-			return comps;
-		}
-
-	}
-
-	public static class ClockDomain {
-		private final SimplePin clock;
-		private SimplePin reset;
-		private final GlobalReset.Physical gsr;
-		private final String domainSpec;
-
-		private ClockDomain(String domainSpec) {
-			this.domainSpec = domainSpec;
-			String[] parsed = parse(domainSpec);
-			String clk = parsed[0];
-			String rst = parsed[1];
-			clock = new ControlPin(clk);
-			if (rst != null && rst.length() > 0) {
-				reset = new ControlPin(rst);
-			}
-			gsr = new GlobalReset.Physical(reset != null);
-			clock.connectBus(Collections.singleton(gsr.getClockInput()));
-			if (reset != null) {
-				reset.connectBus(Collections.singleton(gsr.getResetInput()));
-			}
-		}
-
-		// Private methods are accessible to Design
-		public SimplePin getClockPin() {
-			return clock;
-		}
-
-		public SimplePin getResetPin() {
-			return reset;
-		}
-
-		private GlobalReset.Physical getGSR() {
-			return gsr;
-		}
-
-		public String getDomainKeyString() {
-			return domainSpec;
-		}
-
-		public void connectComponentToDomain(Component comp) {
-			if (comp.getClockPort().isUsed())
-				clock.connectBus(Collections.singleton(comp.getClockPort()));
-			if (comp.getResetPort().isUsed())
-				comp.getResetPort().setBus(gsr.getResetOutput());
-		}
-
-		public static String[] parse(String spec) {
-			String[] result = { "", "" };
-			String[] split = spec.split(":");
-			if (split.length > 0)
-				result[0] = split[0];
-			else
-				throw new IllegalArgumentException("Cannot parse clock domain");
-			if (split.length > 1)
-				result[1] = split[1];
-			return result;
-		}
-
-		private static class ControlPin extends SimplePin {
-			private ControlPin(String name) {
-				super(1, name);
-			}
-		}
+	public void setUnbreakableGateDepth(int unbreakableGateDepth) {
+		this.unbreakableGateDepth = unbreakableGateDepth;
 	}
 
 }

@@ -46,14 +46,17 @@ import org.xronos.openforge.lim.Design;
 public class DesignEngine extends Engine {
 
 	Actor actor;
-	
+
 	Network network;
-	
+
 	ResourceCache resourceCache;
+
+	GenericJob genJob;
 
 	public DesignEngine(GenericJob genJob, Actor actor,
 			ResourceCache resourceCache) {
 		super(genJob);
+		this.genJob = genJob;
 		this.actor = actor;
 		this.resourceCache = resourceCache;
 		this.jobHandler = new JobHandlerAdapter("Forging: "
@@ -63,6 +66,7 @@ public class DesignEngine extends Engine {
 	public DesignEngine(GenericJob genJob, Network network,
 			ResourceCache resourceCache) {
 		super(genJob);
+		this.genJob = genJob;
 		this.network = network;
 		this.resourceCache = resourceCache;
 		this.jobHandler = new JobHandlerAdapter("Forging: "
@@ -71,7 +75,6 @@ public class DesignEngine extends Engine {
 
 	@Override
 	public Design buildLim() {
-		Design design = null;
 
 		// Single file generation
 		if (network != null) {
@@ -86,6 +89,17 @@ public class DesignEngine extends Engine {
 					resourceCache);
 			design = instanceToDesign.buildDesign();
 		}
+
+		// Generate Project File
+		// File projectFile = new File("/tmp/test.xml");
+		// ForgeProjectWriter projectWriter = new
+		// ForgeProjectWriter(projectFile,
+		// genJob, this, true);
+		// try {
+		// projectWriter.write();
+		// } catch (IOException e) {
+		// e.printStackTrace();
+		// }
 
 		return design;
 	}

@@ -263,7 +263,6 @@ public class Xronos extends AbstractBackend {
 									.warnln("Actor: "
 											+ actor.getSimpleName()
 											+ " contains @no_generation tag, it will not be generated!");
-
 						}
 					}
 
