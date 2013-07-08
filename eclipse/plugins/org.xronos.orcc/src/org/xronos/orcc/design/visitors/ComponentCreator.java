@@ -37,6 +37,7 @@ import java.util.Map;
 
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.df.Action;
+import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
@@ -111,6 +112,7 @@ import org.xronos.orcc.design.ResourceDependecies;
 import org.xronos.orcc.design.util.DesignUtil;
 import org.xronos.orcc.design.util.ModuleUtil;
 import org.xronos.orcc.design.util.PortUtil;
+import org.xronos.orcc.design.visitors.stmIO.BlockBasicIO;
 import org.xronos.orcc.design.visitors.stmIO.BranchIO;
 import org.xronos.orcc.design.visitors.stmIO.LoopIO;
 import org.xronos.orcc.design.visitors.stmIO.MutexIO;
@@ -128,7 +130,9 @@ import org.xronos.orcc.ir.InstPortWrite;
  */
 public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
+	private static boolean TEST_BLOCKBASIC = true;
 	private Def assignTarget;
+
 	/** Dependency between Components and Bus-Var **/
 	protected Map<Bus, Var> busDependency;
 
@@ -182,6 +186,36 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		this.doneBusDependency = resourceDependecies.getDoneBusDependency();
 		this.resources = resources;
 		componentList = new ArrayList<Component>();
+	}
+
+	@Override
+	public List<Component> caseBlockBasic(BlockBasic block) {
+		if (TEST_BLOCKBASIC) {
+			List<Component> oldComponents = new ArrayList<Component>(
+					componentList);
+
+			// Visit the blockBasic
+			componentList = new ArrayList<Component>();
+			visitInstructions(block.getInstructions());
+
+			BlockBasicIO blockBasicIO = new BlockBasicIO(block);
+			List<Var> blockInputs = blockBasicIO.getInputs();
+			List<Var> blockOutputs = blockBasicIO.getOutputs();
+
+			Block blk = (Block) ModuleUtil.createModule(componentList,
+					blockInputs, blockOutputs, "blockBasic", false, Exit.DONE,
+					0, portDependency, busDependency, portGroupDependency,
+					doneBusDependency);
+			blk.setNonRemovable();
+			blk.setIDLogical("blockBasic");
+			componentList = new ArrayList<Component>();
+			componentList.addAll(oldComponents);
+			componentList.add(blk);
+
+		} else {
+			return super.caseBlockBasic(block);
+		}
+		return null;
 	}
 
 	@Override

@@ -104,11 +104,15 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
 
 		if (!definedOnlyInThisBlock(varE1)) {
-			inputs.add(varE1);
+			if (!inputs.contains(varE1)) {
+				inputs.add(varE1);
+			}
 		}
 
 		if (!definedOnlyInThisBlock(varE2)) {
-			inputs.add(varE2);
+			if (!inputs.contains(varE2)) {
+				inputs.add(varE2);
+			}
 		}
 
 		return null;
@@ -119,7 +123,9 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 		// Take Var
 		Var var = object.getUse().getVariable();
 		if (!definedOnlyInThisBlock(var)) {
-			inputs.add(var);
+			if (!inputs.contains(var)) {
+				inputs.add(var);
+			}
 		}
 		return null;
 	}
@@ -129,7 +135,9 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 		// Get Target
 		Var target = assign.getTarget().getVariable();
 		if (!usedOnlyInThisBlock(target)) {
-			outputs.add(target);
+			if (!outputs.contains(target)) {
+				outputs.add(target);
+			}
 		}
 		// Visit Value
 		doSwitch(assign.getValue());
@@ -141,13 +149,17 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 		// Get target
 		Var target = cast.getTarget().getVariable();
 		if (!usedOnlyInThisBlock(target)) {
-			outputs.add(target);
+			if (!outputs.contains(target)) {
+				outputs.add(target);
+			}
 		}
 
 		// Get source
 		Var source = cast.getSource().getVariable();
 		if (!definedOnlyInThisBlock(source)) {
-			inputs.add(source);
+			if (!inputs.contains(source)) {
+				inputs.add(source);
+			}
 		}
 
 		return null;
@@ -158,7 +170,9 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 		// Get Target
 		Var target = load.getTarget().getVariable();
 		if (!usedOnlyInThisBlock(target)) {
-			outputs.add(target);
+			if (!outputs.contains(target)) {
+				outputs.add(target);
+			}
 		}
 
 		// Visit indexes
@@ -167,16 +181,26 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 		for (Expression expr : new ArrayList<Expression>(indexes)) {
 			loadIndexVar = ((ExprVar) expr).getUse().getVariable();
 			if (!definedOnlyInThisBlock(loadIndexVar)) {
-				inputs.add(loadIndexVar);
+				if (!inputs.contains(loadIndexVar)) {
+					inputs.add(loadIndexVar);
+				}
 			}
 		}
+		return null;
+	}
+
+	@Override
+	public Void caseInstPhi(InstPhi phi) {
+		// Do nothing
 		return null;
 	}
 
 	public Void caseInstPortPeek(InstPortPeek portPeek) {
 		Var target = portPeek.getTarget().getVariable();
 		if (!usedOnlyInThisBlock(target)) {
-			outputs.add(target);
+			if (!outputs.contains(target)) {
+				outputs.add(target);
+			}
 		}
 		return null;
 	}
@@ -184,7 +208,9 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 	public Void caseInstPortRead(InstPortRead portRead) {
 		Var target = portRead.getTarget().getVariable();
 		if (!usedOnlyInThisBlock(target)) {
-			outputs.add(target);
+			if (!outputs.contains(target)) {
+				outputs.add(target);
+			}
 		}
 		return null;
 	}
@@ -192,7 +218,9 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 	public Void caseInstPortStatus(InstPortStatus portStatus) {
 		Var target = portStatus.getTarget().getVariable();
 		if (!usedOnlyInThisBlock(target)) {
-			outputs.add(target);
+			if (!outputs.contains(target)) {
+				outputs.add(target);
+			}
 		}
 		return null;
 	}
@@ -200,7 +228,9 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 	public Void caseInstPortWrite(InstPortWrite portWrite) {
 		Var source = ((ExprVar) portWrite.getValue()).getUse().getVariable();
 		if (!definedOnlyInThisBlock(source)) {
-			inputs.add(source);
+			if (!inputs.contains(source)) {
+				inputs.add(source);
+			}
 		}
 		return null;
 	}
@@ -216,15 +246,11 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 		for (Expression expr : new ArrayList<Expression>(indexes)) {
 			loadIndexVar = ((ExprVar) expr).getUse().getVariable();
 			if (!definedOnlyInThisBlock(loadIndexVar)) {
-				inputs.add(loadIndexVar);
+				if (!inputs.contains(loadIndexVar)) {
+					inputs.add(loadIndexVar);
+				}
 			}
 		}
-		return null;
-	}
-
-	@Override
-	public Void caseInstPhi(InstPhi phi) {
-		// Do nothing
 		return null;
 	}
 
