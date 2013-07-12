@@ -47,6 +47,7 @@ import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.transform.BlockCombine;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 import net.sf.orcc.ir.transform.DeadCodeElimination;
 import net.sf.orcc.ir.transform.DeadGlobalElimination;
@@ -102,7 +103,6 @@ public class XronosTransform {
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 			transformations.add(new DfVisitor<Expression>(new XronosTac()));
-
 			transformations.add(new DfVisitor<CfgNode>(
 					new ControlFlowAnalyzer()));
 			transformations.add(new DfVisitor<Expression>(
@@ -110,6 +110,8 @@ public class XronosTransform {
 			transformations.add(new TypeResizer(false, true, false, false));
 			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
 					true)));
+
+			transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
 
 			for (DfSwitch<?> transformation : transformations) {
 				try {

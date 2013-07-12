@@ -57,17 +57,6 @@ public class OutBuf extends Component implements Emulatable {
 	private boolean consumesGo = false;
 
 	/**
-	 * Gets the peer {@link Exit}.
-	 * 
-	 * @return the {@link Exit} whose {@link Bus Buses} represent the
-	 *         continutation of this OutBuf's input {@link Port Ports}.
-	 */
-	// public Exit getExit ()
-	public Exit getPeer() {
-		return exit;
-	}
-
-	/**
 	 * Constructs a new OutBuf. It is package private since only {@link Exit} is
 	 * meant to call it.
 	 * 
@@ -82,17 +71,20 @@ public class OutBuf extends Component implements Emulatable {
 	}
 
 	@Override
-	public Collection<Exit> getExits() {
-		return Collections.emptyList();
-	}
-
-	@Override
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
 
-	public boolean hasWait() {
-		return false;
+	/**
+	 * Cloning of OutBufs is not allowed. Use
+	 * {@link Component#makeExit(int,Exit.Type,String)} instead.
+	 * 
+	 * @throws CloneNotSupportedException
+	 *             always
+	 */
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		throw new CloneNotSupportedException("attempt to clone OutBuf");
 	}
 
 	/**
@@ -102,31 +94,6 @@ public class OutBuf extends Component implements Emulatable {
 	@Override
 	public boolean consumesGo() {
 		return consumesGo;
-	}
-
-	/**
-	 * Called by the containing {@link Module} to agree with its value for
-	 * {@link Component#producesDone()}.
-	 */
-	void setConsumesGo(boolean consumesGo) {
-		this.consumesGo = consumesGo;
-	}
-
-	/**
-	 * Sets the gate depth for this OutBuf, called by the Pipeliner to set a
-	 * depth on the inputs of a task to account for IOBs
-	 */
-	public void setGateDepth(int value) {
-		gateDepth = value;
-	}
-
-	/**
-	 * Overrides method in Component to provide the OutBuf depth when it exists
-	 * at the boundry of a task to account for IOBs
-	 */
-	@Override
-	public int getGateDepth() {
-		return gateDepth;
 	}
 
 	/**
@@ -150,6 +117,55 @@ public class OutBuf extends Component implements Emulatable {
 		return outputValues;
 	}
 
+	@Override
+	public Collection<Exit> getExits() {
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Overrides method in Component to provide the OutBuf depth when it exists
+	 * at the boundry of a task to account for IOBs
+	 */
+	@Override
+	public int getGateDepth() {
+		return gateDepth;
+	}
+
+	/**
+	 * Gets the peer {@link Exit}.
+	 * 
+	 * @return the {@link Exit} whose {@link Bus Buses} represent the
+	 *         continutation of this OutBuf's input {@link Port Ports}.
+	 */
+	// public Exit getExit ()
+	public Exit getPeer() {
+		return exit;
+	}
+
+	public boolean hasWait() {
+		return false;
+	}
+
+	/**
+	 * Determines the consumed {@link Value} of each outbuf Port's peer Bus and
+	 * updates the Port's value with that information. Returns true if any new
+	 * information was pushed across the module boundry.
+	 */
+	@Override
+	public boolean pushValuesBackward() {
+		boolean mod = false;
+		for (Port port : getPorts()) {
+			if (port.getPeer() != null) {
+				final Value pushedValue = port.getPeer().getValue();
+				if (pushedValue != null) {
+					mod |= port.pushValueBackward(pushedValue);
+				}
+			}
+		}
+
+		return mod;
+	}
+
 	/*
 	 * =================================================== Begin new constant
 	 * prop rules implementation.
@@ -166,8 +182,8 @@ public class OutBuf extends Component implements Emulatable {
 	public boolean pushValuesForward() {
 		boolean isModified = false;
 		for (Port port : getPorts()) {
-			if ((port == getClockPort()) || (port == getResetPort())
-					|| ((port == getGoPort()) && (port.getValue() == null))) {
+			if (port == getClockPort() || port == getResetPort()
+					|| port == getGoPort() && port.getValue() == null) {
 				/*
 				 * Do nothing for clock or reset, since they are not passed out
 				 * of the OutBuf's module. Also do nothing if the go is not
@@ -177,7 +193,7 @@ public class OutBuf extends Component implements Emulatable {
 				final Value pushedValue = port.getValue();
 				if (pushedValue == null) {
 					throw new NullPointerException(
-							"Null pointer on pusheValue: "
+							"Null pointer on pushedValue: "
 									+ port.getPeer().showIDLogical()
 									+ " Owner: "
 									+ this.getOwner().getIDGlobalType()
@@ -247,23 +263,11 @@ public class OutBuf extends Component implements Emulatable {
 	}
 
 	/**
-	 * Determines the consumed {@link Value} of each outbuf Port's peer Bus and
-	 * updates the Port's value with that information. Returns true if any new
-	 * information was pushed across the module boundry.
+	 * Called by the containing {@link Module} to agree with its value for
+	 * {@link Component#producesDone()}.
 	 */
-	@Override
-	public boolean pushValuesBackward() {
-		boolean mod = false;
-		for (Port port : getPorts()) {
-			if (port.getPeer() != null) {
-				final Value pushedValue = port.getPeer().getValue();
-				if (pushedValue != null) {
-					mod |= port.pushValueBackward(pushedValue);
-				}
-			}
-		}
-
-		return mod;
+	void setConsumesGo(boolean consumesGo) {
+		this.consumesGo = consumesGo;
 	}
 
 	/*
@@ -272,15 +276,11 @@ public class OutBuf extends Component implements Emulatable {
 	 */
 
 	/**
-	 * Cloning of OutBufs is not allowed. Use
-	 * {@link Component#makeExit(int,Exit.Type,String)} instead.
-	 * 
-	 * @throws CloneNotSupportedException
-	 *             always
+	 * Sets the gate depth for this OutBuf, called by the Pipeliner to set a
+	 * depth on the inputs of a task to account for IOBs
 	 */
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		throw new CloneNotSupportedException("attempt to clone OutBuf");
+	public void setGateDepth(int value) {
+		gateDepth = value;
 	}
 
 	@Override

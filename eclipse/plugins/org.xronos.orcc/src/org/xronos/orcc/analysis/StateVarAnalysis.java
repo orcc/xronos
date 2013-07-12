@@ -48,8 +48,8 @@ public class StateVarAnalysis extends DfVisitor<Void> {
 
 		@Override
 		public Void caseInstLoad(InstLoad load) {
-			Var target = load.getSource().getVariable();
-			if (!stateVarOrderOfAppearace.containsKey(target)) {
+			Var source = load.getSource().getVariable();
+			if (!stateVarOrderOfAppearace.containsKey(source)) {
 				// Create the first entry on the Map
 				Map<Procedure, List<Instruction>> procInst = new HashMap<Procedure, List<Instruction>>();
 				List<Instruction> instructions = new ArrayList<Instruction>();
@@ -57,11 +57,20 @@ public class StateVarAnalysis extends DfVisitor<Void> {
 				procInst.put(procedure, instructions);
 
 				// Put the variable on the Map
-				stateVarOrderOfAppearace.put(target, procInst);
+				stateVarOrderOfAppearace.put(source, procInst);
 			} else {
-				List<Instruction> instructions = stateVarOrderOfAppearace.get(
-						target).get(procedure);
-				instructions.add(load);
+
+				if (!stateVarOrderOfAppearace.get(source)
+						.containsKey(procedure)) {
+					List<Instruction> instructions = new ArrayList<Instruction>();
+					instructions.add(load);
+					stateVarOrderOfAppearace.get(source).put(procedure,
+							instructions);
+				} else {
+					List<Instruction> instructions = stateVarOrderOfAppearace
+							.get(source).get(procedure);
+					instructions.add(load);
+				}
 			}
 			return null;
 		}
@@ -79,9 +88,17 @@ public class StateVarAnalysis extends DfVisitor<Void> {
 				// Put the variable on the Map
 				stateVarOrderOfAppearace.put(target, procInst);
 			} else {
-				List<Instruction> instructions = stateVarOrderOfAppearace.get(
-						target).get(procedure);
-				instructions.add(store);
+				if (!stateVarOrderOfAppearace.get(target)
+						.containsKey(procedure)) {
+					List<Instruction> instructions = new ArrayList<Instruction>();
+					instructions.add(store);
+					stateVarOrderOfAppearace.get(target).put(procedure,
+							instructions);
+				} else {
+					List<Instruction> instructions = stateVarOrderOfAppearace
+							.get(target).get(procedure);
+					instructions.add(store);
+				}
 			}
 			return null;
 		}
@@ -124,6 +141,10 @@ public class StateVarAnalysis extends DfVisitor<Void> {
 		variableAnalyzer.doSwitch(action.getBody());
 
 		return null;
+	}
+
+	public Map<Var, Map<Procedure, List<Instruction>>> getOrderOfAppearance() {
+		return stateVarOrderOfAppearace;
 	}
 
 }

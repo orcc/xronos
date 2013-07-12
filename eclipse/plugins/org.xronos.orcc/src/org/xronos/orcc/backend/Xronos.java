@@ -48,6 +48,7 @@ import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.util.OrccLogger;
 
 import org.eclipse.core.resources.IFile;
+import org.xronos.orcc.analysis.StateVarAnalysisWriter;
 import org.xronos.orcc.analysis.XronosDynamicWeights;
 import org.xronos.orcc.analysis.XronosStaticWeight;
 import org.xronos.orcc.backend.transform.NetworkBufferSizeImporter;
@@ -81,8 +82,6 @@ public class Xronos extends AbstractBackend {
 
 	/** The path used for the RTL Go Done generation **/
 	private String rtlGoDonePath;
-
-	/** Use Orcc as a fronted for OpenForge, No XLIM code generation **/
 
 	/** The path used for the RTL generation **/
 	private String rtlPath;
@@ -234,6 +233,11 @@ public class Xronos extends AbstractBackend {
 		// Figure out how many instances need to be compiled/Recompiled
 		for (Vertex vertex : network.getChildren()) {
 			final Actor actor = vertex.getAdapter(Actor.class);
+			// //// TEST
+			StateVarAnalysisWriter analysisWriter = new StateVarAnalysisWriter();
+			analysisWriter.print(actor, rtlPath);// + File.separator +
+													// "report");
+			// //// END TEST
 			if (actor != null) {
 				if (!actor.isNative()) {
 					if (!debugMode) {
