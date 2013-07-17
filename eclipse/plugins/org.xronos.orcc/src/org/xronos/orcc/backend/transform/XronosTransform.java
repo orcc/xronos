@@ -54,7 +54,7 @@ import net.sf.orcc.ir.transform.DeadGlobalElimination;
 import net.sf.orcc.ir.transform.DeadVariableRemoval;
 import net.sf.orcc.util.OrccLogger;
 
-import org.xronos.orcc.backend.transform.pipelining.TestBenchIO;
+import org.xronos.orcc.backend.transform.pipelining.Pipelining;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.XronosScheduler;
 
@@ -113,7 +113,7 @@ public class XronosTransform {
 					true)));
 
 			transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
-			transformations.add(new DfVisitor<Void>(new TestBenchIO(2, 4)));
+			transformations.add(new Pipelining(2, 4));
 
 			for (DfSwitch<?> transformation : transformations) {
 				try {

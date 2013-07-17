@@ -1,3 +1,31 @@
+/*
+ * Copyright (c) 2011, Ecole Polytechnique Fédérale de Lausanne
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *   * Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ *   * Neither the name of the Ecole Polytechnique Fédérale de Lausanne nor the names of its
+ *     contributors may be used to endorse or promote products derived from this
+ *     software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+ * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
 package org.xronos.orcc.backend.transform.pipelining;
 
 import java.util.ArrayList;
@@ -21,8 +49,16 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import org.eclipse.emf.common.util.Enumerator;
 import org.eclipse.emf.ecore.EObject;
 
-public class TestBenchIO extends AbstractIrVisitor<Void> {
+/**
+ * This class is creating two matrix that defines the DFG of an Procedure by
+ * giving the Matrix of input-operators and output-operators.
+ * 
+ * @author Endri Bezati
+ * 
+ */
+public class OperatorsIO extends AbstractIrVisitor<Void> {
 
+	@SuppressWarnings("unused")
 	private static Map<Enumerator, List<Float>> WEIGHTS;
 
 	static {
@@ -50,24 +86,9 @@ public class TestBenchIO extends AbstractIrVisitor<Void> {
 	}
 
 	/**
-	 * Define the number of stages
+	 * The current number of the instruction
 	 */
-	private int stages;
-
-	/**
-	 * Define the time of a Stage
-	 */
-	private float stageTime;
-
-	/**
-	 * The List of Operation
-	 */
-	private List<Enumerator> operators;
-
-	/**
-	 * The List of variables
-	 */
-	private List<Var> variables;
+	private int currentIntruction;
 
 	/**
 	 * The matrix that defines the inputs of operators
@@ -75,24 +96,24 @@ public class TestBenchIO extends AbstractIrVisitor<Void> {
 	private int[][] inputOperators;
 
 	/**
-	 * The matrix that defines the outputs of the operators
-	 */
-	private int[][] outputOperators;
-
-	/**
 	 * Number of instructions without PortRead and PortWrite
 	 */
 	private int nbrInstructions;
 
 	/**
-	 * The current number of the instruction
+	 * The List of Operation
 	 */
-	private int currentIntruction;
+	private List<Enumerator> operators;
 
-	public TestBenchIO(int stages, float stageTime) {
-		this.stages = stages;
-		this.stageTime = stageTime;
-	}
+	/**
+	 * The matrix that defines the outputs of the operators
+	 */
+	private int[][] outputOperators;
+
+	/**
+	 * The List of variables
+	 */
+	private List<Var> variables;
 
 	@Override
 	public Void caseBlockBasic(BlockBasic block) {
@@ -119,6 +140,10 @@ public class TestBenchIO extends AbstractIrVisitor<Void> {
 		// Input Variables
 		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
 		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
+
+		inputOperators[currentIntruction][variables.indexOf(varE1)] = 1;
+		inputOperators[currentIntruction][variables.indexOf(varE2)] = 1;
+
 		return null;
 	}
 
@@ -129,7 +154,10 @@ public class TestBenchIO extends AbstractIrVisitor<Void> {
 
 		// Output variables
 		Var target = assign.getTarget().getVariable();
+		outputOperators[currentIntruction][variables.indexOf(target)] = 1;
 
+		// Increment the Instruction counter
+		currentIntruction++;
 		return null;
 	}
 
@@ -137,12 +165,16 @@ public class TestBenchIO extends AbstractIrVisitor<Void> {
 		// Equivalent operator
 		operators.add(OpBinary.EQ);
 
-		// Output variables
-		Var target = cast.getTarget().getVariable();
-
 		// Input variables
 		Var source = cast.getSource().getVariable();
+		inputOperators[currentIntruction][variables.indexOf(source)] = 1;
 
+		// Output variables
+		Var target = cast.getTarget().getVariable();
+		outputOperators[currentIntruction][variables.indexOf(target)] = 1;
+
+		// Increment the Instruction counter
+		currentIntruction++;
 		return null;
 	}
 
@@ -162,11 +194,6 @@ public class TestBenchIO extends AbstractIrVisitor<Void> {
 
 		// Now Visit the Blocks
 		doSwitch(procedure.getBlocks());
-
-		// Build Input - Operator Matrix
-
-		// Buidle Output - Operator Matrix
-
 		return null;
 	}
 
