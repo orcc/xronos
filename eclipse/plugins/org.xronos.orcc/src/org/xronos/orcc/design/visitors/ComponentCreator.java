@@ -130,7 +130,7 @@ import org.xronos.orcc.ir.InstPortWrite;
  */
 public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
-	private static boolean TEST_BLOCKBASIC = false;
+	private static boolean TEST_BLOCKBASIC = true;
 	private Def assignTarget;
 
 	/** Dependency between Components and Bus-Var **/
