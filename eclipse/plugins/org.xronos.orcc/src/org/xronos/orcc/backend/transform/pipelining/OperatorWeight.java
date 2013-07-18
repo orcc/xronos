@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Ecole Polytechnique Fédérale de Lausanne
+ * Copyright (c) 2013, Ecole Polytechnique Fédérale de Lausanne
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,12 @@ package org.xronos.orcc.backend.transform.pipelining;
 
 import org.eclipse.emf.common.util.Enumerator;
 
+/**
+ * A class that defines two weights for an operator, resource cost and time cost
+ * 
+ * @author Endri Bezati
+ * 
+ */
 public class OperatorWeight {
 
 	/**

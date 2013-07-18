@@ -46,7 +46,6 @@ import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 
-import org.eclipse.emf.common.util.Enumerator;
 import org.eclipse.emf.ecore.EObject;
 
 /**
@@ -59,28 +58,31 @@ import org.eclipse.emf.ecore.EObject;
 public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 	@SuppressWarnings("unused")
-	private static Map<Enumerator, List<Float>> WEIGHTS;
+	private static Map<PipelineOperator, List<Float>> WEIGHTS;
 
 	static {
-		Map<Enumerator, List<Float>> weights = new HashMap<Enumerator, List<Float>>();
-		weights.put(OpBinary.BITAND, Arrays.asList(0.15f, 0.5f));
-		weights.put(OpBinary.BITOR, Arrays.asList(0.15f, 0.5f));
-		weights.put(OpBinary.DIV, Arrays.asList(2.0f, 10.0f));
-		weights.put(OpBinary.DIV_INT, Arrays.asList(2.0f, 10.0f));
-		weights.put(OpBinary.EQ, Arrays.asList(0.1f, 0.2f));
-		weights.put(OpBinary.GE, Arrays.asList(0.1f, 0.2f));
-		weights.put(OpBinary.GT, Arrays.asList(0.1f, 0.2f));
-		weights.put(OpBinary.LE, Arrays.asList(0.1f, 0.2f));
-		weights.put(OpBinary.LT, Arrays.asList(0.1f, 0.2f));
-		weights.put(OpBinary.LOGIC_AND, Arrays.asList(0.5f, 0.2f));
-		weights.put(OpBinary.LOGIC_OR, Arrays.asList(0.5f, 0.2f));
-		weights.put(OpBinary.MINUS, Arrays.asList(1.0f, 2.0f));
-		weights.put(OpBinary.MOD, Arrays.asList(2.0f, 10.0f));
-		weights.put(OpBinary.NE, Arrays.asList(0.1f, 0.2f));
-		weights.put(OpBinary.PLUS, Arrays.asList(1.0f, 1.0f));
-		weights.put(OpBinary.SHIFT_LEFT, Arrays.asList(0.1f, 0.2f));
-		weights.put(OpBinary.SHIFT_RIGHT, Arrays.asList(0.1f, 0.2f));
-		weights.put(OpBinary.TIMES, Arrays.asList(1.0f, 5.0f));
+		Map<PipelineOperator, List<Float>> weights = new HashMap<PipelineOperator, List<Float>>();
+		weights.put(PipelineOperator.ASSIGN, Arrays.asList(0.0f, 0.0f));
+		weights.put(PipelineOperator.BITAND, Arrays.asList(0.15f, 0.5f));
+		weights.put(PipelineOperator.BITOR, Arrays.asList(0.15f, 0.5f));
+		weights.put(PipelineOperator.CAST, Arrays.asList(0.0f, 0.0f));
+		weights.put(PipelineOperator.DIV, Arrays.asList(2.0f, 10.0f));
+		weights.put(PipelineOperator.EQ, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.GE, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.GT, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.LE, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.LT, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.LOGIC_AND, Arrays.asList(0.5f, 0.2f));
+		weights.put(PipelineOperator.LOGIC_OR, Arrays.asList(0.5f, 0.2f));
+		weights.put(PipelineOperator.MINUS, Arrays.asList(1.0f, 2.0f));
+		weights.put(PipelineOperator.MOD, Arrays.asList(2.0f, 10.0f));
+		weights.put(PipelineOperator.NE, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.PLUS, Arrays.asList(1.0f, 1.0f));
+		weights.put(PipelineOperator.SHIFT_LEFT, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.SHIFT_RIGHT, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.STATE_LOAD, Arrays.asList(5.0f, 5.0f));
+		weights.put(PipelineOperator.STATE_STORE, Arrays.asList(5.0f, 5.0f));
+		weights.put(PipelineOperator.TIMES, Arrays.asList(1.0f, 5.0f));
 
 		WEIGHTS = Collections.unmodifiableMap(weights);
 	}
@@ -103,7 +105,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	/**
 	 * The List of Operation
 	 */
-	private List<Enumerator> operators;
+	private List<PipelineOperator> operators;
 
 	/**
 	 * The matrix that defines the outputs of the operators
@@ -135,7 +137,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	public Void caseExprBinary(ExprBinary expr) {
 		// Get operator
 		OpBinary opBinary = expr.getOp();
-		operators.add(opBinary);
+		operators.add(PipelineOperator.getPipelineOperator(opBinary));
 
 		// Input Variables
 		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
@@ -148,9 +150,22 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	}
 
 	@Override
+	public Void caseExprVar(ExprVar object) {
+		// Get the variable
+		Var source = object.getUse().getVariable();
+		inputOperators[currentIntruction][variables.indexOf(source)] = 1;
+
+		return null;
+	}
+
+	@Override
 	public Void caseInstAssign(InstAssign assign) {
 		// Visit Value
 		doSwitch(assign.getValue());
+
+		if (assign.getValue().isExprInt()) {
+			operators.add(PipelineOperator.ASSIGN);
+		}
 
 		// Output variables
 		Var target = assign.getTarget().getVariable();
@@ -163,7 +178,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 	public Void caseInstCast(InstCast cast) {
 		// Equivalent operator
-		operators.add(OpBinary.EQ);
+		operators.add(PipelineOperator.CAST);
 
 		// Input variables
 		Var source = cast.getSource().getVariable();
@@ -182,7 +197,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	public Void caseProcedure(Procedure procedure) {
 		// Init this procedure
 		this.procedure = procedure;
-		operators = new ArrayList<Enumerator>();
+		operators = new ArrayList<PipelineOperator>();
 		variables = new ArrayList<Var>();
 		nbrInstructions = 0;
 		currentIntruction = 0;
