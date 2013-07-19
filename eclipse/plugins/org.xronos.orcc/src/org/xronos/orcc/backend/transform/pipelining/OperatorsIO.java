@@ -29,11 +29,7 @@
 package org.xronos.orcc.backend.transform.pipelining;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.ir.BlockBasic;
@@ -57,36 +53,6 @@ import org.eclipse.emf.ecore.EObject;
  */
 public class OperatorsIO extends AbstractIrVisitor<Void> {
 
-	@SuppressWarnings("unused")
-	private static Map<PipelineOperator, List<Float>> WEIGHTS;
-
-	static {
-		Map<PipelineOperator, List<Float>> weights = new HashMap<PipelineOperator, List<Float>>();
-		weights.put(PipelineOperator.ASSIGN, Arrays.asList(0.0f, 0.0f));
-		weights.put(PipelineOperator.BITAND, Arrays.asList(0.15f, 0.5f));
-		weights.put(PipelineOperator.BITOR, Arrays.asList(0.15f, 0.5f));
-		weights.put(PipelineOperator.CAST, Arrays.asList(0.0f, 0.0f));
-		weights.put(PipelineOperator.DIV, Arrays.asList(2.0f, 10.0f));
-		weights.put(PipelineOperator.EQ, Arrays.asList(0.1f, 0.2f));
-		weights.put(PipelineOperator.GE, Arrays.asList(0.1f, 0.2f));
-		weights.put(PipelineOperator.GT, Arrays.asList(0.1f, 0.2f));
-		weights.put(PipelineOperator.LE, Arrays.asList(0.1f, 0.2f));
-		weights.put(PipelineOperator.LT, Arrays.asList(0.1f, 0.2f));
-		weights.put(PipelineOperator.LOGIC_AND, Arrays.asList(0.5f, 0.2f));
-		weights.put(PipelineOperator.LOGIC_OR, Arrays.asList(0.5f, 0.2f));
-		weights.put(PipelineOperator.MINUS, Arrays.asList(1.0f, 2.0f));
-		weights.put(PipelineOperator.MOD, Arrays.asList(2.0f, 10.0f));
-		weights.put(PipelineOperator.NE, Arrays.asList(0.1f, 0.2f));
-		weights.put(PipelineOperator.PLUS, Arrays.asList(1.0f, 1.0f));
-		weights.put(PipelineOperator.SHIFT_LEFT, Arrays.asList(0.1f, 0.2f));
-		weights.put(PipelineOperator.SHIFT_RIGHT, Arrays.asList(0.1f, 0.2f));
-		weights.put(PipelineOperator.STATE_LOAD, Arrays.asList(5.0f, 5.0f));
-		weights.put(PipelineOperator.STATE_STORE, Arrays.asList(5.0f, 5.0f));
-		weights.put(PipelineOperator.TIMES, Arrays.asList(1.0f, 5.0f));
-
-		WEIGHTS = Collections.unmodifiableMap(weights);
-	}
-
 	/**
 	 * The current number of the instruction
 	 */
@@ -95,12 +61,12 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	/**
 	 * The matrix that defines the inputs of operators
 	 */
-	private int[][] inputOperators;
+	private int[][] inputOp;
 
 	/**
 	 * Number of instructions without PortRead and PortWrite
 	 */
-	private int nbrInstructions;
+	private int nbrOperators;
 
 	/**
 	 * The List of Operation
@@ -110,7 +76,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	/**
 	 * The matrix that defines the outputs of the operators
 	 */
-	private int[][] outputOperators;
+	private int[][] outputOp;
 
 	/**
 	 * The List of variables
@@ -123,12 +89,12 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		for (Instruction instruction : block.getInstructions()) {
 			if (instruction instanceof InstAssign
 					|| instruction instanceof InstCast) {
-				nbrInstructions++;
+				nbrOperators++;
 			}
 		}
 
-		inputOperators = new int[nbrInstructions][variables.size()];
-		outputOperators = new int[nbrInstructions][variables.size()];
+		inputOp = new int[nbrOperators][variables.size()];
+		outputOp = new int[nbrOperators][variables.size()];
 
 		return super.caseBlockBasic(block);
 	}
@@ -143,8 +109,8 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		Var varE1 = ((ExprVar) expr.getE1()).getUse().getVariable();
 		Var varE2 = ((ExprVar) expr.getE2()).getUse().getVariable();
 
-		inputOperators[currentIntruction][variables.indexOf(varE1)] = 1;
-		inputOperators[currentIntruction][variables.indexOf(varE2)] = 1;
+		inputOp[currentIntruction][variables.indexOf(varE1)] = 1;
+		inputOp[currentIntruction][variables.indexOf(varE2)] = 1;
 
 		return null;
 	}
@@ -153,7 +119,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	public Void caseExprVar(ExprVar object) {
 		// Get the variable
 		Var source = object.getUse().getVariable();
-		inputOperators[currentIntruction][variables.indexOf(source)] = 1;
+		inputOp[currentIntruction][variables.indexOf(source)] = 1;
 
 		return null;
 	}
@@ -169,7 +135,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		// Output variables
 		Var target = assign.getTarget().getVariable();
-		outputOperators[currentIntruction][variables.indexOf(target)] = 1;
+		outputOp[currentIntruction][variables.indexOf(target)] = 1;
 
 		// Increment the Instruction counter
 		currentIntruction++;
@@ -182,11 +148,11 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		// Input variables
 		Var source = cast.getSource().getVariable();
-		inputOperators[currentIntruction][variables.indexOf(source)] = 1;
+		inputOp[currentIntruction][variables.indexOf(source)] = 1;
 
 		// Output variables
 		Var target = cast.getTarget().getVariable();
-		outputOperators[currentIntruction][variables.indexOf(target)] = 1;
+		outputOp[currentIntruction][variables.indexOf(target)] = 1;
 
 		// Increment the Instruction counter
 		currentIntruction++;
@@ -199,7 +165,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		this.procedure = procedure;
 		operators = new ArrayList<PipelineOperator>();
 		variables = new ArrayList<Var>();
-		nbrInstructions = 0;
+		nbrOperators = 0;
 		currentIntruction = 0;
 
 		// Get the local variables
@@ -220,4 +186,37 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
+	/**
+	 * Get the input operation matrix
+	 * 
+	 * @return
+	 */
+	public int[][] getInputOp() {
+		return inputOp;
+	}
+
+	/**
+	 * Get the number of operators
+	 * 
+	 * @return
+	 */
+	public int getNbrOperators() {
+		return nbrOperators;
+	}
+
+	/**
+	 * Get the number of variables
+	 */
+	public int getNbrVariables() {
+		return variables.size();
+	}
+
+	/**
+	 * Get the output operation matrix
+	 * 
+	 * @return
+	 */
+	public int[][] getOutputOp() {
+		return outputOp;
+	}
 }

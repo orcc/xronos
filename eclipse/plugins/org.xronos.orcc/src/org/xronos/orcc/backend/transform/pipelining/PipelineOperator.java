@@ -28,6 +28,12 @@
  */
 package org.xronos.orcc.backend.transform.pipelining;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
@@ -153,6 +159,44 @@ public enum PipelineOperator {
 	 */
 	TIMES(21, "TIMES");
 
+	/**
+	 * Map of the Weight of the operators
+	 */
+	private static Map<PipelineOperator, List<Float>> WEIGHTS;
+
+	static {
+		Map<PipelineOperator, List<Float>> weights = new HashMap<PipelineOperator, List<Float>>();
+		weights.put(PipelineOperator.ASSIGN, Arrays.asList(0.0f, 0.0f));
+		weights.put(PipelineOperator.BITAND, Arrays.asList(0.15f, 0.5f));
+		weights.put(PipelineOperator.BITOR, Arrays.asList(0.15f, 0.5f));
+		weights.put(PipelineOperator.CAST, Arrays.asList(0.0f, 0.0f));
+		weights.put(PipelineOperator.DIV, Arrays.asList(2.0f, 10.0f));
+		weights.put(PipelineOperator.EQ, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.GE, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.GT, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.LE, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.LT, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.LOGIC_AND, Arrays.asList(0.5f, 0.2f));
+		weights.put(PipelineOperator.LOGIC_OR, Arrays.asList(0.5f, 0.2f));
+		weights.put(PipelineOperator.MINUS, Arrays.asList(1.0f, 2.0f));
+		weights.put(PipelineOperator.MOD, Arrays.asList(2.0f, 10.0f));
+		weights.put(PipelineOperator.NE, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.PLUS, Arrays.asList(1.0f, 1.0f));
+		weights.put(PipelineOperator.SHIFT_LEFT, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.SHIFT_RIGHT, Arrays.asList(0.1f, 0.2f));
+		weights.put(PipelineOperator.STATE_LOAD, Arrays.asList(5.0f, 5.0f));
+		weights.put(PipelineOperator.STATE_STORE, Arrays.asList(5.0f, 5.0f));
+		weights.put(PipelineOperator.TIMES, Arrays.asList(1.0f, 5.0f));
+
+		WEIGHTS = Collections.unmodifiableMap(weights);
+	}
+
+	/**
+	 * Get the operator from an Orcc OpBinary or from an Orcc Instruction
+	 * 
+	 * @param obj
+	 * @return
+	 */
 	public static PipelineOperator getPipelineOperator(Object obj) {
 		if (obj instanceof OpBinary) {
 			OpBinary op = (OpBinary) obj;
@@ -226,6 +270,26 @@ public enum PipelineOperator {
 	private PipelineOperator(int code, String label) {
 		this.code = code;
 		this.label = label;
+	}
+
+	/**
+	 * Get the Resource weight of an operator
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public float getResourceWeight(PipelineOperator op) {
+		return WEIGHTS.get(op).get(1);
+	}
+
+	/**
+	 * Get the Time weight of an operator
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public float getTimeWeight(PipelineOperator op) {
+		return WEIGHTS.get(op).get(0);
 	}
 
 	@Override

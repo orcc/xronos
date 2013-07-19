@@ -29,55 +29,80 @@
 
 package org.xronos.orcc.backend.transform.pipelining;
 
-import net.sf.orcc.df.Action;
-import net.sf.orcc.df.util.DfVisitor;
-
-/**
- * The pipelining engine transformation
- * 
- * @author Endri Bezati
- * 
- */
-public class Pipelining extends DfVisitor<Void> {
+public class OperatorPrecedence {
 
 	/**
-	 * Define the number of stages
+	 * The operation precedence matrix
 	 */
-	private int stages;
+	private int precedenceOp[][];
 
 	/**
-	 * Define the time of a Stage
+	 * The operation input matrix
 	 */
-	private float stageTime;
+	private int inputOp[][];
 
-	public Pipelining(int stages, float stageTime) {
-		this.stages = stages;
-		this.stageTime = stageTime;
+	/**
+	 * The operation output matrix
+	 */
+	private int outputOp[][];
+
+	/**
+	 * The number of operators
+	 */
+	private int nbrOperators;
+
+	/**
+	 * The number of variables
+	 */
+	private int nbrVariables;
+
+	public OperatorPrecedence(int nbrOperators, int nbrVariables,
+			int inputOp[][], int outputOp[][]) {
+		this.nbrOperators = nbrOperators;
+		this.nbrVariables = nbrVariables;
+		this.inputOp = inputOp;
+		this.outputOp = outputOp;
+
+		// Initialize the precedence of operators matrix
+		precedenceOp = new int[nbrOperators][nbrOperators];
 	}
 
-	@Override
-	public Void caseAction(Action action) {
-		// Apply iff the action has the xronos_pipeline tag
-		if (action.hasAttribute("xronos_pipeline")) {
-			// Get the Input and Output matrix of the operators found on the
-			// BlockBasic of the action
-			OperatorsIO operatorsIO = new OperatorsIO();
-			operatorsIO.doSwitch(action.getBody());
+	/**
+	 * Evaluate the precedence of the operators given the output and input
+	 * matrixes
+	 */
 
-			// Operator precedence
-			int nbrOperators = operatorsIO.getNbrOperators();
-			int nbrVariables = operatorsIO.getNbrVariables();
-			int inputOp[][] = operatorsIO.getInputOp();
-			int outputOp[][] = operatorsIO.getOutputOp();
-
-			OperatorPrecedence operatorPrecedence = new OperatorPrecedence(
-					nbrOperators, nbrVariables, inputOp, outputOp);
-
-			operatorPrecedence.evaluate();
-
-			// Longest Operation path
-
+	public void evaluate() {
+		for (int i = 0; i < nbrOperators; i++) {
+			for (int j = 0; j < nbrOperators; j++) {
+				for (int k = 0; k < nbrVariables; k++) {
+					if (outputOp[i][k] != 0 && inputOp[j][k] != 0) {
+						precedenceOp[i][j] = 1;
+					}
+				}
+			}
 		}
-		return null;
 	}
+
+	public Boolean transitiveClosure() {
+		Boolean flag = true;
+		while (flag) {
+			flag = false;
+			for (int i = 0; i < nbrOperators; i++) {
+				for (int j = 0; j < nbrOperators; j++) {
+					if (precedenceOp[i][j] == 0) {
+						for (int k = 0; k < nbrVariables; k++) {
+							if (precedenceOp[i][k] == 1
+									&& precedenceOp[k][j] == 1) {
+								precedenceOp[i][j] = 1;
+								flag = true;
+							}
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+
 }
