@@ -29,84 +29,46 @@
 
 package org.xronos.orcc.backend.transform.pipelining;
 
-public class OperatorPrecedence {
+/**
+ * 
+ * 
+ * @author Endri Bezati
+ * 
+ */
+public class OperatorConflicts {
 
-	/**
-	 * The operation precedence matrix
-	 */
-	private int precedenceOp[][];
+	private int[][] conflictOp;
 
-	/**
-	 * The operation input matrix
-	 */
-	private int inputOp[][];
-
-	/**
-	 * The operation output matrix
-	 */
-	private int outputOp[][];
-
-	/**
-	 * The number of operators
-	 */
 	private int nbrOperators;
 
-	/**
-	 * The number of variables
-	 */
-	private int nbrVariables;
-
-	public OperatorPrecedence(int nbrOperators, int nbrVariables,
-			int inputOp[][], int outputOp[][]) {
+	public OperatorConflicts(int nbrOperators) {
 		this.nbrOperators = nbrOperators;
-		this.nbrVariables = nbrVariables;
-		this.inputOp = inputOp;
-		this.outputOp = outputOp;
-
-		// Initialize the precedence of operators matrix
-		precedenceOp = new int[nbrOperators][nbrOperators];
+		conflictOp = new int[nbrOperators][nbrOperators];
 	}
 
-	/**
-	 * Evaluate the precedence of the operators given the output and input
-	 * matrixes
-	 */
-
-	public void evaluate() {
+	public void create(LongestOpPath longestPath, float stageTime) {
 		for (int i = 0; i < nbrOperators; i++) {
 			for (int j = 0; j < nbrOperators; j++) {
-				for (int k = 0; k < nbrVariables; k++) {
-					if (outputOp[i][k] != 0 && inputOp[j][k] != 0) {
-						precedenceOp[i][j] = 1;
-					}
+				if (longestPath.getLogestPath(i, j) <= stageTime) {
+					conflictOp[i][j] = 0;
+				} else {
+					conflictOp[i][j] = 1;
 				}
 			}
 		}
 	}
 
-	public int getPrecedenceOp(int i, int j) {
-		return precedenceOp[i][j];
+	public int getOperatorConflict(int i, int j) {
+		return conflictOp[i][j];
 	}
 
-	public Boolean transitiveClosure() {
-		Boolean flag = true;
-		while (flag) {
-			flag = false;
-			for (int i = 0; i < nbrOperators; i++) {
-				for (int j = 0; j < nbrOperators; j++) {
-					if (precedenceOp[i][j] == 0) {
-						for (int k = 0; k < nbrVariables; k++) {
-							if (precedenceOp[i][k] == 1
-									&& precedenceOp[k][j] == 1) {
-								precedenceOp[i][j] = 1;
-								flag = true;
-							}
-						}
-					}
-				}
+	public void print() {
+		System.out.printf("MatrixCop:\n");
+		for (int i = 0; i < nbrOperators; i++) {
+			for (int j = 0; j < nbrOperators; j++) {
+				System.out.printf("%1d ", conflictOp[i][j]);
 			}
+			System.out.printf("\n");
 		}
-		return true;
 	}
-
 }

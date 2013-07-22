@@ -95,8 +95,17 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		inputOp = new int[nbrOperators][variables.size()];
 		outputOp = new int[nbrOperators][variables.size()];
-
-		return super.caseBlockBasic(block);
+		super.caseBlockBasic(block);
+		// int nb = 0;
+		// for (Instruction instruction : block.getInstructions()) {
+		// if (instruction instanceof InstAssign
+		// || instruction instanceof InstCast) {
+		// System.out.println(nb + " Instruction: " + instruction
+		// + "-- OP:" + operators.get(nb));
+		// nb++;
+		// }
+		// }
+		return null;
 	}
 
 	@Override
@@ -120,7 +129,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		// Get the variable
 		Var source = object.getUse().getVariable();
 		inputOp[currentIntruction][variables.indexOf(source)] = 1;
-
+		operators.add(PipelineOperator.ASSIGN);
 		return null;
 	}
 
@@ -211,6 +220,10 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		return variables.size();
 	}
 
+	public PipelineOperator getOperator(int index) {
+		return operators.get(index);
+	}
+
 	/**
 	 * Get the output operation matrix
 	 * 
@@ -219,4 +232,5 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	public int[][] getOutputOp() {
 		return outputOp;
 	}
+
 }

@@ -59,23 +59,34 @@ public class Pipelining extends DfVisitor<Void> {
 	public Void caseAction(Action action) {
 		// Apply iff the action has the xronos_pipeline tag
 		if (action.hasAttribute("xronos_pipeline")) {
+			float stageTime = 3.0f;
 			// Get the Input and Output matrix of the operators found on the
 			// BlockBasic of the action
-			OperatorsIO operatorsIO = new OperatorsIO();
-			operatorsIO.doSwitch(action.getBody());
+			OperatorsIO opIO = new OperatorsIO();
+			opIO.doSwitch(action.getBody());
 
 			// Operator precedence
-			int nbrOperators = operatorsIO.getNbrOperators();
-			int nbrVariables = operatorsIO.getNbrVariables();
-			int inputOp[][] = operatorsIO.getInputOp();
-			int outputOp[][] = operatorsIO.getOutputOp();
+			int nbrOperators = opIO.getNbrOperators();
+			int nbrVariables = opIO.getNbrVariables();
+			int inputOp[][] = opIO.getInputOp();
+			int outputOp[][] = opIO.getOutputOp();
 
-			OperatorPrecedence operatorPrecedence = new OperatorPrecedence(
-					nbrOperators, nbrVariables, inputOp, outputOp);
-
-			operatorPrecedence.evaluate();
+			OperatorPrecedence opPre = new OperatorPrecedence(nbrOperators,
+					nbrVariables, inputOp, outputOp);
+			opPre.evaluate();
 
 			// Longest Operation path
+			LongestOpPath longestOpPath = new LongestOpPath(nbrOperators);
+			longestOpPath.constructPath(opIO, opPre, stageTime);
+
+			// Operator conflicts
+			OperatorConflicts operatorConflicts = new OperatorConflicts(
+					nbrOperators);
+			operatorConflicts.create(longestOpPath, stageTime);
+			// operatorConflicts.print();
+
+			// Operation coloring
+			opPre.transitiveClosure();
 
 		}
 		return null;

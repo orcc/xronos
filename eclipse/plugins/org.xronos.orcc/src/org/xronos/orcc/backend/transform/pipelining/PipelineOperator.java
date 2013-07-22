@@ -278,8 +278,8 @@ public enum PipelineOperator {
 	 * @param op
 	 * @return
 	 */
-	public float getResourceWeight(PipelineOperator op) {
-		return WEIGHTS.get(op).get(1);
+	public float getResourceWeight() {
+		return WEIGHTS.get(this).get(1);
 	}
 
 	/**
@@ -288,8 +288,8 @@ public enum PipelineOperator {
 	 * @param op
 	 * @return
 	 */
-	public float getTimeWeight(PipelineOperator op) {
-		return WEIGHTS.get(op).get(0);
+	public float getTimeWeight() {
+		return WEIGHTS.get(this).get(0);
 	}
 
 	@Override
