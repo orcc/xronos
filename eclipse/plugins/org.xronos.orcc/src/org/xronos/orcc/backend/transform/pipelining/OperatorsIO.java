@@ -205,6 +205,15 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	}
 
 	/**
+	 * Get the input operation by index
+	 * 
+	 * @return
+	 */
+	public int getInputOp(int i, int j) {
+		return inputOp[i][j];
+	}
+
+	/**
 	 * Get the number of operators
 	 * 
 	 * @return
@@ -231,6 +240,23 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	 */
 	public int[][] getOutputOp() {
 		return outputOp;
+	}
+
+	/**
+	 * Get the output operation by index
+	 * 
+	 * @return
+	 */
+	public int getOutputOp(int i, int j) {
+		return outputOp[i][j];
+	}
+
+	public String getVariableName(int index) {
+		return variables.get(index).getIndexedName();
+	}
+
+	public int getVariableWidth(int index) {
+		return variables.get(index).getType().getSizeInBits();
 	}
 
 }

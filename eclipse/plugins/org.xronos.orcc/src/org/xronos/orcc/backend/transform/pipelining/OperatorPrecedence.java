@@ -95,7 +95,7 @@ public class OperatorPrecedence {
 			for (int i = 0; i < nbrOperators; i++) {
 				for (int j = 0; j < nbrOperators; j++) {
 					if (precedenceOp[i][j] == 0) {
-						for (int k = 0; k < nbrVariables; k++) {
+						for (int k = 0; k < nbrOperators; k++) {
 							if (precedenceOp[i][k] == 1
 									&& precedenceOp[k][j] == 1) {
 								precedenceOp[i][j] = 1;

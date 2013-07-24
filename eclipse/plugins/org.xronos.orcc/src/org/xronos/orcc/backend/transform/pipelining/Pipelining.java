@@ -80,13 +80,15 @@ public class Pipelining extends DfVisitor<Void> {
 			longestOpPath.constructPath(opIO, opPre, stageTime);
 
 			// Operator conflicts
-			OperatorConflicts operatorConflicts = new OperatorConflicts(
-					nbrOperators);
-			operatorConflicts.create(longestOpPath, stageTime);
+			OperatorConflicts opCon = new OperatorConflicts(nbrOperators);
+			opCon.create(longestOpPath, stageTime);
 			// operatorConflicts.print();
 
 			// Operation coloring
 			opPre.transitiveClosure();
+			OperatorColoring opCol = new OperatorColoring(nbrOperators,
+					nbrVariables);
+			opCol.construct(opIO, opPre, opCon);
 
 		}
 		return null;
