@@ -59,7 +59,7 @@ public class Pipelining extends DfVisitor<Void> {
 	public Void caseAction(Action action) {
 		// Apply iff the action has the xronos_pipeline tag
 		if (action.hasAttribute("xronos_pipeline")) {
-			float stageTime = 3.0f;
+			float stageTime = 2.0f;
 			// Get the Input and Output matrix of the operators found on the
 			// BlockBasic of the action
 			OperatorsIO opIO = new OperatorsIO();

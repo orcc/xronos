@@ -63,6 +63,8 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	 */
 	private int[][] inputOp;
 
+	private List<List<String>> inputOpString;
+
 	/**
 	 * Number of instructions without PortRead and PortWrite
 	 */
@@ -77,6 +79,8 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 	 * The matrix that defines the outputs of the operators
 	 */
 	private int[][] outputOp;
+
+	private List<String> outputOpString;
 
 	/**
 	 * The List of variables
@@ -95,16 +99,12 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		inputOp = new int[nbrOperators][variables.size()];
 		outputOp = new int[nbrOperators][variables.size()];
+
+		inputOpString = new ArrayList<List<String>>();
+		outputOpString = new ArrayList<String>();
+
 		super.caseBlockBasic(block);
-		// int nb = 0;
-		// for (Instruction instruction : block.getInstructions()) {
-		// if (instruction instanceof InstAssign
-		// || instruction instanceof InstCast) {
-		// System.out.println(nb + " Instruction: " + instruction
-		// + "-- OP:" + operators.get(nb));
-		// nb++;
-		// }
-		// }
+
 		return null;
 	}
 
@@ -120,6 +120,8 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		inputOp[currentIntruction][variables.indexOf(varE1)] = 1;
 		inputOp[currentIntruction][variables.indexOf(varE2)] = 1;
+		List<Var> inputs = new ArrayList<Var>();
+		inputs.add(varE1);
 
 		return null;
 	}
@@ -145,6 +147,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		// Output variables
 		Var target = assign.getTarget().getVariable();
 		outputOp[currentIntruction][variables.indexOf(target)] = 1;
+		outputOpString.add(target.getIndexedName());
 
 		// Increment the Instruction counter
 		currentIntruction++;
@@ -162,6 +165,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		// Output variables
 		Var target = cast.getTarget().getVariable();
 		outputOp[currentIntruction][variables.indexOf(target)] = 1;
+		outputOpString.add(target.getIndexedName());
 
 		// Increment the Instruction counter
 		currentIntruction++;

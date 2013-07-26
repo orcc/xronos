@@ -146,6 +146,7 @@ public class OperatorColoring {
 		int top = 0;
 		opColor[top] = asapLevels[order[0]] - 1;
 		maxColor[top] = alapLevels[order[0]];
+		long t0 = System.currentTimeMillis();
 		for (;;) {
 			if (top < 0) {
 				break;
@@ -200,6 +201,10 @@ public class OperatorColoring {
 				// if(ColoringCount > 1000000) break; // debug
 
 				top--;
+				long t1 = System.currentTimeMillis();
+				if ((t1 - t0) / 1000 > 20) {
+					break;
+				}
 			} else {
 				k = order[top];
 				c = opColor[top] + 1;
