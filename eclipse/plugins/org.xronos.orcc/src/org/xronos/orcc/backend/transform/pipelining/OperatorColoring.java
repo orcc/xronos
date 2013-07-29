@@ -299,9 +299,11 @@ public class OperatorColoring {
 		fillOutputPorts(opIO);
 
 		levelsASAP(opCon);
+		levelsAsapPrint();
 		asapRegisterWidth = registerWidth(asapLevels, opIO);
 
 		levelsALAP(opCon);
+		levelsAlapPrint();
 		alapRegisterWidth = registerWidth(alapLevels, opIO);
 
 		freedomOrdering();
@@ -500,6 +502,15 @@ public class OperatorColoring {
 		}
 	}
 
+	public boolean levelsAlapPrint() {
+		System.out.printf("Levels ALAP:\n");
+		for (int i = 0; i < nbrOperators; i++) {
+			System.out.printf("%d:%1d ", i, alapLevels[i]);
+		}
+		System.out.printf("\n");
+		return true;
+	}
+
 	private void levelsASAP(OperatorConflicts opConflicts) {
 		L = 1;
 		boolean next = true;
@@ -525,6 +536,15 @@ public class OperatorColoring {
 			L++;
 		}
 		maxColors = L - 2;
+	}
+
+	public boolean levelsAsapPrint() {
+		System.out.printf("Levels ASAP:\n");
+		for (int i = 0; i < nbrOperators; i++) {
+			System.out.printf("%d:%1d ", i, asapLevels[i]);
+		}
+		System.out.printf("\n");
+		return true;
 	}
 
 	public int minColor(int top, int k, OperatorConflicts opCon) {

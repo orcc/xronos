@@ -120,8 +120,10 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		inputOp[currentIntruction][variables.indexOf(varE1)] = 1;
 		inputOp[currentIntruction][variables.indexOf(varE2)] = 1;
-		List<Var> inputs = new ArrayList<Var>();
-		inputs.add(varE1);
+		List<String> inputs = new ArrayList<String>();
+		inputs.add(varE1.getIndexedName());
+		inputs.add(varE1.getIndexedName());
+		inputOpString.add(inputs);
 
 		return null;
 	}
@@ -132,6 +134,11 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		Var source = object.getUse().getVariable();
 		inputOp[currentIntruction][variables.indexOf(source)] = 1;
 		operators.add(PipelineOperator.ASSIGN);
+
+		List<String> inputs = new ArrayList<String>();
+		inputs.add(source.getIndexedName());
+		inputOpString.add(inputs);
+
 		return null;
 	}
 
@@ -162,6 +169,10 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		Var source = cast.getSource().getVariable();
 		inputOp[currentIntruction][variables.indexOf(source)] = 1;
 
+		List<String> inputs = new ArrayList<String>();
+		inputs.add(source.getIndexedName());
+		inputOpString.add(inputs);
+
 		// Output variables
 		Var target = cast.getTarget().getVariable();
 		outputOp[currentIntruction][variables.indexOf(target)] = 1;
@@ -188,6 +199,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		// Now Visit the Blocks
 		doSwitch(procedure.getBlocks());
+
 		return null;
 	}
 
@@ -261,6 +273,50 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 	public int getVariableWidth(int index) {
 		return variables.get(index).getType().getSizeInBits();
+	}
+
+	public void printTablesForCTestbench() {
+		System.out.println("#define NC " + nbrOperators);
+		System.out.println("#define MC " + variables.size());
+
+		System.out.println("static char *OpNN[NC] = {");
+		for (PipelineOperator pipeOP : operators) {
+			System.out.print("\"" + pipeOP.toString() + "\", ");
+
+		}
+		System.out.println("};");
+
+		System.out.println("static char *VaNN[MC] = {");
+		for (Var var : variables) {
+			System.out.print("\"" + var.getIndexedName() + "\", ");
+		}
+		System.out.println("};");
+
+		System.out.println("int VaWW[MC] = {");
+		for (Var var : variables) {
+			System.out.print(var.getType().getSizeInBits() + ", ");
+		}
+		System.out.println("};");
+
+		System.out.println("static char *chFF[NC][2] = {");
+		for (List<String> ins : inputOpString) {
+			if (ins.size() == 1) {
+				System.out.print("{\"" + ins.get(0) + "\"" + ",\"\"}, ");
+				System.out.print("\n");
+			} else if (ins.size() == 2) {
+				System.out.print("{\"" + ins.get(0) + "\"" + ",\"" + ins.get(1)
+						+ "\"}, ");
+				System.out.print("\n");
+			}
+
+		}
+		System.out.println("};");
+
+		System.out.println("static char *chHH[NC] = {");
+		for (String outputs : outputOpString) {
+			System.out.print("\"" + outputs + "\", ");
+		}
+		System.out.println("};");
 	}
 
 }
