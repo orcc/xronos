@@ -90,6 +90,12 @@ public class Pipelining extends DfVisitor<Void> {
 					nbrVariables);
 			opCol.construct(opIO, opPre, opCon);
 
+			// Create Actors
+			stages = opCol.getStages();
+			for (int stage = 0; stage < stages; stage++) {
+				PipelineActor pipelineActor = new PipelineActor(opIO, opCol,
+						stage);
+			}
 		}
 		return null;
 	}

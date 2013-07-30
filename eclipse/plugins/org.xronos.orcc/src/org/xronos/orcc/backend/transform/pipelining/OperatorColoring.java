@@ -476,6 +476,10 @@ public class OperatorColoring {
 		}
 	}
 
+	public int getStages() {
+		return maxColors;
+	}
+
 	private void levelsALAP(OperatorConflicts opConflicts) {
 		L = maxColors;
 		boolean next = true;
@@ -601,4 +605,5 @@ public class OperatorColoring {
 		}
 		return regWidth;
 	}
+
 }

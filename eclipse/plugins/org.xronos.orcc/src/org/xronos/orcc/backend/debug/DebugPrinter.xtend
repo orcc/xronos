@@ -167,7 +167,10 @@ class DebugPrinter extends InstancePrinter {
 		«IF (blockWhile.joinBlock != null)»
 			«blockWhile.joinBlock.doSwitch»
 		«ENDIF»
-		«super.caseBlockWhile(blockWhile)»
+		while («blockWhile.condition.doSwitch») {
+			«FOR block : blockWhile.blocks»
+				«block.doSwitch»
+			«ENDFOR»
 		«IF !blockWhile.joinBlock.instructions.empty»
 			// Loop PHI : «blockWhile.lineNumber»
 			«FOR instruction: blockWhile.joinBlock.instructions»
@@ -176,6 +179,7 @@ class DebugPrinter extends InstancePrinter {
 				«ENDIF»
 			«ENDFOR»
 		«ENDIF»
+		}
 	'''
 	}
 	
