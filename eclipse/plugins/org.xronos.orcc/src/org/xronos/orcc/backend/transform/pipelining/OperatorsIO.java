@@ -249,6 +249,27 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		return operators.get(index);
 	}
 
+	public List<Var> getOpInputVariables(int index) {
+		List<Var> inputs = new ArrayList<Var>();
+
+		for (int i = 0; i < getNbrVariables(); i++) {
+			if (inputOp[index][i] == 1) {
+				inputs.add(variables.get(i));
+			}
+		}
+		return inputs;
+	}
+
+	public Var getOpOutputVariable(int index) {
+		Var output = null;
+		for (int i = 0; i < getNbrVariables(); i++) {
+			if (inputOp[index][i] == 1) {
+				return variables.get(i);
+			}
+		}
+		return output;
+	}
+
 	/**
 	 * Get the output operation matrix
 	 * 

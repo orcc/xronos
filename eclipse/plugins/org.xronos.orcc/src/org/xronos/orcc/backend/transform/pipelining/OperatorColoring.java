@@ -28,6 +28,11 @@
  */
 package org.xronos.orcc.backend.transform.pipelining;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import net.sf.orcc.ir.Var;
+
 /**
  * 
  * @author Endri Bezati
@@ -35,67 +40,67 @@ package org.xronos.orcc.backend.transform.pipelining;
  */
 public class OperatorColoring {
 
-	private int[] asapLevels;
-
 	private int[] alapLevels;
 
-	private int[] opFreedom;
+	private int alapRegisterWidth = 0;
 
-	private int[] order;
-
-	private int[] firstOrder;
-
-	private int[] opColor;
-
-	private int[] maxColor;
-
-	private int[] bestColor;
-
-	private int[] worstColor;
-
-	private int[] firstBestColor;
-
-	private int[] stageRegisters;
-
-	private int[] stageRegistersWidth;
-
-	private int[] transmRegisters;
-
-	private int[] transmRegistersWidth;
-
-	private int[] outputPorts;
-
-	private int minRegisterWidth = 100000;
-
-	private int maxRegisterWidth = 0;
+	private int[] asapLevels;
 
 	private int asapRegisterWidth = 0;
 
-	private int alapRegisterWidth = 0;
+	private int[] bestColor;
+
+	private int coloringCount = 0;
+
+	private int[] firstBestColor;
+
+	private int[] firstOrder;
+
+	private int[] inputs;
+
+	private int[] inVarCounts;
+
+	private int[][] inVarLists;
+
+	private int L = 0;
+
+	private int[] maxColor;
+
+	private int maxColors = 0;
+
+	private int maxRegisterWidth = 0;
+
+	private int minRegisterWidth = 100000;
 
 	private int nbrOperators;
 
 	private int nbrVariables;
 
-	private int maxColors = 0;
+	private int[] opColor;
 
-	private int L = 0;
+	private int[] opFreedom;
 
-	private int coloringCount = 0;
+	private int[] order;
 
-	private int[] inputs;
+	private int[] outputPorts;
 
 	private int[] outputs;
 
-	private int[] transmission;
-
-	private int[][] inVarLists;
-
-	private int[] inVarCounts;
+	private int[] outVarCounts;
 
 	private int[][] outVarLists;
 
-	private int[] outVarCounts;
+	private int[] stageRegisters;
+
+	private int[] stageRegistersWidth;
+
+	private int[] transmission;
+
+	private int[] transmRegisters;
+
+	private int[] transmRegistersWidth;
+
+	private int[] worstColor;
 
 	public OperatorColoring(int nbrOperators, int nbrVariables) {
 		this.nbrOperators = nbrOperators;
@@ -202,7 +207,7 @@ public class OperatorColoring {
 
 				top--;
 				long t1 = System.currentTimeMillis();
-				if ((t1 - t0) / 1000 > 20) {
+				if ((t1 - t0) / 1000 > 5) {
 					break;
 				}
 			} else {
@@ -343,7 +348,7 @@ public class OperatorColoring {
 			transmission[r] = outputPorts[r];
 		}
 
-		for (int i = maxColors; i > 1; i--) {
+		for (int i = maxColors; i >= 1; i--) {
 			// Initialize the input and output array
 			for (int r = 0; r < nbrVariables; r++) {
 				inputs[r] = 0;
@@ -474,6 +479,28 @@ public class OperatorColoring {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Get the input port of a given stage
+	 * 
+	 * @param stage
+	 * @return
+	 */
+	public List<Var> getInputPorts(int stage) {
+		List<Var> inputs = new ArrayList<Var>();
+		return inputs;
+	}
+
+	/**
+	 * Get the output port of a given stage
+	 * 
+	 * @param stage
+	 * @return
+	 */
+	public List<Var> getOutputPorts(int stage) {
+		List<Var> outputs = new ArrayList<Var>();
+		return outputs;
 	}
 
 	public int getStages() {

@@ -29,7 +29,18 @@
 
 package org.xronos.orcc.backend.transform.pipelining;
 
+import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.DfFactory;
+import net.sf.orcc.df.Pattern;
+import net.sf.orcc.df.Port;
+import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Var;
+import net.sf.orcc.util.util.EcoreHelper;
+
+import org.eclipse.emf.ecore.util.EcoreUtil;
 
 /**
  * 
@@ -38,19 +49,125 @@ import net.sf.orcc.df.Actor;
  */
 public class PipelineActor {
 
-	private OperatorsIO opIO;
+	private static DfFactory dfFactory = DfFactory.eINSTANCE;
+	private static IrFactory irFactory = IrFactory.eINSTANCE;
 
-	private OperatorColoring opColoring;
-
-	private int stage;
+	private Action action;
 
 	private Actor actor;
 
-	public PipelineActor(OperatorsIO opIO, OperatorColoring opColoring,
-			int stage) {
+	private OperatorColoring opColoring;
+
+	private OperatorsIO opIO;
+
+	private int stage;
+
+	public PipelineActor(Action action, OperatorsIO opIO,
+			OperatorColoring opColoring, int stage) {
+		this.action = action;
 		this.opIO = opIO;
 		this.opColoring = opColoring;
 		this.stage = stage;
+		createActor();
+	}
+
+	/**
+	 * Create an actor based on the stage of the operation coloring
+	 */
+	public void createActor() {
+		// Get the parent actor
+		Actor parentActor = EcoreHelper.getContainerOfType(action, Actor.class);
+
+		// Set a new name for the new actor
+		String name = parentActor.getName() + "_" + action.getName()
+				+ "_stage_" + stage;
+		// Create the new actor
+		actor = dfFactory.createActor();
+		actor.setName(name);
+
+		// Create the Actor Input(s)
+		for (Var varToPort : opColoring.getInputPorts(stage)) {
+			String portName = varToPort.getIndexedName();
+			Type type = EcoreUtil.copy(varToPort.getType());
+			Port port = dfFactory.createPort(type, portName);
+			actor.getInputs().add(port);
+		}
+
+		// Create the Actor Output(s)
+		for (Var varToPort : opColoring.getOutputPorts(stage)) {
+			String portName = varToPort.getIndexedName();
+			Type type = EcoreUtil.copy(varToPort.getType());
+			Port port = DfFactory.eINSTANCE.createPort(type, portName);
+			actor.getOutputs().add(port);
+		}
+
+		// Create IO patterns of the action
+		Pattern inputPattern = createInputPattern();
+		Pattern outputPattern = createOutputPattern();
+		// Empty peek Pattern for the moment
+		Pattern peekedPattern = createPeekPattern();
+
+		// Create the action scheduler and body
+		Procedure scheduler = createScheduler();
+		Procedure body = createBody();
+
+		// Create the new action
+		Action action = dfFactory.createAction("stage_" + stage, inputPattern,
+				outputPattern, peekedPattern, scheduler, body);
+
+		actor.getActions().add(action);
+	}
+
+	private Procedure createBody() {
+		Procedure body = irFactory.createProcedure();
+		return body;
+	}
+
+	/**
+	 * Create a single token based input pattern
+	 * 
+	 * @return
+	 */
+	private Pattern createInputPattern() {
+		Pattern pattern = dfFactory.createPattern();
+		for (Port port : actor.getInputs()) {
+			Type portVarType = irFactory.createTypeList(1, port.getType());
+			pattern.setNumTokens(port, 1);
+			pattern.setVariable(port,
+					irFactory.createVar(portVarType, port.getName(), true, 0));
+		}
+		return pattern;
+	}
+
+	/**
+	 * Create a single token based output pattern
+	 * 
+	 * @return
+	 */
+	private Pattern createOutputPattern() {
+		Pattern pattern = dfFactory.createPattern();
+		for (Port port : actor.getOutputs()) {
+			Type portVarType = irFactory.createTypeList(1, port.getType());
+			pattern.setNumTokens(port, 1);
+			pattern.setVariable(port,
+					irFactory.createVar(portVarType, port.getName(), true, 0));
+		}
+		return pattern;
+	}
+
+	/**
+	 * Crate an empty peek pattern
+	 * 
+	 * @return
+	 */
+	private Pattern createPeekPattern() {
+		Pattern pattern = dfFactory.createPattern();
+		return pattern;
+	}
+
+	private Procedure createScheduler() {
+		Procedure scheduler = irFactory.createProcedure();
+		return scheduler;
 	}
 
 }
