@@ -122,7 +122,7 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 		inputOp[currentIntruction][variables.indexOf(varE2)] = 1;
 		List<String> inputs = new ArrayList<String>();
 		inputs.add(varE1.getIndexedName());
-		inputs.add(varE1.getIndexedName());
+		inputs.add(varE2.getIndexedName());
 		inputOpString.add(inputs);
 
 		return null;
@@ -149,6 +149,10 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		if (assign.getValue().isExprInt()) {
 			operators.add(PipelineOperator.ASSIGN);
+			List<String> inputs = new ArrayList<String>();
+			inputs.add("");
+			inputs.add("");
+			inputOpString.add(inputs);
 		}
 
 		// Output variables

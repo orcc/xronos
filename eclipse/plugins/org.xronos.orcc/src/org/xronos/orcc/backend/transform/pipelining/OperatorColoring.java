@@ -318,7 +318,7 @@ public class OperatorColoring {
 		System.out.println("PIPELINING: Total colors: " + coloringCount);
 
 		estimateRegisters(bestColor, opIO, "!BEST!");
-		estimateRegisters(worstColor, opIO, "!WORST!");
+		// estimateRegisters(worstColor, opIO, "!WORST!");
 
 		float diff = maxRegisterWidth;
 
