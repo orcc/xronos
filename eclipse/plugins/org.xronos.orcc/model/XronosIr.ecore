@@ -44,6 +44,6 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="node" eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Instruction"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="DfgEdge" eSuperTypes="../../net.sf.orcc.models/model/Graph.ecore#//Edge">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="line" eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Var"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="line" eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Expression"/>
   </eClassifiers>
 </ecore:EPackage>

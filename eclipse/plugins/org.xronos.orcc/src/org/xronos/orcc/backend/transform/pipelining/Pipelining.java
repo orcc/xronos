@@ -64,7 +64,8 @@ public class Pipelining extends DfVisitor<Void> {
 			// BlockBasic of the action
 			OperatorsIO opIO = new OperatorsIO();
 			opIO.doSwitch(action.getBody());
-			// opIO.printTablesForCTestbench();
+			opIO.printTablesForCTestbench();
+
 			// Operator precedence
 			int nbrOperators = opIO.getNbrOperators();
 			int nbrVariables = opIO.getNbrVariables();

@@ -39,8 +39,10 @@ import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.EObject;
 
@@ -198,13 +200,51 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		// Get the local variables
 		for (Var var : procedure.getLocals()) {
-			variables.add(var);
+			// Add and clean variables
+			for (Use use : var.getUses()) {
+				Procedure procContainsVar = EcoreHelper.getContainerOfType(use,
+						Procedure.class);
+				if (procContainsVar != null) {
+					if (procContainsVar == procedure) {
+						if (!variables.contains(var)) {
+							variables.add(var);
+						}
+					}
+				}
+			}
+
 		}
 
 		// Now Visit the Blocks
 		doSwitch(procedure.getBlocks());
 
 		return null;
+	}
+
+	public void cleanVariables() {
+		List<Var> varToBeDeleted = new ArrayList<Var>();
+
+		for (Var var : variables) {
+			String name = var.getIndexedName();
+			if (!containsInput(name) && !outputOpString.contains(name)) {
+				varToBeDeleted.add(var);
+			}
+		}
+
+		for (Var var : varToBeDeleted) {
+			variables.remove(var);
+		}
+	}
+
+	public boolean containsInput(String name) {
+		for (List<String> ins : inputOpString) {
+			for (String in : ins) {
+				if (in.equals(name)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	@Override

@@ -317,6 +317,16 @@ public class OperatorColoring {
 
 		System.out.println("PIPELINING: Total colors: " + coloringCount);
 
+		System.out.printf("Best coloring:\n");
+		for (int i = 0; i < nbrOperators; i++) {
+			firstBestColor[order[i]] = bestColor[i];
+		}
+
+		for (int i = 0; i < nbrOperators; i++) {
+			System.out.printf("%d:%1d ", i, firstBestColor[i]);
+		}
+		System.out.printf("\n");
+
 		estimateRegisters(bestColor, opIO, "!BEST!");
 		// estimateRegisters(worstColor, opIO, "!WORST!");
 
