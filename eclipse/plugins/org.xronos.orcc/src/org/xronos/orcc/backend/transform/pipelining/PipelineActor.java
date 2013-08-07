@@ -37,7 +37,6 @@ import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
-import net.sf.orcc.ir.Var;
 import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -86,19 +85,19 @@ public class PipelineActor {
 		actor.setName(name);
 
 		// Create the Actor Input(s)
-		for (Var varToPort : opColoring.getInputPorts(stage)) {
-			String portName = varToPort.getIndexedName();
-			Type type = EcoreUtil.copy(varToPort.getType());
-			Port port = dfFactory.createPort(type, portName);
-			actor.getInputs().add(port);
+		for (String portName : opColoring.getInputPorts(stage)) {
+			Type type = EcoreUtil.copy(opIO.getVariableType(portName));
+			Port inPort = dfFactory.createPort(type, portName + "_p");
+			actor.getInputs().add(inPort);
 		}
 
 		// Create the Actor Output(s)
-		for (Var varToPort : opColoring.getOutputPorts(stage)) {
-			String portName = varToPort.getIndexedName();
-			Type type = EcoreUtil.copy(varToPort.getType());
-			Port port = DfFactory.eINSTANCE.createPort(type, portName);
-			actor.getOutputs().add(port);
+		for (String portName : opColoring.getOutputPorts(stage)) {
+
+			Type type = EcoreUtil.copy(opIO.getVariableType(portName));
+			Port outPort = DfFactory.eINSTANCE
+					.createPort(type, portName + "_p");
+			actor.getOutputs().add(outPort);
 		}
 
 		// Create IO patterns of the action

@@ -39,6 +39,7 @@ import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
@@ -334,6 +335,15 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 	public String getVariableName(int index) {
 		return variables.get(index).getIndexedName();
+	}
+
+	public Type getVariableType(String name) {
+		for (Var var : variables) {
+			if (var.getIndexedName().equals(name)) {
+				return var.getType();
+			}
+		}
+		return null;
 	}
 
 	public int getVariableWidth(int index) {

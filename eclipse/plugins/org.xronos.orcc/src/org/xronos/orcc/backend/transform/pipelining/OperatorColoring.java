@@ -30,8 +30,7 @@ package org.xronos.orcc.backend.transform.pipelining;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import net.sf.orcc.ir.Var;
+import java.util.Vector;
 
 /**
  * 
@@ -101,6 +100,10 @@ public class OperatorColoring {
 	private int[] transmRegistersWidth;
 
 	private int[] worstColor;
+
+	private Vector<List<String>> stageInputs;
+
+	private Vector<List<String>> stageOutputs;
 
 	public OperatorColoring(int nbrOperators, int nbrVariables) {
 		this.nbrOperators = nbrOperators;
@@ -352,6 +355,11 @@ public class OperatorColoring {
 		int reg = 0;
 		int regWidth = 0;
 
+		stageInputs = new Vector<List<String>>(maxColors);
+		stageInputs.setSize(3);
+		stageOutputs = new Vector<List<String>>(maxColors);
+		stageOutputs.setSize(3);
+
 		System.out.print("\nPIPELINING: " + title);
 
 		for (int r = 0; r < nbrVariables; r++) {
@@ -398,22 +406,28 @@ public class OperatorColoring {
 				}
 			}
 
+			List<String> actorInputs = new ArrayList<String>();
+			List<String> actorOutputs = new ArrayList<String>();
+
 			stageRegisters[i - 1] = 0;
 			stageRegistersWidth[i - 1] = 0;
 			transmRegisters[i - 1] = 0;
 			transmRegistersWidth[i - 1] = 0;
 
 			for (int k = 0; k < nbrVariables; k++) {
+
 				if (outputs[k] == 0) {
 					if (inputs[k] == 1) {
 						stageRegisters[i - 1]++;
 						stageRegistersWidth[i - 1] += opIO.getVariableWidth(k);
+						actorInputs.add(opIO.getVariableName(k));
 						System.out.println(opIO.getVariableName(k) + " ");
 					}
 				} else {
 					if (transmission[k] == 1) {
 						transmRegisters[i - 1]++;
 						transmRegistersWidth[i - 1] += opIO.getVariableWidth(k);
+						actorOutputs.add(opIO.getVariableName(k));
 						System.out.println(opIO.getVariableName(k) + "# ");
 					}
 				}
@@ -423,7 +437,8 @@ public class OperatorColoring {
 					transmission[k] = 0;
 				}
 			}
-
+			stageInputs.set(i - 1, actorInputs);
+			stageOutputs.set(i - 1, actorOutputs);
 			reg += stageRegisters[i - 1] + transmRegisters[i - 1];
 			regWidth += stageRegisters[i - 1] + transmRegistersWidth[i - 1];
 			System.out.println("PIPELINING: reg = " + stageRegisters[i - 1]
@@ -497,9 +512,8 @@ public class OperatorColoring {
 	 * @param stage
 	 * @return
 	 */
-	public List<Var> getInputPorts(int stage) {
-		List<Var> inputs = new ArrayList<Var>();
-		return inputs;
+	public List<String> getInputPorts(int stage) {
+		return stageInputs.get(stage);
 	}
 
 	/**
@@ -508,9 +522,8 @@ public class OperatorColoring {
 	 * @param stage
 	 * @return
 	 */
-	public List<Var> getOutputPorts(int stage) {
-		List<Var> outputs = new ArrayList<Var>();
-		return outputs;
+	public List<String> getOutputPorts(int stage) {
+		return stageOutputs.get(stage);
 	}
 
 	public int getStages() {
