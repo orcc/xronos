@@ -29,6 +29,8 @@
 
 package org.xronos.orcc.backend.transform.pipelining;
 
+import java.util.List;
+
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.DfFactory;
@@ -55,18 +57,21 @@ public class PipelineActor {
 
 	private Actor actor;
 
-	private OperatorColoring opColoring;
-
-	private OperatorsIO opIO;
+	private ExtractOperatorsIO opIO;
 
 	private int stage;
 
-	public PipelineActor(Action action, OperatorsIO opIO,
-			OperatorColoring opColoring, int stage) {
+	private List<String> inputs;
+
+	private List<String> outputs;
+
+	public PipelineActor(Action action, ExtractOperatorsIO opIO, int stage,
+			List<String> inputs, List<String> outputs) {
 		this.action = action;
 		this.opIO = opIO;
-		this.opColoring = opColoring;
 		this.stage = stage;
+		this.inputs = inputs;
+		this.outputs = outputs;
 		createActor();
 	}
 
@@ -85,14 +90,14 @@ public class PipelineActor {
 		actor.setName(name);
 
 		// Create the Actor Input(s)
-		for (String portName : opColoring.getInputPorts(stage)) {
+		for (String portName : inputs) {
 			Type type = EcoreUtil.copy(opIO.getVariableType(portName));
 			Port inPort = dfFactory.createPort(type, portName + "_p");
 			actor.getInputs().add(inPort);
 		}
 
 		// Create the Actor Output(s)
-		for (String portName : opColoring.getOutputPorts(stage)) {
+		for (String portName : outputs) {
 
 			Type type = EcoreUtil.copy(opIO.getVariableType(portName));
 			Port outPort = DfFactory.eINSTANCE

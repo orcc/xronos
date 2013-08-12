@@ -26,72 +26,64 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-package org.xronos.orcc.backend.transform.pipelining;
 
-import org.eclipse.emf.common.util.Enumerator;
+package org.xronos.orcc.backend.transform.pipelining.coloring;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
 
 /**
- * A class that defines two weights for an operator, resource cost and time cost
+ * This class contains the variable parameters
  * 
- * @author Endri Bezati
+ * @author Anatoly Prihozhy
  * 
  */
-public class OperatorWeight {
+public class VariableParameters {
 
 	/**
-	 * Op Binary or Unary
+	 * The number of variables
 	 */
-	private Enumerator operator;
+	public int M;
 
 	/**
-	 * Time of the operator
+	 * The array that contains the variables names
 	 */
-	private float time;
+	public String[] varNames;
 
 	/**
-	 * Cost of the operator
+	 * The array that contains the variables widths
 	 */
-	private float cost;
+	public int[] varWidths;
 
-	public OperatorWeight(Enumerator operator, float time, float cost) {
-		this.operator = operator;
-		this.time = time;
-		this.cost = cost;
+	public VariableParameters(TestBench tB) {
+		M = tB.M;
+		varNames = new String[M];
+		varWidths = new int[M];
+
+		for (int i = 0; i < M; i++) {
+			varNames[i] = tB.vaN[i];
+			varWidths[i] = tB.vaW[i];
+		}
 	}
 
-	/**
-	 * Get the cost of the operator
-	 * 
-	 * @return
-	 */
-	public float getCost() {
-		return cost;
+	public boolean print(BufferedWriter out) {
+		try {
+			if (M == 0) {
+				return false;
+			}
+			out.write("Variable names:\n");
+			for (int i = 0; i < M; i++) {
+				if (i % 10 == 0) {
+					out.write("\n");
+				}
+				int j = i + 1;
+				out.write(j + ". " + varNames[i] + "\n");
+			}
+			out.write("\n");
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
 	}
 
-	/**
-	 * Get the operator
-	 * 
-	 * @return
-	 */
-	public Enumerator getOperator() {
-		return operator;
-	}
-
-	/**
-	 * Get the time of the operator
-	 * 
-	 * @return
-	 */
-	public float getTime() {
-		return time;
-	}
-
-	public String print() {
-		return toString();
-	}
-
-	@Override
-	public String toString() {
-		return "Op(" + operator + ", " + time + ", " + cost + ")";
-	}
 }

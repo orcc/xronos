@@ -27,58 +27,104 @@
  * SUCH DAMAGE.
  */
 
-package org.xronos.orcc.backend.transform.pipelining;
+package org.xronos.orcc.backend.transform.pipelining.coloring;
 
-import java.io.File;
-
-import net.sf.orcc.df.Action;
-import net.sf.orcc.df.util.DfVisitor;
-
-import org.xronos.orcc.backend.transform.pipelining.coloring.PipeliningOptimization;
-import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
+import java.io.BufferedWriter;
+import java.io.IOException;
 
 /**
- * The pipelining engine transformation
+ * This class defines different parameters for an operator
  * 
- * @author Endri Bezati
+ * @author Anatoly Prihozhy
  * 
  */
-public class Pipelining extends DfVisitor<Void> {
+public class OperatorType {
 
 	/**
-	 * Define the time of a Stage
+	 * The operators name
 	 */
-	private float stageTime;
+	private String name;
 
-	public Pipelining(float stageTime) {
-		this.stageTime = stageTime;
+	/**
+	 * The operators time cost
+	 */
+	private float time;
+
+	/**
+	 * The operators cost
+	 */
+	private float cost;
+
+	/**
+	 * Count the copies
+	 */
+	private int count;
+
+	public OperatorType() {
+		name = "t0";
+		time = 0.0f;
+		cost = 0.0f;
+		count = 0;
+	}
+
+	public OperatorType(String name, float time, float cost) {
+		this.name = name;
+		this.time = time;
+		this.cost = cost;
+		count = 0;
+	}
+
+	/**
+	 * Add copy
+	 */
+
+	public void addCopy() {
+		count++;
+	}
+
+	/**
+	 * Get this operator name
+	 * 
+	 * @return
+	 */
+	public String getName() {
+		return this.name;
+	}
+
+	/**
+	 * Get this operator time
+	 * 
+	 * @return
+	 */
+	public float getTime() {
+		return this.time;
+	}
+
+	/**
+	 * Print this operator type
+	 * 
+	 * @param out
+	 * @return
+	 */
+	public boolean print(BufferedWriter out) {
+		try {
+			out.write(name + " - " + time + " - " + cost + " - " + count);
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Remove copy
+	 */
+	public void removeCopy() {
+		count--;
 	}
 
 	@Override
-	public Void caseAction(Action action) {
-		// Apply iff the action has the xronos_pipeline tag
-		if (action.hasAttribute("xronos_pipeline")) {
-			float stageTime = 2.2f;
-			// Get the Input and Output matrix of the operators found on the
-			// BlockBasic of the action
-			ExtractOperatorsIO opIO = new ExtractOperatorsIO();
-			opIO.doSwitch(action.getBody());
-			// opIO.printTablesForCTestbench();
-
-			// Create the TestBench for this action
-			TestBench tb = opIO.createTestBench(stageTime);
-
-			// Create and run the PipelineOptimization
-			String logPath = System.getProperty("user.home") + File.separator
-					+ "Pipeline.txt";
-			PipeliningOptimization pipeliningOptimization = new PipeliningOptimization(
-					tb, logPath);
-
-			pipeliningOptimization.run();
-			// Create Actors
-			int stages = pipeliningOptimization.getNbrStages();
-
-		}
-		return null;
+	public String toString() {
+		return name + " - " + time + " - " + cost + " - " + count;
 	}
+
 }

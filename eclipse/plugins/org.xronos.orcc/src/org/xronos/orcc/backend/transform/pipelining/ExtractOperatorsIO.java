@@ -46,6 +46,8 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.EObject;
+import org.xronos.orcc.backend.transform.pipelining.coloring.OperatorType;
+import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
 
 /**
  * This class is creating two matrix that defines the DFG of an Procedure by
@@ -54,7 +56,7 @@ import org.eclipse.emf.ecore.EObject;
  * @author Endri Bezati
  * 
  */
-public class OperatorsIO extends AbstractIrVisitor<Void> {
+public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 	/**
 	 * The current number of the instruction
@@ -218,7 +220,6 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 
 		// Now Visit the Blocks
 		doSwitch(procedure.getBlocks());
-
 		return null;
 	}
 
@@ -246,6 +247,80 @@ public class OperatorsIO extends AbstractIrVisitor<Void> {
 			}
 		}
 		return false;
+	}
+
+	public TestBench createTestBench(float stageTime) {
+		// Number of Operators Type
+		int T = operators.size();
+		// An operator has maximum two inputs
+		int IC = 2;
+		// An operator has maximum one output
+		int OC = 1;
+		// Create the OperatorType OpT array
+		OperatorType[] OpT = new OperatorType[operators.size()];
+
+		int i = 0;
+		for (PipelineOperator pipelineOperator : operators) {
+			String name = pipelineOperator.name();
+			float time = pipelineOperator.getTimeWeight();
+			float cost = pipelineOperator.getResourceWeight();
+			OpT[i] = new OperatorType(name, time, cost);
+			i++;
+		}
+
+		// Number of Operators
+		int NC = nbrOperators;
+
+		// Create the Operator Name array
+		i = 0;
+		String[] OpNN = new String[nbrOperators];
+		for (PipelineOperator pipelineOperator : operators) {
+			OpNN[i] = pipelineOperator.toString();
+			i++;
+		}
+
+		// Number of variables
+		int MC = variables.size();
+
+		// Create the Variables array
+		i = 0;
+		String[] VaNN = new String[variables.size()];
+		for (Var var : variables) {
+			VaNN[i] = var.getIndexedName();
+			i++;
+		}
+
+		// Create the Variables width array
+		i = 0;
+		int[] VaWW = new int[variables.size()];
+		for (Var var : variables) {
+			VaWW[i] = var.getType().getSizeInBits();
+			i++;
+		}
+
+		// Create the Operators Inputs array
+		i = 0;
+		String[][] chFF = new String[NC][IC];
+		for (List<String> ins : inputOpString) {
+			if (ins.size() == 1) {
+				chFF[i][0] = ins.get(0);
+				chFF[i][1] = "";
+			} else if (ins.size() == 2) {
+				chFF[i][0] = ins.get(0);
+				chFF[i][1] = ins.get(1);
+			}
+			i++;
+		}
+		// Create the Operators Outputs array
+		i = 0;
+		String[][] chHH = new String[NC][OC];
+		for (String output : outputOpString) {
+			chFF[i][0] = output;
+			i++;
+		}
+		TestBench testbench = new TestBench(T, NC, MC, 2, stageTime);
+		testbench.setData(OpT, IC, OC, OpNN, VaNN, VaWW, chFF, chHH);
+		return testbench;
 	}
 
 	@Override

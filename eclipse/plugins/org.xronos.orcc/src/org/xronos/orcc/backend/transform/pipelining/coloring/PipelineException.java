@@ -26,59 +26,23 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-package org.xronos.orcc.backend.transform.pipelining;
-
-import java.io.File;
-
-import net.sf.orcc.df.Action;
-import net.sf.orcc.df.util.DfVisitor;
-
-import org.xronos.orcc.backend.transform.pipelining.coloring.PipeliningOptimization;
-import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
+package org.xronos.orcc.backend.transform.pipelining.coloring;
 
 /**
- * The pipelining engine transformation
+ * A simple exception class used for catching exceptions
  * 
  * @author Endri Bezati
  * 
  */
-public class Pipelining extends DfVisitor<Void> {
+public class PipelineException extends Exception {
 
-	/**
-	 * Define the time of a Stage
-	 */
-	private float stageTime;
+	private static final long serialVersionUID = 1L;
 
-	public Pipelining(float stageTime) {
-		this.stageTime = stageTime;
+	public PipelineException() {
 	}
 
-	@Override
-	public Void caseAction(Action action) {
-		// Apply iff the action has the xronos_pipeline tag
-		if (action.hasAttribute("xronos_pipeline")) {
-			float stageTime = 2.2f;
-			// Get the Input and Output matrix of the operators found on the
-			// BlockBasic of the action
-			ExtractOperatorsIO opIO = new ExtractOperatorsIO();
-			opIO.doSwitch(action.getBody());
-			// opIO.printTablesForCTestbench();
-
-			// Create the TestBench for this action
-			TestBench tb = opIO.createTestBench(stageTime);
-
-			// Create and run the PipelineOptimization
-			String logPath = System.getProperty("user.home") + File.separator
-					+ "Pipeline.txt";
-			PipeliningOptimization pipeliningOptimization = new PipeliningOptimization(
-					tb, logPath);
-
-			pipeliningOptimization.run();
-			// Create Actors
-			int stages = pipeliningOptimization.getNbrStages();
-
-		}
-		return null;
+	public PipelineException(String message) {
+		super(message);
 	}
+
 }

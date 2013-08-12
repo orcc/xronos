@@ -26,49 +26,79 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+package org.xronos.orcc.backend.transform.pipelining.coloring;
 
-package org.xronos.orcc.backend.transform.pipelining;
+import java.io.BufferedWriter;
+import java.io.IOException;
 
 /**
+ * This class contains the output(s) of the operators
  * 
- * 
- * @author Endri Bezati
+ * @author Anatoly Prihozhy
  * 
  */
-public class OperatorConflicts {
+public class OperatorOutputs {
 
-	private int[][] conflictOp;
+	/**
+	 * The inputs of operators
+	 */
+	public int[] objOuts;
 
-	private int nbrOperators;
+	/**
+	 * Number of Operators
+	 */
+	public int N;
 
-	public OperatorConflicts(int nbrOperators) {
-		this.nbrOperators = nbrOperators;
-		conflictOp = new int[nbrOperators][nbrOperators];
+	/**
+	 * Number of Variables
+	 */
+	public int M;
+
+	public OperatorOutputs(TestBench tB) {
+		create(tB);
 	}
 
-	public void create(LongestOpPath longestPath, float stageTime) {
-		for (int i = 0; i < nbrOperators; i++) {
-			for (int j = 0; j < nbrOperators; j++) {
-				if (longestPath.getLogestPath(i, j) <= stageTime) {
-					conflictOp[i][j] = 0;
-				} else {
-					conflictOp[i][j] = 1;
+	/**
+	 * Create the input objects
+	 * 
+	 * @param tB
+	 */
+	public void create(TestBench tB) {
+		N = tB.N;
+		M = tB.M;
+		objOuts = new int[N * M];
+		for (int i = 0; i < N; i++) {
+			for (int j = 0; j < M; j++) {
+				objOuts[i * M + j] = tB.H[i * M + j];
+			}
+		}
+
+	}
+
+	/**
+	 * Print the input objects
+	 * 
+	 * @return
+	 */
+	public boolean print(BufferedWriter out) {
+		if (N == 0) {
+			return false;
+		}
+		if (M == 0) {
+			return false;
+		}
+		try {
+			out.write("MatrixH:" + "\n");
+			for (int i = 0; i < N; i++) {
+				for (int j = 0; j < M; j++) {
+					out.write(objOuts[i * M + j] + " ");
 				}
+				out.write("\n");
 			}
-		}
-	}
 
-	public int getOperatorConflict(int i, int j) {
-		return conflictOp[i][j];
-	}
-
-	public void print() {
-		System.out.printf("MatrixCop:\n");
-		for (int i = 0; i < nbrOperators; i++) {
-			for (int j = 0; j < nbrOperators; j++) {
-				System.out.printf("%1d ", conflictOp[i][j]);
-			}
-			System.out.printf("\n");
+			// out.close();
+		} catch (IOException e) {
 		}
+		return true;
 	}
 }

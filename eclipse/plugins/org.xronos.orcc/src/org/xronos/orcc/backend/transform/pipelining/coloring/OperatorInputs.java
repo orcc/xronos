@@ -26,59 +26,80 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+package org.xronos.orcc.backend.transform.pipelining.coloring;
 
-package org.xronos.orcc.backend.transform.pipelining;
-
-import java.io.File;
-
-import net.sf.orcc.df.Action;
-import net.sf.orcc.df.util.DfVisitor;
-
-import org.xronos.orcc.backend.transform.pipelining.coloring.PipeliningOptimization;
-import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
+import java.io.BufferedWriter;
+import java.io.IOException;
 
 /**
- * The pipelining engine transformation
+ * This class contains the input of the operators
  * 
- * @author Endri Bezati
+ * @author Anatoly Prihozhy
  * 
  */
-public class Pipelining extends DfVisitor<Void> {
+public class OperatorInputs {
 
 	/**
-	 * Define the time of a Stage
+	 * The inputs of operators
 	 */
-	private float stageTime;
+	public int[] objIns;
 
-	public Pipelining(float stageTime) {
-		this.stageTime = stageTime;
+	/**
+	 * Number of Operators
+	 */
+	public int N;
+
+	/**
+	 * Number of Variables
+	 */
+	public int M;
+
+	public OperatorInputs(TestBench tB) {
+		N = tB.N;
+		M = tB.M;
+		objIns = new int[N * M];
+
+		create(tB);
 	}
 
-	@Override
-	public Void caseAction(Action action) {
-		// Apply iff the action has the xronos_pipeline tag
-		if (action.hasAttribute("xronos_pipeline")) {
-			float stageTime = 2.2f;
-			// Get the Input and Output matrix of the operators found on the
-			// BlockBasic of the action
-			ExtractOperatorsIO opIO = new ExtractOperatorsIO();
-			opIO.doSwitch(action.getBody());
-			// opIO.printTablesForCTestbench();
-
-			// Create the TestBench for this action
-			TestBench tb = opIO.createTestBench(stageTime);
-
-			// Create and run the PipelineOptimization
-			String logPath = System.getProperty("user.home") + File.separator
-					+ "Pipeline.txt";
-			PipeliningOptimization pipeliningOptimization = new PipeliningOptimization(
-					tb, logPath);
-
-			pipeliningOptimization.run();
-			// Create Actors
-			int stages = pipeliningOptimization.getNbrStages();
-
+	/**
+	 * Create the input objects
+	 * 
+	 * @param tB
+	 */
+	private void create(TestBench tB) {
+		for (int i = 0; i < N; i++) {
+			for (int j = 0; j < M; j++) {
+				objIns[i * M + j] = tB.F[i * M + j];
+			}
 		}
-		return null;
+
+	}
+
+	/**
+	 * Print the input objects
+	 * 
+	 * @return
+	 */
+	public boolean print(BufferedWriter out) {
+		if (N == 0) {
+			return false;
+		}
+		if (M == 0) {
+			return false;
+		}
+		try {
+			out.write("MatrixF:" + "\n");
+			for (int i = 0; i < N; i++) {
+				for (int j = 0; j < M; j++) {
+					out.write(objIns[i * M + j] + " ");
+				}
+				out.write("\n");
+			}
+
+			// out.close();
+		} catch (IOException e) {
+		}
+		return true;
 	}
 }

@@ -113,7 +113,7 @@ public class XronosTransform {
 					true)));
 
 			transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
-			transformations.add(new Pipelining(2, 4));
+			transformations.add(new Pipelining(2.2f));
 
 			for (DfSwitch<?> transformation : transformations) {
 				try {

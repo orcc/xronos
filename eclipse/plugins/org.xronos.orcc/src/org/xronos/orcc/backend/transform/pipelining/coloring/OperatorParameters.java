@@ -26,87 +26,98 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+package org.xronos.orcc.backend.transform.pipelining.coloring;
 
-package org.xronos.orcc.backend.transform.pipelining;
+import java.io.BufferedWriter;
+import java.io.IOException;
 
-public class OperatorPrecedence {
-
-	/**
-	 * The operation precedence matrix
-	 */
-	private int precedenceOp[][];
-
-	/**
-	 * The operation input matrix
-	 */
-	private int inputOp[][];
+/**
+ * This class defines the Operators parameters
+ * 
+ * @author Anatoly Prihozhy
+ * 
+ */
+public class OperatorParameters {
 
 	/**
-	 * The operation output matrix
+	 * Array of operators types
 	 */
-	private int outputOp[][];
+	private OperatorType[] operatorTypes;
 
 	/**
-	 * The number of operators
+	 * Number of different operator types
 	 */
-	private int nbrOperators;
+	private int T;
 
 	/**
-	 * The number of variables
+	 * Number of Operators
 	 */
-	private int nbrVariables;
-
-	public OperatorPrecedence(int nbrOperators, int nbrVariables,
-			int inputOp[][], int outputOp[][]) {
-		this.nbrOperators = nbrOperators;
-		this.nbrVariables = nbrVariables;
-		this.inputOp = inputOp;
-		this.outputOp = outputOp;
-
-		// Initialize the precedence of operators matrix
-		precedenceOp = new int[nbrOperators][nbrOperators];
-	}
+	private int N;
 
 	/**
-	 * Evaluate the precedence of the operators given the output and input
-	 * matrixes
+	 * Array of operators names
 	 */
+	private String[] optNames;
 
-	public void evaluate() {
-		for (int i = 0; i < nbrOperators; i++) {
-			for (int j = 0; j < nbrOperators; j++) {
-				for (int k = 0; k < nbrVariables; k++) {
-					if (outputOp[i][k] != 0 && inputOp[j][k] != 0) {
-						precedenceOp[i][j] = 1;
-					}
-				}
-			}
+	public OperatorParameters(TestBench tB) {
+		T = tB.T;
+		N = tB.N;
+
+		operatorTypes = new OperatorType[T];
+		for (int i = 0; i < T; i++) {
+			operatorTypes[i] = tB.opT[i];
+		}
+
+		optNames = new String[N];
+		for (int i = 0; i < N; i++) {
+			optNames[i] = tB.opN[i];
 		}
 	}
 
-	public int getPrecedenceOp(int i, int j) {
-		return precedenceOp[i][j];
-	}
-
-	public Boolean transitiveClosure() {
-		Boolean flag = true;
-		while (flag) {
-			flag = false;
-			for (int i = 0; i < nbrOperators; i++) {
-				for (int j = 0; j < nbrOperators; j++) {
-					if (precedenceOp[i][j] == 0) {
-						for (int k = 0; k < nbrOperators; k++) {
-							if (precedenceOp[i][k] == 1
-									&& precedenceOp[k][j] == 1) {
-								precedenceOp[i][j] = 1;
-								flag = true;
-							}
-						}
-					}
-				}
+	/**
+	 * Get the time of an operator
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public float getTime(int op) {
+		for (int i = 0; i < T; i++) {
+			if (optNames[op] == operatorTypes[i].getName()) {
+				return operatorTypes[i].getTime();
 			}
 		}
+		return 0.0f;
+	}
+
+	/**
+	 * Print the operators parameters
+	 * 
+	 * @return
+	 */
+	public boolean print(BufferedWriter out) {
+		if (T == 0 || N == 0) {
+			return false;
+		}
+		try {
+			out.write("Operator type descriptions:\n");
+			for (int i = 0; i < T; i++) {
+				operatorTypes[i].print(out);
+				out.write("\n");
+			}
+			out.write("\n");
+			out.write("Types of all operators:\n");
+			for (int i = 0; i < N; i++) {
+				if (i % 10 == 0) {
+					out.write("\n");
+				}
+				int j = i + 1;
+				out.write(j + ":" + optNames[i] + " ");
+			}
+			out.write("\n");
+		} catch (IOException e) {
+			return false;
+		}
+
 		return true;
 	}
-
 }
