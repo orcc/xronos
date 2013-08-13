@@ -162,6 +162,7 @@ public class LongestOperPath {
 			return false;
 		}
 		try {
+			out.write("\nMatrixG:\n");
 			for (int i = 0; i < N; i++) {
 				for (int j = 0; j < N; j++) {
 					out.write(" " + longPath[i * N + j]);

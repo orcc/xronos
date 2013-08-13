@@ -155,8 +155,9 @@ public class PipeliningOptimization {
 			P.print(out);
 
 			OperatorColoring ColO = new OperatorColoring(testBench, out);
-			ColO.optimizePipeline(Cop, F, H, P, Op, Vs, nbrStages, stageInputs,
+			ColO.optimizePipeline(Cop, F, H, P, Op, Vs, stageInputs,
 					stageOutputs, stageOperators);
+			nbrStages = ColO.getNbrStages();
 			out.close();
 
 		} catch (IOException e) {

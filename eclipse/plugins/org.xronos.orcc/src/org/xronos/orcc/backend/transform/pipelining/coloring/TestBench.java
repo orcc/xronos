@@ -104,7 +104,7 @@ public class TestBench {
 			for (int j = 0; j < M; j++) {
 				F[i * M + j] = 0;
 				for (int k = 0; k < IC; k++) {
-					if (chFF[i][k] == VaNN[j]) {
+					if (chFF[i][k].equals(VaNN[j])) {
 						F[i * M + j] = 1;
 					}
 					if (chFF[i][k] == null || chFF[i][k] == "") {
@@ -113,7 +113,7 @@ public class TestBench {
 				}
 				H[i * M + j] = 0;
 				for (int k = 0; k < OC; k++) {
-					if (chHH[i][k] == VaNN[j]) {
+					if (chHH[i][k].equals(VaNN[j])) {
 						H[i * M + j] = 1;
 					}
 					if (chHH[i][k] == null || chHH[i][k] == "") {

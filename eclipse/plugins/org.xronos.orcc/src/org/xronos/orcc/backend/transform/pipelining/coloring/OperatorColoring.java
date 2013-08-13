@@ -968,7 +968,7 @@ public class OperatorColoring {
 
 	public void optimizePipeline(OperatorConflicts Cop, OperatorInputs F,
 			OperatorOutputs H, OperatorPrecedence P, OperatorParameters Op,
-			VariableParameters Vs, Integer nbrStages, List<String> stageInputs,
+			VariableParameters Vs, List<String> stageInputs,
 			List<String> stageOutputs, List<Integer> stageOperators) {
 		generate_F_H_lists(F, H, Op, Vs);
 		get_input_output_ports(F, H, Vs);
@@ -1000,7 +1000,6 @@ public class OperatorColoring {
 					+ CutCount + " cutc = " + cutc + " ConflictCount = "
 					+ ConflictCount + " confc = " + confc);
 
-			nbrStages = maxColor;
 			print();
 			estimateRegisters(bestcolor, F, H, Vs, "BEST PIPELINE:",
 					stageInputs, stageOutputs, stageOperators);
@@ -1210,7 +1209,7 @@ public class OperatorColoring {
 	 */
 	public void print_levels_asap() {
 		try {
-			out.write("Levels ASAP:\n");
+			out.write("\nLevels ASAP:\n");
 			for (int i = 0; i < N; i++) {
 				out.write(i + ":" + level_asap[i] + " ");
 			}

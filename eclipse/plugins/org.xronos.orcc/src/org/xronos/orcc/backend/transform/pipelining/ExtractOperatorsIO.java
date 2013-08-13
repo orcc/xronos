@@ -250,8 +250,6 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 	}
 
 	public TestBench createTestBench(float stageTime) {
-		// Number of Operators Type
-		int T = operators.size();
 		// An operator has maximum two inputs
 		int IC = 2;
 		// An operator has maximum one output
@@ -262,11 +260,26 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		int i = 0;
 		for (PipelineOperator pipelineOperator : operators) {
 			String name = pipelineOperator.name();
-			float time = pipelineOperator.getTimeWeight();
-			float cost = pipelineOperator.getResourceWeight();
-			OpT[i] = new OperatorType(name, time, cost);
-			i++;
+
+			// Test if this operator is already in the OpT array
+			boolean contains = false;
+			for (int j = 0; j < i; j++) {
+				String opName = OpT[j].getName();
+				if (name.equals(opName)) {
+					contains = true;
+					break;
+				}
+			}
+			if (!contains) {
+				float time = pipelineOperator.getTimeWeight();
+				float cost = pipelineOperator.getResourceWeight();
+
+				OpT[i] = new OperatorType(name, time, cost);
+				i++;
+			}
 		}
+		// Number of Operators Type
+		int T = i;
 
 		// Number of Operators
 		int NC = nbrOperators;
@@ -315,7 +328,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		i = 0;
 		String[][] chHH = new String[NC][OC];
 		for (String output : outputOpString) {
-			chFF[i][0] = output;
+			chHH[i][0] = output;
 			i++;
 		}
 		TestBench testbench = new TestBench(T, NC, MC, 2, stageTime);

@@ -395,7 +395,7 @@ public class testPipeline {
 
 		// Run Pipeline
 		String logPath = System.getProperty("user.home") + File.separator
-				+ "Pipeline.txt";
+				+ "Pipeline_W.txt";
 
 		PipeliningOptimization pipe = new PipeliningOptimization(tB, logPath);
 		pipe.run();
