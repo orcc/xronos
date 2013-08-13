@@ -36,9 +36,14 @@ import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.DfFactory;
 import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
+import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Var;
 import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -65,13 +70,16 @@ public class PipelineActor {
 
 	private List<String> outputs;
 
+	private List<Integer> operators;
+
 	public PipelineActor(Action action, ExtractOperatorsIO opIO, int stage,
-			List<String> inputs, List<String> outputs) {
+			List<String> inputs, List<String> outputs, List<Integer> operators) {
 		this.action = action;
 		this.opIO = opIO;
 		this.stage = stage;
 		this.inputs = inputs;
 		this.outputs = outputs;
+		this.operators = operators;
 		createActor();
 	}
 
@@ -116,10 +124,11 @@ public class PipelineActor {
 		Procedure body = createBody();
 
 		// Create the new action
-		Action action = dfFactory.createAction("stage_" + stage, inputPattern,
-				outputPattern, peekedPattern, scheduler, body);
+		String actionStageName = action.getName() + "_stage_" + stage;
+		Action actionStage = dfFactory.createAction(actionStageName,
+				inputPattern, outputPattern, peekedPattern, scheduler, body);
 
-		actor.getActions().add(action);
+		actor.getActions().add(actionStage);
 	}
 
 	private Procedure createBody() {
@@ -171,7 +180,42 @@ public class PipelineActor {
 
 	private Procedure createScheduler() {
 		Procedure scheduler = irFactory.createProcedure();
+		// Set the scheduler procedure name
+		String schedulerStageName = "isSchedulable_" + action.getName()
+				+ "_stage_" + stage;
+		scheduler.setName(schedulerStageName);
+
+		// Create the result Variable
+		Type typeBool = irFactory.createTypeBool();
+		Var result = irFactory.createVar(typeBool, "result", true, 0);
+
+		scheduler.getLocals().add(result);
+
+		// Create scheduler Body
+
+		BlockBasic block = irFactory.createBlockBasic();
+
+		Expression exprTrue = irFactory.createExprBool(true);
+
+		InstAssign assign = irFactory.createInstAssign(result, exprTrue);
+
+		block.add(assign);
+
+		Expression exprVar = irFactory.createExprVar(result);
+
+		InstReturn returnResult = irFactory.createInstReturn(exprVar);
+
+		block.add(returnResult);
+
+		// Add to the procedure blocks
+
+		scheduler.getBlocks().add(block);
+
 		return scheduler;
+	}
+
+	public Actor getActor() {
+		return actor;
 	}
 
 }

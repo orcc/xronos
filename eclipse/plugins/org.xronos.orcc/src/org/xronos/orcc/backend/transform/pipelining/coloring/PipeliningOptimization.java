@@ -32,6 +32,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -56,17 +57,17 @@ public class PipeliningOptimization {
 	 * The stage inputs
 	 */
 
-	private List<String> stageInputs;
+	private List<List<String>> stageInputs;
 
 	/**
 	 * The stage outputs
 	 */
-	private List<String> stageOutputs;
+	private List<List<String>> stageOutputs;
 
 	/**
 	 * The stage operators
 	 */
-	private List<Integer> stageOperators;
+	private List<List<Integer>> stageOperators;
 
 	/**
 	 * The number of stages that are going top be generated from the pipeline
@@ -93,8 +94,8 @@ public class PipeliningOptimization {
 	 * 
 	 * @return
 	 */
-	public List<String> getStageInputs() {
-		return stageInputs;
+	public List<String> getStageInputs(int stage) {
+		return stageInputs.get(stage);
 	}
 
 	/**
@@ -102,8 +103,8 @@ public class PipeliningOptimization {
 	 * 
 	 * @return
 	 */
-	public List<Integer> getStageOperators() {
-		return stageOperators;
+	public List<Integer> getStageOperators(int stage) {
+		return stageOperators.get(stage);
 	}
 
 	/**
@@ -111,8 +112,8 @@ public class PipeliningOptimization {
 	 * 
 	 * @return
 	 */
-	public List<String> getStageOutputs() {
-		return stageOutputs;
+	public List<String> getStageOutputs(int stage) {
+		return stageOutputs.get(stage);
 	}
 
 	public void run() {
@@ -154,6 +155,9 @@ public class PipeliningOptimization {
 			P.transitiveClosure();
 			P.print(out);
 
+			stageInputs = new ArrayList<List<String>>();
+			stageOutputs = new ArrayList<List<String>>();
+			stageOperators = new ArrayList<List<Integer>>();
 			OperatorColoring ColO = new OperatorColoring(testBench, out);
 			ColO.optimizePipeline(Cop, F, H, P, Op, Vs, stageInputs,
 					stageOutputs, stageOperators);
@@ -163,10 +167,6 @@ public class PipeliningOptimization {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	public void setStageInputs(List<String> stageInputs) {
-		this.stageInputs = stageInputs;
 	}
 
 }

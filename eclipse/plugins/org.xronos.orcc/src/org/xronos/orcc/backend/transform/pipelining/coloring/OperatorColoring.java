@@ -30,6 +30,7 @@ package org.xronos.orcc.backend.transform.pipelining.coloring;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -569,10 +570,18 @@ public class OperatorColoring {
 
 	private void estimateRegisters(int[] colors, OperatorInputs F,
 			OperatorOutputs H, VariableParameters Vs, String title,
-			List<String> stageInputs, List<String> stageOutputs,
-			List<Integer> stageOperators) {
+			List<List<String>> stageInputs, List<List<String>> stageOutputs,
+			List<List<Integer>> stageOperators) {
 		int reg = 0;
 		int regW = 0;
+
+		// Initialize the IO and operators arrays
+		for (int i = 0; i < maxColor; i++) {
+			stageInputs.add(new ArrayList<String>());
+			stageOutputs.add(new ArrayList<String>());
+			stageOperators.add(new ArrayList<Integer>());
+		}
+
 		try {
 			out.write("\n" + title + "\n");
 			for (int r = 0; r < M; r++) {
@@ -580,14 +589,18 @@ public class OperatorColoring {
 			}
 
 			out.write("Input tokens: ");
+			List<String> stgFirstInputs = new ArrayList<String>();
 			for (int r = 0; r < M; r++) {
 				transmission[r] = inputPorts[r];
 				if (inputPorts[r] == 1) {
 					out.write(Vs.varNames[r] + " ");
+					stageInputs.get(0).add(Vs.varNames[r]);
 				}
 			}
+
 			out.write("\n");
 			for (int i = 1; i <= maxColor; i++) {
+
 				out.write("STAGE " + i + "\n");
 				for (int r = 0; r < M; r++) {
 					ins[r] = 0;
@@ -614,6 +627,7 @@ public class OperatorColoring {
 				for (int j = 0; j < N; j++) {
 					if (i == colors[order1[j]]) {
 						out.write(j + " ");
+						stageOperators.get(i - 1).add(j);
 					}
 				}
 				out.write("\n");
@@ -654,6 +668,13 @@ public class OperatorColoring {
 				for (int k = 0; k < M; k++) {
 					if (transmission[k] == 1) {
 						out.write(Vs.varNames[k] + " ");
+						if (i < maxColor) {
+							stageOutputs.get(i - 1).add(Vs.varNames[k]);
+
+							stageInputs.get(i).add(Vs.varNames[k]);
+						} else {
+							stageOutputs.get(i - 1).add(Vs.varNames[k]);
+						}
 						if (i < maxColor) {
 							reg++;
 							regW += Vs.varWidths[k];
@@ -968,8 +989,8 @@ public class OperatorColoring {
 
 	public void optimizePipeline(OperatorConflicts Cop, OperatorInputs F,
 			OperatorOutputs H, OperatorPrecedence P, OperatorParameters Op,
-			VariableParameters Vs, List<String> stageInputs,
-			List<String> stageOutputs, List<Integer> stageOperators) {
+			VariableParameters Vs, List<List<String>> stageInputs,
+			List<List<String>> stageOutputs, List<List<Integer>> stageOperators) {
 		generate_F_H_lists(F, H, Op, Vs);
 		get_input_output_ports(F, H, Vs);
 		levelsASAP(Cop);

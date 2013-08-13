@@ -30,8 +30,11 @@
 package org.xronos.orcc.backend.transform.pipelining;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.sf.orcc.df.Action;
+import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.util.DfVisitor;
 
 import org.xronos.orcc.backend.transform.pipelining.coloring.PipeliningOptimization;
@@ -71,12 +74,22 @@ public class Pipelining extends DfVisitor<Void> {
 			// Create and run the PipelineOptimization
 			String logPath = System.getProperty("user.home") + File.separator
 					+ "Pipeline.txt";
-			PipeliningOptimization pipeliningOptimization = new PipeliningOptimization(
+			PipeliningOptimization pOptimization = new PipeliningOptimization(
 					tb, logPath);
 
-			pipeliningOptimization.run();
+			pOptimization.run();
+
 			// Create Actors
-			int stages = pipeliningOptimization.getNbrStages();
+			int stages = pOptimization.getNbrStages();
+			List<Actor> pipeActors = new ArrayList<Actor>();
+			for (int i = 0; i < stages; i++) {
+				PipelineActor pipelineActor = new PipelineActor(action, opIO,
+						i, pOptimization.getStageInputs(i),
+						pOptimization.getStageOutputs(i),
+						pOptimization.getStageOperators(i));
+				Actor actor = pipelineActor.getActor();
+				pipeActors.add(actor);
+			}
 
 		}
 		return null;
