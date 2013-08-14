@@ -29,23 +29,35 @@
 
 package org.xronos.orcc.backend.transform.pipelining;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import net.sf.orcc.backends.ir.InstCast;
+import net.sf.orcc.backends.ir.IrSpecificFactory;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.DfFactory;
 import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.ExprBinary;
+import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstReturn;
+import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.util.EcoreHelper;
 
+import org.eclipse.emf.common.util.EMap;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
 /**
@@ -72,6 +84,8 @@ public class PipelineActor {
 
 	private List<Integer> operators;
 
+	private Map<Port, String> portToStringMap;
+
 	public PipelineActor(Action action, ExtractOperatorsIO opIO, int stage,
 			List<String> inputs, List<String> outputs, List<Integer> operators) {
 		this.action = action;
@@ -80,6 +94,7 @@ public class PipelineActor {
 		this.inputs = inputs;
 		this.outputs = outputs;
 		this.operators = operators;
+		portToStringMap = new HashMap<Port, String>();
 		createActor();
 	}
 
@@ -101,15 +116,16 @@ public class PipelineActor {
 		for (String portName : inputs) {
 			Type type = EcoreUtil.copy(opIO.getVariableType(portName));
 			Port inPort = dfFactory.createPort(type, portName + "_p");
+			portToStringMap.put(inPort, portName);
 			actor.getInputs().add(inPort);
 		}
 
 		// Create the Actor Output(s)
 		for (String portName : outputs) {
-
 			Type type = EcoreUtil.copy(opIO.getVariableType(portName));
 			Port outPort = DfFactory.eINSTANCE
 					.createPort(type, portName + "_p");
+			portToStringMap.put(outPort, portName);
 			actor.getOutputs().add(outPort);
 		}
 
@@ -121,7 +137,7 @@ public class PipelineActor {
 
 		// Create the action scheduler and body
 		Procedure scheduler = createScheduler();
-		Procedure body = createBody();
+		Procedure body = createBody(inputPattern, outputPattern);
 
 		// Create the new action
 		String actionStageName = action.getName() + "_stage_" + stage;
@@ -131,8 +147,171 @@ public class PipelineActor {
 		actor.getActions().add(actionStage);
 	}
 
-	private Procedure createBody() {
+	private Procedure createBody(Pattern inputPattern, Pattern outputPattern) {
 		Procedure body = irFactory.createProcedure();
+		// Give the body procedure a name
+		String bodyStageName = action.getName() + "_stage_" + stage;
+		body.setName(bodyStageName);
+
+		// Create scheduler Body
+		BlockBasic block = irFactory.createBlockBasic();
+
+		// Get the input port var map
+		EMap<Port, Var> portVarMap = inputPattern.getPortToVarMap();
+
+		// Create all the load instructions for reading from the input ports
+		for (Port port : inputPattern.getPorts()) {
+			String name = portToStringMap.get(port);
+			Type type = IrUtil.copy(port.getType());
+			Var read = irFactory.createVar(type, name, true, 0);
+
+			// Add to locals
+			body.getLocals().add(read);
+
+			List<Expression> indexes = new ArrayList<Expression>();
+
+			Expression index0 = irFactory.createExprInt(0);
+			indexes.add(index0);
+
+			InstLoad load = irFactory.createInstLoad(read,
+					portVarMap.get(port), indexes);
+
+			block.add(load);
+		}
+
+		// Add instructions from the operations list
+		for (Integer nbrOp : operators) {
+			PipelineOperator pipelineOperator = opIO.getOperator(nbrOp);
+			if (pipelineOperator == PipelineOperator.ASSIGN) {
+				Var target = null;
+				Expression value = null;
+				List<String> inputs = opIO.getInputs(nbrOp);
+				// test if we have to assign a constant
+				if (inputs.get(0).equals("") && inputs.get(1).equals("")) {
+					Expression expr = opIO.getConstantExpression(nbrOp);
+					value = EcoreUtil.copy(expr);
+
+				} else {
+					Var source = null;
+					if (body.getLocal(inputs.get(0)) == null) {
+						Type type = opIO.getVariableType(inputs.get(0));
+						source = irFactory.createVar(type, inputs.get(0), true,
+								0);
+						body.getLocals().add(source);
+					} else {
+						source = body.getLocal(inputs.get(0));
+					}
+
+					value = irFactory.createExprVar(source);
+				}
+
+				String output = opIO.getOutput(nbrOp);
+				Type typeOutput = opIO.getVariableType(output);
+				if (body.getLocal(output) == null) {
+					target = irFactory.createVar(typeOutput, output, true, 0);
+					body.getLocals().add(target);
+				} else {
+					target = body.getLocal(output);
+				}
+
+				InstAssign assign = irFactory.createInstAssign(target, value);
+				block.add(assign);
+
+			} else if (pipelineOperator == PipelineOperator.CAST) {
+
+				Var source = null;
+				Var target = null;
+
+				List<String> inputs = opIO.getInputs(nbrOp);
+				if (body.getLocal(inputs.get(0)) == null) {
+					Type type = opIO.getVariableType(inputs.get(0));
+					source = irFactory.createVar(type, inputs.get(0), true, 0);
+					body.getLocals().add(source);
+				} else {
+					source = body.getLocal(inputs.get(0));
+				}
+
+				String output = opIO.getOutput(nbrOp);
+				Type typeOutput = opIO.getVariableType(output);
+				if (body.getLocal(output) == null) {
+					target = irFactory.createVar(typeOutput, output, true, 0);
+					body.getLocals().add(target);
+				} else {
+					target = body.getLocal(output);
+				}
+
+				InstCast cast = IrSpecificFactory.eINSTANCE.createInstCast(
+						source, target);
+				block.add(cast);
+
+			} else {
+				// Get Orcc operator
+				OpBinary op = pipelineOperator.getOrccOperator();
+
+				Var inputE1 = null;
+				Var inputE2 = null;
+				Var target = null;
+				// Get inputs and output
+				List<String> inputs = opIO.getInputs(nbrOp);
+				if (body.getLocal(inputs.get(0)) == null) {
+					Type type = opIO.getVariableType(inputs.get(0));
+					inputE1 = irFactory.createVar(type, inputs.get(0), true, 0);
+					body.getLocals().add(inputE1);
+				} else {
+					inputE1 = body.getLocal(inputs.get(0));
+				}
+				if (body.getLocal(inputs.get(1)) == null) {
+					Type type = opIO.getVariableType(inputs.get(1));
+					inputE2 = irFactory.createVar(type, inputs.get(1), true, 0);
+					body.getLocals().add(inputE2);
+				} else {
+					inputE2 = body.getLocal(inputs.get(1));
+				}
+
+				String output = opIO.getOutput(nbrOp);
+				Type typeOutput = opIO.getVariableType(output);
+				if (body.getLocal(output) == null) {
+					target = irFactory.createVar(typeOutput, output, true, 0);
+					body.getLocals().add(target);
+				} else {
+					target = body.getLocal(output);
+				}
+
+				ExprVar e1 = irFactory.createExprVar(inputE1);
+				ExprVar e2 = irFactory.createExprVar(inputE2);
+
+				ExprBinary value = irFactory.createExprBinary(e1, op, e2,
+						EcoreUtil.copy(typeOutput));
+
+				InstAssign assign = irFactory.createInstAssign(target, value);
+				block.add(assign);
+
+			}
+
+		}
+
+		// Get the output port var map
+		portVarMap = outputPattern.getPortToVarMap();
+		// Create all the store instructions for reading from the input ports
+
+		for (Port port : outputPattern.getPorts()) {
+			String name = portToStringMap.get(port);
+			Var write = body.getLocal(name);
+
+			List<Expression> indexes = new ArrayList<Expression>();
+
+			Expression index0 = irFactory.createExprInt(0);
+			indexes.add(index0);
+
+			InstStore store = irFactory.createInstStore(portVarMap.get(port),
+					indexes, write);
+
+			block.add(store);
+		}
+
+		// Finally this basic block to the
+		body.getBlocks().add(block);
+
 		return body;
 	}
 

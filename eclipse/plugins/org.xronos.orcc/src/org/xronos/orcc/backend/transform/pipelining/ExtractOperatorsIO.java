@@ -29,12 +29,16 @@
 package org.xronos.orcc.backend.transform.pipelining;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.sf.orcc.backends.ir.InstCast;
+import net.sf.orcc.df.Action;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.OpBinary;
@@ -46,6 +50,7 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.xronos.orcc.backend.transform.pipelining.coloring.OperatorType;
 import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
 
@@ -87,6 +92,10 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 	private List<String> outputOpString;
 
+	private Map<Integer, Expression> constantInstructions;
+
+	private Integer nbrReads;
+
 	/**
 	 * The List of variables
 	 */
@@ -107,6 +116,8 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 		inputOpString = new ArrayList<List<String>>();
 		outputOpString = new ArrayList<String>();
+
+		constantInstructions = new HashMap<Integer, Expression>();
 
 		super.caseBlockBasic(block);
 
@@ -152,12 +163,17 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		// Visit Value
 		doSwitch(assign.getValue());
 
-		if (assign.getValue().isExprInt()) {
+		if (assign.getValue().isExprInt() || assign.getValue().isExprBool()
+				|| assign.getValue().isExprFloat()) {
 			operators.add(PipelineOperator.ASSIGN);
 			List<String> inputs = new ArrayList<String>();
 			inputs.add("");
 			inputs.add("");
 			inputOpString.add(inputs);
+			Integer position = assign.getBlock().getInstructions()
+					.indexOf(assign)
+					- nbrReads;
+			constantInstructions.put(position, assign.getValue());
 		}
 
 		// Output variables
@@ -201,6 +217,10 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		nbrOperators = 0;
 		currentIntruction = 0;
 
+		// Get the number of tokens reads
+		Action action = EcoreHelper.getContainerOfType(procedure, Action.class);
+		nbrReads = action.getInputPattern().getPorts().size();
+
 		// Get the local variables
 		for (Var var : procedure.getLocals()) {
 			// Add and clean variables
@@ -215,7 +235,6 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 					}
 				}
 			}
-
 		}
 
 		// Now Visit the Blocks
@@ -344,6 +363,10 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
+	public Expression getConstantExpression(Integer position) {
+		return constantInstructions.get(position);
+	}
+
 	/**
 	 * Get the input operation matrix
 	 * 
@@ -360,6 +383,10 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 	 */
 	public int getInputOp(int i, int j) {
 		return inputOp[i][j];
+	}
+
+	public List<String> getInputs(int index) {
+		return inputOpString.get(index);
 	}
 
 	/**
@@ -403,6 +430,10 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		return output;
 	}
 
+	public String getOutput(int index) {
+		return outputOpString.get(index);
+	}
+
 	/**
 	 * Get the output operation matrix
 	 * 
@@ -428,10 +459,12 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 	public Type getVariableType(String name) {
 		for (Var var : variables) {
 			if (var.getIndexedName().equals(name)) {
-				return var.getType();
+				return EcoreUtil.copy(var.getType());
 			}
 		}
+
 		return null;
+
 	}
 
 	public int getVariableWidth(int index) {

@@ -272,6 +272,49 @@ public enum PipelineOperator {
 		this.label = label;
 	}
 
+	public OpBinary getOrccOperator() {
+		switch (this) {
+		case BITAND:
+			return OpBinary.BITAND;
+		case BITOR:
+			return OpBinary.BITOR;
+		case BITXOR:
+			return OpBinary.BITXOR;
+		case DIV:
+			return OpBinary.DIV;
+		case EQ:
+			return OpBinary.EQ;
+		case GE:
+			return OpBinary.GE;
+		case GT:
+			return OpBinary.GT;
+		case LE:
+			return OpBinary.LE;
+		case LOGIC_AND:
+			return OpBinary.LOGIC_AND;
+		case LOGIC_OR:
+			return OpBinary.LOGIC_OR;
+		case LT:
+			return OpBinary.LT;
+		case MINUS:
+			return OpBinary.MINUS;
+		case MOD:
+			return OpBinary.MOD;
+		case NE:
+			return OpBinary.NE;
+		case PLUS:
+			return OpBinary.PLUS;
+		case SHIFT_LEFT:
+			return OpBinary.SHIFT_LEFT;
+		case SHIFT_RIGHT:
+			return OpBinary.SHIFT_RIGHT;
+		case TIMES:
+			return OpBinary.TIMES;
+		default:
+			return null;
+		}
+	}
+
 	/**
 	 * Get the Resource weight of an operator
 	 * 
