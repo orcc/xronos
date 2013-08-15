@@ -306,7 +306,8 @@ public class Xronos extends AbstractBackend {
 				}
 			}
 			boolean failed = printer.printInstance(flags.getStringFlag(),
-					rtlPath, actor, resourceCache, numInstance, toBeCompiled);
+					rtlPath, actor, options, resourceCache, numInstance,
+					toBeCompiled);
 			if (failed) {
 				failedToCompile++;
 			}
@@ -340,7 +341,7 @@ public class Xronos extends AbstractBackend {
 		printer.getOptions().put("fpgaType", fpgaName);
 		XronosFlags flags = new XronosFlags(rtlPath, network.getSimpleName());
 		boolean failed = printer.printNetwork(flags.getStringFlag(), rtlPath,
-				network, resourceCache);
+				network, options, resourceCache);
 
 		if (failed) {
 			OrccLogger

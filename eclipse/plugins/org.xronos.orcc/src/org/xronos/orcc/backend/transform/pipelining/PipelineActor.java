@@ -115,7 +115,7 @@ public class PipelineActor {
 		// Create the Actor Input(s)
 		for (String portName : inputs) {
 			Type type = EcoreUtil.copy(opIO.getVariableType(portName));
-			Port inPort = dfFactory.createPort(type, portName + "_p");
+			Port inPort = dfFactory.createPort(type, portName + "_pI");
 			portToStringMap.put(inPort, portName);
 			actor.getInputs().add(inPort);
 		}
@@ -123,8 +123,8 @@ public class PipelineActor {
 		// Create the Actor Output(s)
 		for (String portName : outputs) {
 			Type type = EcoreUtil.copy(opIO.getVariableType(portName));
-			Port outPort = DfFactory.eINSTANCE
-					.createPort(type, portName + "_p");
+			Port outPort = DfFactory.eINSTANCE.createPort(type, portName
+					+ "_pO");
 			portToStringMap.put(outPort, portName);
 			actor.getOutputs().add(outPort);
 		}
@@ -145,6 +145,7 @@ public class PipelineActor {
 				inputPattern, outputPattern, peekedPattern, scheduler, body);
 
 		actor.getActions().add(actionStage);
+		actor.getActionsOutsideFsm().add(actionStage);
 	}
 
 	private Procedure createBody(Pattern inputPattern, Pattern outputPattern) {
@@ -285,7 +286,6 @@ public class PipelineActor {
 
 				InstAssign assign = irFactory.createInstAssign(target, value);
 				block.add(assign);
-
 			}
 
 		}
@@ -297,6 +297,9 @@ public class PipelineActor {
 		for (Port port : outputPattern.getPorts()) {
 			String name = portToStringMap.get(port);
 			Var write = body.getLocal(name);
+
+			// Add to locals
+			body.getLocals().add(portVarMap.get(port));
 
 			List<Expression> indexes = new ArrayList<Expression>();
 

@@ -29,14 +29,21 @@
 
 package org.xronos.orcc.backend.transform.pipelining;
 
+import static net.sf.orcc.OrccLaunchConstants.PROJECT;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.util.DfVisitor;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.xronos.orcc.backend.cal.ActorPrinter;
 import org.xronos.orcc.backend.transform.pipelining.coloring.PipeliningOptimization;
 import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
 
@@ -48,13 +55,16 @@ import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
  */
 public class Pipelining extends DfVisitor<Void> {
 
+	Map<String, Object> options;
+
 	/**
 	 * Define the time of a Stage
 	 */
 	private float stageTime;
 
-	public Pipelining(float stageTime) {
+	public Pipelining(Map<String, Object> options, float stageTime) {
 		this.stageTime = stageTime;
+		this.options = options;
 	}
 
 	@Override
@@ -86,10 +96,25 @@ public class Pipelining extends DfVisitor<Void> {
 						i, pOptimization.getStageInputs(i),
 						pOptimization.getStageOutputs(i),
 						pOptimization.getStageOperators(i));
-				Actor actor = pipelineActor.getActor();
-				pipeActors.add(actor);
-			}
+				Actor pActor = pipelineActor.getActor();
+				// Debug print actor
+				ActorPrinter actorPrinter = new ActorPrinter(pActor);
+				String printPath = System.getProperty("user.home")
+						+ File.separator + "tmp";
+				actorPrinter.printActor(printPath);
+				pipeActors.add(pActor);
 
+				// Get Project
+				IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+				IProject project = root.getProject((String) options
+						.get(PROJECT));
+
+				// Get the package of the actor
+				// Actor containementActor = EcoreUti
+
+				project.getFolder("src");
+
+			}
 		}
 		return null;
 	}

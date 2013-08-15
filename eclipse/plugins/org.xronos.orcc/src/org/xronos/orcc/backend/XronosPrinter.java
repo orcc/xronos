@@ -157,8 +157,8 @@ public class XronosPrinter {
 	 * @return
 	 */
 	public boolean printInstance(String[] xronosArgs, String rtlPath,
-			Actor actor, ResourceCache resourceCache, int idxInstance,
-			int totalInstances) {
+			Actor actor, Map<String, Object> options,
+			ResourceCache resourceCache, int idxInstance, int totalInstances) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		boolean error = false;
@@ -174,7 +174,8 @@ public class XronosPrinter {
 				OrccLogger.traceln("Compiling instance: "
 						+ actor.getSimpleName() + " (" + idxInstance + "/"
 						+ totalInstances + ")");
-				XronosTransform.transformActor(actor, resourceCache, true);
+				XronosTransform.transformActor(actor, options, resourceCache,
+						true);
 				Engine engine = new DesignEngine(xronosMainJob, actor,
 						resourceCache);
 				engine.begin();
@@ -264,7 +265,8 @@ public class XronosPrinter {
 	}
 
 	public boolean printNetwork(String[] xronosArgs, String rtlPath,
-			Network network, ResourceCache resourceCache) {
+			Network network, Map<String, Object> options,
+			ResourceCache resourceCache) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		boolean error = false;
@@ -278,7 +280,8 @@ public class XronosPrinter {
 					CodeLabel.UNSCOPED, "xc2vp30-7-ff1152");
 			f.preprocess(xronosMainJob);
 
-			XronosTransform.transformNetworkActors(network, resourceCache);
+			XronosTransform.transformNetworkActors(network, options,
+					resourceCache);
 			Engine engine = new DesignEngine(xronosMainJob, network,
 					resourceCache);
 			engine.begin();

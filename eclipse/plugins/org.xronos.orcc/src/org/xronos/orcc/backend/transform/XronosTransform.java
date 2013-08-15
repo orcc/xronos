@@ -30,6 +30,7 @@ package org.xronos.orcc.backend.transform;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import net.sf.orcc.backends.transform.CastAdder;
 import net.sf.orcc.backends.transform.DivisionSubstitution;
@@ -66,8 +67,8 @@ import org.xronos.orcc.design.visitors.XronosScheduler;
  */
 public class XronosTransform {
 
-	public static void transformActor(Actor actor, ResourceCache resourceCache,
-			boolean portTransformation) {
+	public static void transformActor(Actor actor, Map<String, Object> options,
+			ResourceCache resourceCache, boolean portTransformation) {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
@@ -113,7 +114,7 @@ public class XronosTransform {
 					true)));
 
 			transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
-			transformations.add(new Pipelining(2.2f));
+			transformations.add(new Pipelining(options, 2.2f));
 
 			for (DfSwitch<?> transformation : transformations) {
 				try {
@@ -129,9 +130,9 @@ public class XronosTransform {
 	}
 
 	public static void transformNetworkActors(Network network,
-			ResourceCache resourceCache) {
+			Map<String, Object> options, ResourceCache resourceCache) {
 		for (Actor actor : network.getAllActors()) {
-			transformActor(actor, resourceCache, false);
+			transformActor(actor, options, resourceCache, false);
 		}
 	}
 
