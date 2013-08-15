@@ -39,10 +39,13 @@ import java.util.Map;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.util.util.EcoreHelper;
 
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.xronos.orcc.backend.cal.ActorPrinter;
 import org.xronos.orcc.backend.transform.pipelining.coloring.PipeliningOptimization;
 import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
@@ -91,6 +94,9 @@ public class Pipelining extends DfVisitor<Void> {
 			// Create Actors
 			int stages = pOptimization.getNbrStages();
 			List<Actor> pipeActors = new ArrayList<Actor>();
+
+			IFolder folder = createNewPipelineFolder(action);
+
 			for (int i = 0; i < stages; i++) {
 				PipelineActor pipelineActor = new PipelineActor(action, opIO,
 						i, pOptimization.getStageInputs(i),
@@ -103,19 +109,35 @@ public class Pipelining extends DfVisitor<Void> {
 						+ File.separator + "tmp";
 				actorPrinter.printActor(printPath);
 				pipeActors.add(pActor);
-
-				// Get Project
-				IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-				IProject project = root.getProject((String) options
-						.get(PROJECT));
-
-				// Get the package of the actor
-				// Actor containementActor = EcoreUti
-
-				project.getFolder("src");
-
 			}
 		}
 		return null;
 	}
+
+	private IFolder createNewPipelineFolder(Action action) {
+		// Get Project
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		IProject project = root.getProject((String) options.get(PROJECT));
+
+		// Get the package of the actor
+		Actor containementActor = EcoreHelper.getContainerOfType(action,
+				Actor.class);
+		String actorFileName = containementActor.getFileName();
+		int position = actorFileName.indexOf(containementActor.getName(), 0);
+
+		int positionBegin = project.getFullPath().toString().length() + 1;
+
+		String packageFolder = actorFileName.substring(positionBegin, position);
+
+		IFolder folder = project.getFolder(packageFolder + "/"
+				+ containementActor.getSimpleName() + "_pipeline");
+		try {
+			folder.create(false, true, null);
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return folder;
+	}
+
 }
