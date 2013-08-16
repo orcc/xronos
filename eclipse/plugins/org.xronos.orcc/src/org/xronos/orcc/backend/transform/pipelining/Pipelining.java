@@ -43,6 +43,7 @@ import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -96,7 +97,9 @@ public class Pipelining extends DfVisitor<Void> {
 			List<Actor> pipeActors = new ArrayList<Actor>();
 
 			IFolder folder = createNewPipelineFolder(action);
+			String path = folder.getRawLocation().toOSString();
 
+			String packageName = findActorPackage(path);
 			for (int i = 0; i < stages; i++) {
 				PipelineActor pipelineActor = new PipelineActor(action, opIO,
 						i, pOptimization.getStageInputs(i),
@@ -104,11 +107,18 @@ public class Pipelining extends DfVisitor<Void> {
 						pOptimization.getStageOperators(i));
 				Actor pActor = pipelineActor.getActor();
 				// Debug print actor
-				ActorPrinter actorPrinter = new ActorPrinter(pActor);
-				String printPath = System.getProperty("user.home")
-						+ File.separator + "tmp";
-				actorPrinter.printActor(printPath);
+				ActorPrinter actorPrinter = new ActorPrinter(pActor,
+						packageName);
+
+				actorPrinter.printActor(path);
 				pipeActors.add(pActor);
+			}
+
+			try {
+				folder.refreshLocal(IResource.DEPTH_INFINITE, null);
+			} catch (CoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 		return null;
@@ -132,12 +142,38 @@ public class Pipelining extends DfVisitor<Void> {
 		IFolder folder = project.getFolder(packageFolder + "/"
 				+ containementActor.getSimpleName() + "_pipeline");
 		try {
-			folder.create(false, true, null);
+			if (!folder.exists()) {
+				folder.create(false, true, null);
+			} else {
+				// Delete old contents
+				IResource[] resources = folder.members();
+				for (IResource resource : resources) {
+					resource.delete(true, null);
+				}
+			}
 		} catch (CoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return folder;
+	}
+
+	private String findActorPackage(String string) {
+
+		int position = string.indexOf("src/", 0);
+
+		String subString = string.substring(position + 4, string.length());
+
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < subString.length(); i++) {
+			if (subString.charAt(i) == '/') {
+				builder.append('.');
+			} else {
+				builder.append(subString.charAt(i));
+			}
+		}
+
+		return builder.toString();
 	}
 
 }

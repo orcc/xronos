@@ -52,6 +52,7 @@ import org.eclipse.emf.ecore.EObject
 import net.sf.orcc.backends.ir.InstCast
 import org.eclipse.emf.common.util.EMap
 
+
 class ActorPrinter extends CommonPrinter{
 	
 	protected Actor actor
@@ -61,8 +62,11 @@ class ActorPrinter extends CommonPrinter{
 	
 	private EMap<Var,Port> outVarToPort;
 	
-	new (Actor actor){
+	private String actorPackage
+	
+	new (Actor actor, String actorPackage){
 		this.actor = actor
+		this.actorPackage = actorPackage
 	}
 	
 	
@@ -78,9 +82,10 @@ class ActorPrinter extends CommonPrinter{
 		}
 			
 	}
+		
 	
 	def compileActor()'''
-	package «actor.package»;
+	package «actorPackage»;
 	
 	actor «actor.simpleName»(«actorParameters»)
 		«actorInputs»
