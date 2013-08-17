@@ -53,6 +53,8 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.xronos.orcc.backend.transform.pipelining.coloring.OperatorType;
 import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
+import org.xronos.orcc.ir.InstPortRead;
+import org.xronos.orcc.ir.InstPortWrite;
 
 /**
  * This class is creating two matrix that defines the DFG of an Procedure by
@@ -62,6 +64,8 @@ import org.xronos.orcc.backend.transform.pipelining.coloring.TestBench;
  * 
  */
 public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
+
+	private Map<Integer, Expression> constantInstructions;
 
 	/**
 	 * The current number of the instruction
@@ -80,6 +84,8 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 	 */
 	private int nbrOperators;
 
+	private Integer nbrReads;
+
 	/**
 	 * The List of Operation
 	 */
@@ -92,9 +98,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 	private List<String> outputOpString;
 
-	private Map<Integer, Expression> constantInstructions;
-
-	private Integer nbrReads;
+	private Map<String, String> stringPortToVarMap;
 
 	/**
 	 * The List of variables
@@ -116,6 +120,8 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 		inputOpString = new ArrayList<List<String>>();
 		outputOpString = new ArrayList<String>();
+
+		stringPortToVarMap = new HashMap<String, String>();
 
 		constantInstructions = new HashMap<Integer, Expression>();
 
@@ -205,6 +211,28 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 		// Increment the Instruction counter
 		currentIntruction++;
+		return null;
+	}
+
+	public Void caseInstPortRead(InstPortRead read) {
+		String portLabel = read.getPort().getLabel();
+		String varName = read.getTarget().getVariable().getIndexedName();
+
+		stringPortToVarMap.put(portLabel, varName);
+
+		return null;
+	}
+
+	public Void caseInstPortWrite(InstPortWrite write) {
+		String portLabel = write.getPort().getLabel();
+		Expression value = write.getValue();
+
+		if (value instanceof ExprVar) {
+			ExprVar exprVar = (ExprVar) value;
+			String varName = exprVar.getUse().getVariable().getIndexedName();
+			stringPortToVarMap.put(portLabel, varName);
+		}
+
 		return null;
 	}
 
@@ -359,6 +387,10 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 	public Void defaultCase(EObject object) {
 		if (object instanceof InstCast) {
 			return caseInstCast((InstCast) object);
+		} else if (object instanceof InstPortRead) {
+			return caseInstPortRead((InstPortRead) object);
+		} else if (object instanceof InstPortWrite) {
+			return caseInstPortWrite((InstPortWrite) object);
 		}
 		return null;
 	}
@@ -450,6 +482,10 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 	 */
 	public int getOutputOp(int i, int j) {
 		return outputOp[i][j];
+	}
+
+	public Map<String, String> getStringPortToVarMap() {
+		return stringPortToVarMap;
 	}
 
 	public String getVariableName(int index) {

@@ -29,6 +29,7 @@
 
 package org.xronos.orcc.backend.transform.pipelining;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -74,20 +75,28 @@ public class PipelineActor {
 
 	private Actor actor;
 
-	private ExtractOperatorsIO opIO;
-
-	private int stage;
-
 	private List<String> inputs;
-
-	private List<String> outputs;
 
 	private List<Integer> operators;
 
+	private ExtractOperatorsIO opIO;
+
+	private List<String> outputs;
+
+	private String packageName;
+
+	private String path;
+
 	private Map<Port, String> portToStringMap;
 
-	public PipelineActor(Action action, ExtractOperatorsIO opIO, int stage,
-			List<String> inputs, List<String> outputs, List<Integer> operators) {
+	private int stage;
+
+	public PipelineActor(String path, String packageName, Action action,
+			ExtractOperatorsIO opIO, int stage, List<String> inputs,
+			List<String> outputs, List<Integer> operators) {
+
+		this.path = path;
+		this.packageName = packageName;
 		this.action = action;
 		this.opIO = opIO;
 		this.stage = stage;
@@ -111,6 +120,8 @@ public class PipelineActor {
 		// Create the new actor
 		actor = dfFactory.createActor();
 		actor.setName(name);
+		actor.setLabel(packageName + "." + name);
+		actor.setFileName(path + File.separator + name);
 
 		// Create the Actor Input(s)
 		for (String portName : inputs) {

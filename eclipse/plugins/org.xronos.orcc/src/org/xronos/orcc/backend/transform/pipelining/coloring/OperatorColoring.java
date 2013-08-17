@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.sf.orcc.util.OrccLogger;
+
 /**
  * This class colors the DFG and it applies heuristics for creating pipeline
  * stages
@@ -44,23 +46,86 @@ import java.util.List;
 public class OperatorColoring {
 
 	private class Srec {
-		public int rp;
-		public int stage;
 		public int bound;
+		public int[] dW;
 		public int early;
 		public int late;
 		public int mob;
 		public int[] rank;
-		public int[] dW;
+		public int rp;
+		public int stage;
 	}
+
+	private int ALAP_registersW;
 
 	private float Alfa;
 
+	private int ASAP_registersW;
+
+	private int[] bestcolor;
+
+	private int[] bestcolor1;
+
 	private float Beta;
+
+	private long ColoringCount;
+
+	private int confc;
+
+	private long ConflictCount;
+
+	private int[] cons_count; // inp_count
+
+	private int[] consume; // INP consumers
+
+	private int[] cP_count;
+
+	private int[] cPred;
+
+	private long cutc;
+
+	private long CutCount;
+
+	private int[] diffio;
+
+	private int figcount;
+
+	private float[] figures;
+
+	private int[] inputPorts;
+
+	private int[] ins;
+
+	private int[] inVarCounts;
+
+	// Operator input and output lists
+	private int[] inVarLists;
+
+	private int L; // Color count
+
+	private int[] lbrw;
+
+	private int[] level_alap;
 
 	private int[] level_asap;
 
-	private int[] level_alap;
+	private int M;
+
+	private int[] maxcolor;
+
+	private int maxColor;
+
+	private int maxRegistersW;
+
+	private int minRegistersW;
+
+	private int N;
+
+	private int[] ncP_count;
+
+	private int[] ncPred;
+
+	private int[] opcolor;
 
 	private int[] opfreedom;
 
@@ -68,106 +133,43 @@ public class OperatorColoring {
 
 	private int[] order1;
 
-	private int[] opcolor;
+	BufferedWriter out;
 
-	private int[] maxcolor;
+	private int[] outputPorts;
 
-	private int[] bestcolor;
+	private int[] outs;
 
-	private int[] worstcolor;
+	private int[] outVarCounts;
 
-	private int[] bestcolor1;
+	private int[] outVarLists;
+
+	private int[] prod_count; // outp_count
+
+	private int[] produce; // OUTP producers
+
+	private int solc;
+
+	private long SolutionCount;
+
+	private int[] specific;
+
+	private Srec[] Stack;
 
 	private int[] stageRegisters;
 
 	private int[] stageRegistersW;
 
+	private int[] stcount;
+
+	private int[] transmission;
+
 	private int[] transmRegisters;
 
 	private int[] transmRegistersW;
 
-	private int[] outputPorts;
-
-	private int[] inputPorts;
-
-	private int minRegistersW;
-
-	private int maxRegistersW;
-
-	private int ASAP_registersW;
-
-	private int ALAP_registersW;
-
-	private int N;
-
-	private int M;
-
-	private int maxColor;
-
-	private int L; // Color count
-
-	private long ColoringCount;
-
-	private long CutCount;
-
-	private long cutc;
-
-	private long ConflictCount;
-
-	private int confc;
-
-	private long SolutionCount;
-
-	private int solc;
-
-	private int[] ins;
-
-	private int[] outs;
-
-	private int[] transmission;
-
-	// Operator input and output lists
-	private int[] inVarLists;
-
-	private int[] inVarCounts;
-
-	private int[] outVarLists;
-
-	private int[] outVarCounts;
-
-	private int[] produce; // OUTP producers
-
-	private int[] prod_count; // outp_count
-
-	private int[] consume; // INP consumers
-
-	private int[] cons_count; // inp_count
-
-	private int[] lbrw;
-
-	private int[] cPred;
-
-	private int[] cP_count;
-
-	private int[] ncPred;
-
-	private int[] ncP_count;
-
-	private Srec[] Stack;
-
 	private float[] weight;
 
-	private int[] diffio;
-
-	private int[] specific;
-
-	private int figcount;
-
-	private float[] figures;
-
-	private int[] stcount;
-
-	BufferedWriter out;
+	private int[] worstcolor;
 
 	public OperatorColoring(TestBench tB, BufferedWriter out) {
 		N = tB.N;
@@ -307,7 +309,9 @@ public class OperatorColoring {
 						}
 						if (CutCount % 1000000 == 0) {
 							long t1 = System.currentTimeMillis();
-							if ((t1 - t0) / 1000 > 5) {
+							if ((t1 - t0) / 1000 > 10) {
+								OrccLogger.traceln("\t - Pipeline Stops in: "
+										+ (float) (t1 - t0) / 1000 + "s");
 								return false;
 							}
 						}
