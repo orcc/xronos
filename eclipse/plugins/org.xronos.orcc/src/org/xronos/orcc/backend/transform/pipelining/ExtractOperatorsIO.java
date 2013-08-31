@@ -40,6 +40,7 @@ import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
@@ -110,7 +111,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 		for (Instruction instruction : block.getInstructions()) {
 			if (instruction instanceof InstAssign
-					|| instruction instanceof InstCast) {
+					|| instruction instanceof InstCast|| instruction instanceof InstLoad) {
 				nbrOperators++;
 			}
 		}
@@ -206,6 +207,23 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 		// Output variables
 		Var target = cast.getTarget().getVariable();
+		outputOp[currentIntruction][variables.indexOf(target)] = 1;
+		outputOpString.add(target.getIndexedName());
+
+		// Increment the Instruction counter
+		currentIntruction++;
+		return null;
+	}
+
+	@Override
+	public Void caseInstLoad(InstLoad load) {
+		operators.add(PipelineOperator.STATE_LOAD);
+		List<String> inputs = new ArrayList<String>();
+		inputs.add("");
+		inputs.add("");
+		inputOpString.add(inputs);
+
+		Var target = load.getTarget().getVariable();
 		outputOp[currentIntruction][variables.indexOf(target)] = 1;
 		outputOpString.add(target.getIndexedName());
 

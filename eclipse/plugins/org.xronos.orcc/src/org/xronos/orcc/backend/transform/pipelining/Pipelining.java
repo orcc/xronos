@@ -144,9 +144,16 @@ public class Pipelining extends DfVisitor<Void> {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+			} else if (action.getAttribute("xronos_pipeline").hasAttribute(
+					"Debug")) {
+				// Get the Input and Output matrix of the operators found on the
+				// BlockBasic of the action
+				ExtractOperatorsIO opIO = new ExtractOperatorsIO();
+				opIO.doSwitch(action.getBody());
+				opIO.printTablesForCTestbench();
 			} else {
 				OrccLogger
-						.warnln("PIPELINING: StageTime attribute missing, example: @xronos_pipeline(StageTime=\"1,2\")");
+				.warnln("PIPELINING: StageTime attribute missing, example: @xronos_pipeline(StageTime=\"1,2\")");
 			}
 		}
 		return null;

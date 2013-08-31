@@ -184,8 +184,8 @@ public enum PipelineOperator {
 		weights.put(PipelineOperator.PLUS, Arrays.asList(1.0f, 1.0f));
 		weights.put(PipelineOperator.SHIFT_LEFT, Arrays.asList(0.1f, 0.2f));
 		weights.put(PipelineOperator.SHIFT_RIGHT, Arrays.asList(0.1f, 0.2f));
-		weights.put(PipelineOperator.STATE_LOAD, Arrays.asList(5.0f, 5.0f));
-		weights.put(PipelineOperator.STATE_STORE, Arrays.asList(5.0f, 5.0f));
+		weights.put(PipelineOperator.STATE_LOAD, Arrays.asList(0.0f, 0.0f));
+		weights.put(PipelineOperator.STATE_STORE, Arrays.asList(0.0f, 0.0f));
 		weights.put(PipelineOperator.TIMES, Arrays.asList(1.0f, 5.0f));
 
 		WEIGHTS = Collections.unmodifiableMap(weights);
