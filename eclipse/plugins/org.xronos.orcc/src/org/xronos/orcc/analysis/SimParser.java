@@ -34,9 +34,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.df.Action;
@@ -44,27 +42,29 @@ import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.util.OrccLogger;
 
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+
 public class SimParser {
 
 	private Network network;
 	private String path;
 
-	private Map<Actor, Map<Action, List<Integer>>> execution;
+	Map<Actor, Map<Action, SummaryStatistics>> statistics;
 
 	public SimParser(Network network, String path) {
 		this.network = network;
 		this.path = path;
-		this.execution = new HashMap<Actor, Map<Action, List<Integer>>>();
+		this.statistics = new HashMap<Actor, Map<Action, SummaryStatistics>>();
 	}
 
 	public void createMaps() {
 
 		for (Actor actor : network.getAllActors()) {
-			Map<Action, List<Integer>> actionTimeGoDone = new HashMap<Action, List<Integer>>();
+			Map<Action, SummaryStatistics> aTimeGoDone = new HashMap<Action, SummaryStatistics>();
 			for (Action action : actor.getActions()) {
 				OrccLogger.noticeln("Parsing weight: " + actor.getSimpleName()
 						+ "_" + action.getName());
-				List<Integer> timeGoDone = new ArrayList<Integer>();
+				SummaryStatistics tGoDone = new SummaryStatistics();
 
 				File actionFile = new File(path + File.separator
 						+ actor.getSimpleName() + "_" + action.getName()
@@ -94,29 +94,29 @@ public class SimParser {
 							fromOneZero = true;
 						} else if (intGo == 1 && intDone == 1) {
 							if (fromOneZero) {
-								timeGoDone.add((intTime - startTime) / 100);
+								tGoDone.addValue((intTime - startTime) / 100);
 								startTime = intTime;
 							} else {
-								timeGoDone.add(0);
+								tGoDone.addValue(0);
 							}
 						} else if (intGo == 0 && intDone == 1) {
 							fromOneZero = false;
-							timeGoDone.add((intTime - startTime) / 100);
+							tGoDone.addValue((intTime - startTime) / 100);
 						}
 
 					}
 					iBuffer.close();
-					actionTimeGoDone.put(action, timeGoDone);
+					aTimeGoDone.put(action, tGoDone);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
-			execution.put(actor, actionTimeGoDone);
+			statistics.put(actor, aTimeGoDone);
 		}
 	}
 
-	public Map<Actor, Map<Action, List<Integer>>> getExecutionMap() {
-		return this.execution;
+	public Map<Actor, Map<Action, SummaryStatistics>> getStatisticsMap() {
+		return this.statistics;
 	}
 
 }

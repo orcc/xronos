@@ -31,7 +31,6 @@ package org.xronos.orcc.analysis;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import javax.xml.stream.XMLOutputFactory;
@@ -42,12 +41,14 @@ import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
 
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+
 public class XronosDynamicWeights {
 
 	private Network network;
 	private String path;
 
-	Map<Actor, Map<Action, List<Integer>>> execution;
+	Map<Actor, Map<Action, SummaryStatistics>> statistics;
 
 	public XronosDynamicWeights(Network network, String path) {
 		this.network = network;
@@ -65,29 +66,37 @@ public class XronosDynamicWeights {
 								+ "_dynamicWeights.xml"));
 				writer.writeStartDocument();
 				writer.writeStartElement("actors");
-				for (Actor actor : execution.keySet()) {
+				for (Actor actor : statistics.keySet()) {
 					writer.writeStartElement("actor");
 					writer.writeAttribute("name", actor.getSimpleName()
 							.toLowerCase());
-					Map<Action, List<Integer>> actionWeight = execution
+					Map<Action, SummaryStatistics> actionWeight = statistics
 							.get(actor);
 					writer.writeStartElement("actions");
 					for (Action action : actionWeight.keySet()) {
 						writer.writeStartElement("action");
 						writer.writeAttribute("name", action.getName()
 								.toLowerCase());
-						// get MeanWeight
-						int sum = 0;
-						for (Integer i : actionWeight.get(action)) {
-							sum += i;
-						}
 
-						Integer meanWeight = 0;
-						if (actionWeight.get(action).size() != 0) {
-							meanWeight = sum / actionWeight.get(action).size();
-						}
-						writer.writeAttribute("meanWeight",
-								meanWeight.toString());
+						double min = Double.isNaN(actionWeight.get(action)
+								.getMin()) ? 0 : actionWeight.get(action)
+								.getMin();
+						double mean = Double.isNaN(actionWeight.get(action)
+								.getMean()) ? 0 : actionWeight.get(action)
+								.getMean();
+						double max = Double.isNaN(actionWeight.get(action)
+								.getMax()) ? 0 : actionWeight.get(action)
+								.getMax();
+						double variance = Double.isNaN(actionWeight.get(action)
+								.getVariance()) ? 0 : actionWeight.get(action)
+								.getVariance();
+
+						writer.writeAttribute("min", Double.toString(min));
+						writer.writeAttribute("mean", Double.toString(mean));
+						writer.writeAttribute("max", Double.toString(max));
+						writer.writeAttribute("variance",
+								Double.toString(variance));
+
 						writer.writeEndElement();
 					}
 					writer.writeEndElement();
@@ -114,7 +123,7 @@ public class XronosDynamicWeights {
 				SimParser simParser = new SimParser(network, path
 						+ File.separator + "weights");
 				simParser.createMaps();
-				execution = simParser.getExecutionMap();
+				statistics = simParser.getStatisticsMap();
 				return true;
 			} else {
 				return false;

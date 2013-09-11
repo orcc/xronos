@@ -220,9 +220,9 @@ public class XronosPrinter {
 				OrccLogger.traceln("\t - Compiled in: " + (float) (t1 - t0)
 						/ 1000 + "s");
 			}
-			if (options.containsKey("generateGoDone")) {
+			if (options.containsKey("org.xronos.orcc.generateGoDone")) {
 				Boolean generateGoDone = (Boolean) options
-						.get("generateGoDone");
+						.get("org.xronos.orcc.generateGoDone");
 
 				if (generateGoDone) {
 					if (!error) {

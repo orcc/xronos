@@ -110,6 +110,7 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new TypeResizer(false, true, false, false));
+
 			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
 					true)));
 

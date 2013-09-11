@@ -28,6 +28,10 @@
  */
 package org.xronos.orcc.backend.transform.pipelining;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -111,7 +115,8 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 		for (Instruction instruction : block.getInstructions()) {
 			if (instruction instanceof InstAssign
-					|| instruction instanceof InstCast|| instruction instanceof InstLoad) {
+					|| instruction instanceof InstCast
+					|| instruction instanceof InstLoad) {
 				nbrOperators++;
 			}
 		}
@@ -526,47 +531,101 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 	}
 
 	public void printTablesForCTestbench() {
-		System.out.println("#define NC " + nbrOperators);
-		System.out.println("#define MC " + variables.size());
 
-		System.out.println("static char *OpNN[NC] = {");
-		for (PipelineOperator pipeOP : operators) {
-			System.out.print("\"" + pipeOP.toString() + "\", ");
+		try {
+			File file = new File("/tmp/pipelines.txt");
+			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
 
-		}
-		System.out.println("};");
+			bw.write("#define NC " + nbrOperators);
+			bw.write("\n");
+			bw.write("#define MC " + variables.size());
+			bw.write("\n");
+			bw.write("static char *OpNN[NC] = {");
+			for (PipelineOperator pipeOP : operators) {
+				bw.write("\"" + pipeOP.toString() + "\", ");
 
-		System.out.println("static char *VaNN[MC] = {");
-		for (Var var : variables) {
-			System.out.print("\"" + var.getIndexedName() + "\", ");
-		}
-		System.out.println("};");
-
-		System.out.println("int VaWW[MC] = {");
-		for (Var var : variables) {
-			System.out.print(var.getType().getSizeInBits() + ", ");
-		}
-		System.out.println("};");
-
-		System.out.println("static char *chFF[NC][2] = {");
-		for (List<String> ins : inputOpString) {
-			if (ins.size() == 1) {
-				System.out.print("{\"" + ins.get(0) + "\"" + ",\"\"}, ");
-				System.out.print("\n");
-			} else if (ins.size() == 2) {
-				System.out.print("{\"" + ins.get(0) + "\"" + ",\"" + ins.get(1)
-						+ "\"}, ");
-				System.out.print("\n");
 			}
+			bw.write("};");
+			bw.write("\n");
+			bw.write("static char *VaNN[MC] = {");
+			for (Var var : variables) {
+				bw.write("\"" + var.getIndexedName() + "\", ");
+			}
+			bw.write("};");
+			bw.write("\n");
+			bw.write("int VaWW[MC] = {");
+			for (Var var : variables) {
+				bw.write(var.getType().getSizeInBits() + ", ");
+			}
+			bw.write("};");
+			bw.write("\n");
+			bw.write("static char *chFF[NC][2] = {");
+			for (List<String> ins : inputOpString) {
+				if (ins.size() == 1) {
+					bw.write("{\"" + ins.get(0) + "\"" + ",\"\"}, ");
+					bw.write("\n");
+				} else if (ins.size() == 2) {
+					bw.write("{\"" + ins.get(0) + "\"" + ",\"" + ins.get(1)
+							+ "\"}, ");
+					bw.write("\n");
+				}
 
-		}
-		System.out.println("};");
+			}
+			bw.write("};");
+			bw.write("\n");
+			bw.write("static char *chHH[NC] = {");
+			for (String outputs : outputOpString) {
+				bw.write("\"" + outputs + "\", ");
+			}
+			bw.write("};");
 
-		System.out.println("static char *chHH[NC] = {");
-		for (String outputs : outputOpString) {
-			System.out.print("\"" + outputs + "\", ");
+			bw.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		System.out.println("};");
+		// System.out.println("#define NC " + nbrOperators);
+		// System.out.println("#define MC " + variables.size());
+		//
+		// System.out.println("static char *OpNN[NC] = {");
+		// for (PipelineOperator pipeOP : operators) {
+		// System.out.print("\"" + pipeOP.toString() + "\", ");
+		//
+		// }
+		// System.out.println("};");
+		//
+		// System.out.println("static char *VaNN[MC] = {");
+		// for (Var var : variables) {
+		// System.out.print("\"" + var.getIndexedName() + "\", ");
+		// }
+		// System.out.println("};");
+		//
+		// System.out.println("int VaWW[MC] = {");
+		// for (Var var : variables) {
+		// System.out.print(var.getType().getSizeInBits() + ", ");
+		// }
+		// System.out.println("};");
+		//
+		// System.out.println("static char *chFF[NC][2] = {");
+		// for (List<String> ins : inputOpString) {
+		// if (ins.size() == 1) {
+		// System.out.print("{\"" + ins.get(0) + "\"" + ",\"\"}, ");
+		// System.out.print("\n");
+		// } else if (ins.size() == 2) {
+		// System.out.print("{\"" + ins.get(0) + "\"" + ",\"" + ins.get(1)
+		// + "\"}, ");
+		// System.out.print("\n");
+		// }
+		//
+		// }
+		// System.out.println("};");
+		//
+		// System.out.println("static char *chHH[NC] = {");
+		// for (String outputs : outputOpString) {
+		// System.out.print("\"" + outputs + "\", ");
+		// }
+		// System.out.println("};");
 	}
 
 }
