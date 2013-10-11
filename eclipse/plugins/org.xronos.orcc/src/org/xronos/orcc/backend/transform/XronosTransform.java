@@ -72,12 +72,12 @@ public class XronosTransform {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
+			transformations.add(new DfVisitor<Void>(
+					new XronosConstantPropagation()));
 			if (!actor.hasAttribute("xronos_no_store_once")) {
 				transformations.add(new StoreOnceTransformation());
 			}
 			transformations.add(new DfVisitor<Void>(new LoopUnrolling()));
-			transformations.add(new DfVisitor<Void>(
-					new XronosConstantPropagation()));
 			transformations.add(new XronosParameterPropagation());
 			transformations.add(new DivisionSubstitution());
 

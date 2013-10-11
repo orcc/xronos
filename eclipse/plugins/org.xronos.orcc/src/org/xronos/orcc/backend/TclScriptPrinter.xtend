@@ -173,7 +173,7 @@ class TclScriptPrinter extends IrSwitch {
 		'''
 		## Start VSIM
 		«IF(xilinxPrimitives)»
-			vsim -novopt -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
+			vsim -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
 		«ELSE»
 			vsim -novopt -L unisims_ver -L simprims_ver -t ns «workName».glbl «workName».«simName»
 		«ENDIF»	
