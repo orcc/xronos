@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orcc.backends.llvm.tta.transform.PrintRemoval;
 import net.sf.orcc.backends.transform.CastAdder;
 import net.sf.orcc.backends.transform.DivisionSubstitution;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
@@ -50,7 +51,6 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.transform.BlockCombine;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
-import net.sf.orcc.ir.transform.DeadCodeElimination;
 import net.sf.orcc.ir.transform.DeadGlobalElimination;
 import net.sf.orcc.ir.transform.DeadVariableRemoval;
 import net.sf.orcc.util.OrccLogger;
@@ -72,6 +72,7 @@ public class XronosTransform {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
+			transformations.add(new XronosRepeatFixer());
 			transformations.add(new DfVisitor<Void>(
 					new XronosConstantPropagation()));
 			if (!actor.hasAttribute("xronos_no_store_once")) {
@@ -91,16 +92,19 @@ public class XronosTransform {
 			transformations.add(new XronosScheduler(resourceCache));
 			transformations.add(new DfVisitor<Void>(new Inliner(false, true,
 					true)));
+			transformations.add(new PrintRemoval());
 			// transformations.add(new DfVisitor<Void>(new
 			// LocalVarInitializer()));
 
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
+			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
 
 			transformations.add(new DeadGlobalElimination());
-			transformations.add(new DfVisitor<Void>(new DeadCodeElimination()));
+			// transformations.add(new DfVisitor<Void>(new
+			// DeadCodeElimination()));
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
-
+			transformations.add(new PrintRemoval());
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));

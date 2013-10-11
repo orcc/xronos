@@ -48,23 +48,6 @@ import net.sf.orcc.util.util.EcoreHelper;
  */
 public class PhiFixer extends AbstractIrVisitor<Void> {
 
-	@Override
-	public Void caseInstPhi(InstPhi phi) {
-		for (Expression expr : phi.getValues()) {
-			doSwitch(expr);
-		}
-		return null;
-	}
-
-	@Override
-	public Void caseExprVar(ExprVar object) {
-		Var var = object.getUse().getVariable();
-		if (var.getDefs().isEmpty()) {
-			addAssign(var);
-		}
-		return null;
-	}
-
 	private void addAssign(Var var) {
 		// Create its Zero value
 		Expression value = null;
@@ -87,6 +70,23 @@ public class PhiFixer extends AbstractIrVisitor<Void> {
 		Procedure procedure = EcoreHelper.getContainerOfType(var,
 				Procedure.class);
 		procedure.getBlocks().add(0, blockBasic);
+	}
+
+	@Override
+	public Void caseExprVar(ExprVar object) {
+		Var var = object.getUse().getVariable();
+		if (var.getDefs().isEmpty() && !var.getType().isString()) {
+			addAssign(var);
+		}
+		return null;
+	}
+
+	@Override
+	public Void caseInstPhi(InstPhi phi) {
+		for (Expression expr : phi.getValues()) {
+			doSwitch(expr);
+		}
+		return null;
 	}
 
 }
