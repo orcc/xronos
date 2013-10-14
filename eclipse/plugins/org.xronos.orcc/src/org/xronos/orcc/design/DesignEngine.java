@@ -70,7 +70,7 @@ public class DesignEngine extends Engine {
 		this.network = network;
 		this.resourceCache = resourceCache;
 		this.jobHandler = new JobHandlerAdapter("Forging: "
-				+ actor.getSimpleName());
+				+ network.getSimpleName());
 	}
 
 	@Override

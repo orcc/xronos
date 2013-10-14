@@ -54,23 +54,31 @@ import org.xronos.orcc.design.visitors.io.CircularBuffer;
  */
 public class ResourceCache {
 
-	private Map<Action, Task> actionToTask = new HashMap<Action, Task>();
+	private Map<Action, Task> actionToTask;
 
-	private Map<Actor, Boolean> actorContainsRepeat = new HashMap<Actor, Boolean>();
+	private Map<Actor, Boolean> actorContainsRepeat;
 
-	private Map<Actor, Map<Port, CircularBuffer>> actorInputCircularBuffer = new HashMap<Actor, Map<Port, CircularBuffer>>();
+	private Map<Actor, Map<Port, CircularBuffer>> actorInputCircularBuffer;
 
-	private final Map<Port, ActionIOHandler> ioHandlers = new HashMap<Port, ActionIOHandler>();
+	private Map<Port, ActionIOHandler> ioHandlers;
 
 	/** Map of a LoopBody Block Input Variables **/
-	private Map<Block, List<Var>> loopBodyInputs = new HashMap<Block, List<Var>>();
+	private Map<Block, List<Var>> loopBodyInputs;
 
 	/** Map of a LoopBody Block Output Variables **/
-	private Map<Block, List<Var>> loopBodyOutputs = new HashMap<Block, List<Var>>();
+	private Map<Block, List<Var>> loopBodyOutputs;
 
-	private final Map<Var, Location> memLocations = new HashMap<Var, Location>();
+	private Map<Var, Location> memLocations;
 
 	public ResourceCache() {
+		actionToTask = new HashMap<Action, Task>();
+		actorContainsRepeat = new HashMap<Actor, Boolean>();
+		actorInputCircularBuffer = new HashMap<Actor, Map<Port, CircularBuffer>>();
+		ioHandlers = new HashMap<Port, ActionIOHandler>();
+		loopBodyInputs = new HashMap<Block, List<Var>>();
+		loopBodyOutputs = new HashMap<Block, List<Var>>();
+		memLocations = new HashMap<Var, Location>();
+
 	}
 
 	public void addActorContainsRepeat(Actor actor, Boolean contains) {

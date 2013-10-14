@@ -28,50 +28,67 @@
  */
 package org.xronos.orcc.backend.transform;
 
-import net.sf.orcc.backends.transform.ssa.ConstantPropagator;
+import java.util.List;
+import java.util.ListIterator;
+
+import net.sf.orcc.ir.Block;
+import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstLoad;
-import net.sf.orcc.ir.Use;
+import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstPhi;
+import net.sf.orcc.ir.Instruction;
+import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Var;
-import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.util.EcoreHelper;
 
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.util.EcoreUtil;
-
-/**
- * A constant propagation transformation
- * 
- * @author Endri Bezati
- * @author Ghislain Roquier
- * 
- */
-public class XronosConstantPropagation extends ConstantPropagator {
+public class XronosDeadCodeElimination extends AbstractIrVisitor<Void> {
 
 	@Override
-	public Void caseInstLoad(InstLoad load) {
-		Var var = load.getSource().getVariable();
-		if (var.isGlobal() && !var.isAssignable()) {
-			Expression value = var.getInitialValue();
-			if (value == null) { // should be a param
-				value = (Expression) var.getValue();
-			}
-			if (value.isExprBool() || value.isExprFloat() || value.isExprInt()
-					|| value.isExprString()) {
-				EList<Use> targetUses = load.getTarget().getVariable()
-						.getUses();
-				while (!targetUses.isEmpty()) {
-					ExprVar expr = EcoreHelper.getContainerOfType(
-							targetUses.get(0), ExprVar.class);
-					EcoreUtil.replace(expr, IrUtil.copy(value));
-					IrUtil.delete(expr);
+	public Void caseBlockIf(BlockIf blockIf) {
+		Expression condition = blockIf.getCondition();
+		if (condition.isExprBool()) {
+			if (((ExprBool) condition).isValue()) {
+
+			} else {
+				if (blockIf.getElseBlocks().isEmpty()) {
+					List<Block> parentBlocks = EcoreHelper
+							.getContainingList(blockIf);
+					// parentBlocks.remove(blockIf);
+					// replacePhis(blockIf.getJoinBlock(), 1);
 				}
-				IrUtil.delete(load);
-				indexInst--;
 			}
 		}
 		return null;
+	}
+
+	private void replacePhis(BlockBasic joinBlock, int index) {
+		ListIterator<Instruction> it = joinBlock.listIterator();
+		while (it.hasNext()) {
+			Instruction instruction = it.next();
+			if (instruction.isInstPhi()) {
+				InstPhi phi = (InstPhi) instruction;
+
+				Var target = phi.getTarget().getVariable();
+				ExprVar sourceExpr = (ExprVar) phi.getValues().get(index);
+				Var source = sourceExpr.getUse().getVariable();
+
+				// translate the phi to an assign
+				ExprVar expr = IrFactory.eINSTANCE.createExprVar(source);
+				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+						target, expr);
+
+				it.set(assign);
+
+				// remove the other variable
+				ExprVar localExpr = (ExprVar) phi.getValues().get(1 - index);
+				Var local = localExpr.getUse().getVariable();
+				procedure.getLocals().remove(local);
+			}
+		}
 	}
 
 }

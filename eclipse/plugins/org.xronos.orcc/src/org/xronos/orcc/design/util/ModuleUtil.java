@@ -81,6 +81,22 @@ import org.xronos.orcc.preference.Constants;
  */
 
 public class ModuleUtil {
+	public static Component absoluteMemoryRead(Var stateVar, Var readValue,
+			ResourceCache resourceCache, Map<Bus, Var> busDependency,
+			Map<Bus, Integer> doneBusDependency) {
+		Location targetLocation = resourceCache.getLocation(stateVar);
+
+		LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
+				.getLogicalMemoryPorts().iterator().next();
+
+		Component absoluteMemRead = new AbsoluteMemoryRead(targetLocation,
+				Constants.MAX_ADDR_WIDTH, stateVar.getType().isInt());
+		memPort.addAccess((LValue) absoluteMemRead, targetLocation);
+		PortUtil.mapOutDataPorts(absoluteMemRead, readValue, busDependency,
+				doneBusDependency);
+		return absoluteMemRead;
+	}
+
 	/**
 	 * This method creates an AbsoluteMemoryWrite Component which is an absolute
 	 * memory write access.
@@ -114,22 +130,6 @@ public class ModuleUtil {
 				portGroupDependency);
 		PortUtil.mapOutControlPort(absoluteMemWrite, 0, doneBusDependency);
 		return absoluteMemWrite;
-	}
-
-	public static Component absoluteMemoryRead(Var stateVar, Var readValue,
-			ResourceCache resourceCache, Map<Bus, Var> busDependency,
-			Map<Bus, Integer> doneBusDependency) {
-		Location targetLocation = resourceCache.getLocation(stateVar);
-
-		LogicalMemoryPort memPort = targetLocation.getLogicalMemory()
-				.getLogicalMemoryPorts().iterator().next();
-
-		Component absoluteMemRead = new AbsoluteMemoryRead(targetLocation,
-				Constants.MAX_ADDR_WIDTH, stateVar.getType().isInt());
-		memPort.addAccess((LValue) absoluteMemRead, targetLocation);
-		PortUtil.mapOutDataPorts(absoluteMemRead, readValue, busDependency,
-				doneBusDependency);
-		return absoluteMemRead;
 	}
 
 	/**
@@ -724,7 +724,8 @@ public class ModuleUtil {
 			Exit exit = module.getExit(Exit.DONE);
 			for (Var var : outVars) {
 				Bus dataBus = exit.makeDataBus();
-				Integer busSize = var.getType().getSizeInBits();
+				Integer busSize = var.getType().isString() ? 1 : var.getType()
+						.getSizeInBits();
 				boolean isSigned = var.getType().isInt()
 						|| var.getType().isBool();
 				dataBus.setSize(busSize, isSigned);
@@ -977,7 +978,8 @@ public class ModuleUtil {
 		if (!outVars.isEmpty()) {
 			for (Var var : outVars) {
 				Bus dataBus = exit.makeDataBus();
-				Integer busSize = var.getType().getSizeInBits();
+				Integer busSize = var.getType().isString() ? 1 : var.getType()
+						.getSizeInBits();
 				boolean isSigned = var.getType().isInt()
 						|| var.getType().isBool();
 				dataBus.setSize(busSize, isSigned);

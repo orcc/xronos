@@ -97,12 +97,13 @@ public class XronosTransform {
 			// LocalVarInitializer()));
 
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
-			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
+			// transformations.add(new DfVisitor<Void>(new
+			// DeadVariableRemoval()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
 
 			transformations.add(new DeadGlobalElimination());
-			// transformations.add(new DfVisitor<Void>(new
-			// DeadCodeElimination()));
+			transformations.add(new DfVisitor<Void>(
+					new XronosDeadCodeElimination()));
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
 			transformations.add(new PrintRemoval());
 			transformations.add(new DfVisitor<Expression>(

@@ -34,6 +34,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orcc.df.Action;
+import net.sf.orcc.df.Actor;
+import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Var;
+
+import org.eclipse.emf.common.util.EList;
 import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
 import org.xronos.openforge.frontend.slim.builder.ActionIOHandler.FifoIOHandler;
 import org.xronos.openforge.frontend.slim.builder.ActionIOHandler.NativeIOHandler;
@@ -44,14 +51,6 @@ import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.io.FifoID;
 import org.xronos.orcc.design.ResourceCache;
-
-import net.sf.orcc.df.Action;
-import net.sf.orcc.df.Actor;
-import net.sf.orcc.ir.IrFactory;
-import net.sf.orcc.ir.Type;
-import net.sf.orcc.ir.Var;
-
-import org.eclipse.emf.common.util.EList;
 
 /**
  * This class contains several methods for the Design Ports
@@ -203,6 +202,25 @@ public class PortUtil {
 		return pinWriteList;
 	}
 
+	public static void mapInDataPorts(Component component, List<Var> inVars,
+			Map<Port, Var> portDependency,
+			Map<Port, Integer> portGroupDependency) {
+
+		Iterator<Port> portIter = component.getDataPorts().iterator();
+
+		Integer group = 0; // By default the group is zero
+		for (Var var : inVars) {
+			Port dataPort = portIter.next();
+			dataPort.setIDLogical(var.getIndexedName());
+			dataPort.setSize(var.getType().isString() ? 1 : var.getType()
+					.getSizeInBits(), var.getType().isInt()
+					|| var.getType().isBool());
+			// Put Input Port dependency
+			portDependency.put(dataPort, var);
+			portGroupDependency.put(dataPort, group);
+		}
+	}
+
 	public static void mapInDataPorts(Component component, Var inVar,
 			Map<Port, Var> portDependency,
 			Map<Port, Integer> portGroupDependency) {
@@ -219,48 +237,10 @@ public class PortUtil {
 		portGroupDependency.put(dataPort, group);
 	}
 
-	public static void mapInDataPorts(Component component, List<Var> inVars,
-			Map<Port, Var> portDependency,
-			Map<Port, Integer> portGroupDependency) {
-
-		Iterator<Port> portIter = component.getDataPorts().iterator();
-
-		Integer group = 0; // By default the group is zero
-		for (Var var : inVars) {
-			Port dataPort = portIter.next();
-			dataPort.setIDLogical(var.getIndexedName());
-			dataPort.setSize(var.getType().getSizeInBits(), var.getType()
-					.isInt() || var.getType().isBool());
-			// Put Input Port dependency
-			portDependency.put(dataPort, var);
-			portGroupDependency.put(dataPort, group);
-		}
-	}
-
 	public static void mapOutControlPort(Component component, Integer group,
 			Map<Bus, Integer> doneBusDependency) {
 		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
 		doneBusDependency.put(doneBus, group);
-	}
-
-	public static void mapOutDataPorts(Component component, Var outVar,
-			Map<Bus, Var> busDependency, Map<Bus, Integer> doneBusDependency) {
-
-		Integer group = 0; // By default the group is zero
-		Bus dataBus = component.getExit(Exit.DONE).getDataBuses().get(group);
-
-		// Set the bus value
-		if (dataBus.getValue() == null) {
-			dataBus.setSize(outVar.getType().getSizeInBits(), outVar.getType()
-					.isInt() || outVar.getType().isBool());
-		}
-		// Name the dataBus
-		dataBus.setIDLogical(outVar.getIndexedName());
-		busDependency.put(dataBus, outVar);
-
-		// Map Out done Bus
-		mapOutControlPort(component, group, doneBusDependency);
-
 	}
 
 	public static void mapOutDataPorts(Component component, List<Var> outVars,
@@ -283,6 +263,26 @@ public class PortUtil {
 		}
 		// Map Out done Bus
 		mapOutControlPort(component, group, doneBusDependency);
+	}
+
+	public static void mapOutDataPorts(Component component, Var outVar,
+			Map<Bus, Var> busDependency, Map<Bus, Integer> doneBusDependency) {
+
+		Integer group = 0; // By default the group is zero
+		Bus dataBus = component.getExit(Exit.DONE).getDataBuses().get(group);
+
+		// Set the bus value
+		if (dataBus.getValue() == null) {
+			dataBus.setSize(outVar.getType().getSizeInBits(), outVar.getType()
+					.isInt() || outVar.getType().isBool());
+		}
+		// Name the dataBus
+		dataBus.setIDLogical(outVar.getIndexedName());
+		busDependency.put(dataBus, outVar);
+
+		// Map Out done Bus
+		mapOutControlPort(component, group, doneBusDependency);
+
 	}
 
 }
