@@ -130,6 +130,7 @@ public class XronosTransform {
 					OrccLogger
 							.severeln("\t - transformation failed: NullPointerException, "
 									+ ex.getMessage());
+					break;
 				}
 			}
 		}
