@@ -156,14 +156,17 @@ public class XronosPrinter {
 	 *            an Instance
 	 * @return
 	 */
+	@SuppressWarnings("null")
 	public boolean printInstance(String[] xronosArgs, String rtlPath,
 			Actor actor, Map<String, Object> options,
 			ResourceCache resourceCache, int idxInstance, int totalInstances) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
+		Engine engine = null;
 		boolean error = false;
 
 		long t0 = System.currentTimeMillis();
+
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			try {
 				xronosMainJob.setOptionValues(xronosArgs);
@@ -176,8 +179,7 @@ public class XronosPrinter {
 						+ totalInstances + ")");
 				XronosTransform.transformActor(actor, options, resourceCache,
 						true);
-				Engine engine = new DesignEngine(xronosMainJob, actor,
-						resourceCache);
+				engine = new DesignEngine(xronosMainJob, actor, resourceCache);
 				engine.begin();
 			} catch (NewJob.ForgeOptionException foe) {
 				OrccLogger.severeln("\t command line option error: "
@@ -219,6 +221,7 @@ public class XronosPrinter {
 				long t1 = System.currentTimeMillis();
 				OrccLogger.traceln("\t - Compiled in: " + (float) (t1 - t0)
 						/ 1000 + "s");
+				engine.kill();
 			}
 			if (options.containsKey("org.xronos.orcc.generateGoDone")) {
 				Boolean generateGoDone = (Boolean) options

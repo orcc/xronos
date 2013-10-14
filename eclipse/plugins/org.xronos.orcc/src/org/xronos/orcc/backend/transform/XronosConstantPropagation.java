@@ -28,12 +28,12 @@
  */
 package org.xronos.orcc.backend.transform;
 
-import net.sf.orcc.backends.transform.ssa.ConstantPropagator;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.util.EcoreHelper;
 
@@ -47,7 +47,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * @author Ghislain Roquier
  * 
  */
-public class XronosConstantPropagation extends ConstantPropagator {
+public class XronosConstantPropagation extends AbstractIrVisitor<Void> {
 
 	@Override
 	public Void caseInstLoad(InstLoad load) {
