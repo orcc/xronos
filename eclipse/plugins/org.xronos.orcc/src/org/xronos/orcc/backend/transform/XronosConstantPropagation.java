@@ -28,13 +28,23 @@
  */
 package org.xronos.orcc.backend.transform;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import net.sf.orcc.ir.ExprBool;
+import net.sf.orcc.ir.ExprFloat;
+import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstStore;
+import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.ir.util.ValueUtil;
 import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.common.util.EList;
@@ -48,6 +58,48 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  * 
  */
 public class XronosConstantPropagation extends AbstractIrVisitor<Void> {
+
+	XronosExprEvaluator exprEvaluator;
+
+	public XronosConstantPropagation() {
+		exprEvaluator = new XronosExprEvaluator();
+	}
+
+	@Override
+	public Void caseInstAssign(InstAssign assign) {
+		Object value = exprEvaluator.doSwitch(assign.getValue());
+		if (value != null) {
+			if (ValueUtil.isBool(value)) {
+				ExprBool exprBool = IrFactory.eINSTANCE
+						.createExprBool((Boolean) value);
+				assign.setValue(exprBool);
+			} else if (ValueUtil.isInt(value)) {
+				ExprInt exprInt = IrFactory.eINSTANCE
+						.createExprInt((BigInteger) value);
+				assign.setValue(exprInt);
+			} else if (ValueUtil.isFloat(value)) {
+				ExprFloat exprFloat = IrFactory.eINSTANCE
+						.createExprFloat((BigDecimal) value);
+				assign.setValue(exprFloat);
+			}
+		}
+
+		Expression newValue = assign.getValue();
+		if (newValue.isExprBool() || newValue.isExprFloat()
+				|| newValue.isExprInt() || newValue.isExprString()) {
+			EList<Use> targetUses = assign.getTarget().getVariable().getUses();
+			while (!targetUses.isEmpty()) {
+				ExprVar expr = EcoreHelper.getContainerOfType(
+						targetUses.get(0), ExprVar.class);
+				EcoreUtil.replace(expr, IrUtil.copy(newValue));
+				IrUtil.delete(expr);
+			}
+			IrUtil.delete(assign);
+			indexInst--;
+		}
+
+		return null;
+	}
 
 	@Override
 	public Void caseInstLoad(InstLoad load) {
@@ -74,4 +126,24 @@ public class XronosConstantPropagation extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
+	@Override
+	public Void caseInstStore(InstStore store) {
+		Object value = exprEvaluator.doSwitch(store.getValue());
+		if (value != null) {
+			if (ValueUtil.isBool(value)) {
+				ExprBool exprBool = IrFactory.eINSTANCE
+						.createExprBool((Boolean) value);
+				store.setValue(exprBool);
+			} else if (ValueUtil.isInt(value)) {
+				ExprInt exprInt = IrFactory.eINSTANCE
+						.createExprInt((BigInteger) value);
+				store.setValue(exprInt);
+			} else if (ValueUtil.isFloat(value)) {
+				ExprFloat exprFloat = IrFactory.eINSTANCE
+						.createExprFloat((BigDecimal) value);
+				store.setValue(exprFloat);
+			}
+		}
+		return null;
+	}
 }

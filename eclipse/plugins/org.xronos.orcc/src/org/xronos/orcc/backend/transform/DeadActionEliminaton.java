@@ -41,21 +41,16 @@ import net.sf.orcc.df.Transition;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.graph.Edge;
 import net.sf.orcc.ir.BlockBasic;
-import net.sf.orcc.ir.ExprBinary;
-import net.sf.orcc.ir.ExprUnary;
-import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.Instruction;
-import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
-import net.sf.orcc.ir.util.ExpressionEvaluator;
 import net.sf.orcc.ir.util.ValueUtil;
 import net.sf.orcc.util.OrccLogger;
 
@@ -66,80 +61,6 @@ import net.sf.orcc.util.OrccLogger;
  * 
  */
 public class DeadActionEliminaton extends DfVisitor<Void> {
-
-	/**
-	 * An expression evaluator that accepts null values
-	 * 
-	 * @author Endri Bezati
-	 * 
-	 */
-	public class ExprEvaluator extends ExpressionEvaluator {
-		@Override
-		public Object caseExprBinary(ExprBinary expr) {
-			Object val1 = doSwitch(expr.getE1());
-			Object val2 = doSwitch(expr.getE2());
-			Object result = null;
-			if (val1 == null && val2 == null) {
-				return null;
-			} else if (val1 != null && val2 == null) {
-				if (ValueUtil.isBool(val1)) {
-					Boolean value = (Boolean) val1;
-					if (expr.getOp() == OpBinary.LOGIC_AND) {
-						if (value) {
-							return null;
-						} else {
-							return false;
-						}
-					} else if (expr.getOp() == OpBinary.LOGIC_OR) {
-						if (value) {
-							return true;
-						} else {
-							return null;
-						}
-					}
-				}
-			} else if (val1 == null && val2 != null) {
-				if (ValueUtil.isBool(val2)) {
-					Boolean value = (Boolean) val2;
-					if (expr.getOp() == OpBinary.LOGIC_AND) {
-						if (value) {
-							return null;
-						} else {
-							return false;
-						}
-					} else if (expr.getOp() == OpBinary.LOGIC_OR) {
-						if (value) {
-							return true;
-						} else {
-							return null;
-						}
-					}
-				}
-			} else {
-				result = ValueUtil.compute(val1, expr.getOp(), val2);
-			}
-			return result;
-		}
-
-		@Override
-		public Object caseExprUnary(ExprUnary expr) {
-			Object value = doSwitch(expr.getExpr());
-			if (value == null) {
-				return null;
-			}
-			Object result = ValueUtil.compute(expr.getOp(), value);
-
-			return result;
-		}
-
-		@Override
-		public Object caseExprVar(ExprVar expr) {
-			Var var = expr.getUse().getVariable();
-			Object value = var.getValue();
-
-			return value;
-		}
-	}
 
 	/**
 	 * This class evaluates statically guards
@@ -192,6 +113,8 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 					throw new OrccRuntimeException(
 							"Array Index Out of Bound at line "
 									+ load.getLineNumber());
+				} catch (OrccRuntimeException e) {
+					target.setValue(null);
 				}
 			}
 			return null;
@@ -216,10 +139,10 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 	/**
 	 * The expression evaluator
 	 */
-	private ExprEvaluator exprInterpreter;
+	private XronosExprEvaluator exprInterpreter;
 
 	public DeadActionEliminaton() {
-		this.exprInterpreter = new ExprEvaluator();
+		this.exprInterpreter = new XronosExprEvaluator();
 	}
 
 	@Override

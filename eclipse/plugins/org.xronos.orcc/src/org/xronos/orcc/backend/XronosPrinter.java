@@ -156,7 +156,6 @@ public class XronosPrinter {
 	 *            an Instance
 	 * @return
 	 */
-	@SuppressWarnings("null")
 	public boolean printInstance(String[] xronosArgs, String rtlPath,
 			Actor actor, Map<String, Object> options,
 			ResourceCache resourceCache, int idxInstance, int totalInstances) {
