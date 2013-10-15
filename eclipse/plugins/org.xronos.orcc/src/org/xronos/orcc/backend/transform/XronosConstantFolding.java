@@ -103,7 +103,6 @@ public class XronosConstantFolding extends XronosExprEvaluator {
 			for (Integer idx : indexes.keySet()) {
 				load.getIndexes().set(idx, indexes.get(idx));
 			}
-
 		}
 		return null;
 	}

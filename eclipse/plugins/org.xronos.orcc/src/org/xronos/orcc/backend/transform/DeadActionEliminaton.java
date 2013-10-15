@@ -95,7 +95,9 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 			Var target = load.getTarget().getVariable();
 			Var source = load.getSource().getVariable();
 			if (load.getIndexes().isEmpty()) {
-				target.setValue(source.getValue());
+				if (source.getValue() != null) {
+					target.setValue(source.getValue());
+				}
 			} else {
 				Object array = source.getValue();
 				Object[] indexes = new Object[load.getIndexes().size()];
@@ -154,7 +156,7 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 				Boolean value = (Boolean) eliminate;
 				// if the result is false then eliminate
 				if (!value) {
-					OrccLogger.warnln("\tXronos: action \"" + action.getName()
+					OrccLogger.warnln("Xronos: action \"" + action.getName()
 							+ "\" is unreachable, eliminating!");
 					toBeEliminated.add(action);
 				}

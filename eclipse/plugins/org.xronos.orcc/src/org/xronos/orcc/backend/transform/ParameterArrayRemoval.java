@@ -53,6 +53,8 @@ public class ParameterArrayRemoval extends DfVisitor<Void> {
 				Var newVar = IrFactory.eINSTANCE.createVar(var.getType(),
 						var.getName() + "_param", true, var.getIndex());
 				newVar.setInitialValue(var.getInitialValue());
+				newVar.setValue(var.getValue());
+				newVar.setAssignable(false);
 
 				EList<Use> uses = var.getUses();
 				while (!uses.isEmpty()) {

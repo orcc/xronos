@@ -85,7 +85,6 @@ public class XronosTransform {
 				transformations.add(new StoreOnceTransformation());
 			}
 			transformations.add(new DfVisitor<Void>(new LoopUnrolling()));
-			transformations.add(new XronosParameterPropagation());
 			transformations.add(new DivisionSubstitution());
 
 			if (portTransformation) {
@@ -99,12 +98,9 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Void>(new Inliner(false, true,
 					true)));
 			transformations.add(new PrintRemoval());
-			// transformations.add(new DfVisitor<Void>(new
-			// LocalVarInitializer()));
+			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
 
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
-			// transformations.add(new DfVisitor<Void>(new
-			// DeadVariableRemoval()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
 
 			transformations.add(new DeadGlobalElimination());
