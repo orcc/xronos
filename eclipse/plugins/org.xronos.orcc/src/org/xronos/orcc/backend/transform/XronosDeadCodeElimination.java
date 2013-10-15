@@ -29,20 +29,12 @@
 package org.xronos.orcc.backend.transform;
 
 import java.util.List;
-import java.util.ListIterator;
 
 import net.sf.orcc.ir.Block;
-import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
-import net.sf.orcc.ir.ExprBool;
-import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstAssign;
-import net.sf.orcc.ir.InstPhi;
-import net.sf.orcc.ir.Instruction;
-import net.sf.orcc.ir.IrFactory;
-import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.ir.util.ValueUtil;
 import net.sf.orcc.util.util.EcoreHelper;
 
 public class XronosDeadCodeElimination extends AbstractIrVisitor<Void> {
@@ -50,45 +42,43 @@ public class XronosDeadCodeElimination extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseBlockIf(BlockIf blockIf) {
 		Expression condition = blockIf.getCondition();
-		if (condition.isExprBool()) {
-			if (((ExprBool) condition).isValue()) {
-
-			} else {
-				if (blockIf.getElseBlocks().isEmpty()) {
+		XronosExprEvaluator exprEvaluator = new XronosExprEvaluator();
+		Object value = exprEvaluator.doSwitch(condition);
+		if (value != null) {
+			if (ValueUtil.isBool(value)) {
+				Boolean val = (Boolean) value;
+				if (val) {
+					// 1. Get parent Blocks
 					List<Block> parentBlocks = EcoreHelper
 							.getContainingList(blockIf);
-					// parentBlocks.remove(blockIf);
-					// replacePhis(blockIf.getJoinBlock(), 1);
+
+					// 2. Get then Blocks
+					List<Block> thenBlocks = blockIf.getThenBlocks();
+
+					// 3. Add the blocks to the parents one
+					parentBlocks.addAll(indexBlock, thenBlocks);
+
+					// 4. Remove all blocks from the else
+					parentBlocks.remove(blockIf);
+
+				} else {
+					// 1. Get parent Blocks
+					List<Block> parentBlocks = EcoreHelper
+							.getContainingList(blockIf);
+					if (!blockIf.getElseBlocks().isEmpty()) {
+
+						// 2. Get then Blocks
+						List<Block> elseBlocks = blockIf.getElseBlocks();
+
+						// 3. Add the blocks to the parents one
+						parentBlocks.addAll(indexBlock, elseBlocks);
+					}
+					// 5. Remove all blocks from the else
+					parentBlocks.remove(blockIf);
 				}
 			}
 		}
+
 		return null;
 	}
-
-	private void replacePhis(BlockBasic joinBlock, int index) {
-		ListIterator<Instruction> it = joinBlock.listIterator();
-		while (it.hasNext()) {
-			Instruction instruction = it.next();
-			if (instruction.isInstPhi()) {
-				InstPhi phi = (InstPhi) instruction;
-
-				Var target = phi.getTarget().getVariable();
-				ExprVar sourceExpr = (ExprVar) phi.getValues().get(index);
-				Var source = sourceExpr.getUse().getVariable();
-
-				// translate the phi to an assign
-				ExprVar expr = IrFactory.eINSTANCE.createExprVar(source);
-				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
-						target, expr);
-
-				it.set(assign);
-
-				// remove the other variable
-				ExprVar localExpr = (ExprVar) phi.getValues().get(1 - index);
-				Var local = localExpr.getUse().getVariable();
-				procedure.getLocals().remove(local);
-			}
-		}
-	}
-
 }

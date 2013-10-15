@@ -79,8 +79,9 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Object>(
 					new XronosConstantFolding()));
 			transformations.add(new DeadActionEliminaton());
+			transformations.add(new DfVisitor<Void>(
+					new XronosDeadCodeElimination()));
 			transformations.add(new XronosRepeatFixer());
-
 			if (!actor.hasAttribute("xronos_no_store_once")) {
 				transformations.add(new StoreOnceTransformation());
 			}
@@ -104,10 +105,7 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
 
 			transformations.add(new DeadGlobalElimination());
-			transformations.add(new DfVisitor<Void>(
-					new XronosDeadCodeElimination()));
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
-			transformations.add(new PrintRemoval());
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));

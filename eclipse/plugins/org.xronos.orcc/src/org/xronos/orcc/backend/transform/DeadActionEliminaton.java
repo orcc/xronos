@@ -39,6 +39,7 @@ import net.sf.orcc.df.Transition;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.graph.Edge;
 import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstLoad;
@@ -79,6 +80,26 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 					return result;
 				}
 			}
+			return null;
+		}
+
+		@Override
+		public Object caseBlockIf(BlockIf blockIf) {
+			Expression condition = blockIf.getCondition();
+			Object resultCondition = doSwitch(condition);
+			if (resultCondition == null) {
+				return null;
+			} else {
+				if (ValueUtil.isBool(resultCondition)) {
+					Boolean value = (Boolean) resultCondition;
+					if (value) {
+						return doSwitch(blockIf.getThenBlocks());
+					} else {
+						return doSwitch(blockIf.getElseBlocks());
+					}
+				}
+			}
+
 			return null;
 		}
 
