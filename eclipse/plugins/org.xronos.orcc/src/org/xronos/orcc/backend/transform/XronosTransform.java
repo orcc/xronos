@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Ecole Polytechnique Fédérale de Lausanne
+ * Copyright (c) 2013, Ecole Polytechnique Fédérale de Lausanne
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -72,10 +72,15 @@ public class XronosTransform {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
-			transformations.add(new DeadActionEliminaton());
-			transformations.add(new XronosRepeatFixer());
+			transformations.add(new XronosVarInitializer());
+			transformations.add(new ParameterArrayRemoval());
 			transformations.add(new DfVisitor<Void>(
 					new XronosConstantPropagation()));
+			transformations.add(new DfVisitor<Object>(
+					new XronosConstantFolding()));
+			transformations.add(new DeadActionEliminaton());
+			transformations.add(new XronosRepeatFixer());
+
 			if (!actor.hasAttribute("xronos_no_store_once")) {
 				transformations.add(new StoreOnceTransformation());
 			}

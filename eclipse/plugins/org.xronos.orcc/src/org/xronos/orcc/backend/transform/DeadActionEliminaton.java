@@ -28,8 +28,6 @@
  */
 package org.xronos.orcc.backend.transform;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -149,18 +147,6 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 	public Void caseActor(Actor actor) {
 		List<Action> toBeEliminated = new ArrayList<Action>();
 
-		// initialize parameters
-		for (Var var : actor.getParameters()) {
-			initializeVar(var);
-		}
-
-		// initializes state variables
-		for (Var stateVar : actor.getStateVars()) {
-			if (!stateVar.isAssignable()) {
-				initializeVar(stateVar);
-			}
-		}
-
 		for (Action action : actor.getActions()) {
 			GuardEvaluator guardEvaluator = new GuardEvaluator();
 			Object eliminate = guardEvaluator.doSwitch(action.getScheduler());
@@ -200,37 +186,4 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 		return null;
 	}
 
-	/**
-	 * Initializes the given variable.
-	 * 
-	 * @param variable
-	 *            a variable
-	 */
-	protected void initializeVar(Var variable) {
-		Type type = variable.getType();
-		Expression initConst = variable.getInitialValue();
-		if (initConst == null) {
-			Object value;
-			if (type.isBool()) {
-				value = false;
-			} else if (type.isFloat()) {
-				value = BigDecimal.ZERO;
-			} else if (type.isInt() || type.isUint()) {
-				value = BigInteger.ZERO;
-			} else if (type.isList()) {
-				value = ValueUtil.createArray((TypeList) type);
-			} else if (type.isString()) {
-				value = "";
-			} else {
-				value = null;
-			}
-			variable.setValue(value);
-		} else {
-			// evaluate initial constant value
-			if (type.isList()) {
-				exprInterpreter.setType((TypeList) type);
-			}
-			variable.setValue(exprInterpreter.doSwitch(initConst));
-		}
-	}
 }

@@ -28,46 +28,41 @@
  */
 package org.xronos.orcc.backend.transform;
 
-import net.sf.orcc.ir.ExprVar;
-import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.Def;
+import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
-import net.sf.orcc.ir.util.AbstractIrVisitor;
-import net.sf.orcc.ir.util.IrUtil;
-import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 
 /**
- * A constant propagation transformation
+ * This transformation transforms parameter arrays to state variables
  * 
  * @author Endri Bezati
  * 
  */
-public class XronosConstantPropagation extends AbstractIrVisitor<Void> {
+public class ParameterArrayRemoval extends DfVisitor<Void> {
 
 	@Override
-	public Void caseInstLoad(InstLoad load) {
-		Var var = load.getSource().getVariable();
-		if (var.isGlobal() && !var.isAssignable()) {
-			Expression value = var.getInitialValue();
-			if (value == null) { // should be a param
-				value = (Expression) var.getValue();
-			}
-			if (value.isExprBool() || value.isExprFloat() || value.isExprInt()
-					|| value.isExprString()) {
-				EList<Use> targetUses = load.getTarget().getVariable()
-						.getUses();
-				while (!targetUses.isEmpty()) {
-					ExprVar expr = EcoreHelper.getContainerOfType(
-							targetUses.get(0), ExprVar.class);
-					EcoreUtil.replace(expr, IrUtil.copy(value));
-					IrUtil.delete(expr);
+	public Void caseActor(Actor actor) {
+
+		for (Var var : actor.getParameters()) {
+			if (var.getType().isList()) {
+				Var newVar = IrFactory.eINSTANCE.createVar(var.getType(),
+						var.getName() + "_param", true, var.getIndex());
+				newVar.setInitialValue(var.getInitialValue());
+
+				EList<Use> uses = var.getUses();
+				while (!uses.isEmpty()) {
+					uses.get(0).setVariable(newVar);
 				}
-				IrUtil.delete(load);
-				indexInst--;
+				EList<Def> defs = var.getDefs();
+				while (!defs.isEmpty()) {
+					defs.get(0).setVariable(newVar);
+				}
+				actor.getStateVars().add(newVar);
 			}
 		}
 		return null;

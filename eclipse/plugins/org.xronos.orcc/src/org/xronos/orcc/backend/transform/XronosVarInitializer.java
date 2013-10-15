@@ -28,49 +28,73 @@
  */
 package org.xronos.orcc.backend.transform;
 
-import net.sf.orcc.ir.ExprVar;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstLoad;
-import net.sf.orcc.ir.Use;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
-import net.sf.orcc.ir.util.AbstractIrVisitor;
-import net.sf.orcc.ir.util.IrUtil;
-import net.sf.orcc.util.util.EcoreHelper;
+import net.sf.orcc.ir.util.ValueUtil;
 
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.util.EcoreUtil;
+public class XronosVarInitializer extends DfVisitor<Void> {
 
-/**
- * A constant propagation transformation
- * 
- * @author Endri Bezati
- * 
- */
-public class XronosConstantPropagation extends AbstractIrVisitor<Void> {
+	XronosExprEvaluator exprEvaluator;
+
+	public XronosVarInitializer() {
+		exprEvaluator = new XronosExprEvaluator();
+	}
 
 	@Override
-	public Void caseInstLoad(InstLoad load) {
-		Var var = load.getSource().getVariable();
-		if (var.isGlobal() && !var.isAssignable()) {
-			Expression value = var.getInitialValue();
-			if (value == null) { // should be a param
-				value = (Expression) var.getValue();
-			}
-			if (value.isExprBool() || value.isExprFloat() || value.isExprInt()
-					|| value.isExprString()) {
-				EList<Use> targetUses = load.getTarget().getVariable()
-						.getUses();
-				while (!targetUses.isEmpty()) {
-					ExprVar expr = EcoreHelper.getContainerOfType(
-							targetUses.get(0), ExprVar.class);
-					EcoreUtil.replace(expr, IrUtil.copy(value));
-					IrUtil.delete(expr);
-				}
-				IrUtil.delete(load);
-				indexInst--;
+	public Void caseActor(Actor actor) {
+		// initialize parameters
+		for (Var var : actor.getParameters()) {
+			initializeVar(var);
+		}
+
+		// initializes state variables
+		for (Var stateVar : actor.getStateVars()) {
+			if (!stateVar.isAssignable()) {
+				initializeVar(stateVar);
 			}
 		}
-		return null;
+		return super.caseActor(actor);
+	}
+
+	/**
+	 * Initializes the given variable.
+	 * 
+	 * @param variable
+	 *            a variable
+	 */
+	protected void initializeVar(Var variable) {
+		Type type = variable.getType();
+		Expression initConst = variable.getInitialValue();
+		if (initConst == null) {
+			Object value;
+			if (type.isBool()) {
+				value = false;
+			} else if (type.isFloat()) {
+				value = BigDecimal.ZERO;
+			} else if (type.isInt() || type.isUint()) {
+				value = BigInteger.ZERO;
+			} else if (type.isList()) {
+				value = ValueUtil.createArray((TypeList) type);
+			} else if (type.isString()) {
+				value = "";
+			} else {
+				value = null;
+			}
+			variable.setValue(value);
+		} else {
+			// evaluate initial constant value
+			if (type.isList()) {
+				exprEvaluator.setType((TypeList) type);
+			}
+			variable.setValue(exprEvaluator.doSwitch(initConst));
+		}
 	}
 
 }
