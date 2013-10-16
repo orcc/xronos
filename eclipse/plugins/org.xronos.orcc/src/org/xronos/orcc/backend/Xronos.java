@@ -307,7 +307,7 @@ public class Xronos extends AbstractBackend {
 			}
 			boolean failed = printer.printInstance(flags.getStringFlag(),
 					rtlPath, actor, options, resourceCache, numInstance,
-					toBeCompiled);
+					toBeCompiled, debugMode);
 			if (failed) {
 				failedToCompile++;
 			}

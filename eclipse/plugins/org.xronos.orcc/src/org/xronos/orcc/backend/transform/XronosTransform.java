@@ -68,7 +68,8 @@ import org.xronos.orcc.design.visitors.XronosScheduler;
 public class XronosTransform {
 
 	public static void transformActor(Actor actor, Map<String, Object> options,
-			ResourceCache resourceCache, boolean portTransformation) {
+			ResourceCache resourceCache, Boolean portTransformation,
+			Boolean debugMode) {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
@@ -78,9 +79,9 @@ public class XronosTransform {
 					new XronosConstantPropagation()));
 			transformations.add(new DfVisitor<Object>(
 					new XronosConstantFolding()));
-			transformations.add(new DeadActionEliminaton());
+			transformations.add(new DeadActionEliminaton(debugMode));
 			transformations.add(new DfVisitor<Void>(
-					new XronosDeadCodeElimination()));
+					new XronosDeadCodeElimination(debugMode)));
 			transformations.add(new XronosRepeatFixer());
 			if (!actor.hasAttribute("xronos_no_store_once")) {
 				transformations.add(new StoreOnceTransformation());
@@ -103,6 +104,7 @@ public class XronosTransform {
 
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
+			transformations.add(new DfVisitor<Void>(new DeadPhiElimination()));
 
 			transformations.add(new DeadGlobalElimination());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
@@ -139,7 +141,7 @@ public class XronosTransform {
 	public static void transformNetworkActors(Network network,
 			Map<String, Object> options, ResourceCache resourceCache) {
 		for (Actor actor : network.getAllActors()) {
-			transformActor(actor, options, resourceCache, false);
+			transformActor(actor, options, resourceCache, false, false);
 		}
 	}
 

@@ -34,10 +34,22 @@ import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.ir.util.ValueUtil;
+import net.sf.orcc.util.OrccLogger;
 import net.sf.orcc.util.util.EcoreHelper;
 
 public class XronosDeadCodeElimination extends AbstractIrVisitor<Void> {
+
+	Boolean debug;
+
+	public XronosDeadCodeElimination() {
+		this(false);
+	}
+
+	public XronosDeadCodeElimination(Boolean debug) {
+		this.debug = debug;
+	}
 
 	@Override
 	public Void caseBlockIf(BlockIf blockIf) {
@@ -60,6 +72,12 @@ public class XronosDeadCodeElimination extends AbstractIrVisitor<Void> {
 
 					// 4. Remove all blocks from the else
 					parentBlocks.remove(blockIf);
+					IrUtil.delete(blockIf);
+					if (debug) {
+						OrccLogger.warnln("Xronos: BlockIf line: "
+								+ blockIf.getLineNumber()
+								+ " removed, all then blocks copied");
+					}
 
 				} else {
 					// 1. Get parent Blocks
@@ -72,9 +90,19 @@ public class XronosDeadCodeElimination extends AbstractIrVisitor<Void> {
 
 						// 3. Add the blocks to the parents one
 						parentBlocks.addAll(indexBlock, elseBlocks);
+						if (debug) {
+							OrccLogger.warnln("Xronos: BlockIf line: "
+									+ blockIf.getLineNumber()
+									+ " removed, all else blocks copied");
+						}
 					}
 					// 5. Remove all blocks from the else
 					parentBlocks.remove(blockIf);
+					IrUtil.delete(blockIf);
+					if (debug) {
+						OrccLogger.warnln("Xronos: BlockIf line: "
+								+ blockIf.getLineNumber() + " removed");
+					}
 				}
 			}
 		}

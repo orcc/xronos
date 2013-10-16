@@ -50,6 +50,7 @@ import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.ir.util.ValueUtil;
 import net.sf.orcc.util.OrccLogger;
 
@@ -131,9 +132,7 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 					Object value = ValueUtil.get(type, array, indexes);
 					target.setValue(value);
 				} catch (IndexOutOfBoundsException e) {
-					throw new OrccRuntimeException(
-							"Array Index Out of Bound at line "
-									+ load.getLineNumber());
+					target.setValue(null);
 				} catch (OrccRuntimeException e) {
 					target.setValue(null);
 				}
@@ -162,7 +161,14 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 	 */
 	private XronosExprEvaluator exprInterpreter;
 
+	Boolean debug;
+
 	public DeadActionEliminaton() {
+		this(false);
+	}
+
+	public DeadActionEliminaton(Boolean debug) {
+		this.debug = debug;
 		this.exprInterpreter = new XronosExprEvaluator();
 	}
 
@@ -177,8 +183,11 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 				Boolean value = (Boolean) eliminate;
 				// if the result is false then eliminate
 				if (!value) {
-					OrccLogger.warnln("Xronos: action \"" + action.getName()
-							+ "\" is unreachable, eliminating!");
+					if (debug) {
+						OrccLogger.warnln("Xronos: action \""
+								+ action.getName()
+								+ "\" is unreachable, eliminating!");
+					}
 					toBeEliminated.add(action);
 				}
 			}
@@ -201,10 +210,13 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 		}
 
 		// Delete from the actions list
-		if (!actor.getActionsOutsideFsm().isEmpty()) {
-			actor.getActionsOutsideFsm().removeAll(toBeEliminated);
+		for (Action action : toBeEliminated) {
+			if (!actor.getActionsOutsideFsm().isEmpty()) {
+				actor.getActionsOutsideFsm().remove(action);
+			}
+			actor.getActions().remove(action);
+			IrUtil.delete(action);
 		}
-		actor.getActions().removeAll(toBeEliminated);
 
 		return null;
 	}

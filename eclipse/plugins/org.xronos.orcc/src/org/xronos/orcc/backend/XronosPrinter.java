@@ -158,7 +158,8 @@ public class XronosPrinter {
 	 */
 	public boolean printInstance(String[] xronosArgs, String rtlPath,
 			Actor actor, Map<String, Object> options,
-			ResourceCache resourceCache, int idxInstance, int totalInstances) {
+			ResourceCache resourceCache, int idxInstance, int totalInstances,
+			Boolean debugMode) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		Engine engine = null;
@@ -177,7 +178,7 @@ public class XronosPrinter {
 						+ actor.getSimpleName() + " (" + idxInstance + "/"
 						+ totalInstances + ")");
 				XronosTransform.transformActor(actor, options, resourceCache,
-						true);
+						true, debugMode);
 				engine = new DesignEngine(xronosMainJob, actor, resourceCache);
 				engine.begin();
 			} catch (NewJob.ForgeOptionException foe) {
