@@ -109,8 +109,6 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
 
-			transformations.add(new DfVisitor<Void>(new SimplePhiRemover()));
-
 			transformations.add(new DeadGlobalElimination());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
 			transformations.add(new DfVisitor<Expression>(
