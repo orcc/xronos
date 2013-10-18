@@ -188,7 +188,7 @@ public class OutputRepeatPattern extends DfVisitor<Void> {
 				ExprInt condE1 = IrFactory.eINSTANCE.createExprInt(size);
 
 				ExprBinary whileCond = IrFactory.eINSTANCE.createExprBinary(
-						condE0, OpBinary.LE, condE1,
+						condE0, OpBinary.LT, condE1,
 						IrFactory.eINSTANCE.createTypeBool());
 
 				whileBlock.setCondition(whileCond);
