@@ -82,7 +82,7 @@ public class XronosTransform {
 			transformations.add(new DeadActionEliminaton(debugMode));
 			transformations.add(new DfVisitor<Void>(
 					new XronosDeadCodeElimination(debugMode)));
-			transformations.add(new XronosRepeatFixer());
+
 			if (!actor.hasAttribute("xronos_no_store_once")) {
 				transformations.add(new StoreOnceTransformation());
 			}
@@ -90,7 +90,8 @@ public class XronosTransform {
 			transformations.add(new DivisionSubstitution());
 
 			if (portTransformation) {
-				transformations.add(new RepeatPattern(resourceCache));
+				transformations.add(new InputRepeatPattern(resourceCache));
+				transformations.add(new OutputRepeatPattern());
 				transformations.add(new ScalarPortIO(resourceCache));
 			}
 
@@ -101,10 +102,14 @@ public class XronosTransform {
 					true)));
 			transformations.add(new PrintRemoval());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
+			transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
+			transformations.add(new DfVisitor<CfgNode>(
+					new ControlFlowAnalyzer()));
 
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
-			transformations.add(new DfVisitor<Void>(new DeadPhiElimination()));
+
+			transformations.add(new DfVisitor<Void>(new SimplePhiRemover()));
 
 			transformations.add(new DeadGlobalElimination());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
@@ -112,8 +117,7 @@ public class XronosTransform {
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 			transformations.add(new DfVisitor<Expression>(new XronosTac()));
-			transformations.add(new DfVisitor<CfgNode>(
-					new ControlFlowAnalyzer()));
+
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
 			transformations.add(new TypeResizer(false, true, false, false));

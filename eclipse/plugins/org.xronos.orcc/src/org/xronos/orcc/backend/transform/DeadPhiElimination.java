@@ -34,6 +34,7 @@ import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.InstPhi;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
@@ -87,12 +88,18 @@ public class DeadPhiElimination extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseInstPhi(InstPhi phi) {
 		Var target = phi.getTarget().getVariable();
-		if (target != null && !target.isUsed()) {
+		if ((target != null) && !target.isUsed()) {
 			IrUtil.delete(phi);
 			changed = true;
 			indexInst--;
 		}
 		return null;
+	}
+
+	@Override
+	public Void caseProcedure(Procedure procedure) {
+		this.procedure = procedure;
+		return super.caseProcedure(procedure);
 	}
 
 	@Override

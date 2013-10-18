@@ -41,10 +41,8 @@ import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
-import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
-import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprInt;
@@ -62,7 +60,6 @@ import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
-import net.sf.orcc.util.util.EcoreHelper;
 
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.XronosIrUtil;
@@ -71,7 +68,6 @@ import org.xronos.orcc.design.visitors.io.CircularBuffer;
 import org.xronos.orcc.ir.BlockMutex;
 import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.ir.InstPortStatus;
-import org.xronos.orcc.ir.InstPortWrite;
 import org.xronos.orcc.ir.XronosIrFactory;
 
 /**
@@ -85,7 +81,7 @@ import org.xronos.orcc.ir.XronosIrFactory;
  * @author Endri Bezati
  * 
  */
-public class RepeatPattern extends DfVisitor<Void> {
+public class InputRepeatPattern extends DfVisitor<Void> {
 
 	private class RepeatFinder extends DfVisitor<Void> {
 
@@ -131,94 +127,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 			return null;
 		}
 
-	}
-
-	private class StoreToPortWrite extends AbstractIrVisitor<Object> {
-
-		private Map<BlockWhile, Map<InstStore, InstPortWrite>> blockStore;
-
-		public StoreToPortWrite() {
-			super(true);
-		}
-
-		@Override
-		public Object caseInstStore(InstStore store) {
-			Var targetVar = store.getTarget().getVariable();
-			if (oldOutputMap.containsKey(targetVar)) {
-				Port port = oldOutputMap.get(targetVar);
-				Expression value = store.getValue();
-				InstPortWrite insPortWrite = XronosIrFactory.eINSTANCE
-						.createInstPortWrite();
-				insPortWrite.setPort(port);
-				insPortWrite.setValue(value);
-				insPortWrite.setBlocking(true);
-				// Find the BlockWhile and store the InstStore and InstPortWrite
-				BlockWhile blockWhile = EcoreHelper.getContainerOfType(store,
-						BlockWhile.class);
-				if (blockWhile != null) {
-					Map<InstStore, InstPortWrite> storePortWrite;
-					if (blockStore.containsKey(blockWhile)) {
-						storePortWrite = blockStore.get(blockWhile);
-					} else {
-						storePortWrite = new HashMap<InstStore, InstPortWrite>();
-					}
-					storePortWrite.put(store, insPortWrite);
-					blockStore.put(blockWhile, storePortWrite);
-				} else {
-					BlockBasic block = store.getBlock();
-					int index = block.getInstructions().indexOf(store);
-					block.add(index, insPortWrite);
-					IrUtil.delete(store);
-				}
-			}
-			return null;
-		}
-
-		@Override
-		public Object caseProcedure(Procedure procedure) {
-			this.procedure = procedure;
-			blockStore = new HashMap<BlockWhile, Map<InstStore, InstPortWrite>>();
-			super.caseProcedure(procedure);
-
-			for (BlockWhile blockWhile : blockStore.keySet()) {
-				Map<InstStore, InstPortWrite> storePortWrite = blockStore
-						.get(blockWhile);
-				Port port = null;
-				// Replace Stores with PortWrite
-				for (InstStore store : storePortWrite.keySet()) {
-					InstPortWrite insPortWrite = storePortWrite.get(store);
-					port = (Port) insPortWrite.getPort();
-					BlockBasic block = store.getBlock();
-					int index = block.getInstructions().indexOf(store);
-					block.add(index, insPortWrite);
-					IrUtil.delete(store);
-				}
-				// Add Port Status and the portStatusIf block
-				List<Block> whileBlocks = blockWhile.getBlocks();
-				Var portStatus = IrFactory.eINSTANCE.createVar(port.getType(),
-						"portStatus_" + port.getName(), true, 0);
-				procedure.getLocals().add(portStatus);
-				InstPortStatus instPortStatus = XronosIrUtil
-						.createInstPortStatus(portStatus, port);
-
-				BlockBasic portStatusBlock = IrFactory.eINSTANCE
-						.createBlockBasic();
-				portStatusBlock.add(instPortStatus);
-
-				Expression eFalse = IrFactory.eINSTANCE.createExprBool(false);
-				Expression statusWhileCondition = XronosIrUtil
-						.createExprBinaryNotEqual(portStatus, eFalse);
-
-				BlockIf statusIf = XronosIrUtil.createBlockIf(
-						statusWhileCondition, whileBlocks);
-
-				blockWhile.getBlocks().add(0, portStatusBlock);
-				blockWhile.getBlocks().add(statusIf);
-
-			}
-
-			return null;
-		}
 	}
 
 	private class TransformCircularBufferLoadStore extends
@@ -336,8 +244,6 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 	private Map<Var, Port> oldInputMap = new HashMap<Var, Port>();
 
-	private Map<Var, Port> oldOutputMap = new HashMap<Var, Port>();
-
 	private Map<Port, Integer> portMaxRepeatSize = new HashMap<Port, Integer>();
 
 	private Map<Port, CircularBuffer> circularBufferInputs = new HashMap<Port, CircularBuffer>();
@@ -346,7 +252,7 @@ public class RepeatPattern extends DfVisitor<Void> {
 
 	private IrFactory irFactory = IrFactory.eINSTANCE;
 
-	public RepeatPattern(ResourceCache resourceCache) {
+	public InputRepeatPattern(ResourceCache resourceCache) {
 		super();
 		this.resourceCache = resourceCache;
 	}
@@ -472,21 +378,10 @@ public class RepeatPattern extends DfVisitor<Void> {
 			}
 		}
 
-		for (Port port : action.getOutputPattern().getPorts()) {
-			// Create Load instruction head
-			Var pinWriteVar = action.getOutputPattern().getPortToVarMap()
-					.get(port);
-			// oldOutputMap.put(pinWriteVar, port);
-		}
-
 		// Now change the Loads of an action
 		TransformCircularBufferLoadStore circularBufferLoadStore = new TransformCircularBufferLoadStore(
 				action.getBody());
 		circularBufferLoadStore.doSwitch(action.getBody().getBlocks());
-
-		// Now change the Stores to PortWrite of an action
-		StoreToPortWrite storeToPortWrite = new StoreToPortWrite();
-		storeToPortWrite.doSwitch(action.getBody());
 
 		// Now change the Loads of an action schedueler
 		circularBufferLoadStore = new TransformCircularBufferLoadStore(
