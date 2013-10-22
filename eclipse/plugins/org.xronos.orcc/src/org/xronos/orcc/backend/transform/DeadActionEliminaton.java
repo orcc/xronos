@@ -116,6 +116,9 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 		public Object caseInstLoad(InstLoad load) {
 			Var target = load.getTarget().getVariable();
 			Var source = load.getSource().getVariable();
+			if (source.isAssignable()) {
+				return null;
+			}
 			if (load.getIndexes().isEmpty()) {
 				if (source.getValue() != null) {
 					target.setValue(source.getValue());
@@ -169,7 +172,7 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 
 	public DeadActionEliminaton(Boolean debug) {
 		this.debug = debug;
-		this.exprInterpreter = new XronosExprEvaluator();
+		exprInterpreter = new XronosExprEvaluator();
 	}
 
 	@Override

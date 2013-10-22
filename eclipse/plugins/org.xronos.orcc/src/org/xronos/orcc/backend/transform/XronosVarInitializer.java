@@ -56,7 +56,7 @@ public class XronosVarInitializer extends DfVisitor<Void> {
 
 		// initializes state variables
 		for (Var stateVar : actor.getStateVars()) {
-			if (!stateVar.isAssignable()) {
+			if (!stateVar.isAssignable() || stateVar.isInitialized()) {
 				initializeVar(stateVar);
 			}
 		}

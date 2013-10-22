@@ -185,10 +185,10 @@ public class OutputRepeatPattern extends DfVisitor<Void> {
 				action.getBody().getLocals().add(index);
 
 				ExprVar condE0 = IrFactory.eINSTANCE.createExprVar(index);
-				ExprInt condE1 = IrFactory.eINSTANCE.createExprInt(size);
+				ExprInt condE1 = IrFactory.eINSTANCE.createExprInt(size-1);
 
 				ExprBinary whileCond = IrFactory.eINSTANCE.createExprBinary(
-						condE0, OpBinary.LT, condE1,
+						condE0, OpBinary.LE, condE1,
 						IrFactory.eINSTANCE.createTypeBool());
 
 				whileBlock.setCondition(whileCond);
@@ -258,14 +258,20 @@ public class OutputRepeatPattern extends DfVisitor<Void> {
 
 				// Add the ifBlock to the Block While
 				whileBlock.getBlocks().add(blockIf);
+				
+				// Create a Block  Basic with rp_Index_ to 0
+				BlockBasic initRpIndex = IrFactory.eINSTANCE.createBlockBasic();
+				InstAssign rpAssignZero = IrFactory.eINSTANCE.createInstAssign(index, 0);
+				initRpIndex.add(rpAssignZero);
 
 				// Add the BlockWhile to the body of the procedure
 				int indexBlock = action.getBody().getBlocks().size();
 				Block lastBlock = action.getBody().getBlocks()
 						.get(indexBlock - 1);
 				if (isSinlgeReturnBlock(lastBlock)) {
+					action.getBody().getBlocks().add(indexBlock - 1, initRpIndex);
 					action.getBody().getBlocks()
-							.add(indexBlock - 1, whileBlock);
+							.add(indexBlock, whileBlock);
 				} else {
 					if (lastBlock.isBlockBasic()) {
 						BlockBasic basic = (BlockBasic) lastBlock;
@@ -277,6 +283,7 @@ public class OutputRepeatPattern extends DfVisitor<Void> {
 							BlockBasic newLastBlock = IrFactory.eINSTANCE
 									.createBlockBasic();
 							newLastBlock.add(returnInst);
+							action.getBody().getBlocks().add(initRpIndex);
 							action.getBody().getBlocks().add(whileBlock);
 							action.getBody().getBlocks().add(newLastBlock);
 						}

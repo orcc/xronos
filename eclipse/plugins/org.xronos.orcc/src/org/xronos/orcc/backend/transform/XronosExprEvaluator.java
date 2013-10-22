@@ -30,11 +30,20 @@ public class XronosExprEvaluator extends AbstractIrVisitor<Object> {
 
 	private TypeList typeList;
 
+	public XronosExprEvaluator() {
+		super(true);
+	}
+
 	@Override
 	public Object caseExprBinary(ExprBinary expr) {
 		Object val1 = doSwitch(expr.getE1());
 		Object val2 = doSwitch(expr.getE2());
-		Object result = getValue(val1, val2, expr.getOp());
+		Object result = null;
+		try {
+			result = getValue(val1, val2, expr.getOp());
+		} catch (ArithmeticException e) {
+			return null;
+		}
 		return result;
 	}
 
@@ -185,7 +194,11 @@ public class XronosExprEvaluator extends AbstractIrVisitor<Object> {
 				}
 			}
 		} else {
-			result = ValueUtil.compute(val1, op, val2);
+			try {
+				result = ValueUtil.compute(val1, op, val2);
+			} catch (ArithmeticException e) {
+				return null;
+			}
 		}
 		return result;
 	}

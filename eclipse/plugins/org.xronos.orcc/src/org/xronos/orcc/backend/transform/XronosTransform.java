@@ -74,12 +74,13 @@ public class XronosTransform {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
 			transformations.add(new XronosVarInitializer());
+			transformations.add(new CheckVarSize());
 			transformations.add(new ParameterArrayRemoval());
 			transformations.add(new DfVisitor<Void>(
 					new XronosConstantPropagation()));
 			transformations.add(new DfVisitor<Object>(
 					new XronosConstantFolding()));
-			transformations.add(new DeadActionEliminaton(debugMode));
+			transformations.add(new DeadActionEliminaton(true));
 			transformations.add(new DfVisitor<Void>(
 					new XronosDeadCodeElimination(debugMode)));
 
@@ -102,7 +103,6 @@ public class XronosTransform {
 					true)));
 			transformations.add(new PrintRemoval());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
-			transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
 			transformations.add(new DfVisitor<CfgNode>(
 					new ControlFlowAnalyzer()));
 

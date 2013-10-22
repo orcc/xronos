@@ -137,4 +137,5 @@ public class XronosConstantFolding extends XronosExprEvaluator {
 		}
 		return expression;
 	}
+
 }
