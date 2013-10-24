@@ -324,7 +324,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 	public XronosScheduler(ResourceCache resourceCache) {
 		super();
 		this.resourceCache = resourceCache;
-		this.xronosSchedulerLocals = new ArrayList<Var>();
+		xronosSchedulerLocals = new ArrayList<Var>();
 		actionInputPortRequestSize = new HashMap<Action, Map<Port, Integer>>();
 		actionOutputPortRequestSize = new HashMap<Action, Map<Port, Integer>>();
 		actionFireability = new HashMap<Action, Var>();

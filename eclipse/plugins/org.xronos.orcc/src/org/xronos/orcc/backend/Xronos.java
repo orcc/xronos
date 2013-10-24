@@ -94,6 +94,12 @@ public class Xronos extends AbstractBackend {
 	/** The path used for the testBench generation **/
 	private String testBenchPath;
 
+	/** The path where the fifo traces should be placed **/
+	private String tracePath;
+
+	/** The path where the VHDL tesbenches are placed */
+	private String tbVhdPath;
+
 	/** Copy the Xilinx RAM/registers primitives **/
 	private boolean xilinxPrimitives;
 
@@ -138,6 +144,20 @@ public class Xronos extends AbstractBackend {
 		File testBenchDir = new File(testBenchPath);
 		if (!testBenchDir.exists()) {
 			testBenchDir.mkdir();
+		}
+
+		// Create the fifoTraces folder
+		tracePath = testBenchPath + File.separator + "fifoTraces";
+		File fifoTracesDir = new File(tracePath);
+		if (!fifoTracesDir.exists()) {
+			fifoTracesDir.mkdir();
+		}
+
+		// Create the VHD directory on the testbench folder
+		tbVhdPath = testBenchPath + File.separator + "vhd";
+		File tbVhdDir = new File(tbVhdPath);
+		if (!tbVhdDir.exists()) {
+			tbVhdDir.mkdir();
 		}
 
 		// Set FPGA name and forge flags
@@ -292,6 +312,7 @@ public class Xronos extends AbstractBackend {
 			ResourceCache resourceCache = new ResourceCache();
 			XronosPrinter printer = new XronosPrinter(!debugMode);
 			printer.getOptions().put("generateGoDone", generateGoDone);
+			printer.getOptions().put("xilinxPrimitives", xilinxPrimitives);
 			printer.getOptions().put("fpgaType", fpgaName);
 			XronosFlags flags = new XronosFlags(rtlPath, actor.getSimpleName());
 			if (actor.hasAttribute("xronos_pipeline")) {
@@ -306,8 +327,8 @@ public class Xronos extends AbstractBackend {
 				}
 			}
 			boolean failed = printer.printInstance(flags.getStringFlag(),
-					rtlPath, actor, options, resourceCache, numInstance,
-					toBeCompiled, debugMode);
+					rtlPath, testBenchPath, tbVhdPath, actor, options,
+					resourceCache, numInstance, toBeCompiled, debugMode);
 			if (failed) {
 				failedToCompile++;
 			}
@@ -371,20 +392,6 @@ public class Xronos extends AbstractBackend {
 	private void printTestbenches(Network network) {
 		OrccLogger.traceln("Generating Testbenches...");
 
-		// Create the fifoTraces folder
-		String tracePath = testBenchPath + File.separator + "fifoTraces";
-		File fifoTracesDir = new File(tracePath);
-		if (!fifoTracesDir.exists()) {
-			fifoTracesDir.mkdir();
-		}
-
-		// Create the VHD directory on the testbench folder
-		String tbVhdPath = testBenchPath + File.separator + "vhd";
-		File tbVhdDir = new File(tbVhdPath);
-		if (!tbVhdDir.exists()) {
-			tbVhdDir.mkdir();
-		}
-
 		// Create the Xronos Printer
 		XronosPrinter xronosPrinter = new XronosPrinter();
 		xronosPrinter.getOptions().put("xilinxPrimitives", xilinxPrimitives);
@@ -410,14 +417,6 @@ public class Xronos extends AbstractBackend {
 
 		// Print the network testbench TCL ModelSim simulation script
 		xronosPrinter.printTclScript(testBenchPath, true, network);
-
-		for (Vertex vertex : network.getChildren()) {
-			final Actor actor = vertex.getAdapter(Actor.class);
-			if (actor != null) {
-				xronosPrinter.printTestbench(tbVhdPath, actor);
-				xronosPrinter.printTclScript(testBenchPath, true, actor);
-			}
-		}
 	}
 
 }

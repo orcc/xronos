@@ -157,9 +157,9 @@ public class XronosPrinter {
 	 * @return
 	 */
 	public boolean printInstance(String[] xronosArgs, String rtlPath,
-			Actor actor, Map<String, Object> options,
-			ResourceCache resourceCache, int idxInstance, int totalInstances,
-			Boolean debugMode) {
+			String tbPath, String tbVhdPath, Actor actor,
+			Map<String, Object> options, ResourceCache resourceCache,
+			int idxInstance, int totalInstances, Boolean debugMode) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		Engine engine = null;
@@ -222,6 +222,8 @@ public class XronosPrinter {
 				OrccLogger.traceln("\t - Compiled in: " + (float) (t1 - t0)
 						/ 1000 + "s");
 				engine.kill();
+				printTestbenches(actor, tbPath, tbVhdPath,
+						(Boolean) getOptions().get("xilinxPrimitives"));
 			}
 			if (options.containsKey("org.xronos.orcc.generateGoDone")) {
 				Boolean generateGoDone = (Boolean) options
@@ -432,6 +434,12 @@ public class XronosPrinter {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
 		return false;
+	}
+
+	public void printTestbenches(Actor actor, String tbPath, String tbVhdPath,
+			Boolean xilinxPrimitives) {
+		printTclScript(tbPath, true, actor);
+		printTestbench(tbVhdPath, actor);
 	}
 
 	public boolean printWeightTclScript(String path, Network network) {
