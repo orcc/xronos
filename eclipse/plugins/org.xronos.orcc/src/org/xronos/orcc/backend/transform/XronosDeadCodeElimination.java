@@ -37,6 +37,7 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.ir.util.ValueUtil;
 import net.sf.orcc.util.OrccLogger;
+import net.sf.orcc.util.Void;
 import net.sf.orcc.util.util.EcoreHelper;
 
 public class XronosDeadCodeElimination extends AbstractIrVisitor<Void> {

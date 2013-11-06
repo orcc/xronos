@@ -29,6 +29,7 @@
 package org.xronos.orcc.backend.transform;
 
 import net.sf.orcc.ir.transform.SSATransformation;
+import net.sf.orcc.util.Void;
 
 import org.eclipse.emf.ecore.EObject;
 import org.xronos.orcc.ir.BlockMutex;
