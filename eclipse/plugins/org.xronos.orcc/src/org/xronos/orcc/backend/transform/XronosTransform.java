@@ -98,7 +98,7 @@ public class XronosTransform {
 
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new GlobalArrayInitializer(true));
-			transformations.add(new XronosScheduler(resourceCache));
+			transformations.add(new XronosScheduler(resourceCache, true));
 			transformations.add(new DfVisitor<Void>(new Inliner(false, true,
 					true)));
 			transformations.add(new PrintRemoval());

@@ -367,9 +367,11 @@ architecture behavioral of async_fifo_int is
 
 begin
 
-  i_rdy <= not(is_full);
+  i_rdy   <= not(is_full);
   o_count <= (15 downto 1=>'0', 0=>o_sending);
-  o_send <= o_sending;
+  o_send  <= o_sending;
+  full    <= is_full;
+  almost_full <= is_full;
 
   ctl: entity SystemBuilder.async_fifo_controller( behavioral )
     generic map ( l => l )
@@ -419,9 +421,10 @@ architecture behavioral of async_fifo_bool is
   
 begin
 
-  i_rdy <= not(is_full);
+  i_rdy   <= not(is_full);
   o_count <= (15 downto 1=>'0', 0=>o_sending);
-  o_send <= o_sending;
+  o_send  <= o_sending;
+  full    <= is_full;
 
   ctl: entity SystemBuilder.async_fifo_controller( behavioral )
     generic map ( l => l )
@@ -685,13 +688,16 @@ end architecture behavioral;
 
 architecture behavioral of sync_fifo_int is
   signal msync_full : std_logic;
+  signal msync_empty : std_logic;
   signal msync_o_send : std_logic;
   
 begin
-  i_rdy <= not (msync_full);
+  i_rdy   <= not (msync_full);
   o_count <= (15 downto 1=>'0', 0=>msync_o_send);
-  o_send <= msync_o_send;
-  
+  o_send  <= msync_o_send;
+  full    <= msync_full;
+  empty   <= msync_empty;
+
   fifo: entity SystemBuilder.msync_fifo_int(behavioral) generic map(
     l => l, w => w)
   port map(
@@ -700,6 +706,7 @@ begin
       output_clock => SB_clock,
       SB_reset => SB_reset,
       full => msync_full,
+      empty => msync_empty,      
 
       i => i_data,
       i_send => i_send,
@@ -885,6 +892,53 @@ begin  -- behavioral
 end behavioral;
 
 
+architecture behavioral of Double_Queue is
+    signal m_full : std_logic; 
+    signal m_DATA : std_logic_vector(width - 1 downto 0);
+    signal m_SEND : std_logic;
+    signal m_ACK : std_logic;
+    signal m_RDY : std_logic;
+    signal m_COUNT : std_logic_vector(15 downto 0);
+begin  -- behavioral
+    full  <= m_full;
+    m_RDY <= not(m_full);
+  
+    fifo_a: entity SystemBuilder.sync_fifo_int( behavioral )
+      generic map ( w => width, l => length_a )
+      port map (
+        SB_reset => reset,
+        SB_clock => clk,
+		  full     => m_full,
+        i_data   => In_DATA,
+        i_send   => In_SEND,
+        i_ack    => In_ACK,
+        i_rdy    => In_RDY,
+        i_count  => In_COUNT,
+        o_data   => m_DATA,
+        o_send   => m_SEND,
+        o_ack    => m_ACK,
+        o_count  => m_COUNT);
+
+
+     fifo_b: entity SystemBuilder.sync_fifo_int( behavioral )
+      generic map ( w => width, l => length_b )
+      port map (
+        SB_reset => reset,
+        SB_clock => clk,
+        full	 => almost_full,
+        i_data   => m_DATA,
+        i_send   => m_SEND,
+        i_ack    => m_ACK,
+        i_rdy    => m_RDY,
+        i_count  => m_COUNT,
+        o_data   => Out_DATA,
+        o_send   => Out_SEND,
+        o_ack    => Out_ACK,
+        o_count  => Out_COUNT);
+
+    
+end behavioral;
+
 architecture behavioral of Queue_bool is
 
 begin  -- behavioral
@@ -906,6 +960,57 @@ begin  -- behavioral
 
 end behavioral;
 
+
+
+architecture behavioral of Double_Queue_bool is
+    signal m_full : std_logic;
+    signal m_DATA : std_logic;
+    signal m_SEND : std_logic;
+    signal m_ACK : std_logic;
+    signal m_RDY : std_logic;
+    signal m_COUNT : std_logic_vector(15 downto 0);
+begin  -- behavioral
+   
+  almost_full <= m_full;
+  m_RDY       <= not(m_full);
+  
+  fifo_a: entity SystemBuilder.sync_fifo_bool( behavioral )
+    generic map ( l => length_a )
+    port map (
+      SB_reset => reset,
+      SB_clock => clk,
+      full     => m_full,
+      i_data   => In_DATA,
+      i_send   => In_SEND,
+      i_ack    => In_ACK,
+      i_rdy    => In_RDY,
+      i_count  => In_COUNT,
+      o_data   => m_DATA,
+      o_send   => m_SEND,
+      o_ack    => m_ACK,
+      o_count  => m_COUNT);
+
+
+  fifo_b: entity SystemBuilder.sync_fifo_bool( behavioral )
+    generic map ( l => length_b )
+    port map (
+      SB_reset => reset,
+      SB_clock => clk,
+      full     => full,
+      i_data   => m_DATA,
+      i_send   => m_SEND,
+      i_ack    => m_ACK,
+      i_rdy    => m_RDY,
+      i_count  => m_COUNT,
+      o_data   => Out_DATA,
+      o_send   => Out_SEND,
+      o_ack    => Out_ACK,
+      o_count  => Out_COUNT);
+
+
+end behavioral;
+
+
 architecture behavioral of Queue_Async is
     
 begin  -- behavioral
@@ -915,6 +1020,8 @@ begin  -- behavioral
       port map (
         SB_reset_i => reset_i,
         SB_clock_i => clk_i,
+        almost_full => almost_full,
+        full       => full,
         i_data   => In_DATA,
         i_send   => In_SEND,
         i_ack    => In_ACK,
