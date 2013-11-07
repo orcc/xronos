@@ -88,6 +88,8 @@ class NetworkPrinter extends IrSwitch {
 	 * 
 	 * @param network
 	 */
+	 
+	 var Boolean doubleBuffering;
 	
 	def computeActorOutputPortFanout(Network network) {
 		for (Vertex vertex : network.getVertices()) {
@@ -357,7 +359,17 @@ class NetworkPrinter extends IrSwitch {
 					«printSignal(port,actor.simpleName+"_","ao",0,true)»
 					
 					«printSignal(port,actor.simpleName+"_","aof",actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size,true)»
+					«IF doubleBuffering»
+						
+						«printDoubleQueueSignal(port,actor.simpleName+"_","ai",actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»
+					«ENDIF»
 				«ENDFOR»
+				«IF doubleBuffering»
+					«IF actor.outputs.size > 0»
+						signal «actor.simpleName»_clk : std_logic;
+						signal «actor.simpleName»_clk_enable : std_logic;
+					«ENDIF»
+				«ENDIF»
 			«ENDFOR»
 		
 			-- --------------------------------------------------------------------------
@@ -410,8 +422,12 @@ class NetworkPrinter extends IrSwitch {
 				«ELSEIF connection.source instanceof Actor»
 					«IF connection.target instanceof Port»
 						«addQeueu(connection.sourcePort, connection.target as Port, connection.source as Actor, null, connection, "no", "aof")»
+						«IF doubleBuffering»
+						«ENDIF»
 					«ELSEIF connection.target instanceof Actor»
 						«addQeueu(connection.sourcePort, connection.targetPort, connection.source as Actor, connection.target as Actor, connection, "ai", "aof")»
+						«IF doubleBuffering»
+						«ENDIF»
 					«ENDIF»
 				«ENDIF»
 			«ENDFOR»
@@ -467,34 +483,81 @@ class NetworkPrinter extends IrSwitch {
 		'''
 	}
 	
+	def printDoubleQueueSignal(Port port, String owner, String prefix,Integer fanout){
+		var String fanoutSize;
+		if(fanout == 1){
+			fanoutSize = "std_logic";
+		}else{
+			fanoutSize = "std_logic_vector("+(fanout - 1)+" downto 0)";
+		}
+		'''
+		signal «owner»«port.name»_full :  «fanoutSize»;
+		signal «owner»«port.name»_almost_full :  «fanoutSize»;
+		'''
+	}
+	
 	def printArchitectureComponents(){
 		'''
 		«FOR actor: network.children.filter(typeof(Actor)) SEPARATOR "\n"»
 			«IF !actor.native»
-			component «actor.simpleName» is
-			port(
-			     -- Instance «actor.simpleName» Input(s)
-			     «FOR port: actor.inputs»
-			     	«addDeclarationPort(port,"in","out", false)»
-			     «ENDFOR»
-			     -- Instance «actor.simpleName» Output(s)
-			     «FOR port: actor.outputs»
-			     	«addDeclarationPort(port,"out","in", true)»
-			     «ENDFOR»
-			     «IF options.containsKey("generateGoDone")»
-			     	-- Instance «actor.simpleName» Actions Go and Done
-			     	«FOR action: actor.actions SEPARATOR "\n"»
-			     		«action.name»_go : out std_logic;
-			     		«action.name»_done : out std_logic;
-			    	«ENDFOR»
-			     «ENDIF»
-			     clk: in std_logic;
-			     reset: in std_logic);
-			end component «actor.simpleName»;
+				component «actor.simpleName» is
+				port(
+				     -- Instance «actor.simpleName» Input(s)
+				     «FOR port: actor.inputs»
+				     	«addDeclarationPort(port,"in","out", false)»
+				     «ENDFOR»
+				     -- Instance «actor.simpleName» Output(s)
+				     «FOR port: actor.outputs»
+				     	«addDeclarationPort(port,"out","in", true)»
+				     «ENDFOR»
+				     «IF options.containsKey("generateGoDone")»
+				     	-- Instance «actor.simpleName» Actions Go and Done
+				     	«FOR action: actor.actions SEPARATOR "\n"»
+				     		«action.name»_go : out std_logic;
+				     		«action.name»_done : out std_logic;
+				    	«ENDFOR»
+				     «ENDIF»
+				     clk: in std_logic;
+				     reset: in std_logic);
+				end component «actor.simpleName»;
+				«IF doubleBuffering»
+					
+					«IF actor.outputs.size > 0»
+					component «actor.simpleName»_clock_controller is
+					port(
+						«FOR port: actor.outputs»
+							«port.name»_almost_full : in «printLogicOrVector(actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
+							«port.name»_full : in «printLogicOrVector(actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
+						«ENDFOR»
+						clk : in std_logic;
+						clk_out : out std_logic);
+					end component «actor.simpleName»_clock_controller;
+					«ENDIF»
+				«ENDIF»
 			«ENDIF»
 		«ENDFOR»
+		
+		«IF doubleBuffering»
+		component clock_enable is
+		port(
+		    en : in std_logic;
+		    clk : in std_logic;
+		    clk_out : out std_logic);
+		end component clock_enable;
+		«ENDIF»
 		'''
 	}
+	
+	def printLogicOrVector(Integer fanout){
+			var String fanoutSize;
+		if(fanout == 1){
+			fanoutSize = "std_logic";
+		}else{
+			fanoutSize = "std_logic_vector("+(fanout - 1)+" downto 0)";
+		}
+		'''«fanoutSize»'''
+	}
+	
 	
 	def printInstanceConnection(){
 		'''
@@ -527,8 +590,20 @@ class NetworkPrinter extends IrSwitch {
 			    	«ENDFOR»
 			    «ENDIF»
 				-- Clock and Reset
-				clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
+				clk => «IF actor.outputs.size > 0»«IF doubleBuffering»«actor.simpleName»_clk«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ENDIF»«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»,
 				reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(actor))»));
+			«IF doubleBuffering»
+				«IF actor.outputs.size > 0 »
+					cc_«actor.simpleName» : component «actor.simpleName»_clock_controller
+					port map(
+						«FOR port: actor.outputs»
+							«port.name»_almost_full => «actor.simpleName»_«port.name»_almost_full,
+							«port.name»_full => «actor.simpleName»_«port.name»_full,
+						«ENDFOR»
+						clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
+						clk_out => «actor.simpleName»_clk);
+				«ENDIF»	
+			«ENDIF»
 		«ENDFOR»
 		'''
 	}
@@ -597,10 +672,20 @@ class NetworkPrinter extends IrSwitch {
 		var Integer fifoSize = 1;
 		if(!prefixIn.equals("no")){
 				fifoSize = connection.size;
+		}
+		var Integer clkIndex = 0;
+		if(tgtInstance != null){
+			clkIndex = clockDomainsIndex.get(instanceClockDomain.get(tgtInstance));
+		}else{
+			clkIndex = clockDomainsIndex.get(portClockDomain.get(tgtPort));
 		} 
+		var String queueType = "Queue";
+		if (doubleBuffering && srcInstance != null && !prefixIn.equals("no")){
+			queueType = "Double_Queue";
+		}
 		'''
-		q_«prefixIn»_«IF tgtInstance !=null»«tgtInstance.simpleName»_«ENDIF»«tgtPort.name» : entity SystemBuilder.Queue«IF connectionsClockDomain.containsKey(connection)»_Async«ENDIF»(behavioral)
-		generic map (length => «fifoSize», width => «tgtPort.type.sizeInBits»)
+		q_«prefixIn»_«IF tgtInstance !=null»«tgtInstance.simpleName»_«ENDIF»«tgtPort.name» : entity SystemBuilder.«queueType»«IF connectionsClockDomain.containsKey(connection)»_Async«ENDIF»(behavioral)
+		generic map («IF doubleBuffering && srcInstance != null && !prefixIn.equals("no")»length_a => «fifoSize», length_b => «fifoSize»«ELSE»length => «fifoSize»«ENDIF», width => «tgtPort.type.sizeInBits»)
 		port map(
 			-- Queue Out
 			«addSignalConnection(tgtInstance, tgtPort, prefixIn,"Out", false, null, false)»
@@ -611,14 +696,18 @@ class NetworkPrinter extends IrSwitch {
 				clk_i => clocks(«connectionsClockDomain.get(connection).get(0)»),
 				reset_i => resets(«connectionsClockDomain.get(connection).get(0)»),
 				clk_o => clocks(«connectionsClockDomain.get(connection).get(1)»),
-				reset_o => resets(«connectionsClockDomain.get(connection).get(1)»));
+				reset_o => resets(«connectionsClockDomain.get(connection).get(1)»)«IF doubleBuffering &&  srcInstance != null»,«ENDIF»
 			«ELSE»
-				clk => clocks(0),
-				reset => resets(0));
+				clk => clocks(«clkIndex»),
+				reset => resets(«clkIndex»)«IF doubleBuffering»,«ENDIF»
 			«ENDIF»
+			«IF (doubleBuffering  &&  srcInstance != null)»
+				full => «IF srcInstance !=null»«srcInstance.simpleName»_«ENDIF»«srcPort.name»_full«IF srcInstance.getAdapter((typeof(Entity))).getOutgoingPortMap().get(srcPort).size > 1»(«networkPortConnectionFanout.get(connection)»)«ENDIF»,
+				almost_full => «IF srcInstance !=null»«srcInstance.simpleName»_«ENDIF»«srcPort.name»_almost_full«IF srcInstance.getAdapter((typeof(Entity))).getOutgoingPortMap().get(srcPort).size > 1»(«networkPortConnectionFanout.get(connection)»)«ENDIF»
+			«ENDIF»
+		);
 		'''
 	}
-	
 	
 	def printNetwork(Network network, Map<String,Object> options){
 		// Initialize members
@@ -634,9 +723,14 @@ class NetworkPrinter extends IrSwitch {
 		computeActorOutputPortFanout(network);
 		var Map<String,String> clkDomains = new HashMap<String,String>(); 
 		
+		if (options.containsKey("doubleBuffering")) {
+			doubleBuffering = options.get("doubleBuffering") as Boolean; 
+		}
+		
 		if (options.containsKey("clkDomains")) {
 			clkDomains = options.get("clkDomains") as Map<String,String>; 
 		}
+		
 		computeNetworkClockDomains(network,clkDomains);
 		
 		'''

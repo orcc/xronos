@@ -321,9 +321,12 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 	private BlockIf firstBlockIf;
 
-	public XronosScheduler(ResourceCache resourceCache) {
+	private Boolean idle;
+
+	public XronosScheduler(ResourceCache resourceCache, Boolean idle) {
 		super();
 		this.resourceCache = resourceCache;
+		this.idle = idle;
 		xronosSchedulerLocals = new ArrayList<Var>();
 		actionInputPortRequestSize = new HashMap<Action, Map<Port, Integer>>();
 		actionOutputPortRequestSize = new HashMap<Action, Map<Port, Integer>>();
@@ -449,6 +452,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			blocks.add(blockIf);
 		}
 		return blocks;
+	}
+
+	private void createIdleBlock() {
+
 	}
 
 	private List<Block> createSchedulerBody(Actor actor, Procedure procedure) {

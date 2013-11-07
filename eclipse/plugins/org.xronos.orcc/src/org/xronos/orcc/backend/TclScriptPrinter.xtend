@@ -49,6 +49,8 @@ class TclScriptPrinter extends IrSwitch {
 	var Boolean xilinxPrimitives = false;
 	var Boolean testbench = false;
 	var Boolean generateGoDone = false;
+	var Boolean doubleBuffering = false;
+	
 	
 	var Map<String, Integer> clockDomainsIndex;
 	var String DEFAULT_CLOCK_DOMAIN = "CLK";	
@@ -135,6 +137,11 @@ class TclScriptPrinter extends IrSwitch {
 			«FOR netVertex : network.vertices»
 				«IF netVertex instanceof Actor»
 					vlog -work «workName» «rtlPath»/«(netVertex as Actor).simpleName».v
+					«IF doubleBuffering»
+						«IF (netVertex as Actor).outputs.size > 0 »
+						vlog -work «workName» $Rtl/«(netVertex as Actor).simpleName»_clock_controller.v
+						«ENDIF»
+					«ENDIF»
 				«ENDIF» 
 			«ENDFOR»
 		«ELSEIF vertex instanceof Actor»
@@ -331,7 +338,8 @@ class TclScriptPrinter extends IrSwitch {
 		«FOR vertex : network.vertices»
 			«IF vertex instanceof Actor»
 				«FOR port : (vertex as Actor).inputs»
-				add wave -label «(vertex as Actor).simpleName»_«port.name»_full sim:/«simName»/q_ai_«(vertex as Actor).simpleName»_«port.name»/fifo/msync_full 
+				add wave -label «(vertex as Actor).simpleName»_«port.name»_full sim:/«simName»/q_ai_«(vertex as Actor).simpleName»_«port.name»/full
+				add wave -label «(vertex as Actor).simpleName»_«port.name»_full sim:/«simName»/q_ai_«(vertex as Actor).simpleName»_«port.name»/almost_full
 				«ENDFOR»
 			«ENDIF»
 		«ENDFOR»
@@ -349,6 +357,10 @@ class TclScriptPrinter extends IrSwitch {
 		
 		if (options.containsKey("xilinxPrimitives")) {
 			xilinxPrimitives = options.get("xilinxPrimitives") as Boolean;
+		}
+		
+		if (options.containsKey("doubleBuffering")) {
+			doubleBuffering = options.get("doubleBuffering") as Boolean;
 		}
 		
 		if (generateGoDone){
@@ -403,6 +415,11 @@ class TclScriptPrinter extends IrSwitch {
 		if (options.containsKey("xilinxPrimitives")) {
 			xilinxPrimitives = options.get("xilinxPrimitives") as Boolean;
 		}
+		
+		if (options.containsKey("doubleBuffering")) {
+			doubleBuffering = options.get("doubleBuffering") as Boolean;
+		}
+		
 		
 		if (generateGoDone){
 			rtlPath = "$RtlGoDone";

@@ -103,6 +103,8 @@ public class Xronos extends AbstractBackend {
 	/** Copy the Xilinx RAM/registers primitives **/
 	private boolean xilinxPrimitives;
 
+	private static boolean doubleBuffering = true;
+
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
@@ -360,6 +362,7 @@ public class Xronos extends AbstractBackend {
 		XronosPrinter printer = new XronosPrinter(!debugMode);
 		printer.getOptions().put("generateGoDone", generateGoDone);
 		printer.getOptions().put("fpgaType", fpgaName);
+		printer.getOptions().put("doubleBuffering", doubleBuffering);
 		XronosFlags flags = new XronosFlags(rtlPath, network.getSimpleName());
 		boolean failed = printer.printNetwork(flags.getStringFlag(), rtlPath,
 				network, options, resourceCache);
@@ -380,11 +383,16 @@ public class Xronos extends AbstractBackend {
 
 		XronosPrinter xronosPrinter = new XronosPrinter();
 		xronosPrinter.getOptions().put("clkDomains", clkDomains);
+		xronosPrinter.getOptions().put("doubleBuffering", doubleBuffering);
 		xronosPrinter.printNetwork(rtlPath, network);
-
 		if (generateGoDone) {
 			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
 			xronosPrinter.printNetwork(rtlGoDonePath, network);
+		}
+		// Print clock controllers if doublebuffering is enabled
+		if (doubleBuffering) {
+			ClockEnabler clockEnabler = new ClockEnabler(rtlPath);
+			clockEnabler.doSwitch(network);
 		}
 
 	}
@@ -395,12 +403,14 @@ public class Xronos extends AbstractBackend {
 		// Create the Xronos Printer
 		XronosPrinter xronosPrinter = new XronosPrinter();
 		xronosPrinter.getOptions().put("xilinxPrimitives", xilinxPrimitives);
+		xronosPrinter.getOptions().put("doubleBuffering", doubleBuffering);
 
 		// Print the network TCL ModelSim simulation script
 		xronosPrinter.printSimTclScript(simPath, false, network);
 		if (generateGoDone) {
 			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
 			xronosPrinter.getOptions().put("generateWeights", generateWeights);
+			xronosPrinter.getOptions().put("doubleBuffering", doubleBuffering);
 			// Create the weights path
 			File weightsPath = new File(testBenchPath + File.separator
 					+ "weights");

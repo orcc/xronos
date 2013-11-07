@@ -243,6 +243,8 @@ entity sync_fifo_int is
      );
   port(
     SB_reset, SB_clock: in std_logic;
+    full: out std_logic;
+	 empty: out std_logic;
     i_data: in int( w-1 downto 0 );
     i_send: in  std_logic;
     i_ack:  out std_logic;
@@ -305,7 +307,8 @@ entity sync_fifo_bool is
     o_data: out bool;
     o_send: out  std_logic;
     o_ack: in std_logic;
-    o_count: out std_logic_vector(15 downto 0) -- ;
+    o_count: out std_logic_vector(15 downto 0); -- ;
+    full: out std_logic
     );
 end entity sync_fifo_bool;
 
@@ -357,7 +360,9 @@ entity async_fifo_int is
     o_data: out int( w-1 downto 0 );
     o_send: out  std_logic;
     o_ack: in std_logic;
-    o_count:  out std_logic_vector(15 downto 0)  -- ignored for now
+    o_count:  out std_logic_vector(15 downto 0) ; -- ignored for now
+    full: out  std_logic;
+    almost_full: out std_logic
     );
 end entity async_fifo_int;
 
@@ -381,7 +386,8 @@ entity async_fifo_bool is
     o_data: out bool;
     o_send: out  std_logic;
     o_ack: in std_logic;
-    o_count:  out std_logic_vector(15 downto 0)  -- ignored for now
+    o_count:  out std_logic_vector(15 downto 0);  -- ignored for now
+    full: out  std_logic
     );
 end entity async_fifo_bool;
 
@@ -415,6 +421,35 @@ end Queue;
 
 library ieee, SystemBuilder;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;      -- need for conv_std_logic_vector()
+use SystemBuilder.sb_types.all;
+use SystemBuilder.fifo_utilities.all;
+
+entity Double_Queue is
+  generic (
+    width  : INTEGER;
+    length_a : INTEGER;
+    length_b : INTEGER
+    );
+
+  port (
+    In_DATA            : in  std_logic_vector (width-1 downto 0);
+    In_SEND            : in  std_logic;
+    In_ACK             : out std_logic;
+    In_COUNT           : in  std_logic_vector (15 downto 0);
+    In_RDY             : out std_logic;
+    Out_DATA           : out std_logic_vector (width-1 downto 0);
+    Out_SEND           : out std_logic;
+    Out_ACK            : in  std_logic;
+    Out_COUNT          : out std_logic_vector (15 downto 0);
+    full, almost_full  : out std_logic;
+    clk, reset         : in  std_logic);
+
+end Double_Queue;
+
+
+library ieee, SystemBuilder;
+use ieee.std_logic_1164.all;
 use SystemBuilder.sb_types.all;
 use SystemBuilder.fifo_utilities.all;
 
@@ -436,6 +471,34 @@ entity Queue_bool is
     clk, reset         : in  std_logic);
 
 end Queue_bool;
+
+
+library ieee, SystemBuilder;
+use ieee.std_logic_1164.all;
+use SystemBuilder.sb_types.all;
+use SystemBuilder.fifo_utilities.all;
+
+entity Double_Queue_bool is
+  generic (
+    length_a : INTEGER;
+    length_b : INTEGER
+    );
+
+  port (
+    In_DATA            : in  bool;
+    In_SEND            : in  std_logic;
+    In_ACK             : out std_logic;
+    In_COUNT           : in  std_logic_vector (15 downto 0);
+    In_RDY             : out std_logic;
+    Out_DATA           : out bool;
+    Out_SEND           : out std_logic;
+    Out_ACK            : in  std_logic;
+    Out_COUNT          : out std_logic_vector (15 downto 0);
+    full, almost_full  : out std_logic;
+    clk, reset         : in  std_logic);
+
+end Double_Queue_bool;
+
 
 library ieee, SystemBuilder;
 use ieee.std_logic_1164.all;
@@ -459,10 +522,45 @@ entity Queue_Async is
     Out_SEND           : out std_logic;
     Out_ACK            : in  std_logic;
     Out_COUNT          : out std_logic_vector (15 downto 0);
+    full               : out std_logic;
+    almost_full        : out std_logic;
     clk_i, reset_i     : in  std_logic;
     clk_o, reset_o     : in  std_logic);
 
 end Queue_Async;
+
+
+
+library ieee, SystemBuilder;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;      -- need for conv_std_logic_vector()
+use SystemBuilder.sb_types.all;
+use SystemBuilder.fifo_utilities.all;
+
+entity Double_Queue_Async is
+  generic (
+    width    : INTEGER;
+    length_a : INTEGER;
+    length_b : INTEGER
+    );
+
+  port (
+    In_DATA            : in  std_logic_vector (width-1 downto 0);
+    In_SEND            : in  std_logic;
+    In_ACK             : out std_logic;
+    In_COUNT           : in  std_logic_vector (15 downto 0);
+
+    In_RDY             : out std_logic;
+    Out_DATA           : out std_logic_vector (width-1 downto 0);
+    Out_SEND           : out std_logic;
+    Out_ACK            : in  std_logic;
+    Out_COUNT          : out std_logic_vector (15 downto 0);
+    full, almost_full  : out std_logic;
+    clk_i, reset_i     : in  std_logic;
+    clk_o, reset_o     : in  std_logic);
+
+end Double_Queue_Async;
+
 
 library ieee, SystemBuilder;
 use ieee.std_logic_1164.all;
@@ -488,6 +586,35 @@ entity Queue_bool_Async is
     clk_o, reset_o     : in  std_logic);
 
 end Queue_bool_Async;
+
+
+library ieee, SystemBuilder;
+use ieee.std_logic_1164.all;
+use SystemBuilder.sb_types.all;
+use SystemBuilder.fifo_utilities.all;
+
+entity Double_Queue_bool_Async is
+  generic (
+    length_a : INTEGER;
+    length_b : INTEGER
+    );
+
+  port (
+    In_DATA            : in  bool;
+    In_SEND            : in  std_logic;
+    In_ACK             : out std_logic;
+    In_COUNT           : in  std_logic_vector (15 downto 0);
+    In_RDY             : out std_logic;
+    Out_DATA           : out bool;
+    Out_SEND           : out std_logic;
+    Out_ACK            : in  std_logic;
+    Out_COUNT          : out std_logic_vector (15 downto 0);
+    full, almost_full  : out std_logic;
+    clk_i, reset_i     : in  std_logic;
+    clk_o, reset_o     : in  std_logic);
+
+end Double_Queue_bool_Async;
+
 
 -----------------------------------------------------------------------
 -- Fanouts
