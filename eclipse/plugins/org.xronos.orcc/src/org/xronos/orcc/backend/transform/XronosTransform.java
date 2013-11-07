@@ -53,6 +53,7 @@ import net.sf.orcc.ir.transform.BlockCombine;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 import net.sf.orcc.ir.transform.DeadGlobalElimination;
 import net.sf.orcc.ir.transform.DeadVariableRemoval;
+import net.sf.orcc.ir.transform.SSAVariableRenamer;
 import net.sf.orcc.util.OrccLogger;
 import net.sf.orcc.util.Void;
 
@@ -126,6 +127,9 @@ public class XronosTransform {
 
 			transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
 			transformations.add(new Pipelining(options));
+
+			// computes names of local variables
+			transformations.add(new DfVisitor<Void>(new SSAVariableRenamer()));
 
 			for (DfSwitch<?> transformation : transformations) {
 				try {

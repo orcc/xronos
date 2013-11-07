@@ -29,6 +29,8 @@
 
 package org.xronos.orcc.design.visitors;
 
+import static net.sf.orcc.ir.util.IrUtil.getNameSSA;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -228,7 +230,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		Var decisionVar = branchIO.getDecision();
 		Decision decision = null;
 		String condName = "decision_" + procedure.getName() + "_"
-				+ decisionVar.getIndexedName();
+				+ getNameSSA(decisionVar);
 
 		decision = ModuleUtil.createDecision(decisionVar, condName,
 				portDependency, busDependency, portGroupDependency,
@@ -354,7 +356,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 		if (decisionComponent == null) {
 			Var target = IrFactory.eINSTANCE.createVar(decisionVar.getType(),
-					"decisionVar_" + decisionVar.getIndexedName(), true,
+					"decisionVar_" + getNameSSA(decisionVar), true,
 					decisionVar.getIndex());
 			decisionComponent = ModuleUtil.assignComponent(target, decisionVar,
 					portDependency, busDependency, portGroupDependency,
@@ -850,7 +852,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 					portGroupDependency);
 			Var castedVar = procedure.newTempLocalVariable(
 					IrFactory.eINSTANCE.createTypeInt(newMaxSize), "casted_"
-							+ castIndex + "_" + var.getIndexedName());
+							+ castIndex + "_" + getNameSSA(var));
 
 			PortUtil.mapOutDataPorts(castOp, castedVar, busDependency,
 					doneBusDependency);
