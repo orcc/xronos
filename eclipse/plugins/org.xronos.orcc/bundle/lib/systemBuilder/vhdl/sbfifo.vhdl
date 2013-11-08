@@ -361,8 +361,7 @@ entity async_fifo_int is
     o_send: out  std_logic;
     o_ack: in std_logic;
     o_count:  out std_logic_vector(15 downto 0) ; -- ignored for now
-    full: out  std_logic;
-    almost_full: out std_logic
+    full: out  std_logic
     );
 end entity async_fifo_int;
 
@@ -415,6 +414,7 @@ entity Queue is
     Out_SEND           : out std_logic;
     Out_ACK            : in  std_logic;
     Out_COUNT          : out std_logic_vector (15 downto 0);
+    full,almost_full   : out std_logic;
     clk, reset         : in  std_logic);
 
 end Queue;

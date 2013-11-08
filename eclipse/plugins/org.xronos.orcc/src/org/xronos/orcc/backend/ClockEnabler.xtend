@@ -84,10 +84,11 @@ class ClockEnabler extends DfVisitor<CharSequence> {
 		
 		`timescale 1ns/1ps
 		
-		module «actor.simpleName»_clock_controller(«actorsOutput(actor,"almost_full")», «actorsOutput(actor,"full")», clk, clk_out);
+		module «actor.simpleName»_clock_controller(«actorsOutput(actor,"almost_full")», «actorsOutput(actor,"full")», clk, reset, clk_out);
 		
+		input reset;
 		input clk;
-
+		
 		«FOR port: actor.outputs SEPARATOR "\n"»
 			input«IF portFanout.get(port) > 1»[«portFanout.get(port)-1»:0]«ENDIF» «port.name»_almost_full;
 			input«IF portFanout.get(port) > 1»[«portFanout.get(port)-1»:0]«ENDIF» «port.name»_full;
@@ -100,25 +101,27 @@ class ClockEnabler extends DfVisitor<CharSequence> {
 			wire«IF portFanout.get(port) > 1»[«portFanout.get(port)-1»:0]«ENDIF» «port.name»_enable;
 		«ENDFOR»
 
-		wire en;
+		reg en;
 		
-		assign en = «FOR port: actor.outputs SEPARATOR " & "»«IF portFanout.get(port) > 1»«FOR idx : 0 ..< portFanout.get(port) SEPARATOR " & "»«port.name»_enable[«idx»]«ENDFOR»«ELSE»«port.name»_enable«ENDIF»«ENDFOR»;
-		
+	
 		«FOR port: actor.outputs SEPARATOR " \n "»
 			«IF portFanout.get(port) > 1»
 				«FOR idx : 0 ..< portFanout.get(port) SEPARATOR " \n "»
-					controller c_«port.name»_«idx»(.clk(clk), .almost_full(«port.name»_almost_full[«idx»]), .full(«port.name»_full[«idx»]), .enable(«port.name»_enable[«idx»]));
+					controller c_«port.name»_«idx»(.almost_full(«port.name»_almost_full[«idx»]), .full(«port.name»_full[«idx»]), .enable(«port.name»_enable[«idx»]), .clk(clk), .reset(reset));
 				«ENDFOR»
 			«ELSE»
-				controller c_«port.name» (.clk(clk), .almost_full(«port.name»_almost_full),.full(«port.name»_full),.enable(«port.name»_enable));
+				controller c_«port.name» (.almost_full(«port.name»_almost_full),.full(«port.name»_full),.enable(«port.name»_enable), .clk(clk), .reset(reset));
 			«ENDIF»
 		«ENDFOR»
+
+		always @(posedge clk)
+		begin
+			 en <= «FOR port: actor.outputs SEPARATOR " | "»«IF portFanout.get(port) > 1»«FOR idx : 0 ..< portFanout.get(port) SEPARATOR " | "»«port.name»_enable[«idx»]«ENDFOR»«ELSE»«port.name»_enable«ENDIF»«ENDFOR»;
+		end 
 
 		BUFGCE clock_enabling (.I(clk), .CE(en), .O(clk_out));
 
 		endmodule
-		
-		«singleController»
 		'''
 	}
 	
@@ -126,33 +129,5 @@ class ClockEnabler extends DfVisitor<CharSequence> {
 	def actorsOutput(Actor actor, String suffix){
 		'''«FOR port : actor.outputs SEPARATOR ","»«port.name»_«suffix»«ENDFOR»'''
 	}
-	
-	
-	def singleController(){
-		'''
-		module controller(clk, almost_full, full, enable);
-		input clk;
-		input almost_full;
-		input full;
-		output reg enable;
-			
-			always @(posedge clk)
-			begin
-			if ( almost_full == 1 && full == 1 )
-				enable <= 0;
-			else if	( almost_full == 1 && full == 0 )
-				enable <= 1;	
-			else if	( almost_full == 0 && full == 1 )
-				enable <= 1;
-			else if	( almost_full == 0 && full == 0 )
-				enable <= 1;
-			else
-				enable <= 0;
-			end	
-		endmodule
-		'''
-		
-	}
-	
 	
 }

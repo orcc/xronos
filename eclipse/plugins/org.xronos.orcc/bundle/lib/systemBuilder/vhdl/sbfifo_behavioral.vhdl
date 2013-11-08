@@ -371,7 +371,6 @@ begin
   o_count <= (15 downto 1=>'0', 0=>o_sending);
   o_send  <= o_sending;
   full    <= is_full;
-  almost_full <= is_full;
 
   ctl: entity SystemBuilder.async_fifo_controller( behavioral )
     generic map ( l => l )
@@ -871,7 +870,7 @@ end architecture behavioral;
 -----------------------------------------------------------------------
 -- Queues (just a port rename from the fifos)
 architecture behavioral of Queue is
-    
+    signal m_full : std_logic;
 begin  -- behavioral
 
     fifo: entity SystemBuilder.sync_fifo_int( behavioral )
@@ -879,6 +878,7 @@ begin  -- behavioral
       port map (
         SB_reset => reset,
         SB_clock => clk,
+	      full     => m_full,
         i_data   => In_DATA,
         i_send   => In_SEND,
         i_ack    => In_ACK,
@@ -888,7 +888,9 @@ begin  -- behavioral
         o_send   => Out_SEND,
         o_ack    => Out_ACK,
         o_count  => Out_COUNT);
-    
+        
+    almost_full <= m_full;
+    full <= m_full;
 end behavioral;
 
 
@@ -1020,7 +1022,6 @@ begin  -- behavioral
       port map (
         SB_reset_i => reset_i,
         SB_clock_i => clk_i,
-        almost_full => almost_full,
         full       => full,
         i_data   => In_DATA,
         i_send   => In_SEND,
@@ -1035,6 +1036,38 @@ begin  -- behavioral
         o_count  => Out_COUNT);
     
 end behavioral;
+
+
+architecture behavioral of Double_Queue_Async is
+  	signal m_almost_full : std_logic;  
+    signal m_DATA : std_logic_vector(width - 1 downto 0);
+    signal m_SEND : std_logic;
+    signal m_ACK : std_logic;
+    signal m_RDY : std_logic;
+    signal m_COUNT : std_logic_vector(15 downto 0);
+    signal m_clk : std_logic;
+    signal m_reset : std_logic;
+begin  -- behavioral
+	full <= m_almost_full;  
+	 fifo: entity SystemBuilder.async_fifo_int( behavioral )
+      generic map ( w => width, l => length_b )
+      port map (
+        SB_reset_i => reset_i,
+        SB_clock_i => clk_i,
+        full       => m_almost_full,
+        i_data   => In_DATA,
+        i_send   => In_SEND,
+        i_ack    => In_ACK,
+        i_rdy    => In_RDY,
+        i_count  => In_COUNT,
+        SB_reset_o => reset_o,
+        SB_clock_o => clk_o,
+        o_data   => Out_DATA,
+        o_send   => Out_SEND,
+        o_ack    => Out_ACK,
+        o_count  => Out_COUNT);
+end behavioral;
+
 
 
 architecture behavioral of Queue_bool_Async is

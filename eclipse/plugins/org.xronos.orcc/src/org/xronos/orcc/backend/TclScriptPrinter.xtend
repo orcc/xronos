@@ -127,10 +127,13 @@ class TclScriptPrinter extends IrSwitch {
 		## Compile the glbl constans given by Xilinx 
 		vlog -work «workName» ../lib/simulation/glbl.v
 		
+		«IF doubleBuffering»
+			vlog -work «workName» $Lib/xronos/controller.v
+		«ENDIF»
+		
 		«IF testbench»
 		# Compile sim package
 		vcom -93 -reportprogress 30 -work «workName» $LibSim/sim_package.vhd
-		
 		«ENDIF»
 		## Compile network instances and add them to work library	
 		«IF vertex instanceof Network»
@@ -182,7 +185,7 @@ class TclScriptPrinter extends IrSwitch {
 		«IF(xilinxPrimitives)»
 			vsim -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
 		«ELSE»
-			vsim -novopt -L unisims_ver -L simprims_ver -t ns «workName».glbl «workName».«simName»
+			vsim -L unisims_ver -L simprims_ver -t ns «workName».glbl «workName».«simName»
 		«ENDIF»	
 			
 		## Add clock(s) and reset signal
@@ -212,6 +215,7 @@ class TclScriptPrinter extends IrSwitch {
 		}
 		'''
 		add wave -noupdate -divider -height 20 i_«actor.simpleName»
+		add wave sim:/«simName»/i_«actor.simpleName»/CLK
 		«FOR port : actor.inputs SEPARATOR "\n"»
 			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_DATA
 			add wave sim:/«simName»/i_«actor.simpleName»/«port.name»_ACK
@@ -339,10 +343,21 @@ class TclScriptPrinter extends IrSwitch {
 			«IF vertex instanceof Actor»
 				«FOR port : (vertex as Actor).inputs»
 				add wave -label «(vertex as Actor).simpleName»_«port.name»_full sim:/«simName»/q_ai_«(vertex as Actor).simpleName»_«port.name»/full
-				add wave -label «(vertex as Actor).simpleName»_«port.name»_full sim:/«simName»/q_ai_«(vertex as Actor).simpleName»_«port.name»/almost_full
+				add wave -label «(vertex as Actor).simpleName»_«port.name»_almost_full sim:/«simName»/q_ai_«(vertex as Actor).simpleName»_«port.name»/almost_full
 				«ENDFOR»
 			«ENDIF»
 		«ENDFOR»
+		
+		## CLOCK CONTROLLER
+		add wave -noupdate -divider -height 20 "CC"
+		«FOR vertex : network.vertices»
+			«IF vertex instanceof Actor»
+				«IF (vertex as Actor).outputs.size > 0»
+					add wave -label cc_«(vertex as Actor).simpleName»_clk_out sim:/«simName»/cc_«(vertex as Actor).simpleName»/clk_out
+				«ENDIF»
+			«ENDIF»
+		«ENDFOR»
+		
 		'''
 	}
 	

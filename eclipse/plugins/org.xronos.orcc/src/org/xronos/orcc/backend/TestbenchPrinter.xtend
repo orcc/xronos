@@ -48,6 +48,8 @@ class TestbenchPrinter extends IrSwitch {
 	var Boolean goDone;
 	var Boolean generateWeights;
 	
+	var Boolean globalVerification = false;
+	
 	/**
 	 * Contains a Map which indicates the index of the given clock
 	 */
@@ -264,7 +266,19 @@ class TestbenchPrinter extends IrSwitch {
 		signal «port.name»_count : std_logic_vector(15 downto 0) := (others => '0');
 		«ENDFOR»
 		
-		
+		«IF globalVerification»
+		-- Actors output file
+			«IF vertex instanceof Network»
+				«FOR v : (vertex as Network).vertices»
+					«IF v instanceof Actor»
+						«FOR port : (v as Actor).outputs»
+							file sim_file_«name»_«port.name» : text is "fifoTraces/«(v as Actor).simpleName»_«port.name».txt";
+						«ENDFOR»
+					«ENDIF»
+				«ENDFOR»
+			«ENDIF»
+		«ENDIF»
+	
 		«IF generateWeights»
 		-- Actions Go Done signals
 		«FOR actor: (vertex as Network).allActors»

@@ -530,6 +530,7 @@ class NetworkPrinter extends IrSwitch {
 							«port.name»_full : in «printLogicOrVector(actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
 						«ENDFOR»
 						clk : in std_logic;
+						reset : in std_logic;
 						clk_out : out std_logic);
 					end component «actor.simpleName»_clock_controller;
 					«ENDIF»
@@ -590,7 +591,8 @@ class NetworkPrinter extends IrSwitch {
 			    	«ENDFOR»
 			    «ENDIF»
 				-- Clock and Reset
-				clk => «IF actor.outputs.size > 0»«IF doubleBuffering»«actor.simpleName»_clk«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ENDIF»«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»,
+				--clk => «IF actor.outputs.size > 0»«IF doubleBuffering»«actor.simpleName»_clk«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»,
+				clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
 				reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(actor))»));
 			«IF doubleBuffering»
 				«IF actor.outputs.size > 0 »
@@ -601,6 +603,7 @@ class NetworkPrinter extends IrSwitch {
 							«port.name»_full => «actor.simpleName»_«port.name»_full,
 						«ENDFOR»
 						clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
+						reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
 						clk_out => «actor.simpleName»_clk);
 				«ENDIF»	
 			«ENDIF»
@@ -669,7 +672,7 @@ class NetworkPrinter extends IrSwitch {
 	}
 	
 	def addQeueu(Port srcPort, Port tgtPort, Actor srcInstance, Actor tgtInstance, Connection connection, String prefixIn, String prefixOut){
-		var Integer fifoSize = 1;
+		var Integer fifoSize = 64;
 		if(!prefixIn.equals("no")){
 				fifoSize = connection.size;
 		}
@@ -680,12 +683,12 @@ class NetworkPrinter extends IrSwitch {
 			clkIndex = clockDomainsIndex.get(portClockDomain.get(tgtPort));
 		} 
 		var String queueType = "Queue";
-		if (doubleBuffering && srcInstance != null && !prefixIn.equals("no")){
-			queueType = "Double_Queue";
+		if (doubleBuffering){
+			queueType = "Double_Queue_Async";
 		}
 		'''
-		q_«prefixIn»_«IF tgtInstance !=null»«tgtInstance.simpleName»_«ENDIF»«tgtPort.name» : entity SystemBuilder.«queueType»«IF connectionsClockDomain.containsKey(connection)»_Async«ENDIF»(behavioral)
-		generic map («IF doubleBuffering && srcInstance != null && !prefixIn.equals("no")»length_a => «fifoSize», length_b => «fifoSize»«ELSE»length => «fifoSize»«ENDIF», width => «tgtPort.type.sizeInBits»)
+		q_«prefixIn»_«IF tgtInstance !=null»«tgtInstance.simpleName»_«ENDIF»«tgtPort.name» : entity SystemBuilder.«queueType»«IF connectionsClockDomain.containsKey(connection) && doubleBuffering == false»_Async«ENDIF»(behavioral)
+		generic map («IF doubleBuffering »length_a => 2, length_b => «fifoSize»«ELSE»length => «fifoSize»«ENDIF», width => «tgtPort.type.sizeInBits»)
 		port map(
 			-- Queue Out
 			«addSignalConnection(tgtInstance, tgtPort, prefixIn,"Out", false, null, false)»
@@ -693,17 +696,33 @@ class NetworkPrinter extends IrSwitch {
 			«addSignalConnection(srcInstance, srcPort, prefixOut,"In", false, networkPortConnectionFanout.get(connection), true)»
 			-- Clock & Reset
 			«IF connectionsClockDomain.containsKey(connection)»
+				«IF doubleBuffering»
+					clk_i => clocks(«IF srcInstance != null»«srcInstance.simpleName»_clk«ELSE»«connectionsClockDomain.get(connection).get(0)»«ENDIF»),
+					reset_i => resets(«connectionsClockDomain.get(connection).get(0)»),
+					clk_o => clocks(«IF tgtInstance != null»«tgtInstance.simpleName»_clk«ELSE»«connectionsClockDomain.get(connection).get(1)»«ENDIF»),
+					reset_o => resets(«connectionsClockDomain.get(connection).get(1)»)«IF srcInstance != null»,«ENDIF»
+				«ELSE»
 				clk_i => clocks(«connectionsClockDomain.get(connection).get(0)»),
 				reset_i => resets(«connectionsClockDomain.get(connection).get(0)»),
 				clk_o => clocks(«connectionsClockDomain.get(connection).get(1)»),
-				reset_o => resets(«connectionsClockDomain.get(connection).get(1)»)«IF doubleBuffering &&  srcInstance != null»,«ENDIF»
+				reset_o => resets(«connectionsClockDomain.get(connection).get(1)»)«IF doubleBuffering && srcInstance != null»,«ENDIF»
+				«ENDIF»
 			«ELSE»
-				clk => clocks(«clkIndex»),
-				reset => resets(«clkIndex»)«IF doubleBuffering»,«ENDIF»
+				«IF doubleBuffering»
+					--clk_i => clocks(«clkIndex»),
+					--clk_o => clocks(«clkIndex»),
+					clk_i => «IF srcInstance != null»«srcInstance.simpleName»_clk«ELSE»clocks(«clkIndex»)«ENDIF»,
+					reset_i => resets(«clkIndex»),
+					clk_o => «IF tgtInstance != null»«tgtInstance.simpleName»_clk«ELSE»clocks(«clkIndex»)«ENDIF»,
+					reset_o => resets(«clkIndex»)«IF srcInstance != null»,«ENDIF»
+				«ELSE»
+					clk => clocks(«clkIndex»),
+					reset => resets(«clkIndex»)«IF doubleBuffering && srcInstance != null»,«ENDIF»
+				«ENDIF»
 			«ENDIF»
-			«IF (doubleBuffering  &&  srcInstance != null)»
-				full => «IF srcInstance !=null»«srcInstance.simpleName»_«ENDIF»«srcPort.name»_full«IF srcInstance.getAdapter((typeof(Entity))).getOutgoingPortMap().get(srcPort).size > 1»(«networkPortConnectionFanout.get(connection)»)«ENDIF»,
-				almost_full => «IF srcInstance !=null»«srcInstance.simpleName»_«ENDIF»«srcPort.name»_almost_full«IF srcInstance.getAdapter((typeof(Entity))).getOutgoingPortMap().get(srcPort).size > 1»(«networkPortConnectionFanout.get(connection)»)«ENDIF»
+			«IF (doubleBuffering && srcInstance != null)»
+				full => «IF srcInstance !=null»«srcInstance.simpleName»_«ENDIF»«srcPort.name»_full«IF srcInstance !=null»«IF srcInstance.getAdapter((typeof(Entity))).getOutgoingPortMap().get(srcPort).size > 1»(«networkPortConnectionFanout.get(connection)»)«ENDIF»«ENDIF»,
+				almost_full => «IF srcInstance !=null»«srcInstance.simpleName»_«ENDIF»«srcPort.name»_almost_full«IF srcInstance !=null»«IF srcInstance.getAdapter((typeof(Entity))).getOutgoingPortMap().get(srcPort).size > 1»(«networkPortConnectionFanout.get(connection)»)«ENDIF»«ENDIF»
 			«ENDIF»
 		);
 		'''
