@@ -28,6 +28,8 @@
  */
 package org.xronos.orcc.design.visitors.stmIO;
 
+import static net.sf.orcc.ir.util.IrUtil.getNameSSA;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -326,7 +328,7 @@ public class BlockBasicIO extends AbstractIrVisitor<Void> {
 						// It is the blockIf condition variable
 						return false;
 					} else {
-						System.out.println("Var(" + var.getIndexedName()
+						System.out.println("Var(" + getNameSSA(var)
 								+ ") not contained in a BlockBasic");
 					}
 				}

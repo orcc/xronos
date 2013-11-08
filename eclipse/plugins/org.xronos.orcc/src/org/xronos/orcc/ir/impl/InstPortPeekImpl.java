@@ -2,21 +2,17 @@
  */
 package org.xronos.orcc.ir.impl;
 
+import static net.sf.orcc.ir.util.IrUtil.getNameSSA;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.graph.Vertex;
-
 import net.sf.orcc.ir.Def;
-
 import net.sf.orcc.ir.impl.InstructionImpl;
 
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
-
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
-
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-
 import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.XronosIrPackage;
 
@@ -223,7 +219,7 @@ public class InstPortPeekImpl extends InstructionImpl implements InstPortPeek {
 	@Override
 	public String toString() {
 		return super.toString() + "PortPeek("
-				+ target.getVariable().getIndexedName() + ", "
+				+ getNameSSA(target.getVariable()) + ", "
 				+ ((Port) port).getName() + ")";
 	}
 } //InstPortPeekImpl

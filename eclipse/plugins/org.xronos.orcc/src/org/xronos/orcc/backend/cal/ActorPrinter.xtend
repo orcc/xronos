@@ -150,7 +150,7 @@ class ActorPrinter extends CommonPrinter{
 	'''
 	
 	def actionPort(Port port, Var portVar)
-		'''«port.name»:[«portVar.indexedName»]'''
+		'''«port.name»:[«portVar.name»]'''
 	
 	def actionGuard(Action action)'''
 	'''
@@ -158,7 +158,7 @@ class ActorPrinter extends CommonPrinter{
 	def actionLocals(Procedure procedure)'''
 		var
 			«FOR local: procedure.locals SEPARATOR ", "»
-				«local.type.doSwitch» «local.indexedName»
+				«local.type.doSwitch» «local.name»
 			«ENDFOR»
 	'''
 	
@@ -180,7 +180,7 @@ class ActorPrinter extends CommonPrinter{
 	
 	
 	override caseInstLoad(InstLoad inst) '''
-		«inst.target.variable.indexedName» := «inst.source.variable.name»«IF !isSinglePortToken(inst.source.variable)»«FOR index : inst.indexes»[«index.doSwitch»]«ENDFOR»«ENDIF»;
+		«inst.target.variable.name» := «inst.source.variable.name»«IF !isSinglePortToken(inst.source.variable)»«FOR index : inst.indexes»[«index.doSwitch»]«ENDFOR»«ENDIF»;
 	'''
 	
 	def isSinglePortToken(Var variable){

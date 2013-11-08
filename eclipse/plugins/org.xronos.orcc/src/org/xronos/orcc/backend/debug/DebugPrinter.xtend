@@ -93,7 +93,7 @@ class DebugPrinter extends InstancePrinter {
 	}
 	
 	def caseInstCast(InstCast instCast)'''
-	«instCast.target.variable.indexedName» = «instCast.source.variable.indexedName»;
+	«instCast.target.variable.name» = «instCast.source.variable.name»;
 	'''
 	
 	
@@ -126,12 +126,12 @@ class DebugPrinter extends InstancePrinter {
 		
 	'''
 		// Block Branch : «block.lineNumber»
-		// Inputs[«FOR variable: inputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-		// Outputs[«FOR variable: outputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-		// thenInputs[«FOR variable: thenInputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-		// thenOutputs[«FOR variable: thenOutputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-		// elseInputs[«FOR variable: elseInputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-		// elseOutputs[«FOR variable: elseOutputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		// Inputs[«FOR variable: inputs SEPARATOR ","»«variable.name» «ENDFOR»]
+		// Outputs[«FOR variable: outputs SEPARATOR ","»«variable.name» «ENDFOR»]
+		// thenInputs[«FOR variable: thenInputs SEPARATOR ","»«variable.name» «ENDFOR»]
+		// thenOutputs[«FOR variable: thenOutputs SEPARATOR ","»«variable.name» «ENDFOR»]
+		// elseInputs[«FOR variable: elseInputs SEPARATOR ","»«variable.name» «ENDFOR»]
+		// elseOutputs[«FOR variable: elseOutputs SEPARATOR ","»«variable.name» «ENDFOR»]
 		«super.caseBlockIf(block)»
 		«IF !block.joinBlock.instructions.empty»
 			// Branch PHI  : «block.lineNumber»
@@ -145,7 +145,7 @@ class DebugPrinter extends InstancePrinter {
 	}
 	
 	def printPhi(Expression condition, InstPhi instPhi)'''
-	«instPhi.target.variable.indexedName» = «doSwitch(condition)» ? «(instPhi.values.get(0) as ExprVar).use.variable.indexedName» : «(instPhi.values.get(1) as ExprVar).use.variable.indexedName»;
+	«instPhi.target.variable.name» = «doSwitch(condition)» ? «(instPhi.values.get(0) as ExprVar).use.variable.name» : «(instPhi.values.get(1) as ExprVar).use.variable.name»;
 	'''
 	
 	def caseBlockMutex(BlockMutex blockMutex)'''
@@ -158,28 +158,28 @@ class DebugPrinter extends InstancePrinter {
 	def caseInstPortStatus(InstPortStatus portStatus) {
 	val Port port = portStatus.port as Port;
 	'''
-		«portStatus.target.variable.indexedName» = portStatus(«port.name»);
+		«portStatus.target.variable.name» = portStatus(«port.name»);
 	'''
 	}
 	
 	def caseInstPortRead(InstPortRead portRead) {
 	val Port port = portRead.port as Port;
 	'''
-		«portRead.target.variable.indexedName» = portRead(«port.name»);
+		«portRead.target.variable.name» = portRead(«port.name»);
 	'''
 	}
 	
 	def caseInstPortPeek(InstPortPeek portPeek) {
 	val Port port = portPeek.port as Port;
 	'''
-		«portPeek.target.variable.indexedName» = portPeek(«port.name»);
+		«portPeek.target.variable.name» = portPeek(«port.name»);
 	'''
 	}
 	
 	def caseInstPortWrite(InstPortWrite portWrite) {
 	val Port port = portWrite.port as Port;
 	'''
-		portWrite(«port.name», «(portWrite.value as ExprVar).use.variable.indexedName»);
+		portWrite(«port.name», «(portWrite.value as ExprVar).use.variable.name»);
 	'''
 	}
 	
@@ -190,8 +190,8 @@ class DebugPrinter extends InstancePrinter {
 		var List<Var> outputs = loopIO.outputs;
 	'''
 		// Block Loop : «blockWhile.lineNumber»
-		// Inputs[«FOR variable: inputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
-		// Outputs[«FOR variable: outputs SEPARATOR ","»«variable.indexedName» «ENDFOR»]
+		// Inputs[«FOR variable: inputs SEPARATOR ","»«variable.name» «ENDFOR»]
+		// Outputs[«FOR variable: outputs SEPARATOR ","»«variable.name» «ENDFOR»]
 		«IF (blockWhile.joinBlock != null)»
 			«blockWhile.joinBlock.doSwitch»
 		«ENDIF»

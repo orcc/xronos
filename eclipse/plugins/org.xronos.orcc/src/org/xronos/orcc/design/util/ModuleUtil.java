@@ -29,6 +29,8 @@
 
 package org.xronos.orcc.design.util;
 
+import static net.sf.orcc.ir.util.IrUtil.getNameSSA;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -415,7 +417,7 @@ public class ModuleUtil {
 		// Add to dependency, This type of decision has only one Input at
 		// group 0
 		Port port = decision.getDataPorts().get(0);
-		port.setIDLogical(inputDecision.getIndexedName());
+		port.setIDLogical(getNameSSA(inputDecision));
 		portDependency.put(port, inputDecision);
 		portGroupDependency.put(port, 0);
 
@@ -532,11 +534,11 @@ public class ModuleUtil {
 									sourceBus = outBus;
 									Reg fbReg = loop.createDataRegister();
 									fbReg.setIDLogical("fbReg_"
-											+ src.getIndexedName());
+											+ getNameSSA(src));
 									fbReg.getDataPort().setIDLogical(
-											src.getIndexedName());
+											getNameSSA(src));
 									fbReg.getResultBus().setIDLogical(
-											tgt.getIndexedName());
+											getNameSSA(tgt));
 									Entry entry = fbReg.makeEntry(fbExit);
 									entry.addDependency(fbReg.getDataPort(),
 											new DataDependency(sourceBus));
@@ -552,15 +554,15 @@ public class ModuleUtil {
 					Port port = lbBus.getPeer();
 					Bus sourceBus = lBus;
 					Latch latch = loop.createDataLatch();
-					latch.setIDLogical("latchedInput_" + src.getIndexedName());
+					latch.setIDLogical("latchedInput_" + getNameSSA(src));
 					Entry latchEntry = latch.makeEntry(initDoneBus.getOwner());
-					latch.getDataPort().setIDLogical(src.getIndexedName());
+					latch.getDataPort().setIDLogical(getNameSSA(src));
 					latchEntry.addDependency(latch.getEnablePort(),
 							new ControlDependency(initDoneBus));
 					latchEntry.addDependency(latch.getDataPort(),
 							new DataDependency(sourceBus));
 					sourceBus = latch.getResultBus();
-					sourceBus.setIDLogical(src.getIndexedName());
+					sourceBus.setIDLogical(getNameSSA(src));
 
 					Dependency dep = new DataDependency(sourceBus);
 					fbEntry.addDependency(port, dep);
@@ -605,7 +607,7 @@ public class ModuleUtil {
 		if (!inVars.isEmpty()) {
 			for (Var var : inVars) {
 				Port port = loopBody.makeDataPort();
-				port.setIDLogical(var.getIndexedName());
+				port.setIDLogical(getNameSSA(var));
 				portDependency.put(port, var);
 				portGroupDependency.put(port, 0);
 				busDependency.put(port.getPeer(), var);
@@ -709,8 +711,8 @@ public class ModuleUtil {
 		if (!inVars.isEmpty()) {
 			for (Var var : inVars) {
 				Port port = module.makeDataPort();
-				port.setIDLogical(var.getIndexedName());
-				port.getPeer().setIDLogical(var.getIndexedName());
+				port.setIDLogical(getNameSSA(var));
+				port.getPeer().setIDLogical(getNameSSA(var));
 				portDependency.put(port, var);
 				portGroupDependency.put(port, 0);
 				busDependency.put(port.getPeer(), var);
@@ -729,7 +731,7 @@ public class ModuleUtil {
 				boolean isSigned = var.getType().isInt()
 						|| var.getType().isBool();
 				dataBus.setSize(busSize, isSigned);
-				dataBus.setIDLogical(var.getIndexedName());
+				dataBus.setIDLogical(getNameSSA(var));
 
 				portDependency.put(dataBus.getPeer(), var);
 				portGroupDependency.put(dataBus.getPeer(), 0);
@@ -983,7 +985,7 @@ public class ModuleUtil {
 				boolean isSigned = var.getType().isInt()
 						|| var.getType().isBool();
 				dataBus.setSize(busSize, isSigned);
-				dataBus.setIDLogical(var.getIndexedName());
+				dataBus.setIDLogical(getNameSSA(var));
 
 				portDependency.put(dataBus.getPeer(), var);
 				portGroupDependency.put(dataBus.getPeer(), 0);

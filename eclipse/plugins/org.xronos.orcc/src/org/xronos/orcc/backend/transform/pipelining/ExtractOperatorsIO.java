@@ -28,6 +28,8 @@
  */
 package org.xronos.orcc.backend.transform.pipelining;
 
+import static net.sf.orcc.ir.util.IrUtil.getNameSSA;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -149,8 +151,8 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		inputOp[currentIntruction][variables.indexOf(varE1)] = 1;
 		inputOp[currentIntruction][variables.indexOf(varE2)] = 1;
 		List<String> inputs = new ArrayList<String>();
-		inputs.add(varE1.getIndexedName());
-		inputs.add(varE2.getIndexedName());
+		inputs.add(getNameSSA(varE1));
+		inputs.add(getNameSSA(varE2));
 		inputOpString.add(inputs);
 
 		return null;
@@ -164,7 +166,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		operators.add(PipelineOperator.ASSIGN);
 
 		List<String> inputs = new ArrayList<String>();
-		inputs.add(source.getIndexedName());
+		inputs.add(getNameSSA(source));
 		inputOpString.add(inputs);
 
 		return null;
@@ -191,7 +193,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		// Output variables
 		Var target = assign.getTarget().getVariable();
 		outputOp[currentIntruction][variables.indexOf(target)] = 1;
-		outputOpString.add(target.getIndexedName());
+		outputOpString.add(getNameSSA(target));
 
 		// Increment the Instruction counter
 		currentIntruction++;
@@ -207,13 +209,13 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		inputOp[currentIntruction][variables.indexOf(source)] = 1;
 
 		List<String> inputs = new ArrayList<String>();
-		inputs.add(source.getIndexedName());
+		inputs.add(getNameSSA(source));
 		inputOpString.add(inputs);
 
 		// Output variables
 		Var target = cast.getTarget().getVariable();
 		outputOp[currentIntruction][variables.indexOf(target)] = 1;
-		outputOpString.add(target.getIndexedName());
+		outputOpString.add(getNameSSA(target));
 
 		// Increment the Instruction counter
 		currentIntruction++;
@@ -230,7 +232,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 		Var target = load.getTarget().getVariable();
 		outputOp[currentIntruction][variables.indexOf(target)] = 1;
-		outputOpString.add(target.getIndexedName());
+		outputOpString.add(getNameSSA(target));
 
 		// Increment the Instruction counter
 		currentIntruction++;
@@ -239,7 +241,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 	public Void caseInstPortRead(InstPortRead read) {
 		String portLabel = read.getPort().getLabel();
-		String varName = read.getTarget().getVariable().getIndexedName();
+		String varName = getNameSSA(read.getTarget().getVariable());
 
 		stringPortToVarMap.put(portLabel, varName);
 
@@ -252,7 +254,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 
 		if (value instanceof ExprVar) {
 			ExprVar exprVar = (ExprVar) value;
-			String varName = exprVar.getUse().getVariable().getIndexedName();
+			String varName = getNameSSA(exprVar.getUse().getVariable());
 			stringPortToVarMap.put(portLabel, varName);
 		}
 
@@ -297,7 +299,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		List<Var> varToBeDeleted = new ArrayList<Var>();
 
 		for (Var var : variables) {
-			String name = var.getIndexedName();
+			String name = getNameSSA(var);
 			if (!containsInput(name) && !outputOpString.contains(name)) {
 				varToBeDeleted.add(var);
 			}
@@ -369,7 +371,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		i = 0;
 		String[] VaNN = new String[variables.size()];
 		for (Var var : variables) {
-			VaNN[i] = var.getIndexedName();
+			VaNN[i] = getNameSSA(var);
 			i++;
 		}
 
@@ -512,12 +514,12 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 	}
 
 	public String getVariableName(int index) {
-		return variables.get(index).getIndexedName();
+		return getNameSSA(variables.get(index));
 	}
 
 	public Type getVariableType(String name) {
 		for (Var var : variables) {
-			if (var.getIndexedName().equals(name)) {
+			if (getNameSSA(var).equals(name)) {
 				return EcoreUtil.copy(var.getType());
 			}
 		}
@@ -550,7 +552,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 			bw.write("\n");
 			bw.write("static char *VaNN[MC] = {");
 			for (Var var : variables) {
-				bw.write("\"" + var.getIndexedName() + "\", ");
+				bw.write("\"" + getNameSSA(var) + "\", ");
 			}
 			bw.write("};");
 			bw.write("\n");
@@ -597,7 +599,7 @@ public class ExtractOperatorsIO extends AbstractIrVisitor<Void> {
 		//
 		// System.out.println("static char *VaNN[MC] = {");
 		// for (Var var : variables) {
-		// System.out.print("\"" + var.getIndexedName() + "\", ");
+		// System.out.print("\"" + var.getNameSSA() + "\", ");
 		// }
 		// System.out.println("};");
 		//

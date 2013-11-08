@@ -29,6 +29,8 @@
 
 package org.xronos.orcc.design.util;
 
+import static net.sf.orcc.ir.util.IrUtil.getNameSSA;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -211,7 +213,7 @@ public class PortUtil {
 		Integer group = 0; // By default the group is zero
 		for (Var var : inVars) {
 			Port dataPort = portIter.next();
-			dataPort.setIDLogical(var.getIndexedName());
+			dataPort.setIDLogical(getNameSSA(var));
 			dataPort.setSize(var.getType().isString() ? 1 : var.getType()
 					.getSizeInBits(), var.getType().isInt()
 					|| var.getType().isBool());
@@ -229,7 +231,7 @@ public class PortUtil {
 
 		Integer group = 0; // By default the group is zero
 		Port dataPort = portIter.next();
-		dataPort.setIDLogical(inVar.getIndexedName());
+		dataPort.setIDLogical(getNameSSA(inVar));
 		dataPort.setSize(inVar.getType().getSizeInBits(), inVar.getType()
 				.isInt() || inVar.getType().isBool());
 		// Put Input Port dependency
@@ -258,7 +260,7 @@ public class PortUtil {
 						.isInt() || var.getType().isBool());
 			}
 			// Name the dataBus
-			dataBus.setIDLogical(var.getIndexedName());
+			dataBus.setIDLogical(getNameSSA(var));
 			busDependency.put(dataBus, var);
 		}
 		// Map Out done Bus
@@ -277,7 +279,7 @@ public class PortUtil {
 					.isInt() || outVar.getType().isBool());
 		}
 		// Name the dataBus
-		dataBus.setIDLogical(outVar.getIndexedName());
+		dataBus.setIDLogical(getNameSSA(outVar));
 		busDependency.put(dataBus, outVar);
 
 		// Map Out done Bus

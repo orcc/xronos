@@ -112,7 +112,7 @@ class EmbeddedNetwork extends NetworkPrinter {
 	'''
 	
 	def compileParameters()
-	'''«FOR param : network.parameters SEPARATOR ", "»«param.type.doSwitch» «FOR dim:param.type.dimensions»*«ENDFOR»«param.indexedName»«ENDFOR»'''
+	'''«FOR param : network.parameters SEPARATOR ", "»«param.type.doSwitch» «FOR dim:param.type.dimensions»*«ENDFOR»«param.name»«ENDFOR»'''
 	
 	override compileCmakeLists() '''
 		cmake_minimum_required (VERSION 2.8)
