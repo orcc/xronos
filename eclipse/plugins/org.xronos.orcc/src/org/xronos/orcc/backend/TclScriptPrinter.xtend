@@ -120,7 +120,7 @@ class TclScriptPrinter extends IrSwitch {
 		}
 		'''
 		## Create the work design library
-		if {[file exist «workName»]} {rm -r «workName»}
+		if {[file exist «workName»]} {vdel -all -lib «workName»}
 		vlib «workName»
 		vmap «workName» «workName»
 		

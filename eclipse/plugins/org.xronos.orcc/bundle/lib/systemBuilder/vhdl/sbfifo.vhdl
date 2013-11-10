@@ -198,7 +198,9 @@ entity sync_fifo_controller is
     o_ack:   in std_logic;
     o_mem_addr: out std_logic_vector( address_bits( l ) -1 downto 0 );
     o_mem_enable: out std_logic;
-    full: out std_logic;
+    almost_full : out std_logic;
+	almost_empty : out std_logic;
+	full: out std_logic;
     empty: out std_logic);
 end entity sync_fifo_controller;
 
@@ -243,8 +245,10 @@ entity sync_fifo_int is
      );
   port(
     SB_reset, SB_clock: in std_logic;
+    almost_full : out std_logic;
+    almost_empty : out std_logic;
     full: out std_logic;
-	 empty: out std_logic;
+	  empty: out std_logic;
     i_data: in int( w-1 downto 0 );
     i_send: in  std_logic;
     i_ack:  out std_logic;
@@ -280,7 +284,9 @@ entity msync_fifo_int is
     o: out int( w-1 downto 0 );
     o_send: out  std_logic;
     o_ack: in std_logic := '1';
-    full: out std_logic;
+    almost_full: out std_logic;
+	almost_empty : out std_logic;
+	full: out std_logic;
     empty: out std_logic --;
 --     size: out std_logic_vector( SystemBuilder.fifo_utilities.address_bits( l ) downto 0 )
     );
@@ -549,7 +555,6 @@ entity Double_Queue_Async is
     In_SEND            : in  std_logic;
     In_ACK             : out std_logic;
     In_COUNT           : in  std_logic_vector (15 downto 0);
-
     In_RDY             : out std_logic;
     Out_DATA           : out std_logic_vector (width-1 downto 0);
     Out_SEND           : out std_logic;
@@ -557,7 +562,8 @@ entity Double_Queue_Async is
     Out_COUNT          : out std_logic_vector (15 downto 0);
     full, almost_full  : out std_logic;
     clk_i, reset_i     : in  std_logic;
-    clk_o, reset_o     : in  std_logic);
+    clk_o, reset_o     : in  std_logic;
+	clk_r, reset_r     : in  std_logic);
 
 end Double_Queue_Async;
 
@@ -755,3 +761,4 @@ entity natout is
 end entity natout;
 
 --------------------------------------------------------
+

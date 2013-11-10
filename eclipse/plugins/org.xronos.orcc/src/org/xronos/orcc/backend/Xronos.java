@@ -103,7 +103,7 @@ public class Xronos extends AbstractBackend {
 	/** Copy the Xilinx RAM/registers primitives **/
 	private boolean xilinxPrimitives;
 
-	private boolean doubleBuffering = false;
+	private boolean doubleBuffering = true;
 
 	@Override
 	protected void doInitializeOptions() {

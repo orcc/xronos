@@ -483,6 +483,8 @@ begin
       ( msread = 3 and mswrite = 0 )
     else '0';
 
+  almost_empty <= going_empty;
+	
   -- Detect the write address just behind the read address
   going_full  <= '1' when
       ( mswrite = 0 and msread = 1 ) or
@@ -490,7 +492,9 @@ begin
       ( mswrite = 2 and msread = 3 ) or
       ( mswrite = 3 and msread = 0 )
     else '0';
-
+  
+  almost_full <= going_full;
+  
   -- Predict the meaning of a read/write address match
   -- If there is no going_empty or going_full indication, keep the same prediction
   process( SB_clock, SB_reset )
@@ -669,7 +673,9 @@ begin
         o_ack => o_ack,
         o_mem_addr => read_addr,
         o_mem_enable => read_enable,
-        full => full,
+        almost_full => almost_full,
+		almost_empty => almost_empty,
+		full => full,
         empty => empty);
     ram: entity SystemBuilder.ram_2p_int( behavioral )
       generic map ( w => w, l => l )
@@ -688,6 +694,8 @@ end architecture behavioral;
 architecture behavioral of sync_fifo_int is
   signal msync_full : std_logic;
   signal msync_empty : std_logic;
+  signal msync_almost_full : std_logic;
+  signal msync_almost_empty : std_logic;
   signal msync_o_send : std_logic;
   
 begin
@@ -696,7 +704,9 @@ begin
   o_send  <= msync_o_send;
   full    <= msync_full;
   empty   <= msync_empty;
-
+  almost_full <= msync_almost_full;
+  almost_empty <= msync_almost_empty;  
+  
   fifo: entity SystemBuilder.msync_fifo_int(behavioral) generic map(
     l => l, w => w)
   port map(
@@ -704,6 +714,8 @@ begin
       input_clock => SB_clock,
       output_clock => SB_clock,
       SB_reset => SB_reset,
+	  almost_full => msync_almost_full,
+	  almost_empty => msync_almost_empty,
       full => msync_full,
       empty => msync_empty,      
 
@@ -878,7 +890,8 @@ begin  -- behavioral
       port map (
         SB_reset => reset,
         SB_clock => clk,
-	      full     => m_full,
+	    full     => full,
+		almost_full => almost_full,
         i_data   => In_DATA,
         i_send   => In_SEND,
         i_ack    => In_ACK,
@@ -888,9 +901,7 @@ begin  -- behavioral
         o_send   => Out_SEND,
         o_ack    => Out_ACK,
         o_count  => Out_COUNT);
-        
-    almost_full <= m_full;
-    full <= m_full;
+ 
 end behavioral;
 
 
@@ -1042,24 +1053,46 @@ architecture behavioral of Double_Queue_Async is
   	signal m_almost_full : std_logic;  
     signal m_DATA : std_logic_vector(width - 1 downto 0);
     signal m_SEND : std_logic;
+	signal s_SEND : std_logic;
     signal m_ACK : std_logic;
     signal m_RDY : std_logic;
     signal m_COUNT : std_logic_vector(15 downto 0);
     signal m_clk : std_logic;
     signal m_reset : std_logic;
 begin  -- behavioral
-	full <= m_almost_full;  
-	 fifo: entity SystemBuilder.async_fifo_int( behavioral )
-      generic map ( w => width, l => length_b )
+	--almost_full <= m_almost_full;
+	m_SEND <= s_SEND and not(m_almost_full);
+	almost_full <= m_almost_full;
+	
+	fifo_a: entity SystemBuilder.async_fifo_int( behavioral )
+      generic map ( w => width, l => length_a )
       port map (
         SB_reset_i => reset_i,
         SB_clock_i => clk_i,
-        full       => m_almost_full,
+        full       => full,
         i_data   => In_DATA,
         i_send   => In_SEND,
         i_ack    => In_ACK,
         i_rdy    => In_RDY,
         i_count  => In_COUNT,
+        SB_reset_o => reset_r,
+        SB_clock_o => clk_r,
+        o_data   => m_DATA,
+        o_send   => s_SEND,
+        o_ack    => m_ACK,
+        o_count  => m_COUNT);
+    
+	  fifo_b: entity SystemBuilder.async_fifo_int( behavioral )
+      generic map ( w => width, l => length_b )
+      port map (
+        SB_reset_i => reset_r,
+        SB_clock_i => clk_r,
+        full     => m_almost_full,
+        i_data   => m_DATA,
+        i_send   => m_SEND,
+        i_ack    => m_ACK,
+        i_rdy    => m_RDY,
+        i_count  => m_COUNT,
         SB_reset_o => reset_o,
         SB_clock_o => clk_o,
         o_data   => Out_DATA,
@@ -1310,3 +1343,4 @@ begin
   end generate;
   
 end architecture behavioral;
+

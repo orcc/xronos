@@ -32,6 +32,8 @@ parameter FULL = 4'b1000;
            INIT: begin
                if (almost_full == 1'b1 && full == 1'b1)
                   state <= SPACE;
+               else if (almost_full == 1'b0 && full == 1'b0)
+                  state <= SPACE;
                else
                   state  <= INIT;
                   enable <= 1'b1;
@@ -72,6 +74,6 @@ parameter FULL = 4'b1000;
             default: begin  // Fault Recovery
                state <= INIT;
                enable <= 1'b1;
-	    end
+	    	end
          endcase
 endmodule							

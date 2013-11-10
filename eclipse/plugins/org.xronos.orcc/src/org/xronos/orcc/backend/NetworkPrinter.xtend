@@ -591,8 +591,8 @@ class NetworkPrinter extends IrSwitch {
 			    	«ENDFOR»
 			    «ENDIF»
 				-- Clock and Reset
-				--clk => «IF actor.outputs.size > 0»«IF doubleBuffering»«actor.simpleName»_clk«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»,
-				clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
+				clk => «IF actor.outputs.size > 0»«IF doubleBuffering»«actor.simpleName»_clk«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»,
+				--clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
 				reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(actor))»));
 			«IF doubleBuffering»
 				«IF actor.outputs.size > 0 »
@@ -666,7 +666,11 @@ class NetworkPrinter extends IrSwitch {
 			-- Fanout Out
 			«addSignalConnection(actor, port, prefixOut,"Out", false, null, true)»
 			-- Clock & Reset
-			clk => clocks(«clkIndex»),
+			«IF doubleBuffering && actor != null»
+				clk => «actor.simpleName»_clk,
+			«ELSE»
+				clk => clocks(«clkIndex»),
+			«ENDIF»
 			reset => resets(«clkIndex»));
 		'''
 	}
@@ -683,12 +687,12 @@ class NetworkPrinter extends IrSwitch {
 			clkIndex = clockDomainsIndex.get(portClockDomain.get(tgtPort));
 		} 
 		var String queueType = "Queue";
-		if (doubleBuffering){
+		if (doubleBuffering ){
 			queueType = "Double_Queue_Async";
 		}
 		'''
 		q_«prefixIn»_«IF tgtInstance !=null»«tgtInstance.simpleName»_«ENDIF»«tgtPort.name» : entity SystemBuilder.«queueType»«IF connectionsClockDomain.containsKey(connection) && doubleBuffering == false»_Async«ENDIF»(behavioral)
-		generic map («IF doubleBuffering »length_a => 2, length_b => «fifoSize»«ELSE»length => «fifoSize»«ENDIF», width => «tgtPort.type.sizeInBits»)
+		generic map («IF doubleBuffering »length_a => 1, length_b => «fifoSize»«ELSE»length => «fifoSize»«ENDIF», width => «tgtPort.type.sizeInBits»)
 		port map(
 			-- Queue Out
 			«addSignalConnection(tgtInstance, tgtPort, prefixIn,"Out", false, null, false)»
@@ -700,7 +704,10 @@ class NetworkPrinter extends IrSwitch {
 					clk_i => clocks(«IF srcInstance != null»«srcInstance.simpleName»_clk«ELSE»«connectionsClockDomain.get(connection).get(0)»«ENDIF»),
 					reset_i => resets(«connectionsClockDomain.get(connection).get(0)»),
 					clk_o => clocks(«IF tgtInstance != null»«tgtInstance.simpleName»_clk«ELSE»«connectionsClockDomain.get(connection).get(1)»«ENDIF»),
-					reset_o => resets(«connectionsClockDomain.get(connection).get(1)»)«IF srcInstance != null»,«ENDIF»
+					reset_o => resets(«connectionsClockDomain.get(connection).get(1)»),
+					clk_r => clocks(«connectionsClockDomain.get(connection).get(0)»),
+					reset_r => resets(«connectionsClockDomain.get(connection).get(0)»)
+					«IF srcInstance != null»,«ENDIF»
 				«ELSE»
 				clk_i => clocks(«connectionsClockDomain.get(connection).get(0)»),
 				reset_i => resets(«connectionsClockDomain.get(connection).get(0)»),
@@ -708,13 +715,15 @@ class NetworkPrinter extends IrSwitch {
 				reset_o => resets(«connectionsClockDomain.get(connection).get(1)»)«IF doubleBuffering && srcInstance != null»,«ENDIF»
 				«ENDIF»
 			«ELSE»
-				«IF doubleBuffering»
+				«IF doubleBuffering »
 					--clk_i => clocks(«clkIndex»),
 					--clk_o => clocks(«clkIndex»),
 					clk_i => «IF srcInstance != null»«srcInstance.simpleName»_clk«ELSE»clocks(«clkIndex»)«ENDIF»,
 					reset_i => resets(«clkIndex»),
-					clk_o => «IF tgtInstance != null»«tgtInstance.simpleName»_clk«ELSE»clocks(«clkIndex»)«ENDIF»,
-					reset_o => resets(«clkIndex»)«IF srcInstance != null»,«ENDIF»
+					clk_o => «IF tgtInstance != null && tgtInstance.outputs.size > 0»«tgtInstance.simpleName»_clk«ELSE»clocks(«clkIndex»)«ENDIF»,
+					reset_o => resets(«clkIndex»),
+					clk_r => clocks(«clkIndex»),
+					reset_r => resets(«clkIndex»)«IF srcInstance != null»,«ENDIF»
 				«ELSE»
 					clk => clocks(«clkIndex»),
 					reset => resets(«clkIndex»)«IF doubleBuffering && srcInstance != null»,«ENDIF»
