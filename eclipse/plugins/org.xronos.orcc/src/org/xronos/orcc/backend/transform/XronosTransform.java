@@ -83,8 +83,6 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Object>(
 					new XronosConstantFolding()));
 			transformations.add(new DeadActionEliminaton(true));
-			transformations.add(new DfVisitor<Void>(
-					new XronosDeadCodeElimination(debugMode)));
 
 			if (!actor.hasAttribute("xronos_no_store_once")) {
 				transformations.add(new StoreOnceTransformation());
@@ -101,8 +99,9 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new XronosScheduler(resourceCache, true));
-			transformations.add(new DfVisitor<Void>(new Inliner(false, true,
-					true)));
+			
+			
+			
 			transformations.add(new PrintRemoval());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
 			transformations.add(new DfVisitor<CfgNode>(
@@ -110,6 +109,20 @@ public class XronosTransform {
 
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
+
+			transformations.add(new DfVisitor<Void>(new Inliner(false, true,
+					true)));
+			
+			transformations.add(new DfVisitor<Void>(
+					new AssignConstantPropagator()));
+			
+			transformations.add(new DfVisitor<Void>(
+					new XronosDeadCodeElimination(debugMode, true)));
+			
+			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
+			
+			transformations.add(new DfVisitor<Void>(
+					new AssignConstantPropagator()));
 
 			transformations.add(new DeadGlobalElimination());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
