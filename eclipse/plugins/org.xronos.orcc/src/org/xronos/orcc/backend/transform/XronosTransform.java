@@ -88,6 +88,7 @@ public class XronosTransform {
 				transformations.add(new StoreOnceTransformation());
 			}
 			transformations.add(new DfVisitor<Void>(new LoopUnrolling()));
+			transformations.add(new DfVisitor<Void>(new ConstantDivision()));
 			transformations.add(new DivisionSubstitution());
 
 			if (portTransformation) {
@@ -133,7 +134,7 @@ public class XronosTransform {
 
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
-			transformations.add(new TypeResizer(false, true, false, false));
+			//transformations.add(new TypeResizer(false, false, false, false));
 
 			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
 					true)));
