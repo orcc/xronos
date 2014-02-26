@@ -103,7 +103,7 @@ public class Xronos extends AbstractBackend {
 	/** Copy the Xilinx RAM/registers primitives **/
 	private boolean xilinxPrimitives;
 
-	private boolean doubleBuffering = false;
+	private boolean doubleBuffering;
 
 	@Override
 	protected void doInitializeOptions() {
@@ -118,7 +118,8 @@ public class Xronos extends AbstractBackend {
 		importBufferSize = getAttribute("org.xronos.orcc.importBufferSize",
 				false);
 		fifoSize = getAttribute("net.sf.orcc.fifoSize", 1);
-
+		doubleBuffering = getAttribute(
+				"org.xronos.orcc.highGrainClockGating", false);
 		// Set Paths for RTL
 		rtlPath = path + File.separator + "rtl";
 		File rtlDir = new File(rtlPath);
@@ -196,11 +197,11 @@ public class Xronos extends AbstractBackend {
 			// Generate Network Design
 			generateNetwork(network);
 		} else {
-			// Print Network
-			printNetwork(network);
-
 			// Print Instances
 			generateInstances(network);
+			
+			// Print Network
+			printNetwork(network);
 		}
 		// Print Testbenches
 		printTestbenches(network);

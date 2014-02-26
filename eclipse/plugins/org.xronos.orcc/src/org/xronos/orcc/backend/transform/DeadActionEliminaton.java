@@ -197,17 +197,19 @@ public class DeadActionEliminaton extends DfVisitor<Void> {
 		}
 
 		// Delete from FSM
-		for (Action action : actor.getActions()) {
-			if (toBeEliminated.contains(action)) {
-				for (State state : actor.getFsm().getStates()) {
-					List<Edge> edges = new ArrayList<Edge>();
-					for (Edge edge : state.getOutgoing()) {
-						Transition transition = (Transition) edge;
-						if (transition.getAction() == action) {
-							edges.add(edge);
+		if (actor.getFsm() != null) {
+			for (Action action : actor.getActions()) {
+				if (toBeEliminated.contains(action)) {
+					for (State state : actor.getFsm().getStates()) {
+						List<Edge> edges = new ArrayList<Edge>();
+						for (Edge edge : state.getOutgoing()) {
+							Transition transition = (Transition) edge;
+							if (transition.getAction() == action) {
+								edges.add(edge);
+							}
 						}
+						state.getOutgoing().removeAll(edges);
 					}
-					state.getOutgoing().removeAll(edges);
 				}
 			}
 		}

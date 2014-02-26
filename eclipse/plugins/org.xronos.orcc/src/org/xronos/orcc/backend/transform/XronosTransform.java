@@ -42,7 +42,6 @@ import net.sf.orcc.backends.transform.LoopUnrolling;
 import net.sf.orcc.backends.transform.StoreOnceTransformation;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
-import net.sf.orcc.df.transform.TypeResizer;
 import net.sf.orcc.df.transform.UnitImporter;
 import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.df.util.DfVisitor;
@@ -57,6 +56,7 @@ import net.sf.orcc.ir.transform.SSAVariableRenamer;
 import net.sf.orcc.util.OrccLogger;
 import net.sf.orcc.util.Void;
 
+import org.xronos.orcc.analysis.NativeProcedureFinder;
 import org.xronos.orcc.backend.transform.pipelining.Pipelining;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.XronosScheduler;
@@ -100,9 +100,7 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new GlobalArrayInitializer(true));
 			transformations.add(new XronosScheduler(resourceCache, true));
-			
-			
-			
+
 			transformations.add(new PrintRemoval());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
 			transformations.add(new DfVisitor<CfgNode>(
@@ -111,17 +109,20 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
 
+			transformations
+					.add(new DfVisitor<Void>(new NativeProcedureFinder()));
+
 			transformations.add(new DfVisitor<Void>(new Inliner(false, true,
 					true)));
-			
+
 			transformations.add(new DfVisitor<Void>(
 					new AssignConstantPropagator()));
-			
+
 			transformations.add(new DfVisitor<Void>(
-					new XronosDeadCodeElimination(debugMode, true)));
-			
+					new XronosDeadCodeElimination(true, true)));
+
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
-			
+
 			transformations.add(new DfVisitor<Void>(
 					new AssignConstantPropagator()));
 
@@ -134,7 +135,7 @@ public class XronosTransform {
 
 			transformations.add(new DfVisitor<Expression>(
 					new XronosLiteralIntegersAdder()));
-			//transformations.add(new TypeResizer(false, false, false, false));
+			// transformations.add(new TypeResizer(false, false, false, false));
 
 			transformations.add(new DfVisitor<Expression>(new XronosCast(false,
 					true)));

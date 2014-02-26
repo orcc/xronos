@@ -50,6 +50,8 @@ class TestbenchPrinter extends IrSwitch {
 	
 	var Boolean globalVerification = false;
 	
+	var Boolean doubleBuffering = false;
+	
 	/**
 	 * Contains a Map which indicates the index of the given clock
 	 */
@@ -149,6 +151,9 @@ class TestbenchPrinter extends IrSwitch {
 		    «ENDFOR»
 		    «IF generateWeights»
 		    	«addGoDoneComponentPort((vertex as Network))»
+		    «ENDIF»
+		    «IF doubleBuffering»
+		    	CG_EN : IN std_logic;
 		    «ENDIF»
 		    «IF vertex instanceof Network»
 		    	«FOR string: clockDomainsIndex.keySet»
@@ -306,6 +311,10 @@ class TestbenchPrinter extends IrSwitch {
 			signal CLK : std_logic := '0';
 		«ENDIF»
 		signal reset : std_logic := '0';
+		
+		«IF doubleBuffering»
+			signal CG_EN : std_logic := '1';
+		«ENDIF»
 		'''
 	}
 	
@@ -355,7 +364,9 @@ class TestbenchPrinter extends IrSwitch {
 					«ENDFOR»
 				«ENDFOR»
 			«ENDIF»
-			
+			«IF doubleBuffering»
+				CG_EN => CG_EN,
+			«ENDIF»
 			«IF vertex instanceof Network»
 				«FOR string: clockDomainsIndex.keySet»
 					«string» => «string»,
@@ -620,6 +631,11 @@ class TestbenchPrinter extends IrSwitch {
 		if (options.containsKey("clkDomains")) {
 			clkDomains = options.get("clkDomains") as Map<String,String>; 
 		}
+		
+		if (options.containsKey("doubleBuffering")) {
+			doubleBuffering = options.get("doubleBuffering") as Boolean; 
+		}
+		
 		computeNetworkClockDomains(network,clkDomains);
 		
 		'''

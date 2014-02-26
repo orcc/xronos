@@ -20,6 +20,9 @@
                id="org.xronos.orcc.generateGoDone">
          </option>
          <option
+               id="org.xronos.orcc.highGrainClockGating">
+         </option>
+         <option
                id="org.xronos.orcc.xilinxPrimitives">
          </option>
          <option
@@ -77,6 +80,13 @@
                </browseFile>
             </option>
          </checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            description="Clock gating actors when their output queues are becoming full."
+            id="org.xronos.orcc.highGrainClockGating"
+            name="High grain clock gating on actors (beta)">
+         <checkBox></checkBox>
       </option>
    </extension>
 

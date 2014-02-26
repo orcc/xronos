@@ -278,17 +278,17 @@ public class XronosPrinter {
 
 		long t0 = System.currentTimeMillis();
 
-		try {
-			xronosMainJob.setOptionValues(xronosArgs);
-			// Set the Xilinx Part
-			xronosMainJob.getOption(OptionRegistry.XILINX_PART).setValue(
-					CodeLabel.UNSCOPED, "xc2vp30-7-ff1152");
-			f.preprocess(xronosMainJob);
+		xronosMainJob.setOptionValues(xronosArgs);
+		// Set the Xilinx Part
+		xronosMainJob.getOption(OptionRegistry.XILINX_PART).setValue(
+				CodeLabel.UNSCOPED, "xc2vp30-7-ff1152");
+		f.preprocess(xronosMainJob);
 
-			XronosTransform.transformNetworkActors(network, options,
-					resourceCache);
-			Engine engine = new DesignEngine(xronosMainJob, network,
-					resourceCache);
+		XronosTransform.transformNetworkActors(network, options,
+				resourceCache);
+		Engine engine = new DesignEngine(xronosMainJob, network,
+				resourceCache);
+		try {
 			engine.begin();
 		} catch (NewJob.ForgeOptionException foe) {
 			OrccLogger.severeln("\t command line option error: "
@@ -330,7 +330,7 @@ public class XronosPrinter {
 			OrccLogger.traceln("\t - Compiled in: " + (float) (t1 - t0) / 1000
 					+ "s");
 		}
-
+		engine.kill();
 		return error;
 	}
 

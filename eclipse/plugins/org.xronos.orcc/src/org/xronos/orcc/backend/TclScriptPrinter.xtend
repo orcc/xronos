@@ -200,6 +200,12 @@ class TclScriptPrinter extends IrSwitch {
 		«ENDIF»
 		add wave sim:/«simName»/RESET
 		
+		«IF doubleBuffering»
+			## Add clock gating enable signal
+			add wave -noupdate -divider -height 20 "CLOCK GATE ENABLE"
+			add wave sim:/«simName»/CG_EN
+		«ENDIF»
+		
 		## Change radix to decimal
 		radix -decimal
 		'''
@@ -348,16 +354,17 @@ class TclScriptPrinter extends IrSwitch {
 			«ENDIF»
 		«ENDFOR»
 		
-		## CLOCK CONTROLLER
-		add wave -noupdate -divider -height 20 "CC"
-		«FOR vertex : network.vertices»
-			«IF vertex instanceof Actor»
-				«IF (vertex as Actor).outputs.size > 0»
-					add wave -label cc_«(vertex as Actor).simpleName»_clk_out sim:/«simName»/cc_«(vertex as Actor).simpleName»/clk_out
+		«IF doubleBuffering»
+			## CLOCK CONTROLLER
+			add wave -noupdate -divider -height 20 "CC"
+			«FOR vertex : network.vertices»
+				«IF vertex instanceof Actor»
+					«IF (vertex as Actor).outputs.size > 0»
+						add wave -label cc_«(vertex as Actor).simpleName»_clk_out sim:/«simName»/cc_«(vertex as Actor).simpleName»/clk_out
+					«ENDIF»
 				«ENDIF»
-			«ENDIF»
-		«ENDFOR»
-		
+			«ENDFOR»
+		«ENDIF»
 		'''
 	}
 	

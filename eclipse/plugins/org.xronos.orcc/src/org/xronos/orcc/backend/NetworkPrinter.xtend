@@ -89,7 +89,7 @@ class NetworkPrinter extends IrSwitch {
 	 * @param network
 	 */
 	 
-	 var Boolean doubleBuffering;
+	var Boolean doubleBuffering;
 	
 	def computeActorOutputPortFanout(Network network) {
 		for (Vertex vertex : network.getVertices()) {
@@ -298,6 +298,10 @@ class NetworkPrinter extends IrSwitch {
 			 			«ENDFOR»
 			 		«ENDIF»
 			 	«ENDFOR»
+			 «ENDIF»
+			 «IF doubleBuffering»
+			 	-- Clock gating enable
+			 	CG_EN : in std_logic;
 			 «ENDIF»
 			 -- Clock(s) and Reset
 			 «FOR string: clockDomainsIndex.keySet SEPARATOR "\n"»
@@ -529,6 +533,7 @@ class NetworkPrinter extends IrSwitch {
 							«port.name»_almost_full : in «printLogicOrVector(actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
 							«port.name»_full : in «printLogicOrVector(actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
 						«ENDFOR»
+						en : in std_logic;
 						clk : in std_logic;
 						reset : in std_logic;
 						clk_out : out std_logic);
@@ -602,6 +607,7 @@ class NetworkPrinter extends IrSwitch {
 							«port.name»_almost_full => «actor.simpleName»_«port.name»_almost_full,
 							«port.name»_full => «actor.simpleName»_«port.name»_full,
 						«ENDFOR»
+						en => CG_EN,
 						clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
 						reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
 						clk_out => «actor.simpleName»_clk);
@@ -701,9 +707,9 @@ class NetworkPrinter extends IrSwitch {
 			-- Clock & Reset
 			«IF connectionsClockDomain.containsKey(connection)»
 				«IF doubleBuffering»
-					clk_i => clocks(«IF srcInstance != null»«srcInstance.simpleName»_clk«ELSE»«connectionsClockDomain.get(connection).get(0)»«ENDIF»),
+					clk_i => «IF srcInstance != null»«srcInstance.simpleName»_clk«ELSE»clocks(«connectionsClockDomain.get(connection).get(0)»)«ENDIF»,
 					reset_i => resets(«connectionsClockDomain.get(connection).get(0)»),
-					clk_o => clocks(«IF tgtInstance != null»«tgtInstance.simpleName»_clk«ELSE»«connectionsClockDomain.get(connection).get(1)»«ENDIF»),
+					clk_o => «IF tgtInstance != null»«tgtInstance.simpleName»_clk«ELSE»clocks(«connectionsClockDomain.get(connection).get(1)»)«ENDIF»,
 					reset_o => resets(«connectionsClockDomain.get(connection).get(1)»),
 					clk_r => clocks(«connectionsClockDomain.get(connection).get(0)»),
 					reset_r => resets(«connectionsClockDomain.get(connection).get(0)»)
