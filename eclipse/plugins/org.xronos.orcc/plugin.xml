@@ -23,6 +23,9 @@
                id="org.xronos.orcc.highGrainClockGating">
          </option>
          <option
+               id="org.xronos.orcc.arraySizeToPowerOfTwo">
+         </option>
+         <option
                id="org.xronos.orcc.xilinxPrimitives">
          </option>
          <option
@@ -86,6 +89,13 @@
             description="Clock gating actors when their output queues are becoming full."
             id="org.xronos.orcc.highGrainClockGating"
             name="High grain clock gating on actors (beta)">
+         <checkBox></checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            description="Transform list arrays size into a power of two, eliminates multiplications due to index flattening but it consumes more memory"
+            id="org.xronos.orcc.arraySizeToPowerOfTwo"
+            name="Transform list arrays size into a power of two.">
          <checkBox></checkBox>
       </option>
    </extension>

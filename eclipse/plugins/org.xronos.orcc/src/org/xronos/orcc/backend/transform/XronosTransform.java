@@ -34,7 +34,6 @@ import java.util.Map;
 
 import net.sf.orcc.backends.llvm.tta.transform.PrintRemoval;
 import net.sf.orcc.backends.transform.CastAdder;
-import net.sf.orcc.backends.transform.DivisionSubstitution;
 import net.sf.orcc.backends.transform.GlobalArrayInitializer;
 import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.backends.transform.LocalArrayRemoval;
@@ -75,6 +74,12 @@ public class XronosTransform {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
+			Boolean sizeArrayOfPowerOfTwo = options
+					.get("org.xronos.orcc.arraySizeToPowerOfTwo") != null ? (Boolean) options
+					.get("org.xronos.orcc.arraySizeToPowerOfTwo") : false;
+			if (sizeArrayOfPowerOfTwo) {
+				transformations.add(new ArraySizeToPowerOfTwo());
+			}
 			transformations.add(new XronosVarInitializer());
 			transformations.add(new CheckVarSize());
 			transformations.add(new ParameterArrayRemoval());
@@ -88,8 +93,7 @@ public class XronosTransform {
 				transformations.add(new StoreOnceTransformation());
 			}
 			transformations.add(new DfVisitor<Void>(new LoopUnrolling()));
-			transformations.add(new DfVisitor<Void>(new ConstantDivision()));
-			transformations.add(new DivisionSubstitution());
+			transformations.add(new XronosDivision());
 
 			if (portTransformation) {
 				transformations.add(new InputRepeatPattern(resourceCache));
@@ -173,6 +177,7 @@ public class XronosTransform {
 		this.procedure = procedure;
 	}
 
+	@Deprecated
 	public Procedure transformProcedure(ResourceCache resourceCache) {
 		// Add SSA transformation
 		new XronosSSA().doSwitch(procedure);
