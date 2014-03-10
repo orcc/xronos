@@ -141,10 +141,10 @@ public class GlobalReset extends HiddenPin {
 			finalReg.getClockPort().setBus(commonClock);
 			finalReg.getClockPort().pushValueForward();
 
-			sampleReg.setHardInstantiate(true);
-			crossReg.setHardInstantiate(true);
-			glitchReg.setHardInstantiate(true);
-			finalReg.setHardInstantiate(true);
+			//sampleReg.setHardInstantiate(true);
+			//crossReg.setHardInstantiate(true);
+			//glitchReg.setHardInstantiate(true);
+			//finalReg.setHardInstantiate(true);
 
 			// add all the components to the module
 			addComponent(sampleReg);

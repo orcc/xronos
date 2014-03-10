@@ -21,9 +21,6 @@
 
 package org.xronos.openforge.verilog.mapping;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.xronos.openforge.lim.memory.MemoryBank;
 import org.xronos.openforge.lim.memory.MemoryImplementation;
 import org.xronos.openforge.verilog.mapping.memory.DualPortBlockWriter;
@@ -41,6 +38,7 @@ import org.xronos.openforge.verilog.mapping.memory.VerilogMemory;
  * <P>
  * 
  * Created: Tue Jun 18 12:37:06 2002
+ * Modified: Mon Mar 10 2014
  * 
  * @author cwu
  * @version $Id: MemoryMapper.java 2 2005-06-09 20:00:48Z imiller $
@@ -51,12 +49,6 @@ public class MemoryMapper {
 	public final static String SIM_INCLUDE_PATH = "$XILINX/verilog/src/unisims/";
 	public final static String SIMPRIM_INCLUDE_PATH = "$XILINX/verilog/src/simprims/";
 	public final static String SYNTH_INCLUDE_PATH = "$XILINX/verilog/src/iSE/";
-
-	/** A LIM memory to a type of memory being used for mapping */
-	private static Map<MemoryBank, VerilogMemory> mapMemoryType = new HashMap<MemoryBank, VerilogMemory>();
-
-	MemoryMapper() {
-	}
 
 	/**
 	 * Returns the appropriate {@link VerilogMemory} (memory writer) for the
@@ -69,8 +61,7 @@ public class MemoryMapper {
 	 */
 	// public static VerilogMemory getMemoryType (Memory memory)
 	public static VerilogMemory getMemoryType(MemoryBank memory) {
-		VerilogMemory allocated = mapMemoryType.get(memory);
-		if (allocated == null) {
+		VerilogMemory allocated = null;
 			MemoryImplementation impl = memory.getImplementation();
 
 			int portCount = memory.getBankPorts().size();
@@ -101,10 +92,6 @@ public class MemoryMapper {
 						"All memories must have either 1 or 2 ports. Found: "
 								+ portCount);
 			}
-			mapMemoryType.put(memory, allocated);
-		}
-		// System.out.println("Allocated memory writer: " + allocated + " for "
-		// + memory + " " + memory.getImplementation());
 		return allocated;
 	}
 

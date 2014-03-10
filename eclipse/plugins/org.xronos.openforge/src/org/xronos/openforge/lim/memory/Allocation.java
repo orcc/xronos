@@ -44,7 +44,7 @@ public class Allocation extends Variable implements MemoryVisitable {
 	 * of this Allocation. Note that there may be multiple because an allocation
 	 * may be filled by an input stream and drained by an output stream
 	 */
-	private Set<BlockElement> blockElements = Collections.emptySet();
+	private Set<BlockElement> blockElements;
 
 	/**
 	 * Constructs a new Allocation.
@@ -61,6 +61,7 @@ public class Allocation extends Variable implements MemoryVisitable {
 	Allocation(LogicalMemory logicalMemory, LogicalValue initialValue) {
 		super(logicalMemory, initialValue.getSize());
 		this.initialValue = initialValue;
+		this.blockElements = Collections.emptySet();
 	}
 
 	/**

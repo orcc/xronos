@@ -38,7 +38,6 @@ import org.xronos.openforge.optimize.Optimization;
 import org.xronos.openforge.util.SizedInteger;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * @author gandhij
  * 
@@ -66,7 +65,7 @@ public class LoopVariableResizer extends ComponentSwapVisitor implements
 	/**
 	 * List of previously resized loops. We do not resize a loop twice.
 	 */
-	private static List<Loop> resizedLoops = new LinkedList<Loop>();
+	private List<Loop> resizedLoops;
 
 	/**
 	 * Total number of variables resized by this optimization
@@ -83,6 +82,7 @@ public class LoopVariableResizer extends ComponentSwapVisitor implements
 	 */
 	public LoopVariableResizer() {
 		super();
+		resizedLoops = new LinkedList<Loop>();
 	}
 
 	/**

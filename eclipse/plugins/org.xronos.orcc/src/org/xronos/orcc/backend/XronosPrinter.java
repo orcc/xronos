@@ -222,6 +222,7 @@ public class XronosPrinter {
 				OrccLogger.traceln("\t - Compiled in: " + (float) (t1 - t0)
 						/ 1000 + "s");
 				engine.kill();
+				engine = null;
 				printTestbenches(actor, tbPath, tbVhdPath,
 						(Boolean) getOptions().get("xilinxPrimitives"));
 			}

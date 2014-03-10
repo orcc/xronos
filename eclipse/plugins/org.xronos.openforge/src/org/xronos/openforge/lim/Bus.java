@@ -64,10 +64,10 @@ public class Bus extends ID {
 	private Port peer = null;
 
 	/** Collection of Ports; accessed directly by Port */
-	Collection<Port> ports = new HashSet<Port>(3);
+	Collection<Port> ports;// = new HashSet<Port>(3);
 
 	/** Collection of Dependencys; accessed directly by Dependency */
-	Collection<Dependency> logicalDependents = new HashSet<Dependency>(3);
+	Collection<Dependency> logicalDependents;// = new HashSet<Dependency>(3);
 
 	/** True if significant, false if ignorable */
 	private boolean isUsed = false;
@@ -376,6 +376,8 @@ public class Bus extends ID {
 	 */
 	public Bus(Exit owner) {
 		this.owner = owner;
+		this.ports = new HashSet<Port>(3);
+		this.logicalDependents = new HashSet<Dependency>(3);
 	}
 
 	/**

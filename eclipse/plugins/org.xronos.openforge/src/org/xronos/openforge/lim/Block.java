@@ -47,7 +47,7 @@ import org.xronos.openforge.lim.Exit.Tag;
 public class Block extends Module {
 
 	/** Ordered sequence of Components to be executed */
-	protected List<Component> sequence = null;
+	protected List<Component> sequence;
 
 	/** The Procedure (if any) for which this is the body. */
 	private Procedure procedure;

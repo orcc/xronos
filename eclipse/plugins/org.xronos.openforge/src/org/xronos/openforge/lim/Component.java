@@ -83,19 +83,19 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	private Port thisPort;
 
 	/** List of argument Ports */
-	protected List<Port> dataPorts = new LinkedList<Port>();
+	protected List<Port> dataPorts;// = new LinkedList<Port>();
 
 	/** Entry */
-	protected List<Entry> entries = new LinkedList<Entry>();
+	protected List<Entry> entries;// = new LinkedList<Entry>();
 
 	/** Map of Exit.Tag to Exit */
-	Map<Exit.Tag, Exit> exits = new HashMap<Exit.Tag, Exit>();
+	Map<Exit.Tag, Exit> exits;// = new HashMap<Exit.Tag, Exit>();
 
 	/** Natural log of 2 */
 	private static final double LN_2 = Math.log(2);
 
 	/** Collection of CloneListener */
-	private Collection<CloneListener> cloneListeners = Collections.emptyList();
+	private Collection<CloneListener> cloneListeners;// = Collections.emptyList();
 
 	/** denotes if this Component is non-removable */
 	private boolean nonRemovable = false;
@@ -104,9 +104,9 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 * A list of Attribute objects that should be attached to this component
 	 * when instantiated in the LIM.
 	 */
-	private List<Attribute> attributes = Collections.emptyList();
+	private List<Attribute> attributes;// = Collections.emptyList();
 
-	private List<PostScheduleCallback> schedCallbacks = Collections.emptyList();
+	private List<PostScheduleCallback> schedCallbacks;// = Collections.emptyList();
 
 	/**
 	 * A type identifier for an Bus or Port.
@@ -156,7 +156,12 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		clockPort.setUsed(false);
 		resetPort.setUsed(false);
 		goPort.setUsed(false);
-
+		entries = new LinkedList<Entry>();
+		exits = new HashMap<Exit.Tag, Exit>();
+		cloneListeners = Collections.emptyList();
+		attributes = Collections.emptyList();
+		schedCallbacks = Collections.emptyList();
+		
 		if (dataCount < 0) {
 			throw new IllegalArgumentException("negative dataCount");
 		}
@@ -166,6 +171,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 			for (int i = 0; i < dataCount; i++) {
 				makeDataPort();
 			}
+		}else{
+			dataPorts = new LinkedList<Port>();
 		}
 	}
 

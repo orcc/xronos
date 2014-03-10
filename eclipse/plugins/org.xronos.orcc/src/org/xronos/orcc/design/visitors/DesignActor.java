@@ -65,35 +65,32 @@ import org.xronos.orcc.preference.Constants;
  */
 public class DesignActor extends DfVisitor<Object> {
 
-	/** Map of action associated to its Task **/
-	private final Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
-
 	/** The list of components **/
 	private List<Component> componentsList;
 
 	/** The design that is being populated **/
-	private final Design design;
+	private Design design;
 
 	/** Instruction Visitor **/
-	private final StateVarVisitor stateVarVisitor;
+	private StateVarVisitor stateVarVisitor;
 
 	/** The resource Cache **/
-	private final ResourceCache resources;
+	private ResourceCache resources;
 
 	/** Design stateVars **/
-	private final Map<LogicalValue, Var> stateVars;
+	private Map<LogicalValue, Var> stateVars;
 
 	/** Dependency between Components and Bus-Var **/
-	private final Map<Bus, Var> busDependency;
+	private Map<Bus, Var> busDependency;
 
 	/** Dependency between Components and Done Bus **/
-	private final Map<Bus, Integer> doneBusDependency;
+	private Map<Bus, Integer> doneBusDependency;
 
 	/** Dependency between Components and Done Bus **/
-	private final Map<Port, Integer> portGroupDependency;
+	private Map<Port, Integer> portGroupDependency;
 
 	/** Dependency between Components and Port-Var **/
-	private final Map<Port, Var> portDependency;
+	private Map<Port, Var> portDependency;
 
 	public DesignActor(Design design, ResourceCache resources) {
 		this.design = design;
@@ -105,7 +102,6 @@ public class DesignActor extends DfVisitor<Object> {
 		stateVars = new HashMap<LogicalValue, Var>();
 		stateVarVisitor = new StateVarVisitor(stateVars);
 		componentsList = new ArrayList<Component>();
-
 	}
 
 	@Override
@@ -151,6 +147,7 @@ public class DesignActor extends DfVisitor<Object> {
 		DesignUtil.designAllocateMemory(design, stateVars,
 				Constants.MAX_ADDR_WIDTH, resources);
 
+		Map<Action, Task> actorsTasks = new HashMap<Action, Task>();
 		/** Create a Task for each action in the actor **/
 		for (Action action : actor.getActions()) {
 			Task task = (Task) doSwitch(action);

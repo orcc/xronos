@@ -169,8 +169,8 @@ public abstract class Module extends Component implements Cloneable {
 	private InBuf inBuf;
 
 	/** Collection of Component */
-	// private Collection<Component> components = new ArrayList<Component>();
-	private Collection<Component> components = new HashSet<Component>();
+	//private Collection<Component> components = new ArrayList<Component>();
+	private Collection<Component> components;// = new HashSet<Component>();
 
 	/** True iff this module needs a go signal */
 	private boolean consumesGo = false;
@@ -188,7 +188,7 @@ public abstract class Module extends Component implements Cloneable {
 	private boolean consumesReset = false;
 
 	/** A Set of components which can break feedback paths. */
-	private Set<Component> feedbackPoints = Collections.emptySet();
+	private Set<Component> feedbackPoints;// = Collections.emptySet();
 
 	/**
 	 * The label used for OptionDB look-ups. May be null if no search scope has
@@ -214,6 +214,9 @@ public abstract class Module extends Component implements Cloneable {
 	public Module(int dataCount) {
 		super(dataCount);
 		assert !isConstructed();
+		this.components = new HashSet<Component>();
+		//this.components = new ArrayList<Component>();
+		this.feedbackPoints = Collections.emptySet();
 		createInBuf();
 	}
 
