@@ -118,7 +118,7 @@ class ClockEnabler extends DfVisitor<CharSequence> {
 
 		always @(posedge clk)
 		begin
-			 clock_enable <= «FOR port: actor.outputs SEPARATOR " | "»«IF portFanout.get(port) > 1»«FOR idx : 0 ..< portFanout.get(port) SEPARATOR " & "»«port.name»_enable[«idx»]«ENDFOR»«ELSE»«port.name»_enable«ENDIF»«ENDFOR»;
+			 clock_enable <= «FOR port: actor.outputs SEPARATOR " | "»«IF portFanout.get(port) > 1»(«FOR idx : 0 ..< portFanout.get(port) SEPARATOR " & "»«port.name»_enable[«idx»]«ENDFOR»)«ELSE»«port.name»_enable«ENDIF»«ENDFOR»;
 		end 
 
 		assign buf_enable = en ? clock_enable : 1;

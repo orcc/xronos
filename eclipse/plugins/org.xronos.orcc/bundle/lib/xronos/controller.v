@@ -15,65 +15,73 @@ input full;
 output reg enable;
 
 
-parameter INIT = 4'b0001;
-parameter SPACE = 4'b0010;
-parameter ALMOST_FULL = 4'b0100;
-parameter FULL = 4'b1000;
+parameter INIT = 5'b00001;
+parameter SPACE = 5'b00010;
+parameter AF_DISABLE = 5'b00100;
+parameter FULL = 5'b01000;
+parameter AF_ENABLE = 5'b10000;
 
-  (* FSM_ENCODING="ONE-HOT", SAFE_IMPLEMENTATION="YES", SAFE_RECOVERY_STATE="<recovery_state_value>" *) reg [3:0] state = INIT;
+  (* FSM_ENCODING="ONE-HOT", SAFE_IMPLEMENTATION="YES", SAFE_RECOVERY_STATE="INIT" *) reg [4:0] state = INIT;
 
-   always@(posedge clk)
-      if (reset) begin
-         state <= INIT;
-         enable <= 1'b1;
-      end
-      else
-         (* PARALLEL_CASE *) case (state)
-           INIT: begin
-               if (almost_full == 1'b1 && full == 1'b1)
-                  state <= SPACE;
-               else if (almost_full == 1'b0 && full == 1'b0)
-                  state <= SPACE;
-               else
-                  state  <= INIT;
-                  enable <= 1'b1;
-            end
-            SPACE : begin
-               if (almost_full == 1'b0 && full == 1'b0)
-                  state <= SPACE;
-               else if (almost_full == 1'b1 && full == 1'b0)
-                  state <= ALMOST_FULL;
-               else if (almost_full == 1'b1 && full == 1'b1)
-									state <= FULL;
-							 else
-									state <= INIT;
-               enable <= 1'b1;
-            end
-            ALMOST_FULL : begin
-               if (almost_full == 1'b0 && full == 1'b0)
-                  state <= SPACE;
-               else if (almost_full == 1'b1 && full == 1'b0)
-                  state <= ALMOST_FULL;
-               else if (almost_full == 1'b1 && full == 1'b1)
-									state <= FULL;
-							 else
-									state <= INIT;
-               enable <= 1'b0;
-            end
-            FULL : begin
-               if (almost_full == 1'b0 && full == 1'b0)
-                  state <= SPACE;
-               else if (almost_full == 1'b1 && full == 1'b0)
-                  state <= ALMOST_FULL;
-               else if (almost_full == 1'b1 && full == 1'b1)
-									state <= FULL;
-							 else
-									state <= INIT;
-               enable <= 1'b0;
-            end
-            default: begin  // Fault Recovery
-               state <= INIT;
-               enable <= 1'b1;
-	    	end
-         endcase
+always@(posedge clk)
+	if (reset) begin
+		state <= INIT;
+		enable <= 1'b1;
+	end
+	else
+		(* PARALLEL_CASE *) case (state)
+		INIT: begin
+			if (almost_full == 1'b1 && full == 1'b1)
+				state <= SPACE;
+			else
+				state  <= INIT;
+
+			enable <= 1'b1;
+		end
+
+		SPACE : begin
+			if (almost_full == 1'b1 && full == 1'b0)
+				state <= AF_DISABLE;
+			else
+				state <= SPACE;
+
+			enable <= 1'b1;
+		end
+
+		AF_DISABLE : begin
+			if (almost_full == 1'b1 && full == 1'b1)
+				state <= FULL;
+			if (almost_full == 1'b0 && full == 1'b0)
+				state <= SPACE;
+			else
+				state <= AF_DISABLE;
+	
+			enable <= 1'b0;
+		end
+
+		FULL : begin
+			if (almost_full == 1'b1 && full == 1'b0)
+				state <= AF_ENABLE;
+			else
+				state <= FULL;
+	
+			enable <= 1'b0;
+		end
+
+		AF_ENABLE : begin
+			if (almost_full == 1'b0 && full == 1'b0)
+				state <= SPACE;
+			else if (almost_full == 1'b1 && full == 1'b1)
+				state <= FULL;
+			else
+				state <= AF_ENABLE;
+
+			enable <= 1'b1;
+		end
+	
+		default: begin  // Fault Recovery
+			state <= INIT;
+			enable <= 1'b1;
+		end
+	endcase
 endmodule							
