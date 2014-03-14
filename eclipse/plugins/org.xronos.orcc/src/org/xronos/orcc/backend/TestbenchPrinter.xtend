@@ -30,21 +30,21 @@ package org.xronos.orcc.backend
 
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Map
-import net.sf.orcc.df.Network
-import net.sf.orcc.ir.util.IrSwitch
-import net.sf.orcc.graph.Vertex
-import net.sf.orcc.df.Port
-import java.util.List
-import net.sf.orcc.df.Actor
 import java.util.HashMap
+import java.util.List
+import java.util.Map
+import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Network
+import net.sf.orcc.df.Port
+import net.sf.orcc.graph.Vertex
 
 /*
  * A VHDL Testbench printer
  * 
  * @author Endri Bezati
  */
-class TestbenchPrinter extends IrSwitch {
+class TestbenchPrinter {
+	
 	var Boolean goDone;
 	var Boolean generateWeights;
 	
