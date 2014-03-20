@@ -47,11 +47,14 @@ public class ActorToDesign {
 	Design design;
 	Actor actor;
 	ResourceCache resourceCache;
+	boolean schedulerInformation;
 
-	public ActorToDesign(Actor actor, ResourceCache resourceCache) {
+	public ActorToDesign(Actor actor, ResourceCache resourceCache,
+			boolean schedulerInformation) {
 		this.actor = actor;
 		this.resourceCache = resourceCache;
 		design = new Design();
+		this.schedulerInformation = schedulerInformation;
 	}
 
 	public Design buildDesign() {
@@ -62,7 +65,8 @@ public class ActorToDesign {
 		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
 				design.getSearchLabel(), designName);
 
-		DesignActor designVisitor = new DesignActor(design, resourceCache);
+		DesignActor designVisitor = new DesignActor(design, resourceCache,
+				schedulerInformation);
 		designVisitor.doSwitch(actor);
 
 		return design;

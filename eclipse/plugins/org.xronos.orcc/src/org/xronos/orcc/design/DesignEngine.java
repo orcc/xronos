@@ -53,24 +53,27 @@ public class DesignEngine extends Engine {
 
 	GenericJob genJob;
 
+	boolean schedulerInformation;
+
 	public DesignEngine(GenericJob genJob, Actor actor,
-			ResourceCache resourceCache) {
+			ResourceCache resourceCache, boolean schedulerInformation) {
 		super(genJob);
 		this.genJob = genJob;
 		this.actor = actor;
 		this.resourceCache = resourceCache;
-		this.jobHandler = new JobHandlerAdapter("Forging: "
-				+ actor.getSimpleName());
+		jobHandler = new JobHandlerAdapter("Forging: " + actor.getSimpleName());
+		this.schedulerInformation = schedulerInformation;
 	}
 
 	public DesignEngine(GenericJob genJob, Network network,
-			ResourceCache resourceCache) {
+			ResourceCache resourceCache, boolean schedulerInformation) {
 		super(genJob);
 		this.genJob = genJob;
 		this.network = network;
 		this.resourceCache = resourceCache;
-		this.jobHandler = new JobHandlerAdapter("Forging: "
+		jobHandler = new JobHandlerAdapter("Forging: "
 				+ network.getSimpleName());
+		this.schedulerInformation = schedulerInformation;
 	}
 
 	@Override
@@ -79,14 +82,14 @@ public class DesignEngine extends Engine {
 		// Single file generation
 		if (network != null) {
 			NetworkToDesign networkToDesign = new NetworkToDesign(network,
-					resourceCache);
+					resourceCache, schedulerInformation);
 			design = networkToDesign.buildDesign();
 		}
 
 		// Multiple file generation
 		if (actor != null) {
 			ActorToDesign instanceToDesign = new ActorToDesign(actor,
-					resourceCache);
+					resourceCache, schedulerInformation);
 			design = instanceToDesign.buildDesign();
 		}
 

@@ -34,6 +34,7 @@ import net.sf.orcc.ir.Expression;
 import org.eclipse.emf.ecore.EObject;
 import org.xronos.orcc.ir.BlockMutex;
 import org.xronos.orcc.ir.InstPortWrite;
+import org.xronos.orcc.ir.InstSimplePortWrite;
 
 /**
  * This class extends LiteralIntegersAdder with InstSpecific Instructions
@@ -50,6 +51,9 @@ public class XronosLiteralIntegersAdder extends LiteralIntegersAdder {
 		} else if (object instanceof InstPortWrite) {
 			InstPortWrite portWrite = (InstPortWrite) object;
 			portWrite.setValue(doSwitch(portWrite.getValue()));
+		} else if (object instanceof InstSimplePortWrite) {
+			InstSimplePortWrite simplePortWrite = (InstSimplePortWrite) object;
+			simplePortWrite.setValue(doSwitch(simplePortWrite.getValue()));
 		}
 		return super.defaultCase(object);
 	}

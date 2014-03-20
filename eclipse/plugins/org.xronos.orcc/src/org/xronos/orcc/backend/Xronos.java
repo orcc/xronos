@@ -105,6 +105,8 @@ public class Xronos extends AbstractBackend {
 
 	private boolean doubleBuffering;
 
+	boolean schedulerInformation;
+
 	@Override
 	protected void doInitializeOptions() {
 		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
@@ -118,8 +120,11 @@ public class Xronos extends AbstractBackend {
 		importBufferSize = getAttribute("org.xronos.orcc.importBufferSize",
 				false);
 		fifoSize = getAttribute("net.sf.orcc.fifoSize", 1);
-		doubleBuffering = getAttribute(
-				"org.xronos.orcc.highGrainClockGating", false);
+		doubleBuffering = getAttribute("org.xronos.orcc.highGrainClockGating",
+				false);
+		schedulerInformation = getAttribute(
+				"org.xronos.orcc.schedulingInformation", false);
+
 		// Set Paths for RTL
 		rtlPath = path + File.separator + "rtl";
 		File rtlDir = new File(rtlPath);
@@ -199,7 +204,7 @@ public class Xronos extends AbstractBackend {
 		} else {
 			// Print Instances
 			generateInstances(network);
-			
+
 			// Print Network
 			printNetwork(network);
 		}
@@ -329,9 +334,11 @@ public class Xronos extends AbstractBackend {
 							.warnln("PIPELINING: gd attribute missing, example: @xronos_pipeline(gd=\"100\")");
 				}
 			}
+
 			boolean failed = printer.printInstance(flags.getStringFlag(),
 					rtlPath, testBenchPath, tbVhdPath, actor, options,
-					resourceCache, numInstance, toBeCompiled, debugMode);
+					resourceCache, numInstance, toBeCompiled,
+					schedulerInformation, debugMode);
 			if (failed) {
 				failedToCompile++;
 			}
@@ -365,8 +372,10 @@ public class Xronos extends AbstractBackend {
 		printer.getOptions().put("fpgaType", fpgaName);
 		printer.getOptions().put("doubleBuffering", doubleBuffering);
 		XronosFlags flags = new XronosFlags(rtlPath, network.getSimpleName());
+		boolean schedulerInformation = getAttribute(
+				"org.xronos.orcc.schedulingInformation", false);
 		boolean failed = printer.printNetwork(flags.getStringFlag(), rtlPath,
-				network, options, resourceCache);
+				network, options, resourceCache, schedulerInformation);
 
 		if (failed) {
 			OrccLogger
@@ -405,6 +414,8 @@ public class Xronos extends AbstractBackend {
 		XronosPrinter xronosPrinter = new XronosPrinter();
 		xronosPrinter.getOptions().put("xilinxPrimitives", xilinxPrimitives);
 		xronosPrinter.getOptions().put("doubleBuffering", doubleBuffering);
+		xronosPrinter.getOptions().put("schedulerInformation",
+				schedulerInformation);
 
 		// Print the network TCL ModelSim simulation script
 		xronosPrinter.printSimTclScript(simPath, false, network);
@@ -412,6 +423,8 @@ public class Xronos extends AbstractBackend {
 			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
 			xronosPrinter.getOptions().put("generateWeights", generateWeights);
 			xronosPrinter.getOptions().put("doubleBuffering", doubleBuffering);
+			xronosPrinter.getOptions().put("schedulerInformation",
+					schedulerInformation);
 			// Create the weights path
 			File weightsPath = new File(testBenchPath + File.separator
 					+ "weights");

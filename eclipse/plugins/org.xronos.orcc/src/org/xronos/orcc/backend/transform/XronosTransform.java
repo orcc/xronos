@@ -70,7 +70,7 @@ public class XronosTransform {
 
 	public static void transformActor(Actor actor, Map<String, Object> options,
 			ResourceCache resourceCache, Boolean portTransformation,
-			Boolean debugMode) {
+			boolean schedulerInformation, Boolean debugMode) {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
@@ -103,7 +103,9 @@ public class XronosTransform {
 
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new GlobalArrayInitializer(true));
-			transformations.add(new XronosScheduler(resourceCache, true));
+
+			transformations.add(new XronosScheduler(resourceCache,
+					schedulerInformation));
 
 			transformations.add(new PrintRemoval());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
@@ -165,9 +167,11 @@ public class XronosTransform {
 	}
 
 	public static void transformNetworkActors(Network network,
-			Map<String, Object> options, ResourceCache resourceCache) {
+			Map<String, Object> options, ResourceCache resourceCache,
+			boolean schedulerInformation) {
 		for (Actor actor : network.getAllActors()) {
-			transformActor(actor, options, resourceCache, false, false);
+			transformActor(actor, options, resourceCache, false,
+					schedulerInformation, false);
 		}
 	}
 

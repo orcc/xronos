@@ -68,6 +68,7 @@ import org.xronos.orcc.design.visitors.io.CircularBuffer;
 import org.xronos.orcc.ir.BlockMutex;
 import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.InstPortStatus;
+import org.xronos.orcc.ir.InstSimplePortWrite;
 import org.xronos.orcc.ir.XronosIrFactory;
 
 /**
@@ -297,6 +298,15 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				InstAssign instAssign = irFactory.createInstAssign(
 						tokenAvailability, exprTokenAvailability);
 				block.add(instAssign);
+				if (schedulerInformation) {
+					// TEST
+					InstSimplePortWrite instSimplePortWrite = XronosIrFactory.eINSTANCE
+							.createInstSimplePortWrite();
+					instSimplePortWrite.setName("ta_" + action.getName());
+					ExprVar tVar = irFactory.createExprVar(tokenAvailability);
+					instSimplePortWrite.setValue(tVar);
+					block.add(instSimplePortWrite);
+				}
 			}
 
 			return null;
@@ -321,12 +331,13 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 	private BlockIf firstBlockIf;
 
-	private Boolean idle;
+	private Boolean schedulerInformation;
 
-	public XronosScheduler(ResourceCache resourceCache, Boolean idle) {
+	public XronosScheduler(ResourceCache resourceCache,
+			Boolean schedulerInformation) {
 		super();
 		this.resourceCache = resourceCache;
-		this.idle = idle;
+		this.schedulerInformation = schedulerInformation;
 		xronosSchedulerLocals = new ArrayList<Var>();
 		actionInputPortRequestSize = new HashMap<Action, Map<Port, Integer>>();
 		actionOutputPortRequestSize = new HashMap<Action, Map<Port, Integer>>();
@@ -440,6 +451,8 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 						stateSource, stateTarget);
 			}
 
+			lastBlockIf.getElseBlocks().add(createIdleBlock());
+
 			// Create an if block that will contains all the transitions
 			Var stateSource = procedure.getLocal("s_" + state.getName());
 
@@ -454,7 +467,21 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		return blocks;
 	}
 
-	private void createIdleBlock() {
+	private Block createIdleBlock() {
+		ExprBool exprBool = irFactory.createExprBool(true);
+		// Var idlevar = irFactory.createVar(irFactory.createTypeBool(), "idle_"
+		// + actor.getName(), true, 0);
+		// xronosSchedulerLocals.add(idlevar);
+		// InstAssign assign = irFactory.createInstAssign(idlevar, exprBool);
+		InstSimplePortWrite idle = XronosIrFactory.eINSTANCE
+				.createInstSimplePortWrite();
+		idle.setName("idle_" + actor.getSimpleName());
+		idle.setValue(exprBool);
+
+		BlockBasic blockBasic = irFactory.createBlockBasic();
+		// blockBasic.add(assign);
+		blockBasic.add(idle);
+		return blockBasic;
 
 	}
 
@@ -559,6 +586,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			for (Action action : actor.getActionsOutsideFsm()) {
 				lastBlockIf = createTaskCallOutFSM(procedure, action,
 						lastBlockIf);
+				lastBlockIf.getElseBlocks().add(createIdleBlock());
 			}
 			blocks.add(firstBlockIf);
 		} else {

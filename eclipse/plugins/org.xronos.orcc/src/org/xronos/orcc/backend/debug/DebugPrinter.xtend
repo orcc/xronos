@@ -51,6 +51,7 @@ import org.xronos.orcc.ir.InstPortPeek
 import org.xronos.orcc.ir.InstPortRead
 import org.xronos.orcc.ir.InstPortStatus
 import org.xronos.orcc.ir.InstPortWrite
+import org.xronos.orcc.ir.InstSimplePortWrite
 
 class DebugPrinter extends InstancePrinter {
 	
@@ -108,6 +109,8 @@ class DebugPrinter extends InstancePrinter {
 			«caseInstPortStatus(object as InstPortStatus)»
 		«ELSEIF (object instanceof InstPortWrite)»
 			«caseInstPortWrite(object as InstPortWrite)»
+		«ELSEIF (object instanceof InstSimplePortWrite)»
+			«caseInstSimplePortWrite(object as InstSimplePortWrite)»
 		«ELSEIF object instanceof InstCast»
 			«caseInstCast(object as InstCast)»
 		«ENDIF»
@@ -180,6 +183,13 @@ class DebugPrinter extends InstancePrinter {
 	val Port port = portWrite.port as Port;
 	'''
 		portWrite(«port.name», «(portWrite.value as ExprVar).use.variable.name»);
+	'''
+	}
+	
+	def caseInstSimplePortWrite(InstSimplePortWrite simplePortWrite) {
+	val String name = simplePortWrite.name as String;
+	'''
+		simplePortWrite(«name», «simplePortWrite.value.doSwitch»);
 	'''
 	}
 	

@@ -24,8 +24,22 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortPeek/target"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstPortPeek/port"/>
     </genClasses>
+    <genClasses ecoreClass="XronosIr.ecore#//InstSimplePortWrite">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute XronosIr.ecore#//InstSimplePortWrite/name"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//InstSimplePortWrite/value"/>
+    </genClasses>
     <genClasses ecoreClass="XronosIr.ecore#//BlockMutex">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference XronosIr.ecore#//BlockMutex/blocks"/>
+    </genClasses>
+    <genClasses ecoreClass="XronosIr.ecore#//Dfg">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//Dfg/operations"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//Dfg/dependencies"/>
+    </genClasses>
+    <genClasses ecoreClass="XronosIr.ecore#//DfgVertex">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//DfgVertex/node"/>
+    </genClasses>
+    <genClasses ecoreClass="XronosIr.ecore#//DfgEdge">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference XronosIr.ecore#//DfgEdge/line"/>
     </genClasses>
   </genPackages>
 </genmodel:GenModel>

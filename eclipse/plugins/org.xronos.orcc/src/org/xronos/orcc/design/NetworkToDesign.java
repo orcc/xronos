@@ -44,17 +44,21 @@ import org.xronos.orcc.design.visitors.DesignNetwork;
  * @author Endri Bezati
  */
 public class NetworkToDesign {
-	
+
 	Design design;
-	
+
 	Network network;
-	
+
 	ResourceCache resourceCache;
 
-	public NetworkToDesign(Network network, ResourceCache resourceCache) {
+	boolean schedulerInformation;
+
+	public NetworkToDesign(Network network, ResourceCache resourceCache,
+			boolean schedulerInformation) {
 		this.network = network;
 		this.resourceCache = resourceCache;
 		design = new Design();
+		this.schedulerInformation = schedulerInformation;
 	}
 
 	public Design buildDesign() {
@@ -65,7 +69,8 @@ public class NetworkToDesign {
 		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
 				design.getSearchLabel(), designName);
 
-		DesignNetwork designVisitor = new DesignNetwork(design, resourceCache);
+		DesignNetwork designVisitor = new DesignNetwork(design, resourceCache,
+				schedulerInformation);
 		designVisitor.doSwitch(network);
 
 		return design;

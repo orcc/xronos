@@ -20,6 +20,9 @@
                id="org.xronos.orcc.generateGoDone">
          </option>
          <option
+               id="org.xronos.orcc.schedulingInformation">
+         </option>
+         <option
                id="org.xronos.orcc.highGrainClockGating">
          </option>
          <option
@@ -98,6 +101,21 @@
             name="Transform list arrays size into a power of two.">
          <checkBox></checkBox>
       </option>
+      <option
+            defaultValue="false"
+            description="Output the availability of tokens on inputs and if the scheduler is idle."
+            id="org.xronos.orcc.schedulingInformation"
+            name="Output scheduling information">
+         <checkBox></checkBox>
+      </option>
+   </extension>
+
+   <extension point="org.eclipse.emf.ecore.generated_package">
+      <!-- @generated XronosIr -->
+      <package
+            uri="http://www.xronos.org/ir"
+            class="org.xronos.orcc.ir.XronosIrPackage"
+            genModel="model/XronosIr.genmodel"/>
    </extension>
 
 </plugin>

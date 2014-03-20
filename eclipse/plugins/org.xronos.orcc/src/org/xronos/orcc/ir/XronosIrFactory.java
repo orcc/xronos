@@ -58,6 +58,15 @@ public interface XronosIrFactory extends EFactory {
 	InstPortPeek createInstPortPeek();
 
 	/**
+	 * Returns a new object of class '<em>Inst Simple Port Write</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Inst Simple Port Write</em>'.
+	 * @generated
+	 */
+	InstSimplePortWrite createInstSimplePortWrite();
+
+	/**
 	 * Returns a new object of class '<em>Block Mutex</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -65,6 +74,33 @@ public interface XronosIrFactory extends EFactory {
 	 * @generated
 	 */
 	BlockMutex createBlockMutex();
+
+	/**
+	 * Returns a new object of class '<em>Dfg</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Dfg</em>'.
+	 * @generated
+	 */
+	Dfg createDfg();
+
+	/**
+	 * Returns a new object of class '<em>Dfg Vertex</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Dfg Vertex</em>'.
+	 * @generated
+	 */
+	DfgVertex createDfgVertex();
+
+	/**
+	 * Returns a new object of class '<em>Dfg Edge</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Dfg Edge</em>'.
+	 * @generated
+	 */
+	DfgEdge createDfgEdge();
 
 	/**
 	 * Returns the package supported by this factory.

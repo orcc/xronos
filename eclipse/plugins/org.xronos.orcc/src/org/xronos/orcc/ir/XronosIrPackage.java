@@ -2,6 +2,7 @@
  */
 package org.xronos.orcc.ir;
 
+import net.sf.orcc.graph.GraphPackage;
 import net.sf.orcc.ir.IrPackage;
 
 import org.eclipse.emf.ecore.EAttribute;
@@ -332,6 +333,70 @@ public interface XronosIrPackage extends EPackage {
 	int INST_PORT_PEEK_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
 
 	/**
+	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.InstSimplePortWriteImpl <em>Inst Simple Port Write</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see org.xronos.orcc.ir.impl.InstSimplePortWriteImpl
+	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstSimplePortWrite()
+	 * @generated
+	 */
+	int INST_SIMPLE_PORT_WRITE = 4;
+
+	/**
+	 * The feature id for the '<em><b>Attributes</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_SIMPLE_PORT_WRITE__ATTRIBUTES = IrPackage.INSTRUCTION__ATTRIBUTES;
+
+	/**
+	 * The feature id for the '<em><b>Line Number</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_SIMPLE_PORT_WRITE__LINE_NUMBER = IrPackage.INSTRUCTION__LINE_NUMBER;
+
+	/**
+	 * The feature id for the '<em><b>Predicate</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_SIMPLE_PORT_WRITE__PREDICATE = IrPackage.INSTRUCTION__PREDICATE;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_SIMPLE_PORT_WRITE__NAME = IrPackage.INSTRUCTION_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Value</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_SIMPLE_PORT_WRITE__VALUE = IrPackage.INSTRUCTION_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>Inst Simple Port Write</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int INST_SIMPLE_PORT_WRITE_FEATURE_COUNT = IrPackage.INSTRUCTION_FEATURE_COUNT + 2;
+
+	/**
 	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.BlockMutexImpl <em>Block Mutex</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -339,7 +404,7 @@ public interface XronosIrPackage extends EPackage {
 	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getBlockMutex()
 	 * @generated
 	 */
-	int BLOCK_MUTEX = 4;
+	int BLOCK_MUTEX = 5;
 
 	/**
 	 * The feature id for the '<em><b>Attributes</b></em>' containment reference list.
@@ -376,6 +441,316 @@ public interface XronosIrPackage extends EPackage {
 	 * @ordered
 	 */
 	int BLOCK_MUTEX_FEATURE_COUNT = IrPackage.BLOCK_FEATURE_COUNT + 1;
+
+
+	/**
+	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.DfgImpl <em>Dfg</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see org.xronos.orcc.ir.impl.DfgImpl
+	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getDfg()
+	 * @generated
+	 */
+	int DFG = 6;
+
+	/**
+	 * The feature id for the '<em><b>Attributes</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__ATTRIBUTES = GraphPackage.GRAPH__ATTRIBUTES;
+
+	/**
+	 * The feature id for the '<em><b>Label</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__LABEL = GraphPackage.GRAPH__LABEL;
+
+	/**
+	 * The feature id for the '<em><b>Number</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__NUMBER = GraphPackage.GRAPH__NUMBER;
+
+	/**
+	 * The feature id for the '<em><b>Incoming</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__INCOMING = GraphPackage.GRAPH__INCOMING;
+
+	/**
+	 * The feature id for the '<em><b>Outgoing</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__OUTGOING = GraphPackage.GRAPH__OUTGOING;
+
+	/**
+	 * The feature id for the '<em><b>Connecting</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__CONNECTING = GraphPackage.GRAPH__CONNECTING;
+
+	/**
+	 * The feature id for the '<em><b>Predecessors</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__PREDECESSORS = GraphPackage.GRAPH__PREDECESSORS;
+
+	/**
+	 * The feature id for the '<em><b>Successors</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__SUCCESSORS = GraphPackage.GRAPH__SUCCESSORS;
+
+	/**
+	 * The feature id for the '<em><b>Neighbors</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__NEIGHBORS = GraphPackage.GRAPH__NEIGHBORS;
+
+	/**
+	 * The feature id for the '<em><b>Edges</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__EDGES = GraphPackage.GRAPH__EDGES;
+
+	/**
+	 * The feature id for the '<em><b>Vertices</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__VERTICES = GraphPackage.GRAPH__VERTICES;
+
+	/**
+	 * The feature id for the '<em><b>Operations</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__OPERATIONS = GraphPackage.GRAPH_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Dependencies</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG__DEPENDENCIES = GraphPackage.GRAPH_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>Dfg</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_FEATURE_COUNT = GraphPackage.GRAPH_FEATURE_COUNT + 2;
+
+	/**
+	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.DfgVertexImpl <em>Dfg Vertex</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see org.xronos.orcc.ir.impl.DfgVertexImpl
+	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getDfgVertex()
+	 * @generated
+	 */
+	int DFG_VERTEX = 7;
+
+	/**
+	 * The feature id for the '<em><b>Attributes</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__ATTRIBUTES = GraphPackage.VERTEX__ATTRIBUTES;
+
+	/**
+	 * The feature id for the '<em><b>Label</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__LABEL = GraphPackage.VERTEX__LABEL;
+
+	/**
+	 * The feature id for the '<em><b>Number</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__NUMBER = GraphPackage.VERTEX__NUMBER;
+
+	/**
+	 * The feature id for the '<em><b>Incoming</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__INCOMING = GraphPackage.VERTEX__INCOMING;
+
+	/**
+	 * The feature id for the '<em><b>Outgoing</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__OUTGOING = GraphPackage.VERTEX__OUTGOING;
+
+	/**
+	 * The feature id for the '<em><b>Connecting</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__CONNECTING = GraphPackage.VERTEX__CONNECTING;
+
+	/**
+	 * The feature id for the '<em><b>Predecessors</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__PREDECESSORS = GraphPackage.VERTEX__PREDECESSORS;
+
+	/**
+	 * The feature id for the '<em><b>Successors</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__SUCCESSORS = GraphPackage.VERTEX__SUCCESSORS;
+
+	/**
+	 * The feature id for the '<em><b>Neighbors</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__NEIGHBORS = GraphPackage.VERTEX__NEIGHBORS;
+
+	/**
+	 * The feature id for the '<em><b>Node</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX__NODE = GraphPackage.VERTEX_FEATURE_COUNT + 0;
+
+	/**
+	 * The number of structural features of the '<em>Dfg Vertex</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_VERTEX_FEATURE_COUNT = GraphPackage.VERTEX_FEATURE_COUNT + 1;
+
+	/**
+	 * The meta object id for the '{@link org.xronos.orcc.ir.impl.DfgEdgeImpl <em>Dfg Edge</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see org.xronos.orcc.ir.impl.DfgEdgeImpl
+	 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getDfgEdge()
+	 * @generated
+	 */
+	int DFG_EDGE = 8;
+
+	/**
+	 * The feature id for the '<em><b>Attributes</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_EDGE__ATTRIBUTES = GraphPackage.EDGE__ATTRIBUTES;
+
+	/**
+	 * The feature id for the '<em><b>Label</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_EDGE__LABEL = GraphPackage.EDGE__LABEL;
+
+	/**
+	 * The feature id for the '<em><b>Source</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_EDGE__SOURCE = GraphPackage.EDGE__SOURCE;
+
+	/**
+	 * The feature id for the '<em><b>Target</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_EDGE__TARGET = GraphPackage.EDGE__TARGET;
+
+	/**
+	 * The feature id for the '<em><b>Line</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_EDGE__LINE = GraphPackage.EDGE_FEATURE_COUNT + 0;
+
+	/**
+	 * The number of structural features of the '<em>Dfg Edge</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DFG_EDGE_FEATURE_COUNT = GraphPackage.EDGE_FEATURE_COUNT + 1;
 
 
 	/**
@@ -529,6 +904,38 @@ public interface XronosIrPackage extends EPackage {
 	EReference getInstPortPeek_Port();
 
 	/**
+	 * Returns the meta object for class '{@link org.xronos.orcc.ir.InstSimplePortWrite <em>Inst Simple Port Write</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Inst Simple Port Write</em>'.
+	 * @see org.xronos.orcc.ir.InstSimplePortWrite
+	 * @generated
+	 */
+	EClass getInstSimplePortWrite();
+
+	/**
+	 * Returns the meta object for the attribute '{@link org.xronos.orcc.ir.InstSimplePortWrite#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see org.xronos.orcc.ir.InstSimplePortWrite#getName()
+	 * @see #getInstSimplePortWrite()
+	 * @generated
+	 */
+	EAttribute getInstSimplePortWrite_Name();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link org.xronos.orcc.ir.InstSimplePortWrite#getValue <em>Value</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Value</em>'.
+	 * @see org.xronos.orcc.ir.InstSimplePortWrite#getValue()
+	 * @see #getInstSimplePortWrite()
+	 * @generated
+	 */
+	EReference getInstSimplePortWrite_Value();
+
+	/**
 	 * Returns the meta object for class '{@link org.xronos.orcc.ir.BlockMutex <em>Block Mutex</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -548,6 +955,80 @@ public interface XronosIrPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getBlockMutex_Blocks();
+
+	/**
+	 * Returns the meta object for class '{@link org.xronos.orcc.ir.Dfg <em>Dfg</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Dfg</em>'.
+	 * @see org.xronos.orcc.ir.Dfg
+	 * @generated
+	 */
+	EClass getDfg();
+
+	/**
+	 * Returns the meta object for the reference list '{@link org.xronos.orcc.ir.Dfg#getOperations <em>Operations</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference list '<em>Operations</em>'.
+	 * @see org.xronos.orcc.ir.Dfg#getOperations()
+	 * @see #getDfg()
+	 * @generated
+	 */
+	EReference getDfg_Operations();
+
+	/**
+	 * Returns the meta object for the reference list '{@link org.xronos.orcc.ir.Dfg#getDependencies <em>Dependencies</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference list '<em>Dependencies</em>'.
+	 * @see org.xronos.orcc.ir.Dfg#getDependencies()
+	 * @see #getDfg()
+	 * @generated
+	 */
+	EReference getDfg_Dependencies();
+
+	/**
+	 * Returns the meta object for class '{@link org.xronos.orcc.ir.DfgVertex <em>Dfg Vertex</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Dfg Vertex</em>'.
+	 * @see org.xronos.orcc.ir.DfgVertex
+	 * @generated
+	 */
+	EClass getDfgVertex();
+
+	/**
+	 * Returns the meta object for the reference '{@link org.xronos.orcc.ir.DfgVertex#getNode <em>Node</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Node</em>'.
+	 * @see org.xronos.orcc.ir.DfgVertex#getNode()
+	 * @see #getDfgVertex()
+	 * @generated
+	 */
+	EReference getDfgVertex_Node();
+
+	/**
+	 * Returns the meta object for class '{@link org.xronos.orcc.ir.DfgEdge <em>Dfg Edge</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Dfg Edge</em>'.
+	 * @see org.xronos.orcc.ir.DfgEdge
+	 * @generated
+	 */
+	EClass getDfgEdge();
+
+	/**
+	 * Returns the meta object for the reference '{@link org.xronos.orcc.ir.DfgEdge#getLine <em>Line</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Line</em>'.
+	 * @see org.xronos.orcc.ir.DfgEdge#getLine()
+	 * @see #getDfgEdge()
+	 * @generated
+	 */
+	EReference getDfgEdge_Line();
 
 	/**
 	 * Returns the factory that creates the instances of the model.
@@ -692,6 +1173,32 @@ public interface XronosIrPackage extends EPackage {
 		EReference INST_PORT_PEEK__PORT = eINSTANCE.getInstPortPeek_Port();
 
 		/**
+		 * The meta object literal for the '{@link org.xronos.orcc.ir.impl.InstSimplePortWriteImpl <em>Inst Simple Port Write</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see org.xronos.orcc.ir.impl.InstSimplePortWriteImpl
+		 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getInstSimplePortWrite()
+		 * @generated
+		 */
+		EClass INST_SIMPLE_PORT_WRITE = eINSTANCE.getInstSimplePortWrite();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute INST_SIMPLE_PORT_WRITE__NAME = eINSTANCE.getInstSimplePortWrite_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Value</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference INST_SIMPLE_PORT_WRITE__VALUE = eINSTANCE.getInstSimplePortWrite_Value();
+
+		/**
 		 * The meta object literal for the '{@link org.xronos.orcc.ir.impl.BlockMutexImpl <em>Block Mutex</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -708,6 +1215,68 @@ public interface XronosIrPackage extends EPackage {
 		 * @generated
 		 */
 		EReference BLOCK_MUTEX__BLOCKS = eINSTANCE.getBlockMutex_Blocks();
+
+		/**
+		 * The meta object literal for the '{@link org.xronos.orcc.ir.impl.DfgImpl <em>Dfg</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see org.xronos.orcc.ir.impl.DfgImpl
+		 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getDfg()
+		 * @generated
+		 */
+		EClass DFG = eINSTANCE.getDfg();
+
+		/**
+		 * The meta object literal for the '<em><b>Operations</b></em>' reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference DFG__OPERATIONS = eINSTANCE.getDfg_Operations();
+
+		/**
+		 * The meta object literal for the '<em><b>Dependencies</b></em>' reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference DFG__DEPENDENCIES = eINSTANCE.getDfg_Dependencies();
+
+		/**
+		 * The meta object literal for the '{@link org.xronos.orcc.ir.impl.DfgVertexImpl <em>Dfg Vertex</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see org.xronos.orcc.ir.impl.DfgVertexImpl
+		 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getDfgVertex()
+		 * @generated
+		 */
+		EClass DFG_VERTEX = eINSTANCE.getDfgVertex();
+
+		/**
+		 * The meta object literal for the '<em><b>Node</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference DFG_VERTEX__NODE = eINSTANCE.getDfgVertex_Node();
+
+		/**
+		 * The meta object literal for the '{@link org.xronos.orcc.ir.impl.DfgEdgeImpl <em>Dfg Edge</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see org.xronos.orcc.ir.impl.DfgEdgeImpl
+		 * @see org.xronos.orcc.ir.impl.XronosIrPackageImpl#getDfgEdge()
+		 * @generated
+		 */
+		EClass DFG_EDGE = eINSTANCE.getDfgEdge();
+
+		/**
+		 * The meta object literal for the '<em><b>Line</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference DFG_EDGE__LINE = eINSTANCE.getDfgEdge_Line();
 
 	}
 

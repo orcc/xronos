@@ -2,9 +2,13 @@
  */
 package org.xronos.orcc.ir.util;
 
+import net.sf.orcc.graph.Edge;
+import net.sf.orcc.graph.Graph;
+import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.Instruction;
 
+import net.sf.orcc.util.Adaptable;
 import net.sf.orcc.util.Attributable;
 
 import org.eclipse.emf.common.notify.Adapter;
@@ -89,8 +93,24 @@ public class XronosIrAdapterFactory extends AdapterFactoryImpl {
 				return createInstPortPeekAdapter();
 			}
 			@Override
+			public Adapter caseInstSimplePortWrite(InstSimplePortWrite object) {
+				return createInstSimplePortWriteAdapter();
+			}
+			@Override
 			public Adapter caseBlockMutex(BlockMutex object) {
 				return createBlockMutexAdapter();
+			}
+			@Override
+			public Adapter caseDfg(Dfg object) {
+				return createDfgAdapter();
+			}
+			@Override
+			public Adapter caseDfgVertex(DfgVertex object) {
+				return createDfgVertexAdapter();
+			}
+			@Override
+			public Adapter caseDfgEdge(DfgEdge object) {
+				return createDfgEdgeAdapter();
 			}
 			@Override
 			public Adapter caseAttributable(Attributable object) {
@@ -103,6 +123,22 @@ public class XronosIrAdapterFactory extends AdapterFactoryImpl {
 			@Override
 			public Adapter caseBlock(Block object) {
 				return createBlockAdapter();
+			}
+			@Override
+			public Adapter caseAdaptable(Adaptable object) {
+				return createAdaptableAdapter();
+			}
+			@Override
+			public Adapter caseVertex(Vertex object) {
+				return createVertexAdapter();
+			}
+			@Override
+			public Adapter caseGraph(Graph object) {
+				return createGraphAdapter();
+			}
+			@Override
+			public Adapter caseEdge(Edge object) {
+				return createEdgeAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -181,6 +217,20 @@ public class XronosIrAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
+	 * Creates a new adapter for an object of class '{@link org.xronos.orcc.ir.InstSimplePortWrite <em>Inst Simple Port Write</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see org.xronos.orcc.ir.InstSimplePortWrite
+	 * @generated
+	 */
+	public Adapter createInstSimplePortWriteAdapter() {
+		return null;
+	}
+
+	/**
 	 * Creates a new adapter for an object of class '{@link org.xronos.orcc.ir.BlockMutex <em>Block Mutex</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -191,6 +241,48 @@ public class XronosIrAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createBlockMutexAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link org.xronos.orcc.ir.Dfg <em>Dfg</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see org.xronos.orcc.ir.Dfg
+	 * @generated
+	 */
+	public Adapter createDfgAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link org.xronos.orcc.ir.DfgVertex <em>Dfg Vertex</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see org.xronos.orcc.ir.DfgVertex
+	 * @generated
+	 */
+	public Adapter createDfgVertexAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link org.xronos.orcc.ir.DfgEdge <em>Dfg Edge</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see org.xronos.orcc.ir.DfgEdge
+	 * @generated
+	 */
+	public Adapter createDfgEdgeAdapter() {
 		return null;
 	}
 
@@ -233,6 +325,62 @@ public class XronosIrAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createBlockAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link net.sf.orcc.util.Adaptable <em>Adaptable</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see net.sf.orcc.util.Adaptable
+	 * @generated
+	 */
+	public Adapter createAdaptableAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link net.sf.orcc.graph.Vertex <em>Vertex</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see net.sf.orcc.graph.Vertex
+	 * @generated
+	 */
+	public Adapter createVertexAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link net.sf.orcc.graph.Graph <em>Graph</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see net.sf.orcc.graph.Graph
+	 * @generated
+	 */
+	public Adapter createGraphAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link net.sf.orcc.graph.Edge <em>Edge</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see net.sf.orcc.graph.Edge
+	 * @generated
+	 */
+	public Adapter createEdgeAdapter() {
 		return null;
 	}
 

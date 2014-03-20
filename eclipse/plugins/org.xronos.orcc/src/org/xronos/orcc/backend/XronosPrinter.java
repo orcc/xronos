@@ -159,7 +159,8 @@ public class XronosPrinter {
 	public boolean printInstance(String[] xronosArgs, String rtlPath,
 			String tbPath, String tbVhdPath, Actor actor,
 			Map<String, Object> options, ResourceCache resourceCache,
-			int idxInstance, int totalInstances, Boolean debugMode) {
+			int idxInstance, int totalInstances, boolean schedulerInformation,
+			Boolean debugMode) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		Engine engine = null;
@@ -178,8 +179,9 @@ public class XronosPrinter {
 						+ actor.getSimpleName() + " (" + idxInstance + "/"
 						+ totalInstances + ")");
 				XronosTransform.transformActor(actor, options, resourceCache,
-						true, debugMode);
-				engine = new DesignEngine(xronosMainJob, actor, resourceCache);
+						true, schedulerInformation, debugMode);
+				engine = new DesignEngine(xronosMainJob, actor, resourceCache,
+						schedulerInformation);
 				engine.begin();
 			} catch (NewJob.ForgeOptionException foe) {
 				OrccLogger.severeln("\t command line option error: "
@@ -272,7 +274,7 @@ public class XronosPrinter {
 
 	public boolean printNetwork(String[] xronosArgs, String rtlPath,
 			Network network, Map<String, Object> options,
-			ResourceCache resourceCache) {
+			ResourceCache resourceCache, boolean schedulerInformation) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		boolean error = false;
@@ -285,10 +287,10 @@ public class XronosPrinter {
 				CodeLabel.UNSCOPED, "xc2vp30-7-ff1152");
 		f.preprocess(xronosMainJob);
 
-		XronosTransform.transformNetworkActors(network, options,
-				resourceCache);
-		Engine engine = new DesignEngine(xronosMainJob, network,
-				resourceCache);
+		XronosTransform.transformNetworkActors(network, options, resourceCache,
+				schedulerInformation);
+		Engine engine = new DesignEngine(xronosMainJob, network, resourceCache,
+				schedulerInformation);
 		try {
 			engine.begin();
 		} catch (NewJob.ForgeOptionException foe) {

@@ -52,60 +52,6 @@ public abstract class BinaryOp extends Operation {
 	}
 
 	/**
-	 * Gets the left-hand side input Port.
-	 */
-	public Port getLeftDataPort() {
-		return getDataPorts().get(0);
-	}
-
-	/**
-	 * Gets the right-hand side input Port.
-	 */
-	public Port getRightDataPort() {
-		return getDataPorts().get(1);
-	}
-
-	public Bus getResultBus() {
-		return result_bus;
-	}
-
-	/**
-	 * Calls the super, then removes any reference to the given bus in this
-	 * class.
-	 */
-	@Override
-	public boolean removeDataBus(Bus bus) {
-		if (super.removeDataBus(bus)) {
-			if (bus == result_bus)
-				result_bus = null;
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Tests whether this is a signed operation. An operation is signed if both
-	 * the left and right port {@link Value values} are signed, otherwise the
-	 * operation is considered unsigned.
-	 * 
-	 * @return boolean
-	 */
-	public boolean isSigned() {
-		Value leftValue = getLeftDataPort().getValue();
-		Value rightValue = getRightDataPort().getValue();
-
-		return (leftValue.isSigned() && rightValue.isSigned());
-	}
-
-	/**
-	 * Returns true if this BinaryOp returns a floating point value.
-	 */
-	@Override
-	public boolean isFloat() {
-		return getResultBus().isFloat();
-	}
-
-	/**
 	 * Clones this BinaryOp and correctly set's the 'resultBus'
 	 * 
 	 * @return a BinaryOp clone of this operations.
@@ -121,15 +67,21 @@ public abstract class BinaryOp extends Operation {
 	}
 
 	/**
-	 * Tests whether this is a passthrough operation.
-	 * 
-	 * @return true if the output of this component can be reduced to a constant
-	 *         or the value of a single input, based upon the current
-	 *         {@link Value} of each data {@link Port}
+	 * Gets the left-hand side input Port.
 	 */
-	protected boolean isPassthrough() {
-		return (getLeftDataPort().getValue().isConstant() || getRightDataPort()
-				.getValue().isConstant());
+	public Port getLeftDataPort() {
+		return getDataPorts().get(0);
+	}
+
+	public Bus getResultBus() {
+		return result_bus;
+	}
+
+	/**
+	 * Gets the right-hand side input Port.
+	 */
+	public Port getRightDataPort() {
+		return getDataPorts().get(1);
 	}
 
 	/**
@@ -157,6 +109,40 @@ public abstract class BinaryOp extends Operation {
 	}
 
 	/**
+	 * Returns true if this BinaryOp returns a floating point value.
+	 */
+	@Override
+	public boolean isFloat() {
+		return getResultBus().isFloat();
+	}
+
+	/**
+	 * Tests whether this is a passthrough operation.
+	 * 
+	 * @return true if the output of this component can be reduced to a constant
+	 *         or the value of a single input, based upon the current
+	 *         {@link Value} of each data {@link Port}
+	 */
+	protected boolean isPassthrough() {
+		return (getLeftDataPort().getValue().isConstant() || getRightDataPort()
+				.getValue().isConstant());
+	}
+
+	/**
+	 * Tests whether this is a signed operation. An operation is signed if both
+	 * the left and right port {@link Value values} are signed, otherwise the
+	 * operation is considered unsigned.
+	 * 
+	 * @return boolean
+	 */
+	public boolean isSigned() {
+		Value leftValue = getLeftDataPort().getValue();
+		Value rightValue = getRightDataPort().getValue();
+
+		return (leftValue.isSigned() && rightValue.isSigned());
+	}
+
+	/**
 	 * Tests whether the states of two bits from the same position of each
 	 * operand will cause work to be done in a bitwise binary operation. Called
 	 * as a helper method by {@link #isBitwisePassthrough()}.
@@ -175,11 +161,33 @@ public abstract class BinaryOp extends Operation {
 		return (leftSig && rightSig);
 	}
 
+	/**
+	 * Calls the super, then removes any reference to the given bus in this
+	 * class.
+	 */
 	@Override
-	public String toString() {
-		return  result_bus.showIDLogical() + " = " + this.getIDGlobalType() + "("
-				+ getLeftDataPort().showIDLogical() + ", "
-				+ getRightDataPort().showIDLogical() + ")";
+	public boolean removeDataBus(Bus bus) {
+		if (super.removeDataBus(bus)) {
+			if (bus == result_bus) {
+				result_bus = null;
+			}
+			return true;
+		}
+		return false;
 	}
 
+	@Override
+	public String toString() {
+		String string = "null";
+		try {
+			string = result_bus.showIDLogical() + " = " + getIDGlobalType()
+					+ "(" + getLeftDataPort().showIDLogical() + ", "
+					+ getRightDataPort().showIDLogical() + ")";
+		} catch (NullPointerException e) {
+			string = "NullPointer";
+		}
+
+		return string;
+
+	}
 }

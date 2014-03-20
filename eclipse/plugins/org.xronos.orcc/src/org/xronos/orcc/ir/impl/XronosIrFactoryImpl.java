@@ -27,7 +27,7 @@ public class XronosIrFactoryImpl extends EFactoryImpl implements XronosIrFactory
 	 */
 	public static XronosIrFactory init() {
 		try {
-			XronosIrFactory theXronosIrFactory = (XronosIrFactory)EPackage.Registry.INSTANCE.getEFactory("http://www.xronos.org/ir"); 
+			XronosIrFactory theXronosIrFactory = (XronosIrFactory)EPackage.Registry.INSTANCE.getEFactory(XronosIrPackage.eNS_URI);
 			if (theXronosIrFactory != null) {
 				return theXronosIrFactory;
 			}
@@ -60,7 +60,11 @@ public class XronosIrFactoryImpl extends EFactoryImpl implements XronosIrFactory
 			case XronosIrPackage.INST_PORT_READ: return createInstPortRead();
 			case XronosIrPackage.INST_PORT_WRITE: return createInstPortWrite();
 			case XronosIrPackage.INST_PORT_PEEK: return createInstPortPeek();
+			case XronosIrPackage.INST_SIMPLE_PORT_WRITE: return createInstSimplePortWrite();
 			case XronosIrPackage.BLOCK_MUTEX: return createBlockMutex();
+			case XronosIrPackage.DFG: return createDfg();
+			case XronosIrPackage.DFG_VERTEX: return createDfgVertex();
+			case XronosIrPackage.DFG_EDGE: return createDfgEdge();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -111,9 +115,49 @@ public class XronosIrFactoryImpl extends EFactoryImpl implements XronosIrFactory
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public InstSimplePortWrite createInstSimplePortWrite() {
+		InstSimplePortWriteImpl instSimplePortWrite = new InstSimplePortWriteImpl();
+		return instSimplePortWrite;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public BlockMutex createBlockMutex() {
 		BlockMutexImpl blockMutex = new BlockMutexImpl();
 		return blockMutex;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public Dfg createDfg() {
+		DfgImpl dfg = new DfgImpl();
+		return dfg;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public DfgVertex createDfgVertex() {
+		DfgVertexImpl dfgVertex = new DfgVertexImpl();
+		return dfgVertex;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public DfgEdge createDfgEdge() {
+		DfgEdgeImpl dfgEdge = new DfgEdgeImpl();
+		return dfgEdge;
 	}
 
 	/**

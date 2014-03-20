@@ -29,19 +29,22 @@
 
 package org.xronos.orcc.design.visitors;
 
+import net.sf.orcc.df.util.DfVisitor;
+
 import org.xronos.openforge.lim.Design;
 import org.xronos.orcc.design.ResourceCache;
-
-import net.sf.orcc.df.util.DfVisitor;
 
 public class DesignNetwork extends DfVisitor<Void> {
 
 	Design design;
 	ResourceCache resourceCache;
+	boolean schedulerInformation;
 
-	public DesignNetwork(Design design, ResourceCache resourceCache) {
+	public DesignNetwork(Design design, ResourceCache resourceCache,
+			boolean schedulerInformation) {
 		this.design = design;
 		this.resourceCache = resourceCache;
+		this.schedulerInformation = schedulerInformation;
 	}
 
 }

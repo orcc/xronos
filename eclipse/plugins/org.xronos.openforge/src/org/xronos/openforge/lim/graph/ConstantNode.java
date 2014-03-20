@@ -42,7 +42,11 @@ class ConstantNode extends ComponentNode {
 		int[] simpleRep = new int[rep.length];
 		for (int i = 0; i < rep.length; i++) {
 			// FIXME: Possible truncation of value here.
-			simpleRep[i] = rep[i].getValue().intValue();
+			try {
+				simpleRep[i] = rep[i].getValue().intValue();
+			} catch (UnsupportedOperationException e) {
+
+			}
 		}
 		int[] littleRep = new int[simpleRep.length];
 		for (int i = 0; i < simpleRep.length; i++) {

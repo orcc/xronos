@@ -48,7 +48,8 @@ class TclScriptPrinter {
 	var Boolean testbench = false;
 	var Boolean generateGoDone = false;
 	var Boolean doubleBuffering = false;
-
+	var Boolean schedulerInformation = false;
+	
 	var Map<String, Integer> clockDomainsIndex;
 	var String DEFAULT_CLOCK_DOMAIN = "CLK";
 
@@ -236,6 +237,14 @@ class TclScriptPrinter {
 					add wave -label «action.name»_done sim:/«simName»/i_«actor.simpleName»/«action.name»_done
 				«ENDFOR»
 			«ENDIF»
+			«IF schedulerInformation»
+				«FOR action : actor.actions»
+					«IF !action.inputPattern.ports.empty»
+						add wave -label ta_«action.name» sim:/«simName»/i_«actor.simpleName»/ta_«action.name»
+					«ENDIF»
+				«ENDFOR»
+				add wave -label Idle sim:/«simName»/i_«actor.simpleName»/idle_«actor.simpleName»
+			«ENDIF»
 		'''
 
 	}
@@ -281,6 +290,14 @@ class TclScriptPrinter {
 					add wave -label Go sim:/«simName»/i_«actor.simpleName»/«action.name»_go
 					add wave -label Done sim:/«simName»/i_«actor.simpleName»/«action.name»_done
 				«ENDFOR»
+			«ENDIF»
+			«IF schedulerInformation»
+				«FOR action : actor.actions»
+					«IF !action.inputPattern.ports.empty»
+						add wave -label ta_«action.name» sim:/«simName»/i_«actor.simpleName»/ta_«action.name»
+					«ENDIF»
+				«ENDFOR»
+				add wave -label Idle sim:/«simName»/i_«actor.simpleName»/idle_«actor.simpleName»
 			«ENDIF»
 		'''
 	}
@@ -432,6 +449,10 @@ class TclScriptPrinter {
 		if (options.containsKey("generateGoDone")) {
 			generateGoDone = options.get("generateGoDone") as Boolean;
 		}
+		
+		if (options.containsKey("schedulerInformation")) {
+			schedulerInformation = options.get("schedulerInformation") as Boolean;
+		}
 
 		if (options.containsKey("xilinxPrimitives")) {
 			xilinxPrimitives = options.get("xilinxPrimitives") as Boolean;
@@ -476,6 +497,10 @@ class TclScriptPrinter {
 			generateGoDone = options.get("generateGoDone") as Boolean;
 		}
 
+		if (options.containsKey("schedulerInformation")) {
+			schedulerInformation = options.get("schedulerInformation") as Boolean;
+		}
+		
 		if (options.containsKey("xilinxPrimitives")) {
 			xilinxPrimitives = options.get("xilinxPrimitives") as Boolean;
 		}

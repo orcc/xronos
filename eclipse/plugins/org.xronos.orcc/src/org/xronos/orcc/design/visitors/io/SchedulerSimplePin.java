@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Ecole Polytechnique Fédérale de Lausanne
+ * Copyright (c) 2014, Ecole Polytechnique Fédérale de Lausanne
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -26,38 +26,20 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-package org.xronos.orcc.backend.transform;
+package org.xronos.orcc.design.visitors.io;
 
-import net.sf.orcc.ir.transform.SSATransformation;
-import net.sf.orcc.util.Void;
+import org.xronos.openforge.lim.io.SimplePin;
 
-import org.eclipse.emf.ecore.EObject;
-import org.xronos.orcc.ir.BlockMutex;
-import org.xronos.orcc.ir.InstPortWrite;
-import org.xronos.orcc.ir.InstSimplePortWrite;
+/**
+ * This class creates a pin for outputing information on the xronos scheduler
+ * 
+ * @author Endri Bezati
+ * 
+ */
+public class SchedulerSimplePin extends SimplePin {
 
-public class XronosSSA extends SSATransformation {
-
-	public Void caseInstPortWrite(InstPortWrite portWrite) {
-		replaceUses(portWrite.getValue());
-		return null;
-	}
-
-	public Void caseInstSimplePortWrite(InstSimplePortWrite simplePortWrite) {
-		replaceUses(simplePortWrite.getValue());
-		return null;
-	}
-
-	@Override
-	public Void defaultCase(EObject object) {
-		if (object instanceof BlockMutex) {
-			doSwitch(((BlockMutex) object).getBlocks());
-		} else if (object instanceof InstPortWrite) {
-			return caseInstPortWrite((InstPortWrite) object);
-		} else if (object instanceof InstSimplePortWrite) {
-			return caseInstSimplePortWrite((InstSimplePortWrite) object);
-		}
-		return super.defaultCase(object);
+	public SchedulerSimplePin(int width, String pinName) {
+		super(width, pinName);
 	}
 
 }

@@ -49,12 +49,14 @@ import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.Task;
+import org.xronos.openforge.lim.io.SimplePin;
 import org.xronos.openforge.lim.memory.LogicalValue;
 import org.xronos.orcc.backend.debug.DebugPrinter;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.DesignUtil;
 import org.xronos.orcc.design.util.ModuleUtil;
 import org.xronos.orcc.design.util.PortUtil;
+import org.xronos.orcc.design.visitors.io.SchedulerSimplePin;
 import org.xronos.orcc.preference.Constants;
 
 /**
@@ -92,9 +94,17 @@ public class DesignActor extends DfVisitor<Object> {
 	/** Dependency between Components and Port-Var **/
 	private Map<Port, Var> portDependency;
 
-	public DesignActor(Design design, ResourceCache resources) {
+	/** Output the scheduling signals, token availability and Idle state **/
+	private boolean schedulerInformation;
+
+	/** Scheduling information pins **/
+	Map<String, SimplePin> schedulingInfoPins;
+
+	public DesignActor(Design design, ResourceCache resources,
+			boolean schedulerInformation) {
 		this.design = design;
 		this.resources = resources;
+		this.schedulerInformation = schedulerInformation;
 		busDependency = new HashMap<Bus, Var>();
 		doneBusDependency = new HashMap<Bus, Integer>();
 		portDependency = new HashMap<Port, Var>();
@@ -102,6 +112,7 @@ public class DesignActor extends DfVisitor<Object> {
 		stateVars = new HashMap<LogicalValue, Var>();
 		stateVarVisitor = new StateVarVisitor(stateVars);
 		componentsList = new ArrayList<Component>();
+		schedulingInfoPins = new HashMap<String, SimplePin>();
 	}
 
 	@Override
@@ -111,8 +122,8 @@ public class DesignActor extends DfVisitor<Object> {
 
 		/** Visit the action body and take all the generated components **/
 		ComponentCreator actionComponentCreator = new ComponentCreator(
-				resources, portDependency, busDependency, portGroupDependency,
-				doneBusDependency);
+				resources, schedulingInfoPins, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
 		List<Component> bodyComponents = actionComponentCreator.doSwitch(action
 				.getBody());
 		componentsList.addAll(bodyComponents);
@@ -137,6 +148,24 @@ public class DesignActor extends DfVisitor<Object> {
 		/** Build the Design Ports **/
 		PortUtil.createDesignPorts(design, actor.getInputs(), "in", resources);
 		PortUtil.createDesignPorts(design, actor.getOutputs(), "out", resources);
+
+		/** Add the Scheduler information ports **/
+		if (schedulerInformation) {
+			for (Action action : actor.getActions()) {
+				if (!action.getInputPattern().getPorts().isEmpty()) {
+					String pinName = "ta_" + action.getName();
+					SchedulerSimplePin schedulerPin = new SchedulerSimplePin(1,
+							pinName);
+					schedulingInfoPins.put(pinName, schedulerPin);
+					design.addComponentToDesign(schedulerPin);
+				}
+			}
+			// Add idle Pin
+			SchedulerSimplePin idlePin = new SchedulerSimplePin(1, "idle_"
+					+ actor.getName());
+			schedulingInfoPins.put("idle_" + actor.getName(), idlePin);
+			design.addComponentToDesign(idlePin);
+		}
 
 		/** Visit the State Variables **/
 		for (Var stateVar : actor.getStateVars()) {
@@ -167,8 +196,8 @@ public class DesignActor extends DfVisitor<Object> {
 
 		List<Component> schedulerComponents = new ArrayList<Component>();
 		ComponentCreator schedulerComponentCreator = new ComponentCreator(
-				resources, portDependency, busDependency, portGroupDependency,
-				doneBusDependency);
+				resources, schedulingInfoPins, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
 		schedulerComponents = schedulerComponentCreator.doSwitch(procedure);
 
 		/** Module of the scheduler **/

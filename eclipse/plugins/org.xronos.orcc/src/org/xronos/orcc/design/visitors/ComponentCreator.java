@@ -79,6 +79,8 @@ import org.xronos.openforge.lim.Loop;
 import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.TaskCall;
+import org.xronos.openforge.lim.io.SimplePin;
+import org.xronos.openforge.lim.io.SimplePinWrite;
 import org.xronos.openforge.lim.memory.AddressStridePolicy;
 import org.xronos.openforge.lim.memory.Location;
 import org.xronos.openforge.lim.memory.LogicalMemoryPort;
@@ -123,6 +125,7 @@ import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.ir.InstPortStatus;
 import org.xronos.orcc.ir.InstPortWrite;
+import org.xronos.orcc.ir.InstSimplePortWrite;
 
 /**
  * This visitor visit the procedural blocks and it creates a Design component
@@ -166,7 +169,10 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	private final boolean STM_DEBUG = false;
 
+	Map<String, SimplePin> schedulingInfoPins;
+
 	public ComponentCreator(ResourceCache resources,
+			Map<String, SimplePin> schedulingInfoPins,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
@@ -176,6 +182,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		this.portGroupDependency = portGroupDependency;
 		this.doneBusDependency = doneBusDependency;
 		this.resources = resources;
+		this.schedulingInfoPins = schedulingInfoPins;
 		componentList = new ArrayList<Component>();
 	}
 
@@ -711,7 +718,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portWrite.getPort();
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
 		Boolean blocking = portWrite.isBlocking();
-		Component pinWrite = ioHandler.getWriteAccess(blocking);
+		Component pinWrite = ioHandler.getWriteAccess(false);
 		pinWrite.setNonRemovable();
 
 		ExprVar value = (ExprVar) portWrite.getValue();
@@ -726,7 +733,26 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	@Override
 	public List<Component> caseInstReturn(InstReturn returnInstr) {
-		// Do nothing
+		return null;
+	}
+
+	public List<Component> caseInstSimplePortWrite(
+			InstSimplePortWrite simplePortWrite) {
+		String name = simplePortWrite.getName();
+
+		ExprVar value = (ExprVar) simplePortWrite.getValue();
+		Var pinWriteVar = value.getUse().getVariable();
+
+		SimplePin simplePin = schedulingInfoPins.get(name);
+
+		SimplePinWrite simplePinWrite = new SimplePinWrite(simplePin);
+		simplePinWrite.setNonRemovable();
+
+		PortUtil.mapInDataPorts(simplePinWrite, pinWriteVar, portDependency,
+				portGroupDependency);
+		PortUtil.mapOutControlPort(simplePinWrite, 0, doneBusDependency);
+		componentList.add(simplePinWrite);
+
 		return null;
 	}
 
@@ -836,6 +862,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			return caseInstPortWrite((InstPortWrite) object);
 		} else if (object instanceof InstCast) {
 			return caseInstCast((InstCast) object);
+		} else if (object instanceof InstSimplePortWrite) {
+			return caseInstSimplePortWrite((InstSimplePortWrite) object);
 		}
 
 		return super.defaultCase(object);

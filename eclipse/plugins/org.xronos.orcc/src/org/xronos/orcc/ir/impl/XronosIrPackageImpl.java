@@ -15,10 +15,14 @@ import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.impl.EPackageImpl;
 
 import org.xronos.orcc.ir.BlockMutex;
+import org.xronos.orcc.ir.Dfg;
+import org.xronos.orcc.ir.DfgEdge;
+import org.xronos.orcc.ir.DfgVertex;
 import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.ir.InstPortStatus;
 import org.xronos.orcc.ir.InstPortWrite;
+import org.xronos.orcc.ir.InstSimplePortWrite;
 import org.xronos.orcc.ir.XronosIrFactory;
 import org.xronos.orcc.ir.XronosIrPackage;
 
@@ -62,7 +66,35 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass instSimplePortWriteEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass blockMutexEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass dfgEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass dfgVertexEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass dfgEdgeEClass = null;
 
 	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
@@ -112,6 +144,7 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 
 		// Initialize simple dependencies
 		IrPackage.eINSTANCE.eClass();
+		EcorePackage.eINSTANCE.eClass();
 
 		// Create package meta-data objects
 		theXronosIrPackage.createPackageContents();
@@ -259,6 +292,33 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public EClass getInstSimplePortWrite() {
+		return instSimplePortWriteEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EAttribute getInstSimplePortWrite_Name() {
+		return (EAttribute)instSimplePortWriteEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EReference getInstSimplePortWrite_Value() {
+		return (EReference)instSimplePortWriteEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public EClass getBlockMutex() {
 		return blockMutexEClass;
 	}
@@ -270,6 +330,69 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 	 */
 	public EReference getBlockMutex_Blocks() {
 		return (EReference)blockMutexEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EClass getDfg() {
+		return dfgEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EReference getDfg_Operations() {
+		return (EReference)dfgEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EReference getDfg_Dependencies() {
+		return (EReference)dfgEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EClass getDfgVertex() {
+		return dfgVertexEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EReference getDfgVertex_Node() {
+		return (EReference)dfgVertexEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EClass getDfgEdge() {
+		return dfgEdgeEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EReference getDfgEdge_Line() {
+		return (EReference)dfgEdgeEClass.getEStructuralFeatures().get(0);
 	}
 
 	/**
@@ -318,8 +441,22 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 		createEReference(instPortPeekEClass, INST_PORT_PEEK__TARGET);
 		createEReference(instPortPeekEClass, INST_PORT_PEEK__PORT);
 
+		instSimplePortWriteEClass = createEClass(INST_SIMPLE_PORT_WRITE);
+		createEAttribute(instSimplePortWriteEClass, INST_SIMPLE_PORT_WRITE__NAME);
+		createEReference(instSimplePortWriteEClass, INST_SIMPLE_PORT_WRITE__VALUE);
+
 		blockMutexEClass = createEClass(BLOCK_MUTEX);
 		createEReference(blockMutexEClass, BLOCK_MUTEX__BLOCKS);
+
+		dfgEClass = createEClass(DFG);
+		createEReference(dfgEClass, DFG__OPERATIONS);
+		createEReference(dfgEClass, DFG__DEPENDENCIES);
+
+		dfgVertexEClass = createEClass(DFG_VERTEX);
+		createEReference(dfgVertexEClass, DFG_VERTEX__NODE);
+
+		dfgEdgeEClass = createEClass(DFG_EDGE);
+		createEReference(dfgEdgeEClass, DFG_EDGE__LINE);
 	}
 
 	/**
@@ -359,7 +496,11 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 		instPortReadEClass.getESuperTypes().add(theIrPackage.getInstruction());
 		instPortWriteEClass.getESuperTypes().add(theIrPackage.getInstruction());
 		instPortPeekEClass.getESuperTypes().add(theIrPackage.getInstruction());
+		instSimplePortWriteEClass.getESuperTypes().add(theIrPackage.getInstruction());
 		blockMutexEClass.getESuperTypes().add(theIrPackage.getBlock());
+		dfgEClass.getESuperTypes().add(theGraphPackage.getGraph());
+		dfgVertexEClass.getESuperTypes().add(theGraphPackage.getVertex());
+		dfgEdgeEClass.getESuperTypes().add(theGraphPackage.getEdge());
 
 		// Initialize classes and features; add operations and parameters
 		initEClass(instPortStatusEClass, InstPortStatus.class, "InstPortStatus", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -380,8 +521,22 @@ public class XronosIrPackageImpl extends EPackageImpl implements XronosIrPackage
 		initEReference(getInstPortPeek_Target(), theIrPackage.getDef(), null, "target", null, 0, 1, InstPortPeek.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getInstPortPeek_Port(), theGraphPackage.getVertex(), null, "port", null, 0, 1, InstPortPeek.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
+		initEClass(instSimplePortWriteEClass, InstSimplePortWrite.class, "InstSimplePortWrite", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getInstSimplePortWrite_Name(), theEcorePackage.getEString(), "name", null, 0, 1, InstSimplePortWrite.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getInstSimplePortWrite_Value(), theIrPackage.getExpression(), null, "value", null, 0, 1, InstSimplePortWrite.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
 		initEClass(blockMutexEClass, BlockMutex.class, "BlockMutex", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getBlockMutex_Blocks(), theIrPackage.getBlock(), null, "blocks", null, 0, -1, BlockMutex.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(dfgEClass, Dfg.class, "Dfg", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getDfg_Operations(), this.getDfgVertex(), null, "operations", null, 0, -1, Dfg.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDfg_Dependencies(), this.getDfgEdge(), null, "dependencies", null, 0, -1, Dfg.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(dfgVertexEClass, DfgVertex.class, "DfgVertex", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getDfgVertex_Node(), theIrPackage.getInstruction(), null, "node", null, 0, 1, DfgVertex.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(dfgEdgeEClass, DfgEdge.class, "DfgEdge", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getDfgEdge_Line(), theIrPackage.getExpression(), null, "line", null, 0, 1, DfgEdge.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Create resource
 		createResource(eNS_URI);

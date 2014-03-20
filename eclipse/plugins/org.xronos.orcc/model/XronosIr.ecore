@@ -29,6 +29,11 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="port" eType="ecore:EClass ../../net.sf.orcc.models/model/Graph.ecore#//Vertex"
         resolveProxies="false"/>
   </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="InstSimplePortWrite" eSuperTypes="../../net.sf.orcc.core/model/Ir.ecore#//Instruction">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType platform:/plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="value" eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Expression"
+        containment="true" resolveProxies="false"/>
+  </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="BlockMutex" eSuperTypes="../../net.sf.orcc.core/model/Ir.ecore#//Block">
     <eStructuralFeatures xsi:type="ecore:EReference" name="blocks" upperBound="-1"
         eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Block" containment="true"
