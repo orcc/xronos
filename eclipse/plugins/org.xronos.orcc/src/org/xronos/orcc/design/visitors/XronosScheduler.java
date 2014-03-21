@@ -298,15 +298,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				InstAssign instAssign = irFactory.createInstAssign(
 						tokenAvailability, exprTokenAvailability);
 				block.add(instAssign);
-				if (schedulerInformation) {
-					// TEST
-					InstSimplePortWrite instSimplePortWrite = XronosIrFactory.eINSTANCE
-							.createInstSimplePortWrite();
-					instSimplePortWrite.setName("ta_" + action.getName());
-					ExprVar tVar = irFactory.createExprVar(tokenAvailability);
-					instSimplePortWrite.setValue(tVar);
-					block.add(instSimplePortWrite);
-				}
 			}
 
 			return null;
@@ -450,9 +441,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				lastBlockIf = createTaskCall(procedure, action, lastBlockIf,
 						stateSource, stateTarget);
 			}
-
-			lastBlockIf.getElseBlocks().add(createIdleBlock());
-
+			if (schedulerInformation) {
+				lastBlockIf.getElseBlocks().add(createIdleBlock());
+			}
 			// Create an if block that will contains all the transitions
 			Var stateSource = procedure.getLocal("s_" + state.getName());
 
@@ -586,7 +577,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			for (Action action : actor.getActionsOutsideFsm()) {
 				lastBlockIf = createTaskCallOutFSM(procedure, action,
 						lastBlockIf);
-				lastBlockIf.getElseBlocks().add(createIdleBlock());
+				if (schedulerInformation) {
+					lastBlockIf.getElseBlocks().add(createIdleBlock());
+				}
 			}
 			blocks.add(firstBlockIf);
 		} else {
