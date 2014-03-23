@@ -71,7 +71,7 @@ class LoopAnalysis {
 				iterationCount = decisionCircuit.getIterationCount();
 
 				isUnrollable = (iterationCount != Loop.ITERATIONS_UNKNOWN);
-				if (isUnrollable) {
+				if (!isUnrollable) {
 					whyNotUnrollable = "loop iterations are unknown";
 				}
 			} catch (LoopUnrollingException e) {

@@ -854,14 +854,22 @@ public class ModuleUtil {
 	public static Component findDecisionComponent(List<Component> components,
 			Var decisionVar, Map<Bus, Var> busDependency) {
 		Component decisionComponent = null;
-		for (Component component : components) {
-			Exit exit = component.getExit(Exit.DONE);
-			for (Bus bus : exit.getBuses()) {
-				Var var = busDependency.get(bus);
-				if (var == decisionVar) {
-					decisionComponent = component;
+		for (Component c : components) {
+			if (c instanceof Block) {
+				for (Component component : ((Block) c).getComponents()) {
+					Exit exit = component.getExit(Exit.DONE);
+					if (!(component instanceof InBuf)
+							&& !(component instanceof OutBuf)) {
+						for (Bus bus : exit.getBuses()) {
+							Var var = busDependency.get(bus);
+							if (var == decisionVar) {
+								decisionComponent = component;
+							}
+						}
+					}
 				}
 			}
+
 		}
 		return decisionComponent;
 	}
