@@ -23,6 +23,9 @@
                id="org.xronos.orcc.schedulingInformation">
          </option>
          <option
+               id="org.xronos.orcc.newScheduling">
+         </option>
+         <option
                id="org.xronos.orcc.highGrainClockGating">
          </option>
          <option
@@ -107,6 +110,12 @@
             id="org.xronos.orcc.schedulingInformation"
             name="Output scheduling information">
          <checkBox></checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            description="New scheduling"
+            id="org.xronos.orcc.newScheduling"
+            name="New Scheduling">
       </option>
    </extension>
 

@@ -251,8 +251,8 @@ public class PortUtil {
 		Integer group = 0; // By default the group is zero
 		for (Var var : outVars) {
 			// Get the component dataBus
-			Bus dataBus = component.getExit(Exit.DONE).getDataBuses()
-					.get(group);
+			List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
+			Bus dataBus = dataBuses.get(group);
 
 			// Set the bus value
 			if (dataBus.getValue() == null) {
@@ -286,5 +286,4 @@ public class PortUtil {
 		mapOutControlPort(component, group, doneBusDependency);
 
 	}
-
 }

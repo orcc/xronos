@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Ecole Polytechnique Fédérale de Lausanne
+ * Copyright (c) 2014, Ecole Polytechnique Fédérale de Lausanne
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -26,53 +26,44 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 package org.xronos.orcc.design;
 
-import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.util.DfVisitor;
+import java.util.UUID;
+
+import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.Void;
 
 import org.xronos.openforge.app.EngineThread;
-import org.xronos.openforge.app.GenericJob;
 import org.xronos.openforge.app.OptionRegistry;
-import org.xronos.openforge.lim.Design;
-import org.xronos.orcc.design.visitors.DesignActor;
+import org.xronos.openforge.app.project.Option;
+import org.xronos.openforge.lim.Loop;
 
-/**
- * This class transforms an Orcc {@link Actor} Object to an OpenForge
- * {@link Design} Object
- * 
- * @author Endri Bezati
- */
-public class ActorToDesign {
-	Design design;
-	Actor actor;
-	ResourceCache resourceCache;
-	boolean schedulerInformation;
+public class OptimizationFlags extends AbstractIrVisitor<Void> {
 
-	public ActorToDesign(Actor actor, ResourceCache resourceCache,
-			boolean schedulerInformation) {
-		this.actor = actor;
-		this.resourceCache = resourceCache;
-		design = new Design();
-		this.schedulerInformation = schedulerInformation;
+	@Override
+	public Void caseBlockWhile(BlockWhile blockWhile) {
+
+		if (blockWhile.hasAttribute("xronos_unroll")) {
+			if (blockWhile.getAttribute("xronos_unroll").hasAttribute("limit")) {
+				int limit = Integer.parseInt(blockWhile
+						.getAttribute("xronos_unroll").getAttribute("limit")
+						.getStringValue());
+				if (blockWhile.hasAttribute("limLoop")) {
+					Loop loop = (Loop) blockWhile.getAttribute("limLoop")
+							.getObjectValue();
+					loop.specifySearchScope("loop_line_"
+							+ blockWhile.getLineNumber() + "_"
+							+ UUID.randomUUID());
+
+					Option op = EngineThread.getGenericJob().getOption(
+							OptionRegistry.LOOP_UNROLLING_LIMIT);
+					op.setValue(loop.getSearchLabel(), limit);
+				}
+			}
+		}
+
+		return null;
 	}
 
-	public Design buildDesign() {
-		// Get Instance name
-		String designName = actor.getName();
-		design.setIDLogical(designName);
-		GenericJob job = EngineThread.getGenericJob();
-		job.getOption(OptionRegistry.TOP_MODULE_NAME).setValue(
-				design.getSearchLabel(), designName);
-
-		DesignActor designVisitor = new DesignActor(design, resourceCache,
-				schedulerInformation);
-		designVisitor.doSwitch(actor);
-
-		// Optimization Flags
-		new DfVisitor<Void>(new OptimizationFlags()).doSwitch(actor);
-		return design;
-	}
 }

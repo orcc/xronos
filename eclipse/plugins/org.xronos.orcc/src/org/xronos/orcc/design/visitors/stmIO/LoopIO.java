@@ -57,12 +57,15 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 	private Map<Block, List<Var>> bodyBlocksOutputs;
 
 	private Map<BlockWhile, List<Var>> decisionInputs;
+	private Map<BlockWhile, List<Var>> decisionOutputs;
+
 	private Map<BlockWhile, Map<Var, List<Var>>> loopPhi;
 
 	public LoopIO(BlockWhile blockWhile) {
 		super(true);
 		this.blockWhile = blockWhile;
 		decisionInputs = new HashMap<BlockWhile, List<Var>>();
+		decisionOutputs = new HashMap<BlockWhile, List<Var>>();
 		bodyBlocksInputs = new HashMap<Block, List<Var>>();
 		bodyBlocksOutputs = new HashMap<Block, List<Var>>();
 		loopPhi = new HashMap<BlockWhile, Map<Var, List<Var>>>();
@@ -134,6 +137,7 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 
 			// Initialize the maps
 			decisionInputs.put(blockWhile, new ArrayList<Var>());
+			decisionOutputs.put(blockWhile, new ArrayList<Var>());
 
 			loopPhi.put(blockWhile, new HashMap<Var, List<Var>>());
 
@@ -143,7 +147,7 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 			// Get the decisions inputs
 			Var decisionVar = ((ExprVar) blockWhile.getCondition()).getUse()
 					.getVariable();
-			decisionInputs.get(blockWhile).add(decisionVar);
+			decisionOutputs.get(blockWhile).add(decisionVar);
 
 			// Add the decision inputs from the joint Block
 			BlockBasicIO blockBasicIO = new BlockBasicIO(
@@ -271,6 +275,8 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 			blockWhile.setAttribute("outputs", outputs);
 			blockWhile.setAttribute("decisionInputs",
 					decisionInputs.get(blockWhile));
+			blockWhile.setAttribute("decisionOutputs",
+					decisionOutputs.get(blockWhile));
 			blockWhile.setAttribute("bodyInputs", bodyInputs);
 			blockWhile.setAttribute("bodyOutputs", bodyOutputs);
 			blockWhile.setAttribute("phi", loopPhi.get(blockWhile));
@@ -382,6 +388,15 @@ public class LoopIO extends AbstractIrVisitor<Void> {
 			doSwitch(blockWhile);
 		}
 		return (List<Var>) blockWhile.getAttribute("decisionInputs")
+				.getObjectValue();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Var> getDecisionOutputs() {
+		if (!blockWhile.hasAttribute("decisionOutputs")) {
+			doSwitch(blockWhile);
+		}
+		return (List<Var>) blockWhile.getAttribute("decisionOutputs")
 				.getObjectValue();
 	}
 

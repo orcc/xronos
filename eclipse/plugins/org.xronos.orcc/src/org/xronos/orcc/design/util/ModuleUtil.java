@@ -346,23 +346,22 @@ public class ModuleUtil {
 		return branch;
 	}
 
-	public static Decision createDecision(List<Component> bodyComponents,
-			Component decisionComponent, List<Var> inVars,
+	public static Decision createDecision(Block testBlock,
+			Component decisionComponent, List<Var> inVars, List<Var> outVars,
 			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 		Decision decision = null;
 
-		Module decisionModule = (Module) createModule(bodyComponents, inVars,
-				Collections.<Var> emptyList(), "decisionBlock", false,
-				Exit.DONE, 0, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
+		// Module decisionModule = (Module) createModule(bodyComponents, inVars,
+		// outVars, "decisionBlock", false, Exit.DONE, 0, portDependency,
+		// busDependency, portGroupDependency, doneBusDependency);
 
 		// Create the decision
-		decision = new Decision((Block) decisionModule, decisionComponent);
+		decision = new Decision(testBlock, decisionComponent);
 
 		// Propagate Inputs
-		decisionPropagateInputs(decision, (Block) decisionModule);
+		decisionPropagateInputs(decision, testBlock);
 
 		// Map in parts
 		PortUtil.mapInDataPorts(decision, inVars, portDependency,
@@ -425,18 +424,19 @@ public class ModuleUtil {
 	}
 
 	public static Component createLoop(Component decisionComponent,
-			List<Component> decisionComponents, List<Var> decisionInVars,
-			List<Component> bodyComponents, Map<Var, List<Var>> loopPhi,
-			List<Var> loopInVars, List<Var> loopOutVars,
-			List<Var> loopBodyInVars, List<Var> loopBodyOutVars,
-			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Block testBlock, List<Var> decisionInVars,
+			List<Var> decisionOutVars, List<Component> bodyComponents,
+			Map<Var, List<Var>> loopPhi, List<Var> loopInVars,
+			List<Var> loopOutVars, List<Var> loopBodyInVars,
+			List<Var> loopBodyOutVars, Map<Port, Var> portDependency,
+			Map<Bus, Var> busDependency,
 			Map<Port, Integer> portGroupDependency,
 			Map<Bus, Integer> doneBusDependency) {
 
-		Decision decision = createDecision(decisionComponents,
-				decisionComponent, decisionInVars, portDependency,
-				busDependency, portGroupDependency, doneBusDependency);
-
+		Decision decision = createDecision(testBlock, decisionComponent,
+				decisionInVars, decisionOutVars, portDependency, busDependency,
+				portGroupDependency, doneBusDependency);
+		decision.setNonRemovable();
 		Module body = (Module) createModule(bodyComponents, loopBodyInVars,
 				loopBodyOutVars, "loopBody", false, Exit.DONE, 0,
 				portDependency, busDependency, portGroupDependency,
@@ -851,26 +851,22 @@ public class ModuleUtil {
 		}
 	}
 
-	public static Component findDecisionComponent(List<Component> components,
+	public static Component findDecisionComponent(Block testBlock,
 			Var decisionVar, Map<Bus, Var> busDependency) {
 		Component decisionComponent = null;
-		for (Component c : components) {
-			if (c instanceof Block) {
-				for (Component component : ((Block) c).getComponents()) {
-					Exit exit = component.getExit(Exit.DONE);
-					if (!(component instanceof InBuf)
-							&& !(component instanceof OutBuf)) {
-						for (Bus bus : exit.getBuses()) {
-							Var var = busDependency.get(bus);
-							if (var == decisionVar) {
-								decisionComponent = component;
-							}
-						}
+
+		for (Component component : testBlock.getComponents()) {
+			Exit exit = component.getExit(Exit.DONE);
+			if (!(component instanceof InBuf) && !(component instanceof OutBuf)) {
+				for (Bus bus : exit.getBuses()) {
+					Var var = busDependency.get(bus);
+					if (var == decisionVar) {
+						decisionComponent = component;
 					}
 				}
 			}
-
 		}
+
 		return decisionComponent;
 	}
 

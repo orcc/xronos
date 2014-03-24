@@ -357,9 +357,11 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		/** Get Decision Components **/
 		doSwitch(blockWhile.getJoinBlock());
 		Var decisionVar = loopIO.getDecision();
+		// Always a block
+		Block testBlock = (Block) componentList.get(0);
 
 		Component decisionComponent = ModuleUtil.findDecisionComponent(
-				componentList, decisionVar, busDependency);
+				testBlock, decisionVar, busDependency);
 
 		if (decisionComponent == null) {
 			Var target = IrFactory.eINSTANCE.createVar(decisionVar.getType(),
@@ -368,11 +370,17 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			decisionComponent = ModuleUtil.assignComponent(target, decisionVar,
 					portDependency, busDependency, portGroupDependency,
 					doneBusDependency);
-			componentList.add(decisionComponent);
-		}
 
-		List<Component> decisionBodyComponents = new ArrayList<Component>(
-				componentList);
+			List<Var> blockInputs = Arrays.asList(decisionVar);
+			List<Var> blockOutputs = Arrays.asList(target);
+
+			testBlock = (Block) ModuleUtil.createModule(
+					Arrays.asList(decisionComponent), blockInputs,
+					blockOutputs, "blockBasic", false, Exit.DONE, 0,
+					portDependency, busDependency, portGroupDependency,
+					doneBusDependency);
+			loopIO.getDecisionInputs().add(decisionVar);
+		}
 
 		componentList = new ArrayList<Component>();
 
@@ -382,6 +390,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 		/** Create the Loop **/
 		List<Var> decisionInVars = loopIO.getDecisionInputs();
+		List<Var> decisionOutVars = loopIO.getDecisionOutputs();
 		List<Var> loopInVars = loopIO.getInputs();
 		List<Var> loopOutVars = loopIO.getOutputs();
 		List<Var> loopBodyInVars = loopIO.getBodyInputs();
@@ -389,11 +398,11 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 		Map<Var, List<Var>> loopPhi = loopIO.getPhi();
 
-		Loop loop = (Loop) ModuleUtil.createLoop(decisionComponent,
-				decisionBodyComponents, decisionInVars, bodyComponents,
-				loopPhi, loopInVars, loopOutVars, loopBodyInVars,
-				loopBodyOutVars, portDependency, busDependency,
-				portGroupDependency, doneBusDependency);
+		Loop loop = (Loop) ModuleUtil.createLoop(decisionComponent, testBlock,
+				decisionInVars, decisionOutVars, bodyComponents, loopPhi,
+				loopInVars, loopOutVars, loopBodyInVars, loopBodyOutVars,
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
 		// loop.setNonRemovable();
 		if (STM_DEBUG) {
 			System.out.println("Loop: line :" + blockWhile.getLineNumber()
@@ -405,6 +414,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 				blockWhile.getLineNumber());
 		loop.setIDSourceInfo(sinfo);
+
+		blockWhile.setAttribute("limLoop", loop);
 
 		/** Clean componentList **/
 		componentList = new ArrayList<Component>();

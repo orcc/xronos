@@ -35,8 +35,10 @@ import java.util.Map;
 
 import net.sf.orcc.ir.Var;
 
+import org.xronos.openforge.app.project.SearchLabel;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Call;
+import org.xronos.openforge.lim.CodeLabel;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.ControlDependency;
 import org.xronos.openforge.lim.DataDependency;
@@ -133,6 +135,8 @@ public class DesignUtil {
 				procedureBlock);
 		Call call = proc.makeCall();
 		proc.setIDSourceInfo(deriveIDSourceInfo(name));
+		SearchLabel sl = new CodeLabel(proc, name);
+		proc.setSearchLabel(sl);
 		return call;
 	}
 
@@ -150,6 +154,18 @@ public class DesignUtil {
 		task.setKickerRequired(requiresKicker);
 		task.setSourceName(taskName);
 		return task;
+	}
+
+	public static IDSourceInfo deriveIDSourceInfo(String name) {
+		String fileName = null;
+		String packageName = null;
+		String className = name;
+		String methodName = name;
+		String signature = null;
+		int line = 0;
+		int cpos = 0;
+		return new IDSourceInfo(fileName, packageName, className, methodName,
+				signature, line, cpos);
 	}
 
 	/**
@@ -186,30 +202,6 @@ public class DesignUtil {
 		}
 	}
 
-	public static IDSourceInfo deriveIDSourceInfo(String name) {
-		String fileName = null;
-		String packageName = null;
-		String className = name;
-		String methodName = name;
-		String signature = null;
-		int line = 0;
-		int cpos = 0;
-		return new IDSourceInfo(fileName, packageName, className, methodName,
-				signature, line, cpos);
-	}
-
-	/**
-	 * This method sets the sizes of the clock,reset and go ports of a call
-	 * 
-	 * @param call
-	 *            the call
-	 */
-	public static void topLevelInitialization(Call call) {
-		call.getClockPort().setSize(1, false);
-		call.getResetPort().setSize(1, false);
-		call.getGoPort().setSize(1, false);
-	}
-
 	public static void setAttributes(String tag, Component comp) {
 		setAttributes(tag, comp, false);
 	}
@@ -232,6 +224,18 @@ public class DesignUtil {
 	 */
 	public static void setAttributes(Var var, ID comp) {
 		comp.setSourceName(var.getName());
+	}
+
+	/**
+	 * This method sets the sizes of the clock,reset and go ports of a call
+	 * 
+	 * @param call
+	 *            the call
+	 */
+	public static void topLevelInitialization(Call call) {
+		call.getClockPort().setSize(1, false);
+		call.getResetPort().setSize(1, false);
+		call.getGoPort().setSize(1, false);
 	}
 
 }
