@@ -181,9 +181,9 @@ class TclScriptPrinter {
 		'''
 			## Start VSIM
 			«IF (xilinxPrimitives)»
-				vsim -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
+				vsim -voptargs="+acc" -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
 			«ELSE»
-				vsim -L unisims_ver -L simprims_ver -t ns «workName».glbl «workName».«simName»
+				vsim -voptargs="+acc" -L unisims_ver -L simprims_ver -t ns «workName».glbl «workName».«simName»
 			«ENDIF»	
 				
 			## Add clock(s) and reset signal

@@ -298,6 +298,14 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				InstAssign instAssign = irFactory.createInstAssign(
 						tokenAvailability, exprTokenAvailability);
 				block.add(instAssign);
+				if (schedulerInformation) {
+					InstSimplePortWrite instSimplePortWrite = XronosIrFactory.eINSTANCE
+							.createInstSimplePortWrite();
+					instSimplePortWrite.setName("ta_" + action.getName());
+					ExprVar tVar = irFactory.createExprVar(tokenAvailability);
+					instSimplePortWrite.setValue(tVar);
+					block.add(instSimplePortWrite);
+				}
 			}
 
 			return null;
@@ -577,9 +585,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			for (Action action : actor.getActionsOutsideFsm()) {
 				lastBlockIf = createTaskCallOutFSM(procedure, action,
 						lastBlockIf);
-				if (schedulerInformation) {
-					lastBlockIf.getElseBlocks().add(createIdleBlock());
-				}
+			}
+			if (schedulerInformation) {
+				lastBlockIf.getElseBlocks().add(createIdleBlock());
 			}
 			blocks.add(firstBlockIf);
 		} else {
@@ -837,6 +845,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
 					fireabilityThenBlock);
 
+			if (schedulerInformation) {
+				fireabilityIf.getElseBlocks().add(createIdleBlock());
+			}
+
 			schedulabilityThenBlocks.add(fireabilityIf);
 			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
 					schedulability, schedulabilityThenBlocks);
@@ -865,6 +877,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
 					fireabilityThenBlock);
+			if (schedulerInformation) {
+				fireabilityIf.getElseBlocks().add(createIdleBlock());
+			}
 
 			// Create the schedulability BlockIf
 			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
