@@ -105,6 +105,8 @@ public class Xronos extends AbstractBackend {
 
 	private boolean doubleBuffering;
 
+	private boolean inputClockGating;
+
 	boolean schedulerInformation;
 
 	@Override
@@ -120,7 +122,9 @@ public class Xronos extends AbstractBackend {
 		importBufferSize = getAttribute("org.xronos.orcc.importBufferSize",
 				false);
 		fifoSize = getAttribute("net.sf.orcc.fifoSize", 1);
-		doubleBuffering = getAttribute("org.xronos.orcc.highGrainClockGating",
+		doubleBuffering = getAttribute("org.xronos.orcc.outputClockGating",
+				false);
+		inputClockGating = getAttribute("org.xronos.orcc.inputClockGating",
 				false);
 		schedulerInformation = getAttribute(
 				"org.xronos.orcc.schedulingInformation", false);

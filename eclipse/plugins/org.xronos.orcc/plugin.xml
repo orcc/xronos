@@ -26,7 +26,10 @@
                id="org.xronos.orcc.newScheduling">
          </option>
          <option
-               id="org.xronos.orcc.highGrainClockGating">
+               id="org.xronos.orcc.outputClockGating">
+         </option>
+         <option
+               id="org.xronos.orcc.inputClockGating">
          </option>
          <option
                id="org.xronos.orcc.arraySizeToPowerOfTwo">
@@ -92,9 +95,15 @@
       </option>
       <option
             defaultValue="false"
-            description="Clock gating actors when their output queues are becoming full."
-            id="org.xronos.orcc.highGrainClockGating"
-            name="High grain clock gating on actors (beta)">
+            description="Clock gate actors when their output queues are becoming full."
+            id="org.xronos.orcc.outputClockGating"
+            name="Coarsed grain clock gating based on output of actors">
+         <checkBox></checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            id="org.xronos.orcc.inputClockGating"
+            name="Coarsed grain clock gating based on input of actors">
          <checkBox></checkBox>
       </option>
       <option
@@ -115,7 +124,8 @@
             defaultValue="false"
             description="New scheduling"
             id="org.xronos.orcc.newScheduling"
-            name="New Scheduling">
+            name="New Scheduling (Not activated Yet)">
+         <checkBox></checkBox>
       </option>
    </extension>
 

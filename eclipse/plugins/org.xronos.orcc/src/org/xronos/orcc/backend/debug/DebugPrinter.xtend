@@ -52,6 +52,7 @@ import org.xronos.orcc.ir.InstPortRead
 import org.xronos.orcc.ir.InstPortStatus
 import org.xronos.orcc.ir.InstPortWrite
 import org.xronos.orcc.ir.InstSimplePortWrite
+import net.sf.orcc.df.Action
 
 class DebugPrinter extends InstancePrinter {
 	
@@ -220,5 +221,10 @@ class DebugPrinter extends InstancePrinter {
 		}
 	'''
 	}
+	
+	override profileEnd(Action action) ''''''
+	override profileStart(Action action) ''''''
+	
+	
 	
 }
