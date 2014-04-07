@@ -103,7 +103,7 @@ public class Xronos extends AbstractBackend {
 	/** Copy the Xilinx RAM/registers primitives **/
 	private boolean xilinxPrimitives;
 
-	private boolean doubleBuffering;
+	private boolean outputClockGating;
 
 	private boolean inputClockGating;
 
@@ -122,7 +122,7 @@ public class Xronos extends AbstractBackend {
 		importBufferSize = getAttribute("org.xronos.orcc.importBufferSize",
 				false);
 		fifoSize = getAttribute("net.sf.orcc.fifoSize", 1);
-		doubleBuffering = getAttribute("org.xronos.orcc.outputClockGating",
+		outputClockGating = getAttribute("org.xronos.orcc.outputClockGating",
 				false);
 		inputClockGating = getAttribute("org.xronos.orcc.inputClockGating",
 				false);
@@ -374,7 +374,8 @@ public class Xronos extends AbstractBackend {
 		XronosPrinter printer = new XronosPrinter(!debugMode);
 		printer.getOptions().put("generateGoDone", generateGoDone);
 		printer.getOptions().put("fpgaType", fpgaName);
-		printer.getOptions().put("doubleBuffering", doubleBuffering);
+		printer.getOptions().put("doubleBuffering", outputClockGating);
+		printer.getOptions().put("inputClockGating", inputClockGating);
 		XronosFlags flags = new XronosFlags(rtlPath, network.getSimpleName());
 		boolean schedulerInformation = getAttribute(
 				"org.xronos.orcc.schedulingInformation", false);
@@ -397,14 +398,15 @@ public class Xronos extends AbstractBackend {
 
 		XronosPrinter xronosPrinter = new XronosPrinter();
 		xronosPrinter.getOptions().put("clkDomains", clkDomains);
-		xronosPrinter.getOptions().put("doubleBuffering", doubleBuffering);
+		xronosPrinter.getOptions().put("doubleBuffering", outputClockGating);
+		xronosPrinter.getOptions().put("inputClockGating", inputClockGating);
 		xronosPrinter.printNetwork(rtlPath, network);
 		if (generateGoDone) {
 			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
 			xronosPrinter.printNetwork(rtlGoDonePath, network);
 		}
 		// Print clock controllers if doublebuffering is enabled
-		if (doubleBuffering) {
+		if (outputClockGating) {
 			ClockEnabler clockEnabler = new ClockEnabler(rtlPath);
 			clockEnabler.doSwitch(network);
 		}
@@ -417,7 +419,8 @@ public class Xronos extends AbstractBackend {
 		// Create the Xronos Printer
 		XronosPrinter xronosPrinter = new XronosPrinter();
 		xronosPrinter.getOptions().put("xilinxPrimitives", xilinxPrimitives);
-		xronosPrinter.getOptions().put("doubleBuffering", doubleBuffering);
+		xronosPrinter.getOptions().put("doubleBuffering", outputClockGating);
+		xronosPrinter.getOptions().put("inputClockGating", inputClockGating);
 		xronosPrinter.getOptions().put("schedulerInformation",
 				schedulerInformation);
 
@@ -426,7 +429,10 @@ public class Xronos extends AbstractBackend {
 		if (generateGoDone) {
 			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
 			xronosPrinter.getOptions().put("generateWeights", generateWeights);
-			xronosPrinter.getOptions().put("doubleBuffering", doubleBuffering);
+			xronosPrinter.getOptions()
+					.put("doubleBuffering", outputClockGating);
+			xronosPrinter.getOptions()
+					.put("inputClockGating", inputClockGating);
 			xronosPrinter.getOptions().put("schedulerInformation",
 					schedulerInformation);
 			// Create the weights path

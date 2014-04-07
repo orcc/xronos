@@ -558,20 +558,20 @@ class TestbenchPrinter {
 							sequence_«port.name» := sequence_«port.name» + 1;
 							«ELSEIF port.type.int»
 							assert («port.name»_data  = std_logic_vector(to_signed(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» incorrect value computed : " & str(to_integer(signed(«port.name»_data))) & " instead of :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
+							report "on port «port.name» incorrect value computed : " & str(to_integer(signed(«port.name»_data))) & " instead of : " & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity failure;
 							
 							assert («port.name»_data /= std_logic_vector(to_signed(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» correct value computed : " & str(to_integer(signed(«port.name»_data))) & " equals :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
+							report "on port «port.name» correct value computed : " & str(to_integer(signed(«port.name»_data))) & " equals : " & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity note;
 							sequence_«port.name» := sequence_«port.name» + 1;
 							«ELSEIF port.type.uint»
 							assert («port.name»_data  = std_logic_vector(to_unsigned(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» incorrect value computed : " & str(to_integer(unsigned(«port.name»_data))) & " instead of :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
+							report "on port «port.name» incorrect value computed : " & str(to_integer(unsigned(«port.name»_data))) & " instead of : " & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity failure;
 							
 							assert («port.name»_data /= std_logic_vector(to_unsigned(input_bit, «port.type.sizeInBits»)))
-							report "on port «port.name» correct value computed : " & str(to_integer(unsigned(«port.name»_data))) & " equals :" & str(input_bit) & " sequence " & str(sequence_«port.name»)
+							report "on port «port.name» correct value computed : " & str(to_integer(unsigned(«port.name»_data))) & " equals : " & str(input_bit) & " sequence " & str(sequence_«port.name»)
 							severity note;
 							sequence_«port.name» := sequence_«port.name» + 1;
 							«ENDIF»
