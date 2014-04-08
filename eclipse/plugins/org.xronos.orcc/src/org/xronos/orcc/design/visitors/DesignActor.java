@@ -165,6 +165,12 @@ public class DesignActor extends DfVisitor<Object> {
 					+ actor.getName());
 			schedulingInfoPins.put("idle_" + actor.getName(), idlePin);
 			design.addComponentToDesign(idlePin);
+
+			// Add current Action Pin
+			SchedulerSimplePin currentActionPin = new SchedulerSimplePin(actor
+					.getActions().size(), "act_" + actor.getName());
+			schedulingInfoPins.put("act_" + actor.getName(), currentActionPin);
+			design.addComponentToDesign(currentActionPin);
 		}
 
 		/** Visit the State Variables **/

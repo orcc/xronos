@@ -31,6 +31,7 @@ package org.xronos.orcc.design.visitors;
 
 import static net.sf.orcc.ir.util.IrUtil.getNameSSA;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -493,7 +494,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 
 	@Override
 	public List<Component> caseExprInt(ExprInt expr) {
-		final long value = expr.getIntValue();
+		BigInteger value = expr.getValue();
 		int sizeInBits = 32;
 
 		if (assignTarget != null) {

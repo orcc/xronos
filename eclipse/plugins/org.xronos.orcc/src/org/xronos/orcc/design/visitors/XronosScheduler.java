@@ -28,6 +28,7 @@
  */
 package org.xronos.orcc.design.visitors;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -431,7 +432,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 	private List<BlockIf> createFsmBlockIf(Actor actor, Procedure procedure) {
 		List<BlockIf> blocks = new ArrayList<BlockIf>();
 		for (State state : actor.getFsm().getStates()) {
-
+			BigInteger actionMask = BigInteger.ZERO;
 			BlockIf lastBlockIf = null;
 			BlockIf oldFirstBlock = null;
 			if (!actor.getActionsOutsideFsm().isEmpty()) {
@@ -448,9 +449,15 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				Action action = transition.getAction();
 				lastBlockIf = createTaskCall(procedure, action, lastBlockIf,
 						stateSource, stateTarget);
+
+				// Update action Mask
+				if (!action.getInputPattern().isEmpty()) {
+					actionMask = actionMask.add((BigInteger.valueOf(2))
+							.pow(actor.getActions().indexOf(action)));
+				}
 			}
 			if (schedulerInformation) {
-				lastBlockIf.getElseBlocks().add(createIdleBlock());
+				lastBlockIf.getElseBlocks().add(createIdleBlock(actionMask));
 			}
 			// Create an if block that will contains all the transitions
 			Var stateSource = procedure.getLocal("s_" + state.getName());
@@ -466,22 +473,27 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		return blocks;
 	}
 
-	private Block createIdleBlock() {
+	private Block createIdleBlock(BigInteger reason) {
+		BlockBasic blockBasic = irFactory.createBlockBasic();
+
 		ExprBool exprBool = irFactory.createExprBool(true);
-		// Var idlevar = irFactory.createVar(irFactory.createTypeBool(), "idle_"
-		// + actor.getName(), true, 0);
-		// xronosSchedulerLocals.add(idlevar);
-		// InstAssign assign = irFactory.createInstAssign(idlevar, exprBool);
 		InstSimplePortWrite idle = XronosIrFactory.eINSTANCE
 				.createInstSimplePortWrite();
 		idle.setName("idle_" + actor.getSimpleName());
 		idle.setValue(exprBool);
-
-		BlockBasic blockBasic = irFactory.createBlockBasic();
-		// blockBasic.add(assign);
 		blockBasic.add(idle);
-		return blockBasic;
 
+		// Add scheduling information, only if the actions have an input
+		if (reason != BigInteger.ZERO) {
+			Expression exprNumber = IrFactory.eINSTANCE.createExprInt(reason);
+			InstSimplePortWrite actSimplePortWrite = XronosIrFactory.eINSTANCE
+					.createInstSimplePortWrite();
+			actSimplePortWrite.setName("act_" + actor.getSimpleName());
+			actSimplePortWrite.setValue(exprNumber);
+
+			blockBasic.add(actSimplePortWrite);
+		}
+		return blockBasic;
 	}
 
 	private List<Block> createSchedulerBody(Actor actor, Procedure procedure) {
@@ -579,6 +591,18 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			blocks.add(actionFireability.doSwitch(action));
 		}
 
+		// Add scheduling information
+		if (schedulerInformation) {
+			Expression exprNumber = IrFactory.eINSTANCE.createExprInt(0);
+			InstSimplePortWrite actSimplePortWrite = XronosIrFactory.eINSTANCE
+					.createInstSimplePortWrite();
+			actSimplePortWrite.setName("act_" + actor.getSimpleName());
+			actSimplePortWrite.setValue(exprNumber);
+			BlockBasic blockBasic = irFactory.createBlockBasic();
+			blockBasic.add(actSimplePortWrite);
+			blocks.add(blockBasic);
+		}
+
 		/** Test if the actor has an FSM **/
 		if (!actor.hasFsm()) {
 			BlockIf lastBlockIf = null;
@@ -586,9 +610,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				lastBlockIf = createTaskCallOutFSM(procedure, action,
 						lastBlockIf);
 			}
-			if (schedulerInformation) {
-				lastBlockIf.getElseBlocks().add(createIdleBlock());
-			}
+			// if (schedulerInformation) {
+			// lastBlockIf.getElseBlocks().add(createIdleBlock());
+			// }
 			blocks.add(firstBlockIf);
 		} else {
 			BlockMutex blockMutex = XronosIrFactory.eINSTANCE
@@ -739,6 +763,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					fireabilityThenBlock.add(inst);
 				}
 			}
+
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -834,6 +859,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					fireabilityThenBlock.add(inst);
 				}
 			}
+
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -846,7 +872,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					fireabilityThenBlock);
 
 			if (schedulerInformation) {
-				fireabilityIf.getElseBlocks().add(createIdleBlock());
+				fireabilityIf.getElseBlocks().add(
+						createIdleBlock((BigInteger.valueOf(2)).pow(actor
+								.getActions().indexOf(action))));
 			}
 
 			schedulabilityThenBlocks.add(fireabilityIf);
@@ -869,6 +897,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 					fireabilityThenBlock.add(inst);
 				}
 			}
+
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -878,7 +907,9 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
 					fireabilityThenBlock);
 			if (schedulerInformation) {
-				fireabilityIf.getElseBlocks().add(createIdleBlock());
+				fireabilityIf.getElseBlocks().add(
+						createIdleBlock((BigInteger.valueOf(2)).pow(actor
+								.getActions().indexOf(action))));
 			}
 
 			// Create the schedulability BlockIf
