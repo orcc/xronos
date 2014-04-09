@@ -168,8 +168,9 @@ public class DesignActor extends DfVisitor<Object> {
 
 			// Add current Action Pin
 			SchedulerSimplePin currentActionPin = new SchedulerSimplePin(actor
-					.getActions().size(), "act_" + actor.getName());
-			schedulingInfoPins.put("act_" + actor.getName(), currentActionPin);
+					.getActions().size(), "idle_action_" + actor.getName());
+			schedulingInfoPins.put("idle_action_" + actor.getName(),
+					currentActionPin);
 			design.addComponentToDesign(currentActionPin);
 		}
 

@@ -244,7 +244,7 @@ class TclScriptPrinter {
 					«ENDIF»
 				«ENDFOR»
 				add wave -label Idle sim:/«simName»/i_«actor.simpleName»/idle_«actor.simpleName»
-				add wave -label Idle_Action sim:/«simName»/i_«actor.simpleName»/act_«actor.simpleName»
+				add wave -label Idle_Action sim:/«simName»/i_«actor.simpleName»/idle_action_«actor.simpleName»
 			«ENDIF»
 		'''
 
@@ -299,7 +299,7 @@ class TclScriptPrinter {
 					«ENDIF»
 				«ENDFOR»
 				add wave -label Idle sim:/«simName»/i_«actor.simpleName»/idle_«actor.simpleName»
-				add wave -label Idle_Action sim:/«simName»/i_«actor.simpleName»/act_«actor.simpleName»
+				add wave -label Idle_Action sim:/«simName»/i_«actor.simpleName»/idle_action_«actor.simpleName»
 			«ENDIF»
 		'''
 	}

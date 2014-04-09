@@ -81,6 +81,7 @@ import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.TaskCall;
 import org.xronos.openforge.lim.io.SimplePin;
+import org.xronos.openforge.lim.io.SimplePinStall;
 import org.xronos.openforge.lim.io.SimplePinWrite;
 import org.xronos.openforge.lim.memory.AddressStridePolicy;
 import org.xronos.openforge.lim.memory.Location;

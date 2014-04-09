@@ -349,6 +349,20 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 	public Procedure caseActor(Actor actor) {
 		this.actor = actor;
 
+		if (schedulerInformation) {
+			// Add stateVar related to the actor Idle
+			Var idleVar = IrFactory.eINSTANCE.createVar(
+					IrFactory.eINSTANCE.createTypeBool(),
+					"idle_" + actor.getName(), true, 0);
+			actor.getStateVars().add(idleVar);
+
+			// Add stateVar related to the actor Idle Action Pin
+			Var idleAction = IrFactory.eINSTANCE.createVar(IrFactory.eINSTANCE
+					.createTypeInt(actor.getActions().size()), "idle_action_"
+					+ actor.getName(), true, 0);
+			actor.getStateVars().add(idleAction);
+		}
+
 		if (actor.getFsm() != null) {
 			// Add state Vars
 			for (State state : actor.getFsm().getStates()) {
@@ -477,22 +491,20 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		BlockBasic blockBasic = irFactory.createBlockBasic();
 
 		ExprBool exprBool = irFactory.createExprBool(true);
-		InstSimplePortWrite idle = XronosIrFactory.eINSTANCE
-				.createInstSimplePortWrite();
-		idle.setName("idle_" + actor.getSimpleName());
-		idle.setValue(exprBool);
-		blockBasic.add(idle);
+
+		InstStore storeIdle = irFactory.createInstStore(
+				actor.getStateVar("idle_" + actor.getName()), exprBool);
+		blockBasic.add(storeIdle);
 
 		// Add scheduling information, only if the actions have an input
-		if (reason != BigInteger.ZERO) {
-			Expression exprNumber = IrFactory.eINSTANCE.createExprInt(reason);
-			InstSimplePortWrite actSimplePortWrite = XronosIrFactory.eINSTANCE
-					.createInstSimplePortWrite();
-			actSimplePortWrite.setName("act_" + actor.getSimpleName());
-			actSimplePortWrite.setValue(exprNumber);
+		Expression exprNumber = IrFactory.eINSTANCE.createExprInt(reason);
 
-			blockBasic.add(actSimplePortWrite);
-		}
+		InstStore storeIdleAction = irFactory
+				.createInstStore(
+						actor.getStateVar("idle_action_" + actor.getName()),
+						exprNumber);
+		blockBasic.add(storeIdleAction);
+
 		return blockBasic;
 	}
 
@@ -593,26 +605,76 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 		// Add scheduling information
 		if (schedulerInformation) {
-			Expression exprNumber = IrFactory.eINSTANCE.createExprInt(0);
-			InstSimplePortWrite actSimplePortWrite = XronosIrFactory.eINSTANCE
-					.createInstSimplePortWrite();
-			actSimplePortWrite.setName("act_" + actor.getSimpleName());
-			actSimplePortWrite.setValue(exprNumber);
 			BlockBasic blockBasic = irFactory.createBlockBasic();
-			blockBasic.add(actSimplePortWrite);
+
+			// Create Load instruction for idle
+			Var tmpIdle = null;
+			if (procedure.getLocals().contains("tmpIdle_" + actor.getName())) {
+				tmpIdle = procedure.getLocal("tmpIdle_" + actor.getName());
+			} else {
+				tmpIdle = irFactory.createVar(irFactory.createTypeBool(),
+						"tmpIdle_" + actor.getName(), true, 0);
+				procedure.getLocals().add(tmpIdle);
+			}
+
+			InstLoad loadIdle = irFactory.createInstLoad(tmpIdle,
+					actor.getStateVar("idle_" + actor.getName()));
+
+			blockBasic.add(loadIdle);
+
+			Expression boolValue = IrFactory.eINSTANCE.createExprVar(tmpIdle);
+			InstSimplePortWrite idlePortWrite = XronosIrFactory.eINSTANCE
+					.createInstSimplePortWrite();
+			idlePortWrite.setName("idle_" + actor.getSimpleName());
+			idlePortWrite.setValue(boolValue);
+
+			blockBasic.add(idlePortWrite);
+
+			// Create Load instruction for idle Action
+			Var tmpIdleAction = null;
+			if (procedure.getLocals().contains(
+					"tmpIdleAction_" + actor.getName())) {
+				tmpIdleAction = procedure.getLocal("tmpIdleAction_"
+						+ actor.getName());
+			} else {
+				tmpIdleAction = irFactory.createVar(
+						irFactory.createTypeInt(actor.getActions().size()),
+						"tmpIdleAction_" + actor.getName(), true, 0);
+				procedure.getLocals().add(tmpIdleAction);
+			}
+
+			InstLoad loadIdleAction = irFactory.createInstLoad(tmpIdle,
+					actor.getStateVar("idle_action_" + actor.getName()));
+
+			blockBasic.add(loadIdleAction);
+
+			Expression bigIntegerValue = IrFactory.eINSTANCE
+					.createExprVar(tmpIdle);
+			InstSimplePortWrite idleActionPortWrite = XronosIrFactory.eINSTANCE
+					.createInstSimplePortWrite();
+			idleActionPortWrite.setName("idle_action_" + actor.getSimpleName());
+			idleActionPortWrite.setValue(bigIntegerValue);
+
+			blockBasic.add(idleActionPortWrite);
+
 			blocks.add(blockBasic);
 		}
 
 		/** Test if the actor has an FSM **/
 		if (!actor.hasFsm()) {
 			BlockIf lastBlockIf = null;
+			BigInteger actionMask = BigInteger.ZERO;
 			for (Action action : actor.getActionsOutsideFsm()) {
 				lastBlockIf = createTaskCallOutFSM(procedure, action,
 						lastBlockIf);
+				if (!action.getInputPattern().isEmpty()) {
+					actionMask = actionMask.add((BigInteger.valueOf(2))
+							.pow(actor.getActions().indexOf(action)));
+				}
 			}
-			// if (schedulerInformation) {
-			// lastBlockIf.getElseBlocks().add(createIdleBlock());
-			// }
+			if (schedulerInformation) {
+				lastBlockIf.getElseBlocks().add(createIdleBlock(actionMask));
+			}
 			blocks.add(firstBlockIf);
 		} else {
 			BlockMutex blockMutex = XronosIrFactory.eINSTANCE
@@ -717,6 +779,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				}
 			}
 
+			if (schedulerInformation) {
+				resetIdleBlock(fireabilityThenBlock);
+			}
+
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -743,7 +809,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					fireabilityThenBlock);
+					fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
 
 			// Create the schedulability BlockIf
 			blockIf = XronosIrUtil.createBlockIf(schedulability, fireabilityIf);
@@ -764,6 +830,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				}
 			}
 
+			if (schedulerInformation) {
+				resetIdleBlock(fireabilityThenBlock);
+			}
+
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -790,7 +860,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					fireabilityThenBlock);
+					fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
 
 			// Create the schedulability BlockIf
 			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
@@ -860,6 +930,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				}
 			}
 
+			if (schedulerInformation) {
+				resetIdleBlock(fireabilityThenBlock);
+			}
+
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -869,13 +943,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					fireabilityThenBlock);
-
-			if (schedulerInformation) {
-				fireabilityIf.getElseBlocks().add(
-						createIdleBlock((BigInteger.valueOf(2)).pow(actor
-								.getActions().indexOf(action))));
-			}
+					fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
 
 			schedulabilityThenBlocks.add(fireabilityIf);
 			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
@@ -898,6 +966,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 				}
 			}
 
+			if (schedulerInformation) {
+				resetIdleBlock(fireabilityThenBlock);
+			}
+
 			// Create Inst call
 			InstCall instCall = irFactory.createInstCall();
 			instCall.setProcedure(action.getBody());
@@ -905,7 +977,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					fireabilityThenBlock);
+					fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
 			if (schedulerInformation) {
 				fireabilityIf.getElseBlocks().add(
 						createIdleBlock((BigInteger.valueOf(2)).pow(actor
@@ -920,5 +992,36 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			blockIf = schedulabilityIf;
 		}
 		return blockIf;
+	}
+
+	private void resetIdleBlock(BlockBasic block) {
+
+		ExprBool exprBool = irFactory.createExprBool(false);
+
+		InstStore storeIdle = irFactory.createInstStore(
+				actor.getStateVar("idle_" + actor.getName()), exprBool);
+		block.add(storeIdle);
+
+		// Add scheduling information, only if the actions have an input
+		Expression exprNumber = IrFactory.eINSTANCE.createExprInt(0);
+
+		InstStore storeIdleAction = irFactory
+				.createInstStore(
+						actor.getStateVar("idle_action_" + actor.getName()),
+						exprNumber);
+		block.add(storeIdleAction);
+
+		InstSimplePortWrite idlePortWrite = XronosIrFactory.eINSTANCE
+				.createInstSimplePortWrite();
+		idlePortWrite.setName("idle_action_" + actor.getSimpleName());
+		idlePortWrite.setValue(irFactory.createExprBool(false));
+
+		block.add(idlePortWrite);
+
+		InstSimplePortWrite idleActionPortWrite = XronosIrFactory.eINSTANCE
+				.createInstSimplePortWrite();
+		idleActionPortWrite.setName("idle_action_" + actor.getSimpleName());
+		idleActionPortWrite.setValue(irFactory.createExprInt(BigInteger.ZERO));
+		block.add(idleActionPortWrite);
 	}
 }

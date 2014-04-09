@@ -56,7 +56,6 @@ import org.xronos.openforge.lim.memory.MemoryWrite;
 import org.xronos.openforge.util.naming.ID;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 
-
 /**
  * ThroughputAnalyzer determines the minimum spacing between assertions of
  * GO/data to each task in order to prevent overlap of data processing within
@@ -97,15 +96,39 @@ import org.xronos.openforge.util.naming.IDSourceInfo;
  */
 public class ThroughputAnalyzer extends DataFlowVisitor implements Visitor {
 
+	private static class DummyPinResource extends Resource {
+		@Override
+		public int getGoSpacing(Referencer from, Referencer to) {
+			return -1;
+		}
+
+		@Override
+		public Latency getLatency(Exit exit) {
+			assert false;
+			return null;
+		}
+
+		@Override
+		public int getSpacing(Referencer from, Referencer to) {
+			return 0;
+		}
+
+		@Override
+		public String toString() {
+			return "DUMMY_PIN_RESOURCE";
+		}
+	}
+
 	/**
 	 * These 4 maps are all non persistent. They are created and destroyed
 	 * during processing of each Task.
 	 */
 	private Map<Bus, Latency> latencyMap = Collections.emptyMap();
-	private Map<Component, Latency> inputLatencyMap = Collections.emptyMap();
 
+	private Map<Component, Latency> inputLatencyMap = Collections.emptyMap();
 	/** Loop/Resource -> ThroughputLimit */
 	private Map<ID, ThroughputLimit> nodeToThroughputLimit = new HashMap<ID, ThroughputLimit>();
+
 	/**
 	 * Resource->ThroughputLimit for tracking limits imposed by the address port
 	 * of a memory
@@ -128,35 +151,12 @@ public class ThroughputAnalyzer extends DataFlowVisitor implements Visitor {
 	private Stack<Loop> loopStack = new Stack<Loop>();
 
 	/**
-	 * A persitent map of Task->Set where the Set is a collection of
+	 * A persistent map of Task->Set where the Set is a collection of
 	 * ThroughputLimit objects for that task. Used for reporting.
 	 */
 	private Map<Task, Set<ThroughputLimit>> taskToThroughputLimit = new HashMap<Task, Set<ThroughputLimit>>();
 
 	private static final Resource PIN_RESOURCE = new DummyPinResource();
-
-	private static class DummyPinResource extends Resource {
-		@Override
-		public int getSpacing(Referencer from, Referencer to) {
-			return 0;
-		}
-
-		@Override
-		public int getGoSpacing(Referencer from, Referencer to) {
-			return -1;
-		}
-
-		@Override
-		public Latency getLatency(Exit exit) {
-			assert false;
-			return null;
-		}
-
-		@Override
-		public String toString() {
-			return "DUMMY_PIN_RESOURCE";
-		}
-	}
 
 	public ThroughputAnalyzer() {
 		super();
@@ -164,194 +164,85 @@ public class ThroughputAnalyzer extends DataFlowVisitor implements Visitor {
 	}
 
 	/**
-	 * Writes out a report of all identified paths for each resource encounted,
-	 * on a per-task basis to the given PrintStream.
+	 * Gets the latency to use if this access is the head of a chain of
+	 * accesses.
 	 */
-	public void writeReport(PrintStream ps) {
-		for (Task task : taskToThroughputLimit.keySet()) {
-			final Set<ThroughputLimit> limits = taskToThroughputLimit.get(task);
-
-			// String name = task.showIDLogical();
-			String name = task.getCall().showIDLogical();
-
-			ps.println("Throughput analysis results for task: " + name);
-
-			// int pathCount = 0;
-			for (ThroughputLimit limiter : limits) {
-				limiter.writeReport(ps, 0);
-			}
-			ps.println();
+	private Latency getHeadLatency(Access access, Resource resource) {
+		final Latency headLatency;
+		if (_throughput.db) {
+			_throughput.d.ln(_throughput.TA, "Finding head latency for "
+					+ access + " to " + resource);
 		}
-	}
-
-	@Override
-	public void visit(Design design) {
-		if (_throughput.db)
-			_throughput.d.launchXGraph(design, false);
-		super.visit(design);
-	}
-
-	@Override
-	public void visit(Task task) {
-		if (!task.isBalanced()) {
-			Latency callLatency = task.getCall().getLatency();
-			if (callLatency.getMaxClocks() == Latency.UNKNOWN)
-				task.setGoSpacing(Task.INDETERMINATE_GO_SPACING);
-			else
-				task.setGoSpacing(callLatency.getMaxClocks());
-			return;
+		if (_throughput.db) {
+			_throughput.d.ln(_throughput.TA, "\tLoopStack.isEmpty(): "
+					+ loopStack.isEmpty());
 		}
-
-		//
-		// Identify the latency of each bus in the LIM as an absolute
-		// value from the initial GO so we can calculate the
-		// difference between the first and last access to resources.
-		//
-		final GlobalLatencyVisitor glv = new GlobalLatencyVisitor();
-		task.accept(glv);
-		latencyMap = glv.getLatencyMap();
-		inputLatencyMap = glv.getInputLatencyMap();
-		methodStack = new Stack<Call>();
-		nodeToThroughputLimit = new HashMap<ID, ThroughputLimit>();
-		addrLimit = new HashMap<ID, ThroughputLimit>();
-
-		super.visit(task);
-
-		//
-		// Clear out the maps to save memory.
-		//
-		latencyMap = Collections.emptyMap();
-		inputLatencyMap = Collections.emptyMap();
-		methodStack = null;
-		Set<ThroughputLimit> limitSet = new HashSet<ThroughputLimit>(
-				nodeToThroughputLimit.values());
-		limitSet.addAll(addrLimit.values());
-		taskToThroughputLimit.put(task, limitSet);
-		nodeToThroughputLimit = Collections.emptyMap();
-		addrLimit = Collections.emptyMap();
-
-		//
-		// Start at 0 since the 'no restrictions' case means we can
-		// assert data every clock cycle.
-		//
-		if (_throughput.db)
-			_throughput.d.ln(_throughput.TA, "Analyzing paths:");
-		int longestPath = 0;
-		for (ThroughputLimit paths : limitSet) {
-			if (_throughput.db)
-				_throughput.d.ln(_throughput.TA, "\t" + paths + " limit: "
-						+ paths.getLimit());
-			final int limit = paths.getLimit();
-			if (limit < 0) {
-				longestPath = Task.INDETERMINATE_GO_SPACING;
-				break;
-			}
-			longestPath = Math.max(longestPath, paths.getLimit());
-		}
-		task.setGoSpacing(longestPath);
-	}
-
-	@Override
-	public void visit(Call call) {
-		methodStack.push(call);
-		markCall(call);
-		super.visit(call);
-		methodStack.pop();
-	}
-
-	@Override
-	public void visit(MemoryRead comp) {
-		markMemAccess(comp);
-
-		// Since the array length cannot change then it is not a
-		// limitation on the throughput because no one can change it.
-		Module owner = comp.getOwner();
-		if (owner instanceof HeapRead && ((HeapRead) owner).isArrayLengthRead()) {
+		if (loopStack.isEmpty()) {
+			//
+			// If the accessed resource does not allow parallel reads,
+			// then that indicates there is a contention on its ports
+			// such that 2 things cannot access it simultaneously
+			// (like the memory address port). In that case we need
+			// to use the INPUT latency of the first access to ensure
+			// that the 2 accesses do not occur simultaneously. If
+			// there is no contention, then it is OK for the first and
+			// last access to occur in the same cycle and so we use
+			// the DONE of the first access
+			//
+			// if (resource.allowsParallelReads())
+			// {
+			// Bus doneBus = access.getExit(Exit.DONE).getDoneBus();
+			// headLatency = (Latency)this.latencyMap.get(doneBus);
+			// }
+			// else
+			// {
+			headLatency = inputLatencyMap.get(access);
+			// }
 		} else {
-			markResource(comp);
+			Object key = loopStack.firstElement();
+			if (_throughput.db) {
+				_throughput.d.ln(_throughput.TA, "\tUsing input latency of: "
+						+ key);
+			}
+			headLatency = inputLatencyMap.get(key);
 		}
-		super.visit(comp);
-	}
-
-	@Override
-	public void visit(MemoryWrite comp) {
-		markMemAccess(comp);
-		markResource(comp);
-		super.visit(comp);
-	}
-
-	@Override
-	public void visit(PinRead comp) {
-		markResource(comp);
-		super.visit(comp);
-	}
-
-	@Override
-	public void visit(PinWrite comp) {
-		markResource(comp);
-		super.visit(comp);
-	}
-
-	@Override
-	public void visit(PinStateChange comp) {
-		markResource(comp);
-		super.visit(comp);
-	}
-
-	@Override
-	public void visit(RegisterRead comp) {
-		markResource(comp);
-		super.visit(comp);
-	}
-
-	@Override
-	public void visit(RegisterWrite comp) {
-		markResource(comp);
-		super.visit(comp);
+		if (_throughput.db) {
+			_throughput.d.ln(_throughput.TA, "\thead latency: " + headLatency);
+		}
+		assert headLatency != null;
+		return headLatency;
 	}
 
 	/**
-	 * The loop only represents a limitation if it is iterative.
+	 * Gets the latency to use if this access is the tail of a chain of
+	 * accesses.
 	 */
-	@Override
-	public void visit(Loop loop) {
-		if (loop.isIterative()) {
-			if (_throughput.db)
-				_throughput.d.ln(_throughput.TA, "Pushing loop " + loop);
-			loopStack.push(loop);
-			markLoop(loop);
-
-			super.visit(loop);
-
-			Object o = loopStack.pop();
-			if (_throughput.db)
-				_throughput.d.ln(_throughput.TA, "Popped loop " + o);
-			assert loop == o;
-		} else {
-			super.visit(loop);
+	private Latency getTailLatency(Access access) {
+		final Latency tailLatency;
+		if (_throughput.db) {
+			_throughput.d.ln(_throughput.TA, "Finding tail latency for "
+					+ access);
 		}
+		if (_throughput.db) {
+			_throughput.d.ln(_throughput.TA, "\tLoopStack.isEmpty(): "
+					+ loopStack.isEmpty());
+		}
+		if (loopStack.isEmpty()) {
+			tailLatency = inputLatencyMap.get(access);
+		} else {
+			Loop loop = loopStack.firstElement();
+			if (_throughput.db) {
+				_throughput.d.ln(_throughput.TA, "\tUsing output latency of: "
+						+ loop);
+			}
+			tailLatency = latencyMap.get(loop.getExit(Exit.DONE).getDoneBus());
+		}
+		assert tailLatency != null;
+		if (_throughput.db) {
+			_throughput.d.ln(_throughput.TA, "\ttail latency: " + tailLatency);
+		}
+		return tailLatency;
 	}
-
-	@Override
-	protected void preFilterAny(Component comp) {
-		super.preFilterAny(comp);
-		// System.out.println("TA: " + comp);
-	}
-
-	//
-	// A shared procedure call does not impose the same type of access
-	// restrictions on throughput as does any of the other globally
-	// accessing {@link Access Accesses}, however we do not currently
-	// use the shared procedure call, so this visit throws an
-	// assertion error.
-	//
-	// public void visit (SharedProcedureCall comp)
-	// {
-	// assert false :
-	// "SharedProcedureCall not supported in Throughput Analysis";
-	// markResource(comp);
-	// super.visit(comp);
-	// }
 
 	/**
 	 * Method calls have throughput limit set by an user via api method.
@@ -432,95 +323,220 @@ public class ThroughputAnalyzer extends DataFlowVisitor implements Visitor {
 
 		paths.mark(access, headLatency, tailLatency, methodStack.peek());
 
-		if (_throughput.db)
+		if (_throughput.db) {
 			_throughput.d
 					.ln(_throughput.TA, "Marked resource " + resource + "("
 							+ resource.showIDLogical() + ") access " + access
 							+ " headlatency " + headLatency + " taillatency "
 							+ tailLatency + " in "
 							+ methodStack.peek().showIDLogical());
+		}
 		// IDSourceInfo info = access.getIDSourceInfo();
 		IDSourceInfo info = resource.getIDSourceInfo();
-		if (_throughput.db)
+		if (_throughput.db) {
 			_throughput.d.ln(
 					_throughput.TA,
 					"\taccess:: pkg: " + info.getSourcePackageName()
 							+ " file: " + info.getSourceFileName() + " line "
 							+ info.getSourceLine() + " class "
 							+ info.getSourceClassName());
+		}
+	}
+
+	@Override
+	protected void preFilterAny(Component comp) {
+		super.preFilterAny(comp);
+		// System.out.println("TA: " + comp);
+	}
+
+	@Override
+	public void visit(Call call) {
+		methodStack.push(call);
+		markCall(call);
+		super.visit(call);
+		methodStack.pop();
+	}
+
+	@Override
+	public void visit(Design design) {
+		if (_throughput.db) {
+			_throughput.d.launchXGraph(design, false);
+		}
+		super.visit(design);
 	}
 
 	/**
-	 * Gets the latency to use if this access is the head of a chain of
-	 * accesses.
+	 * The loop only represents a limitation if it is iterative.
 	 */
-	private Latency getHeadLatency(Access access, Resource resource) {
-		final Latency headLatency;
-		if (_throughput.db)
-			_throughput.d.ln(_throughput.TA, "Finding head latency for "
-					+ access + " to " + resource);
-		if (_throughput.db)
-			_throughput.d.ln(_throughput.TA, "\tLoopStack.isEmpty(): "
-					+ loopStack.isEmpty());
-		if (loopStack.isEmpty()) {
-			//
-			// If the accessed resource does not allow parallel reads,
-			// then that indicates there is a contention on its ports
-			// such that 2 things cannot access it simultaneously
-			// (like the memory address port). In that case we need
-			// to use the INPUT latency of the first access to ensure
-			// that the 2 accesses do not occur simultaneously. If
-			// there is no contention, then it is OK for the first and
-			// last access to occur in the same cycle and so we use
-			// the DONE of the first access
-			//
-			// if (resource.allowsParallelReads())
-			// {
-			// Bus doneBus = access.getExit(Exit.DONE).getDoneBus();
-			// headLatency = (Latency)this.latencyMap.get(doneBus);
-			// }
-			// else
-			// {
-			headLatency = inputLatencyMap.get(access);
-			// }
+	@Override
+	public void visit(Loop loop) {
+		if (loop.isIterative()) {
+			if (_throughput.db) {
+				_throughput.d.ln(_throughput.TA, "Pushing loop " + loop);
+			}
+			loopStack.push(loop);
+			markLoop(loop);
+
+			super.visit(loop);
+
+			Object o = loopStack.pop();
+			if (_throughput.db) {
+				_throughput.d.ln(_throughput.TA, "Popped loop " + o);
+			}
+			assert loop == o;
 		} else {
-			Object key = loopStack.firstElement();
-			if (_throughput.db)
-				_throughput.d.ln(_throughput.TA, "\tUsing input latency of: "
-						+ key);
-			headLatency = inputLatencyMap.get(key);
+			super.visit(loop);
 		}
-		if (_throughput.db)
-			_throughput.d.ln(_throughput.TA, "\thead latency: " + headLatency);
-		assert headLatency != null;
-		return headLatency;
+	}
+
+	@Override
+	public void visit(MemoryRead comp) {
+		markMemAccess(comp);
+
+		// Since the array length cannot change then it is not a
+		// limitation on the throughput because no one can change it.
+		Module owner = comp.getOwner();
+		if (owner instanceof HeapRead && ((HeapRead) owner).isArrayLengthRead()) {
+		} else {
+			markResource(comp);
+		}
+		super.visit(comp);
+	}
+
+	@Override
+	public void visit(MemoryWrite comp) {
+		markMemAccess(comp);
+		markResource(comp);
+		super.visit(comp);
+	}
+
+	@Override
+	public void visit(PinRead comp) {
+		markResource(comp);
+		super.visit(comp);
+	}
+
+	//
+	// A shared procedure call does not impose the same type of access
+	// restrictions on throughput as does any of the other globally
+	// accessing {@link Access Accesses}, however we do not currently
+	// use the shared procedure call, so this visit throws an
+	// assertion error.
+	//
+	// public void visit (SharedProcedureCall comp)
+	// {
+	// assert false :
+	// "SharedProcedureCall not supported in Throughput Analysis";
+	// markResource(comp);
+	// super.visit(comp);
+	// }
+
+	@Override
+	public void visit(PinStateChange comp) {
+		markResource(comp);
+		super.visit(comp);
+	}
+
+	@Override
+	public void visit(PinWrite comp) {
+		markResource(comp);
+		super.visit(comp);
+	}
+
+	@Override
+	public void visit(RegisterRead comp) {
+		markResource(comp);
+		super.visit(comp);
+	}
+
+	@Override
+	public void visit(RegisterWrite comp) {
+		markResource(comp);
+		super.visit(comp);
+	}
+
+	@Override
+	public void visit(Task task) {
+		if (!task.isBalanced()) {
+			Latency callLatency = task.getCall().getLatency();
+			if (callLatency.getMaxClocks() == Latency.UNKNOWN) {
+				task.setGoSpacing(Task.INDETERMINATE_GO_SPACING);
+			} else {
+				task.setGoSpacing(callLatency.getMaxClocks());
+			}
+			return;
+		}
+
+		//
+		// Identify the latency of each bus in the LIM as an absolute
+		// value from the initial GO so we can calculate the
+		// difference between the first and last access to resources.
+		//
+		final GlobalLatencyVisitor glv = new GlobalLatencyVisitor();
+		task.accept(glv);
+		latencyMap = glv.getLatencyMap();
+		inputLatencyMap = glv.getInputLatencyMap();
+		methodStack = new Stack<Call>();
+		nodeToThroughputLimit = new HashMap<ID, ThroughputLimit>();
+		addrLimit = new HashMap<ID, ThroughputLimit>();
+
+		super.visit(task);
+
+		//
+		// Clear out the maps to save memory.
+		//
+		latencyMap = Collections.emptyMap();
+		inputLatencyMap = Collections.emptyMap();
+		methodStack = null;
+		Set<ThroughputLimit> limitSet = new HashSet<ThroughputLimit>(
+				nodeToThroughputLimit.values());
+		limitSet.addAll(addrLimit.values());
+		taskToThroughputLimit.put(task, limitSet);
+		nodeToThroughputLimit = Collections.emptyMap();
+		addrLimit = Collections.emptyMap();
+
+		//
+		// Start at 0 since the 'no restrictions' case means we can
+		// assert data every clock cycle.
+		//
+		if (_throughput.db) {
+			_throughput.d.ln(_throughput.TA, "Analyzing paths:");
+		}
+		int longestPath = 0;
+		for (ThroughputLimit paths : limitSet) {
+			if (_throughput.db) {
+				_throughput.d.ln(_throughput.TA, "\t" + paths + " limit: "
+						+ paths.getLimit());
+			}
+			final int limit = paths.getLimit();
+			if (limit < 0) {
+				longestPath = Task.INDETERMINATE_GO_SPACING;
+				break;
+			}
+			longestPath = Math.max(longestPath, paths.getLimit());
+		}
+		task.setGoSpacing(longestPath);
 	}
 
 	/**
-	 * Gets the latency to use if this access is the tail of a chain of
-	 * accesses.
+	 * Writes out a report of all identified paths for each resource encounted,
+	 * on a per-task basis to the given PrintStream.
 	 */
-	private Latency getTailLatency(Access access) {
-		final Latency tailLatency;
-		if (_throughput.db)
-			_throughput.d.ln(_throughput.TA, "Finding tail latency for "
-					+ access);
-		if (_throughput.db)
-			_throughput.d.ln(_throughput.TA, "\tLoopStack.isEmpty(): "
-					+ loopStack.isEmpty());
-		if (loopStack.isEmpty()) {
-			tailLatency = inputLatencyMap.get(access);
-		} else {
-			Loop loop = loopStack.firstElement();
-			if (_throughput.db)
-				_throughput.d.ln(_throughput.TA, "\tUsing output latency of: "
-						+ loop);
-			tailLatency = latencyMap.get(loop.getExit(Exit.DONE).getDoneBus());
+	public void writeReport(PrintStream ps) {
+		for (Task task : taskToThroughputLimit.keySet()) {
+			final Set<ThroughputLimit> limits = taskToThroughputLimit.get(task);
+
+			// String name = task.showIDLogical();
+			String name = task.getCall().showIDLogical();
+
+			ps.println("Throughput analysis results for task: " + name);
+
+			// int pathCount = 0;
+			for (ThroughputLimit limiter : limits) {
+				limiter.writeReport(ps, 0);
+			}
+			ps.println();
 		}
-		assert tailLatency != null;
-		if (_throughput.db)
-			_throughput.d.ln(_throughput.TA, "\ttail latency: " + tailLatency);
-		return tailLatency;
 	}
 
 }// ThroughputAnalyzer
