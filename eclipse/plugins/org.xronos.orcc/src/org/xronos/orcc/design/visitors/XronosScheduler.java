@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
@@ -62,7 +63,9 @@ import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.transform.BlockCombine;
 
+import org.xronos.orcc.backend.transform.XronosDeadCodeElimination;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.XronosIrUtil;
 import org.xronos.orcc.design.visitors.io.CircularBuffer;
@@ -354,12 +357,16 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			Var idleVar = IrFactory.eINSTANCE.createVar(
 					IrFactory.eINSTANCE.createTypeBool(),
 					"idle_" + actor.getName(), true, 0);
+			idleVar.setValue(false);
+			idleVar.setInitialValue(IrFactory.eINSTANCE.createExprBool(false));
 			actor.getStateVars().add(idleVar);
 
 			// Add stateVar related to the actor Idle Action Pin
 			Var idleAction = IrFactory.eINSTANCE.createVar(IrFactory.eINSTANCE
 					.createTypeInt(actor.getActions().size()), "idle_action_"
 					+ actor.getName(), true, 0);
+			idleAction.setValue(Integer.valueOf(0));
+			idleAction.setInitialValue(IrFactory.eINSTANCE.createExprInt(0));
 			actor.getStateVars().add(idleAction);
 		}
 
@@ -439,6 +446,18 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		xronosScheduler.setReturnType(returnType);
 
 		actor.getProcs().add(xronosScheduler);
+
+		Inliner inliner = new Inliner(true, true);
+		inliner.doSwitch(xronosScheduler);
+
+		XronosDeadCodeElimination dc = new XronosDeadCodeElimination(true);
+		dc.doSwitch(xronosScheduler);
+
+		BlockCombine blockCombine = new BlockCombine(false);
+		blockCombine.doSwitch(xronosScheduler);
+
+		// LoadOnce loadOnce = new LoadOnce();
+		// loadOnce.doSwitch(xronosScheduler);
 
 		return xronosScheduler;
 	}
