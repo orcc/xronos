@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
@@ -63,9 +62,7 @@ import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
-import net.sf.orcc.ir.transform.BlockCombine;
 
-import org.xronos.orcc.backend.transform.XronosDeadCodeElimination;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.XronosIrUtil;
 import org.xronos.orcc.design.visitors.io.CircularBuffer;
@@ -447,14 +444,14 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 		actor.getProcs().add(xronosScheduler);
 
-		Inliner inliner = new Inliner(true, true);
-		inliner.doSwitch(xronosScheduler);
+		// Inliner inliner = new Inliner(true, true);
+		// inliner.doSwitch(xronosScheduler);
 
-		XronosDeadCodeElimination dc = new XronosDeadCodeElimination(true);
-		dc.doSwitch(xronosScheduler);
+		// XronosDeadCodeElimination dc = new XronosDeadCodeElimination(true);
+		// dc.doSwitch(xronosScheduler);
 
-		BlockCombine blockCombine = new BlockCombine(false);
-		blockCombine.doSwitch(xronosScheduler);
+		// BlockCombine blockCombine = new BlockCombine(false);
+		// blockCombine.doSwitch(xronosScheduler);
 
 		// LoadOnce loadOnce = new LoadOnce();
 		// loadOnce.doSwitch(xronosScheduler);
@@ -827,8 +824,15 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			}
 
 			// Create the fireability BlockIf
-			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
+			BlockIf fireabilityIf = null;
+
+			if (schedulerInformation) {
+				fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+						fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
+			} else {
+				fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+						fireabilityThenBlock);
+			}
 
 			// Create the schedulability BlockIf
 			blockIf = XronosIrUtil.createBlockIf(schedulability, fireabilityIf);
@@ -878,8 +882,15 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			}
 
 			// Create the fireability BlockIf
-			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
+			BlockIf fireabilityIf = null;
+
+			if (schedulerInformation) {
+				fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+						fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
+			} else {
+				fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+						fireabilityThenBlock);
+			}
 
 			// Create the schedulability BlockIf
 			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
@@ -961,8 +972,15 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			// Add circularBuffer start to true, if necessary
 
 			// Create the fireability BlockIf
-			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
+			BlockIf fireabilityIf = null;
+
+			if (schedulerInformation) {
+				fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+						fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
+			} else {
+				fireabilityIf = XronosIrUtil.createBlockIf(fireability,
+						fireabilityThenBlock);
+			}
 
 			schedulabilityThenBlocks.add(fireabilityIf);
 			BlockIf schedulabilityIf = XronosIrUtil.createBlockIf(
@@ -996,7 +1014,7 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 			// Create the fireability BlockIf
 			BlockIf fireabilityIf = XronosIrUtil.createBlockIf(fireability,
-					fireabilityThenBlock, createIdleBlock(BigInteger.ZERO));
+					fireabilityThenBlock);
 			if (schedulerInformation) {
 				fireabilityIf.getElseBlocks().add(
 						createIdleBlock((BigInteger.valueOf(2)).pow(actor
