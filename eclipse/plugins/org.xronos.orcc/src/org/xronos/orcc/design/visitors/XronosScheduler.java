@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orcc.backends.transform.Inliner;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Pattern;
@@ -62,7 +63,10 @@ import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.transform.BlockCombine;
 
+import org.xronos.orcc.backend.transform.LoadOnce;
+import org.xronos.orcc.backend.transform.XronosConstantPropagation;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.XronosIrUtil;
 import org.xronos.orcc.design.visitors.io.CircularBuffer;
@@ -444,17 +448,17 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 
 		actor.getProcs().add(xronosScheduler);
 
-		// Inliner inliner = new Inliner(true, true);
-		// inliner.doSwitch(xronosScheduler);
+		Inliner inliner = new Inliner(false, true, true);
+		inliner.doSwitch(xronosScheduler);
 
-		// XronosDeadCodeElimination dc = new XronosDeadCodeElimination(true);
-		// dc.doSwitch(xronosScheduler);
+		BlockCombine blockCombine = new BlockCombine(false);
+		blockCombine.doSwitch(xronosScheduler);
 
-		// BlockCombine blockCombine = new BlockCombine(false);
-		// blockCombine.doSwitch(xronosScheduler);
+		LoadOnce loadOnce = new LoadOnce();
+		loadOnce.doSwitch(xronosScheduler);
 
-		// LoadOnce loadOnce = new LoadOnce();
-		// loadOnce.doSwitch(xronosScheduler);
+		XronosConstantPropagation xronosConstantPropagation = new XronosConstantPropagation();
+		xronosConstantPropagation.doSwitch(xronosScheduler);
 
 		return xronosScheduler;
 	}
