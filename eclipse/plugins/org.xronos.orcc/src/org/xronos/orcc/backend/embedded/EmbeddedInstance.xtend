@@ -326,7 +326,7 @@ class EmbeddedInstance extends ExprAndTypePrinter {
 	'''
 	
 	def compileScheduler(Action action, State state) '''
-		(«FOR e : action.inputPattern.numTokensMap»status_«e.key.name»_ >= «e.value» && «ENDFOR»isSchedulable_«action.name»())
+		(«FOR e : action.inputPattern.numTokensMap»status_«e.key.name»_ >= «e.value» && «ENDFOR»«action.scheduler.name»())
 		{
 			«IF !action.outputPattern.empty»
 			if(«FOR e : action.outputPattern.numTokensMap SEPARATOR " && "»status_«e.key.name»_ >= «e.value»«ENDFOR») {
