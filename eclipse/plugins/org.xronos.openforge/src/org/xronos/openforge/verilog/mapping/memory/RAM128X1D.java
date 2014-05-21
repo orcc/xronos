@@ -21,14 +21,14 @@
 
 package org.xronos.openforge.verilog.mapping.memory;
 
-class RAM16X1D extends DualPortLutRam {
-
-	protected RAM16X1D() {
+class RAM128X1D extends DualPortLutRam {
+	
+	protected RAM128X1D() {
 	}
 
 	@Override
 	public String getName() {
-		return ("RAM16X1D");
+		return ("RAM128X1D");
 	}
 
 	@Override
@@ -38,16 +38,17 @@ class RAM16X1D extends DualPortLutRam {
 
 	@Override
 	public int getDepth() {
-		return (16);
+		return (128);
 	}
 
 	@Override
 	public int getCost() {
-		return (2);
+		return (16);
 	}
 
 	@Override
 	public boolean isDualPortLutRam128() {
-		return false;
+		return true;
 	}
+	
 }

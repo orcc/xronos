@@ -98,6 +98,7 @@ public abstract class Ram implements Cloneable {
 
 	public static Ram[] getMappers(XilinxDevice xd, boolean lut_map) {
 		switch (xd.getFamily()) {
+		case XilinxDevice.ZYNQ:
 		case XilinxDevice.VIRTEX2P:
 		case XilinxDevice.VIRTEX2:
 			return lut_map ? v2lut : v2block;

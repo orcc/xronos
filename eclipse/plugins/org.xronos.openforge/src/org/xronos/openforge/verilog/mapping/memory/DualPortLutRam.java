@@ -77,6 +77,8 @@ public abstract class DualPortLutRam extends DualPortRam {
 		return initial_block;
 	}
 
+	public abstract boolean isDualPortLutRam128();
+
 	private void initialize(ModuleInstance instance) {
 		// The init strings for LUT memories use the syntax INIT for
 		// X1 memories, and INIT_NM where NM is the output data bit
@@ -141,18 +143,24 @@ public abstract class DualPortLutRam extends DualPortRam {
 		}
 		moduleInstance.connect(new Wire("WE", 1), we_exp);
 
-		for (int i = 0; i < getLibAddressWidth(); i++) {
-			Expression addr_exp = zero;
-			// Determine if we have an address bit to attach, if not
-			// put in a constant 0
-			if (i < addrWidth) {
-				int addr_bit = addrStartBit[PORTA] + i;
-				addr_exp = new Wire(addrName[PORTA], addrWidth);
-				if (!addrScalar[PORTA]) {
-					addr_exp = ((Wire) addr_exp).getRange(addr_bit, addr_bit);
+		if (isDualPortLutRam128()) {
+			Expression addr_exp = new Wire(addrName[PORTA], addrWidth);
+			moduleInstance.connect(new Wire("A", addrWidth), addr_exp);
+		} else {
+			for (int i = 0; i < getLibAddressWidth(); i++) {
+				Expression addr_exp = zero;
+				// Determine if we have an address bit to attach, if not
+				// put in a constant 0
+				if (i < addrWidth) {
+					int addr_bit = addrStartBit[PORTA] + i;
+					addr_exp = new Wire(addrName[PORTA], addrWidth);
+					if (!addrScalar[PORTA]) {
+						addr_exp = ((Wire) addr_exp).getRange(addr_bit,
+								addr_bit);
+					}
 				}
+				moduleInstance.connect(new Wire("A" + i, 1), addr_exp);
 			}
-			moduleInstance.connect(new Wire("A" + i, 1), addr_exp);
 		}
 
 		Wire dataInA = new Wire(dataInName[PORTA], 256);
@@ -205,19 +213,24 @@ public abstract class DualPortLutRam extends DualPortRam {
 				}
 			}
 		}
-
-		for (int i = 0; i < getLibAddressWidth(); i++) {
-			Expression addr_exp = zero;
-			// Determine if we have an address bit to attach, if not
-			// put in a constant 0
-			if (i < addrWidth) {
-				int addr_bit = addrStartBit[PORTB] + i;
-				addr_exp = new Wire(addrName[PORTB], addrWidth);
-				if (!addrScalar[PORTB]) {
-					addr_exp = ((Wire) addr_exp).getRange(addr_bit, addr_bit);
+		if (isDualPortLutRam128()) {
+			Expression addr_exp = new Wire(addrName[PORTB], addrWidth);
+			moduleInstance.connect(new Wire("DPRA", addrWidth), addr_exp);
+		} else {
+			for (int i = 0; i < getLibAddressWidth(); i++) {
+				Expression addr_exp = zero;
+				// Determine if we have an address bit to attach, if not
+				// put in a constant 0
+				if (i < addrWidth) {
+					int addr_bit = addrStartBit[PORTB] + i;
+					addr_exp = new Wire(addrName[PORTB], addrWidth);
+					if (!addrScalar[PORTB]) {
+						addr_exp = ((Wire) addr_exp).getRange(addr_bit,
+								addr_bit);
+					}
 				}
+				moduleInstance.connect(new Wire("DPRA" + i, 1), addr_exp);
 			}
-			moduleInstance.connect(new Wire("DPRA" + i, 1), addr_exp);
 		}
 
 		for (int i = 0; i < getWidth(); i++) {

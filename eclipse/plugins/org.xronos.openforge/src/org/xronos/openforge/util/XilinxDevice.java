@@ -49,20 +49,21 @@ public class XilinxDevice {
 	public static final int VIRTEX4SX = 20;
 	public static final int VIRTEX4FX = 21;
 	public static final int VIRTEX4LX = 22;
+	public static final int ZYNQ = 23;
 
 	private static final String[] families = { "VIRTEX", "VIRTEX2P", "VIRTEX2",
 			"VIRTEXE", "SPARTAN", "SPARTAN2", "SPARTAN2E", "SPARTANXL",
 			"XC3000", "XC4000", "XC4000EX", "XC4000E", "XC4000L", "XC4000XLA",
 			"XC4000XV", "XC5200", "XC9500", "XC9500XL", "XC9500XV", "SPARTAN3",
-			"VIRTEX4SX", "VIRTEX4FX", "VIRTEX4LX" };
+			"VIRTEX4SX", "VIRTEX4FX", "VIRTEX4LX", "ZYNQ" };
 
 	private static final String[] abbreviations = { "v", "2vp", "2v", "v", "s",
 			"2s", "2s", "s", "30", "40", "40", "40", "40", "40", "40", "52",
-			"95", "95", "95", "3s", "4vsx", "4vfx", "4vlx" };
+			"95", "95", "95", "3s", "4vsx", "4vfx", "4vlx", "7z" };
 
 	private static final String[] suffixes = { "", "", "", "e", "", "", "e",
 			"xl", "", "", "ex", "e", "l", "xla", "xv", "", "", "xl", "xv", "",
-			"", "", "" };
+			"", "", "", "" };
 
 	private static final XilinxDevice[] knownParts;
 

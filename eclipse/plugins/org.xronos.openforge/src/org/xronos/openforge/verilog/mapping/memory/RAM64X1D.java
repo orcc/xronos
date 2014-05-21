@@ -45,4 +45,9 @@ class RAM64X1D extends DualPortLutRam {
 	public int getCost() {
 		return (8);
 	}
+
+	@Override
+	public boolean isDualPortLutRam128() {
+		return false;
+	}
 }

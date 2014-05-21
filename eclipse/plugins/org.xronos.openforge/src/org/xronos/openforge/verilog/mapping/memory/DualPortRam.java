@@ -86,6 +86,14 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 			new RAMB4_S2_S2(), new RAMB4_S4_S4(), new RAMB4_S8_S8(),
 			new RAMB4_S16_S16() };
 
+	private static DualPortRam[] z7lut = {new RAM16X1D(), new RAM32X1D(),
+		new RAM64X1D(), new RAM128X1D()};
+
+	// zynq dual port block ram based retargeted primitives
+	private static DualPortRam[] z7block = { new RAMB16_S1_S1(),
+			new RAMB16_S2_S2(), new RAMB16_S4_S4(), new RAMB16_S9_S9(),
+			new RAMB16_S18_S18(), new RAMB16_S36_S36() };
+
 	protected DualPortRam() {
 	}
 
@@ -134,6 +142,10 @@ public abstract class DualPortRam extends Ram implements Cloneable {
 		case XilinxDevice.XC9500XV:
 			// What are they doing!!! no mappers for these guys!
 			return null;
+			
+			
+		case XilinxDevice.ZYNQ:
+			return lut_map ? z7lut : z7block;
 		default:
 			// They must not have defined a part in the
 			// preferences, no mappers for you!
