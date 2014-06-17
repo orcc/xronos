@@ -48,7 +48,6 @@ import org.xronos.openforge.verilog.model.Statement;
 import org.xronos.openforge.verilog.pattern.MemoryModule;
 import org.xronos.openforge.verilog.pattern.SynopsysBlock;
 
-
 /**
  * DualPortInferredWriter implements the defineModule method necessary for
  * creating an inferred (entirely verilog, no instantiated primitives) dual port
@@ -113,14 +112,16 @@ public class DualPortInferredWriter extends DualPortWriter {
 		SequentialBlock alwaysClockA = new SequentialBlock();
 		Register weaDone = new Register("wea_done", 1);
 		if (mpA.writes()) {
-			if (!mpA.getWriteMode().equals(LogicalMemoryPort.READ_FIRST))
+			if (!mpA.getWriteMode().equals(LogicalMemoryPort.READ_FIRST)) {
 				throw new IllegalStateException(
 						"Inferred dual port memories must be read first");
+			}
 
 			Statement weaTrueBranch = new Assign.NonBlocking(new MemoryElement(
 					ramReg, mpA.adr), mpA.din);
 			Statement weaCS = new ConditionalStatement(mpA.wen, weaTrueBranch);
 			SequentialBlock eaTrueBranch = new SequentialBlock(weaCS);
+			alwaysClockA.add(eaTrueBranch);
 			if (SEQUENTIAL_READ) {
 				if (mpA.reads()) {
 					eaTrueBranch
@@ -152,9 +153,10 @@ public class DualPortInferredWriter extends DualPortWriter {
 		SequentialBlock alwaysClockB = new SequentialBlock();
 		Register webDone = new Register("web_done", 1);
 		if (mpB.writes()) {
-			if (!mpB.getWriteMode().equals(LogicalMemoryPort.READ_FIRST))
+			if (!mpB.getWriteMode().equals(LogicalMemoryPort.READ_FIRST)) {
 				throw new IllegalStateException(
 						"Inferred dual port memories must be read first");
+			}
 
 			Statement webTrueBranch = new Assign.NonBlocking(new MemoryElement(
 					ramReg, mpB.adr), mpB.din);
@@ -169,6 +171,7 @@ public class DualPortInferredWriter extends DualPortWriter {
 						.add(new ConditionalStatement(mpB.ren, ebTrueBranch));
 			}
 			memoryModule.declare(webDone);
+			alwaysClockA.add(ebTrueBranch);
 			alwaysClockB.add(new Assign.NonBlocking(webDone, mpB.wen));
 		} else {
 			if (SEQUENTIAL_READ) {

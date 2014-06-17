@@ -47,7 +47,6 @@ import org.xronos.openforge.verilog.model.Statement;
 import org.xronos.openforge.verilog.pattern.MemoryModule;
 import org.xronos.openforge.verilog.pattern.SynopsysBlock;
 
-
 /**
  * SinglePortInferredRamWriter.java
  * 

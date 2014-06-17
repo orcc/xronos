@@ -60,7 +60,6 @@ import org.xronos.openforge.verilog.pattern.MemoryInstance;
 import org.xronos.openforge.verilog.pattern.MemoryModule;
 import org.xronos.openforge.verilog.pattern.PortWire;
 
-
 /**
  * SinglePortRamWriter.java
  * 
@@ -68,12 +67,144 @@ import org.xronos.openforge.verilog.pattern.PortWire;
  */
 public class SinglePortRamWriter extends VerilogMemory {
 
+	/**
+	 * This code generates the necessary logic to 'merge' the result values from
+	 * each 'stacked' instantiated ram by muxing them together based on the MSB
+	 * bits of the address. Note, however that if the read latency of the memory
+	 * is > 0 we must delay the address by the correct number of cycles so that
+	 * it aligns with the data coming out. This also breaks combinational paths
+	 * through the memory.
+	 * 
+	 * @param extra_address_bits
+	 *            a value of type 'int'
+	 * @param result_depth
+	 *            a value of type 'int'
+	 * @param pre_dout
+	 *            a value of type 'Net[]'
+	 * @param mux_out
+	 *            a value of type 'Register'
+	 * @param memoryModule
+	 *            a value of type 'MemoryModule'
+	 */
+	public static void mergeResults(int extra_address_bits, int result_depth,
+			int adrWidth, int dataWidth, Net[] pre_dout, Register mux_out,
+			MemoryModule memoryModule, Net adrPort, Net clkPort,
+			Latency readLatency, boolean insertReadReg, String portId) {
+		Net adrNet = adrPort;
+		if (readLatency.getMinClocks() > 0) {
+			// Register the Address wire so that the address is in
+			// sync with the data coming out of the memory.
+			// always(@posedge CLK)
+			// adrReg <= addr;
+			if (readLatency.getMinClocks() != 1) {
+				throw new UnsupportedOperationException(
+						"Memory cannot have read latency > 1");
+			}
+
+			Register adrReg = new Register(adrPort.getIdentifier().toString()
+					+ "_reg", adrPort.getWidth());
+			memoryModule.declare(adrReg);
+
+			EventControl clkEvent = new EventControl(
+					new EventExpression.PosEdge(clkPort));
+			SequentialBlock seqBlock = new SequentialBlock();
+			seqBlock.add(new Assign.NonBlocking(adrReg, adrPort));
+			Always always = new Always(new ProceduralTimingBlock(clkEvent,
+					seqBlock));
+			memoryModule.state(always);
+			adrNet = adrReg;
+		}
+
+		if (insertReadReg) {
+			// XXX Think about this... we are explicitly making the
+			// read of LUT based memories 'registered'. Not a bad
+			// thing as this increased fmax. The warning is just an
+			// annoyance and was intended to be just a reminder to us.
+			// EngineThread.getGenericJob().warn("Adding registers to the data out port of a LUT based memory");
+
+			// Define registers for each pre_dout, which come directly
+			// from the RAM primitives. ie:
+			// always @(posedge clk) begin
+			// pre_dout0_reg <= pre_dout0;
+			// ...
+			// end
+
+			// First, create the always block which will be populated.
+			EventControl clkEvent = new EventControl(
+					new EventExpression.PosEdge(clkPort));
+			SequentialBlock seqBlock = new SequentialBlock();
+
+			Net[] pre_dout_reg = new Net[pre_dout.length];
+			for (int i = 0; i < pre_dout.length; i++) {
+				Net inNet = pre_dout[i];
+				Register reg = new Register(inNet.toString() + "_reg",
+						inNet.getWidth());
+				seqBlock.add(new Assign.NonBlocking(reg, inNet));
+				pre_dout_reg[i] = reg;
+			}
+
+			Always always = new Always(new ProceduralTimingBlock(clkEvent,
+					seqBlock));
+			memoryModule.state(always);
+
+			// Re-set the pre_dout nets to be the registered version now.
+			pre_dout = pre_dout_reg;
+		}
+
+		if (result_depth > 1) {
+			// We need an output mux ie:
+			// case (addr or pre_dout*)
+			// 0: dout <= pre_dout0;
+			// 1: dout <= pre_dout1;
+			// ...
+			// endcase
+			EventExpression event_list = new EventExpression(adrNet);
+
+			for (int d = 0; d < result_depth; d++) {
+				event_list.add(pre_dout[d]);
+			}
+
+			EventControl event_control = new EventControl(event_list);
+
+			CaseBlock case_block = new CaseBlock(adrNet.getRange(adrWidth - 1,
+					adrWidth - extra_address_bits));
+			for (int d = 0; d < result_depth; d++) {
+				Decimal case_value = new Decimal(d, extra_address_bits);
+				case_block.add(case_value.toString(), new Assign.Blocking(
+						mux_out, pre_dout[d]));
+			}
+			HexConstant unknown = new HexConstant("0", dataWidth);
+			case_block.add("default", new Assign.Blocking(mux_out,
+					new HexNumber(unknown)));
+
+			SequentialBlock sequential_block = new SequentialBlock(case_block);
+
+			Always always = new Always(new ProceduralTimingBlock(event_control,
+					sequential_block));
+			memoryModule.state(always);
+		} else {
+			// We need just an assign
+			EventExpression[] pre_dout_event = new EventExpression[result_depth];
+			for (int d = 0; d < result_depth; d++) {
+				pre_dout_event[d] = new EventExpression(pre_dout[d]);
+			}
+			EventControl pre_dout_ec = new EventControl(new EventExpression(
+					pre_dout_event));
+			SequentialBlock sequential_block = new SequentialBlock();
+			sequential_block.add(new Assign.NonBlocking(mux_out, pre_dout[0]));
+			memoryModule.state(new Always(new ProceduralTimingBlock(
+					pre_dout_ec, sequential_block)));
+		}
+
+	}
+
 	protected Input clkPort = new Input(clk, 1);
 	protected Input renPort = new Input(ren, 1);
 	protected Input wenPort = new Input(wen, 1);
 	protected Input adrPort;
 	protected Input dinPort;
 	protected Output doutPort;
+
 	protected Output donePort = new Output(done, 1);
 
 	private String moduleName;
@@ -88,25 +219,6 @@ public class SinglePortRamWriter extends VerilogMemory {
 		// this.moduleName = "forge_memory_" + getDepth() + "x" + getDataWidth()
 		// + "_"+ memory_module_id++;
 		moduleName = memory.showIDLogical() + "_" + memory_module_id++;
-	}
-
-	@Override
-	public String getName() {
-		return moduleName;
-	}
-
-	/**
-	 * Retrieves the Latency of a read access to this memory implementation.
-	 */
-	protected Latency getReadLatency() {
-		return getMemBank().getImplementation().getReadLatency();
-	}
-
-	/**
-	 * Retrieves the Latency of a write access to this memory implementation.
-	 */
-	protected Latency getWriteLatency() {
-		return getMemBank().getImplementation().getWriteLatency();
 	}
 
 	@Override
@@ -322,134 +434,23 @@ public class SinglePortRamWriter extends VerilogMemory {
 		return memoryModule;
 	}
 
+	@Override
+	public String getName() {
+		return moduleName;
+	}
+
 	/**
-	 * This code generates the necessary logic to 'merge' the result values from
-	 * each 'stacked' instantiated ram by muxing them together based on the MSB
-	 * bits of the address. Note, however that if the read latency of the memory
-	 * is > 0 we must delay the address by the correct number of cycles so that
-	 * it aligns with the data coming out. This also breaks combinational paths
-	 * through the memory.
-	 * 
-	 * @param extra_address_bits
-	 *            a value of type 'int'
-	 * @param result_depth
-	 *            a value of type 'int'
-	 * @param pre_dout
-	 *            a value of type 'Net[]'
-	 * @param mux_out
-	 *            a value of type 'Register'
-	 * @param memoryModule
-	 *            a value of type 'MemoryModule'
+	 * Retrieves the Latency of a read access to this memory implementation.
 	 */
-	public static void mergeResults(int extra_address_bits, int result_depth,
-			int adrWidth, int dataWidth, Net[] pre_dout, Register mux_out,
-			MemoryModule memoryModule, Net adrPort, Net clkPort,
-			Latency readLatency, boolean insertReadReg, String portId) {
-		Net adrNet = adrPort;
-		if (readLatency.getMinClocks() > 0) {
-			// Register the Address wire so that the address is in
-			// sync with the data coming out of the memory.
-			// always(@posedge CLK)
-			// adrReg <= addr;
-			if (readLatency.getMinClocks() != 1)
-				throw new UnsupportedOperationException(
-						"Memory cannot have read latency > 1");
+	protected Latency getReadLatency() {
+		return getMemBank().getImplementation().getReadLatency();
+	}
 
-			Register adrReg = new Register(adrPort.getIdentifier().toString()
-					+ "_reg", adrPort.getWidth());
-			memoryModule.declare(adrReg);
-
-			EventControl clkEvent = new EventControl(
-					new EventExpression.PosEdge(clkPort));
-			SequentialBlock seqBlock = new SequentialBlock();
-			seqBlock.add(new Assign.NonBlocking(adrReg, adrPort));
-			Always always = new Always(new ProceduralTimingBlock(clkEvent,
-					seqBlock));
-			memoryModule.state(always);
-			adrNet = adrReg;
-		}
-
-		if (insertReadReg) {
-			// XXX Think about this... we are explicitly making the
-			// read of LUT based memories 'registered'. Not a bad
-			// thing as this increased fmax. The warning is just an
-			// annoyance and was intended to be just a reminder to us.
-			// EngineThread.getGenericJob().warn("Adding registers to the data out port of a LUT based memory");
-
-			// Define registers for each pre_dout, which come directly
-			// from the RAM primitives. ie:
-			// always @(posedge clk) begin
-			// pre_dout0_reg <= pre_dout0;
-			// ...
-			// end
-
-			// First, create the always block which will be populated.
-			EventControl clkEvent = new EventControl(
-					new EventExpression.PosEdge(clkPort));
-			SequentialBlock seqBlock = new SequentialBlock();
-
-			Net[] pre_dout_reg = new Net[pre_dout.length];
-			for (int i = 0; i < pre_dout.length; i++) {
-				Net inNet = pre_dout[i];
-				Register reg = new Register(inNet.toString() + "_reg",
-						inNet.getWidth());
-				seqBlock.add(new Assign.NonBlocking(reg, inNet));
-				pre_dout_reg[i] = reg;
-			}
-
-			Always always = new Always(new ProceduralTimingBlock(clkEvent,
-					seqBlock));
-			memoryModule.state(always);
-
-			// Re-set the pre_dout nets to be the registered version now.
-			pre_dout = pre_dout_reg;
-		}
-
-		if (result_depth > 1) {
-			// We need an output mux ie:
-			// case (addr or pre_dout*)
-			// 0: dout <= pre_dout0;
-			// 1: dout <= pre_dout1;
-			// ...
-			// endcase
-			EventExpression event_list = new EventExpression(adrNet);
-
-			for (int d = 0; d < result_depth; d++) {
-				event_list.add(pre_dout[d]);
-			}
-
-			EventControl event_control = new EventControl(event_list);
-
-			CaseBlock case_block = new CaseBlock(adrNet.getRange(adrWidth - 1,
-					adrWidth - extra_address_bits));
-			for (int d = 0; d < result_depth; d++) {
-				Decimal case_value = new Decimal(d, extra_address_bits);
-				case_block.add(case_value.toString(), new Assign.Blocking(
-						mux_out, pre_dout[d]));
-			}
-			HexConstant unknown = new HexConstant("0", dataWidth);
-			case_block.add("default", new Assign.Blocking(mux_out,
-					new HexNumber(unknown)));
-
-			SequentialBlock sequential_block = new SequentialBlock(case_block);
-
-			Always always = new Always(new ProceduralTimingBlock(event_control,
-					sequential_block));
-			memoryModule.state(always);
-		} else {
-			// We need just an assign
-			EventExpression[] pre_dout_event = new EventExpression[result_depth];
-			for (int d = 0; d < result_depth; d++) {
-				pre_dout_event[d] = new EventExpression(pre_dout[d]);
-			}
-			EventControl pre_dout_ec = new EventControl(new EventExpression(
-					pre_dout_event));
-			SequentialBlock sequential_block = new SequentialBlock();
-			sequential_block.add(new Assign.NonBlocking(mux_out, pre_dout[0]));
-			memoryModule.state(new Always(new ProceduralTimingBlock(
-					pre_dout_ec, sequential_block)));
-		}
-
+	/**
+	 * Retrieves the Latency of a write access to this memory implementation.
+	 */
+	protected Latency getWriteLatency() {
+		return getMemBank().getImplementation().getWriteLatency();
 	}
 
 	/**
@@ -470,9 +471,10 @@ public class SinglePortRamWriter extends VerilogMemory {
 		MemoryBank.BankPort bankPort = bank.getBankPorts().get(0);
 
 		// Net clkWire = new BusWire(getMemBank().getClockPort().getBus());
-		Net clkWire = NetFactory.makeNet(bank.getClockPort().getBus());
-		memoryInstance.connect(clkPort, clkWire);
-
+		if (clkPort != null) {
+			Net clkWire = NetFactory.makeNet(bank.getClockPort().getBus());
+			memoryInstance.connect(clkPort, clkWire);
+		}
 		if (renPort != null) {
 			// Net enWire = new BusWire(bankPort.getEnablePort().getBus());
 			Net enWire = new PortWire(bankPort.getEnablePort()); // enWire=ARG2[32]
