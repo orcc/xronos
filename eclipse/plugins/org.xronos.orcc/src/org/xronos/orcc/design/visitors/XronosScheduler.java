@@ -454,8 +454,8 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		BlockCombine blockCombine = new BlockCombine(false);
 		blockCombine.doSwitch(xronosScheduler);
 
-		LoadOnce loadOnce = new LoadOnce();
-		loadOnce.doSwitch(xronosScheduler);
+		//LoadOnce loadOnce = new LoadOnce();
+		//loadOnce.doSwitch(xronosScheduler);
 
 		XronosConstantPropagation xronosConstantPropagation = new XronosConstantPropagation();
 		xronosConstantPropagation.doSwitch(xronosScheduler);
