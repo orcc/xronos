@@ -33,7 +33,6 @@ import java.util.Set;
 import org.xronos.openforge.util.naming.ID;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 
-
 /**
  * An Exit is a group of Buses that represent an exit condition from an
  * Executable. This includes the control signal as well as all the data values
@@ -349,6 +348,33 @@ public class Exit extends ID implements LatencyKey {
 	 */
 	public Bus makeDataBus() {
 		return makeDataBus(Component.NORMAL);
+	}
+
+	/**
+	 * Make a new data bus with specific value (size and if it is signed)
+	 * 
+	 * @param size
+	 * @param isSigned
+	 * @return
+	 */
+	public Bus makeDataBus(int size, boolean isSigned) {
+		Bus bus = makeDataBus();
+		bus.setSize(size, isSigned);
+		return bus;
+	}
+
+	/**
+	 * Make a new data bus with a specific IDLogical and a value
+	 * 
+	 * @param idLogical
+	 * @param size
+	 * @param isSigned
+	 * @return
+	 */
+	public Bus makeDataBus(String idLogical, int size, boolean isSigned) {
+		Bus bus = makeDataBus(size, isSigned);
+		bus.setIDLogical(idLogical);
+		return bus;
 	}
 
 	/**

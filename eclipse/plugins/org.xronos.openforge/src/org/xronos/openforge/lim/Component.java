@@ -40,7 +40,6 @@ import org.xronos.openforge.report.FPGAResource;
 import org.xronos.openforge.schedule.LatencyTracker;
 import org.xronos.openforge.util.naming.ID;
 
-
 /**
  * Component is the base class of all components.
  * 
@@ -95,7 +94,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	private static final double LN_2 = Math.log(2);
 
 	/** Collection of CloneListener */
-	private Collection<CloneListener> cloneListeners;// = Collections.emptyList();
+	private Collection<CloneListener> cloneListeners;// =
+														// Collections.emptyList();
 
 	/** denotes if this Component is non-removable */
 	private boolean nonRemovable = false;
@@ -106,7 +106,8 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 	 */
 	private List<Attribute> attributes;// = Collections.emptyList();
 
-	private List<PostScheduleCallback> schedCallbacks;// = Collections.emptyList();
+	private List<PostScheduleCallback> schedCallbacks;// =
+														// Collections.emptyList();
 
 	/**
 	 * A type identifier for an Bus or Port.
@@ -161,7 +162,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 		cloneListeners = Collections.emptyList();
 		attributes = Collections.emptyList();
 		schedCallbacks = Collections.emptyList();
-		
+
 		if (dataCount < 0) {
 			throw new IllegalArgumentException("negative dataCount");
 		}
@@ -171,7 +172,7 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 			for (int i = 0; i < dataCount; i++) {
 				makeDataPort();
 			}
-		}else{
+		} else {
 			dataPorts = new LinkedList<Port>();
 		}
 	}
@@ -727,6 +728,36 @@ public abstract class Component extends ID implements Visitable, Cloneable,
 			dataPorts = new LinkedList<Port>();
 		}
 		dataPorts.add(port);
+		return port;
+	}
+
+	/**
+	 * Make a new data port for this component with a specific size
+	 * 
+	 * @param size
+	 *            the size in in bits > 0
+	 * @param isSigned
+	 *            if it is signed
+	 * @return
+	 */
+	public Port makeDataPort(int size, boolean isSigned) {
+		Port port = makeDataPort(Component.NORMAL);
+		port.setSize(size, isSigned);
+		return port;
+	}
+
+	/**
+	 * Make a new data port for this component with a specific idLogical and
+	 * size
+	 * 
+	 * @param idLogical
+	 * @param size
+	 * @param isSigned
+	 * @return
+	 */
+	public Port makeDataPort(String idLogical, int size, boolean isSigned) {
+		Port port = makeDataPort(size, isSigned);
+		port.setIDLogical(idLogical);
 		return port;
 	}
 
