@@ -109,8 +109,8 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		if (varE1 != null) {
 			Type type = varE1.getType();
 			// Create DataPort and Get the bus
-			Port dataPort = block.makeDataPort(varE1.getName(),type.getSizeInBits(),
-					type.isInt() || type.isBool());
+			Port dataPort = block.makeDataPort(varE1.getName(),
+					type.getSizeInBits(), type.isInt() || type.isBool());
 			Bus dataBus = dataPort.getPeer();
 			// Get the left data port of a binary Op
 			Port dataPortE1 = ((BinaryOp) op).getLeftDataPort();
@@ -135,14 +135,19 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 					// Add to Expression inputs
 					inputs.put(var, portBlock);
 				}
+				// Connect the RightDataPort of the input OP
+				Bus resultBus = compE1.getExit(Exit.DONE).getDataBuses().get(0);
+				Port dataPortE1 = ((BinaryOp) op).getRightDataPort();
+				ComponentUtil.connectDataDependency(resultBus, dataPortE1, 0);
 			}
+
 		}
 		// Right Data Port
 		if (varE2 != null) {
 			Type type = varE2.getType();
 			// Create DataPort and Get the bus
-			Port dataPort = block.makeDataPort(varE2.getName(),type.getSizeInBits(),
-					type.isInt() || type.isBool());
+			Port dataPort = block.makeDataPort(varE2.getName(),
+					type.getSizeInBits(), type.isInt() || type.isBool());
 			Bus dataBus = dataPort.getPeer();
 			// Get the left data port of a binary Op
 			Port dataPortE2 = ((BinaryOp) op).getRightDataPort();
@@ -152,6 +157,7 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 
 			inputs.put(varE2, dataPort);
 		} else {
+			// Connect the component inputs
 			if (compE2 != null) {
 				@SuppressWarnings("unchecked")
 				Map<Var, Port> compInputs = (Map<Var, Port>) E2.getAttribute(
@@ -167,6 +173,10 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 					// Add to Expression inputs
 					inputs.put(var, portBlock);
 				}
+				// Connect the RightDataPort of the input OP
+				Bus resultBus = compE2.getExit(Exit.DONE).getDataBuses().get(0);
+				Port dataPortE2 = ((BinaryOp) op).getRightDataPort();
+				ComponentUtil.connectDataDependency(resultBus, dataPortE2, 0);
 			}
 		}
 
@@ -174,8 +184,8 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		// Connect output
 		Type type = expr.getType();
 		Exit exit = block.getExit(Exit.DONE);
-		Bus resultBus = exit.makeDataBus(type.getSizeInBits(),
-				type.isInt() || type.isBool());
+		Bus resultBus = exit.makeDataBus(type.getSizeInBits(), type.isInt()
+				|| type.isBool());
 		Port resultPort = resultBus.getPeer();
 
 		// Connect Operands and operator components
@@ -188,6 +198,23 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		expr.setAttribute("inputs", inputs);
 
 		return block;
+	}
+
+	@Override
+	public Component caseExprBool(ExprBool object) {
+		object.setAttribute("inputs", inputs);
+		final long value = object.isValue() ? 1 : 0;
+		return new SimpleConstant(value, 1, true);
+	}
+
+	@Override
+	public Component caseExprInt(ExprInt object) {
+		object.setAttribute("inputs", inputs);
+		BigInteger value = object.getValue();
+		int sizeInBits = object.getType().getSizeInBits();
+		boolean isSigned = object.getType().isInt();
+
+		return new SimpleConstant(value, sizeInBits, isSigned);
 	}
 
 	@Override
@@ -248,23 +275,6 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			return block;
 		}
 
-	}
-
-	@Override
-	public Component caseExprBool(ExprBool object) {
-		object.setAttribute("inputs", inputs);
-		final long value = object.isValue() ? 1 : 0;
-		return new SimpleConstant(value, 1, true);
-	}
-
-	@Override
-	public Component caseExprInt(ExprInt object) {
-		object.setAttribute("inputs", inputs);
-		BigInteger value = object.getValue();
-		int sizeInBits = object.getType().getSizeInBits();
-		boolean isSigned = object.getType().isInt();
-
-		return new SimpleConstant(value, sizeInBits, isSigned);
 	}
 
 	@Override
