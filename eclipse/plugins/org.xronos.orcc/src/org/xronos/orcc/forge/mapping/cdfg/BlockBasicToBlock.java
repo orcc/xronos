@@ -104,6 +104,11 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	Map<Var, List<Bus>> lastDefinedVarBus;
 
 	/**
+	 * The port variable for each dependency
+	 */
+	Map<Port,Var> dependecies;
+	
+	/**
 	 * Set og Block outputs
 	 */
 	Map<Var, Bus> outputs;
@@ -152,6 +157,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		inputs = new HashMap<Var, Port>();
 		outputs = new HashMap<Var, Bus>();
 		lastDefinedVarBus = new HashMap<Var, List<Bus>>();
+		dependecies = new HashMap<Port, Var>();
 	}
 
 	private void addToLastDefined(Var target, Bus resultBus) {
@@ -693,7 +699,9 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					isSigned, // is signed?
 					addrPolicy); // addressing policy
 			sequence.add(write);
+
 			memPort.addAccess(write, location);
+
 			LocationConstant locationConst = new LocationConstant(location, 32,
 					location.getAbsoluteBase().getLogicalMemory()
 							.getAddressStridePolicy());
@@ -704,9 +712,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			AddOp adder = new AddOp();
 			sequence.add(adder);
-
-			CastOp castResult = new CastOp(dataSize, isSigned);
-			sequence.add(castResult);
 
 			// Build read Block
 			Block storedBlock = new Block(sequence);
@@ -729,6 +734,11 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					.addDependency(adder.getRightDataPort(),
 							new DataDependency(cast.getResultBus()));
 
+			// Dependency from compResultBus
+
+			ComponentUtil.connectDataDependency(compResultBus,
+					write.getValuePort(), 0);
+
 			write.getEntries()
 					.get(0)
 					.addDependency(write.getBaseAddressPort(),
@@ -749,6 +759,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			Map<Var, Port> exprInput = (Map<Var, Port>) index.getAttribute(
 					"inputs").getObjectValue();
 			for (Var var : exprInput.keySet()) {
+				// FIXME: wrong depency here
 				if (lastDefinedVarBus.containsKey(var)) {
 					Type type = var.getType();
 					List<Bus> buses = lastDefinedVarBus.get(var);
@@ -774,25 +785,16 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				Map<Var, Port> valueInput = (Map<Var, Port>) value
 						.getAttribute("inputs").getObjectValue();
 				for (Var var : valueInput.keySet()) {
-					if (lastDefinedVarBus.containsKey(var)) {
-						Type type = var.getType();
-						List<Bus> buses = lastDefinedVarBus.get(var);
-						int lastDefIndx = buses.size() - 1;
-						// Get last defined bus
-						Bus bus = buses.get(lastDefIndx);
-
-						Port blkDataPort = storedBlock.makeDataPort(
-								type.getSizeInBits(),
-								type.isInt() || type.isBool());
-
-						ComponentUtil
-								.connectDataDependency(bus, blkDataPort, 0);
-
-						// Now Connect it with the components port
-						Bus blkDataBus = blkDataPort.getPeer();
-						ComponentUtil.connectDataDependency(blkDataBus,
-								exprInput.get(var), 0);
-					}
+					Type type = var.getType();
+					// Create a Port on the storeBlock
+					Port dataPort = storedBlock.makeDataPort(var.getName(), type.getSizeInBits(), type.isInt()
+							|| type.isBool());
+					Bus dataBus = dataPort.getPeer();
+					
+					ComponentUtil.connectDataDependency(dataBus, valueInput.get(var), 0);
+					
+					// Add Block port to dependecies
+					dependecies.put(dataPort, var);
 				}
 			}
 			return storedBlock;
