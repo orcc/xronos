@@ -22,6 +22,7 @@
 package org.xronos.orcc.forge.mapping.cdfg;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -86,10 +87,12 @@ public class ProcedureToBlock extends AbstractIrVisitor<Block> {
 	@Override
 	public Block caseProcedure(Procedure procedure) {
 		// TODO: Resolve Dependencies for each block
-
+		Map<net.sf.orcc.ir.Block, Component> blockComponents = new HashMap<net.sf.orcc.ir.Block, Component>();
 		List<Component> sequence = new ArrayList<Component>();
 		for (net.sf.orcc.ir.Block block : procedure.getBlocks()) {
-			sequence.add(doSwitch(block));
+			Component component = doSwitch(block);
+			blockComponents.put(block, component);
+			sequence.add(component);
 		}
 
 		Block proceduralBlock = new Block(sequence, isActionBody);
