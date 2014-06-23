@@ -106,8 +106,13 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	/**
 	 * The port variable for each dependency
 	 */
-	Map<Port,Var> dependecies;
-	
+	Map<Port, Var> portDependecies;
+
+	/**
+	 * The Bus variable for each dependency
+	 */
+	Map<Bus, Var> busDependecies;
+
 	/**
 	 * Set og Block outputs
 	 */
@@ -157,7 +162,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		inputs = new HashMap<Var, Port>();
 		outputs = new HashMap<Var, Bus>();
 		lastDefinedVarBus = new HashMap<Var, List<Bus>>();
-		dependecies = new HashMap<Port, Var>();
+		portDependecies = new HashMap<Port, Var>();
+		busDependecies = new HashMap<Bus, Var>();
 	}
 
 	private void addToLastDefined(Var target, Bus resultBus) {
@@ -579,6 +585,9 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			// Add port to last defined var
 			addToLastDefined(target, resultBus);
 
+			// Add to bus depencdencies
+			busDependecies.put(resultBus, target);
+
 			return loadBlock;
 		}
 	}
@@ -787,14 +796,16 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				for (Var var : valueInput.keySet()) {
 					Type type = var.getType();
 					// Create a Port on the storeBlock
-					Port dataPort = storedBlock.makeDataPort(var.getName(), type.getSizeInBits(), type.isInt()
-							|| type.isBool());
+					Port dataPort = storedBlock
+							.makeDataPort(var.getName(), type.getSizeInBits(),
+									type.isInt() || type.isBool());
 					Bus dataBus = dataPort.getPeer();
-					
-					ComponentUtil.connectDataDependency(dataBus, valueInput.get(var), 0);
-					
+
+					ComponentUtil.connectDataDependency(dataBus,
+							valueInput.get(var), 0);
+
 					// Add Block port to dependecies
-					dependecies.put(dataPort, var);
+					portDependecies.put(dataPort, var);
 				}
 			}
 			return storedBlock;
@@ -815,22 +826,69 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	public Component visitInstructions(List<Instruction> instructions) {
 		int oldIndexInst = indexInst;
 		Component result = null;
-		List<Component> components = new ArrayList<Component>();
+		List<Component> sequence = new ArrayList<Component>();
 		for (indexInst = 0; indexInst < instructions.size(); indexInst++) {
 			Instruction inst = instructions.get(indexInst);
 			result = doSwitch(inst);
 			if (result != null)
-				components.add(result);
+				sequence.add(result);
 		}
 
 		// restore old index
 		indexInst = oldIndexInst;
-		currentBlock = new Block(components);
+		currentBlock = new Block(sequence);
+
+		Map<Var, List<Bus>> lastDefVarBus = new HashMap<Var, List<Bus>>();
+		// First get the first component
+		Component firstComp = sequence.get(0);
+		// All dataPorts are coming from outside
+		List<Port> dataPorts = firstComp.getDataPorts();
+		for (Port port : dataPorts) {
+			Var var = portDependecies.get(port);
+			Type type = var.getType();
+			inputs.put(var, port);
+			// Create a data Port
+			Port blkDataPort = currentBlock.makeDataPort(var.getName(),
+					type.getSizeInBits(), type.isInt() || type.isBool());
+			Bus blkDataBus = blkDataPort.getPeer();
+			ComponentUtil.connectDataDependency(blkDataBus, port, 0);
+		}
+
+		// All dataBuses should be given as lastDefined here
+		List<Bus> dataBuses = firstComp.getExit(Exit.DONE).getDataBuses();
+		for (Bus bus : dataBuses) {
+			Var var = busDependecies.get(bus);
+			lastDefVarBus.put(var, Arrays.asList(bus));
+		}
+
+		for (Component component : sequence.subList(1, sequence.size())) {
+			dataPorts = component.getDataPorts();
+			for (Port port : dataPorts) {
+				Var var = portDependecies.get(port);
+				if (lastDefVarBus.containsKey(var)) {
+					List<Bus> buses = lastDefVarBus.get(var);
+					int lastDefIndx = buses.size() - 1;
+					// Get last defined bus
+					Bus bus = buses.get(lastDefIndx);
+					ComponentUtil.connectDataDependency(bus, port, 0);
+				} else {
+					// It is an input
+					Type type = var.getType();
+					inputs.put(var, port);
+					// Create a data Port
+					Port blkDataPort = currentBlock
+							.makeDataPort(var.getName(), type.getSizeInBits(),
+									type.isInt() || type.isBool());
+					Bus blkDataBus = blkDataPort.getPeer();
+					ComponentUtil.connectDataDependency(blkDataBus, port, 0);
+				}
+
+			}
+		}
 
 		// Set Data dependencies between the components
 		// TODO: dependencies
 
 		return currentBlock;
 	}
-
 }
