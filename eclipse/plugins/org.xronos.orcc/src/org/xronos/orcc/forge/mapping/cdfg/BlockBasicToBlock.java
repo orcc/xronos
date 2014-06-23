@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import net.sf.orcc.backends.ir.InstCast;
@@ -178,7 +179,10 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 	@Override
 	public Component caseBlockBasic(BlockBasic block) {
-		return super.caseBlockBasic(block);
+		Component component = super.caseBlockBasic(block);
+		block.setAttribute("inputs", inputs);
+		block.setAttribute("outputs", outputs);
+		return component;
 	}
 
 	@Override
@@ -839,30 +843,11 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		currentBlock = new Block(sequence);
 
 		Map<Var, List<Bus>> lastDefVarBus = new HashMap<Var, List<Bus>>();
-		// First get the first component
-		Component firstComp = sequence.get(0);
-		// All dataPorts are coming from outside
-		List<Port> dataPorts = firstComp.getDataPorts();
-		for (Port port : dataPorts) {
-			Var var = portDependecies.get(port);
-			Type type = var.getType();
-			inputs.put(var, port);
-			// Create a data Port
-			Port blkDataPort = currentBlock.makeDataPort(var.getName(),
-					type.getSizeInBits(), type.isInt() || type.isBool());
-			Bus blkDataBus = blkDataPort.getPeer();
-			ComponentUtil.connectDataDependency(blkDataBus, port, 0);
-		}
 
-		// All dataBuses should be given as lastDefined here
-		List<Bus> dataBuses = firstComp.getExit(Exit.DONE).getDataBuses();
-		for (Bus bus : dataBuses) {
-			Var var = busDependecies.get(bus);
-			lastDefVarBus.put(var, Arrays.asList(bus));
-		}
-
-		for (Component component : sequence.subList(1, sequence.size())) {
-			dataPorts = component.getDataPorts();
+		// Build the current block inputs and
+		// Set the dependencies for the rest of the components
+		for (Component component : sequence) {
+			List<Port> dataPorts = component.getDataPorts();
 			for (Port port : dataPorts) {
 				Var var = portDependecies.get(port);
 				if (lastDefVarBus.containsKey(var)) {
@@ -882,12 +867,36 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					Bus blkDataBus = blkDataPort.getPeer();
 					ComponentUtil.connectDataDependency(blkDataBus, port, 0);
 				}
-
+			}
+			// All dataBuses should be given as lastDefined here
+			List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
+			for (Bus bus : dataBuses) {
+				Var var = busDependecies.get(bus);
+				lastDefVarBus.put(var, Arrays.asList(bus));
 			}
 		}
 
-		// Set Data dependencies between the components
-		// TODO: dependencies
+		// Build the current block outputs
+		ListIterator<Component> iter = sequence.listIterator(sequence.size());
+
+		while (iter.hasPrevious()) {
+			Component component = iter.previous();
+			List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
+			for (Bus bus : dataBuses) {
+				Var var = busDependecies.get(bus);
+				if (!outputs.containsKey(var)) {
+					Type type = var.getType();
+					Bus blkOutputBus = currentBlock.getExit(Exit.DONE)
+							.makeDataBus(var.getName(), type.getSizeInBits(),
+									type.isInt() || type.isBool());
+					Port blkOutputPort = blkOutputBus.getPeer();
+					// Add dependency
+					ComponentUtil.connectDataDependency(bus, blkOutputPort, 0);
+
+					outputs.put(var, blkOutputBus);
+				}
+			}
+		}
 
 		return currentBlock;
 	}
