@@ -31,11 +31,13 @@ package org.xronos.orcc.design;
 
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.util.OrccLogger;
 
 import org.xronos.openforge.app.Engine;
 import org.xronos.openforge.app.GenericJob;
 import org.xronos.openforge.app.JobHandlerAdapter;
 import org.xronos.openforge.lim.Design;
+import org.xronos.orcc.forge.mapping.DesignActor;
 
 /**
  * Creates an Engine with a given {@Design}
@@ -45,15 +47,17 @@ import org.xronos.openforge.lim.Design;
  */
 public class DesignEngine extends Engine {
 
-	Actor actor;
+	private Actor actor;
 
-	Network network;
+	private Network network;
 
-	ResourceCache resourceCache;
+	private ResourceCache resourceCache;
 
-	GenericJob genJob;
+	private GenericJob genJob;
 
-	boolean schedulerInformation;
+	private boolean schedulerInformation;
+
+	private boolean newLimGen = false;
 
 	public DesignEngine(GenericJob genJob, Actor actor,
 			ResourceCache resourceCache, boolean schedulerInformation) {
@@ -76,6 +80,16 @@ public class DesignEngine extends Engine {
 		this.schedulerInformation = schedulerInformation;
 	}
 
+	public DesignEngine(GenericJob genJob, Actor actor,
+			boolean schedulerInformation) {
+		super(genJob);
+		this.genJob = genJob;
+		this.actor = actor;
+		jobHandler = new JobHandlerAdapter("Forging: " + actor.getSimpleName());
+		this.schedulerInformation = schedulerInformation;
+		this.newLimGen = true;
+	}
+
 	@Override
 	public Design buildLim() {
 
@@ -83,14 +97,32 @@ public class DesignEngine extends Engine {
 		if (network != null) {
 			NetworkToDesign networkToDesign = new NetworkToDesign(network,
 					resourceCache, schedulerInformation);
+			long t0 = System.currentTimeMillis();
 			design = networkToDesign.buildDesign();
+			long t1 = System.currentTimeMillis();
+			System.out.println("- Orcc IR to LIM transformed in: "
+					+ (float) (t1 - t0) / 1000 + "s");
 		}
 
-		// Multiple file generation
-		if (actor != null) {
-			ActorToDesign instanceToDesign = new ActorToDesign(actor,
-					resourceCache, schedulerInformation);
-			design = instanceToDesign.buildDesign();
+		if (newLimGen) {
+			if(actor != null){
+				long t0 = System.currentTimeMillis();
+				design = new DesignActor().doSwitch(actor);
+				long t1 = System.currentTimeMillis();
+				System.out.println("- Orcc IR to LIM transformed in: "
+						+ (float) (t1 - t0) / 1000 + "s");
+			}
+		} else {
+			// Multiple file generation
+			if (actor != null) {
+				ActorToDesign instanceToDesign = new ActorToDesign(actor,
+						resourceCache, schedulerInformation);
+				long t0 = System.currentTimeMillis();
+				design = instanceToDesign.buildDesign();
+				long t1 = System.currentTimeMillis();
+				System.out.println("- Orcc IR to LIM transformed in: "
+						+ (float) (t1 - t0) / 1000 + "s");
+			}
 		}
 
 		// Generate Project File
@@ -106,5 +138,4 @@ public class DesignEngine extends Engine {
 
 		return design;
 	}
-
 }

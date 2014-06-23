@@ -69,11 +69,32 @@ import org.xronos.orcc.design.visitors.XronosScheduler;
 public class XronosTransform {
 
 	public static void transformActor(Actor actor, Map<String, Object> options,
+			Boolean debugMode) {
+		List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
+		
+		transformations.add(new UnitImporter());
+		transformations.add(new XronosVarInitializer());
+		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
+		
+		for (DfSwitch<?> transformation : transformations) {
+			try {
+				transformation.doSwitch(actor);
+			} catch (NullPointerException ex) {
+				OrccLogger
+						.severeln("\t - transformation failed: NullPointerException, "
+								+ ex.getMessage());
+				break;
+			}
+		}
+	}
+
+	public static void transformActor(Actor actor, Map<String, Object> options,
 			ResourceCache resourceCache, Boolean portTransformation,
 			boolean schedulerInformation, Boolean debugMode) {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 			transformations.add(new UnitImporter());
+			// transformations.add(new DfVisitor<Void>(new Liveness()));
 			Boolean sizeArrayOfPowerOfTwo = options
 					.get("org.xronos.orcc.arraySizeToPowerOfTwo") != null ? (Boolean) options
 					.get("org.xronos.orcc.arraySizeToPowerOfTwo") : false;
@@ -109,8 +130,6 @@ public class XronosTransform {
 
 			transformations.add(new PrintRemoval());
 			transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
-			transformations.add(new DfVisitor<CfgNode>(
-					new ControlFlowAnalyzer()));
 
 			transformations.add(new DfVisitor<Void>(new XronosSSA()));
 			transformations.add(new DfVisitor<Void>(new PhiFixer()));
@@ -152,6 +171,9 @@ public class XronosTransform {
 			// computes names of local variables
 			transformations.add(new DfVisitor<Void>(new SSAVariableRenamer()));
 
+			transformations.add(new DfVisitor<CfgNode>(
+					new ControlFlowAnalyzer()));
+
 			for (DfSwitch<?> transformation : transformations) {
 				try {
 					transformation.doSwitch(actor);
@@ -164,6 +186,34 @@ public class XronosTransform {
 			}
 		}
 
+	}
+
+	public static void transformActorNonSSA(Actor actor,
+			Map<String, Object> options, ResourceCache resourceCache,
+			Boolean portTransformation, boolean schedulerInformation,
+			Boolean debugMode) {
+		List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
+		transformations.add(new UnitImporter());
+
+		// Multi-Dimensional Indexes to Single dimension index
+		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
+
+		// Casting
+		transformations.add(new DfVisitor<Expression>(new XronosCast(false,
+				true)));
+		// Combine Blocks
+		transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
+
+		for (DfSwitch<?> transformation : transformations) {
+			try {
+				transformation.doSwitch(actor);
+			} catch (NullPointerException ex) {
+				OrccLogger
+						.severeln("\t - transformation failed: NullPointerException, "
+								+ ex.getMessage());
+				break;
+			}
+		}
 	}
 
 	public static void transformNetworkActors(Network network,

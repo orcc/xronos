@@ -160,7 +160,7 @@ public class XronosPrinter {
 			String tbPath, String tbVhdPath, Actor actor,
 			Map<String, Object> options, ResourceCache resourceCache,
 			int idxInstance, int totalInstances, boolean schedulerInformation,
-			Boolean debugMode) {
+			boolean newLimGen, Boolean debugMode) {
 		Forge f = new Forge();
 		GenericJob xronosMainJob = new GenericJob();
 		Engine engine = null;
@@ -178,10 +178,16 @@ public class XronosPrinter {
 				OrccLogger.traceln("Compiling instance: "
 						+ actor.getSimpleName() + " (" + idxInstance + "/"
 						+ totalInstances + ")");
-				XronosTransform.transformActor(actor, options, resourceCache,
-						true, schedulerInformation, debugMode);
-				engine = new DesignEngine(xronosMainJob, actor, resourceCache,
-						schedulerInformation);
+				if (newLimGen) {
+					XronosTransform.transformActor(actor, options, debugMode);
+					engine = new DesignEngine(xronosMainJob, actor, schedulerInformation);
+				} else {
+					XronosTransform.transformActor(actor, options,
+							resourceCache, true, schedulerInformation,
+							debugMode);
+					engine = new DesignEngine(xronosMainJob, actor,
+							resourceCache, schedulerInformation);
+				}
 				engine.begin();
 			} catch (NewJob.ForgeOptionException foe) {
 				OrccLogger.severeln("\t command line option error: "

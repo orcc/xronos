@@ -686,6 +686,43 @@ public class ModuleUtil {
 		return module;
 	}
 
+	public static Component createTaskModule(List<Component> components,
+			List<Var> inVars, List<Var> outVars, String searchScope,
+			Boolean isMutex, Exit.Type exitType, Integer group,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+
+		// Create an Empty Block
+		Module module = isMutex ? new MutexBlock(false) : new Block(false);
+
+		// Create the modules IO interface
+		createModuleInterface(module, inVars, outVars, exitType,
+				portDependency, portGroupDependency, busDependency);
+
+		// Populate Module
+		modulePopulate(module, components);
+
+		// Resolve all dependencies
+		moduleDependencies(module, components, module.getExit(exitType),
+				portDependency, busDependency, portGroupDependency,
+				doneBusDependency);
+		// Give the name of the searchScope
+		module.specifySearchScope(searchScope);
+
+		// The condition of emptiness on components means that the DONE exit
+		// signal should not be connected with the other dependencies of its
+		// container
+		// if (!components.isEmpty()) {
+		if (exitType != Exit.RETURN) {
+			// Add done dependency on module, Exit group 0 of a "normal"
+			// module
+			PortUtil.mapOutControlPort(module, group, doneBusDependency);
+		}
+
+		return module;
+	}
+
 	/**
 	 * This method creates the Input DataPorts and the Output DataBuses of a
 	 * module
@@ -907,6 +944,49 @@ public class ModuleUtil {
 				}
 			}
 
+			// Build control Dependencies
+			if (!(component instanceof InBuf) && !(component instanceof OutBuf)) {
+				Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
+				Port donePort = exit.getDoneBus().getPeer();
+				List<Entry> entries = donePort.getOwner().getEntries();
+				Entry entry = entries.get(doneBusDependency.get(doneBus));
+				Dependency dep = new ControlDependency(doneBus);
+				entry.addDependency(donePort, dep);
+			}
+		}
+
+	}
+
+	public static void moduleDataDependencies(Module module,
+			List<Component> components, Exit exit,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+
+		for (Component component : module.getComponents()) {
+			// Build Data Dependencies
+			for (Bus bus : component.getDataBuses()) {
+				Var busVar = busDependency.get(bus);
+				List<Port> targetPorts = getDependencyTargetPorts(
+						module.getComponents(), busVar, portDependency);
+				for (Port port : targetPorts) {
+					int group = portGroupDependency.get(port);
+					List<Entry> entries = port.getOwner().getEntries();
+					Entry entry = entries.get(group);
+					Dependency dep = new DataDependency(bus);
+					entry.addDependency(port, dep);
+				}
+			}
+		}
+	}
+
+	public static void moduleControlDependencies(Module module,
+			List<Component> components, Exit exit,
+			Map<Port, Var> portDependency, Map<Bus, Var> busDependency,
+			Map<Port, Integer> portGroupDependency,
+			Map<Bus, Integer> doneBusDependency) {
+
+		for (Component component : module.getComponents()) {
 			// Build control Dependencies
 			if (!(component instanceof InBuf) && !(component instanceof OutBuf)) {
 				Bus doneBus = component.getExit(Exit.DONE).getDoneBus();

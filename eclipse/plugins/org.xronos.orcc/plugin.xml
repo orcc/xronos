@@ -23,7 +23,7 @@
                id="org.xronos.orcc.schedulingInformation">
          </option>
          <option
-               id="org.xronos.orcc.newScheduling">
+               id="org.xronos.orcc.newLimGen">
          </option>
          <option
                id="org.xronos.orcc.outputClockGating">
@@ -36,9 +36,6 @@
          </option>
          <option
                id="org.xronos.orcc.xilinxPrimitives">
-         </option>
-         <option
-               id="net.sf.orcc.dontExportLibrary">
          </option>
          <option
                id="org.xronos.orcc.singleFileGeneration">
@@ -122,9 +119,9 @@
       </option>
       <option
             defaultValue="false"
-            description="New scheduling"
-            id="org.xronos.orcc.newScheduling"
-            name="New Scheduling (Not activated Yet)">
+            description="New LIM generation with non introusive modifications on the ORCC IR."
+            id="org.xronos.orcc.newLimGen"
+            name="New LIM Generation (Experimental)">
          <checkBox></checkBox>
       </option>
    </extension>

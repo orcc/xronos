@@ -108,6 +108,8 @@ public class Xronos extends AbstractBackend {
 	private boolean inputClockGating;
 
 	boolean schedulerInformation;
+	
+	boolean newLimGen;
 
 	@Override
 	protected void doInitializeOptions() {
@@ -128,6 +130,8 @@ public class Xronos extends AbstractBackend {
 				false);
 		schedulerInformation = getAttribute(
 				"org.xronos.orcc.schedulingInformation", false);
+		newLimGen = getAttribute(
+				"org.xronos.orcc.newLimGen", false);
 
 		// Set Paths for RTL
 		rtlPath = path + File.separator + "rtl";
@@ -342,7 +346,7 @@ public class Xronos extends AbstractBackend {
 			boolean failed = printer.printInstance(flags.getStringFlag(),
 					rtlPath, testBenchPath, tbVhdPath, actor, options,
 					resourceCache, numInstance, toBeCompiled,
-					schedulerInformation, debugMode);
+					schedulerInformation, newLimGen, debugMode);
 			if (failed) {
 				failedToCompile++;
 			}

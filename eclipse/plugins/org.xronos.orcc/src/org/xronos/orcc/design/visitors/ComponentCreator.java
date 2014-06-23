@@ -35,6 +35,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -81,7 +82,6 @@ import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.TaskCall;
 import org.xronos.openforge.lim.io.SimplePin;
-import org.xronos.openforge.lim.io.SimplePinStall;
 import org.xronos.openforge.lim.io.SimplePinWrite;
 import org.xronos.openforge.lim.memory.AddressStridePolicy;
 import org.xronos.openforge.lim.memory.Location;
@@ -154,6 +154,9 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	/** Current Component **/
 	private Component currentComponent;
 
+	/** Block to component map**/
+	private Map<net.sf.orcc.ir.Block,Component> blockToComponent;
+	
 	/** Dependency between Components and Done Bus **/
 	protected Map<Bus, Integer> doneBusDependency;
 
@@ -186,6 +189,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		this.resources = resources;
 		this.schedulingInfoPins = schedulingInfoPins;
 		componentList = new ArrayList<Component>();
+		blockToComponent = new HashMap<net.sf.orcc.ir.Block, Component>();
 	}
 
 	public ComponentCreator(ResourceCache resources,
@@ -222,7 +226,8 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			componentList = new ArrayList<Component>();
 			componentList.addAll(oldComponents);
 			componentList.add(blk);
-
+			
+			blockToComponent.put(block,blk);
 		} else {
 			return super.caseBlockBasic(block);
 		}
@@ -323,6 +328,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		} else {
 			componentList.add(currentComponent);
 		}
+		blockToComponent.put(blockIf, branch);
 		return null;
 	}
 
@@ -347,6 +353,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		/** Put back all previous components and add the loop **/
 		componentList.addAll(oldComponents);
 		componentList.add(mutexModule);
+		blockToComponent.put(blockMutex, mutexModule);
 		return null;
 	}
 
@@ -424,6 +431,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		/** Put back all previous components and add the loop **/
 		componentList.addAll(oldComponents);
 		componentList.add(loop);
+		blockToComponent.put(blockWhile, loop);
 		return null;
 	}
 
@@ -630,6 +638,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 			int dataSize = type.getSizeInBits();
 			HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(), 32,
 					0, isSigned, addrPolicy);
+			
 			// read.setNonRemovable();
 			CastOp castOp = new CastOp(dataSize, isSigned);
 			// castOp.setNonRemovable();
@@ -730,7 +739,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 	public List<Component> caseInstPortWrite(InstPortWrite portWrite) {
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) portWrite.getPort();
 		ActionIOHandler ioHandler = resources.getIOHandler(port);
-		Boolean blocking = portWrite.isBlocking();
+		//Boolean blocking = portWrite.isBlocking();
 		Component pinWrite = ioHandler.getWriteAccess(false);
 		pinWrite.setNonRemovable();
 
