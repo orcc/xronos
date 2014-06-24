@@ -43,6 +43,8 @@ import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.op.BinaryOp;
+import org.xronos.openforge.lim.op.CastOp;
+import org.xronos.openforge.lim.op.NoOp;
 import org.xronos.openforge.lim.op.SimpleConstant;
 import org.xronos.openforge.lim.op.UnaryOp;
 
@@ -68,12 +70,18 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 	public Component caseExprBinary(ExprBinary expr) {
 		Expression E1 = expr.getE1();
 		Expression E2 = expr.getE2();
-		Component block = null;
 
 		Var varE1 = null;
 		Var varE2 = null;
+
+		Component block = null;
 		Component compE1 = null;
 		Component compE2 = null;
+		NoOp noopE1 = null;
+		NoOp noopE2 = null;
+		CastOp castE1 = null;
+		CastOp castE2 = null;
+		Component op = null;
 
 		if (!E1.isExprVar()) {
 			compE1 = new ExprToComponent().doSwitch(E1);
@@ -87,22 +95,49 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			varE2 = ((ExprVar) E2).getUse().getVariable();
 		}
 
-		Component op = ComponentUtil.createExprBinComponent(expr);
+		op = ComponentUtil.createExprBinComponent(expr);
 
-		// Create List of Block Components
-		List<Component> components = new ArrayList<Component>();
+		// Create List of Block Sequence
+		List<Component> sequence = new ArrayList<Component>();
 
+		// Add NoOp and Cast or only Cast
 		if (compE1 != null) {
-			components.add(compE1);
+			sequence.add(compE1);
+			// Cast Operator input mix max size of the expression output
+			Type type = expr.getType();
+			castE1 = new CastOp(type.getSizeInBits(), type.isInt()
+					|| type.isBool());
+			sequence.add(castE1);
+		} else {
+			noopE1 = new NoOp(1, Exit.DONE);
+			sequence.add(noopE1);
+			// Cast Operator input mix max size of the expression output
+			Type type = expr.getType();
+			castE1 = new CastOp(type.getSizeInBits(), type.isInt()
+					|| type.isBool());
+			sequence.add(castE1);
 		}
 
 		if (compE2 != null) {
-			components.add(compE2);
+			sequence.add(compE2);
+			// Cast Operator input mix max size of the expression output
+			Type type = expr.getType();
+			castE2 = new CastOp(type.getSizeInBits(), type.isInt()
+					|| type.isBool());
+			sequence.add(castE2);
+		} else {
+			noopE2 = new NoOp(1, Exit.DONE);
+			sequence.add(noopE2);
+			// Cast Operator input mix max size of the expression output
+			Type type = expr.getType();
+			castE2 = new CastOp(type.getSizeInBits(), type.isInt()
+					|| type.isBool());
+			sequence.add(castE2);
 		}
-		components.add(op);
+		sequence.add(op);
 
-		// Create Block of components
-		block = new Block(components);
+		// Create Block with the given sequence
+		block = new Block(sequence);
 
 		// Create Data Dependencies between components
 		// Left Data Port
@@ -111,13 +146,6 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			// Create DataPort and Get the bus
 			Port dataPort = block.makeDataPort(varE1.getName(),
 					type.getSizeInBits(), type.isInt() || type.isBool());
-			Bus dataBus = dataPort.getPeer();
-			// Get the left data port of a binary Op
-			Port dataPortE1 = ((BinaryOp) op).getLeftDataPort();
-			dataPortE1.setIDLogical(varE1.getName());
-			// Connect the blocks data Bus with Binary Op data port
-			ComponentUtil.connectDataDependency(dataBus, dataPortE1, 0);
-
 			inputs.put(varE1, dataPort);
 		} else {
 			if (compE1 != null) {
@@ -135,12 +163,7 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 					// Add to Expression inputs
 					inputs.put(var, portBlock);
 				}
-				// Connect the RightDataPort of the input OP
-				Bus resultBus = compE1.getExit(Exit.DONE).getDataBuses().get(0);
-				Port dataPortE1 = ((BinaryOp) op).getRightDataPort();
-				ComponentUtil.connectDataDependency(resultBus, dataPortE1, 0);
 			}
-
 		}
 		// Right Data Port
 		if (varE2 != null) {
@@ -148,13 +171,6 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			// Create DataPort and Get the bus
 			Port dataPort = block.makeDataPort(varE2.getName(),
 					type.getSizeInBits(), type.isInt() || type.isBool());
-			Bus dataBus = dataPort.getPeer();
-			// Get the left data port of a binary Op
-			Port dataPortE2 = ((BinaryOp) op).getRightDataPort();
-			dataPortE2.setIDLogical(varE2.getName());
-			// Connect the blocks data Bus with Binary Op data port
-			ComponentUtil.connectDataDependency(dataBus, dataPortE2, 0);
-
 			inputs.put(varE2, dataPort);
 		} else {
 			// Connect the component inputs
@@ -173,10 +189,6 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 					// Add to Expression inputs
 					inputs.put(var, portBlock);
 				}
-				// Connect the RightDataPort of the input OP
-				Bus resultBus = compE2.getExit(Exit.DONE).getDataBuses().get(0);
-				Port dataPortE2 = ((BinaryOp) op).getRightDataPort();
-				ComponentUtil.connectDataDependency(resultBus, dataPortE2, 0);
 			}
 		}
 
@@ -190,10 +202,68 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 
 		// Connect Operands and operator components
 		// Get Exit
-		Exit exitE1 = op.getExit(Exit.DONE);
+		Exit exitOP = op.getExit(Exit.DONE);
 		// Get the result bus
-		Bus resultBusE1 = exitE1.getDataBuses().iterator().next();
-		ComponentUtil.connectDataDependency(resultBusE1, resultPort, 0);
+		Bus resultBusOP = exitOP.getDataBuses().iterator().next();
+		ComponentUtil.connectDataDependency(resultBusOP, resultPort, 0);
+
+		// Connect Everything
+		if (varE1 != null) {
+			// Connect Block data Port with NoOp Data Port
+			Port blkDataport = inputs.get(varE1);
+			Bus blkDataBus = blkDataport.getPeer();
+			Port noopDataPort = noopE1.getDataPorts().get(0);
+			ComponentUtil.connectDataDependency(blkDataBus, noopDataPort, 0);
+
+			// Connect Cast with NoOp result Bus
+			Bus noopResultBus = noopE1.getResultBus();
+			Port castDataPort = castE1.getDataPort();
+			ComponentUtil.connectDataDependency(noopResultBus, castDataPort, 0);
+
+			// Connect the casts Result Bus to the Left Data Port
+			Bus castResultBus = castE1.getResultBus();
+			Port dataPortE1 = ((BinaryOp) op).getLeftDataPort();
+			ComponentUtil.connectDataDependency(castResultBus, dataPortE1, 0);
+
+		} else {
+			// Connect the Result Bus of the compE1 to Cast
+			Port castDataPort = castE1.getDataPort();
+			Bus opResultBus = compE1.getExit(Exit.DONE).getDataBuses().get(0);
+			ComponentUtil.connectDataDependency(opResultBus, castDataPort, 0);
+
+			// Connect the casts Result Bus to the Left Data Port
+			Bus castResultBus = castE1.getResultBus();
+			Port dataPort = ((BinaryOp) op).getLeftDataPort();
+			ComponentUtil.connectDataDependency(castResultBus, dataPort, 0);
+		}
+
+		if (varE2 != null) {
+			// Connect Block data Port with NoOp Data Port
+			Port blkDataport = inputs.get(varE2);
+			Bus blkDataBus = blkDataport.getPeer();
+			Port noopDataPort = noopE2.getDataPorts().get(0);
+			ComponentUtil.connectDataDependency(blkDataBus, noopDataPort, 0);
+
+			// Connect Cast with NoOp result Bus
+			Bus noopResultBus = noopE2.getResultBus();
+			Port castDataPort = castE2.getDataPort();
+			ComponentUtil.connectDataDependency(noopResultBus, castDataPort, 0);
+
+			// Connect the casts Result Bus to the Left Data Port
+			Bus castResultBus = castE2.getResultBus();
+			Port dataPort = ((BinaryOp) op).getLeftDataPort();
+			ComponentUtil.connectDataDependency(castResultBus, dataPort, 0);
+		} else {
+			// Connect the Result Bus of the compE1 to Cast
+			Port castDataPort = castE2.getDataPort();
+			Bus opResultBus = compE2.getExit(Exit.DONE).getDataBuses().get(0);
+			ComponentUtil.connectDataDependency(opResultBus, castDataPort, 0);
+
+			// Connect the casts Result Bus to the Left Data Port
+			Bus castResultBus = castE2.getResultBus();
+			Port dataPortE2 = ((BinaryOp) op).getRightDataPort();
+			ComponentUtil.connectDataDependency(castResultBus, dataPortE2, 0);
+		}
 
 		expr.setAttribute("inputs", inputs);
 
