@@ -22,7 +22,6 @@ package org.xronos.orcc.forge.mapping.cdfg;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -298,18 +297,23 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			expr.setAttribute("inputs", inputs);
 			return opUnary;
 		} else {
+			// Create the sequence of components
+			List<Component> sequence = new ArrayList<Component>();
 			Component comp = new ExprToComponent().doSwitch(expr.getExpr());
+			sequence.add(comp);
+			
+			UnaryOp opUnary = ComponentUtil.createExprUnaryComponent(expr);
+			sequence.add(opUnary);
 
-			Component opUnary = ComponentUtil.createExprUnaryComponent(expr);
-
-			Block block = new Block(Arrays.asList(comp, opUnary));
+			// Create a new Block
+			Block block = new Block(sequence);
 
 			// Set Data Dependencies between components
 			Exit compExit = comp.getExit(Exit.DONE);
 			// Only one output possible
 			Bus compResultBus = compExit.getDataBuses().get(0);
 			// Get DataPort of UnaryOp
-			Port portOpUnary = ((UnaryOp) opUnary).getDataPort();
+			Port portOpUnary = opUnary.getDataPort();
 			ComponentUtil.connectDataDependency(compResultBus, portOpUnary, 0);
 
 			// Connect comp inputs with new Ports of blocks
@@ -349,7 +353,13 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 
 	@Override
 	public Component caseExprVar(ExprVar object) {
-		// Do nothing
-		return null;
+		Var var = object.getUse().getVariable();
+		Component comp = new NoOp(1, Exit.DONE);
+		Port dataPort = comp.getDataPorts().get(0);
+		dataPort.setIDLogical(var.getName());
+		inputs.put(var, dataPort);
+		object.setAttribute("inputs", inputs);
+
+		return comp;
 	}
 }

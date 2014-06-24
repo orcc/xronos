@@ -50,6 +50,7 @@ import org.xronos.openforge.lim.op.NotOp;
 import org.xronos.openforge.lim.op.OrOp;
 import org.xronos.openforge.lim.op.RightShiftOp;
 import org.xronos.openforge.lim.op.SubtractOp;
+import org.xronos.openforge.lim.op.UnaryOp;
 import org.xronos.openforge.lim.op.XorOp;
 import org.xronos.openforge.lim.primitive.And;
 import org.xronos.openforge.lim.primitive.Or;
@@ -114,8 +115,8 @@ public class ComponentUtil {
 		return op;			
 	}
 	
-	public static Component createExprUnaryComponent(ExprUnary expr){
-		Component op = null;
+	public static UnaryOp createExprUnaryComponent(ExprUnary expr){
+		UnaryOp op = null;
 		if (expr.getOp() == OpUnary.BITNOT){
 			op = new ComplementOp();
 		}else if (expr.getOp() == OpUnary.LOGIC_NOT){

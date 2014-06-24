@@ -188,10 +188,39 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	@Override
 	public Component caseInstAssign(InstAssign assign) {
 		Var target = assign.getTarget().getVariable();
+		Type targetType = target.getType();
 		Expression expr = assign.getValue();
 
 		if (!expr.isExprVar()) {
-			Component comp = new ExprToComponent().doSwitch(expr);
+			Type exprType = expr.getType();
+			Component comp = null;
+
+			if (exprType.getSizeInBits() != targetType.getSizeInBits()) {
+				Component exprComp = new ExprToComponent().doSwitch(expr);
+				CastOp castOp = new CastOp(targetType.getSizeInBits(),
+						targetType.isInt());
+
+				comp = new Block(Arrays.asList(exprComp, castOp));
+
+				// Now deal with dependencies
+				Bus compResultBus = exprComp.getExit(Exit.DONE).getDataBuses()
+						.get(0);
+				Port castDataPort = castOp.getDataPort();
+				ComponentUtil.connectDataDependency(compResultBus,
+						castDataPort, 0);
+
+				// Create a block data bus
+				Bus resultBus = comp.getExit(Exit.DONE).makeDataBus(
+						targetType.getSizeInBits(), targetType.isInt());
+				Port reslutPort = resultBus.getPeer();
+				Bus castResultBus = castOp.getResultBus();
+				ComponentUtil.connectDataDependency(castResultBus, reslutPort,
+						0);
+			} else {
+				comp = new ExprToComponent().doSwitch(expr);
+			}
+
+			// TODO : cast
 			Exit compExit = comp.getExit(Exit.DONE);
 			Bus resultBus = compExit.getDataBuses().get(0);
 			resultBus.setIDLogical(target.getName());
@@ -210,6 +239,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					}
 				}
 			}
+			// Bus dependencies
+			busDependecies.put(resultBus, target);
 			return comp;
 		} else {
 			// Just a passthrought
