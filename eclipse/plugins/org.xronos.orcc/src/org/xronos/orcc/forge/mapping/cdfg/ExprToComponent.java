@@ -104,16 +104,14 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			sequence.add(compE1);
 			// Cast Operator input mix max size of the expression output
 			Type type = expr.getType();
-			castE1 = new CastOp(type.getSizeInBits(), type.isInt()
-					|| type.isBool());
+			castE1 = new CastOp(type.getSizeInBits(), type.isInt());
 			sequence.add(castE1);
 		} else {
 			noopE1 = new NoOp(1, Exit.DONE);
 			sequence.add(noopE1);
 			// Cast Operator input mix max size of the expression output
 			Type type = expr.getType();
-			castE1 = new CastOp(type.getSizeInBits(), type.isInt()
-					|| type.isBool());
+			castE1 = new CastOp(type.getSizeInBits(), type.isInt());
 			sequence.add(castE1);
 		}
 
@@ -121,16 +119,14 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			sequence.add(compE2);
 			// Cast Operator input mix max size of the expression output
 			Type type = expr.getType();
-			castE2 = new CastOp(type.getSizeInBits(), type.isInt()
-					|| type.isBool());
+			castE2 = new CastOp(type.getSizeInBits(), type.isInt());
 			sequence.add(castE2);
 		} else {
 			noopE2 = new NoOp(1, Exit.DONE);
 			sequence.add(noopE2);
 			// Cast Operator input mix max size of the expression output
 			Type type = expr.getType();
-			castE2 = new CastOp(type.getSizeInBits(), type.isInt()
-					|| type.isBool());
+			castE2 = new CastOp(type.getSizeInBits(), type.isInt());
 			sequence.add(castE2);
 		}
 		sequence.add(op);
@@ -141,36 +137,45 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		// Create Data Dependencies between components
 		// Left Data Port
 		if (varE1 != null) {
-			Type type = varE1.getType();
-			// Create DataPort and Get the bus
-			Port dataPort = block.makeDataPort(varE1.getName(),
-					type.getSizeInBits(), type.isInt() || type.isBool());
-			inputs.put(varE1, dataPort);
+			if (!inputs.containsKey(varE1)) {
+				Type type = varE1.getType();
+				// Create DataPort and Get the bus
+				Port dataPort = block.makeDataPort(varE1.getName(),
+						type.getSizeInBits(), type.isInt());
+				addToInputs(varE1, dataPort);
+			}
 		} else {
 			if (compE1 != null) {
 				@SuppressWarnings("unchecked")
 				Map<Var, Port> compInputs = (Map<Var, Port>) E1.getAttribute(
 						"inputs").getObjectValue();
 				for (Var var : compInputs.keySet()) {
-					Type type = var.getType();
-					Port portBlock = block.makeDataPort(type.getSizeInBits(),
-							type.isInt() || type.isBool());
+					Port portBlock = null;
+					if (inputs.containsKey(var)) {
+						portBlock = inputs.get(var);
+					} else {
+						Type type = var.getType();
+						portBlock = block.makeDataPort(var.getName(),
+								type.getSizeInBits(), type.isInt());
+						// Add to Expression inputs
+						inputs.put(var, portBlock);
+					}
 					Bus busBlock = portBlock.getPeer();
 
 					ComponentUtil.connectDataDependency(busBlock,
 							compInputs.get(var), 0);
-					// Add to Expression inputs
-					inputs.put(var, portBlock);
 				}
 			}
 		}
 		// Right Data Port
 		if (varE2 != null) {
-			Type type = varE2.getType();
-			// Create DataPort and Get the bus
-			Port dataPort = block.makeDataPort(varE2.getName(),
-					type.getSizeInBits(), type.isInt() || type.isBool());
-			inputs.put(varE2, dataPort);
+			if (!inputs.containsKey(varE2)) {
+				Type type = varE2.getType();
+				// Create DataPort and Get the bus
+				Port dataPort = block.makeDataPort(varE2.getName(),
+						type.getSizeInBits(), type.isInt());
+				addToInputs(varE2, dataPort);
+			}
 		} else {
 			// Connect the component inputs
 			if (compE2 != null) {
@@ -178,15 +183,19 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 				Map<Var, Port> compInputs = (Map<Var, Port>) E2.getAttribute(
 						"inputs").getObjectValue();
 				for (Var var : compInputs.keySet()) {
-					Type type = var.getType();
-					Port portBlock = block.makeDataPort(type.getSizeInBits(),
-							type.isInt() || type.isBool());
+					Port portBlock = null;
+					if (inputs.containsKey(var)) {
+						portBlock = inputs.get(var);
+					} else {
+						Type type = var.getType();
+						portBlock = block.makeDataPort(var.getName(),
+								type.getSizeInBits(), type.isInt());
+						// Add to Expression inputs
+						inputs.put(var, portBlock);
+					}
 					Bus busBlock = portBlock.getPeer();
-
 					ComponentUtil.connectDataDependency(busBlock,
 							compInputs.get(var), 0);
-					// Add to Expression inputs
-					inputs.put(var, portBlock);
 				}
 			}
 		}
@@ -195,8 +204,7 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		// Connect output
 		Type type = expr.getType();
 		Exit exit = block.getExit(Exit.DONE);
-		Bus resultBus = exit.makeDataBus(type.getSizeInBits(), type.isInt()
-				|| type.isBool());
+		Bus resultBus = exit.makeDataBus(type.getSizeInBits(), type.isInt());
 		Port resultPort = resultBus.getPeer();
 
 		// Connect Operands and operator components
@@ -250,7 +258,7 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 
 			// Connect the casts Result Bus to the Left Data Port
 			Bus castResultBus = castE2.getResultBus();
-			Port dataPort = ((BinaryOp) op).getLeftDataPort();
+			Port dataPort = ((BinaryOp) op).getRightDataPort();
 			ComponentUtil.connectDataDependency(castResultBus, dataPort, 0);
 		} else {
 			// Connect the Result Bus of the compE1 to Cast
@@ -293,7 +301,7 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			Var var = ((ExprVar) expr).getUse().getVariable();
 			Port dataPort = ((UnaryOp) opUnary).getDataPort();
 
-			inputs.put(var, dataPort);
+			addToInputs(var, dataPort);
 			expr.setAttribute("inputs", inputs);
 			return opUnary;
 		} else {
@@ -301,7 +309,7 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			List<Component> sequence = new ArrayList<Component>();
 			Component comp = new ExprToComponent().doSwitch(expr.getExpr());
 			sequence.add(comp);
-			
+
 			UnaryOp opUnary = ComponentUtil.createExprUnaryComponent(expr);
 			sequence.add(opUnary);
 
@@ -323,21 +331,21 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			for (Var var : compInputs.keySet()) {
 				Type type = var.getType();
 				Port portBlock = block.makeDataPort(type.getSizeInBits(),
-						type.isInt() || type.isBool());
+						type.isInt());
 				Bus busBlock = portBlock.getPeer();
 
 				ComponentUtil.connectDataDependency(busBlock,
 						compInputs.get(var), 0);
 
 				// Add to Expression inputs
-				inputs.put(var, portBlock);
+				addToInputs(var, portBlock);
 			}
 
 			// Create Block Exit
 			Exit blockExit = block.getExit(Exit.DONE);
 			Type type = expr.getType();
 			Bus blockResultBus = blockExit.makeDataBus(type.getSizeInBits(),
-					type.isInt() || type.isBool());
+					type.isInt());
 			Port blockResultPort = blockResultBus.getPeer();
 
 			// Connect opUnary ResultBus with Block Result Port
@@ -357,9 +365,24 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		Component comp = new NoOp(1, Exit.DONE);
 		Port dataPort = comp.getDataPorts().get(0);
 		dataPort.setIDLogical(var.getName());
-		inputs.put(var, dataPort);
+		addToInputs(var, dataPort);
 		object.setAttribute("inputs", inputs);
 
 		return comp;
 	}
+
+	/**
+	 * Add to inputs if the variable has not been already added
+	 * 
+	 * @param var
+	 *            the variable
+	 * @param port
+	 *            the port
+	 */
+	private void addToInputs(Var var, Port port) {
+		if (!inputs.containsKey(var)) {
+			inputs.put(var, port);
+		}
+	}
+
 }

@@ -540,8 +540,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			Exit exit = absMemRead.getExit(Exit.DONE);
 			Bus resultBus = exit.getDataBuses().get(0);
-			// Add port to last defined var
-			// addToLastDefined(target, resultBus);
+			busDependecies.put(resultBus, target);
 			return absMemRead;
 		} else {
 			// Index Flattener has flatten all indexes only one expression
