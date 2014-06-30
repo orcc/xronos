@@ -217,29 +217,40 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				Bus castResultBus = castOp.getResultBus();
 				ComponentUtil.connectDataDependency(castResultBus, reslutPort,
 						0);
+
+				@SuppressWarnings("unchecked")
+				Map<Var, Port> exprInput = (Map<Var, Port>) expr.getAttribute(
+						"inputs").getObjectValue();
+				for (Var var : exprInput.keySet()) {
+					Type type = var.getType();
+					Port blkDataPort = comp.makeDataPort(var.getName(),
+							type.getSizeInBits(), type.isInt());
+					Bus blkDataPortPeer = blkDataPort.getPeer();
+
+					// Connect it to this port
+					Port exprDataPort = exprInput.get(var);
+					ComponentUtil.connectDataDependency(blkDataPortPeer,
+							exprDataPort, 0);
+
+					// Add to port dependencies
+					portDependecies.put(blkDataPort, var);
+				}
+
 			} else {
 				comp = new ExprToComponent().doSwitch(expr);
+				@SuppressWarnings("unchecked")
+				Map<Var, Port> exprInput = (Map<Var, Port>) expr.getAttribute(
+						"inputs").getObjectValue();
+				for (Var var : exprInput.keySet()) {
+					Port dataPort = exprInput.get(var);
+					portDependecies.put(dataPort, var);
+				}
 			}
 
 			Exit compExit = comp.getExit(Exit.DONE);
 			Bus resultBus = compExit.getDataBuses().get(0);
 			resultBus.setIDLogical(target.getName());
 
-			// Add port to last defined var
-			// addToLastDefined(target, resultBus);
-
-			// Check if inputs are on the block else put it on block inputs
-			// TODO: Fix me here
-			if (expr.hasAttribute("inputs")) {
-				@SuppressWarnings("unchecked")
-				Map<Var, Port> exprInput = (Map<Var, Port>) expr.getAttribute(
-						"inputs").getObjectValue();
-				for (Var var : exprInput.keySet()) {
-					if (!lastDefinedVarBus.containsKey(var)) {
-						inputs.put(var, exprInput.get(var));
-					}
-				}
-			}
 			// Bus dependencies
 			busDependecies.put(resultBus, target);
 			return comp;
