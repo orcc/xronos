@@ -221,15 +221,15 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				comp = new ExprToComponent().doSwitch(expr);
 			}
 
-			// TODO : cast
 			Exit compExit = comp.getExit(Exit.DONE);
 			Bus resultBus = compExit.getDataBuses().get(0);
 			resultBus.setIDLogical(target.getName());
 
 			// Add port to last defined var
-			addToLastDefined(target, resultBus);
+			// addToLastDefined(target, resultBus);
 
 			// Check if inputs are on the block else put it on block inputs
+			// TODO: Fix me here
 			if (expr.hasAttribute("inputs")) {
 				@SuppressWarnings("unchecked")
 				Map<Var, Port> exprInput = (Map<Var, Port>) expr.getAttribute(
@@ -287,38 +287,20 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				Port blockDataBusPeer = blockDataBus.getPeer();
 				ComponentUtil.connectDataDependency(castDatBus,
 						blockDataBusPeer, 0);
-				addToLastDefined(target, blockDataBus);
+				// addToLastDefined(target, blockDataBus);
 				busDependecies.put(blockDataBus, target);
 				comp = block;
 			} else {
+				// Dependencies, put port and bus dependencies on source and
+				// target
 				NoOp noop = new NoOp(1, Exit.DONE);
-				// Resolve Dependencies
-				// -- Input
-				if (lastDefinedVarBus.containsKey(source)) {
-					List<Bus> buses = lastDefinedVarBus.get(source);
-					int lastDefIndx = buses.size() - 1;
-					// Get last defined bus
-					Bus bus = buses.get(lastDefIndx);
-					Port noopDatPort = noop.getDataPorts().get(0);
-					ComponentUtil.connectDataDependency(bus, noopDatPort, 0);
-					// Port Dependencie
-					portDependecies.put(noopDatPort, source);
-				} else {
-					Port dataPort = currentBlock.makeDataPort(
-							sourceType.getSizeInBits(), sourceType.isInt()
-									|| sourceType.isBool());
-					Bus dataBus = dataPort.getPeer();
-					Port noopDatPort = noop.getDataPorts().get(0);
-					ComponentUtil
-							.connectDataDependency(dataBus, noopDatPort, 0);
-					inputs.put(source, dataPort);
-					// Port Dependencie
-					portDependecies.put(noopDatPort, source);
-				}
+				Port noopDatPort = noop.getDataPorts().get(0);
+				// Port Dependencies
+				portDependecies.put(noopDatPort, source);
+
 				// -- Output
 				Bus noopResultBus = noop.getResultBus();
 				noopResultBus.setIDLogical(target.getName());
-				addToLastDefined(target, noopResultBus);
 				busDependecies.put(noopResultBus, target);
 
 				comp = noop;
@@ -518,7 +500,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		resultBus.setIDLogical(target.getName());
 
 		// Add port to last defined var
-		addToLastDefined(target, resultBus);
+		// addToLastDefined(target, resultBus);
 
 		// Check if inputs are on the block else put it on block inputs
 
@@ -548,7 +530,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			Exit exit = absMemRead.getExit(Exit.DONE);
 			Bus resultBus = exit.getDataBuses().get(0);
 			// Add port to last defined var
-			addToLastDefined(target, resultBus);
+			// addToLastDefined(target, resultBus);
 			return absMemRead;
 		} else {
 			// Index Flattener has flatten all indexes only one expression

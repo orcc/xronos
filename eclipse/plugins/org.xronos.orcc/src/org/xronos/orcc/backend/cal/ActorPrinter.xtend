@@ -1,32 +1,23 @@
-/*
- * Copyright (c) 2013, Ecole Polytechnique Fédérale de Lausanne
- * All rights reserved.
+/* 
+ * XRONOS, High Level Synthesis of Streaming Applications
  * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- *   * Redistributions of source code must retain the above copyright notice,
- *     this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright notice,
- *     this list of conditions and the following disclaimer in the documentation
- *     and/or other materials provided with the distribution.
- *   * Neither the name of the Ecole Polytechnique Fédérale de Lausanne nor the names of its
- *     contributors may be used to endorse or promote products derived from this
- *     software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
- * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * Copyright (C) 2014 EPFL SCI STI MM
+ *
+ * This file is part of XRONOS.
+ *
+ * XRONOS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * XRONOS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with XRONOS.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
 package org.xronos.orcc.backend.cal
 
 import net.sf.orcc.backends.CommonPrinter
@@ -52,183 +43,172 @@ import org.eclipse.emf.ecore.EObject
 import net.sf.orcc.backends.ir.InstCast
 import org.eclipse.emf.common.util.EMap
 
+class ActorPrinter extends CommonPrinter {
 
-class ActorPrinter extends CommonPrinter{
-	
 	protected Actor actor
-	
-	
-	private EMap<Var,Port> inVarToPort;
-	
-	private EMap<Var,Port> outVarToPort;
-	
+
+	private EMap<Var, Port> inVarToPort;
+
+	private EMap<Var, Port> outVarToPort;
+
 	private String actorPackage
-	
-	new (Actor actor, String actorPackage){
+
+	new(Actor actor, String actorPackage) {
 		this.actor = actor
 		this.actorPackage = actorPackage
 	}
-	
-	
-	def printActor(String targetFolder){
+
+	def printActor(String targetFolder) {
 		val content = compileActor
 		val file = new File(targetFolder + File::separator + actor.simpleName + ".cal")
-		
-		if(needToWriteFile(content, file)) {
+
+		if (needToWriteFile(content, file)) {
 			OrccUtil::printFile(content, file)
 			return 0
 		} else {
 			return 1
 		}
-			
+
 	}
-		
-	
-	def compileActor()'''
-	package «actorPackage»;
-	
-	actor «actor.simpleName»(«actorParameters»)
-		«actorInputs»
-			==>
-				«actorOutputs»
 
-		«stateVars»
+	def compileActor() '''
+		package «actorPackage»;
 		
-		«FOR action: actor.actions»
+		actor «actor.simpleName»(«actorParameters»)
+			«actorInputs»
+				==>
+					«actorOutputs»
+		
+			«stateVars»
+			
+			«FOR action : actor.actions»
 			«actorAction(action)»
-		«ENDFOR»
+			«ENDFOR»
+		
+		end
+	'''
 
-	end
-	'''
-	
-	def actorParameters()'''
-	'''
-	
-	
-	def actorInputs()'''
-		«FOR port: actor.inputs SEPARATOR ", "»
+	def actorParameters() '''
+		'''
+
+	def actorInputs() '''
+		«FOR port : actor.inputs SEPARATOR ", "»
 			«actorPort(port)»
 		«ENDFOR»
 	'''
-	
-	def actorPort(Port port)'''
+
+	def actorPort(Port port) '''
 		«port.type.doSwitch»  «port.name»
 	'''
-	
-	
-	def actorOutputs()'''
-		«FOR port: actor.outputs SEPARATOR ", " AFTER ":"»
+
+	def actorOutputs() '''
+		«FOR port : actor.outputs SEPARATOR ", " AFTER ":"»
 			«actorPort(port)»
 		«ENDFOR»
 	'''
-	
+
 	// State Variables
-	
 	def stateVars() '''
-	'''
-	
+		'''
+
 	// Actions
-	
-	def actorAction(Action action){
+	def actorAction(Action action) {
 		inVarToPort = action.inputPattern.varToPortMap
 		outVarToPort = action.outputPattern.varToPortMap
-	'''
-		«action.name» : action 
-							«actionPorts(action.inputPattern)» 
-								==> 
-									«actionPorts(action.outputPattern)»
-		«IF !action.body.locals.empty»«actionLocals(action.body)»«ENDIF»
-		do
-			«actionBody(action.body)»
-		end
-	'''}
-	
-	def actionPorts(Pattern pattern)'''
-		«FOR port: pattern.ports SEPARATOR ", "»
-			«actionPort(port,pattern.portToVarMap.get(port))»
+		'''
+			«action.name» : action 
+								«actionPorts(action.inputPattern)» 
+									==> 
+										«actionPorts(action.outputPattern)»
+			«IF !action.body.locals.empty»«actionLocals(action.body)»«ENDIF»
+			do
+				«actionBody(action.body)»
+			end
+		'''
+	}
+
+	def actionPorts(Pattern pattern) '''
+		«FOR port : pattern.ports SEPARATOR ", "»
+			«actionPort(port, pattern.portToVarMap.get(port))»
 		«ENDFOR»
 	'''
-	
-	def actionPort(Port port, Var portVar)
-		'''«port.name»:[«portVar.name»]'''
-	
-	def actionGuard(Action action)'''
-	'''
-	
-	def actionLocals(Procedure procedure)'''
+
+	def actionPort(Port port, Var portVar) '''«port.name»:[«portVar.name»]'''
+
+	def actionGuard(Action action) '''
+		'''
+
+	def actionLocals(Procedure procedure) '''
 		var
-			«FOR local: procedure.locals SEPARATOR ", "»
+			«FOR local : procedure.locals SEPARATOR ", "»
 				«local.type.doSwitch» «local.name»
 			«ENDFOR»
 	'''
-	
-	def actionBody(Procedure proc)'''
+
+	def actionBody(Procedure proc) '''
 		«proc.doSwitch»
 	'''
-	
+
 	override caseBlockBasic(BlockBasic block) '''
 		«FOR instr : block.instructions»
 			«instr.doSwitch»
 		«ENDFOR»
 	'''
-	
-	override defaultCase(EObject object)'''
-		«IF object instanceof InstCast »
+
+	override defaultCase(EObject object) '''
+		«IF object instanceof InstCast»
 			«caseInstCast(object as InstCast)»
 		«ENDIF»
 	'''
-	
-	
+
 	override caseInstLoad(InstLoad inst) '''
-		«inst.target.variable.name» := «inst.source.variable.name»«IF !isSinglePortToken(inst.source.variable)»«FOR index : inst.indexes»[«index.doSwitch»]«ENDFOR»«ENDIF»;
+		«inst.target.variable.name» := «inst.source.variable.name»«IF !isSinglePortToken(inst.source.variable)»«FOR index : inst.
+			indexes»[«index.doSwitch»]«ENDFOR»«ENDIF»;
 	'''
-	
-	def isSinglePortToken(Var variable){
+
+	def isSinglePortToken(Var variable) {
 		if (inVarToPort.containsKey(variable) || outVarToPort.containsKey(variable))
 			true
 		else
 			false
 	}
-	
-	
+
 	override caseInstStore(InstStore inst) '''
-		«inst.target.variable.name»«IF !isSinglePortToken(inst.target.variable)»«FOR index : inst.indexes»[«index.doSwitch»]«ENDFOR»«ENDIF» := «inst.value.doSwitch»;
+		«inst.target.variable.name»«IF !isSinglePortToken(inst.target.variable)»«FOR index : inst.indexes»[«index.doSwitch»]«ENDFOR»«ENDIF» := «inst.
+			value.doSwitch»;
 	'''
-	
+
 	override caseInstAssign(InstAssign inst) '''
 		«inst.target.variable.name» := «inst.value.doSwitch»;
 	'''
-	
-	def caseInstCast(InstCast inst)'''
+
+	def caseInstCast(InstCast inst) '''
 		«inst.target.variable.name» := «inst.source.variable.name»;
 	'''
-	
+
 	// CAL types
-	
 	override caseTypeBool(TypeBool type) {
 		'''bool'''
 	}
-	
+
 	override caseTypeFloat(TypeFloat type) {
 		'''float'''
 	}
-	
+
 	override caseTypeInt(TypeInt type) {
 		'''int(size=«type.size»)'''
 	}
-	
+
 	override caseTypeUint(TypeUint type) {
 		'''uint(size=«type.size»)'''
 	}
-	
+
 	override caseTypeString(TypeString type) {
 		"String"
 	}
-	
+
 	override caseTypeList(TypeList type) {
 		'''«IF type.size == 1»«type.type.doSwitch»«ELSE»List(type:«type.type.doSwitch», size=«type.size»)«ENDIF»'''
 	}
-	
-	
-	
+
 }
