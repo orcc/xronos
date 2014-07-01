@@ -32,6 +32,7 @@
 
 package org.xronos.orcc.forge.mapping.cdfg;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,7 +44,11 @@ import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Decision;
+import org.xronos.openforge.lim.Dependency;
+import org.xronos.openforge.lim.Exit;
+import org.xronos.openforge.lim.InBuf;
 import org.xronos.openforge.lim.Loop;
+import org.xronos.openforge.lim.OutBuf;
 import org.xronos.openforge.lim.Port;
 
 /**
@@ -86,10 +91,26 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		return loop;
 	}
 
-	private Component findDecisionComponent(Component decisionBlock) {
-		Component decisionComponent = null;
+	private Component findDecisionComponent(Block decisionBlock) {
+		// Decision block contains olny one result bus
+		Bus resultBus = decisionBlock.getExit(Exit.DONE).getDataBuses().get(0);
+		Port resultBusPeer = resultBus.getPeer();
 
-		return decisionComponent;
+		for (Component component : decisionBlock.getComponents()) {
+			if (!(component instanceof InBuf) && !(component instanceof OutBuf)) {
+				for (Bus bus : component.getExit(Exit.DONE).getDataBuses()) {
+					Collection<Dependency> deps = bus.getLogicalDependents();
+					for (Dependency dep : deps) {
+						Port port = dep.getPort();
+						if (port == resultBusPeer) {
+							return component;
+						}
+					}
+				}
+			}
+		}
+
+		return null;
 	}
 
 }
