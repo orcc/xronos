@@ -43,13 +43,18 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Component;
+import org.xronos.openforge.lim.DataDependency;
 import org.xronos.openforge.lim.Decision;
 import org.xronos.openforge.lim.Dependency;
+import org.xronos.openforge.lim.Entry;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.InBuf;
 import org.xronos.openforge.lim.Loop;
+import org.xronos.openforge.lim.LoopBody;
+import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.OutBuf;
 import org.xronos.openforge.lim.Port;
+import org.xronos.openforge.lim.WhileBody;
 
 /**
  * This Visitor transforms a {@link BlockWhile} to a LIM {@link Loop}
@@ -73,25 +78,37 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 	public Loop caseBlockWhile(BlockWhile blockWhile) {
 		Loop loop = null;
 
+		// -- Decision
 		// Construct decision from the block while condition
 		Block decisionBlock = (Block) new ExprToComponent().doSwitch(blockWhile
 				.getCondition());
 
-		Component decisionComponent = findDecisionComponent(decisionBlock);
+		Component decisionComponent = decisionFindConditionComponent(decisionBlock);
 
+		// Create decision
 		Decision decision = new Decision(decisionBlock, decisionComponent);
 
-		// Construct Loop Body Block from the block while blocks
+		// Propagate decisionBlockInputs to the decision one
+		decisionPropagateInputs(decision, decisionBlock);
 
+		// -- Loop Body
+		// Construct Loop Body Block from the block while blocks
 		Map<Var, Port> lbInputs = new HashMap<Var, Port>();
 		Map<Var, Bus> lbOutputs = new HashMap<Var, Bus>();
-		Component loopBody = new BlocksToBlock(lbInputs, lbOutputs, false)
+		Module body = (Module) new BlocksToBlock(lbInputs, lbOutputs, false)
 				.doSwitch(blockWhile.getBlocks());
+		LoopBody loopBody = new WhileBody(decision, body);
 
 		return loop;
 	}
 
-	private Component findDecisionComponent(Block decisionBlock) {
+	/**
+	 * Find the condition component on the decision Block
+	 * 
+	 * @param decisionBlock
+	 * @return
+	 */
+	private Component decisionFindConditionComponent(Block decisionBlock) {
 		// Decision block contains olny one result bus
 		Bus resultBus = decisionBlock.getExit(Exit.DONE).getDataBuses().get(0);
 		Port resultBusPeer = resultBus.getPeer();
@@ -111,6 +128,24 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		}
 
 		return null;
+	}
+
+	/**
+	 * This method propagates the input of the testBlock of the decision to its
+	 * container. Any data inputs to the decision need to be propagated from the
+	 * block to the decision. There should be no output ports to propagate. They
+	 * are inferred true/false.
+	 * 
+	 * @param decision
+	 * @param testBlock
+	 */
+	private void decisionPropagateInputs(Decision decision, Block decisionBlock) {
+		for (Port port : decisionBlock.getDataPorts()) {
+			Port decisionPort = decision.makeDataPort();
+			Entry entry = port.getOwner().getEntries().get(0);
+			entry.addDependency(port,
+					new DataDependency(decisionPort.getPeer()));
+		}
 	}
 
 }
