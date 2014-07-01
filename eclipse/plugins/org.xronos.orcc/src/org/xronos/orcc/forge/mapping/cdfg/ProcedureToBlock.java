@@ -20,32 +20,27 @@
  * 
  * Additional permission under GNU GPL version 3 section 7
  * 
- * If you modify this Program, or any covered work, by linking or 
- * combining it with Eclipse libraries (or a modified version of that 
- * library), containing parts covered by the terms of EPL,
- * the licensors of this Program grant you additional permission to convey 
- * the resulting work. {Corresponding Source for a non-source form of such 
- * a combination shall include the source code for the parts of Eclipse 
- * libraries used as well as that of the  covered work.}
+ * If you modify this Program, or any covered work, by linking or combining it
+ * with Eclipse (or a modified version of Eclipse or an Eclipse plugin or 
+ * an Eclipse library), containing parts covered by the terms of the 
+ * Eclipse Public License (EPL), the licensors of this Program grant you 
+ * additional permission to convey the resulting work.  Corresponding Source 
+ * for a non-source form of such a combination shall include the source code 
+ * for the parts of Eclipse libraries used as well as that of the  covered work.
+ * 
  */
 
 package org.xronos.orcc.forge.mapping.cdfg;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import net.sf.orcc.ir.BlockBasic;
-import net.sf.orcc.ir.BlockIf;
-import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
-import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Port;
 
 /**
@@ -74,38 +69,15 @@ public class ProcedureToBlock extends AbstractIrVisitor<Block> {
 
 	public ProcedureToBlock(boolean isActionBody) {
 		this.isActionBody = isActionBody;
-	}
-
-	@Override
-	public Block caseBlockBasic(BlockBasic block) {
-		BlockBasicToBlock blockBasicToBlock = new BlockBasicToBlock();
-		return (Block) blockBasicToBlock.doSwitch(block);
-	}
-
-	@Override
-	public Block caseBlockIf(BlockIf blockIf) {
-		// TODO Auto-generated method stub
-		return super.caseBlockIf(blockIf);
-	}
-
-	@Override
-	public Block caseBlockWhile(BlockWhile blockWhile) {
-		// TODO Auto-generated method stub
-		return super.caseBlockWhile(blockWhile);
+		this.inputs = new HashMap<Var, Port>();
+		this.outputs = new HashMap<Var, Bus>();
 	}
 
 	@Override
 	public Block caseProcedure(Procedure procedure) {
-		// TODO: Resolve Dependencies for each block
-		Map<net.sf.orcc.ir.Block, Component> blockComponents = new HashMap<net.sf.orcc.ir.Block, Component>();
-		List<Component> sequence = new ArrayList<Component>();
-		for (net.sf.orcc.ir.Block block : procedure.getBlocks()) {
-			Component component = doSwitch(block);
-			blockComponents.put(block, component);
-			sequence.add(component);
-		}
 
-		Block proceduralBlock = new Block(sequence, isActionBody);
+		Block proceduralBlock = (Block) new BlocksToBlock(inputs, outputs,
+				isActionBody).doSwitch(procedure.getBlocks());
 
 		return proceduralBlock;
 	}

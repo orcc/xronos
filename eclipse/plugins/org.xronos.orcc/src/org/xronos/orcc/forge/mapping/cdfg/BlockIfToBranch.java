@@ -30,85 +30,35 @@
  * 
  */
 
-package org.xronos.orcc.backend.transform;
+package org.xronos.orcc.forge.mapping.cdfg;
 
-import java.util.List;
+import java.util.Map;
 
-import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockIf;
-import net.sf.orcc.ir.BlockWhile;
-import net.sf.orcc.ir.InstPhi;
-import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
-import net.sf.orcc.ir.util.IrUtil;
+
+import org.xronos.openforge.lim.Branch;
+import org.xronos.openforge.lim.Bus;
+import org.xronos.openforge.lim.Port;
 
 /**
- * A dead phi code elimination,
+ * This Visitor transforms a {@link BlockIf} to a LIM {@link Branch}
  * 
  * @author Endri Bezati
- * 
+ *
  */
-public class DeadPhiElimination extends AbstractIrVisitor<Void> {
+public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 
-	boolean changed = false;
+	/**
+	 * Set of Block inputs
+	 */
+	Map<Var, Port> inputs;
 
-	@Override
-	public Void caseBlockIf(BlockIf blockIf) {
-		// visit Join Block
-		doSwitch(blockIf.getJoinBlock());
-		if (changed) {
-			changed = false;
-			doSwitch(blockIf);
-		}
-		doSwitch(blockIf.getThenBlocks());
-		if (changed) {
-			changed = false;
-			doSwitch(blockIf);
-		}
-
-		doSwitch(blockIf.getElseBlocks());
-		if (changed) {
-			changed = false;
-			doSwitch(blockIf);
-		}
-
-		return null;
-	}
-
-	@Override
-	public Void caseBlockWhile(BlockWhile blockWhile) {
-		// Visit the join block in the begining
-		doSwitch(blockWhile.getJoinBlock());
-
-		doSwitch(blockWhile.getBlocks());
-		if (changed) {
-			changed = false;
-			doSwitch(blockWhile);
-		}
-		return null;
-	}
-
-	@Override
-	public Void caseInstPhi(InstPhi phi) {
-		Var target = phi.getTarget().getVariable();
-		if ((target != null) && !target.isUsed()) {
-			IrUtil.delete(phi);
-			changed = true;
-			indexInst--;
-		}
-		return null;
-	}
-
-	@Override
-	public Void caseProcedure(Procedure procedure) {
-		this.procedure = procedure;
-		return super.caseProcedure(procedure);
-	}
-
-	@Override
-	public Void doSwitch(List<Block> blocks) {
-		return visitBlocksReverse(blocks);
-	}
-
+	/**
+	 * Set of Block outputs
+	 */
+	Map<Var, Bus> outputs;
+	
+	
 }
