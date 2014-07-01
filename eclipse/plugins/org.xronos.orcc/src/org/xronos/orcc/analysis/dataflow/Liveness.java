@@ -17,6 +17,16 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with XRONOS.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Additional permission under GNU GPL version 3 section 7
+ * 
+ * If you modify this Program, or any covered work, by linking or 
+ * combining it with Eclipse libraries (or a modified version of that 
+ * library), containing parts covered by the terms of EPL,
+ * the licensors of this Program grant you additional permission to convey 
+ * the resulting work. {Corresponding Source for a non-source form of such 
+ * a combination shall include the source code for the parts of Eclipse 
+ * libraries used as well as that of the  covered work.}
  */
 package org.xronos.orcc.analysis.dataflow;
 
@@ -40,25 +50,23 @@ import net.sf.orcc.util.Void;
 
 public class Liveness extends AbstractIrVisitor<Void> {
 
-	private Map<Block,Set<Var>> blockUses;
-	private Map<Block,Set<Var>> blockDefs;
+	private Map<Block, Set<Var>> blockUses;
+	private Map<Block, Set<Var>> blockDefs;
 
-	private Map<Block,Map<Var, List<Def>>> lastDef;
+	private Map<Block, Map<Var, List<Def>>> lastDef;
 
-	
 	private Block currentBlock;
-	
+
 	private int blockBasicCounter;
 	private int branchCounter;
 	private int loopCounter;
-	
-	
+
 	public Liveness() {
 		super(true);
 		blockUses = new HashMap<Block, Set<Var>>();
 		blockDefs = new HashMap<Block, Set<Var>>();
 
-		lastDef = new HashMap<Block, Map<Var,List<Def>>>();
+		lastDef = new HashMap<Block, Map<Var, List<Def>>>();
 
 	}
 
@@ -66,31 +74,31 @@ public class Liveness extends AbstractIrVisitor<Void> {
 	public Void caseBlockBasic(BlockBasic block) {
 		// Set Current Block
 		currentBlock = block;
-		
+
 		// Set Block Label attribute
 		String label = this.procedure.getName() + ".b" + blockBasicCounter;
 		blockBasicCounter++;
 		block.setAttribute("blockLabel", label);
-		
+
 		// Initialize members
 		lastDef.put(block, new HashMap<Var, List<Def>>());
-		blockUses.put(block,new HashSet<Var>());
-		blockDefs.put(block,new HashSet<Var>());
-		
+		blockUses.put(block, new HashSet<Var>());
+		blockDefs.put(block, new HashSet<Var>());
+
 		// Visit
 		super.caseBlockBasic(block);
-		
-		//Print Uses Defs
-		System.out.println("Block:"+block.getAttribute("blockLabel"));
+
+		// Print Uses Defs
+		System.out.println("Block:" + block.getAttribute("blockLabel"));
 		System.out.println("Uses:");
-		for(Var var: blockUses.get(block)){
-			System.out.println("\t "+var.getName());
+		for (Var var : blockUses.get(block)) {
+			System.out.println("\t " + var.getName());
 		}
 		System.out.println("Defs:");
-		for(Var var: blockDefs.get(block)){
-			System.out.println("\t "+var.getName());
+		for (Var var : blockDefs.get(block)) {
+			System.out.println("\t " + var.getName());
 		}
-		
+
 		return null;
 	}
 
@@ -106,7 +114,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 	public Void caseInstLoad(InstLoad load) {
 		Var target = load.getTarget().getVariable();
 		addToDefs(target, load.getTarget());
-		
+
 		// Visit indexes expressions in main visitor
 		return super.caseInstLoad(load);
 	}
@@ -142,11 +150,10 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		}
 	}
 
-	private void addToUses(Var var){
+	private void addToUses(Var var) {
 		if (!blockUses.get(currentBlock).contains(var)) {
 			blockUses.get(currentBlock).add(var);
 		}
 	}
-	
-	
+
 }
