@@ -32,8 +32,7 @@
 
 package org.xronos.orcc.forge.mapping.cdfg;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import net.sf.orcc.ir.BlockWhile;
@@ -43,6 +42,7 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Component;
+import org.xronos.openforge.lim.Decision;
 import org.xronos.openforge.lim.Loop;
 import org.xronos.openforge.lim.Port;
 
@@ -68,23 +68,28 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 	public Loop caseBlockWhile(BlockWhile blockWhile) {
 		Loop loop = null;
 
-		List<Component> sequence = new ArrayList<Component>();
+		// Construct decision from the block while condition
+		Block decisionBlock = (Block) new ExprToComponent().doSwitch(blockWhile
+				.getCondition());
 
-		for (net.sf.orcc.ir.Block block : blockWhile.getBlocks()) {
-			Component component = null;
-			if (block.isBlockBasic()) {
-				component = new BlockBasicToBlock().doSwitch(block);
-			} else if (block.isBlockWhile()) {
-				component = new BlockWhileToLoop().doSwitch(block);
-			} else if (block.isBlockIf()) {
+		Component decisionComponent = findDecisionComponent(decisionBlock);
 
-			}
-			sequence.add(component);
-		}
+		Decision decision = new Decision(decisionBlock, decisionComponent);
 
-		Block loopBodyBlock = new Block(sequence);
+		// Construct Loop Body Block from the block while blocks
+
+		Map<Var, Port> lbInputs = new HashMap<Var, Port>();
+		Map<Var, Bus> lbOutputs = new HashMap<Var, Bus>();
+		Component loopBody = new BlocksToBlock(lbInputs, lbOutputs, false)
+				.doSwitch(blockWhile.getBlocks());
 
 		return loop;
+	}
+
+	private Component findDecisionComponent(Component decisionBlock) {
+		Component decisionComponent = null;
+
+		return decisionComponent;
 	}
 
 }

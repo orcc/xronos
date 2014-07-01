@@ -208,9 +208,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 
 	@Override
 	public Component caseBlockIf(BlockIf blockIf) {
-		BlockBasicToBlock blockIfToBranch = new BlockBasicToBlock();
-
-		Component component = blockIfToBranch.doSwitch(blockIf);
+		Component component = new BlockIfToBranch().doSwitch(blockIf);
 
 		// Set port and bus dependencies
 		// -- Inputs
@@ -234,9 +232,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 
 	@Override
 	public Component caseBlockWhile(BlockWhile blockWhile) {
-		BlockBasicToBlock blockWhileToLoop = new BlockBasicToBlock();
-
-		Component component = blockWhileToLoop.doSwitch(blockWhile);
+		Component component = new BlockWhileToLoop().doSwitch(blockWhile);
 
 		// Set port and bus dependencies
 		// -- Inputs
