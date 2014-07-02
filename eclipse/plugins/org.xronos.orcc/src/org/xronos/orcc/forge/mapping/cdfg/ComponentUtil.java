@@ -33,6 +33,7 @@
 package org.xronos.orcc.forge.mapping.cdfg;
 
 import java.util.List;
+import java.util.Map;
 
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.ClockDependency;
@@ -72,15 +73,18 @@ import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprUnary;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.OpUnary;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Var;
 
 /**
  * An utility class that contains static methods that helps creating components
+ * 
  * @author Endri Bezati
  *
  */
 public class ComponentUtil {
 
-	public static Component createExprBinComponent(ExprBinary expr){
+	public static Component createExprBinComponent(ExprBinary expr) {
 		int sizeInBits = expr.getType().getSizeInBits();
 		Component op = null;
 		if (expr.getOp() == OpBinary.BITAND) {
@@ -124,23 +128,22 @@ public class ComponentUtil {
 		} else if (expr.getOp() == OpBinary.TIMES) {
 			op = new MultiplyOp(sizeInBits);
 		}
-		return op;			
-	}
-	
-	public static UnaryOp createExprUnaryComponent(ExprUnary expr){
-		UnaryOp op = null;
-		if (expr.getOp() == OpUnary.BITNOT){
-			op = new ComplementOp();
-		}else if (expr.getOp() == OpUnary.LOGIC_NOT){
-			op = new NotOp();
-		}else if (expr.getOp() == OpUnary.MINUS){
-			op = new MinusOp();
-		}
-		
 		return op;
 	}
-	
-	
+
+	public static UnaryOp createExprUnaryComponent(ExprUnary expr) {
+		UnaryOp op = null;
+		if (expr.getOp() == OpUnary.BITNOT) {
+			op = new ComplementOp();
+		} else if (expr.getOp() == OpUnary.LOGIC_NOT) {
+			op = new NotOp();
+		} else if (expr.getOp() == OpUnary.MINUS) {
+			op = new MinusOp();
+		}
+
+		return op;
+	}
+
 	/**
 	 * This method connects the done bus port of a component to its owner done
 	 * bus
@@ -148,7 +151,8 @@ public class ComponentUtil {
 	 * @param component
 	 * @param owner
 	 */
-	public static void connectControlDependency(Component component, Component owner) {
+	public static void connectControlDependency(Component component,
+			Component owner) {
 		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
 		Port donePort = owner.getExit(Exit.DONE).getDoneBus().getPeer();
 		List<Entry> entries = donePort.getOwner().getEntries();
@@ -173,7 +177,7 @@ public class ComponentUtil {
 		Dependency dep = new DataDependency(bus);
 		entry.addDependency(port, dep);
 	}
-	
+
 	/**
 	 * This method adds an entry to a component
 	 * 
@@ -200,5 +204,35 @@ public class ComponentUtil {
 				resetBus));
 		entry.addDependency(component.getGoPort(), new ControlDependency(goBus));
 	}
-	
+
+	/**
+	 * Propagate a list of inputs port that those ports components are owned by
+	 * the Owner Component
+	 * 
+	 * @param component
+	 *            the owner component
+	 * @param compInputs
+	 *            the component inputs map
+	 * @param inputs
+	 *            map of Variables and ports
+	 */
+	public static void propagateDataPorts(Component component,
+			Map<Var, Port> compInputs, Map<Var, Port> inputs) {
+		for (Var var : inputs.keySet()) {
+			Port port = inputs.get(var);
+			if (!compInputs.containsKey(var)) {
+				Type type = var.getType();
+				Port dataPort = component.makeDataPort(var.getName(),
+						type.getSizeInBits(), type.isInt());
+				Bus dataPortpeer = dataPort.getPeer();
+				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
+				compInputs.put(var, dataPort);
+			} else {
+				Port dataPort = inputs.get(var);
+				Bus dataPortpeer = dataPort.getPeer();
+				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
+			}
+		}
+	}
+
 }
