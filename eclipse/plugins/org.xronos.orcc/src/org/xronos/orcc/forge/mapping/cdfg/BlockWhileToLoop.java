@@ -182,7 +182,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
 		// -- Feedback dependencies
 		Entry fbEntry = loop.getBodyFeedbackEntry();
-		for (Bus fbBus : loopBody.getFeedbackExit().getBuses()) {
+		for (Bus fbBus : loopBody.getFeedbackExit().getDataBuses()) {
 			Var var = feedbackBusVar.get(fbBus);
 			if (lbInputs.containsKey(var)) {
 				Exit lfbExit = loop.getBody().getFeedbackExit();
@@ -228,7 +228,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 						new DataDependency(lPortPeer));
 				// -- Data dependency out latch
 				Bus latchResultBus = latch.getResultBus();
-				latchResultBus.setIDLogical(var.getName());
+				latchResultBus.setIDLogical(var.getName()+"_result");
 
 				Port lbPort = lbInputs.get(var);
 				fbEntry.addDependency(lbPort, new DataDependency(lPortPeer));
@@ -256,6 +256,9 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		Dependency dep = new ControlDependency(lDoneBus);
 		outbufEntry.addDependency(lbDonePort, dep);
 
+		blockWhile.setAttribute("inputs", inputs);
+		blockWhile.setAttribute("outputs", outputs);
+		
 		return loop;
 	}
 
