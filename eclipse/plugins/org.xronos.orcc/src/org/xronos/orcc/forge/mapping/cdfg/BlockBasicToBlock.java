@@ -294,7 +294,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				// Between Block input data port and noop data Port
 				Port noopDataPort = noop.getDataPorts().get(0);
 				ComponentUtil.connectDataDependency(dataBus, noopDataPort, 0);
-				inputs.put(source, dataPort);
+				addToInputs(source, dataPort);
 
 				// -- Between NoOp and CastOp
 				Bus noopDataBus = noop.getResultBus();
@@ -392,6 +392,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					for (Var inVar : inputs.keySet()) {
 						if (var == inVar) {
 							Port port = inputs.get(inVar);
+							// FIXME : here the lastDefinedVarBus should be
+							// eliminated
 							if (lastDefinedVarBus.containsKey(var)) {
 								List<Bus> buses = lastDefinedVarBus.get(var);
 								int lastDefIndx = buses.size() - 1;
@@ -414,7 +416,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 										port, 0);
 
 								// Add it to current Block inputs
-								inputs.put(var, cbDataPort);
+								addToInputs(var, cbDataPort);
 							}
 						}
 					}
@@ -464,7 +466,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 									type.getSizeInBits(),
 									type.isInt() || type.isBool());
 							Bus cbDataBus = cbDataPort.getPeer();
-							inputs.put(var, cbDataPort);
+							addToInputs(var, cbDataPort);
 
 							// Connect it with the proc block input
 							ComponentUtil.connectDataDependency(cbDataBus,
@@ -528,7 +530,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		// Check if inputs are on the block else put it on block inputs
 
 		if (!lastDefinedVarBus.containsKey(source)) {
-			inputs.put(source, dataPort);
+			addToInputs(source, dataPort);
 		}
 
 		return castOp;
@@ -929,7 +931,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 		// restore old index
 		indexInst = oldIndexInst;
-		currentBlock = new Block(sequence);
+		Block block = new Block(sequence);
 
 		Map<Var, List<Bus>> lastDefVarBus = new HashMap<Var, List<Bus>>();
 
@@ -948,13 +950,21 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				} else {
 					// It is an input
 					Type type = var.getType();
-					inputs.put(var, port);
-					// Create a data Port
-					Port blkDataPort = currentBlock
-							.makeDataPort(var.getName(), type.getSizeInBits(),
-									type.isInt() || type.isBool());
-					Bus blkDataBus = blkDataPort.getPeer();
-					ComponentUtil.connectDataDependency(blkDataBus, port, 0);
+					if (inputs.containsKey(var)) {
+						Port blkDataPort = inputs.get(var);
+						Bus blkDataBus = blkDataPort.getPeer();
+						ComponentUtil
+								.connectDataDependency(blkDataBus, port, 0);
+					}else{
+						// Create a data Port
+						Port blkDataPort = block.makeDataPort(var.getName(),
+								type.getSizeInBits(),
+								type.isInt() || type.isBool());
+						inputs.put(var, blkDataPort);
+						Bus blkDataBus = blkDataPort.getPeer();
+						ComponentUtil
+								.connectDataDependency(blkDataBus, port, 0);
+					}
 				}
 			}
 			// All dataBuses should be given as lastDefined here
@@ -975,9 +985,9 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				Var var = busDependecies.get(bus);
 				if (!outputs.containsKey(var)) {
 					Type type = var.getType();
-					Bus blkOutputBus = currentBlock.getExit(Exit.DONE)
-							.makeDataBus(var.getName(), type.getSizeInBits(),
-									type.isInt() || type.isBool());
+					Bus blkOutputBus = block.getExit(Exit.DONE).makeDataBus(
+							var.getName(), type.getSizeInBits(),
+							type.isInt() || type.isBool());
 					Port blkOutputPort = blkOutputBus.getPeer();
 					// Add dependency
 					ComponentUtil.connectDataDependency(bus, blkOutputPort, 0);
@@ -987,6 +997,20 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			}
 		}
 
-		return currentBlock;
+		return block;
+	}
+
+	/**
+	 * Add to inputs if the variable has not been already added
+	 * 
+	 * @param var
+	 *            the variable
+	 * @param port
+	 *            the port
+	 */
+	private void addToInputs(Var var, Port port) {
+		if (!inputs.containsKey(var)) {
+			inputs.put(var, port);
+		}
 	}
 }
