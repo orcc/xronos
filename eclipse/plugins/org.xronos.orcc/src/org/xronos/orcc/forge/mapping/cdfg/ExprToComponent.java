@@ -47,6 +47,7 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.ir.util.TypeUtil;
 
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
@@ -110,35 +111,33 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 
 		// Create List of Block Sequence
 		List<Component> sequence = new ArrayList<Component>();
-
+		
+		Type castType = TypeUtil.getLub(E1.getType(), E2.getType());
+		
 		// Add NoOp and Cast or only Cast
 		if (compE1 != null) {
 			sequence.add(compE1);
 			// Cast Operator input mix max size of the expression output
-			Type type = expr.getType();
-			castE1 = new CastOp(type.getSizeInBits(), type.isInt());
+			castE1 = new CastOp(castType.getSizeInBits(), castType.isInt());
 			sequence.add(castE1);
 		} else {
 			noopE1 = new NoOp(1, Exit.DONE);
 			sequence.add(noopE1);
 			// Cast Operator input mix max size of the expression output
-			Type type = expr.getType();
-			castE1 = new CastOp(type.getSizeInBits(), type.isInt());
+			castE1 = new CastOp(castType.getSizeInBits(), castType.isInt());
 			sequence.add(castE1);
 		}
 
 		if (compE2 != null) {
 			sequence.add(compE2);
 			// Cast Operator input mix max size of the expression output
-			Type type = expr.getType();
-			castE2 = new CastOp(type.getSizeInBits(), type.isInt());
+			castE2 = new CastOp(castType.getSizeInBits(), castType.isInt());
 			sequence.add(castE2);
 		} else {
 			noopE2 = new NoOp(1, Exit.DONE);
 			sequence.add(noopE2);
 			// Cast Operator input mix max size of the expression output
-			Type type = expr.getType();
-			castE2 = new CastOp(type.getSizeInBits(), type.isInt());
+			castE2 = new CastOp(castType.getSizeInBits(), castType.isInt());
 			sequence.add(castE2);
 		}
 		sequence.add(op);
