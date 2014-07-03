@@ -32,14 +32,25 @@
 
 package org.xronos.orcc.forge.mapping.cdfg;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 
+import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Branch;
 import org.xronos.openforge.lim.Bus;
+import org.xronos.openforge.lim.Component;
+import org.xronos.openforge.lim.ControlDependency;
+import org.xronos.openforge.lim.Decision;
+import org.xronos.openforge.lim.Dependency;
+import org.xronos.openforge.lim.Entry;
+import org.xronos.openforge.lim.Exit;
+import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 
 /**
@@ -50,15 +61,105 @@ import org.xronos.openforge.lim.Port;
  */
 public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 
-	/**
-	 * Set of Block inputs
-	 */
-	Map<Var, Port> inputs;
+	@Override
+	public Branch caseBlockIf(BlockIf blockIf) {
+		Map<Var, Port> inputs = new HashMap<Var, Port>();
+		Map<Var, Bus> outputs = new HashMap<Var, Bus>();
 
-	/**
-	 * Set of Block outputs
-	 */
-	Map<Var, Bus> outputs;
-	
-	
+		// -- Decision
+		// Construct decision from the block while condition
+		Block decisionBlock = (Block) new ExprToComponent().doSwitch(blockIf
+				.getCondition());
+
+		@SuppressWarnings("unchecked")
+		Map<Var, Port> dBlockDataPorts = (Map<Var, Port>) blockIf
+				.getCondition().getAttribute("inputs").getObjectValue();
+
+		Component decisionComponent = ComponentUtil
+				.decisionFindConditionComponent(decisionBlock);
+
+		// Create decision
+		Decision decision = new Decision(decisionBlock, decisionComponent);
+
+		// Propagate decisionBlockInputs to the decision one
+		Map<Var, Port> dDataPorts = new HashMap<Var, Port>();
+		ComponentUtil.propagateDataPorts(decision, dDataPorts, dBlockDataPorts);
+
+		// -- Then Blocks
+
+		Map<Var, Port> tDataPorts = new HashMap<Var, Port>();
+		Map<Var, Bus> tDataBuses = new HashMap<Var, Bus>();
+		Module trueBranch = (Module) new BlocksToBlock(tDataPorts, tDataBuses,
+				false).doSwitch(blockIf.getThenBlocks());
+
+		// -- Else Blocks
+		Map<Var, Port> eDataPorts = new HashMap<Var, Port>();
+		Map<Var, Bus> eDataBuses = new HashMap<Var, Bus>();
+		Module falseBranch = null;
+		if (!blockIf.getElseBlocks().isEmpty()) {
+			falseBranch = (Module) new BlocksToBlock(eDataPorts, eDataBuses,
+					false).doSwitch(blockIf.getThenBlocks());
+		}
+
+		// Create Branch
+		Branch branch = falseBranch == null ? new Branch(decision, trueBranch)
+				: new Branch(decision, trueBranch, falseBranch);
+
+		// Propagate Inputs from decision, true branch and false branch
+		ComponentUtil.propagateDataPorts(branch, inputs, dDataPorts);
+		ComponentUtil.propagateDataPorts(branch, inputs, tDataPorts);
+		ComponentUtil.propagateDataPorts(branch, inputs, eDataPorts);
+
+		// Create DataBuses for true Branch
+		for (Var var : tDataBuses.keySet()) {
+			Type type = var.getType();
+			Bus bus = tDataBuses.get(var);
+			// Connect
+			Bus bDataBus = branch.getExit(Exit.DONE).makeDataBus(var.getName(),
+					type.getSizeInBits(), type.isInt());
+			Port bDataBusPeer = bDataBus.getPeer();
+			ComponentUtil.connectDataDependency(bus, bDataBusPeer, 0);
+			outputs.put(var, bDataBus);
+		}
+
+		// -- True branch control dependecies
+		Bus doneBus = trueBranch.getExit(Exit.DONE).getDoneBus();
+		Port donePort = branch.getExit(Exit.DONE).getDoneBus().getPeer();
+		List<Entry> entries = donePort.getOwner().getEntries();
+		Entry entry = entries.get(0);
+		Dependency dep = new ControlDependency(doneBus);
+		entry.addDependency(donePort, dep);
+
+		// Create DataBuses for false Branch
+		for (Var var : eDataBuses.keySet()) {
+			Type type = var.getType();
+			Bus bus = tDataBuses.get(var);
+			Bus bDataBus = null;
+			if (outputs.containsKey(var)) {
+				bDataBus = outputs.get(var);
+			} else {
+				// Connect
+				bDataBus = branch.getExit(Exit.DONE).makeDataBus(var.getName(),
+						type.getSizeInBits(), type.isInt());
+			}
+			Port bDataBusPeer = bDataBus.getPeer();
+			ComponentUtil.connectDataDependency(bus, bDataBusPeer, 1);
+		}
+
+		// -- False branch control dependencies
+		if (falseBranch != null) {
+			doneBus = falseBranch.getExit(Exit.DONE).getDoneBus();
+			donePort = branch.getExit(Exit.DONE).getDoneBus().getPeer();
+			entries = donePort.getOwner().getEntries();
+			entry = entries.get(1);
+			dep = new ControlDependency(doneBus);
+			entry.addDependency(donePort, dep);
+		}
+		
+		blockIf.setAttribute("inputs", inputs);
+		blockIf.setAttribute("outputs", outputs);
+
+		return branch;
+	}
+
 }

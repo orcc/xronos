@@ -32,17 +32,22 @@
 
 package org.xronos.orcc.forge.mapping.cdfg;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.ClockDependency;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.ControlDependency;
 import org.xronos.openforge.lim.DataDependency;
+import org.xronos.openforge.lim.Decision;
 import org.xronos.openforge.lim.Dependency;
 import org.xronos.openforge.lim.Entry;
 import org.xronos.openforge.lim.Exit;
+import org.xronos.openforge.lim.InBuf;
+import org.xronos.openforge.lim.OutBuf;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.ResetDependency;
 import org.xronos.openforge.lim.op.AddOp;
@@ -211,27 +216,74 @@ public class ComponentUtil {
 	 * 
 	 * @param component
 	 *            the owner component
-	 * @param compInputs
+	 * @param tgtDataPorts
 	 *            the component inputs map
-	 * @param inputs
+	 * @param srcDataPorts
 	 *            map of Variables and ports
 	 */
 	public static void propagateDataPorts(Component component,
-			Map<Var, Port> compInputs, Map<Var, Port> inputs) {
-		for (Var var : inputs.keySet()) {
-			Port port = inputs.get(var);
-			if (!compInputs.containsKey(var)) {
+			Map<Var, Port> tgtDataPorts, Map<Var, Port> srcDataPorts) {
+		for (Var var : srcDataPorts.keySet()) {
+			Port port = srcDataPorts.get(var);
+			if (!tgtDataPorts.containsKey(var)) {
 				Type type = var.getType();
 				Port dataPort = component.makeDataPort(var.getName(),
 						type.getSizeInBits(), type.isInt());
 				Bus dataPortpeer = dataPort.getPeer();
 				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
-				compInputs.put(var, dataPort);
+				tgtDataPorts.put(var, dataPort);
 			} else {
-				Port dataPort = inputs.get(var);
+				Port dataPort = srcDataPorts.get(var);
 				Bus dataPortpeer = dataPort.getPeer();
 				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
 			}
+		}
+	}
+
+	/**
+	 * Find the condition component on the decision Block
+	 * 
+	 * @param decisionBlock
+	 * @return
+	 */
+	public static Component decisionFindConditionComponent(Block decisionBlock) {
+		// Decision block contains only one result bus
+		Bus resultBus = decisionBlock.getExit(Exit.DONE).getDataBuses().get(0);
+		Port resultBusPeer = resultBus.getPeer();
+
+		for (Component component : decisionBlock.getComponents()) {
+			if (!(component instanceof InBuf) && !(component instanceof OutBuf)) {
+				for (Bus bus : component.getExit(Exit.DONE).getDataBuses()) {
+					Collection<Dependency> deps = bus.getLogicalDependents();
+					for (Dependency dep : deps) {
+						Port port = dep.getPort();
+						if (port == resultBusPeer) {
+							return component;
+						}
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * This method propagates the input of the testBlock of the decision to its
+	 * container. Any data inputs to the decision need to be propagated from the
+	 * block to the decision. There should be no output ports to propagate. They
+	 * are inferred true/false.
+	 * 
+	 * @param decision
+	 * @param testBlock
+	 */
+	public static void decisionPropagateInputs(Decision decision,
+			Block decisionBlock) {
+		for (Port port : decisionBlock.getDataPorts()) {
+			Port decisionPort = decision.makeDataPort();
+			Entry entry = port.getOwner().getEntries().get(0);
+			entry.addDependency(port,
+					new DataDependency(decisionPort.getPeer()));
 		}
 	}
 

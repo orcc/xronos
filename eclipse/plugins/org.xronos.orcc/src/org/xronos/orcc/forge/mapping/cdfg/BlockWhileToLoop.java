@@ -52,12 +52,10 @@ import org.xronos.openforge.lim.Decision;
 import org.xronos.openforge.lim.Dependency;
 import org.xronos.openforge.lim.Entry;
 import org.xronos.openforge.lim.Exit;
-import org.xronos.openforge.lim.InBuf;
 import org.xronos.openforge.lim.Latch;
 import org.xronos.openforge.lim.Loop;
 import org.xronos.openforge.lim.LoopBody;
 import org.xronos.openforge.lim.Module;
-import org.xronos.openforge.lim.OutBuf;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.WhileBody;
 import org.xronos.openforge.lim.primitive.Reg;
@@ -82,16 +80,17 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		Block decisionBlock = (Block) new ExprToComponent().doSwitch(blockWhile
 				.getCondition());
 		@SuppressWarnings("unchecked")
-		Map<Var, Port> dInputs = (Map<Var, Port>) blockWhile.getCondition()
+		Map<Var, Port> dBlockDataPorts = (Map<Var, Port>) blockWhile.getCondition()
 				.getAttribute("inputs").getObjectValue();
 
-		Component decisionComponent = decisionFindConditionComponent(decisionBlock);
+		Component decisionComponent = ComponentUtil.decisionFindConditionComponent(decisionBlock);
 
 		// Create decision
 		Decision decision = new Decision(decisionBlock, decisionComponent);
 
 		// Propagate decisionBlockInputs to the decision one
-		decisionPropagateInputs(decision, decisionBlock);
+		Map<Var, Port> dDataPorts =  new HashMap<Var, Port>();
+		ComponentUtil.propagateDataPorts(decision, dDataPorts, dBlockDataPorts);
 
 		// -- Loop Body
 		// Construct Loop Body Block from the block while blocks
@@ -107,7 +106,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
 		// Propagate decision and body inputs to the loopBody
 		// -- Propagate Decision data ports
-		ComponentUtil.propagateDataPorts(loopBody, lbInputs, dInputs);
+		ComponentUtil.propagateDataPorts(loopBody, lbInputs, dDataPorts);
 
 		// -- Propagate Body Blocks data ports
 		ComponentUtil.propagateDataPorts(loopBody, lbInputs, blocksInputs);
@@ -153,7 +152,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		// Create Loop DataPorts
 
 		Set<Var> inVars = new HashSet<Var>();
-		inVars.addAll(dInputs.keySet());
+		inVars.addAll(dDataPorts.keySet());
 		inVars.addAll(blocksInputs.keySet());
 
 		for (Var var : inVars) {
@@ -260,52 +259,6 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		blockWhile.setAttribute("outputs", outputs);
 		
 		return loop;
-	}
-
-	/**
-	 * Find the condition component on the decision Block
-	 * 
-	 * @param decisionBlock
-	 * @return
-	 */
-	private Component decisionFindConditionComponent(Block decisionBlock) {
-		// Decision block contains olny one result bus
-		Bus resultBus = decisionBlock.getExit(Exit.DONE).getDataBuses().get(0);
-		Port resultBusPeer = resultBus.getPeer();
-
-		for (Component component : decisionBlock.getComponents()) {
-			if (!(component instanceof InBuf) && !(component instanceof OutBuf)) {
-				for (Bus bus : component.getExit(Exit.DONE).getDataBuses()) {
-					Collection<Dependency> deps = bus.getLogicalDependents();
-					for (Dependency dep : deps) {
-						Port port = dep.getPort();
-						if (port == resultBusPeer) {
-							return component;
-						}
-					}
-				}
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * This method propagates the input of the testBlock of the decision to its
-	 * container. Any data inputs to the decision need to be propagated from the
-	 * block to the decision. There should be no output ports to propagate. They
-	 * are inferred true/false.
-	 * 
-	 * @param decision
-	 * @param testBlock
-	 */
-	private void decisionPropagateInputs(Decision decision, Block decisionBlock) {
-		for (Port port : decisionBlock.getDataPorts()) {
-			Port decisionPort = decision.makeDataPort();
-			Entry entry = port.getOwner().getEntries().get(0);
-			entry.addDependency(port,
-					new DataDependency(decisionPort.getPeer()));
-		}
 	}
 
 }
