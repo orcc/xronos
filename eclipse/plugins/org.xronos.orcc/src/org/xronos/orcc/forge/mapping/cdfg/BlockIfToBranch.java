@@ -86,8 +86,7 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 					valueDataPorts);
 			// Propagate DataBuses
 			for (Bus dataBus : valueComponent.getExit(Exit.DONE).getDataBuses()) {
-				Bus blockDataBus = decisionBlock.getExit(Exit.DONE).makeDataBus(
-						dataBus.getSize(), dataBus.getValue().isSigned());
+				Bus blockDataBus = decisionBlock.getExit(Exit.DONE).makeDataBus();
 				Port blockDataBuspeer = blockDataBus.getPeer();
 				ComponentUtil.connectDataDependency(dataBus, blockDataBuspeer,
 						0);
