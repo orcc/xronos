@@ -133,7 +133,7 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 		// Create DataBuses for false Branch
 		for (Var var : eDataBuses.keySet()) {
 			Type type = var.getType();
-			Bus bus = tDataBuses.get(var);
+			Bus bus = eDataBuses.get(var);
 			Bus bDataBus = null;
 			if (outputs.containsKey(var)) {
 				bDataBus = outputs.get(var);
