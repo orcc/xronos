@@ -191,8 +191,8 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 				// -- Create a feedback register
 				Reg fbReg = loop.createDataRegister();
 				fbReg.setIDLogical("fbReg_" + var.getName());
-				fbReg.getDataPort().setIDLogical(var.getName());
-				fbReg.getResultBus().setIDLogical(var.getName());
+				//fbReg.getDataPort().setIDLogical(var.getName());
+				//fbReg.getResultBus().setIDLogical(var.getName());
 
 				// -- Dependencies
 				Entry entry = fbReg.makeEntry(lfbExit);
@@ -231,7 +231,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 				latchResultBus.setIDLogical(var.getName()+"_result");
 
 				Port lbPort = lbInputs.get(var);
-				fbEntry.addDependency(lbPort, new DataDependency(lPortPeer));
+				fbEntry.addDependency(lbPort, new DataDependency(latchResultBus));
 			}
 		}
 

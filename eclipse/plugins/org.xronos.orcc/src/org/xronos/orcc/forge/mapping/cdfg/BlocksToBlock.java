@@ -50,6 +50,7 @@ import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Port;
+import org.xronos.openforge.util.Debug;
 
 /**
  * This visitor takes a list of {@link net.sf.orcc.ir.Block}s and creates a new
@@ -177,6 +178,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 			}
 		}
 		indexBlock = oldIndexBlock;
+		Debug.modGraph(block, "/tmp");
 		return block;
 	}
 
