@@ -759,13 +759,30 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			sequence.add(absoluteMemWrite);
 			memPort.addAccess((LValue) absoluteMemWrite, location);
 
+			// Create Block
+			Block block = new Block(sequence);
+			
+			// Resolve inputs
+			@SuppressWarnings("unchecked")
+			Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
+					"inputs").getObjectValue();
+			for (Var var : exprInput.keySet()) {
+				Type type = var.getType();
+
+				Port dataPort = block.makeDataPort(type.getSizeInBits(),
+						type.isInt());
+				Bus dataPortPeer = dataPort.getPeer();
+				ComponentUtil.connectDataDependency(dataPortPeer,
+						exprInput.get(var), 0);
+				portDependecies.put(dataPort, var);
+			}
+			
 			// Resolve Dependencies
 			Port dataPort = absoluteMemWrite.getDataPorts().get(0);
 			ComponentUtil.connectDataDependency(compResultBus, dataPort, 0);
 
-			if (comp == null) {
-				return absoluteMemWrite;
-			}
+			return block;
+			
 		} else {
 			// Index Flattener has flatten all indexes only one expression
 			// possible
@@ -905,8 +922,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			return storedBlock;
 		}
-
-		return null;
 	}
 
 	@Override

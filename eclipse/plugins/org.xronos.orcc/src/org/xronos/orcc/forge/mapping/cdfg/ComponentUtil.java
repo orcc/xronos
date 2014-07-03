@@ -178,7 +178,7 @@ public class ComponentUtil {
 	 */
 	public static void connectDataDependency(Bus bus, Port port, int group) {
 		List<Entry> entries = port.getOwner().getEntries();
-		Entry entry = entries.get(0);
+		Entry entry = entries.get(group);
 		Dependency dep = new DataDependency(bus);
 		entry.addDependency(port, dep);
 	}

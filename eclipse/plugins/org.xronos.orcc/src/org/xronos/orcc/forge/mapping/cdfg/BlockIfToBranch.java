@@ -120,7 +120,7 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 		Module falseBranch = null;
 		if (!blockIf.getElseBlocks().isEmpty()) {
 			falseBranch = (Module) new BlocksToBlock(eDataPorts, eDataBuses,
-					false).doSwitch(blockIf.getThenBlocks());
+					false).doSwitch(blockIf.getElseBlocks());
 		}
 
 		// Create Branch
@@ -144,7 +144,7 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 			outputs.put(var, bDataBus);
 		}
 
-		// -- True branch control dependecies
+		// -- True branch control dependencies
 		Bus doneBus = trueBranch.getExit(Exit.DONE).getDoneBus();
 		Port donePort = branch.getExit(Exit.DONE).getDoneBus().getPeer();
 		List<Entry> entries = donePort.getOwner().getEntries();
@@ -163,6 +163,7 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 				// Connect
 				bDataBus = branch.getExit(Exit.DONE).makeDataBus(var.getName(),
 						type.getSizeInBits(), type.isInt());
+				outputs.put(var, bDataBus);
 			}
 			Port bDataBusPeer = bDataBus.getPeer();
 			ComponentUtil.connectDataDependency(bus, bDataBusPeer, 1);
