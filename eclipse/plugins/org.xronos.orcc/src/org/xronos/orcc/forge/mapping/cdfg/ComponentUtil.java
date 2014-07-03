@@ -233,7 +233,7 @@ public class ComponentUtil {
 				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
 				tgtDataPorts.put(var, dataPort);
 			} else {
-				Port dataPort = srcDataPorts.get(var);
+				Port dataPort = tgtDataPorts.get(var);
 				Bus dataPortpeer = dataPort.getPeer();
 				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
 			}

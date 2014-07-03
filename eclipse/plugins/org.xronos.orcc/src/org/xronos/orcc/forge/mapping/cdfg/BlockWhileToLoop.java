@@ -73,6 +73,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		// Initialize members
 		Map<Var, Port> inputs = new HashMap<Var, Port>();
 		Map<Var, Bus> outputs = new HashMap<Var, Bus>();
+
 		Map<Bus, Var> feedbackBusVar = new HashMap<Bus, Var>();
 		Map<Bus, Var> completeBusVar = new HashMap<Bus, Var>();
 		// -- Decision
@@ -80,49 +81,49 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		Block decisionBlock = (Block) new ExprToComponent().doSwitch(blockWhile
 				.getCondition());
 		@SuppressWarnings("unchecked")
-		Map<Var, Port> dBlockDataPorts = (Map<Var, Port>) blockWhile.getCondition()
-				.getAttribute("inputs").getObjectValue();
+		Map<Var, Port> dBlockDataPorts = (Map<Var, Port>) blockWhile
+				.getCondition().getAttribute("inputs").getObjectValue();
 
-		Component decisionComponent = ComponentUtil.decisionFindConditionComponent(decisionBlock);
+		Component decisionComponent = ComponentUtil
+				.decisionFindConditionComponent(decisionBlock);
 
 		// Create decision
 		Decision decision = new Decision(decisionBlock, decisionComponent);
 
 		// Propagate decisionBlockInputs to the decision one
-		Map<Var, Port> dDataPorts =  new HashMap<Var, Port>();
+		Map<Var, Port> dDataPorts = new HashMap<Var, Port>();
 		ComponentUtil.propagateDataPorts(decision, dDataPorts, dBlockDataPorts);
 
 		// -- Loop Body
 		// Construct Loop Body Block from the block while blocks
-		Map<Var, Port> blocksInputs = new HashMap<Var, Port>();
-		Map<Var, Bus> blocksOutputs = new HashMap<Var, Bus>();
-		Module body = (Module) new BlocksToBlock(blocksInputs, blocksOutputs,
-				false).doSwitch(blockWhile.getBlocks());
+		Map<Var, Port> blockDataPorts = new HashMap<Var, Port>();
+		Map<Var, Bus> blockDataBuses = new HashMap<Var, Bus>();
+		Module body = (Module) new BlocksToBlock(blockDataPorts,
+				blockDataBuses, false).doSwitch(blockWhile.getBlocks());
 
 		// Loop body (While Body) inputs and outputs
-		Map<Var, Port> lbInputs = new HashMap<Var, Port>();
+		Map<Var, Port> lbDataPorts = new HashMap<Var, Port>();
 
 		LoopBody loopBody = new WhileBody(decision, body);
 
 		// Propagate decision and body inputs to the loopBody
 		// -- Propagate Decision data ports
-		ComponentUtil.propagateDataPorts(loopBody, lbInputs, dDataPorts);
+		ComponentUtil.propagateDataPorts(loopBody, lbDataPorts, dDataPorts);
 
 		// -- Propagate Body Blocks data ports
-		ComponentUtil.propagateDataPorts(loopBody, lbInputs, blocksInputs);
+		ComponentUtil.propagateDataPorts(loopBody, lbDataPorts, blockDataPorts);
 
 		// -- Propagate Body Blocks data Buses
 
 		// Propagate data buses to feedback and completed data buses
 		// -- Feedback Exit
-		Exit fExit = loopBody.getFeedbackExit();
-		for (Var var : blocksOutputs.keySet()) {
-			if (blocksInputs.containsKey(var)) {
+		for (Var var : blockDataBuses.keySet()) {
+			if (blockDataPorts.containsKey(var)) {
 				Type type = var.getType();
-				Bus bus = blocksOutputs.get(var);
+				Bus bus = blockDataBuses.get(var);
 				// -- Make an feedback exit data bus
-				Bus fbBus = fExit.makeDataBus(var.getName(),
-						type.getSizeInBits(), type.isInt());
+				Bus fbBus = loopBody.getFeedbackExit().makeDataBus(
+						var.getName(), type.getSizeInBits(), type.isInt());
 				// -- Connect
 				Port fbBusPeer = fbBus.getPeer();
 				ComponentUtil.connectDataDependency(bus, fbBusPeer, 0);
@@ -132,19 +133,32 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		}
 
 		// -- Complete Exit
-		Exit cExit = loopBody.getLoopCompleteExit();
-		for (Var var : blocksOutputs.keySet()) {
+		for (Var var : blockDataBuses.keySet()) {
 			Type type = var.getType();
-			Bus bus = blocksOutputs.get(var);
-			// -- Make an feedback exit data bus
-			Bus cBus = cExit.makeDataBus(var.getName(), type.getSizeInBits(),
-					type.isInt());
+			Bus bus = blockDataBuses.get(var);
+			// -- Make an complete exit data bus
+			Bus cBus = loopBody.getLoopCompleteExit().makeDataBus(
+					var.getName(), type.getSizeInBits(), type.isInt());
 			// -- Connect
 			Port cBusPeer = cBus.getPeer();
 			ComponentUtil.connectDataDependency(bus, cBusPeer, 0);
 			// -- Save it to the feedbackBusVar
 			completeBusVar.put(cBus, var);
 		}
+
+		// -- Dependency through input to the Done Exit
+		for (Var lbVar : lbDataPorts.keySet())
+			for (Bus cBus : completeBusVar.keySet()) {
+				Var cVar = completeBusVar.get(cBus);
+				if (lbVar == cVar) {
+					Port lbDataPort = lbDataPorts.get(lbVar);
+					Bus lbDataportBus = lbDataPort.getPeer();
+
+					Port cBusPeer = cBus.getPeer();
+					ComponentUtil.connectDataDependency(lbDataportBus,
+							cBusPeer, 0);
+				}
+			}
 
 		// Create Loop
 		Loop loop = new Loop(loopBody);
@@ -153,7 +167,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
 		Set<Var> inVars = new HashSet<Var>();
 		inVars.addAll(dDataPorts.keySet());
-		inVars.addAll(blocksInputs.keySet());
+		inVars.addAll(lbDataPorts.keySet());
 
 		for (Var var : inVars) {
 			if (!inputs.containsKey(var)) {
@@ -170,8 +184,8 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		Entry initEntry = loop.getBodyInitEntry();
 		for (Var var : inputs.keySet()) {
 			Port lPort = inputs.get(var);
-			if (lbInputs.containsKey(var)) {
-				Port lbPort = lbInputs.get(var);
+			if (lbDataPorts.containsKey(var)) {
+				Port lbPort = lbDataPorts.get(var);
 				Bus lPortPeer = lPort.getPeer();
 				Dependency dep = (lbPort == lbPort.getOwner().getGoPort()) ? new ControlDependency(
 						lPortPeer) : new DataDependency(lPortPeer);
@@ -183,15 +197,15 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		Entry fbEntry = loop.getBodyFeedbackEntry();
 		for (Bus fbBus : loopBody.getFeedbackExit().getDataBuses()) {
 			Var var = feedbackBusVar.get(fbBus);
-			if (lbInputs.containsKey(var)) {
+			if (lbDataPorts.containsKey(var)) {
 				Exit lfbExit = loop.getBody().getFeedbackExit();
-				Port lbPort = lbInputs.get(var);
+				Port lbPort = lbDataPorts.get(var);
 
 				// -- Create a feedback register
 				Reg fbReg = loop.createDataRegister();
 				fbReg.setIDLogical("fbReg_" + var.getName());
-				//fbReg.getDataPort().setIDLogical(var.getName());
-				//fbReg.getResultBus().setIDLogical(var.getName());
+				// fbReg.getDataPort().setIDLogical(var.getName());
+				// fbReg.getResultBus().setIDLogical(var.getName());
 
 				// -- Dependencies
 				Entry entry = fbReg.makeEntry(lfbExit);
@@ -207,8 +221,8 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 				.getBody().getGoPort());
 		Bus initDoneBus = goInitDeps.iterator().next().getLogicalBus();
 
-		for (Var var : blocksInputs.keySet()) {
-			if (!blocksOutputs.containsKey(var)) {
+		for (Var var : blockDataPorts.keySet()) {
+			if (!blockDataBuses.containsKey(var)) {
 				Port lPort = inputs.get(var);
 				Bus lPortPeer = lPort.getPeer();
 
@@ -227,10 +241,11 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 						new DataDependency(lPortPeer));
 				// -- Data dependency out latch
 				Bus latchResultBus = latch.getResultBus();
-				latchResultBus.setIDLogical(var.getName()+"_result");
+				latchResultBus.setIDLogical(var.getName() + "_result");
 
-				Port lbPort = lbInputs.get(var);
-				fbEntry.addDependency(lbPort, new DataDependency(latchResultBus));
+				Port lbPort = lbDataPorts.get(var);
+				fbEntry.addDependency(lbPort,
+						new DataDependency(latchResultBus));
 			}
 		}
 
@@ -257,7 +272,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
 		blockWhile.setAttribute("inputs", inputs);
 		blockWhile.setAttribute("outputs", outputs);
-		
+
 		return loop;
 	}
 

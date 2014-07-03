@@ -178,7 +178,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 			}
 		}
 		indexBlock = oldIndexBlock;
-		Debug.modGraph(block, "/tmp");
+		//Debug.modGraph(block, "/tmp");
 		return block;
 	}
 
