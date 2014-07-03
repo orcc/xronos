@@ -30,7 +30,6 @@
  * 
  */
 
-
 package org.xronos.orcc.forge.mapping.cdfg;
 
 import java.math.BigInteger;

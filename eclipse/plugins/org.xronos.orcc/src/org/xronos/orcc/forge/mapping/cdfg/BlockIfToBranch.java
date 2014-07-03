@@ -32,6 +32,7 @@
 
 package org.xronos.orcc.forge.mapping.cdfg;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,7 @@ import org.xronos.openforge.lim.Port;
  */
 public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Branch caseBlockIf(BlockIf blockIf) {
 		Map<Var, Port> inputs = new HashMap<Var, Port>();
@@ -68,12 +70,33 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 
 		// -- Decision
 		// Construct decision from the block while condition
-		Block decisionBlock = (Block) new ExprToComponent().doSwitch(blockIf
+		Block decisionBlock = null;
+		Component valueComponent = new ExprToComponent().doSwitch(blockIf
 				.getCondition());
 
-		@SuppressWarnings("unchecked")
-		Map<Var, Port> dBlockDataPorts = (Map<Var, Port>) blockIf
-				.getCondition().getAttribute("inputs").getObjectValue();
+		Map<Var, Port> dBlockDataPorts = null;
+
+		if (!(valueComponent instanceof Block)) {
+			dBlockDataPorts = new HashMap<Var, Port>();
+			Map<Var, Port> valueDataPorts = (Map<Var, Port>) blockIf
+					.getCondition().getAttribute("inputs").getObjectValue();
+			decisionBlock = new Block(Arrays.asList(valueComponent));
+			// Propagate DataPorts
+			ComponentUtil.propagateDataPorts(decisionBlock, dBlockDataPorts,
+					valueDataPorts);
+			// Propagate DataBuses
+			for (Bus dataBus : valueComponent.getExit(Exit.DONE).getDataBuses()) {
+				Bus blockDataBus = decisionBlock.getExit(Exit.DONE).makeDataBus(
+						dataBus.getSize(), dataBus.getValue().isSigned());
+				Port blockDataBuspeer = blockDataBus.getPeer();
+				ComponentUtil.connectDataDependency(dataBus, blockDataBuspeer,
+						0);
+			}
+		} else {
+			decisionBlock = (Block) valueComponent;
+			dBlockDataPorts = (Map<Var, Port>) blockIf.getCondition()
+					.getAttribute("inputs").getObjectValue();
+		}
 
 		Component decisionComponent = ComponentUtil
 				.decisionFindConditionComponent(decisionBlock);

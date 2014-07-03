@@ -32,6 +32,7 @@
 
 package org.xronos.orcc.forge.mapping.cdfg;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,6 +69,7 @@ import org.xronos.openforge.lim.primitive.Reg;
  */
 public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Loop caseBlockWhile(BlockWhile blockWhile) {
 		// Initialize members
@@ -78,11 +80,33 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		Map<Bus, Var> completeBusVar = new HashMap<Bus, Var>();
 		// -- Decision
 		// Construct decision from the block while condition
-		Block decisionBlock = (Block) new ExprToComponent().doSwitch(blockWhile
+		Block decisionBlock = null;
+		Component valueComponent = new ExprToComponent().doSwitch(blockWhile
 				.getCondition());
-		@SuppressWarnings("unchecked")
-		Map<Var, Port> dBlockDataPorts = (Map<Var, Port>) blockWhile
-				.getCondition().getAttribute("inputs").getObjectValue();
+
+		Map<Var, Port> dBlockDataPorts = null;
+
+		if (!(valueComponent instanceof Block)) {
+			dBlockDataPorts = new HashMap<Var, Port>();
+			Map<Var, Port> valueDataPorts = (Map<Var, Port>) blockWhile
+					.getCondition().getAttribute("inputs").getObjectValue();
+			decisionBlock = new Block(Arrays.asList(valueComponent));
+			// Propagate DataPorts
+			ComponentUtil.propagateDataPorts(decisionBlock, dBlockDataPorts,
+					valueDataPorts);
+			// Propagate DataBuses
+			for (Bus dataBus : valueComponent.getExit(Exit.DONE).getDataBuses()) {
+				Bus blockDataBus = decisionBlock.getExit(Exit.DONE).makeDataBus(
+						dataBus.getSize(), dataBus.getValue().isSigned());
+				Port blockDataBuspeer = blockDataBus.getPeer();
+				ComponentUtil.connectDataDependency(dataBus, blockDataBuspeer,
+						0);
+			}
+		} else {
+			decisionBlock = (Block) valueComponent;
+			dBlockDataPorts = (Map<Var, Port>) blockWhile.getCondition()
+					.getAttribute("inputs").getObjectValue();
+		}
 
 		Component decisionComponent = ComponentUtil
 				.decisionFindConditionComponent(decisionBlock);
