@@ -79,6 +79,8 @@ public class ProcedureToBlock extends AbstractIrVisitor<Block> {
 		Block proceduralBlock = (Block) new BlocksToBlock(inputs, outputs,
 				isActionBody).doSwitch(procedure.getBlocks());
 
+		procedure.setAttribute("inputs", inputs);
+		procedure.setAttribute("outputs", outputs);
 		return proceduralBlock;
 	}
 

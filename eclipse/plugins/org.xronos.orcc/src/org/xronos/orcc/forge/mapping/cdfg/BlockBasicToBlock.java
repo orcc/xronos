@@ -52,6 +52,7 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.IrFactory;
@@ -165,6 +166,22 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 						.get(target));
 				store.setTarget(newDef);
 			}
+			return null;
+		}
+
+	}
+
+	public class PropagateReturnTarget extends AbstractIrVisitor<Void> {
+
+		Var target;
+
+		public PropagateReturnTarget(Var target) {
+			this.target = target;
+		}
+
+		@Override
+		public Void caseInstReturn(InstReturn returnInstr) {
+			returnInstr.setAttribute("returnTarget", target);
 			return null;
 		}
 
@@ -339,7 +356,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		// Test if the call is coming from an action or the XronosScheduler
 		Action action = EcoreHelper.getContainerOfType(this.procedure,
 				Action.class);
-		if (action != null) {
+		if (action == null) {
 			// Construct the Block of the Procedure
 
 			Map<Var, Var> byRefVar = new HashMap<Var, Var>();
@@ -379,47 +396,36 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				new PropagateReferences(byRefVar).doSwitch(proc);
 				procBlock = new ProcedureToBlock(false).doSwitch(proc);
 			} else {
-				Procedure callProcedure = call.getProcedure();
-				procBlock = new ProcedureToBlock(false).doSwitch(callProcedure);
+				proc = call.getProcedure();
+				// Propagate the InstCall target if any
+				Var target = call.getTarget().getVariable();
+				if (target != null) {
+					new PropagateReturnTarget(target).doSwitch(proc);
+				}
+				procBlock = new ProcedureToBlock(false).doSwitch(proc);
 			}
 
 			// Resolve dependencies from other arguments
 			if (byValCompoent.isEmpty()) {
 				for (Var var : byValVar.keySet()) {
+					// -- Port dependencies
 					@SuppressWarnings("unchecked")
 					Map<Var, Port> inputs = (Map<Var, Port>) proc.getAttribute(
 							"inputs").getObjectValue();
 					for (Var inVar : inputs.keySet()) {
 						if (var == inVar) {
 							Port port = inputs.get(inVar);
-							// FIXME : here the lastDefinedVarBus should be
-							// eliminated
-							if (lastDefinedVarBus.containsKey(var)) {
-								List<Bus> buses = lastDefinedVarBus.get(var);
-								int lastDefIndx = buses.size() - 1;
-								// Get last defined bus
-								Bus bus = buses.get(lastDefIndx);
-								// Connect the data dependency
-								ComponentUtil.connectDataDependency(bus, port,
-										0);
-							} else {
-								// A new dataPort should be creates on current
-								// Block
-								Type type = var.getType();
-								Port cbDataPort = currentBlock.makeDataPort(
-										type.getSizeInBits(), type.isInt()
-												|| type.isBool());
-								Bus cbDataBus = cbDataPort.getPeer();
-
-								// Connect the data dependency
-								ComponentUtil.connectDataDependency(cbDataBus,
-										port, 0);
-
-								// Add it to current Block inputs
-								addToInputs(var, cbDataPort);
-							}
+							portDependecies.put(port, inVar);
 						}
 					}
+				}
+				// -- Bus dependencies
+				@SuppressWarnings("unchecked")
+				Map<Var, Bus> outputs = (Map<Var, Bus>) proc.getAttribute(
+						"outputs").getObjectValue();
+				for (Var var : outputs.keySet()) {
+					Bus bus = outputs.get(var);
+					busDependecies.put(bus, var);
 				}
 
 				component = procBlock;
@@ -500,7 +506,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		} else {
 			// Construct a LIM Call
 			TaskCall taskCall = new TaskCall();
-			@SuppressWarnings("null")
 			Task task = (Task) action.getAttribute("task").getObjectValue();
 			taskCall.setTarget(task);
 			taskCall.setIDSourceInfo(new IDSourceInfo(action.getName(), call
@@ -761,7 +766,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			// Create Block
 			Block block = new Block(sequence);
-			
+
 			// Resolve inputs
 			@SuppressWarnings("unchecked")
 			Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
@@ -776,13 +781,13 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 						exprInput.get(var), 0);
 				portDependecies.put(dataPort, var);
 			}
-			
+
 			// Resolve Dependencies
 			Port dataPort = absoluteMemWrite.getDataPorts().get(0);
 			ComponentUtil.connectDataDependency(compResultBus, dataPort, 0);
 
 			return block;
-			
+
 		} else {
 			// Index Flattener has flatten all indexes only one expression
 			// possible
@@ -970,7 +975,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 						Bus blkDataBus = blkDataPort.getPeer();
 						ComponentUtil
 								.connectDataDependency(blkDataBus, port, 0);
-					}else{
+					} else {
 						// Create a data Port
 						Port blkDataPort = block.makeDataPort(var.getName(),
 								type.getSizeInBits(),
@@ -1013,6 +1018,29 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		}
 
 		return block;
+	}
+
+	@Override
+	public Component caseInstReturn(InstReturn returnInstr) {
+		Expression value = returnInstr.getValue();
+		if (value != null) {
+			Component comp = new ExprToComponent().doSwitch(value);
+			@SuppressWarnings("unchecked")
+			Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
+					"inputs").getObjectValue();
+			for (Var var : exprInput.keySet()) {
+				Port port = exprInput.get(var);
+				portDependecies.put(port, var);
+			}
+
+			Var target = (Var) returnInstr.getAttribute("returnTarget")
+					.getReferencedValue();
+			// Only one possible output, expression
+			Bus resultBus = comp.getExit(Exit.DONE).getDataBuses().get(0);
+			busDependecies.put(resultBus, target);
+			return comp;
+		}
+		return null;
 	}
 
 	/**
