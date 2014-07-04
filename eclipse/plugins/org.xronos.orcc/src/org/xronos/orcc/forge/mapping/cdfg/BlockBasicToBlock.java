@@ -399,10 +399,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				proc = call.getProcedure();
 				// Propagate the InstCall target if any
 				Var target = call.getTarget().getVariable();
-				if (target != null) {
-					new PropagateReturnTarget(target).doSwitch(proc);
-				}
-				procBlock = new ProcedureToBlock(false).doSwitch(proc);
+				procBlock = new ProcedureToBlock(target).doSwitch(proc);
 			}
 
 			// Resolve dependencies from other arguments
@@ -1025,6 +1022,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Expression value = returnInstr.getValue();
 		if (value != null) {
 			Component comp = new ExprToComponent().doSwitch(value);
+			// -- Data Ports dependencies 
 			@SuppressWarnings("unchecked")
 			Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
 					"inputs").getObjectValue();
@@ -1032,12 +1030,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				Port port = exprInput.get(var);
 				portDependecies.put(port, var);
 			}
-
-			Var target = (Var) returnInstr.getAttribute("returnTarget")
-					.getReferencedValue();
-			// Only one possible output, expression
-			Bus resultBus = comp.getExit(Exit.DONE).getDataBuses().get(0);
-			busDependecies.put(resultBus, target);
+			// -- Data Bus dependencies will be resolved later on
 			return comp;
 		}
 		return null;

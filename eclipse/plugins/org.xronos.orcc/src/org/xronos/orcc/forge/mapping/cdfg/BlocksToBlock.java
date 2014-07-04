@@ -85,6 +85,25 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 	 */
 	Map<Bus, Var> busDependecies;
 
+	/**
+	 * Target Output data bus
+	 */
+
+	Var target;
+
+	public BlocksToBlock(Map<Var, Port> inputs, Map<Var, Bus> outputs,
+			Var target) {
+		this(inputs, outputs, true);
+		this.target = target;
+	}
+
+	/**
+	 * 
+	 * @param inputs
+	 * @param outputs
+	 * @param isActionBody
+	 */
+
 	public BlocksToBlock(Map<Var, Port> inputs, Map<Var, Bus> outputs,
 			boolean isActionBody) {
 		this.inputs = inputs;
@@ -176,8 +195,29 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 				}
 			}
 		}
+		
+		// Create only one output, function in-lining
+		if(!isActionBody && target != null){
+			ListIterator<Component> iter = sequence.listIterator(sequence
+					.size());
+			// Get last Component, it has only one data bus
+			Component component = iter.previous();
+			Bus resultBus  = component.getExit(Exit.DONE).getDataBuses().get(0);
+			
+			Type type = target.getType();
+			Bus blkOutputBus = block.getExit(Exit.DONE)
+					.makeDataBus(target.getName(),
+							type.getSizeInBits(), type.isInt());
+			Port blkOutputPort = blkOutputBus.getPeer();
+			// Add dependency
+			ComponentUtil.connectDataDependency(resultBus, blkOutputPort,
+					0);
+
+			outputs.put(target, blkOutputBus);
+		}
+		
 		indexBlock = oldIndexBlock;
-		//Debug.modGraph(block, "/tmp");
+		// Debug.modGraph(block, "/tmp");
 		return block;
 	}
 
