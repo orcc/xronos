@@ -89,6 +89,7 @@ import org.xronos.openforge.lim.memory.LogicalMemoryPort;
 import org.xronos.openforge.lim.op.AddOp;
 import org.xronos.openforge.lim.op.CastOp;
 import org.xronos.openforge.lim.op.NoOp;
+import org.xronos.openforge.util.Debug;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.preference.Constants;
@@ -133,6 +134,9 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	 */
 	Map<Var, Bus> outputs;
 
+	
+	Component returnComponent;
+	
 	/**
 	 * This inner class replaces the local list variables with a referenced one
 	 * 
@@ -196,7 +200,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		portDependecies = new HashMap<Port, Var>();
 		busDependecies = new HashMap<Bus, Var>();
 	}
-
+	
 	private void addToLastDefined(Var target, Bus resultBus) {
 		// Add port to last defined var
 		if (!lastDefinedVarBus.containsKey(target)) {
@@ -381,6 +385,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 						// For retrieving the input of the block
 						byValExpression.put(param.getVariable(), exprArg);
 					} else {
+						// FIXME: here a component should be created here
 						Var var = ((ExprVar) exprArg).getUse().getVariable();
 						byValVar.put(param.getVariable(), var);
 					}
@@ -398,8 +403,14 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			} else {
 				proc = call.getProcedure();
 				// Propagate the InstCall target if any
-				Var target = call.getTarget().getVariable();
-				procBlock = new ProcedureToBlock(target).doSwitch(proc);
+				if(call.getTarget() != null){
+					Var target = call.getTarget().getVariable();
+					new PropagateReturnTarget(target).doSwitch(proc);
+					procBlock = new ProcedureToBlock(target).doSwitch(proc);
+				}else{
+					procBlock = new ProcedureToBlock(false).doSwitch(proc);
+				}
+				
 			}
 
 			// Resolve dependencies from other arguments
@@ -1030,7 +1041,12 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				Port port = exprInput.get(var);
 				portDependecies.put(port, var);
 			}
-			// -- Data Bus dependencies will be resolved later on
+
+			Var target = (Var) returnInstr.getAttribute("returnTarget")
+					.getReferencedValue();
+			// Only one possible output, expression
+			Bus resultBus = comp.getExit(Exit.DONE).getDataBuses().get(0);
+			busDependecies.put(resultBus, target);
 			return comp;
 		}
 		return null;

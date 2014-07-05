@@ -50,13 +50,14 @@ import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Port;
+import org.xronos.openforge.util.Debug;
 
 /**
  * This visitor takes a list of {@link net.sf.orcc.ir.Block}s and creates a new
  * LIM {@link Block} and resolve its data dependencies
  * 
  * @author Endri Bezati
- *
+ * 
  */
 public class BlocksToBlock extends AbstractIrVisitor<Component> {
 
@@ -93,7 +94,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 
 	public BlocksToBlock(Map<Var, Port> inputs, Map<Var, Bus> outputs,
 			Var target) {
-		this(inputs, outputs, true);
+		this(inputs, outputs, false);
 		this.target = target;
 	}
 
@@ -171,51 +172,51 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 		// Build the current block outputs
 		// Do not create outputs if this block list comes from an action body
 		if (!isActionBody) {
-			ListIterator<Component> iter = sequence.listIterator(sequence
-					.size());
+			if (target == null) {
+				ListIterator<Component> iter = sequence.listIterator(sequence
+						.size());
 
-			while (iter.hasPrevious()) {
-				Component component = iter.previous();
-				List<Bus> dataBuses = component.getExit(Exit.DONE)
-						.getDataBuses();
-				for (Bus bus : dataBuses) {
-					Var var = busDependecies.get(bus);
-					if (!outputs.containsKey(var)) {
-						Type type = var.getType();
-						Bus blkOutputBus = block.getExit(Exit.DONE)
-								.makeDataBus(var.getName(),
-										type.getSizeInBits(), type.isInt());
-						Port blkOutputPort = blkOutputBus.getPeer();
-						// Add dependency
-						ComponentUtil.connectDataDependency(bus, blkOutputPort,
-								0);
+				while (iter.hasPrevious()) {
+					Component component = iter.previous();
+					List<Bus> dataBuses = component.getExit(Exit.DONE)
+							.getDataBuses();
+					for (Bus bus : dataBuses) {
+						Var var = busDependecies.get(bus);
+						if (!outputs.containsKey(var)) {
+							Type type = var.getType();
+							Bus blkOutputBus = block.getExit(Exit.DONE)
+									.makeDataBus(var.getName(),
+											type.getSizeInBits(), type.isInt());
+							Port blkOutputPort = blkOutputBus.getPeer();
+							// Add dependency
+							ComponentUtil.connectDataDependency(bus,
+									blkOutputPort, 0);
 
-						outputs.put(var, blkOutputBus);
+							outputs.put(var, blkOutputBus);
+						}
 					}
 				}
+			} else {
+				// Create only one output, function in-lining
+				ListIterator<Component> iter = sequence.listIterator(sequence
+						.size());
+				// Get last Component, it has only one data bus
+				Component component = iter.previous();
+				Bus resultBus = component.getExit(Exit.DONE).getDataBuses()
+						.get(0);
+
+				Type type = target.getType();
+				Bus blkOutputBus = block.getExit(Exit.DONE).makeDataBus(
+						target.getName(), type.getSizeInBits(), type.isInt());
+				Port blkOutputPort = blkOutputBus.getPeer();
+				// Add dependency
+				ComponentUtil
+						.connectDataDependency(resultBus, blkOutputPort, 0);
+
+				outputs.put(target, blkOutputBus);
 			}
 		}
-		
-		// Create only one output, function in-lining
-		if(!isActionBody && target != null){
-			ListIterator<Component> iter = sequence.listIterator(sequence
-					.size());
-			// Get last Component, it has only one data bus
-			Component component = iter.previous();
-			Bus resultBus  = component.getExit(Exit.DONE).getDataBuses().get(0);
-			
-			Type type = target.getType();
-			Bus blkOutputBus = block.getExit(Exit.DONE)
-					.makeDataBus(target.getName(),
-							type.getSizeInBits(), type.isInt());
-			Port blkOutputPort = blkOutputBus.getPeer();
-			// Add dependency
-			ComponentUtil.connectDataDependency(resultBus, blkOutputPort,
-					0);
 
-			outputs.put(target, blkOutputBus);
-		}
-		
 		indexBlock = oldIndexBlock;
 		// Debug.modGraph(block, "/tmp");
 		return block;
@@ -289,7 +290,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 		for (Var var : blockOutputs.keySet()) {
 			busDependecies.put(blockOutputs.get(var), var);
 		}
-
+		Debug.depGraphTo(component, "while", "/tmp/while.dot", 1);
 		return component;
 	}
 

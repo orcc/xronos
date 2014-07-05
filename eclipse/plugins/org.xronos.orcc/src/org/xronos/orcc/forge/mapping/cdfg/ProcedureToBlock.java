@@ -42,6 +42,7 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Port;
+import org.xronos.openforge.util.Debug;
 
 /**
  * This visitor transforms the body blocks of an procedure to a LIM
@@ -100,6 +101,7 @@ public class ProcedureToBlock extends AbstractIrVisitor<Block> {
 
 		procedure.setAttribute("inputs", inputs);
 		procedure.setAttribute("outputs", outputs);
+		
 		return proceduralBlock;
 	}
 
