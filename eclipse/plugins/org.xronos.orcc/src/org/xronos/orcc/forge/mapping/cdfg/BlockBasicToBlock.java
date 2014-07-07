@@ -67,6 +67,7 @@ import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.swt.custom.CCombo;
 import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
@@ -134,9 +135,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	 */
 	Map<Var, Bus> outputs;
 
-	
 	Component returnComponent;
-	
+
 	/**
 	 * This inner class replaces the local list variables with a referenced one
 	 * 
@@ -200,7 +200,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		portDependecies = new HashMap<Port, Var>();
 		busDependecies = new HashMap<Bus, Var>();
 	}
-	
+
 	private void addToLastDefined(Var target, Bus resultBus) {
 		// Add port to last defined var
 		if (!lastDefinedVarBus.containsKey(target)) {
@@ -361,156 +361,156 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Action action = EcoreHelper.getContainerOfType(this.procedure,
 				Action.class);
 		if (action == null) {
+			List<Component> sequence = new ArrayList<Component>();
 			// Construct the Block of the Procedure
 
 			Map<Var, Var> byRefVar = new HashMap<Var, Var>();
-			Map<Var, Component> byValCompoent = new HashMap<Var, Component>();
+			Map<Var, Component> byValComponent = new HashMap<Var, Component>();
 			Map<Var, Expression> byValExpression = new HashMap<Var, Expression>();
-			Map<Var, Var> byValVar = new HashMap<Var, Var>();
-			int i = 0;
+			Map<Bus, Var> byValBusVar = new HashMap<Bus, Var>();
+			
+			// Clone Procedure
+			Procedure proc = IrUtil.copy(call.getProcedure());
+
+			int nbArg = 0;
+			// Propagate References or create the necessary argument components
 			for (Arg arg : call.getArguments()) {
-				Param param = call.getProcedure().getParameters().get(i);
+				Param param = proc.getParameters().get(nbArg);
 				if (arg.isByRef()) {
 					Var refVar = ((ArgByRef) arg).getUse().getVariable();
 					byRefVar.put(param.getVariable(), refVar);
-
 				} else {
 					Expression exprArg = ((ArgByVal) arg).getValue();
-					if (!exprArg.isExprVar()) {
-						// Expression given as an argument, create a component
-						Component comp = new ExprToComponent()
-								.doSwitch(exprArg);
-						// For the components to be included on a new block
-						byValCompoent.put(param.getVariable(), comp);
-						// For retrieving the input of the block
-						byValExpression.put(param.getVariable(), exprArg);
-					} else {
-						// FIXME: here a component should be created here
-						Var var = ((ExprVar) exprArg).getUse().getVariable();
-						byValVar.put(param.getVariable(), var);
-					}
+					Component argComponent = new ExprToComponent()
+							.doSwitch(exprArg);
+					Var paramVar = param.getVariable();
+					Type type = paramVar.getType();
+					Bus resultBus = argComponent.getExit(Exit.DONE)
+							.getDataBuses().get(0);
+					resultBus.setIDLogical(paramVar.getName());
+					resultBus.setSize(type.getSizeInBits(), type.isInt());
+
+					byValBusVar.put(resultBus, paramVar);
+					// For the components to be included on a new block
+					sequence.add(argComponent);
+					byValComponent.put(paramVar, argComponent);
+					byValExpression.put(paramVar, exprArg);
 				}
 			}
-			Block procBlock = null;
-			Procedure proc = null;
-			// Test if there is an argument that is given by reference
+
+			// Create call Block
+			Block callBlock = null;
+			
+
+
+			// Propagate all reference if any
 			if (!byRefVar.isEmpty()) {
-				// Clone Procedure
-				proc = IrUtil.copy(call.getProcedure());
-				// Propagate all reference
 				new PropagateReferences(byRefVar).doSwitch(proc);
-				procBlock = new ProcedureToBlock(false).doSwitch(proc);
-			} else {
-				proc = call.getProcedure();
-				// Propagate the InstCall target if any
-				if(call.getTarget() != null){
-					Var target = call.getTarget().getVariable();
-					new PropagateReturnTarget(target).doSwitch(proc);
-					procBlock = new ProcedureToBlock(target).doSwitch(proc);
-				}else{
-					procBlock = new ProcedureToBlock(false).doSwitch(proc);
-				}
-				
 			}
 
-			// Resolve dependencies from other arguments
-			if (byValCompoent.isEmpty()) {
-				for (Var var : byValVar.keySet()) {
-					// -- Port dependencies
-					@SuppressWarnings("unchecked")
-					Map<Var, Port> inputs = (Map<Var, Port>) proc.getAttribute(
-							"inputs").getObjectValue();
-					for (Var inVar : inputs.keySet()) {
-						if (var == inVar) {
-							Port port = inputs.get(inVar);
-							portDependecies.put(port, inVar);
-						}
-					}
-				}
-				// -- Bus dependencies
-				@SuppressWarnings("unchecked")
-				Map<Var, Bus> outputs = (Map<Var, Bus>) proc.getAttribute(
-						"outputs").getObjectValue();
-				for (Var var : outputs.keySet()) {
-					Bus bus = outputs.get(var);
-					busDependecies.put(bus, var);
-				}
-
-				component = procBlock;
+			if (call.getTarget() != null) {
+				// Call is a CAL function
+				Var target = call.getTarget().getVariable();
+				new PropagateReturnTarget(target).doSwitch(proc);
+				callBlock = new ProcedureToBlock(target).doSwitch(proc);
+				sequence.add(callBlock);
 			} else {
-				// Create a new Block that will contain the procedure and all
-				List<Component> blkComponent = new ArrayList<Component>();
-				for (Component co : byValCompoent.values()) {
-					blkComponent.add(co);
-				}
-				// Finally add the procBlock
-				blkComponent.add(procBlock);
-				Block block = new Block(blkComponent);
+				// Call is a procedure
+				callBlock = new ProcedureToBlock(false).doSwitch(proc);
+				sequence.add(callBlock);
+			}
 
-				// Create inputs of the new block
-				for (Var argVar : byValExpression.keySet()) {
-					Expression exprArg = byValExpression.get(argVar);
+			// -- Single Data Bus on component Exit
+			CastOp castOp = null;
+			if (!proc.getReturnType().isVoid()) {
+				Var target = call.getTarget().getVariable();
+				Type type = target.getType();
+				if (type.getSizeInBits() != proc.getReturnType()
+						.getSizeInBits()) {
+					castOp = new CastOp(type.getSizeInBits(), type.isInt());
+					sequence.add(castOp);
+				}
+			}
+
+			component = new Block(sequence);
+			Map<Var, Port> blkDataports = new HashMap<Var, Port>();
+
+			// Dependencies
+			nbArg = 0;
+			for (Param param : proc.getParameters()) {
+				Var paramVar = param.getVariable();
+
+				if (byValComponent.containsKey(paramVar)) {
+					// --Data Port dependency from arguments
+					Expression expr = byValExpression.get(paramVar);
 					@SuppressWarnings("unchecked")
-					Map<Var, Port> exprInputs = (Map<Var, Port>) exprArg
+					Map<Var, Port> exprInputs = (Map<Var, Port>) expr
 							.getAttribute("inputs").getObjectValue();
 					for (Var var : exprInputs.keySet()) {
 						Type type = var.getType();
-						// Create a new Block Input
-						Port blkDataPort = block.makeDataPort(
-								type.getSizeInBits(),
-								type.isInt() || type.isBool());
-						Bus blkDataBus = blkDataPort.getPeer();
+						if (blkDataports.containsKey(var)) {
+							Port dataPort = blkDataports.get(var);
 
-						// Connect it with arg component input data port
-						Port compDataPort = exprInputs.get(var);
-						ComponentUtil.connectDataDependency(blkDataBus,
-								compDataPort, 0);
-
-						// Now Check if the Var has been defined by a previous,
-						// if not is a global block input
-						if (lastDefinedVarBus.containsKey(var)) {
-							List<Bus> buses = lastDefinedVarBus.get(var);
-							int lastDefIndx = buses.size() - 1;
-							// Get last defined bus
-							Bus bus = buses.get(lastDefIndx);
-							ComponentUtil.connectDataDependency(bus,
-									blkDataPort, 0);
+							Bus dataPortPeer = dataPort.getPeer();
+							ComponentUtil.connectDataDependency(dataPortPeer,
+									exprInputs.get(var), 0);
 						} else {
-							Port cbDataPort = currentBlock.makeDataPort(
-									type.getSizeInBits(),
-									type.isInt() || type.isBool());
-							Bus cbDataBus = cbDataPort.getPeer();
-							addToInputs(var, cbDataPort);
-
-							// Connect it with the proc block input
-							ComponentUtil.connectDataDependency(cbDataBus,
-									blkDataPort, 0);
+							Port dataPort = component.makeDataPort(
+									var.getName(), type.getSizeInBits(),
+									type.isInt());
+							Bus dataPortPeer = dataPort.getPeer();
+							ComponentUtil.connectDataDependency(dataPortPeer,
+									exprInputs.get(var), 0);
+							// Save DataPort
+							blkDataports.put(var, dataPort);
+							portDependecies.put(dataPort, var);
 						}
 					}
+
+					// -- Argument resultBus --> call Block data port
+					Component valComponent = byValComponent.get(paramVar);
+					Bus resultBus = valComponent.getExit(Exit.DONE)
+							.getDataBuses().get(0);
+					Var resultVar = byValBusVar.get(resultBus);
+					@SuppressWarnings("unchecked")
+					Map<Var, Port> procInputs = (Map<Var, Port>) proc
+							.getAttribute("inputs").getObjectValue();
+					// Connect it if same resultVar
+					if (procInputs.containsKey(resultVar)) {
+						Port dataPort = procInputs.get(resultVar);
+						ComponentUtil.connectDataDependency(resultBus,
+								dataPort, 0);
+					}
 				}
-				// Create outputs of the new block
-				if (!proc.getReturnType().isVoid()) {
-					Type type = proc.getReturnType();
-					// The block should have only one output
-					Bus resultBus = procBlock.getExit(Exit.DONE).getDataBuses()
-							.get(0);
 
-					// Create a new Exit data bus for the block
-					Exit exit = block.getExit(Exit.DONE);
-					Bus blkResultBus = exit.makeDataBus(type.getSizeInBits(),
-							type.isInt() || type.isBool());
-					Port blkResultPort = blkResultBus.getPeer();
-
-					// Connect the proc result bus with the block result port
-					ComponentUtil.connectDataDependency(resultBus,
-							blkResultPort, 0);
-
-					// Add to last defined
-					Var target = call.getTarget().getVariable();
-					addToLastDefined(target, blkResultBus);
-				}
-				component = block;
 			}
+
+			// -- Single Data Bus on component Exit
+			if (!proc.getReturnType().isVoid()) {
+				Var target = call.getTarget().getVariable();
+				Type type = target.getType();
+				Bus blockResultBus = component.getExit(Exit.DONE).makeDataBus(
+						target.getName(), type.getSizeInBits(), type.isInt());
+				Port blockResultBusPeer = blockResultBus.getPeer();
+
+				Bus resultBus = null;
+				// -- Connect with Cast if any
+				if (castOp != null) {
+					Bus callBlockResultBus = callBlock.getExit(Exit.DONE)
+							.getDataBuses().get(0);
+					ComponentUtil.connectDataDependency(callBlockResultBus,
+							castOp.getDataPort(), 0);
+					resultBus = castOp.getResultBus();
+				} else {
+					resultBus = callBlock.getExit(Exit.DONE).getDataBuses()
+							.get(0);
+				}
+
+				ComponentUtil.connectDataDependency(resultBus,
+						blockResultBusPeer, 0);
+				busDependecies.put(blockResultBus,target);
+			}
+
 		} else {
 			// Construct a LIM Call
 			TaskCall taskCall = new TaskCall();
@@ -1033,7 +1033,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Expression value = returnInstr.getValue();
 		if (value != null) {
 			Component comp = new ExprToComponent().doSwitch(value);
-			// -- Data Ports dependencies 
+			// -- Data Ports dependencies
 			@SuppressWarnings("unchecked")
 			Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
 					"inputs").getObjectValue();
