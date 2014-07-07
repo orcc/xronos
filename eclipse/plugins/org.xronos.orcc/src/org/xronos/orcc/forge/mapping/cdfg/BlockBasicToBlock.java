@@ -67,7 +67,6 @@ import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.swt.custom.CCombo;
 import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
@@ -366,9 +365,10 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			Map<Var, Var> byRefVar = new HashMap<Var, Var>();
 			Map<Var, Component> byValComponent = new HashMap<Var, Component>();
+			Map<Component, CastOp> byValComponentCast = new HashMap<Component, CastOp>();
 			Map<Var, Expression> byValExpression = new HashMap<Var, Expression>();
 			Map<Bus, Var> byValBusVar = new HashMap<Bus, Var>();
-			
+
 			// Clone Procedure
 			Procedure proc = IrUtil.copy(call.getProcedure());
 
@@ -387,8 +387,15 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					Type type = paramVar.getType();
 					Bus resultBus = argComponent.getExit(Exit.DONE)
 							.getDataBuses().get(0);
-					resultBus.setIDLogical(paramVar.getName());
-					resultBus.setSize(type.getSizeInBits(), type.isInt());
+
+					Type typeExpr = exprArg.getType();
+					// Add casting if necessary
+					if (type.getSizeInBits() != typeExpr.getSizeInBits()) {
+						CastOp cast = new CastOp(type.getSizeInBits(),
+								type.isInt());
+						sequence.add(cast);
+						byValComponentCast.put(argComponent, cast);
+					}
 
 					byValBusVar.put(resultBus, paramVar);
 					// For the components to be included on a new block
@@ -400,8 +407,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			// Create call Block
 			Block callBlock = null;
-			
-
 
 			// Propagate all reference if any
 			if (!byRefVar.isEmpty()) {
@@ -471,6 +476,17 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					Component valComponent = byValComponent.get(paramVar);
 					Bus resultBus = valComponent.getExit(Exit.DONE)
 							.getDataBuses().get(0);
+					if (byValComponentCast.containsKey(valComponent)) {
+						CastOp cast = byValComponentCast.get(valComponent);
+						// Dependency
+						ComponentUtil.connectDataDependency(resultBus,
+								cast.getDataPort(), 0);
+						Var var = byValBusVar.get(resultBus);
+						resultBus = cast.getResultBus();
+						// Update the resultBus with the one of the cast
+						byValBusVar.put(resultBus, var);
+					}
+
 					Var resultVar = byValBusVar.get(resultBus);
 					@SuppressWarnings("unchecked")
 					Map<Var, Port> procInputs = (Map<Var, Port>) proc
@@ -508,7 +524,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 				ComponentUtil.connectDataDependency(resultBus,
 						blockResultBusPeer, 0);
-				busDependecies.put(blockResultBus,target);
+				busDependecies.put(blockResultBus, target);
 			}
 
 		} else {
@@ -520,7 +536,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					.getLineNumber()));
 			component = taskCall;
 		}
-
+		Debug.depGraphTo(component, "call", "/tmp/call.dot", 0);
 		return component;
 	}
 
@@ -705,7 +721,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			// Add port to last defined var
 			addToLastDefined(target, resultBus);
 
-			// Add to bus depencdencies
+			// Add to bus dependencies
 			busDependecies.put(resultBus, target);
 
 			return loadBlock;
