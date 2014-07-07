@@ -376,8 +376,19 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			// Propagate References or create the necessary argument components
 			for (Arg arg : call.getArguments()) {
 				Param param = proc.getParameters().get(nbArg);
-				if (arg.isByRef()) {
-					Var refVar = ((ArgByRef) arg).getUse().getVariable();
+				if (arg.isByRef() || param.getVariable().getType().isList()) {
+					Var refVar = null;
+					// ORCC Workaround to support by reference
+					if(arg.isByRef()){
+						refVar = ((ArgByRef) arg).getUse().getVariable();
+					}else{
+						Expression exprArg = ((ArgByVal) arg).getValue();
+						if(exprArg.isExprVar()){
+							refVar = ((ExprVar) exprArg).getUse().getVariable();
+						}else if(exprArg.isExprList()){
+							// TODO: Create a List and added it to the actors memory
+						}
+					}
 					byRefVar.put(param.getVariable(), refVar);
 				} else {
 					Expression exprArg = ((ArgByVal) arg).getValue();
@@ -536,7 +547,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					.getLineNumber()));
 			component = taskCall;
 		}
-		Debug.depGraphTo(component, "call", "/tmp/call.dot", 0);
+		Debug.wireGraphTo(component, "call", "/tmp/call.dot");
 		return component;
 	}
 
@@ -573,8 +584,18 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		// Check if it is scaler
 		if (!source.getType().isList()) {
 			boolean isSigned = source.getType().isInt();
-			Location location = (Location) source.getAttribute("location")
-					.getObjectValue();
+			Location location = null;
+			PatternImpl pattern = EcoreHelper.getContainerOfType(source,
+					PatternImpl.class);
+			if (pattern != null) {
+				net.sf.orcc.df.Port dfPort = pattern.getVarToPortMap().get(
+						source);
+				location = (Location) dfPort.getAttribute("location")
+						.getObjectValue();
+			} else {
+				location = (Location) source.getAttribute("location")
+						.getObjectValue();
+			}
 			LogicalMemoryPort memPort = location.getLogicalMemory()
 					.getLogicalMemoryPorts().iterator().next();
 			Component absMemRead = new AbsoluteMemoryRead(location,
@@ -680,6 +701,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			@SuppressWarnings("unchecked")
 			Map<Var, Port> exprInput = (Map<Var, Port>) index.getAttribute(
 					"inputs").getObjectValue();
+			// FIXME: remove lastDefinedVarBus obsolete
 			for (Var var : exprInput.keySet()) {
 				if (lastDefinedVarBus.containsKey(var)) {
 					Type type = var.getType();

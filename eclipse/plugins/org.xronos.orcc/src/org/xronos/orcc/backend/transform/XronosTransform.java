@@ -63,6 +63,7 @@ import org.xronos.orcc.analysis.NativeProcedureFinder;
 import org.xronos.orcc.backend.transform.pipelining.Pipelining;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.XronosScheduler;
+import org.xronos.orcc.forge.transform.VarInitializer;
 
 /**
  * This helper class transforms only a given procedure
@@ -77,7 +78,7 @@ public class XronosTransform {
 		List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
 		
 		transformations.add(new UnitImporter());
-		transformations.add(new XronosVarInitializer());
+		transformations.add(new VarInitializer());
 		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 		
 		for (DfSwitch<?> transformation : transformations) {

@@ -46,6 +46,7 @@ import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
@@ -191,6 +192,62 @@ public class DesignMemory extends DfVisitor<Void> {
 			// appropriate for its type/size.
 			Allocation location = mem.allocate(logicalValue);
 			var.setAttribute("location", location);
+		}
+
+		// Actions local list Variables
+		for (Action action : actor.getActions()) {
+			Procedure procedure = action.getBody();
+			for (Var var : procedure.getLocals()) {
+				if (var.getType().isList()) {
+					LogicalValue logicalValue = makeLogicalValue(var);
+					var.setAttribute("logicalValue", logicalValue);
+					int stride = logicalValue.getAddressStridePolicy()
+							.getStride();
+					LogicalMemory mem = memories.get(stride);
+					if (mem == null) {
+						// 32 should be more than enough for max address
+						// width
+						mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
+						mem.createLogicalMemoryPort();
+						mem.setIDLogical("actLocalVar_" + var.getName());
+						design.addMemory(mem);
+						if (colocateVars) {
+							memories.put(stride, mem);
+						}
+					}
+					// Create a 'location' for the stateVar that is
+					// appropriate for its type/size.
+					Allocation location = mem.allocate(logicalValue);
+					var.setAttribute("location", location);
+				}
+			}
+		}
+
+		for (Procedure procedure : actor.getProcs()) {
+			for (Var var : procedure.getLocals()) {
+				if (var.getType().isList()) {
+					LogicalValue logicalValue = makeLogicalValue(var);
+					var.setAttribute("logicalValue", logicalValue);
+					int stride = logicalValue.getAddressStridePolicy()
+							.getStride();
+					LogicalMemory mem = memories.get(stride);
+					if (mem == null) {
+						// 32 should be more than enough for max address
+						// width
+						mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
+						mem.createLogicalMemoryPort();
+						mem.setIDLogical("procLocalVar_" + var.getName());
+						design.addMemory(mem);
+						if (colocateVars) {
+							memories.put(stride, mem);
+						}
+					}
+					// Create a 'location' for the stateVar that is
+					// appropriate for its type/size.
+					Allocation location = mem.allocate(logicalValue);
+					var.setAttribute("location", location);
+				}
+			}
 		}
 
 		return null;
