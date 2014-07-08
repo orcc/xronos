@@ -114,12 +114,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	Map<Var, Port> inputs;
 
 	/**
-	 * This map contains all the vars and their ports that are created during
-	 * the definitions in the blockBasic
-	 */
-	Map<Var, List<Bus>> lastDefinedVarBus;
-
-	/**
 	 * The port variable for each dependency
 	 */
 	Map<Port, Var> portDependecies;
@@ -195,19 +189,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		// Initialize members
 		inputs = new HashMap<Var, Port>();
 		outputs = new HashMap<Var, Bus>();
-		lastDefinedVarBus = new HashMap<Var, List<Bus>>();
 		portDependecies = new HashMap<Port, Var>();
 		busDependecies = new HashMap<Bus, Var>();
-	}
-
-	private void addToLastDefined(Var target, Bus resultBus) {
-		// Add port to last defined var
-		if (!lastDefinedVarBus.containsKey(target)) {
-			lastDefinedVarBus.put(target, Arrays.asList(resultBus));
-		} else {
-			List<Bus> buses = lastDefinedVarBus.get(target);
-			lastDefinedVarBus.put(target, buses);
-		}
 	}
 
 	@Override
@@ -379,14 +362,16 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				if (arg.isByRef() || param.getVariable().getType().isList()) {
 					Var refVar = null;
 					// ORCC Workaround to support by reference
-					if(arg.isByRef()){
+					if (arg.isByRef()) {
 						refVar = ((ArgByRef) arg).getUse().getVariable();
-					}else{
+					} else {
 						Expression exprArg = ((ArgByVal) arg).getValue();
-						if(exprArg.isExprVar()){
+						if (exprArg.isExprVar()) {
 							refVar = ((ExprVar) exprArg).getUse().getVariable();
-						}else if(exprArg.isExprList()){
-							// TODO: Create a List and added it to the actors memory
+						} else if (exprArg.isExprList()) {
+							// Already resolved from Frontend
+							throw (new NullPointerException(
+									"ExprArg is ExprList"));
 						}
 					}
 					byRefVar.put(param.getVariable(), refVar);
@@ -560,19 +545,13 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Port dataPort = castOp.getDataPort();
 		dataPort.setIDLogical(source.getName());
 
+		portDependecies.put(dataPort, source);
+
 		// Name CastOp I/O
 		Bus resultBus = castOp.getResultBus();
 		resultBus.setIDLogical(target.getName());
 
-		// Add port to last defined var
-		// addToLastDefined(target, resultBus);
-
-		// Check if inputs are on the block else put it on block inputs
-
-		if (!lastDefinedVarBus.containsKey(source)) {
-			addToInputs(source, dataPort);
-		}
-
+		busDependecies.put(resultBus, target);
 		return castOp;
 	}
 
@@ -622,6 +601,9 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			int dataSize = innerType.getSizeInBits();
 			boolean isSigned = innerType.isInt();
 
+			// Target Type
+			Type targetType = target.getType();
+
 			Location location = null;
 			PatternImpl pattern = EcoreHelper.getContainerOfType(source,
 					PatternImpl.class);
@@ -654,7 +636,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			AddOp adder = new AddOp();
 			sequence.add(adder);
 
-			CastOp castResult = new CastOp(dataSize, isSigned);
+			CastOp castResult = new CastOp(targetType.getSizeInBits(),
+					targetType.isInt());
 			sequence.add(castResult);
 
 			// Build read Block
@@ -701,30 +684,32 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			@SuppressWarnings("unchecked")
 			Map<Var, Port> exprInput = (Map<Var, Port>) index.getAttribute(
 					"inputs").getObjectValue();
-			// FIXME: remove lastDefinedVarBus obsolete
+
+			Map<Var, Port> blkDataPorts = new HashMap<Var, Port>();
 			for (Var var : exprInput.keySet()) {
-				if (lastDefinedVarBus.containsKey(var)) {
+				Port dataPort = exprInput.get(var);
+				Bus dataPortpeer = dataPort.getPeer();
+
+				if (blkDataPorts.containsKey(var)) {
+					Port blkDataPort = blkDataPorts.get(var);
+					ComponentUtil.connectDataDependency(dataPortpeer,
+							blkDataPort, 0);
+				} else {
 					Type type = var.getType();
-					List<Bus> buses = lastDefinedVarBus.get(var);
-					int lastDefIndx = buses.size() - 1;
-					// Get last defined bus
-					Bus bus = buses.get(lastDefIndx);
-
 					Port blkDataPort = loadBlock
-							.makeDataPort(type.getSizeInBits(), type.isInt()
-									|| type.isBool());
-
-					ComponentUtil.connectDataDependency(bus, blkDataPort, 0);
-
-					// Now Connect it with the components port
-					Bus blkDataBus = blkDataPort.getPeer();
-					ComponentUtil.connectDataDependency(blkDataBus,
-							exprInput.get(var), 0);
+							.makeDataPort(var.getName(), type.getSizeInBits(),
+									type.isInt() || type.isBool());
+					ComponentUtil.connectDataDependency(dataPortpeer,
+							blkDataPort, 0);
+					blkDataPorts.put(var, blkDataPort);
+					portDependecies.put(blkDataPort, var);
 				}
 			}
 
 			// Build loadBlock output dependencies
-			Bus resultBus = loadBlock.getExit(Exit.DONE).makeDataBus();
+			Bus resultBus = loadBlock.getExit(Exit.DONE).makeDataBus(
+					target.getName(), targetType.getSizeInBits(),
+					targetType.isInt());
 			resultBus.setIDLogical(target.getName());
 			castResult
 					.getEntries()
@@ -740,8 +725,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 							new DataDependency(castResult.getResultBus()));
 
 			memPort.addAccess(read, location);
-			// Add port to last defined var
-			addToLastDefined(target, resultBus);
 
 			// Add to bus dependencies
 			busDependecies.put(resultBus, target);
@@ -764,8 +747,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Exit exit = pinRead.getExit(Exit.DONE);
 		Bus resultBus = exit.getDataBuses().get(0);
 
-		// Add port to last defined var
-		addToLastDefined(target, resultBus);
+		// Add to bus dependencies
+		busDependecies.put(resultBus, target);
 		return pinRead;
 	}
 
