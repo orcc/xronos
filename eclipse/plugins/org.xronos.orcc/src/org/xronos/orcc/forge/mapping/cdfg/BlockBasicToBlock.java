@@ -289,7 +289,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				Port dataPort = block.makeDataPort(source.getName(),
 						type.getSizeInBits(), type.isInt());
 
-				// Port Dependencie
+				// Port Dependencies
 				portDependecies.put(dataPort, source);
 
 				Bus dataBus = dataPort.getPeer();
@@ -305,7 +305,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				ComponentUtil.connectDataDependency(noopDataBus, castDataPort,
 						0);
 
-				// -- Between CastOp and Ouput DataBus
+				// -- Between CastOp and Output DataBus
 				Bus castDatBus = castOp.getResultBus();
 				Bus blockDataBus = block.getExit(Exit.DONE).makeDataBus(
 						target.getName(), targetType.getSizeInBits(),
@@ -913,7 +913,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					ComponentUtil.connectDataDependency(dataPortPeer,
 							valueInput.get(var), 0);
 
-					// Add Block port to dependecies
+					// Add Block port to dependencies
 					portDependecies.put(dataPort, var);
 				}
 			}

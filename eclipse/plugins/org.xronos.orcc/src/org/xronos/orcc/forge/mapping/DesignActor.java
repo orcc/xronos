@@ -43,6 +43,7 @@ import org.xronos.openforge.lim.Call;
 import org.xronos.openforge.lim.Design;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Task;
+import org.xronos.orcc.forge.scheduler.ActionScheduler;
 
 /**
  * This Visitor will construct a LIM Design from an Actor
@@ -72,16 +73,24 @@ public class DesignActor extends DfVisitor<Design> {
 		DesignMemory designMemory = new DesignMemory(design, false);
 		designMemory.doSwitch(actor);
 
+		// Build Initialize actions
+		for(Action action: actor.getInitializes()){
+			Task task = new DesignAction().doSwitch(action);
+			design.addTask(task);
+		}
+		
 		// Build Tasks (Action to Tasks)
 		for (Action action : actor.getActions()) {
-			DesignAction designAction = new DesignAction();
-			Task task = designAction.doSwitch(action);
+			Task task = new DesignAction().doSwitch(action);
 			design.addTask(task);
 		}
 
+		// Set attribute design to actor
+		actor.setAttribute("design", design);
+		
 		// Build Action Scheduler
-		DesignActionScheduler designActionScheduler = new DesignActionScheduler();
-		Task scheduler = designActionScheduler.doSwitch(actor);
+		ActionScheduler actionScheduler = new ActionScheduler();
+		Task scheduler = actionScheduler.doSwitch(actor);
 		//design.addTask(scheduler);
 
 		// Activate the production of GO/Done for each task

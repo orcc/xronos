@@ -30,31 +30,69 @@
  * 
  */
 
-package org.xronos.orcc.forge.mapping;
+package org.xronos.orcc.forge.scheduler;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.Block;
+import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Var;
 
 import org.xronos.openforge.lim.Task;
+import org.xronos.orcc.forge.mapping.DesignMemory;
 
 /**
- * This Visitor will build a LIM {@link Task} of an {@link Actor} action
- * scheduler
+ * This visitor constructs the scheduling of actions in an actor
  * 
  * @author Endri Bezati
- * 
+ *
  */
-public class DesignActionScheduler extends DfVisitor<Task> {
+public class ActionScheduler extends DfVisitor<Task> {
 
 	@Override
 	public Task caseActor(Actor actor) {
-		// Construct the action scheduler
-		Procedure scheduler = null;
 
-		// Build the Task of the scheduler
-		TaskProcedure taskProcedure = new TaskProcedure(true);
-		Task schedulerTask = taskProcedure.doSwitch(scheduler);
+		Procedure scheduler = IrFactory.eINSTANCE.createProcedure("scheduler",
+				0, IrFactory.eINSTANCE.createTypeVoid());
+
+		// Create actor FSM states if any
+		if(actor.hasFsm()){
+			for (State state : actor.getFsm().getStates()) {
+				Type typeBool = IrFactory.eINSTANCE.createTypeBool();
+				Var fsmState = IrFactory.eINSTANCE.createVar(typeBool, "state_"
+						+ state.getName(), true, 0);
+				if (state == actor.getFsm().getInitialState()) {
+					fsmState.setValue(true);
+				} else {
+					fsmState.setValue(false);
+				}
+				actor.getStateVars().add(fsmState);
+				// Add to Design Memory
+				DesignMemory.addToMemory(actor, fsmState);
+			}
+		}
+		
+		// -- Create the InitBlock, FSM states and call of initialize action
+		List<Block> initBlocks = new ArrayList<Block>();
+		for(Action action: actor.getInitializes()){
+		}
+		BlockBasic initFSMStatesBlock = IrFactory.eINSTANCE.createBlockBasic();
+		
+		
+		List<Block> isScedulableBlocks = new IsSchedulableBlocks(scheduler)
+				.doSwitch(actor);
+		
+		List<Block> actionSelection = new ActionSelection(scheduler).doSwitch(actor);
+
+		Task schedulerTask = null;
 		return schedulerTask;
 	}
 

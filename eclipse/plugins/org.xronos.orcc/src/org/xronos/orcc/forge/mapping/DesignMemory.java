@@ -209,7 +209,8 @@ public class DesignMemory extends DfVisitor<Void> {
 						// width
 						mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
 						mem.createLogicalMemoryPort();
-						mem.setIDLogical("actLocalVar_" + var.getName());
+						mem.setIDLogical(action.getName() + "_localVar_"
+								+ var.getName());
 						design.addMemory(mem);
 						if (colocateVars) {
 							memories.put(stride, mem);
@@ -236,7 +237,8 @@ public class DesignMemory extends DfVisitor<Void> {
 						// width
 						mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
 						mem.createLogicalMemoryPort();
-						mem.setIDLogical("procLocalVar_" + var.getName());
+						mem.setIDLogical(procedure.getName() + "_procLocalVar_"
+								+ var.getName());
 						design.addMemory(mem);
 						if (colocateVars) {
 							memories.put(stride, mem);
@@ -249,8 +251,37 @@ public class DesignMemory extends DfVisitor<Void> {
 				}
 			}
 		}
-
+		actor.setAttribute("memories", memories);
 		return null;
+	}
+
+	public static void addToMemory(Actor actor, Var var) {
+		@SuppressWarnings("unchecked")
+		Map<Integer, LogicalMemory> memories = (Map<Integer, LogicalMemory>) actor
+				.getAttribute("memories").getObjectValue();
+		LogicalValue logicalValue = makeLogicalValue(var);
+		var.setAttribute("logicalValue", logicalValue);
+
+		// Allocate each LogicalValue (State Variable) in a memory
+		// with a matching address stride. This provides consistency
+		// in the memories and allows (if activated) for state vars to be
+		// co-located
+		// if area is of concern.
+		int stride = logicalValue.getAddressStridePolicy().getStride();
+		LogicalMemory mem = memories.get(stride);
+		if (mem == null) {
+			// 32 should be more than enough for max address
+			// width
+			mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
+			mem.createLogicalMemoryPort();
+			mem.setIDLogical("stateVar_" + var.getName());
+			Design design = (Design) actor.getAttribute("design").getObjectValue();
+			design.addMemory(mem);
+		}
+		// Create a 'location' for the stateVar that is
+		// appropriate for its type/size.
+		Allocation location = mem.allocate(logicalValue);
+		var.setAttribute("location", location);
 	}
 
 	/**
@@ -262,7 +293,7 @@ public class DesignMemory extends DfVisitor<Void> {
 	 *            the type of the numerical value
 	 * @return
 	 */
-	private LogicalValue makeLogicalValue(String stringValue, Type type) {
+	public static LogicalValue makeLogicalValue(String stringValue, Type type) {
 		LogicalValue logicalValue = null;
 		final BigInteger value;
 		Integer bitSize = type.getSizeInBits();
@@ -283,7 +314,7 @@ public class DesignMemory extends DfVisitor<Void> {
 	 *            the variable
 	 * @return
 	 */
-	private LogicalValue makeLogicalValue(Var var) {
+	public static LogicalValue makeLogicalValue(Var var) {
 		LogicalValue logicalValue = null;
 		if (var.getType().isList()) {
 
@@ -343,7 +374,7 @@ public class DesignMemory extends DfVisitor<Void> {
 	 *            the type of the object value
 	 * @return
 	 */
-	private LogicalValue makeLogicalValueObject(Object obj,
+	public static LogicalValue makeLogicalValueObject(Object obj,
 			List<Integer> dimension, Type type) {
 		LogicalValue logicalValue = null;
 
@@ -403,7 +434,7 @@ public class DesignMemory extends DfVisitor<Void> {
 	 * @param nbrElements
 	 * @return
 	 */
-	private LogicalValue makeLogicalValue(Type type, int nbrElements) {
+	public static LogicalValue makeLogicalValue(Type type, int nbrElements) {
 		List<LogicalValue> subElements = new ArrayList<LogicalValue>(
 				nbrElements);
 		for (int i = 0; i < nbrElements; i++) {
