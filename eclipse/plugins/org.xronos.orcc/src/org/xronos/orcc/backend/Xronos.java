@@ -242,7 +242,7 @@ public class Xronos extends AbstractBackend {
 		Result result = FilesManager.extract("/bundle/README.txt", path);
 		String libPath = path + File.separator + "lib";
 		OrccLogger.trace("Export libraries sources into " + libPath + "... ");
-		result.merge(FilesManager.extract("/bundle/lib", libPath));
+		result.merge(FilesManager.extract("/bundle/lib", path));
 		return result;
 	}
 
