@@ -34,7 +34,6 @@ package org.xronos.orcc.backend;
 
 import static net.sf.orcc.OrccLaunchConstants.DEBUG_MODE;
 import static net.sf.orcc.OrccLaunchConstants.MAPPING;
-import static net.sf.orcc.OrccLaunchConstants.NO_LIBRARY_EXPORT;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -49,7 +48,9 @@ import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
 import net.sf.orcc.df.transform.TypeResizer;
 import net.sf.orcc.graph.Vertex;
+import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.OrccLogger;
+import net.sf.orcc.util.Result;
 
 import org.eclipse.core.resources.IFile;
 import org.xronos.orcc.analysis.XronosDynamicWeights;
@@ -112,7 +113,7 @@ public class Xronos extends AbstractBackend {
 	private boolean inputClockGating;
 
 	boolean schedulerInformation;
-	
+
 	boolean newLimGen;
 
 	@Override
@@ -134,8 +135,7 @@ public class Xronos extends AbstractBackend {
 				false);
 		schedulerInformation = getAttribute(
 				"org.xronos.orcc.schedulingInformation", false);
-		newLimGen = getAttribute(
-				"org.xronos.orcc.newLimGen", false);
+		newLimGen = getAttribute("org.xronos.orcc.newLimGen", false);
 
 		// Set Paths for RTL
 		rtlPath = path + File.separator + "rtl";
@@ -238,26 +238,12 @@ public class Xronos extends AbstractBackend {
 	}
 
 	@Override
-	public boolean exportRuntimeLibrary() {
-		boolean exportLibrary = !getAttribute(NO_LIBRARY_EXPORT, false);
-
+	protected Result extractLibraries() {
+		Result result = FilesManager.extract("/bundle/README.txt", path);
 		String libPath = path + File.separator + "lib";
-
-		if (exportLibrary) {
-			copyFileToFilesystem("/bundle/README.txt", path + File.separator
-					+ "README.txt", debug);
-
-			OrccLogger.trace("Export libraries sources into " + libPath
-					+ "... ");
-			if (copyFolderToFileSystem("/bundle/lib", libPath, debug)) {
-				OrccLogger.traceRaw("OK" + "\n");
-				return true;
-			} else {
-				OrccLogger.warnRaw("Error" + "\n");
-				return false;
-			}
-		}
-		return false;
+		OrccLogger.trace("Export libraries sources into " + libPath + "... ");
+		result.merge(FilesManager.extract("/bundle/lib", libPath));
+		return result;
 	}
 
 	public void generateInstances(Network network) {

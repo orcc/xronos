@@ -31,8 +31,6 @@
  */
 package org.xronos.orcc.backend.embedded;
 
-import static net.sf.orcc.OrccLaunchConstants.NO_LIBRARY_EXPORT;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,7 +51,9 @@ import net.sf.orcc.df.transform.UnitImporter;
 import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.ir.transform.RenameTransformation;
+import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.OrccLogger;
+import net.sf.orcc.util.Result;
 
 import org.eclipse.core.resources.IFile;
 /**
@@ -170,20 +170,13 @@ public class Embedded extends AbstractBackend {
 	}
 	
 	@Override
-	public boolean exportRuntimeLibrary() {
-		if (!getAttribute(NO_LIBRARY_EXPORT, false)) {
-			String target = path + File.separator + "lib";
-			OrccLogger
-					.trace("Export libraries sources into " + target + "... ");
-			if (copyFolderToFileSystem("/bundle/embedded", target, debug)) {
-				OrccLogger.traceRaw("OK" + "\n");
-				return true;
-			} else {
-				OrccLogger.warnRaw("Error" + "\n");
-				return false;
-			}
-		}
-		return false;
+	protected Result extractLibraries() {
+		String target = path + File.separator + "lib";
+		OrccLogger
+				.trace("Export libraries sources into " + target + "... ");
+		Result result = FilesManager.extract("/bundle/embedded", target);
+		return result;
 	}
-
+	
+	
 }
