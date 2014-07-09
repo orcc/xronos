@@ -55,7 +55,6 @@ import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
-import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
 
 import org.xronos.orcc.ir.BlockMutex;

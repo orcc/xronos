@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="org.xronos.orcc.feature"
+      label="Feature"
+      version="2.1.2.qualifier"
+      provider-name="EPFL">
+
+   <description url="https://github.com/orcc/xronos/">
+      Xronos: High Level Synthesis of Streaming Applications is a collection
+of tools under GNU GPL3, Apache 2, and BSD licences created by EPFL, and
+IETR/INSA (and Xilinx for OpenForge HLS) for the RVC-CAL dataflow
+programming language.
+   </description>
+
+   <copyright url="http://www.example.com/copyright">
+      Copyright (c) 2009-2014, EPFL
+All rights reserved
+   </copyright>
+
+   <license url="http://www.example.com/license">
+      XRONOS, High Level Synthesis of Streaming Applications
+  
+Copyright (C) 2014 EPFL SCI STI MM
+ 
+XRONOS is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+ 
+XRONOS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License
+along with XRONOS.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+  
+Additional permission under GNU GPL version 3 section 7
+  
+If you modify this Program, or any covered work, by linking or combining it
+with Eclipse (or a modified version of Eclipse or an Eclipse plugin or 
+an Eclipse library), containing parts covered by the terms of the 
+Eclipse Public License (EPL), the licensors of this Program grant you 
+additional permission to convey the resulting work.  Corresponding Source 
+for a non-source form of such a combination shall include the source code 
+for the parts of Eclipse libraries used as well as that of the  covered work.
+   </license>
+
+   <url>
+      <update label="Open RVC-CAL Compiler - Stable releases" url="http://orcc.sourceforge.net/eclipse"/>
+   </url>
+
+   <plugin
+         id="org.xronos.orcc"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>
