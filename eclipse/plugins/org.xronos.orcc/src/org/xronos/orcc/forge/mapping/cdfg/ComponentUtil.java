@@ -36,6 +36,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.orcc.ir.ExprBinary;
+import net.sf.orcc.ir.ExprUnary;
+import net.sf.orcc.ir.OpBinary;
+import net.sf.orcc.ir.OpUnary;
+import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.Var;
+
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.ClockDependency;
@@ -70,16 +77,7 @@ import org.xronos.openforge.lim.op.RightShiftOp;
 import org.xronos.openforge.lim.op.SubtractOp;
 import org.xronos.openforge.lim.op.UnaryOp;
 import org.xronos.openforge.lim.op.XorOp;
-import org.xronos.openforge.lim.primitive.And;
-import org.xronos.openforge.lim.primitive.Or;
 import org.xronos.openforge.util.MathStuff;
-
-import net.sf.orcc.ir.ExprBinary;
-import net.sf.orcc.ir.ExprUnary;
-import net.sf.orcc.ir.OpBinary;
-import net.sf.orcc.ir.OpUnary;
-import net.sf.orcc.ir.Type;
-import net.sf.orcc.ir.Var;
 
 /**
  * An utility class that contains static methods that helps creating components
@@ -111,9 +109,9 @@ public class ComponentUtil {
 		} else if (expr.getOp() == OpBinary.LE) {
 			op = new LessThanEqualToOp();
 		} else if (expr.getOp() == OpBinary.LOGIC_AND) {
-			op = new And(2);
+			op = new AndOp();
 		} else if (expr.getOp() == OpBinary.LOGIC_OR) {
-			op = new Or(2);
+			op = new OrOp();
 		} else if (expr.getOp() == OpBinary.LT) {
 			op = new LessThanOp();
 		} else if (expr.getOp() == OpBinary.MINUS) {
