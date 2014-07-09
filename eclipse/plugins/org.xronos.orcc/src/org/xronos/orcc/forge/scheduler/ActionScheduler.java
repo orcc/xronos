@@ -53,6 +53,7 @@ import net.sf.orcc.ir.transform.BlockCombine;
 
 import org.xronos.openforge.lim.Task;
 import org.xronos.orcc.forge.mapping.DesignMemory;
+import org.xronos.orcc.forge.mapping.TaskProcedure;
 
 /**
  * This visitor constructs the scheduling of actions in an actor
@@ -105,7 +106,7 @@ public class ActionScheduler extends DfVisitor<Task> {
 		for (@SuppressWarnings("unused") Action action : actor.getInitializes()) {
 		}
 
-		// TODO: create assigns for each fsm block, create a new visitor
+		// -- Create loads for each fsm state
 		Block assignFSMStatesBlock = actor.hasFsm() ? new LoadFsmStatesBlock(
 				scheduler).doSwitch(scheduler) : null;
 
@@ -153,8 +154,7 @@ public class ActionScheduler extends DfVisitor<Task> {
 		// -- Combine blocks
 		new BlockCombine().doSwitch(scheduler);
 
-		Task schedulerTask = null;
-		// Task schedulerTask = new TaskProcedure(true).doSwitch(scheduler);
+		Task schedulerTask = new TaskProcedure(true).doSwitch(scheduler);
 		return schedulerTask;
 	}
 

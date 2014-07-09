@@ -71,8 +71,16 @@ public class HasTokensBlock extends DfVisitor<Block> {
 			Expression value = null;
 			if (action.getInputPattern().getPorts().size() > 0) {
 				for (Port port : action.getInputPattern().getPorts()) {
-					Var portIndex = scheduler.getLocal(port.getName()
-							+ "PortIndex");
+					Var portIndex = null;
+					if (scheduler.getLocal(port.getName() + "TokenIndex") != null) {
+						portIndex = scheduler.getLocal(port.getName()
+								+ "TokenIndex");
+					} else {
+						portIndex = IrFactory.eINSTANCE.createVar(
+								IrFactory.eINSTANCE.createTypeInt(), port.getName()
+										+ "TokenIndex", true, 0);
+						scheduler.addLocal(portIndex);
+					}
 					int nbrTokens = action.getInputPattern().getNumTokens(port);
 
 					Expression E1 = IrFactory.eINSTANCE
@@ -102,7 +110,7 @@ public class HasTokensBlock extends DfVisitor<Block> {
 				hasTokens = scheduler.getLocal(action.getName() + "HasTokens");
 			} else {
 				hasTokens = IrFactory.eINSTANCE.createVar(
-						IrFactory.eINSTANCE.createTypeInt(), action.getName()
+						IrFactory.eINSTANCE.createTypeBool(), action.getName()
 								+ "HasTokens", true, 0);
 				scheduler.addLocal(hasTokens);
 			}

@@ -97,6 +97,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 
 		List<Block> blocks = new ArrayList<Block>();
 		if (!actor.hasFsm()) {
+			actionStateToState = new HashMap<Action, Pair<State, State>>();
 			blocks.add(actionSelection(actor.getActionsOutsideFsm()));
 		} else {
 			blocks.addAll(actionSelectionFSM(actor.getFsm()));
@@ -129,15 +130,10 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 			// Set firstBlockIf and lastBlockif
 			if (firstBlockIf == null) {
 				firstBlockIf = blockIf;
+				lastBlockIf = blockIf;
 			} else {
-				// If lastBlockif is not null, resolve priority by adding
-				// the blockIf to the else blockIf
-				if (lastBlockIf == null) {
-					lastBlockIf = blockIf;
-				} else {
 					lastBlockIf.getElseBlocks().add(blockIf);
 					lastBlockIf = blockIf;
-				}
 			}
 		}
 		// -- Handle Input pattern reading and add them to lastBlockIf
@@ -167,9 +163,16 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				actions.add(action);
 				actionStateToState.put(action, pair);
 			}
-			
-			// TODO: create state if and add the if of action selection
 
+			// -- Create if block of the state add all actions
+			Var sStateVar = scheduler.getLocal("s_fsmState_" + state.getName());
+			Expression condition = IrFactory.eINSTANCE.createExprVar(sStateVar);
+			BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
+			blockIf.setCondition(condition);
+			blockIf.getThenBlocks().add(actionSelection(actions));
+
+			// -- Add blockIf to blocks
+			blocks.add(blockIf);
 		}
 
 		return blocks;
@@ -185,21 +188,30 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		instCall.setProcedure(action.getBody());
 		block.add(instCall);
 
-		// TODO: add store instruction from saving state if any
-		
+		// -- add store instruction from saving state if any
+		if (actionStateToState.containsKey(action)) {
+			// Get source and target states
+			State source = actionStateToState.get(action).getA();
+			State target = actionStateToState.get(action).getB();
+
+			// Get Vars
+			Var sourceVar = actor.getStateVar("fsmState_" + source.getName());
+			Var targetVar = actor.getStateVar("fsmState_" + target.getName());
+
+			// Create stores
+			InstStore storeSource = IrFactory.eINSTANCE.createInstStore(
+					sourceVar, IrFactory.eINSTANCE.createExprBool(false));
+			block.add(storeSource);
+			InstStore targetSource = IrFactory.eINSTANCE.createInstStore(
+					targetVar, IrFactory.eINSTANCE.createExprBool(true));
+			block.add(targetSource);
+		}
+
 		// -- Initialize at Zero the portTokenIndex for the input pattern
 		if (action.getInputPattern() != null) {
 			for (Port port : action.getInputPattern().getPorts()) {
-				Var portIndex = null;
-				if (scheduler.getLocal(port.getName() + "TokenIndex") != null) {
-					portIndex = scheduler.getLocal(port.getName()
-							+ "TokenIndex");
-				} else {
-					portIndex = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeInt(), port.getName()
-									+ "TokenIndex", true, 0);
-					scheduler.addLocal(portIndex);
-				}
+				Var portIndex = scheduler.getLocal(port.getName()
+						+ "TokenIndex");
 				ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
 				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
 						portIndex, value);
