@@ -44,6 +44,7 @@ import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstReturn;
+import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
@@ -52,7 +53,6 @@ import net.sf.orcc.ir.transform.BlockCombine;
 
 import org.xronos.openforge.lim.Task;
 import org.xronos.orcc.forge.mapping.DesignMemory;
-import org.xronos.orcc.forge.mapping.TaskProcedure;
 
 /**
  * This visitor constructs the scheduling of actions in an actor
@@ -69,32 +69,45 @@ public class ActionScheduler extends DfVisitor<Task> {
 		Procedure scheduler = IrFactory.eINSTANCE.createProcedure("scheduler",
 				0, IrFactory.eINSTANCE.createTypeVoid());
 
-		// Create actor FSM states if any
+		// Init Blocks
+		List<Block> initBlocks = new ArrayList<Block>();
+
+		// -- Store FSM states
+		BlockBasic storeSMStatesBlock = IrFactory.eINSTANCE.createBlockBasic();
 		if (actor.hasFsm()) {
 			for (State state : actor.getFsm().getStates()) {
 				Type typeBool = IrFactory.eINSTANCE.createTypeBool();
-				Var fsmState = IrFactory.eINSTANCE.createVar(typeBool, "state_"
-						+ state.getName(), true, 0);
+				Var fsmState = IrFactory.eINSTANCE.createVar(typeBool,
+						"fsmState_" + state.getName(), true, 0);
+				Expression value = null;
 				if (state == actor.getFsm().getInitialState()) {
 					fsmState.setValue(true);
+					value = IrFactory.eINSTANCE.createExprBool(true);
 				} else {
 					fsmState.setValue(false);
+					value = IrFactory.eINSTANCE.createExprBool(false);
 				}
 				actor.getStateVars().add(fsmState);
 				// Add to Design Memory
 				DesignMemory.addToMemory(actor, fsmState);
+
+				// Create Store Instruction
+				InstStore store = IrFactory.eINSTANCE.createInstStore(fsmState,
+						value);
+				storeSMStatesBlock.add(store);
 			}
+			initBlocks.add(storeSMStatesBlock);
 		}
 
-		// -- Create the InitBlock, FSM states and call of initialize action
-		BlockBasic initFSMStatesBlock = IrFactory.eINSTANCE.createBlockBasic();
-
-		List<Block> initBlocks = new ArrayList<Block>();
-		for (Action action : actor.getInitializes()) {
+		// -- call of initialize action
+		// TODO: Create call, input and output port resolution for each
+		// initialize action
+		for (@SuppressWarnings("unused") Action action : actor.getInitializes()) {
 		}
 
 		// TODO: create assigns for each fsm block, create a new visitor
-		Block assignFSMStatesBlock = null;
+		Block assignFSMStatesBlock = actor.hasFsm() ? new LoadFsmStatesBlock(
+				scheduler).doSwitch(scheduler) : null;
 
 		// -- Create the isSchedulable Blocks
 		List<Block> isScedulableBlocks = new IsSchedulableBlocks(scheduler)
@@ -113,7 +126,10 @@ public class ActionScheduler extends DfVisitor<Task> {
 		inifiniteWhile.setCondition(condition);
 
 		// -- Add isSchedulable, hasToken and action selection blocks
-		inifiniteWhile.getBlocks().add(assignFSMStatesBlock);
+		if (actor.hasFsm()) {
+			inifiniteWhile.getBlocks().add(assignFSMStatesBlock);
+		}
+
 		inifiniteWhile.getBlocks().addAll(isScedulableBlocks);
 		inifiniteWhile.getBlocks().add(hasTokensBlock);
 		inifiniteWhile.getBlocks().addAll(actionSelection);
