@@ -41,13 +41,18 @@ import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
+import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.transform.BlockCombine;
 
 import org.xronos.openforge.lim.Task;
 import org.xronos.orcc.forge.mapping.DesignMemory;
+import org.xronos.orcc.forge.mapping.TaskProcedure;
 
 /**
  * This visitor constructs the scheduling of actions in an actor
@@ -60,11 +65,12 @@ public class ActionScheduler extends DfVisitor<Task> {
 	@Override
 	public Task caseActor(Actor actor) {
 
+		// -- The Actions Scheduler procedure
 		Procedure scheduler = IrFactory.eINSTANCE.createProcedure("scheduler",
 				0, IrFactory.eINSTANCE.createTypeVoid());
 
 		// Create actor FSM states if any
-		if(actor.hasFsm()){
+		if (actor.hasFsm()) {
 			for (State state : actor.getFsm().getStates()) {
 				Type typeBool = IrFactory.eINSTANCE.createTypeBool();
 				Var fsmState = IrFactory.eINSTANCE.createVar(typeBool, "state_"
@@ -79,20 +85,60 @@ public class ActionScheduler extends DfVisitor<Task> {
 				DesignMemory.addToMemory(actor, fsmState);
 			}
 		}
-		
+
 		// -- Create the InitBlock, FSM states and call of initialize action
-		List<Block> initBlocks = new ArrayList<Block>();
-		for(Action action: actor.getInitializes()){
-		}
 		BlockBasic initFSMStatesBlock = IrFactory.eINSTANCE.createBlockBasic();
-		
-		
+
+		List<Block> initBlocks = new ArrayList<Block>();
+		for (Action action : actor.getInitializes()) {
+		}
+
+		// TODO: create assigns for each fsm block, create a new visitor
+		Block assignFSMStatesBlock = null;
+
+		// -- Create the isSchedulable Blocks
 		List<Block> isScedulableBlocks = new IsSchedulableBlocks(scheduler)
 				.doSwitch(actor);
-		
-		List<Block> actionSelection = new ActionSelection(scheduler).doSwitch(actor);
+
+		// -- Create the hasTokens Block
+		Block hasTokensBlock = new HasTokensBlock(scheduler).doSwitch(actor);
+
+		// -- Create the action selection blocks
+		List<Block> actionSelection = new ActionSelection(scheduler)
+				.doSwitch(actor);
+
+		// -- Create the infinite while block
+		BlockWhile inifiniteWhile = IrFactory.eINSTANCE.createBlockWhile();
+		Expression condition = IrFactory.eINSTANCE.createExprBool(true);
+		inifiniteWhile.setCondition(condition);
+
+		// -- Add isSchedulable, hasToken and action selection blocks
+		inifiniteWhile.getBlocks().add(assignFSMStatesBlock);
+		inifiniteWhile.getBlocks().addAll(isScedulableBlocks);
+		inifiniteWhile.getBlocks().add(hasTokensBlock);
+		inifiniteWhile.getBlocks().addAll(actionSelection);
+
+		// -- Add init and infinite while blocks to the scheduler body
+		scheduler.getBlocks().addAll(initBlocks);
+		scheduler.getBlocks().add(inifiniteWhile);
+
+		// -- Create a Return block and null return instruction on it
+		BlockBasic returnBlock = IrFactory.eINSTANCE.createBlockBasic();
+		InstReturn instReturn = IrFactory.eINSTANCE.createInstReturn(null);
+		returnBlock.add(instReturn);
+		// -- Add return block to the scheduler body
+		scheduler.getBlocks().add(returnBlock);
+
+		// -- Give a void return type to the scheduler
+		Type returnType = IrFactory.eINSTANCE.createTypeVoid();
+		scheduler.setReturnType(returnType);
+
+		// Scheduler transformations
+		// -- Combine blocks
+		new BlockCombine().doSwitch(scheduler);
 
 		Task schedulerTask = null;
+		// Task schedulerTask = new TaskProcedure(true).doSwitch(scheduler);
 		return schedulerTask;
 	}
 

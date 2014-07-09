@@ -30,6 +30,9 @@ import net.sf.orcc.ir.util.IrUtil;
  */
 public class IsSchedulableBlocks extends DfVisitor<List<Block>> {
 
+	/**
+	 * The Actions Scheduler procedure
+	 */
 	Procedure scheduler;
 
 	/**
@@ -110,7 +113,7 @@ public class IsSchedulableBlocks extends DfVisitor<List<Block>> {
 			localsCopyMap = new HashMap<Var, Var>();
 			for (Var var : procedure.getLocals()) {
 				Var copyVar = IrUtil.copy(var);
-				copyVar.setName(procedure.getName() + "_" + copyVar.getName());
+				copyVar.setName(currentAction.getName() + "IsSchedulable");
 				scheduler.addLocal(copyVar);
 				localsCopyMap.put(var, copyVar);
 			}
@@ -140,10 +143,6 @@ public class IsSchedulableBlocks extends DfVisitor<List<Block>> {
 
 			// Copy Blocks to procedure
 			blocks.addAll(schedulerBlocks);
-
-			// Set the isSchedulable Var attribute
-			action.setAttribute("isSchedulableVar",
-					isSchedulableActionVar.get(action));
 		}
 
 		return blocks;
