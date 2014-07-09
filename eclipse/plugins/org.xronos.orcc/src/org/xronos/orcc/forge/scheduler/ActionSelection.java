@@ -132,8 +132,8 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				firstBlockIf = blockIf;
 				lastBlockIf = blockIf;
 			} else {
-					lastBlockIf.getElseBlocks().add(blockIf);
-					lastBlockIf = blockIf;
+				lastBlockIf.getElseBlocks().add(blockIf);
+				lastBlockIf = blockIf;
 			}
 		}
 		// -- Handle Input pattern reading and add them to lastBlockIf
@@ -318,8 +318,9 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 
 					// -- Store the value to the port var
 					Var storeTarget = pattern.getPortToVarMap().get(port);
+					Expression index = IrFactory.eINSTANCE.createExprInt(0);
 					InstStore store = IrFactory.eINSTANCE.createInstStore(
-							storeTarget, target);
+							storeTarget, Arrays.asList(index), target);
 					blockBasic.add(store);
 
 					// -- TokenIndex == 1
@@ -330,8 +331,9 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				} else {
 					// -- Load Value to a temporary variable
 					Var source = pattern.getPortToVarMap().get(port);
+					Expression index = IrFactory.eINSTANCE.createExprInt(0);
 					InstLoad load = IrFactory.eINSTANCE.createInstLoad(target,
-							source, 0);
+							source, Arrays.asList(index));
 					blockBasic.add(load);
 
 					// -- Write the temporary variable to output port
