@@ -37,12 +37,15 @@ import java.util.List;
 
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.Port;
 import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
@@ -100,10 +103,33 @@ public class ActionScheduler extends DfVisitor<Task> {
 			initBlocks.add(storeSMStatesBlock);
 		}
 
+		BlockBasic assignInputTokenIndexBlock = IrFactory.eINSTANCE
+				.createBlockBasic();
+		for (Action action : actor.getActions()) {
+			for (Port port : action.getInputPattern().getPorts()) {
+				Var portIndex = null;
+				if (scheduler.getLocal(port.getName() + "TokenIndex") != null) {
+					portIndex = scheduler.getLocal(port.getName()
+							+ "TokenIndex");
+				} else {
+					portIndex = IrFactory.eINSTANCE.createVar(
+							IrFactory.eINSTANCE.createTypeInt(), port.getName()
+									+ "TokenIndex", true, 0);
+					scheduler.addLocal(portIndex);
+				}
+				ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
+				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+						portIndex, value);
+				assignInputTokenIndexBlock.add(assign);
+			}
+		}
+		initBlocks.add(assignInputTokenIndexBlock);
+
 		// -- call of initialize action
 		// TODO: Create call, input and output port resolution for each
 		// initialize action
-		for (@SuppressWarnings("unused") Action action : actor.getInitializes()) {
+		for (@SuppressWarnings("unused")
+		Action action : actor.getInitializes()) {
 		}
 
 		// -- Create loads for each fsm state
