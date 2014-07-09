@@ -92,6 +92,8 @@ import org.xronos.openforge.lim.op.NoOp;
 import org.xronos.openforge.util.Debug;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 import org.xronos.orcc.ir.InstPortRead;
+import org.xronos.orcc.ir.InstPortStatus;
+import org.xronos.orcc.ir.InstPortWrite;
 import org.xronos.orcc.preference.Constants;
 
 /**
@@ -734,6 +736,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	}
 
 	public Component caseInstPortRead(InstPortRead instPortRead) {
+		// TODO: Add cast if necessary, even thought impossible
 		Var target = instPortRead.getTarget().getVariable();
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortRead.getPort();
 
@@ -750,6 +753,66 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		// Add to bus dependencies
 		busDependecies.put(resultBus, target);
 		return pinRead;
+	}
+
+	public Component caseInstPortWrite(InstPortWrite instPortWrite) {
+		List<Component> sequence = new ArrayList<Component>();
+		Component value = new ExprToComponent().doSwitch(instPortWrite
+				.getValue());
+		sequence.add(value);
+
+		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortWrite
+				.getPort();
+		ActionIOHandler ioHandler = (ActionIOHandler) port.getAttribute(
+				"ioHandler").getObjectValue();
+		Component pinWrite = ioHandler.getWriteAccess(false);
+		pinWrite.setNonRemovable();
+		sequence.add(pinWrite);
+
+		Block block = new Block(sequence);
+
+		// -- Input Dependencies
+		@SuppressWarnings("unchecked")
+		Map<Var, Port> exprInput = (Map<Var, Port>) instPortWrite.getValue()
+				.getAttribute("inputs").getObjectValue();
+		for (Var var : exprInput.keySet()) {
+			Type type = var.getType();
+			Port dataPort = exprInput.get(var);
+			
+			Port blkDataPort = block.makeDataPort(var.getName(),
+					type.getSizeInBits(), type.isInt());
+			Bus blkDataPortBus = blkDataPort.getPeer();
+			
+			ComponentUtil.connectDataDependency(blkDataPortBus, dataPort, 0);
+			portDependecies.put(blkDataPort, var);
+		}
+
+		// -- Value Component --> pinWrite dependency
+		Bus resultBus = value.getExit(Exit.DONE).getDataBuses().get(0);
+		Port dataPort = pinWrite.getDataPorts().get(0);
+		ComponentUtil.connectDataDependency(resultBus, dataPort, 0);
+
+		return block;
+	}
+
+	public Component caseInstPortStatus(InstPortStatus instPortStatus) {
+		Var target = instPortStatus.getTarget().getVariable();
+		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortStatus
+				.getPort();
+
+		// Construct ioHandler ReadAccess Component
+		ActionIOHandler ioHandler = (ActionIOHandler) port.getAttribute(
+				"ioHandler").getObjectValue();
+		Component pinStatus = ioHandler.getStatusAccess();
+		pinStatus.setNonRemovable();
+
+		// Get Exit and ResultBus
+		Exit exit = pinStatus.getExit(Exit.DONE);
+		Bus resultBus = exit.getDataBuses().get(0);
+
+		// Add to bus dependencies
+		busDependecies.put(resultBus, target);
+		return pinStatus;
 	}
 
 	@Override
@@ -960,8 +1023,12 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 	@Override
 	public Component defaultCase(EObject object) {
-		if (object instanceof InstCast) {
-			return caseInstCast((InstCast) object);
+		if (object instanceof InstPortRead) {
+			return caseInstPortRead((InstPortRead) object);
+		} else if (object instanceof InstPortWrite) {
+			return caseInstPortWrite((InstPortWrite) object);
+		} else if (object instanceof InstPortStatus) {
+			return caseInstPortStatus((InstPortStatus) object);
 		}
 		return null;
 	}
