@@ -74,11 +74,11 @@ public class DesignActor extends DfVisitor<Design> {
 		designMemory.doSwitch(actor);
 
 		// Build Initialize actions
-		for(Action action: actor.getInitializes()){
+		for (Action action : actor.getInitializes()) {
 			Task task = new DesignAction().doSwitch(action);
 			design.addTask(task);
 		}
-		
+
 		// Build Tasks (Action to Tasks)
 		for (Action action : actor.getActions()) {
 			Task task = new DesignAction().doSwitch(action);
@@ -87,21 +87,17 @@ public class DesignActor extends DfVisitor<Design> {
 
 		// Set attribute design to actor
 		actor.setAttribute("design", design);
-		
+
 		// Build Action Scheduler
 		ActionScheduler actionScheduler = new ActionScheduler();
 		Task scheduler = actionScheduler.doSwitch(actor);
-		design.addTask(scheduler);
+		//design.addTask(scheduler);
 
 		// Activate the production of GO/Done for each task
 		for (Task task : design.getTasks()) {
 			Call call = task.getCall();
-			if (call.getExit(Exit.DONE).getDoneBus().isConnected()) {
-				call.getProcedure().getBody().setProducesDone(true);
-			}
-			if (call.getGoPort().isConnected()) {
-				call.getProcedure().getBody().setConsumesGo(true);
-			}
+			//call.getProcedure().getBody().setProducesDone(true);
+			//call.getProcedure().getBody().setConsumesGo(true);
 		}
 
 		return design;

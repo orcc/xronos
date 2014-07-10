@@ -100,7 +100,6 @@ public class ProcedureToBlock extends AbstractIrVisitor<Block> {
 
 		procedure.setAttribute("inputs", inputs);
 		procedure.setAttribute("outputs", outputs);
-		
 		return proceduralBlock;
 	}
 

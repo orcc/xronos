@@ -155,11 +155,11 @@ public class ComponentUtil {
 	 * @param owner
 	 */
 	public static void connectControlDependency(Component component,
-			Component owner) {
+			Component owner, int group) {
 		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
 		Port donePort = owner.getExit(Exit.DONE).getDoneBus().getPeer();
 		List<Entry> entries = donePort.getOwner().getEntries();
-		Entry entry = entries.get(0);
+		Entry entry = entries.get(group);
 		Dependency dep = new ControlDependency(doneBus);
 		entry.addDependency(donePort, dep);
 	}

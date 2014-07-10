@@ -55,6 +55,7 @@ import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.Task;
 import org.xronos.openforge.lim.io.SimplePin;
 import org.xronos.openforge.lim.memory.LogicalValue;
+import org.xronos.openforge.util.Debug;
 import org.xronos.orcc.backend.debug.DebugPrinter;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.util.DesignUtil;
@@ -141,6 +142,7 @@ public class DesignActor extends DfVisitor<Object> {
 				taskName + "Body", false, Exit.RETURN, 0, portDependency,
 				busDependency, portGroupDependency, doneBusDependency);
 		/** Create the task **/
+		Debug.depGraphTo(taskModule, "blocks", "/tmp/out.dot", 1);
 		Task task = DesignUtil.createTask(taskName, taskModule, false);
 		task.setIDLogical(taskName);
 

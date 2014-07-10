@@ -59,9 +59,9 @@ public class VarInitializer extends DfVisitor<Void> {
 
 		// initializes state variables
 		for (Var stateVar : actor.getStateVars()) {
-			if (!stateVar.isAssignable() || stateVar.isInitialized()) {
+			//if (!stateVar.isAssignable() || stateVar.isInitialized()) {
 				initializeVar(stateVar);
-			}
+		//	}
 		}
 		
 		// initialize action bodys local variables
