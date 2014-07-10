@@ -197,7 +197,6 @@ public class Xronos extends AbstractBackend {
 
 	@Override
 	protected void doXdfCodeGeneration(Network network) {
-		Validator.checkTopLevel(network);
 		Validator.checkMinimalFifoSize(network, fifoSize);
 		// instantiate and flattens network
 		new Instantiator(true, fifoSize).doSwitch(network);
