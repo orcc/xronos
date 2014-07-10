@@ -29,7 +29,6 @@
  * for the parts of Eclipse libraries used as well as that of the  covered work.
  * 
  */
- 
 package org.xronos.orcc.backend
 
 import java.text.SimpleDateFormat
@@ -57,6 +56,8 @@ class NetworkPrinter {
 	var Map<String, Object> options
 
 	var String DEFAULT_CLOCK_DOMAIN = "CLK";
+
+	var int defaultFifoSize;
 
 	/**
 	 * Map which contains the Clock Domain of a port
@@ -519,7 +520,8 @@ class NetworkPrinter {
 								«FOR port : actor.outputs»
 									«port.name»_almost_full : in «printLogicOrVector(
 				actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
-									«port.name»_full : in «printLogicOrVector(actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
+									«port.name»_full : in «printLogicOrVector(
+				actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
 								«ENDFOR»
 								en : in std_logic;
 								clk : in std_logic;
@@ -580,13 +582,13 @@ class NetworkPrinter {
 						«FOR action : actor.actions SEPARATOR "\n"»
 							«action.name»_go => «actor.simpleName»_«action.name»_go,
 							«action.name»_done => «actor.simpleName»_«action.name»_done,
-							«ENDFOR»
-						«ENDIF»
-						-- Clock and Reset
-					clk => «IF actor.outputs.size > 0»«IF doubleBuffering»«actor.simpleName»_clk«ELSE»clocks(«clockDomainsIndex.
-				get(instanceClockDomain.get(actor))»)«ENDIF»«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»,
-					--clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
-					reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(actor))»));
+						«ENDFOR»
+					«ENDIF»
+					-- Clock and Reset
+				clk => «IF actor.outputs.size > 0»«IF doubleBuffering»«actor.simpleName»_clk«ELSE»clocks(«clockDomainsIndex.get(
+				instanceClockDomain.get(actor))»)«ENDIF»«ELSE»clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»)«ENDIF»,
+				--clk => clocks(«clockDomainsIndex.get(instanceClockDomain.get(actor))»),
+				reset => resets(«clockDomainsIndex.get(instanceClockDomain.get(actor))»));
 				«IF doubleBuffering»
 					«IF actor.outputs.size > 0»
 						cc_«actor.simpleName» : component «actor.simpleName»_clock_controller
@@ -677,6 +679,9 @@ class NetworkPrinter {
 		var Integer fifoSize = 64;
 		if (!prefixIn.equals("no")) {
 			fifoSize = connection.size;
+			if(fifoSize == null){
+				fifoSize = defaultFifoSize;
+			}
 		}
 		var Integer clkIndex = 0;
 		if (tgtInstance != null) {
@@ -736,7 +741,7 @@ class NetworkPrinter {
 				full => «IF srcInstance != null»«srcInstance.simpleName»_«ENDIF»«srcPort.name»_full«IF srcInstance != null»«IF srcInstance.
 				getAdapter((typeof(Entity))).getOutgoingPortMap().get(srcPort).size > 1»(«networkPortConnectionFanout.get(
 				connection)»)«ENDIF»«ENDIF»,
-					almost_full => «IF srcInstance != null»«srcInstance.simpleName»_«ENDIF»«srcPort.name»_almost_full«IF srcInstance !=
+				almost_full => «IF srcInstance != null»«srcInstance.simpleName»_«ENDIF»«srcPort.name»_almost_full«IF srcInstance !=
 				null»«IF srcInstance.getAdapter((typeof(Entity))).getOutgoingPortMap().get(srcPort).size > 1»(«networkPortConnectionFanout.
 				get(connection)»)«ENDIF»«ENDIF»
 				«ENDIF»
@@ -768,7 +773,10 @@ class NetworkPrinter {
 		}
 
 		computeNetworkClockDomains(network, clkDomains);
-
+		
+		if (options.containsKey("fifoSize")) {
+			defaultFifoSize = options.get("fifoSize") as Integer;
+		}
 		'''
 			«headerComments()»
 			

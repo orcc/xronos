@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.backends.AbstractBackend;
+import net.sf.orcc.backends.util.Validator;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.Instantiator;
@@ -196,6 +197,8 @@ public class Xronos extends AbstractBackend {
 
 	@Override
 	protected void doXdfCodeGeneration(Network network) {
+		Validator.checkTopLevel(network);
+		Validator.checkMinimalFifoSize(network, fifoSize);
 		// instantiate and flattens network
 		new Instantiator(true, fifoSize).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
@@ -394,6 +397,7 @@ public class Xronos extends AbstractBackend {
 		xronosPrinter.getOptions().put("clkDomains", clkDomains);
 		xronosPrinter.getOptions().put("doubleBuffering", outputClockGating);
 		xronosPrinter.getOptions().put("inputClockGating", inputClockGating);
+		xronosPrinter.getOptions().put("fifoSize",fifoSize);
 		xronosPrinter.printNetwork(rtlPath, network);
 		if (generateGoDone) {
 			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
