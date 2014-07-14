@@ -60,6 +60,7 @@ import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.WhileBody;
 import org.xronos.openforge.lim.primitive.Reg;
+import org.xronos.openforge.util.Debug;
 
 /**
  * This Visitor transforms a {@link BlockWhile} to a LIM {@link Loop}
@@ -295,8 +296,8 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
 		blockWhile.setAttribute("inputs", inputs);
 		blockWhile.setAttribute("outputs", outputs);
-
+		Debug.depGraphTo(loop, "loop", "/tmp/loop.dot", 1);
 		return loop;
-	}
+	} 
 
 }

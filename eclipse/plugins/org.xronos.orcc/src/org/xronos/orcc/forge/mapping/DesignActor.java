@@ -90,8 +90,8 @@ public class DesignActor extends DfVisitor<Design> {
 
 		// Build Action Scheduler
 		ActionScheduler actionScheduler = new ActionScheduler();
-		Task scheduler = actionScheduler.doSwitch(actor);
-		design.addTask(scheduler);
+		//Task scheduler = actionScheduler.doSwitch(actor);
+		//design.addTask(scheduler);
 
 		// Activate the production of GO/Done for each task
 		for (Task task : design.getTasks()) {

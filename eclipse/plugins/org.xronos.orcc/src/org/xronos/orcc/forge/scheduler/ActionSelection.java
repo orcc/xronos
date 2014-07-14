@@ -195,15 +195,16 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 			// Get source and target states
 			State source = actionStateToState.get(action).getA();
 			State target = actionStateToState.get(action).getB();
-
-			// Get Vars
-			Var sourceVar = actor.getStateVar("fsmState_" + source.getName());
+			
+			if(source != target){
+				Var sourceVar = actor.getStateVar("fsmState_" + source.getName());
+				InstStore storeSource = IrFactory.eINSTANCE.createInstStore(
+						sourceVar, IrFactory.eINSTANCE.createExprBool(false));
+				block.add(storeSource);
+			}
+			
 			Var targetVar = actor.getStateVar("fsmState_" + target.getName());
-
 			// Create stores
-			InstStore storeSource = IrFactory.eINSTANCE.createInstStore(
-					sourceVar, IrFactory.eINSTANCE.createExprBool(false));
-			block.add(storeSource);
 			InstStore targetSource = IrFactory.eINSTANCE.createInstStore(
 					targetVar, IrFactory.eINSTANCE.createExprBool(true));
 			block.add(targetSource);

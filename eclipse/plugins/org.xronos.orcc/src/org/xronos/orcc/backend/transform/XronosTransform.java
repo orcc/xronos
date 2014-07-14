@@ -80,6 +80,7 @@ public class XronosTransform {
 		transformations.add(new UnitImporter());
 		transformations.add(new VarInitializer());
 		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
+		transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
 		
 		for (DfSwitch<?> transformation : transformations) {
 			try {
