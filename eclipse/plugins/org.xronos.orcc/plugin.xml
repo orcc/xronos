@@ -121,7 +121,7 @@
             defaultValue="false"
             description="New LIM generation with non introusive modifications on the ORCC IR."
             id="org.xronos.orcc.newLimGen"
-            name="New LIM Generation (Experimental)">
+            name="New LIM Generation (Alpha)">
          <checkBox></checkBox>
       </option>
    </extension>

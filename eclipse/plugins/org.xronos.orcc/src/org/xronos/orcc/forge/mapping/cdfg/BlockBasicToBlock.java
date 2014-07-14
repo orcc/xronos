@@ -1176,6 +1176,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				}
 			}
 		}
+		Debug.depGraphTo(block, "block", "/tmp/block.dot", 1);
 		return block;
 	}
 

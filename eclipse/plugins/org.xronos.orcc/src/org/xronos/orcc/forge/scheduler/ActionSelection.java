@@ -100,7 +100,9 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 			actionStateToState = new HashMap<Action, Pair<State, State>>();
 			blocks.add(actionSelection(actor.getActionsOutsideFsm()));
 		} else {
-			blocks.addAll(actionSelectionFSM(actor.getFsm()));
+			BlockMutex blockMutex = XronosIrFactory.eINSTANCE.createBlockMutex();
+			blockMutex.getBlocks().addAll(actionSelectionFSM(actor.getFsm()));
+			blocks.add(blockMutex);
 		}
 		return blocks;
 	}
@@ -243,7 +245,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		blocks.add(block);
 
 		// -- Build output pattern while Block
-		if (action.getOutputPattern() != null) {
+		if (!action.getOutputPattern().isEmpty()) {
 			if (action.getOutputPattern().getPorts().size() == 1) {
 				blocks.addAll(doSwitch(action.getOutputPattern()));
 			} else {
@@ -298,7 +300,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 
 				// -- Create Load and then Port Write
 				if (scheduler.getLocal(port.getName() + "PortValue") != null) {
-					target = scheduler.getLocal(port.getName() + "Portvalue");
+					target = scheduler.getLocal(port.getName() + "PortValue");
 				} else {
 					Type type = IrUtil.copy(port.getType());
 					target = IrFactory.eINSTANCE.createVar(type, port.getName()

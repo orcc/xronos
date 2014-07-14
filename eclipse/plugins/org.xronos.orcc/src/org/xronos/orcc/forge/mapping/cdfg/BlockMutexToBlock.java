@@ -29,60 +29,44 @@
  * for the parts of Eclipse libraries used as well as that of the  covered work.
  * 
  */
-package org.xronos.orcc.forge.scheduler;
+package org.xronos.orcc.forge.mapping.cdfg;
 
-import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.State;
-import net.sf.orcc.df.util.DfVisitor;
-import net.sf.orcc.ir.Block;
-import net.sf.orcc.ir.BlockBasic;
-import net.sf.orcc.ir.InstLoad;
-import net.sf.orcc.ir.IrFactory;
-import net.sf.orcc.ir.Procedure;
+import java.util.HashMap;
+import java.util.Map;
+
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.AbstractIrVisitor;
+
+import org.eclipse.emf.ecore.EObject;
+import org.xronos.openforge.lim.Bus;
+import org.xronos.openforge.lim.Component;
+import org.xronos.openforge.lim.Port;
+import org.xronos.orcc.ir.BlockMutex;
 
 /**
- * This visitor creates a Block that contains all the load instructions for
- * loading the current value of all states.
+ * This visitor transforms a BlockMutex to a LIM MutexBlock 
  * 
  * @author Endri Bezati
  *
  */
-public class LoadFsmStatesBlock extends DfVisitor<Block> {
+public class BlockMutexToBlock extends AbstractIrVisitor<Component> {
 
-	/**
-	 * The Actions Scheduler procedure
-	 */
-	Procedure scheduler;
-
-	public LoadFsmStatesBlock(Procedure scheduler) {
-		this.scheduler = scheduler;
-	}
-
-	@Override
-	public Block caseActor(Actor actor) {
-		BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
-
-		if (actor.hasFsm()) {
-			for (State state : actor.getFsm().getStates()) {
-				Var stateVar = actor.getStateVar("fsmState_" + state.getName());
-				Var tempState = null;
-				if (scheduler.getLocal("s_" + stateVar.getName()) != null) {
-					tempState = scheduler.getLocal("s_" + stateVar.getName());
-				} else {
-					tempState = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeBool(), "s_"
-									+ stateVar.getName(), true, 0);
-					scheduler.addLocal(tempState);
-				}
-
-				InstLoad load = IrFactory.eINSTANCE.createInstLoad(tempState,
-						stateVar);
-				block.add(load);
-
-			}
-		}
+	public Component caseBlockMutex(BlockMutex blockMutex) {
+		Map<Var, Port> inputs = new HashMap<Var, Port>();
+		Map<Var, Bus> outputs = new HashMap<Var, Bus>();
+		
+		Component block = new BlocksToBlock(inputs, outputs, false, true)
+				.doSwitch(blockMutex.getBlocks());
+		blockMutex.setAttribute("inputs", inputs);
+		blockMutex.setAttribute("outputs", outputs);
 		return block;
 	}
 
+	public Component defaultCase(EObject object) {
+		if (object instanceof BlockMutex) {
+			return caseBlockMutex((BlockMutex) object);
+		}
+
+		return super.defaultCase(object);
+	}
 }

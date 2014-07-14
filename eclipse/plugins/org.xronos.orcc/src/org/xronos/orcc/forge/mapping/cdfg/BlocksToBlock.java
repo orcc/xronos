@@ -45,11 +45,14 @@ import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 
+import org.eclipse.emf.ecore.EObject;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Exit;
+import org.xronos.openforge.lim.MutexBlock;
 import org.xronos.openforge.lim.Port;
+import org.xronos.orcc.ir.BlockMutex;
 
 /**
  * This visitor takes a list of {@link net.sf.orcc.ir.Block}s and creates a new
@@ -63,33 +66,38 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 	/**
 	 * The Bus variable for each dependency
 	 */
-	Map<Bus, Var> busDependecies;
+	private Map<Bus, Var> busDependecies;
 
 	/**
 	 * Set of Block inputs
 	 */
-	Map<Var, Port> inputs;
+	private Map<Var, Port> inputs;
 
 	/**
 	 * If this set of blocks is from a procedure body
 	 */
-	boolean isActionBody;
+	private boolean isActionBody;
+
+	/**
+	 * 
+	 */
+	private boolean isBlockMutex;
 
 	/**
 	 * Set of Block outputs
 	 */
-	Map<Var, Bus> outputs;
+	private Map<Var, Bus> outputs;
 
 	/**
 	 * The port variable for each dependency
 	 */
-	Map<Port, Var> portDependecies;
+	private Map<Port, Var> portDependecies;
 
 	/**
 	 * Target Output data bus
 	 */
 
-	Var target;
+	private Var target;
 
 	/**
 	 * 
@@ -105,6 +113,13 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 		this.isActionBody = isActionBody;
 		portDependecies = new HashMap<Port, Var>();
 		busDependecies = new HashMap<Bus, Var>();
+		this.isBlockMutex = false;
+	}
+
+	public BlocksToBlock(Map<Var, Port> inputs, Map<Var, Bus> outputs,
+			boolean isActionBody, boolean isBlockMutex) {
+		this(inputs, outputs, isActionBody);
+		this.isBlockMutex = isBlockMutex;
 	}
 
 	public BlocksToBlock(Map<Var, Port> inputs, Map<Var, Bus> outputs,
@@ -175,6 +190,36 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 		return component;
 	}
 
+	public Component defaultCase(EObject object) {
+		if (object instanceof BlockMutex) {
+			return caseBlockMutex((BlockMutex) object);
+		}
+
+		return super.defaultCase(object);
+	}
+
+	public Component caseBlockMutex(BlockMutex blockMutex) {
+		Component component = new BlockMutexToBlock().doSwitch(blockMutex);
+
+		// Set port and bus dependencies
+		// -- Inputs
+		@SuppressWarnings("unchecked")
+		Map<Var, Port> blockInputs = (Map<Var, Port>) blockMutex.getAttribute(
+				"inputs").getObjectValue();
+		for (Var var : blockInputs.keySet()) {
+			portDependecies.put(blockInputs.get(var), var);
+		}
+
+		// -- Outputs
+		@SuppressWarnings("unchecked")
+		Map<Var, Bus> blockOutputs = (Map<Var, Bus>) blockMutex.getAttribute(
+				"outputs").getObjectValue();
+		for (Var var : blockOutputs.keySet()) {
+			busDependecies.put(blockOutputs.get(var), var);
+		}
+		return component;
+	}
+
 	@Override
 	public Component caseBlockWhile(BlockWhile blockWhile) {
 		Component component = new BlockWhileToLoop().doSwitch(blockWhile);
@@ -195,7 +240,6 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 		for (Var var : blockOutputs.keySet()) {
 			busDependecies.put(blockOutputs.get(var), var);
 		}
-		//Debug.depGraphTo(component, "while", "/tmp/while.dot", 1);
 		return component;
 	}
 
@@ -213,7 +257,8 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 		}
 
 		// Create a new Block with the sequence of the components
-		Block block = new Block(sequence, isActionBody);
+		Block block = isBlockMutex ? new MutexBlock(sequence, isActionBody)
+				: new Block(sequence, isActionBody);
 
 		// A map that contains the last defined variable associated with a Bus
 
@@ -227,6 +272,9 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 			List<Port> dataPorts = component.getDataPorts();
 			for (Port port : dataPorts) {
 				Var var = portDependecies.get(port);
+				if(var == null){
+					throw new NullPointerException("Var is Null");
+				}
 				if (lastDefinedVarBus.containsKey(var)) {
 					Bus bus = lastDefinedVarBus.get(var);
 					ComponentUtil.connectDataDependency(bus, port, 0);

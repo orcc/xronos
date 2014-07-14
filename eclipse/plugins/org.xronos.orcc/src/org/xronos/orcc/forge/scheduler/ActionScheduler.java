@@ -55,6 +55,8 @@ import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.transform.BlockCombine;
 
 import org.xronos.openforge.lim.Task;
+import org.xronos.openforge.util.Debug;
+import org.xronos.orcc.backend.debug.XronosDebug;
 import org.xronos.orcc.forge.mapping.DesignMemory;
 import org.xronos.orcc.forge.mapping.TaskProcedure;
 
@@ -180,7 +182,12 @@ public class ActionScheduler extends DfVisitor<Task> {
 		// -- Combine blocks
 		new BlockCombine().doSwitch(scheduler);
 
+		// XronosDebug
+		XronosDebug xronosDebug = new XronosDebug();
+		xronosDebug.printProcedure("/tmp", scheduler);
+		
 		Task schedulerTask = new TaskProcedure(true).doSwitch(scheduler);
+		Debug.depGraphTo(schedulerTask, "scheduler", "/tmp/schdeuler.dot", 1);
 		return schedulerTask;
 	}
 
