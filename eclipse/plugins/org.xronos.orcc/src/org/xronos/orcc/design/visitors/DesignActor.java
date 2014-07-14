@@ -142,7 +142,7 @@ public class DesignActor extends DfVisitor<Object> {
 				taskName + "Body", false, Exit.RETURN, 0, portDependency,
 				busDependency, portGroupDependency, doneBusDependency);
 		/** Create the task **/
-		Debug.depGraphTo(taskModule, "blocks", "/tmp/out.dot", 1);
+		Debug.depGraphTo(taskModule, "blocks", "/tmp/out.dot", 0);
 		Task task = DesignUtil.createTask(taskName, taskModule, false);
 		task.setIDLogical(taskName);
 

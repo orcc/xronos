@@ -42,6 +42,7 @@ import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Call;
 import org.xronos.openforge.lim.CodeLabel;
 import org.xronos.openforge.lim.Task;
+import org.xronos.openforge.util.Debug;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 import org.xronos.orcc.forge.mapping.cdfg.ProcedureToBlock;
 
@@ -60,7 +61,7 @@ public class TaskProcedure extends AbstractIrVisitor<Task> {
 		// Build Task Module, for each block in the procedure
 		ProcedureToBlock procedureToModule = new ProcedureToBlock(true);
 		Block block = procedureToModule.doSwitch(procedure);
-		
+		Debug.depGraphTo(block, "blocks", "/tmp/new_out.dot", 0);
 		org.xronos.openforge.lim.Procedure proc = new org.xronos.openforge.lim.Procedure(
 				block);
 
@@ -96,7 +97,6 @@ public class TaskProcedure extends AbstractIrVisitor<Task> {
 		Task task = new Task(call);
 		task.setKickerRequired(requiresKicker);
 		task.setSourceName(methodName);
-		task.setIDLogical(methodName);
 
 		return task;
 	}
