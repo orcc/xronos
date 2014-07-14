@@ -125,9 +125,9 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 
 		// Create List of Block Sequence
 		List<Component> sequence = new ArrayList<Component>();
-		
+
 		Type castType = TypeUtil.getLub(E1.getType(), E2.getType());
-		
+
 		// Add NoOp and Cast or only Cast
 		if (compE1 != null) {
 			sequence.add(compE1);
@@ -155,6 +155,10 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			sequence.add(castE2);
 		}
 		sequence.add(op);
+
+		CastOp castResult = new CastOp(expr.getType().getSizeInBits(), expr
+				.getType().isInt());
+		sequence.add(castResult);
 
 		// Create Block with the given sequence
 		block = new Block(sequence);
@@ -237,7 +241,11 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		Exit exitOP = op.getExit(Exit.DONE);
 		// Get the result bus
 		Bus resultBusOP = exitOP.getDataBuses().iterator().next();
-		ComponentUtil.connectDataDependency(resultBusOP, resultPort, 0);
+		
+		// Add cast
+		ComponentUtil.connectDataDependency(resultBusOP,castResult.getDataPort());
+		
+		ComponentUtil.connectDataDependency(castResult.getResultBus(), resultPort, 0);
 
 		// Connect Everything
 		if (varE1 != null) {

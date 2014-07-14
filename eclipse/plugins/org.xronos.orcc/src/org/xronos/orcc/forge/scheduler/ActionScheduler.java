@@ -134,7 +134,7 @@ public class ActionScheduler extends DfVisitor<Task> {
 
 		// -- Create loads for each fsm state
 		Block assignFSMStatesBlock = actor.hasFsm() ? new LoadFsmStatesBlock(
-				scheduler).doSwitch(scheduler) : null;
+				scheduler).doSwitch(actor) : null;
 
 		// -- Create the isSchedulable Blocks
 		List<Block> isScedulableBlocks = new IsSchedulableBlocks(scheduler)
