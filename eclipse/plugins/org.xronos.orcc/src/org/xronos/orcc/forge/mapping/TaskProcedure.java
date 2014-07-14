@@ -41,7 +41,6 @@ import org.xronos.openforge.app.project.SearchLabel;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Call;
 import org.xronos.openforge.lim.CodeLabel;
-import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Task;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 import org.xronos.orcc.forge.mapping.cdfg.ProcedureToBlock;

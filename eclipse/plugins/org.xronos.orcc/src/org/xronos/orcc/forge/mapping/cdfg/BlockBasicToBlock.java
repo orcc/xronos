@@ -73,11 +73,10 @@ import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Component;
-import org.xronos.openforge.lim.ControlDependency;
-import org.xronos.openforge.lim.DataDependency;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.HeapRead;
 import org.xronos.openforge.lim.HeapWrite;
+import org.xronos.openforge.lim.OffsetMemoryAccess;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.Task;
 import org.xronos.openforge.lim.TaskCall;
@@ -106,33 +105,6 @@ import org.xronos.orcc.preference.Constants;
  * 
  */
 public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
-
-	/**
-	 * The current Block (Module) being created
-	 */
-	BlockBasic currentBlock;
-
-	/**
-	 * Set of Block inputs
-	 */
-	Map<Var, Port> inputs;
-
-	/**
-	 * The port variable for each dependency
-	 */
-	Map<Port, Var> portDependecies;
-
-	/**
-	 * The Bus variable for each dependency
-	 */
-	Map<Bus, Var> busDependecies;
-
-	/**
-	 * Set og Block outputs
-	 */
-	Map<Var, Bus> outputs;
-
-	Component returnComponent;
 
 	/**
 	 * This inner class replaces the local list variables with a referenced one
@@ -188,6 +160,33 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 	}
 
+	/**
+	 * The Bus variable for each dependency
+	 */
+	Map<Bus, Var> busDependecies;
+
+	/**
+	 * The current Block (Module) being created
+	 */
+	BlockBasic currentBlock;
+
+	/**
+	 * Set of Block inputs
+	 */
+	Map<Var, Port> inputs;
+
+	/**
+	 * Set og Block outputs
+	 */
+	Map<Var, Bus> outputs;
+
+	/**
+	 * The port variable for each dependency
+	 */
+	Map<Port, Var> portDependecies;
+
+	Component returnComponent;
+
 	public BlockBasicToBlock() {
 		super(true);
 		// Initialize members
@@ -195,6 +194,62 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		outputs = new HashMap<Var, Bus>();
 		portDependecies = new HashMap<Port, Var>();
 		busDependecies = new HashMap<Bus, Var>();
+	}
+
+	private Block buildAddressedBlock(OffsetMemoryAccess memAccess,
+			Location location, CastOp resultCastOp) {
+		List<Component> sequence = new ArrayList<Component>();
+
+		LocationConstant locationConst = new LocationConstant(location, 32,
+				location.getAbsoluteBase().getLogicalMemory()
+						.getAddressStridePolicy());
+		sequence.add(locationConst);
+
+		AddOp adder = new AddOp();
+		sequence.add(adder);
+
+		CastOp indexCast = new CastOp(32, false);
+		sequence.add(indexCast);
+		sequence.add(memAccess);
+		if (memAccess instanceof HeapRead) {
+			sequence.add(resultCastOp);
+		}
+
+		Block block = new Block(sequence);
+
+		// Create a data Port index for the block
+		Port index = block.makeDataPort();
+
+		// Dependencies thought components
+		ComponentUtil.connectDataDependency(index.getPeer(),
+				indexCast.getDataPort());
+		ComponentUtil.connectDataDependency(indexCast.getResultBus(),
+				adder.getLeftDataPort());
+		ComponentUtil.connectDataDependency(locationConst.getValueBus(),
+				adder.getRightDataPort());
+		ComponentUtil.connectDataDependency(adder.getResultBus(),
+				memAccess.getBaseAddressPort());
+
+		if (memAccess instanceof HeapRead) {
+			ComponentUtil.connectDataDependency(
+					((HeapRead) memAccess).getResultBus(),
+					resultCastOp.getDataPort());
+
+			Bus resultBus = block.getExit(Exit.DONE).makeDataBus();
+			ComponentUtil.connectDataDependency(resultCastOp.getResultBus(),
+					resultBus.getPeer());
+			//ComponentUtil.connectControlDependency(resultCastOp, block);
+
+		}
+
+		// Control Dependency
+		//ComponentUtil.connectControlDependency(memAccess, block);
+		//ComponentUtil.connectControlDependency(adder, block);
+		//ComponentUtil.connectControlDependency(locationConst, block);
+	
+		//ComponentUtil.connectControlDependency(indexCast, block);
+		return block;
+
 	}
 
 	@Override
@@ -606,7 +661,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			Bus noopResultBus = noop.getResultBus();
 			ComponentUtil.connectDataDependency(noopResultBus,
 					blkResultBusPeer, 0);
-			
+
 			ComponentUtil.connectControlDependency(absMemRead, block, 0);
 			ComponentUtil.connectControlDependency(noop, block, 0);
 
@@ -652,43 +707,17 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(), 32,
 					0, isSigned, addrPolicy);
 			memPort.addAccess(read, location);
-			sequence.add(read);
 
-			LocationConstant locationConst = new LocationConstant(location, 32,
-					location.getAbsoluteBase().getLogicalMemory()
-							.getAddressStridePolicy());
-			sequence.add(locationConst);
-
-			CastOp cast = new CastOp(32, false);
-			sequence.add(cast);
-
-			AddOp adder = new AddOp();
-			sequence.add(adder);
-
-			CastOp castResult = new CastOp(targetType.getSizeInBits(),
+			CastOp resultCastOp = new CastOp(targetType.getSizeInBits(),
 					targetType.isInt());
-			sequence.add(castResult);
 
-			// Build read Block
-			Block loadBlock = new Block(sequence);
+			Block addressedBlock = buildAddressedBlock(read, location,
+					resultCastOp);
+			sequence.add(addressedBlock);
 
-			// build loadBlock dependencies
+			Block block = new Block(sequence);
 
-			ComponentUtil.connectDataDependency(indexComp.getExit(Exit.DONE)
-					.getDataBuses().get(0), cast.getDataPort(), 0);
-
-			ComponentUtil.connectDataDependency(locationConst.getValueBus(),
-					adder.getLeftDataPort(), 0);
-
-			ComponentUtil.connectDataDependency(cast.getResultBus(),
-					adder.getRightDataPort(), 0);
-
-			ComponentUtil.connectDataDependency(adder.getResultBus(),
-					read.getBaseAddressPort(), 0);
-
-			ComponentUtil.connectControlDependency(read, loadBlock, 0);
-
-			// Build loadBlock input dependencies
+			// Build block input dependencies
 			@SuppressWarnings("unchecked")
 			Map<Var, Port> exprInput = (Map<Var, Port>) index.getAttribute(
 					"inputs").getObjectValue();
@@ -704,7 +733,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 							dataPort, 0);
 				} else {
 					Type type = var.getType();
-					Port blkDataPort = loadBlock
+					Port blkDataPort = block
 							.makeDataPort(var.getName(), type.getSizeInBits(),
 									type.isInt() || type.isBool());
 					Bus blkDataPortPeer = blkDataPort.getPeer();
@@ -715,21 +744,25 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				}
 			}
 
-			// Build loadBlock output dependencies
-			Bus resultBus = loadBlock.getExit(Exit.DONE).makeDataBus(
+			// Index dependency --> addressedBlock
+			Bus compIndexResultBus = indexComp.getExit(Exit.DONE)
+					.getDataBuses().get(0);
+			ComponentUtil.connectDataDependency(compIndexResultBus, addressedBlock
+					.getDataPorts().get(0));
+			// addressedBlock --> Block 
+			Bus resultBus = block.getExit(Exit.DONE).makeDataBus(
 					target.getName(), targetType.getSizeInBits(),
 					targetType.isInt());
 
-			ComponentUtil.connectDataDependency(read.getResultBus(),
-					castResult.getDataPort(), 0);
-
-			ComponentUtil.connectDataDependency(castResult.getResultBus(),
-					resultBus.getPeer(), 0);
+			Port resultBusPeer = resultBus.getPeer();
+			ComponentUtil.connectDataDependency(
+					addressedBlock.getExit(Exit.DONE).getDataBuses().get(0),
+					resultBusPeer);
 
 			// Add to bus dependencies
 			busDependecies.put(resultBus, target);
-			Debug.depGraphTo(loadBlock, "load", "/tmp/laod2.dot", 1);
-			return loadBlock;
+			Debug.depGraphTo(block, "load", "/tmp/laod.dot", 128);
+			return block;
 		}
 	}
 
@@ -751,6 +784,26 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		// Add to bus dependencies
 		busDependecies.put(resultBus, target);
 		return pinRead;
+	}
+
+	public Component caseInstPortStatus(InstPortStatus instPortStatus) {
+		Var target = instPortStatus.getTarget().getVariable();
+		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortStatus
+				.getPort();
+
+		// Construct ioHandler ReadAccess Component
+		ActionIOHandler ioHandler = (ActionIOHandler) port.getAttribute(
+				"ioHandler").getObjectValue();
+		Component pinStatus = ioHandler.getStatusAccess();
+		pinStatus.setNonRemovable();
+
+		// Get Exit and ResultBus
+		Exit exit = pinStatus.getExit(Exit.DONE);
+		Bus resultBus = exit.getDataBuses().get(0);
+
+		// Add to bus dependencies
+		busDependecies.put(resultBus, target);
+		return pinStatus;
 	}
 
 	public Component caseInstPortWrite(InstPortWrite instPortWrite) {
@@ -793,24 +846,28 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		return block;
 	}
 
-	public Component caseInstPortStatus(InstPortStatus instPortStatus) {
-		Var target = instPortStatus.getTarget().getVariable();
-		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortStatus
-				.getPort();
+	@Override
+	public Component caseInstReturn(InstReturn returnInstr) {
+		Expression value = returnInstr.getValue();
+		if (value != null) {
+			Component comp = new ExprToComponent().doSwitch(value);
+			// -- Data Ports dependencies
+			@SuppressWarnings("unchecked")
+			Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
+					"inputs").getObjectValue();
+			for (Var var : exprInput.keySet()) {
+				Port port = exprInput.get(var);
+				portDependecies.put(port, var);
+			}
 
-		// Construct ioHandler ReadAccess Component
-		ActionIOHandler ioHandler = (ActionIOHandler) port.getAttribute(
-				"ioHandler").getObjectValue();
-		Component pinStatus = ioHandler.getStatusAccess();
-		pinStatus.setNonRemovable();
-
-		// Get Exit and ResultBus
-		Exit exit = pinStatus.getExit(Exit.DONE);
-		Bus resultBus = exit.getDataBuses().get(0);
-
-		// Add to bus dependencies
-		busDependecies.put(resultBus, target);
-		return pinStatus;
+			Var target = (Var) returnInstr.getAttribute("returnTarget")
+					.getReferencedValue();
+			// Only one possible output, expression
+			Bus resultBus = comp.getExit(Exit.DONE).getDataBuses().get(0);
+			busDependecies.put(resultBus, target);
+			return comp;
+		}
+		return null;
 	}
 
 	@Override
@@ -981,20 +1038,23 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			}
 
 			// Build dependencies between block store components
-			ComponentUtil.connectDataDependency(indexComp.getExit(Exit.DONE).getDataBuses()
-					.get(0),cast.getDataPort(),0);
+			ComponentUtil.connectDataDependency(indexComp.getExit(Exit.DONE)
+					.getDataBuses().get(0), cast.getDataPort(), 0);
 
-			ComponentUtil.connectDataDependency(locationConst.getValueBus(),adder.getLeftDataPort(),0);
-			
-			ComponentUtil.connectDataDependency(cast.getResultBus(),adder.getRightDataPort(),0);
-			
+			ComponentUtil.connectDataDependency(locationConst.getValueBus(),
+					adder.getLeftDataPort(), 0);
+
+			ComponentUtil.connectDataDependency(cast.getResultBus(),
+					adder.getRightDataPort(), 0);
+
 			ComponentUtil.connectDataDependency(compResultBus,
 					write.getValuePort(), 0);
 
-			ComponentUtil.connectDataDependency(adder.getResultBus(),write.getBaseAddressPort(),0);
-		
-			ComponentUtil.connectControlDependency(write, storedBlock, 0);
-			
+			ComponentUtil.connectDataDependency(adder.getResultBus(),
+					write.getBaseAddressPort(), 0);
+
+			// ComponentUtil.connectControlDependency(write, storedBlock, 0);
+
 			Debug.depGraphTo(storedBlock, "store", "/tmp/store.dot", 1);
 			return storedBlock;
 		}
@@ -1008,117 +1068,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			return caseInstPortWrite((InstPortWrite) object);
 		} else if (object instanceof InstPortStatus) {
 			return caseInstPortStatus((InstPortStatus) object);
-		}
-		return null;
-	}
-
-	@Override
-	public Component visitInstructions(List<Instruction> instructions) {
-		int oldIndexInst = indexInst;
-		Component result = null;
-		List<Component> sequence = new ArrayList<Component>();
-		for (indexInst = 0; indexInst < instructions.size(); indexInst++) {
-			Instruction inst = instructions.get(indexInst);
-			result = doSwitch(inst);
-			if (result != null)
-				sequence.add(result);
-		}
-
-		// restore old index
-		indexInst = oldIndexInst;
-		Block block = new Block(sequence);
-
-		Map<Var, List<Bus>> lastDefVarBus = new HashMap<Var, List<Bus>>();
-
-		// Build the current block inputs and
-		// Set the dependencies for the rest of the components
-		for (Component component : sequence) {
-			List<Port> dataPorts = component.getDataPorts();
-			for (Port port : dataPorts) {
-				Var var = portDependecies.get(port);
-				if (lastDefVarBus.containsKey(var)) {
-					List<Bus> buses = lastDefVarBus.get(var);
-					int lastDefIndx = buses.size() - 1;
-					// Get last defined bus
-					Bus bus = buses.get(lastDefIndx);
-					ComponentUtil.connectDataDependency(bus, port, 0);
-				} else {
-					// It is an input
-					Type type = var.getType();
-					if (inputs.containsKey(var)) {
-						Port blkDataPort = inputs.get(var);
-						Bus blkDataBus = blkDataPort.getPeer();
-						ComponentUtil
-								.connectDataDependency(blkDataBus, port, 0);
-					} else {
-						// Create a data Port
-						Port blkDataPort = block.makeDataPort(var.getName(),
-								type.getSizeInBits(),
-								type.isInt() || type.isBool());
-						inputs.put(var, blkDataPort);
-						Bus blkDataBus = blkDataPort.getPeer();
-						ComponentUtil
-								.connectDataDependency(blkDataBus, port, 0);
-					}
-				}
-			}
-			// All dataBuses should be given as lastDefined here
-			List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
-			for (Bus bus : dataBuses) {
-				Var var = busDependecies.get(bus);
-				lastDefVarBus.put(var, Arrays.asList(bus));
-			}
-		}
-
-		// Build the current block outputs
-		ListIterator<Component> iter = sequence.listIterator(sequence.size());
-
-		while (iter.hasPrevious()) {
-			Component component = iter.previous();
-			List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
-			for (Bus bus : dataBuses) {
-				Var var = busDependecies.get(bus);
-				if (usedInOtherBlocks(currentBlock, var)) {
-					if (!outputs.containsKey(var)) {
-						Type type = var.getType();
-						Bus blkOutputBus = block.getExit(Exit.DONE)
-								.makeDataBus(var.getName(),
-										type.getSizeInBits(),
-										type.isInt() || type.isBool());
-						Port blkOutputPort = blkOutputBus.getPeer();
-						// Add dependency
-						ComponentUtil.connectDataDependency(bus, blkOutputPort,
-								0);
-
-						outputs.put(var, blkOutputBus);
-					}
-				}
-			}
-		}
-
-		return block;
-	}
-
-	@Override
-	public Component caseInstReturn(InstReturn returnInstr) {
-		Expression value = returnInstr.getValue();
-		if (value != null) {
-			Component comp = new ExprToComponent().doSwitch(value);
-			// -- Data Ports dependencies
-			@SuppressWarnings("unchecked")
-			Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
-					"inputs").getObjectValue();
-			for (Var var : exprInput.keySet()) {
-				Port port = exprInput.get(var);
-				portDependecies.put(port, var);
-			}
-
-			Var target = (Var) returnInstr.getAttribute("returnTarget")
-					.getReferencedValue();
-			// Only one possible output, expression
-			Bus resultBus = comp.getExit(Exit.DONE).getDataBuses().get(0);
-			busDependecies.put(resultBus, target);
-			return comp;
 		}
 		return null;
 	}
@@ -1149,6 +1098,89 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 		}
 		return false;
+	}
+
+	@Override
+	public Component visitInstructions(List<Instruction> instructions) {
+		int oldIndexInst = indexInst;
+		Component result = null;
+		List<Component> sequence = new ArrayList<Component>();
+		for (indexInst = 0; indexInst < instructions.size(); indexInst++) {
+			Instruction inst = instructions.get(indexInst);
+			result = doSwitch(inst);
+			if (result != null)
+				sequence.add(result);
+		}
+
+		// restore old index
+		indexInst = oldIndexInst;
+		Block block = new Block(sequence);
+
+		Map<Var, Bus> lastDefVarBus = new HashMap<Var, Bus>();
+
+		// Build the current block inputs and
+		// Set the dependencies for the rest of the components
+		for (Component component : sequence) {
+			List<Port> dataPorts = component.getDataPorts();
+			for (Port port : dataPorts) {
+				Var var = portDependecies.get(port);
+				if (lastDefVarBus.containsKey(var)) {
+					Bus bus = lastDefVarBus.get(var);
+					ComponentUtil.connectDataDependency(bus, port, 0);
+				} else {
+					// It is an input
+					Type type = var.getType();
+					if (inputs.containsKey(var)) {
+						Port blkDataPort = inputs.get(var);
+						Bus blkDataBus = blkDataPort.getPeer();
+						ComponentUtil
+								.connectDataDependency(blkDataBus, port, 0);
+					} else {
+						// Create a data Port
+						Port blkDataPort = block.makeDataPort(var.getName(),
+								type.getSizeInBits(),
+								type.isInt() || type.isBool());
+						inputs.put(var, blkDataPort);
+						Bus blkDataBus = blkDataPort.getPeer();
+						ComponentUtil
+								.connectDataDependency(blkDataBus, port, 0);
+					}
+				}
+			}
+			// All dataBuses should be given as lastDefined here
+			List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
+			for (Bus bus : dataBuses) {
+				Var var = busDependecies.get(bus);
+				lastDefVarBus.put(var, bus);
+			}
+		}
+
+		// Build the current block outputs
+		ListIterator<Component> iter = sequence.listIterator(sequence.size());
+
+		while (iter.hasPrevious()) {
+			Component component = iter.previous();
+			List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
+			for (Bus bus : dataBuses) {
+				Var var = busDependecies.get(bus);
+				if (usedInOtherBlocks(currentBlock, var)) {
+					if (!outputs.containsKey(var)) {
+						Type type = var.getType();
+						Bus blkOutputBus = block.getExit(Exit.DONE)
+								.makeDataBus(var.getName(),
+										type.getSizeInBits(),
+										type.isInt() || type.isBool());
+						Port blkOutputPort = blkOutputBus.getPeer();
+						// Add dependency
+						ComponentUtil.connectDataDependency(bus, blkOutputPort,
+								0);
+
+						outputs.put(var, blkOutputBus);
+					}
+				}
+			}
+		}
+		return block;
 	}
 
 }

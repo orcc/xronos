@@ -50,7 +50,6 @@ import org.xronos.openforge.lim.Bus;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Port;
-import org.xronos.openforge.util.Debug;
 
 /**
  * This visitor takes a list of {@link net.sf.orcc.ir.Block}s and creates a new
@@ -62,14 +61,19 @@ import org.xronos.openforge.util.Debug;
 public class BlocksToBlock extends AbstractIrVisitor<Component> {
 
 	/**
-	 * If this set of blocks is from a procedure body
+	 * The Bus variable for each dependency
 	 */
-	boolean isActionBody;
+	Map<Bus, Var> busDependecies;
 
 	/**
 	 * Set of Block inputs
 	 */
 	Map<Var, Port> inputs;
+
+	/**
+	 * If this set of blocks is from a procedure body
+	 */
+	boolean isActionBody;
 
 	/**
 	 * Set of Block outputs
@@ -82,21 +86,10 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 	Map<Port, Var> portDependecies;
 
 	/**
-	 * The Bus variable for each dependency
-	 */
-	Map<Bus, Var> busDependecies;
-
-	/**
 	 * Target Output data bus
 	 */
 
 	Var target;
-
-	public BlocksToBlock(Map<Var, Port> inputs, Map<Var, Bus> outputs,
-			Var target) {
-		this(inputs, outputs, false);
-		this.target = target;
-	}
 
 	/**
 	 * 
@@ -112,6 +105,98 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 		this.isActionBody = isActionBody;
 		portDependecies = new HashMap<Port, Var>();
 		busDependecies = new HashMap<Bus, Var>();
+	}
+
+	public BlocksToBlock(Map<Var, Port> inputs, Map<Var, Bus> outputs,
+			Var target) {
+		this(inputs, outputs, false);
+		this.target = target;
+	}
+
+	/**
+	 * Add to inputs if the variable has not been already added
+	 * 
+	 * @param var
+	 *            the variable
+	 * @param port
+	 *            the port
+	 */
+	private void addToInputs(Var var, Port port) {
+		if (!inputs.containsKey(var)) {
+			inputs.put(var, port);
+		}
+	}
+
+	@Override
+	public Component caseBlockBasic(BlockBasic block) {
+		Component component = new BlockBasicToBlock().doSwitch(block);
+
+		// Set port and bus dependencies
+		// -- Inputs
+		@SuppressWarnings("unchecked")
+		Map<Var, Port> blockInputs = (Map<Var, Port>) block.getAttribute(
+				"inputs").getObjectValue();
+		for (Var var : blockInputs.keySet()) {
+			portDependecies.put(blockInputs.get(var), var);
+		}
+
+		// -- Outputs
+		@SuppressWarnings("unchecked")
+		Map<Var, Bus> blockOutputs = (Map<Var, Bus>) block.getAttribute(
+				"outputs").getObjectValue();
+		for (Var var : blockOutputs.keySet()) {
+			busDependecies.put(blockOutputs.get(var), var);
+		}
+
+		return component;
+	}
+
+	@Override
+	public Component caseBlockIf(BlockIf blockIf) {
+		Component component = new BlockIfToBranch().doSwitch(blockIf);
+
+		// Set port and bus dependencies
+		// -- Inputs
+		@SuppressWarnings("unchecked")
+		Map<Var, Port> blockInputs = (Map<Var, Port>) blockIf.getAttribute(
+				"inputs").getObjectValue();
+		for (Var var : blockInputs.keySet()) {
+			portDependecies.put(blockInputs.get(var), var);
+		}
+
+		// -- Outputs
+		@SuppressWarnings("unchecked")
+		Map<Var, Bus> blockOutputs = (Map<Var, Bus>) blockIf.getAttribute(
+				"outputs").getObjectValue();
+		for (Var var : blockOutputs.keySet()) {
+			busDependecies.put(blockOutputs.get(var), var);
+		}
+
+		return component;
+	}
+
+	@Override
+	public Component caseBlockWhile(BlockWhile blockWhile) {
+		Component component = new BlockWhileToLoop().doSwitch(blockWhile);
+
+		// Set port and bus dependencies
+		// -- Inputs
+		@SuppressWarnings("unchecked")
+		Map<Var, Port> blockInputs = (Map<Var, Port>) blockWhile.getAttribute(
+				"inputs").getObjectValue();
+		for (Var var : blockInputs.keySet()) {
+			portDependecies.put(blockInputs.get(var), var);
+		}
+
+		// -- Outputs
+		@SuppressWarnings("unchecked")
+		Map<Var, Bus> blockOutputs = (Map<Var, Bus>) blockWhile.getAttribute(
+				"outputs").getObjectValue();
+		for (Var var : blockOutputs.keySet()) {
+			busDependecies.put(blockOutputs.get(var), var);
+		}
+		//Debug.depGraphTo(component, "while", "/tmp/while.dot", 1);
+		return component;
 	}
 
 	@Override
@@ -219,92 +304,6 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 
 		indexBlock = oldIndexBlock;
 		return block;
-	}
-
-	@Override
-	public Component caseBlockBasic(BlockBasic block) {
-		Component component = new BlockBasicToBlock().doSwitch(block);
-
-		// Set port and bus dependencies
-		// -- Inputs
-		@SuppressWarnings("unchecked")
-		Map<Var, Port> blockInputs = (Map<Var, Port>) block.getAttribute(
-				"inputs").getObjectValue();
-		for (Var var : blockInputs.keySet()) {
-			portDependecies.put(blockInputs.get(var), var);
-		}
-
-		// -- Outputs
-		@SuppressWarnings("unchecked")
-		Map<Var, Bus> blockOutputs = (Map<Var, Bus>) block.getAttribute(
-				"outputs").getObjectValue();
-		for (Var var : blockOutputs.keySet()) {
-			busDependecies.put(blockOutputs.get(var), var);
-		}
-
-		return component;
-	}
-
-	@Override
-	public Component caseBlockIf(BlockIf blockIf) {
-		Component component = new BlockIfToBranch().doSwitch(blockIf);
-
-		// Set port and bus dependencies
-		// -- Inputs
-		@SuppressWarnings("unchecked")
-		Map<Var, Port> blockInputs = (Map<Var, Port>) blockIf.getAttribute(
-				"inputs").getObjectValue();
-		for (Var var : blockInputs.keySet()) {
-			portDependecies.put(blockInputs.get(var), var);
-		}
-
-		// -- Outputs
-		@SuppressWarnings("unchecked")
-		Map<Var, Bus> blockOutputs = (Map<Var, Bus>) blockIf.getAttribute(
-				"outputs").getObjectValue();
-		for (Var var : blockOutputs.keySet()) {
-			busDependecies.put(blockOutputs.get(var), var);
-		}
-
-		return component;
-	}
-
-	@Override
-	public Component caseBlockWhile(BlockWhile blockWhile) {
-		Component component = new BlockWhileToLoop().doSwitch(blockWhile);
-
-		// Set port and bus dependencies
-		// -- Inputs
-		@SuppressWarnings("unchecked")
-		Map<Var, Port> blockInputs = (Map<Var, Port>) blockWhile.getAttribute(
-				"inputs").getObjectValue();
-		for (Var var : blockInputs.keySet()) {
-			portDependecies.put(blockInputs.get(var), var);
-		}
-
-		// -- Outputs
-		@SuppressWarnings("unchecked")
-		Map<Var, Bus> blockOutputs = (Map<Var, Bus>) blockWhile.getAttribute(
-				"outputs").getObjectValue();
-		for (Var var : blockOutputs.keySet()) {
-			busDependecies.put(blockOutputs.get(var), var);
-		}
-		//Debug.depGraphTo(component, "while", "/tmp/while.dot", 1);
-		return component;
-	}
-
-	/**
-	 * Add to inputs if the variable has not been already added
-	 * 
-	 * @param var
-	 *            the variable
-	 * @param port
-	 *            the port
-	 */
-	private void addToInputs(Var var, Port port) {
-		if (!inputs.containsKey(var)) {
-			inputs.put(var, port);
-		}
 	}
 
 }

@@ -71,18 +71,6 @@ import org.xronos.orcc.preference.Constants;
  */
 public class DesignMemory extends DfVisitor<Void> {
 
-	/**
-	 * Design
-	 */
-	private Design design;
-
-	/**
-	 * Colocate Var that have the same stride
-	 */
-	private boolean colocateVars;
-
-	Map<Integer, LogicalMemory> memories;
-
 	private class MaxPortDepth extends DfVisitor<Map<Port, Integer>> {
 
 		/**
@@ -125,6 +113,206 @@ public class DesignMemory extends DfVisitor<Void> {
 		}
 
 	}
+
+	public static void addToMemory(Actor actor, Var var) {
+		@SuppressWarnings("unchecked")
+		Map<Integer, LogicalMemory> memories = (Map<Integer, LogicalMemory>) actor
+				.getAttribute("memories").getObjectValue();
+		LogicalValue logicalValue = makeLogicalValue(var);
+		var.setAttribute("logicalValue", logicalValue);
+
+		// Allocate each LogicalValue (State Variable) in a memory
+		// with a matching address stride. This provides consistency
+		// in the memories and allows (if activated) for state vars to be
+		// co-located
+		// if area is of concern.
+		int stride = logicalValue.getAddressStridePolicy().getStride();
+		LogicalMemory mem = memories.get(stride);
+		if (mem == null) {
+			// 32 should be more than enough for max address
+			// width
+			mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
+			mem.createLogicalMemoryPort();
+			mem.setIDLogical("stateVar_" + var.getName());
+			Design design = (Design) actor.getAttribute("design").getObjectValue();
+			design.addMemory(mem);
+		}
+		// Create a 'location' for the stateVar that is
+		// appropriate for its type/size.
+		Allocation location = mem.allocate(logicalValue);
+		var.setAttribute("location", location);
+	}
+
+	/**
+	 * Constructs a LogicalValue from a String value given its type
+	 * 
+	 * @param stringValue
+	 *            the numerical value
+	 * @param type
+	 *            the type of the numerical value
+	 * @return
+	 */
+	public static LogicalValue makeLogicalValue(String stringValue, Type type) {
+		LogicalValue logicalValue = null;
+		final BigInteger value;
+		Integer bitSize = type.getSizeInBits();
+		if (stringValue.trim().toUpperCase().startsWith("0X")) {
+			value = new BigInteger(stringValue.trim().substring(2), 16);
+		} else {
+			value = new BigInteger(stringValue);
+		}
+		AddressStridePolicy addrPolicy = new AddressStridePolicy(bitSize);
+		logicalValue = new Scalar(new AddressableUnit(value), addrPolicy);
+		return logicalValue;
+	}
+
+	/**
+	 * Creates a Record of "0" logicalValues
+	 * 
+	 * @param type
+	 * @param nbrElements
+	 * @return
+	 */
+	public static LogicalValue makeLogicalValue(Type type, int nbrElements) {
+		List<LogicalValue> subElements = new ArrayList<LogicalValue>(
+				nbrElements);
+		for (int i = 0; i < nbrElements; i++) {
+			subElements.add(makeLogicalValue("0", type));
+		}
+		return new Record(subElements);
+	}
+
+	/**
+	 * Constructs a LogicalValue from a Variable
+	 * 
+	 * @param var
+	 *            the variable
+	 * @return
+	 */
+	public static LogicalValue makeLogicalValue(Var var) {
+		LogicalValue logicalValue = null;
+		if (var.getType().isList()) {
+
+			TypeList typeList = (TypeList) var.getType();
+			Type type = typeList.getInnermostType();
+
+			List<Integer> listDimension = new ArrayList<Integer>(
+					typeList.getDimensions());
+			Object varValue = var.getValue();
+			logicalValue = makeLogicalValueObject(varValue, listDimension, type);
+		} else {
+			Type type = var.getType();
+			if (var.isInitialized()) {
+				if (type.isBool()) {
+					if (var.getInitialValue() instanceof ExprVar) {
+						ExprVar exprVar = (ExprVar) var.getInitialValue();
+						Integer value = (Boolean) exprVar.getUse()
+								.getVariable().getValue() ? 1 : 0;
+						String valueString = Integer.toString(value);
+						logicalValue = makeLogicalValue(valueString, type);
+					} else {
+						Integer value = ((ExprBool) var.getInitialValue())
+								.isValue() ? 1 : 0;
+						String valueString = Integer.toString(value);
+						logicalValue = makeLogicalValue(valueString, type);
+					}
+				} else if (type.isInt() || type.isUint()) {
+					if (var.getInitialValue() instanceof ExprVar) {
+						ExprVar exprVar = (ExprVar) var.getInitialValue();
+						String valueString = Integer.toString((Integer) exprVar
+								.getUse().getVariable().getValue());
+						logicalValue = makeLogicalValue(valueString, type);
+					} else {
+						String valueString = Integer.toString(((ExprInt) var
+								.getInitialValue()).getIntValue());
+						logicalValue = makeLogicalValue(valueString, type);
+					}
+				} else {
+					logicalValue = makeLogicalValue("0", type);
+				}
+			} else {
+				logicalValue = makeLogicalValue("0", type);
+			}
+		}
+
+		return logicalValue;
+	}
+
+	/**
+	 * Constructs a LogicalValue from a uni or multi-dim Object Value
+	 * 
+	 * @param obj
+	 *            the object value
+	 * @param dimension
+	 *            the dimension of the object value
+	 * @param type
+	 *            the type of the object value
+	 * @return
+	 */
+	public static LogicalValue makeLogicalValueObject(Object obj,
+			List<Integer> dimension, Type type) {
+		LogicalValue logicalValue = null;
+
+		if (dimension.size() > 1) {
+			List<LogicalValue> subElements = new ArrayList<LogicalValue>(
+					dimension.get(0));
+			List<Integer> newListDimension = new ArrayList<Integer>(dimension);
+
+			Integer firstDim = dimension.get(0);
+			newListDimension.remove(0);
+			for (int i = 0; i < firstDim; i++) {
+				subElements.add(makeLogicalValueObject(Array.get(obj, i),
+						newListDimension, type));
+			}
+
+			logicalValue = new Record(subElements);
+		} else {
+			if (dimension.get(0).equals(1)) {
+				BigInteger value = BigInteger.valueOf(0);
+				if (type.isBool()) {
+					int boolValue = ((Boolean) ValueUtil.get(type, obj, 0)) ? 1
+							: 0;
+					value = BigInteger.valueOf(boolValue);
+				} else {
+					value = (BigInteger) ValueUtil.get(type, obj, 0);
+				}
+				String valueString = value.toString();
+				logicalValue = makeLogicalValue(valueString, type);
+			} else {
+				List<LogicalValue> subElements = new ArrayList<LogicalValue>(
+						dimension.get(0));
+				for (int i = 0; i < dimension.get(0); i++) {
+					BigInteger value = BigInteger.valueOf(0);
+					if (type.isBool()) {
+						int boolValue = ((Boolean) ValueUtil.get(type, obj, i)) ? 1
+								: 0;
+						value = BigInteger.valueOf(boolValue);
+					} else {
+						value = (BigInteger) ValueUtil.get(type, obj, i);
+					}
+
+					String valueString = value.toString();
+					subElements.add(makeLogicalValue(valueString, type));
+				}
+				logicalValue = new Record(subElements);
+			}
+
+		}
+
+		return logicalValue;
+	}
+
+	/**
+	 * Colocate Var that have the same stride
+	 */
+	private boolean colocateVars;
+
+	/**
+	 * Design
+	 */
+	private Design design;
+
+	private Map<Integer, LogicalMemory> memories;
 
 	public DesignMemory(Design design, boolean colocateVars) {
 		this.design = design;
@@ -253,194 +441,6 @@ public class DesignMemory extends DfVisitor<Void> {
 		}
 		actor.setAttribute("memories", memories);
 		return null;
-	}
-
-	public static void addToMemory(Actor actor, Var var) {
-		@SuppressWarnings("unchecked")
-		Map<Integer, LogicalMemory> memories = (Map<Integer, LogicalMemory>) actor
-				.getAttribute("memories").getObjectValue();
-		LogicalValue logicalValue = makeLogicalValue(var);
-		var.setAttribute("logicalValue", logicalValue);
-
-		// Allocate each LogicalValue (State Variable) in a memory
-		// with a matching address stride. This provides consistency
-		// in the memories and allows (if activated) for state vars to be
-		// co-located
-		// if area is of concern.
-		int stride = logicalValue.getAddressStridePolicy().getStride();
-		LogicalMemory mem = memories.get(stride);
-		if (mem == null) {
-			// 32 should be more than enough for max address
-			// width
-			mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
-			mem.createLogicalMemoryPort();
-			mem.setIDLogical("stateVar_" + var.getName());
-			Design design = (Design) actor.getAttribute("design").getObjectValue();
-			design.addMemory(mem);
-		}
-		// Create a 'location' for the stateVar that is
-		// appropriate for its type/size.
-		Allocation location = mem.allocate(logicalValue);
-		var.setAttribute("location", location);
-	}
-
-	/**
-	 * Constructs a LogicalValue from a String value given its type
-	 * 
-	 * @param stringValue
-	 *            the numerical value
-	 * @param type
-	 *            the type of the numerical value
-	 * @return
-	 */
-	public static LogicalValue makeLogicalValue(String stringValue, Type type) {
-		LogicalValue logicalValue = null;
-		final BigInteger value;
-		Integer bitSize = type.getSizeInBits();
-		if (stringValue.trim().toUpperCase().startsWith("0X")) {
-			value = new BigInteger(stringValue.trim().substring(2), 16);
-		} else {
-			value = new BigInteger(stringValue);
-		}
-		AddressStridePolicy addrPolicy = new AddressStridePolicy(bitSize);
-		logicalValue = new Scalar(new AddressableUnit(value), addrPolicy);
-		return logicalValue;
-	}
-
-	/**
-	 * Constructs a LogicalValue from a Variable
-	 * 
-	 * @param var
-	 *            the variable
-	 * @return
-	 */
-	public static LogicalValue makeLogicalValue(Var var) {
-		LogicalValue logicalValue = null;
-		if (var.getType().isList()) {
-
-			TypeList typeList = (TypeList) var.getType();
-			Type type = typeList.getInnermostType();
-
-			List<Integer> listDimension = new ArrayList<Integer>(
-					typeList.getDimensions());
-			Object varValue = var.getValue();
-			logicalValue = makeLogicalValueObject(varValue, listDimension, type);
-		} else {
-			Type type = var.getType();
-			if (var.isInitialized()) {
-				if (type.isBool()) {
-					if (var.getInitialValue() instanceof ExprVar) {
-						ExprVar exprVar = (ExprVar) var.getInitialValue();
-						Integer value = (Boolean) exprVar.getUse()
-								.getVariable().getValue() ? 1 : 0;
-						String valueString = Integer.toString(value);
-						logicalValue = makeLogicalValue(valueString, type);
-					} else {
-						Integer value = ((ExprBool) var.getInitialValue())
-								.isValue() ? 1 : 0;
-						String valueString = Integer.toString(value);
-						logicalValue = makeLogicalValue(valueString, type);
-					}
-				} else if (type.isInt() || type.isUint()) {
-					if (var.getInitialValue() instanceof ExprVar) {
-						ExprVar exprVar = (ExprVar) var.getInitialValue();
-						String valueString = Integer.toString((Integer) exprVar
-								.getUse().getVariable().getValue());
-						logicalValue = makeLogicalValue(valueString, type);
-					} else {
-						String valueString = Integer.toString(((ExprInt) var
-								.getInitialValue()).getIntValue());
-						logicalValue = makeLogicalValue(valueString, type);
-					}
-				} else {
-					logicalValue = makeLogicalValue("0", type);
-				}
-			} else {
-				logicalValue = makeLogicalValue("0", type);
-			}
-		}
-
-		return logicalValue;
-	}
-
-	/**
-	 * Constructs a LogicalValue from a uni or multi-dim Object Value
-	 * 
-	 * @param obj
-	 *            the object value
-	 * @param dimension
-	 *            the dimension of the object value
-	 * @param type
-	 *            the type of the object value
-	 * @return
-	 */
-	public static LogicalValue makeLogicalValueObject(Object obj,
-			List<Integer> dimension, Type type) {
-		LogicalValue logicalValue = null;
-
-		if (dimension.size() > 1) {
-			List<LogicalValue> subElements = new ArrayList<LogicalValue>(
-					dimension.get(0));
-			List<Integer> newListDimension = new ArrayList<Integer>(dimension);
-
-			Integer firstDim = dimension.get(0);
-			newListDimension.remove(0);
-			for (int i = 0; i < firstDim; i++) {
-				subElements.add(makeLogicalValueObject(Array.get(obj, i),
-						newListDimension, type));
-			}
-
-			logicalValue = new Record(subElements);
-		} else {
-			if (dimension.get(0).equals(1)) {
-				BigInteger value = BigInteger.valueOf(0);
-				if (type.isBool()) {
-					int boolValue = ((Boolean) ValueUtil.get(type, obj, 0)) ? 1
-							: 0;
-					value = BigInteger.valueOf(boolValue);
-				} else {
-					value = (BigInteger) ValueUtil.get(type, obj, 0);
-				}
-				String valueString = value.toString();
-				logicalValue = makeLogicalValue(valueString, type);
-			} else {
-				List<LogicalValue> subElements = new ArrayList<LogicalValue>(
-						dimension.get(0));
-				for (int i = 0; i < dimension.get(0); i++) {
-					BigInteger value = BigInteger.valueOf(0);
-					if (type.isBool()) {
-						int boolValue = ((Boolean) ValueUtil.get(type, obj, i)) ? 1
-								: 0;
-						value = BigInteger.valueOf(boolValue);
-					} else {
-						value = (BigInteger) ValueUtil.get(type, obj, i);
-					}
-
-					String valueString = value.toString();
-					subElements.add(makeLogicalValue(valueString, type));
-				}
-				logicalValue = new Record(subElements);
-			}
-
-		}
-
-		return logicalValue;
-	}
-
-	/**
-	 * Creates a Record of "0" logicalValues
-	 * 
-	 * @param type
-	 * @param nbrElements
-	 * @return
-	 */
-	public static LogicalValue makeLogicalValue(Type type, int nbrElements) {
-		List<LogicalValue> subElements = new ArrayList<LogicalValue>(
-				nbrElements);
-		for (int i = 0; i < nbrElements; i++) {
-			subElements.add(makeLogicalValue("0", type));
-		}
-		return new Record(subElements);
 	}
 
 }

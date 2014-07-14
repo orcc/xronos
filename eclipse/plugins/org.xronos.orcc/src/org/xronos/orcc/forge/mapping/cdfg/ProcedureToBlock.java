@@ -58,20 +58,26 @@ public class ProcedureToBlock extends AbstractIrVisitor<Block> {
 	Map<Var, Port> inputs;
 
 	/**
-	 * Set of Block outputs
-	 */
-	Map<Var, Bus> outputs;
-
-	/**
 	 * If this procedure is the body of an Action
 	 */
 	boolean isActionBody;
+
+	/**
+	 * Set of Block outputs
+	 */
+	Map<Var, Bus> outputs;
 
 	/**
 	 * Var target, data bus of a CAL function
 	 */
 
 	Var target;
+
+	public ProcedureToBlock(boolean isActionBody) {
+		this.isActionBody = isActionBody;
+		this.inputs = new HashMap<Var, Port>();
+		this.outputs = new HashMap<Var, Bus>();
+	}
 
 	/**
 	 * Create a Block from a procedure
@@ -82,12 +88,6 @@ public class ProcedureToBlock extends AbstractIrVisitor<Block> {
 	public ProcedureToBlock(Var target) {
 		this(true);
 		this.target = target;
-	}
-
-	public ProcedureToBlock(boolean isActionBody) {
-		this.isActionBody = isActionBody;
-		this.inputs = new HashMap<Var, Port>();
-		this.outputs = new HashMap<Var, Bus>();
 	}
 
 	@Override

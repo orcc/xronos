@@ -78,6 +78,20 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		inputs = new HashMap<Var, Port>();
 	}
 
+	/**
+	 * Add to inputs if the variable has not been already added
+	 * 
+	 * @param var
+	 *            the variable
+	 * @param port
+	 *            the port
+	 */
+	private void addToInputs(Var var, Port port) {
+		if (!inputs.containsKey(var)) {
+			inputs.put(var, port);
+		}
+	}
+
 	@Override
 	public Component caseExprBinary(ExprBinary expr) {
 		Expression E1 = expr.getE1();
@@ -380,20 +394,6 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		object.setAttribute("inputs", inputs);
 
 		return comp;
-	}
-
-	/**
-	 * Add to inputs if the variable has not been already added
-	 * 
-	 * @param var
-	 *            the variable
-	 * @param port
-	 *            the port
-	 */
-	private void addToInputs(Var var, Port port) {
-		if (!inputs.containsKey(var)) {
-			inputs.put(var, port);
-		}
 	}
 
 }

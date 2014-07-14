@@ -87,6 +87,76 @@ import org.xronos.openforge.util.MathStuff;
  */
 public class ComponentUtil {
 
+	/**
+	 * This method adds an entry to a component
+	 * 
+	 * @param component
+	 *            the component
+	 * @param drivingExit
+	 *            the driving Exit
+	 * @param clockBus
+	 *            the clock bus attached to the component
+	 * @param resetBus
+	 *            the reset bus attached to the component
+	 * @param goBus
+	 *            the go bus control of the component
+	 */
+	public static void componentAddEntry(Component component, Exit drivingExit,
+			Bus clockBus, Bus resetBus, Bus goBus) {
+
+		Entry entry = component.makeEntry(drivingExit);
+		// Even though most components do not use the clock, reset and
+		// go ports we set up the dependencies for consistency.
+		entry.addDependency(component.getClockPort(), new ClockDependency(
+				clockBus));
+		entry.addDependency(component.getResetPort(), new ResetDependency(
+				resetBus));
+		entry.addDependency(component.getGoPort(), new ControlDependency(goBus));
+	}
+
+	public static void connectControlDependency(Component component,
+			Component owner) {
+		connectControlDependency(component, owner, 0);
+	}
+
+	/**
+	 * This method connects the done bus port of a component to its owner done
+	 * bus
+	 * 
+	 * @param component
+	 * @param owner
+	 */
+	public static void connectControlDependency(Component component,
+			Component owner, int group) {
+		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
+		Port donePort = owner.getExit(Exit.DONE).getDoneBus().getPeer();
+		List<Entry> entries = donePort.getOwner().getEntries();
+		Entry entry = entries.get(group);
+		Dependency dep = new ControlDependency(doneBus);
+		entry.addDependency(donePort, dep);
+	}
+
+	public static void connectDataDependency(Bus bus, Port port) {
+		connectDataDependency(bus, port, 0);
+	}
+
+	/**
+	 * This method connects a bus with a target port
+	 * 
+	 * @param bus
+	 *            the result bus
+	 * @param port
+	 *            the target port
+	 * @param group
+	 *            the entry group
+	 */
+	public static void connectDataDependency(Bus bus, Port port, int group) {
+		List<Entry> entries = port.getOwner().getEntries();
+		Entry entry = entries.get(group);
+		Dependency dep = new DataDependency(bus);
+		entry.addDependency(port, dep);
+	}
+
 	public static Component createExprBinComponent(ExprBinary expr) {
 		int sizeInBits = expr.getType().getSizeInBits();
 		Component op = null;
@@ -148,97 +218,6 @@ public class ComponentUtil {
 	}
 
 	/**
-	 * This method connects the done bus port of a component to its owner done
-	 * bus
-	 * 
-	 * @param component
-	 * @param owner
-	 */
-	public static void connectControlDependency(Component component,
-			Component owner, int group) {
-		Bus doneBus = component.getExit(Exit.DONE).getDoneBus();
-		Port donePort = owner.getExit(Exit.DONE).getDoneBus().getPeer();
-		List<Entry> entries = donePort.getOwner().getEntries();
-		Entry entry = entries.get(group);
-		Dependency dep = new ControlDependency(doneBus);
-		entry.addDependency(donePort, dep);
-	}
-
-	/**
-	 * This method connects a bus with a target port
-	 * 
-	 * @param bus
-	 *            the result bus
-	 * @param port
-	 *            the target port
-	 * @param group
-	 *            the entry group
-	 */
-	public static void connectDataDependency(Bus bus, Port port, int group) {
-		List<Entry> entries = port.getOwner().getEntries();
-		Entry entry = entries.get(group);
-		Dependency dep = new DataDependency(bus);
-		entry.addDependency(port, dep);
-	}
-
-	/**
-	 * This method adds an entry to a component
-	 * 
-	 * @param component
-	 *            the component
-	 * @param drivingExit
-	 *            the driving Exit
-	 * @param clockBus
-	 *            the clock bus attached to the component
-	 * @param resetBus
-	 *            the reset bus attached to the component
-	 * @param goBus
-	 *            the go bus control of the component
-	 */
-	public static void componentAddEntry(Component component, Exit drivingExit,
-			Bus clockBus, Bus resetBus, Bus goBus) {
-
-		Entry entry = component.makeEntry(drivingExit);
-		// Even though most components do not use the clock, reset and
-		// go ports we set up the dependencies for consistency.
-		entry.addDependency(component.getClockPort(), new ClockDependency(
-				clockBus));
-		entry.addDependency(component.getResetPort(), new ResetDependency(
-				resetBus));
-		entry.addDependency(component.getGoPort(), new ControlDependency(goBus));
-	}
-
-	/**
-	 * Propagate a list of inputs port that those ports components are owned by
-	 * the Owner Component
-	 * 
-	 * @param component
-	 *            the owner component
-	 * @param tgtDataPorts
-	 *            the component inputs map
-	 * @param srcDataPorts
-	 *            map of Variables and ports
-	 */
-	public static void propagateDataPorts(Component component,
-			Map<Var, Port> tgtDataPorts, Map<Var, Port> srcDataPorts) {
-		for (Var var : srcDataPorts.keySet()) {
-			Port port = srcDataPorts.get(var);
-			if (!tgtDataPorts.containsKey(var)) {
-				Type type = var.getType();
-				Port dataPort = component.makeDataPort(var.getName(),
-						type.getSizeInBits(), type.isInt());
-				Bus dataPortpeer = dataPort.getPeer();
-				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
-				tgtDataPorts.put(var, dataPort);
-			} else {
-				Port dataPort = tgtDataPorts.get(var);
-				Bus dataPortpeer = dataPort.getPeer();
-				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
-			}
-		}
-	}
-
-	/**
 	 * Find the condition component on the decision Block
 	 * 
 	 * @param decisionBlock
@@ -282,6 +261,36 @@ public class ComponentUtil {
 			Entry entry = port.getOwner().getEntries().get(0);
 			entry.addDependency(port,
 					new DataDependency(decisionPort.getPeer()));
+		}
+	}
+
+	/**
+	 * Propagate a list of inputs port that those ports components are owned by
+	 * the Owner Component
+	 * 
+	 * @param component
+	 *            the owner component
+	 * @param tgtDataPorts
+	 *            the component inputs map
+	 * @param srcDataPorts
+	 *            map of Variables and ports
+	 */
+	public static void propagateDataPorts(Component component,
+			Map<Var, Port> tgtDataPorts, Map<Var, Port> srcDataPorts) {
+		for (Var var : srcDataPorts.keySet()) {
+			Port port = srcDataPorts.get(var);
+			if (!tgtDataPorts.containsKey(var)) {
+				Type type = var.getType();
+				Port dataPort = component.makeDataPort(var.getName(),
+						type.getSizeInBits(), type.isInt());
+				Bus dataPortpeer = dataPort.getPeer();
+				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
+				tgtDataPorts.put(var, dataPort);
+			} else {
+				Port dataPort = tgtDataPorts.get(var);
+				Bus dataPortpeer = dataPort.getPeer();
+				ComponentUtil.connectDataDependency(dataPortpeer, port, 0);
+			}
 		}
 	}
 

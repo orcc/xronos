@@ -91,13 +91,17 @@ public class DesignActor extends DfVisitor<Design> {
 		// Build Action Scheduler
 		ActionScheduler actionScheduler = new ActionScheduler();
 		Task scheduler = actionScheduler.doSwitch(actor);
-		//design.addTask(scheduler);
+		design.addTask(scheduler);
 
 		// Activate the production of GO/Done for each task
 		for (Task task : design.getTasks()) {
 			Call call = task.getCall();
-			//call.getProcedure().getBody().setProducesDone(true);
-			//call.getProcedure().getBody().setConsumesGo(true);
+			if (call.getExit(Exit.DONE).getDoneBus().isConnected()) {
+				call.getProcedure().getBody().setProducesDone(true);
+			}
+			if (call.getGoPort().isConnected()) {
+				call.getProcedure().getBody().setConsumesGo(true);
+			}
 		}
 
 		return design;
