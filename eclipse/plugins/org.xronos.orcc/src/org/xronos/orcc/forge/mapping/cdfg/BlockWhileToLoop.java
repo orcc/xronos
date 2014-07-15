@@ -122,6 +122,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		// Construct Loop Body Block from the block while blocks
 		Map<Var, Port> blockDataPorts = new HashMap<Var, Port>();
 		Map<Var, Bus> blockDataBuses = new HashMap<Var, Bus>();
+		
 		Module body = (Module) new BlocksToBlock(blockDataPorts,
 				blockDataBuses, false).doSwitch(blockWhile.getBlocks());
 

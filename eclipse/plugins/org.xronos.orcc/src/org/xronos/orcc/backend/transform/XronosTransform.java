@@ -63,6 +63,7 @@ import org.xronos.orcc.analysis.NativeProcedureFinder;
 import org.xronos.orcc.backend.transform.pipelining.Pipelining;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.XronosScheduler;
+import org.xronos.orcc.forge.transform.RedundantLoadElimination;
 import org.xronos.orcc.forge.transform.VarInitializer;
 
 /**
@@ -81,6 +82,9 @@ public class XronosTransform {
 		transformations.add(new VarInitializer());
 		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 		transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
+		transformations.add(new PrintRemoval());
+		transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
+		transformations.add(new DfVisitor<Void>(new RedundantLoadElimination()));
 		
 		for (DfSwitch<?> transformation : transformations) {
 			try {

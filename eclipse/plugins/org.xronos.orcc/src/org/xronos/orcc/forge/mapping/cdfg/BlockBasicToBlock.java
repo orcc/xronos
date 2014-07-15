@@ -241,15 +241,15 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			Bus resultBus = block.getExit(Exit.DONE).makeDataBus();
 			ComponentUtil.connectDataDependency(resultCastOp.getResultBus(),
 					resultBus.getPeer());
-			//ComponentUtil.connectControlDependency(resultCastOp, block);
+			// ComponentUtil.connectControlDependency(resultCastOp, block);
 
 		}
 
 		// Control Dependency
-		//ComponentUtil.connectControlDependency(memAccess, block);
-		//ComponentUtil.connectControlDependency(adder, block);
-		//ComponentUtil.connectControlDependency(locationConst, block);
-		
+		// ComponentUtil.connectControlDependency(memAccess, block);
+		// ComponentUtil.connectControlDependency(adder, block);
+		// ComponentUtil.connectControlDependency(locationConst, block);
+
 		return block;
 
 	}
@@ -594,7 +594,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					.getLineNumber()));
 			component = taskCall;
 		}
-		Debug.wireGraphTo(component, "call", "/tmp/call.dot");
+		Debug.depGraphTo(component, "call", "/tmp/call.dot",1);
 		return component;
 	}
 
@@ -644,7 +644,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			memPort.addAccess((LValue) absMemRead, location);
 			Procedure procedure = EcoreHelper.getContainerOfType(load,
 					Procedure.class);
-			absMemRead.setIDSourceInfo(new IDSourceInfo(procedure.getName(), load.getLineNumber()));
+			absMemRead.setIDSourceInfo(new IDSourceInfo(procedure.getName(),
+					load.getLineNumber()));
 
 			Exit exit = absMemRead.getExit(Exit.DONE);
 			Bus resultBus = exit.getDataBuses().get(0);
@@ -714,18 +715,19 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			memPort.addAccess(read, location);
 			Procedure procedure = EcoreHelper.getContainerOfType(load,
 					Procedure.class);
-			read.setIDSourceInfo(new IDSourceInfo(procedure.getName(), load.getLineNumber()));
+			read.setIDSourceInfo(new IDSourceInfo(procedure.getName(), load
+					.getLineNumber()));
 
 			CastOp resultCastOp = new CastOp(targetType.getSizeInBits(),
 					targetType.isInt());
 
 			CastOp indexCast = new CastOp(32, false);
 			sequence.add(indexCast);
-			
+
 			Block addressedBlock = buildAddressedBlock(read, location,
 					resultCastOp);
 			sequence.add(addressedBlock);
-			
+
 			Block block = new Block(sequence);
 
 			// Build block input dependencies
@@ -914,11 +916,12 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					location, Constants.MAX_ADDR_WIDTH, isSigned);
 			memPort.addAccess((LValue) absoluteMemWrite, location);
 			sequence.add(absoluteMemWrite);
-			
+
 			Procedure procedure = EcoreHelper.getContainerOfType(store,
 					Procedure.class);
-			absoluteMemWrite.setIDSourceInfo(new IDSourceInfo(procedure.getName(), store.getLineNumber()));
-			
+			absoluteMemWrite.setIDSourceInfo(new IDSourceInfo(procedure
+					.getName(), store.getLineNumber()));
+
 			// Create Block
 			Block block = new Block(sequence);
 
@@ -986,8 +989,9 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			memPort.addAccess(write, location);
 			Procedure procedure = EcoreHelper.getContainerOfType(store,
 					Procedure.class);
-			write.setIDSourceInfo(new IDSourceInfo(procedure.getName(), store.getLineNumber()));
-			
+			write.setIDSourceInfo(new IDSourceInfo(procedure.getName(), store
+					.getLineNumber()));
+
 			// Dependencies
 			// -- Input form Value
 			CastOp indexCast = new CastOp(32, false);
@@ -999,7 +1003,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			Block addressedBlock = buildAddressedBlock(write, location, null);
 			sequence.add(addressedBlock);
-			
+
 			Block block = new Block(sequence);
 
 			Map<Var, Port> blkDataPorts = new HashMap<Var, Port>();
@@ -1053,10 +1057,10 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			ComponentUtil.connectDataDependency(indexResultIBus,
 					indexCast.getDataPort());
-		
+
 			ComponentUtil.connectDataDependency(indexCast.getResultBus(),
 					addressedBlock.getDataPorts().get(0));
-			
+
 			Bus compResultBus = compValue.getExit(Exit.DONE).getDataBuses()
 					.get(0);
 
@@ -1083,8 +1087,11 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	}
 
 	private boolean usedInOtherBlocks(BlockBasic block, Var var) {
-
+		
+		Map<Use,Boolean> uses = new HashMap<Use, Boolean>();
+		
 		for (Use use : var.getUses()) {
+			uses.put(use,false);
 			BlockBasic useBlockBasic = EcoreHelper.getContainerOfType(use,
 					BlockBasic.class);
 			BlockIf useBlockIf = EcoreHelper.getContainerOfType(use,
@@ -1094,20 +1101,30 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			if (useBlockBasic != null) {
 				if (block != useBlockBasic) {
-					return true;
+					uses.put(use,true);
 				}
 			}
 
 			if (useBlockIf != null) {
-				return true;
+				uses.put(use,true);
 			}
 
 			if (useBlockWhile != null) {
-				return true;
+				if (useBlockBasic == currentBlock
+						&& useBlockBasic.eContainer() == useBlockWhile
+						&& !inputs.containsKey(var)) {
+					uses.put(use,false);
+				}else{
+					uses.put(use,true);
+				}
 			}
 
 		}
-		return false;
+		boolean value = false;
+		for(Use use: uses.keySet()){
+			value |= uses.get(use);
+		}
+		return value;
 	}
 
 	@Override

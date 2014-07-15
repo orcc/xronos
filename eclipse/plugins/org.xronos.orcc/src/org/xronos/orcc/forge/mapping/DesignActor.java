@@ -43,6 +43,7 @@ import org.xronos.openforge.lim.Call;
 import org.xronos.openforge.lim.Design;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Task;
+import org.xronos.orcc.backend.debug.XronosDebug;
 import org.xronos.orcc.forge.scheduler.ActionScheduler;
 
 /**
@@ -90,9 +91,11 @@ public class DesignActor extends DfVisitor<Design> {
 
 		// Build Action Scheduler
 		ActionScheduler actionScheduler = new ActionScheduler();
-		//Task scheduler = actionScheduler.doSwitch(actor);
+		Task scheduler = actionScheduler.doSwitch(actor);
 		//design.addTask(scheduler);
-
+		
+		new XronosDebug().printActor("/tmp", actor, null);
+		
 		// Activate the production of GO/Done for each task
 		for (Task task : design.getTasks()) {
 			Call call = task.getCall();
