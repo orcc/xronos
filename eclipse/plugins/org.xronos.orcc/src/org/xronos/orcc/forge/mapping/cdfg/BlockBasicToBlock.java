@@ -642,6 +642,9 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			Component absMemRead = new AbsoluteMemoryRead(location,
 					Constants.MAX_ADDR_WIDTH, isSigned);
 			memPort.addAccess((LValue) absMemRead, location);
+			Procedure procedure = EcoreHelper.getContainerOfType(load,
+					Procedure.class);
+			absMemRead.setIDSourceInfo(new IDSourceInfo(procedure.getName(), load.getLineNumber()));
 
 			Exit exit = absMemRead.getExit(Exit.DONE);
 			Bus resultBus = exit.getDataBuses().get(0);
@@ -709,6 +712,9 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(), 32,
 					0, isSigned, addrPolicy);
 			memPort.addAccess(read, location);
+			Procedure procedure = EcoreHelper.getContainerOfType(load,
+					Procedure.class);
+			read.setIDSourceInfo(new IDSourceInfo(procedure.getName(), load.getLineNumber()));
 
 			CastOp resultCastOp = new CastOp(targetType.getSizeInBits(),
 					targetType.isInt());
@@ -908,6 +914,11 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					location, Constants.MAX_ADDR_WIDTH, isSigned);
 			memPort.addAccess((LValue) absoluteMemWrite, location);
 			sequence.add(absoluteMemWrite);
+			
+			Procedure procedure = EcoreHelper.getContainerOfType(store,
+					Procedure.class);
+			absoluteMemWrite.setIDSourceInfo(new IDSourceInfo(procedure.getName(), store.getLineNumber()));
+			
 			// Create Block
 			Block block = new Block(sequence);
 
@@ -973,7 +984,10 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					isSigned, // is signed?
 					addrPolicy); // addressing policy
 			memPort.addAccess(write, location);
-
+			Procedure procedure = EcoreHelper.getContainerOfType(store,
+					Procedure.class);
+			write.setIDSourceInfo(new IDSourceInfo(procedure.getName(), store.getLineNumber()));
+			
 			// Dependencies
 			// -- Input form Value
 			CastOp indexCast = new CastOp(32, false);

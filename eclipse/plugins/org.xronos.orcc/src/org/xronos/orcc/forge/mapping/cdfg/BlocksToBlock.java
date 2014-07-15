@@ -277,7 +277,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 				}
 				if (lastDefinedVarBus.containsKey(var)) {
 					Bus bus = lastDefinedVarBus.get(var);
-					ComponentUtil.connectDataDependency(bus, port, 0);
+					ComponentUtil.connectDataDependency(bus, port);
 				} else {
 					Type type = var.getType();
 
@@ -344,7 +344,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 				Port blkOutputPort = blkOutputBus.getPeer();
 				// Add dependency
 				ComponentUtil
-						.connectDataDependency(resultBus, blkOutputPort, 0);
+						.connectDataDependency(resultBus, blkOutputPort);
 
 				outputs.put(target, blkOutputBus);
 			}

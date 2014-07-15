@@ -142,7 +142,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		// Propagate data buses to feedback and completed data buses
 		// -- Feedback Exit
 		for (Var var : blockDataBuses.keySet()) {
-			if (blockDataPorts.containsKey(var)) {
+			if (lbDataPorts.containsKey(var)) {
 				Type type = var.getType();
 				Bus bus = blockDataBuses.get(var);
 				// -- Make an feedback exit data bus
