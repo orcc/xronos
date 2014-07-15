@@ -594,7 +594,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					.getLineNumber()));
 			component = taskCall;
 		}
-		Debug.depGraphTo(component, "call", "/tmp/call.dot",1);
+		Debug.depGraphTo(component, "call", "/tmp/call.dot", 1);
 		return component;
 	}
 
@@ -866,21 +866,42 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Expression value = returnInstr.getValue();
 		if (value != null) {
 			Component comp = new ExprToComponent().doSwitch(value);
+
+			Var target = (Var) returnInstr.getAttribute("returnTarget")
+					.getReferencedValue();
+
+			CastOp cast = new CastOp(target.getType().getSizeInBits(), target
+					.getType().isInt());
+
+			Block block = new Block(Arrays.asList(comp, cast));
+
 			// -- Data Ports dependencies
 			@SuppressWarnings("unchecked")
 			Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
 					"inputs").getObjectValue();
 			for (Var var : exprInput.keySet()) {
-				Port port = exprInput.get(var);
-				portDependecies.put(port, var);
-			}
+				Port dataPort = exprInput.get(var);
 
-			Var target = (Var) returnInstr.getAttribute("returnTarget")
-					.getReferencedValue();
+				Port blkDataPort = block.makeDataPort(var.getName(), var
+						.getType().getSizeInBits(), var.getType().isInt());
+				Bus blkDataPortPeer = blkDataPort.getPeer();
+				ComponentUtil.connectDataDependency(blkDataPortPeer, dataPort);
+				portDependecies.put(blkDataPort, var);
+			}
+			// -- Data Bus Dependencies
+			Bus compResultBus = comp.getExit(Exit.DONE).getDataBuses().get(0);
+			ComponentUtil.connectDataDependency(compResultBus,
+					cast.getDataPort());
+
+			Bus resultBus = block.getExit(Exit.DONE).makeDataBus(
+					target.getName(), target.getType().getSizeInBits(),
+					target.getType().isInt());
+			Port resultBusPeer = resultBus.getPeer();
+			ComponentUtil.connectDataDependency(compResultBus, resultBusPeer);
 			// Only one possible output, expression
-			Bus resultBus = comp.getExit(Exit.DONE).getDataBuses().get(0);
+
 			busDependecies.put(resultBus, target);
-			return comp;
+			return block;
 		}
 		return null;
 	}
@@ -1087,11 +1108,11 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	}
 
 	private boolean usedInOtherBlocks(BlockBasic block, Var var) {
-		
-		Map<Use,Boolean> uses = new HashMap<Use, Boolean>();
-		
+
+		Map<Use, Boolean> uses = new HashMap<Use, Boolean>();
+
 		for (Use use : var.getUses()) {
-			uses.put(use,false);
+			uses.put(use, false);
 			BlockBasic useBlockBasic = EcoreHelper.getContainerOfType(use,
 					BlockBasic.class);
 			BlockIf useBlockIf = EcoreHelper.getContainerOfType(use,
@@ -1101,27 +1122,27 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			if (useBlockBasic != null) {
 				if (block != useBlockBasic) {
-					uses.put(use,true);
+					uses.put(use, true);
 				}
 			}
 
 			if (useBlockIf != null) {
-				uses.put(use,true);
+				uses.put(use, true);
 			}
 
 			if (useBlockWhile != null) {
 				if (useBlockBasic == currentBlock
 						&& useBlockBasic.eContainer() == useBlockWhile
 						&& !inputs.containsKey(var)) {
-					uses.put(use,false);
-				}else{
-					uses.put(use,true);
+					uses.put(use, false);
+				} else {
+					uses.put(use, true);
 				}
 			}
 
 		}
 		boolean value = false;
-		for(Use use: uses.keySet()){
+		for (Use use : uses.keySet()) {
 			value |= uses.get(use);
 		}
 		return value;

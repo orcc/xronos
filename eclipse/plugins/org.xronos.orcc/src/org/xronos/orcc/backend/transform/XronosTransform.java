@@ -83,7 +83,7 @@ public class XronosTransform {
 		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 		transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
 		transformations.add(new PrintRemoval());
-		transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
+		//transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
 		transformations.add(new DfVisitor<Void>(new RedundantLoadElimination()));
 		
 		for (DfSwitch<?> transformation : transformations) {

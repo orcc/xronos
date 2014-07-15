@@ -297,7 +297,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
 		blockWhile.setAttribute("inputs", inputs);
 		blockWhile.setAttribute("outputs", outputs);
-		Debug.depGraphTo(loop, "loop", "/tmp/loop.dot", 1);
+		//Debug.depGraphTo(loop, "loop", "/tmp/loop.dot", 1);
 		return loop;
 	} 
 
