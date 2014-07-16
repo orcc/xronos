@@ -40,9 +40,11 @@ import java.util.Map;
 import java.util.Set;
 
 import net.sf.orcc.ir.BlockWhile;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.util.util.EcoreHelper;
 
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
@@ -61,6 +63,7 @@ import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.WhileBody;
 import org.xronos.openforge.lim.primitive.Reg;
 import org.xronos.openforge.util.Debug;
+import org.xronos.openforge.util.naming.IDSourceInfo;
 
 /**
  * This Visitor transforms a {@link BlockWhile} to a LIM {@link Loop}
@@ -298,7 +301,10 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		blockWhile.setAttribute("inputs", inputs);
 		blockWhile.setAttribute("outputs", outputs);
 		//Debug.depGraphTo(loop, "loop", "/tmp/loop.dot", 1);
+		
+		// IDSourceInfo
+		Procedure procedure = EcoreHelper.getContainerOfType(blockWhile, Procedure.class);
+		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(), blockWhile.getLineNumber());
+		loop.setIDSourceInfo(sinfo);
 		return loop;
-	} 
-
-}
+	}}

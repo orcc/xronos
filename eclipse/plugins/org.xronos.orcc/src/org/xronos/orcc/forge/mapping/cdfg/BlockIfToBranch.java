@@ -38,9 +38,11 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.ir.BlockIf;
+import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.util.util.EcoreHelper;
 
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Branch;
@@ -54,6 +56,7 @@ import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.util.Debug;
+import org.xronos.openforge.util.naming.IDSourceInfo;
 
 /**
  * This Visitor transforms a {@link BlockIf} to a LIM {@link Branch}
@@ -185,6 +188,9 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 		blockIf.setAttribute("inputs", inputs);
 		blockIf.setAttribute("outputs", outputs);
 
+		Procedure procedure = EcoreHelper.getContainerOfType(blockIf, Procedure.class);
+		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(), blockIf.getLineNumber());
+		branch.setIDSourceInfo(sinfo);
 		return branch;
 	}
 

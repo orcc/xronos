@@ -441,6 +441,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					Expression exprArg = ((ArgByVal) arg).getValue();
 					Component argComponent = new ExprToComponent()
 							.doSwitch(exprArg);
+					sequence.add(argComponent);
 					Var paramVar = param.getVariable();
 					Type type = paramVar.getType();
 					Bus resultBus = argComponent.getExit(Exit.DONE)
@@ -457,7 +458,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 					byValBusVar.put(resultBus, paramVar);
 					// For the components to be included on a new block
-					sequence.add(argComponent);
 					byValComponent.put(paramVar, argComponent);
 					byValExpression.put(paramVar, exprArg);
 				}
