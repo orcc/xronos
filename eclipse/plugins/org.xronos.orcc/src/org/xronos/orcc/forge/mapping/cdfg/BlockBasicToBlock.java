@@ -897,7 +897,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					target.getName(), target.getType().getSizeInBits(),
 					target.getType().isInt());
 			Port resultBusPeer = resultBus.getPeer();
-			ComponentUtil.connectDataDependency(compResultBus, resultBusPeer);
+			ComponentUtil.connectDataDependency(cast.getResultBus(), resultBusPeer);
 			// Only one possible output, expression
 
 			busDependecies.put(resultBus, target);
