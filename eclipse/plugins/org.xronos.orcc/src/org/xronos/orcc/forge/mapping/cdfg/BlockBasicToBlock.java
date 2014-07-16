@@ -461,6 +461,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					byValComponent.put(paramVar, argComponent);
 					byValExpression.put(paramVar, exprArg);
 				}
+				nbArg++;
 			}
 
 			// Create call Block
@@ -543,17 +544,29 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 						resultBus = cast.getResultBus();
 						// Update the resultBus with the one of the cast
 						byValBusVar.put(resultBus, var);
-					}
 
-					Var resultVar = byValBusVar.get(resultBus);
-					@SuppressWarnings("unchecked")
-					Map<Var, Port> procInputs = (Map<Var, Port>) proc
-							.getAttribute("inputs").getObjectValue();
-					// Connect it if same resultVar
-					if (procInputs.containsKey(resultVar)) {
-						Port dataPort = procInputs.get(resultVar);
-						ComponentUtil.connectDataDependency(resultBus,
-								dataPort, 0);
+						Var resultVar = byValBusVar.get(resultBus);
+						@SuppressWarnings("unchecked")
+						Map<Var, Port> procInputs = (Map<Var, Port>) proc
+								.getAttribute("inputs").getObjectValue();
+						// Connect it if same resultVar
+						if (procInputs.containsKey(resultVar)) {
+							Port dataPort = procInputs.get(resultVar);
+							ComponentUtil.connectDataDependency(
+									cast.getResultBus(), dataPort, 0);
+						}
+					} else {
+
+						Var resultVar = byValBusVar.get(resultBus);
+						@SuppressWarnings("unchecked")
+						Map<Var, Port> procInputs = (Map<Var, Port>) proc
+								.getAttribute("inputs").getObjectValue();
+						// Connect it if same resultVar
+						if (procInputs.containsKey(resultVar)) {
+							Port dataPort = procInputs.get(resultVar);
+							ComponentUtil.connectDataDependency(resultBus,
+									dataPort, 0);
+						}
 					}
 				}
 
@@ -897,7 +910,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					target.getName(), target.getType().getSizeInBits(),
 					target.getType().isInt());
 			Port resultBusPeer = resultBus.getPeer();
-			ComponentUtil.connectDataDependency(cast.getResultBus(), resultBusPeer);
+			ComponentUtil.connectDataDependency(cast.getResultBus(),
+					resultBusPeer);
 			// Only one possible output, expression
 
 			busDependecies.put(resultBus, target);

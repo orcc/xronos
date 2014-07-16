@@ -49,7 +49,6 @@ import org.xronos.orcc.backend.transform.XronosExprEvaluator;
 
 public class VarInitializer extends DfVisitor<Void> {
 
-
 	@Override
 	public Void caseActor(Actor actor) {
 		// initialize parameters
@@ -58,24 +57,28 @@ public class VarInitializer extends DfVisitor<Void> {
 		}
 
 		// initializes state variables
-		for (Var stateVar : actor.getStateVars()) {
-			//if (!stateVar.isAssignable() || stateVar.isInitialized()) {
-				initializeVar(stateVar);
-		//	}
-		}
-		
-		// initialize action bodys local variables
-		for(Action action : actor.getActions()){
-			Procedure body = action.getBody();
-			for(Var var: body.getLocals()){
+		for (Var var : actor.getStateVars()) {
+			if (!var.isAssignable() || var.isInitialized()) {
 				initializeVar(var);
 			}
 		}
-		
+
+		// initialize action bodys local variables
+		for (Action action : actor.getActions()) {
+			Procedure body = action.getBody();
+			for (Var var : body.getLocals()) {
+				if (!var.isAssignable() || var.isInitialized()) {
+					initializeVar(var);
+				}
+			}
+		}
+
 		// initialize procedures local variables
-		for(Procedure procedure: actor.getProcs()){
-			for (Var var: procedure.getLocals()){
-				initializeVar(var);
+		for (Procedure procedure : actor.getProcs()) {
+			for (Var var : procedure.getLocals()) {
+				if (!var.isAssignable() || var.isInitialized()) {
+					initializeVar(var);
+				}
 			}
 		}
 		return super.caseActor(actor);

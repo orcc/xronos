@@ -46,6 +46,7 @@ import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
@@ -60,6 +61,7 @@ import org.xronos.openforge.lim.memory.LogicalMemory;
 import org.xronos.openforge.lim.memory.LogicalValue;
 import org.xronos.openforge.lim.memory.Record;
 import org.xronos.openforge.lim.memory.Scalar;
+import org.xronos.orcc.backend.transform.XronosExprEvaluator;
 import org.xronos.orcc.preference.Constants;
 
 /**
@@ -192,13 +194,20 @@ public class DesignMemory extends DfVisitor<Void> {
 	public static LogicalValue makeLogicalValue(Var var) {
 		LogicalValue logicalValue = null;
 		if (var.getType().isList()) {
-
+			XronosExprEvaluator exprEvaluator = new XronosExprEvaluator();
 			TypeList typeList = (TypeList) var.getType();
 			Type type = typeList.getInnermostType();
 
 			List<Integer> listDimension = new ArrayList<Integer>(
 					typeList.getDimensions());
-			Object varValue = var.getValue();
+			exprEvaluator.setType((TypeList) typeList);
+			Object varValue = null;
+			Expression initConst = var.getInitialValue();
+			if (initConst == null) {
+				varValue = ValueUtil.createArray((TypeList) typeList);
+			}else{
+				varValue = exprEvaluator.doSwitch(initConst);
+			}
 			logicalValue = makeLogicalValueObject(varValue, listDimension, type);
 		} else {
 			Type type = var.getType();

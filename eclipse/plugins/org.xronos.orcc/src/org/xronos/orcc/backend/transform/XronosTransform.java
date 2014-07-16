@@ -85,6 +85,7 @@ public class XronosTransform {
 		transformations.add(new PrintRemoval());
 		//transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
 		transformations.add(new DfVisitor<Void>(new RedundantLoadElimination()));
+		transformations.add(new XronosDivision());
 		
 		for (DfSwitch<?> transformation : transformations) {
 			try {
