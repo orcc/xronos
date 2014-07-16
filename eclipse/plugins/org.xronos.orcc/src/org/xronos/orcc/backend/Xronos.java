@@ -199,7 +199,7 @@ public class Xronos extends AbstractBackend {
 	protected void doXdfCodeGeneration(Network network) {
 		Validator.checkMinimalFifoSize(network, fifoSize);
 		// instantiate and flattens network
-		new Instantiator(true, fifoSize).doSwitch(network);
+		new Instantiator(true).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
 
 		if (importBufferSize) {
