@@ -80,6 +80,9 @@ public class XronosTransform {
 		
 		transformations.add(new UnitImporter());
 		transformations.add(new VarInitializer());
+		transformations.add(new CheckVarSize());
+		transformations.add(new ParameterArrayRemoval());
+		transformations.add(new DeadActionEliminaton(true));
 		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 		transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
 		transformations.add(new PrintRemoval());

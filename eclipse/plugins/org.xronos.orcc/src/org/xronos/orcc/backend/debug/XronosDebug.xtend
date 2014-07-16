@@ -1,22 +1,22 @@
 package org.xronos.orcc.backend.debug
 
 import java.io.File
+import java.util.HashMap
 import net.sf.orcc.backends.c.InstancePrinter
-import net.sf.orcc.ir.Procedure
-import net.sf.orcc.util.OrccUtil
-import org.eclipse.emf.ecore.EObject
-import org.xronos.orcc.ir.BlockMutex
-import net.sf.orcc.ir.InstAssign
-import net.sf.orcc.ir.InstStore
-import net.sf.orcc.ir.InstLoad
 import net.sf.orcc.df.Actor
 import net.sf.orcc.ir.BlockBasic
-import java.util.Map
-import net.sf.orcc.ir.Var
-import org.xronos.openforge.lim.Port
-import org.xronos.openforge.lim.Bus
 import net.sf.orcc.ir.BlockIf
 import net.sf.orcc.ir.BlockWhile
+import net.sf.orcc.ir.InstAssign
+import net.sf.orcc.ir.InstLoad
+import net.sf.orcc.ir.InstStore
+import net.sf.orcc.ir.Procedure
+import net.sf.orcc.ir.Var
+import net.sf.orcc.util.OrccUtil
+import org.eclipse.emf.ecore.EObject
+import org.xronos.openforge.lim.Bus
+import org.xronos.openforge.lim.Port
+import org.xronos.orcc.ir.BlockMutex
 
 class XronosDebug extends InstancePrinter {
 
@@ -55,8 +55,15 @@ class XronosDebug extends InstancePrinter {
 	}
 
 	def caseBlockMutex(BlockMutex blockMutex) {
-		val inputs = blockMutex.getAttribute("inputs").objectValue as Map<Var,Port>
-		val outputs = blockMutex.getAttribute("outputs").objectValue as Map<Var,Bus>
+		var inputs = new HashMap<Var,Port> 
+		if(blockMutex.hasAttribute("inputs")){
+			inputs = blockMutex.getAttribute("inputs").objectValue as HashMap<Var,Port>
+		}
+		
+		var outputs = new HashMap<Var,Bus>
+		if(blockMutex.hasAttribute("outputs")){
+			outputs = blockMutex.getAttribute("inputs").objectValue as HashMap<Var,Bus>
+		}
 		'''
 			// -- Mutex Block
 			// Inputs: [«FOR variable : inputs.keySet SEPARATOR ","»«variable.name» «ENDFOR»]
@@ -69,8 +76,15 @@ class XronosDebug extends InstancePrinter {
 	}
 
 	override caseBlockBasic(BlockBasic block) {
-		val inputs = block.getAttribute("inputs").objectValue as Map<Var,Port>
-		val outputs = block.getAttribute("outputs").objectValue as Map<Var,Bus>
+		var inputs = new HashMap<Var,Port> 
+		if(block.hasAttribute("inputs")){
+			inputs = block.getAttribute("inputs").objectValue as HashMap<Var,Port>
+		}
+		
+		var outputs = new HashMap<Var,Bus>
+		if(block.hasAttribute("outputs")){
+			outputs = block.getAttribute("inputs").objectValue as HashMap<Var,Bus>
+		}
 		'''
 			// -- Block Basic
 			// Inputs: [«FOR variable : inputs.keySet SEPARATOR ","»«variable.name» «ENDFOR»]
@@ -81,8 +95,15 @@ class XronosDebug extends InstancePrinter {
 	}
 
 	override caseBlockIf(BlockIf block) {
-		val inputs = block.getAttribute("inputs").objectValue as Map<Var,Port>
-		val outputs = block.getAttribute("outputs").objectValue as Map<Var,Bus>
+		var inputs = new HashMap<Var,Port> 
+		if(block.hasAttribute("inputs")){
+			inputs = block.getAttribute("inputs").objectValue as HashMap<Var,Port>
+		}
+		
+		var outputs = new HashMap<Var,Bus>
+		if(block.hasAttribute("outputs")){
+			outputs = block.getAttribute("inputs").objectValue as HashMap<Var,Bus>
+		}
 		'''
 			// -- Block If
 			// Inputs: [«FOR variable : inputs.keySet SEPARATOR ","»«variable.name» «ENDFOR»]
@@ -93,8 +114,15 @@ class XronosDebug extends InstancePrinter {
 	}
 
 	override caseBlockWhile(BlockWhile block) {
-		val inputs = block.getAttribute("inputs").objectValue as Map<Var,Port>
-		val outputs = block.getAttribute("outputs").objectValue as Map<Var,Bus>
+		var inputs = new HashMap<Var,Port> 
+		if(block.hasAttribute("inputs")){
+			inputs = block.getAttribute("inputs").objectValue as HashMap<Var,Port>
+		}
+		
+		var outputs = new HashMap<Var,Bus>
+		if(block.hasAttribute("outputs")){
+			outputs = block.getAttribute("inputs").objectValue as HashMap<Var,Bus>
+		}
 		'''
 			// -- Block While
 			// Inputs: [«FOR variable : inputs.keySet SEPARATOR ","»«variable.name» «ENDFOR»]

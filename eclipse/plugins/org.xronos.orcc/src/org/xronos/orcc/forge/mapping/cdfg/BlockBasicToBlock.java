@@ -402,7 +402,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	public Component caseInstCall(InstCall call) {
 		Component component = null;
 		// Test if the call is coming from an action or the XronosScheduler
-		Action action = EcoreHelper.getContainerOfType(this.procedure,
+		Action action = EcoreHelper.getContainerOfType(call.getProcedure(),
 				Action.class);
 		if (action == null) {
 			List<Component> sequence = new ArrayList<Component>();

@@ -111,7 +111,7 @@ public class DesignEngine extends Engine {
 				long t0 = System.currentTimeMillis();
 				design = new DesignActor().doSwitch(actor);
 				long t1 = System.currentTimeMillis();
-				System.out.println("- Orcc IR to LIM transformed in: "
+				System.out.println(actor.getName()+" :- Orcc IR to LIM transformed in: "
 						+ (float) (t1 - t0) / 1000 + "s");
 			}
 		} else {
