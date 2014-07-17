@@ -119,24 +119,24 @@ public class Xronos extends AbstractBackend {
 
 	@Override
 	protected void doInitializeOptions() {
-		clkDomains = getAttribute(MAPPING, new HashMap<String, String>());
-		debugMode = getAttribute(DEBUG_MODE, true);
-		generateGoDone = getAttribute("org.xronos.orcc.generateGoDone", false);
-		generateWeights = getAttribute("org.xronos.orcc.generateWeights", false);
-		xilinxPrimitives = getAttribute("org.xronos.orcc.xilinxPrimitives",
+		clkDomains = getOption(MAPPING, new HashMap<String, String>());
+		debugMode = getOption(DEBUG_MODE, true);
+		generateGoDone = getOption("org.xronos.orcc.generateGoDone", false);
+		generateWeights = getOption("org.xronos.orcc.generateWeights", false);
+		xilinxPrimitives = getOption("org.xronos.orcc.xilinxPrimitives",
 				false);
-		singleFileGeneration = getAttribute(
+		singleFileGeneration = getOption(
 				"org.xronos.orcc.singleFileGeneration", false);
-		importBufferSize = getAttribute("org.xronos.orcc.importBufferSize",
+		importBufferSize = getOption("org.xronos.orcc.importBufferSize",
 				false);
-		fifoSize = getAttribute("net.sf.orcc.fifoSize", 1);
-		outputClockGating = getAttribute("org.xronos.orcc.outputClockGating",
+		fifoSize = getOption("net.sf.orcc.fifoSize", 1);
+		outputClockGating = getOption("org.xronos.orcc.outputClockGating",
 				false);
-		inputClockGating = getAttribute("org.xronos.orcc.inputClockGating",
+		inputClockGating = getOption("org.xronos.orcc.inputClockGating",
 				false);
-		schedulerInformation = getAttribute(
+		schedulerInformation = getOption(
 				"org.xronos.orcc.schedulingInformation", false);
-		newLimGen = getAttribute("org.xronos.orcc.newLimGen", false);
+		newLimGen = getOption("org.xronos.orcc.newLimGen", false);
 
 		// Set Paths for RTL
 		rtlPath = path + File.separator + "rtl";
@@ -203,7 +203,7 @@ public class Xronos extends AbstractBackend {
 		new NetworkFlattener().doSwitch(network);
 
 		if (importBufferSize) {
-			String bufferSzeFile = getAttribute(
+			String bufferSzeFile = getOption(
 					"org.xronos.orcc.bufferSizeFile", "");
 			new NetworkBufferSizeImporter(bufferSzeFile).doSwitch(network);
 		}
@@ -336,7 +336,7 @@ public class Xronos extends AbstractBackend {
 			}
 
 			boolean failed = printer.printInstance(flags.getStringFlag(),
-					rtlPath, testBenchPath, tbVhdPath, actor, options,
+					rtlPath, testBenchPath, tbVhdPath, actor, getOptions(),
 					resourceCache, numInstance, toBeCompiled,
 					schedulerInformation, newLimGen, debugMode);
 			if (failed) {
@@ -373,10 +373,10 @@ public class Xronos extends AbstractBackend {
 		printer.getOptions().put("doubleBuffering", outputClockGating);
 		printer.getOptions().put("inputClockGating", inputClockGating);
 		XronosFlags flags = new XronosFlags(rtlPath, network.getSimpleName());
-		boolean schedulerInformation = getAttribute(
+		boolean schedulerInformation = getOption(
 				"org.xronos.orcc.schedulingInformation", false);
 		boolean failed = printer.printNetwork(flags.getStringFlag(), rtlPath,
-				network, options, resourceCache, schedulerInformation);
+				network, getOptions(), resourceCache, schedulerInformation);
 
 		if (failed) {
 			OrccLogger

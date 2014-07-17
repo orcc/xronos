@@ -156,13 +156,13 @@ public class Embedded extends AbstractBackend {
 	@Override
 	public boolean printInstance(Instance instance) {
 		if(!instance.getActor().isNative()){
-			return new EmbeddedInstance(instance, options).print(srcPath) > 1;
+			return new EmbeddedInstance(instance, getOptions()).print(srcPath) > 1;
 		}
 		return false;
 	}
 	
 	public void printNetwork(Network network) {
-		EmbeddedNetwork printer = new EmbeddedNetwork(network, options);
+		EmbeddedNetwork printer = new EmbeddedNetwork(network, getOptions());
 		
 		printer.printMain(srcPath);
 		printer.printNetwork(srcPath);
