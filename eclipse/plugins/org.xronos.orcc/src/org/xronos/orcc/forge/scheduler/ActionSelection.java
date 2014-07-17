@@ -245,12 +245,21 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				if (action.getOutputPattern().getNumTokens(port) > 1) {
 					Var portIndex = scheduler.getLocal(port.getName()
 							+ "TokenIndex");
-					int numTokens = action.getOutputPattern()
-							.getNumTokens(port);
 					ExprInt value = IrFactory.eINSTANCE
-							.createExprInt(numTokens);
+							.createExprInt(0);
 					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
 							portIndex, value);
+					block.add(assign);
+					
+					// Get MaxTokenIndex for this action
+					Var maxTokenIndex = scheduler.getLocal(port.getName()
+							+ "MaxTokenIndex");
+					int numTokens = action.getOutputPattern()
+							.getNumTokens(port);
+					value = IrFactory.eINSTANCE
+							.createExprInt(numTokens);
+					assign = IrFactory.eINSTANCE.createInstAssign(
+							maxTokenIndex, value);
 					block.add(assign);
 				}
 			}

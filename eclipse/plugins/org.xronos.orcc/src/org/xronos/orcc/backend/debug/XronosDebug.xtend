@@ -195,7 +195,7 @@ class XronosDebug extends InstancePrinter {
 		val net.sf.orcc.df.Port port = portWrite.port as  net.sf.orcc.df.Port;
 		'''
 			// Port Write
-			portWrite(«port.name», «portWrite.value»);
+			portWrite(«port.name», «doSwitch(portWrite.value)»);
 		'''
 	}
 

@@ -112,12 +112,10 @@ public class TokenIndexBlock extends DfVisitor<Block> {
 				block.add(assign);
 
 				// -- Create MaxTokenIndex variable for Input Ports
-				if (actor.getInputs().contains(port)) {
-					Var maxTokenIndex = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeInt(), port.getName()
-									+ "MaxTokenIndex", true, 0);
-					scheduler.addLocal(maxTokenIndex);
-				}
+				Var maxTokenIndex = IrFactory.eINSTANCE.createVar(
+						IrFactory.eINSTANCE.createTypeInt(), port.getName()
+								+ "MaxTokenIndex", true, 0);
+				scheduler.addLocal(maxTokenIndex);
 			}
 		}
 
