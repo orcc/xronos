@@ -71,27 +71,44 @@ public class HasTokensBlock extends DfVisitor<Block> {
 			Expression value = null;
 			if (action.getInputPattern().getPorts().size() > 0) {
 				for (Port port : action.getInputPattern().getPorts()) {
-					Var portIndex = scheduler.getLocal(port.getName()
-							+ "TokenIndex");
-
-					int nbrTokens = action.getInputPattern().getNumTokens(port);
-
-					Expression E1 = IrFactory.eINSTANCE
-							.createExprVar(portIndex);
-					Expression E2 = IrFactory.eINSTANCE
-							.createExprInt(nbrTokens);
-
-					if (value == null) {
-						value = IrFactory.eINSTANCE.createExprBinary(E1,
-								OpBinary.EQ, E2,
-								IrFactory.eINSTANCE.createTypeBool());
+					if (action.getInputPattern().getNumTokens(port) == 1) {
+						Var status = scheduler.getLocal(port.getName()
+					+ "Status");
+						Expression E =  IrFactory.eINSTANCE
+								.createExprVar(status);
+						if(value == null){
+							value = E;
+						}else{
+							value = IrFactory.eINSTANCE.createExprBinary(value,
+									OpBinary.LOGIC_AND, E,
+									IrFactory.eINSTANCE.createTypeBool());
+						}
+						
 					} else {
-						Expression nextE2 = IrFactory.eINSTANCE
-								.createExprBinary(E1, OpBinary.EQ, E2,
-										IrFactory.eINSTANCE.createTypeBool());
-						value = IrFactory.eINSTANCE.createExprBinary(value,
-								OpBinary.LOGIC_AND, nextE2,
-								IrFactory.eINSTANCE.createTypeBool());
+						Var portIndex = scheduler.getLocal(port.getName()
+								+ "TokenIndex");
+
+						int nbrTokens = action.getInputPattern().getNumTokens(
+								port);
+
+						Expression E1 = IrFactory.eINSTANCE
+								.createExprVar(portIndex);
+						Expression E2 = IrFactory.eINSTANCE
+								.createExprInt(nbrTokens);
+
+						if (value == null) {
+							value = IrFactory.eINSTANCE.createExprBinary(E1,
+									OpBinary.EQ, E2,
+									IrFactory.eINSTANCE.createTypeBool());
+						} else {
+							Expression nextE2 = IrFactory.eINSTANCE
+									.createExprBinary(E1, OpBinary.EQ, E2,
+											IrFactory.eINSTANCE
+													.createTypeBool());
+							value = IrFactory.eINSTANCE.createExprBinary(value,
+									OpBinary.LOGIC_AND, nextE2,
+									IrFactory.eINSTANCE.createTypeBool());
+						}
 					}
 				}
 			} else {

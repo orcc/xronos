@@ -100,7 +100,8 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 			actionStateToState = new HashMap<Action, Pair<State, State>>();
 			blocks.add(actionSelection(actor.getActionsOutsideFsm()));
 		} else {
-			BlockMutex blockMutex = XronosIrFactory.eINSTANCE.createBlockMutex();
+			BlockMutex blockMutex = XronosIrFactory.eINSTANCE
+					.createBlockMutex();
 			blockMutex.getBlocks().addAll(actionSelectionFSM(actor.getFsm()));
 			blocks.add(blockMutex);
 		}
@@ -195,14 +196,15 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 			// Get source and target states
 			State source = actionStateToState.get(action).getA();
 			State target = actionStateToState.get(action).getB();
-			
-			if(source != target){
-				Var sourceVar = actor.getStateVar("fsmState_" + source.getName());
+
+			if (source != target) {
+				Var sourceVar = actor.getStateVar("fsmState_"
+						+ source.getName());
 				InstStore storeSource = IrFactory.eINSTANCE.createInstStore(
 						sourceVar, IrFactory.eINSTANCE.createExprBool(false));
 				block.add(storeSource);
 			}
-			
+
 			Var targetVar = actor.getStateVar("fsmState_" + target.getName());
 			// Create stores
 			InstStore targetSource = IrFactory.eINSTANCE.createInstStore(
@@ -212,33 +214,45 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 
 		// -- Initialize at Zero the portTokenIndex for the input pattern
 		if (action.getInputPattern() != null) {
+
 			for (Port port : action.getInputPattern().getPorts()) {
-				Var portIndex = scheduler.getLocal(port.getName()
-						+ "TokenIndex");
-				ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
-				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
-						portIndex, value);
-				block.add(assign);
+				if (action.getInputPattern().getNumTokens(port) > 1) {
+					Var tokenIndex = scheduler.getLocal(port.getName()
+							+ "TokenIndex");
+					ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
+					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+							tokenIndex, value);
+					block.add(assign);
+					
+					// Get MaxTokenIndex for this action
+					Var maxTokenIndex = scheduler.getLocal(port.getName()
+							+ "MaxTokenIndex");
+					int numTokens = action.getInputPattern()
+							.getNumTokens(port);
+					value = IrFactory.eINSTANCE
+							.createExprInt(numTokens);
+					assign = IrFactory.eINSTANCE.createInstAssign(
+							maxTokenIndex, value);
+					block.add(assign);
+					
+				}
 			}
 		}
 
 		// -- Create portTokenIndex for each port on the output pattern
 		if (action.getOutputPattern() != null) {
 			for (Port port : action.getOutputPattern().getPorts()) {
-				Var portIndex = null;
-				if (scheduler.getLocal(port.getName() + "TokenIndex") != null) {
-					portIndex = scheduler.getLocal(port.getName()
+				if (action.getOutputPattern().getNumTokens(port) > 1) {
+					Var portIndex = scheduler.getLocal(port.getName()
 							+ "TokenIndex");
-				} else {
-					portIndex = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeInt(), port.getName()
-									+ "TokenIndex", true, 0);
-					scheduler.addLocal(portIndex);
+					int numTokens = action.getOutputPattern()
+							.getNumTokens(port);
+					ExprInt value = IrFactory.eINSTANCE
+							.createExprInt(numTokens);
+					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+							portIndex, value);
+					block.add(assign);
 				}
-				ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
-				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
-						portIndex, value);
-				block.add(assign);
 			}
 		}
 
@@ -271,90 +285,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		List<Block> blocks = new ArrayList<Block>();
 
 		for (Port port : pattern.getPorts()) {
-			if (pattern.getNumTokens(port) == 1) {
-				BlockBasic blockBasic = IrFactory.eINSTANCE.createBlockBasic();
-				Var target = null;
-				if (scheduler.getLocal(port.getName() + "PortStatus") != null) {
-					target = scheduler.getLocal(port.getName() + "PortStatus");
-				} else {
-					target = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeBool(),
-							port.getName() + "PortStatus", true, 0);
-					scheduler.addLocal(target);
-				}
-				// -- Create Port Status
-				InstPortStatus portStatus = XronosIrFactory.eINSTANCE
-						.createInstPortStatus();
-				Def def = IrFactory.eINSTANCE.createDef(target);
-				portStatus.setTarget(def);
-				portStatus.setPort(port);
-				blockBasic.add(portStatus);
-				blocks.add(blockBasic);
-
-				// -- Create Block If
-				Expression condition = IrFactory.eINSTANCE
-						.createExprVar(target);
-				BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
-				blockIf.setCondition(condition);
-				// -- Create Block basic for the then Block
-				blockBasic = IrFactory.eINSTANCE.createBlockBasic();
-
-				// -- Create Load and then Port Write
-				if (scheduler.getLocal(port.getName() + "PortValue") != null) {
-					target = scheduler.getLocal(port.getName() + "PortValue");
-				} else {
-					Type type = IrUtil.copy(port.getType());
-					target = IrFactory.eINSTANCE.createVar(type, port.getName()
-							+ "PortValue", true, 0);
-					scheduler.addLocal(target);
-				}
-
-				def = IrFactory.eINSTANCE.createDef(target);
-
-				if (isInputPattern) {
-					// -- Read from the input port to temporary variable
-					InstPortRead portRead = XronosIrFactory.eINSTANCE
-							.createInstPortRead();
-					portRead.setPort(port);
-					portRead.setTarget(def);
-					blockBasic.add(portRead);
-
-					// -- Store the value to the port var
-					Var storeTarget = pattern.getPortToVarMap().get(port);
-					Expression index = IrFactory.eINSTANCE.createExprInt(0);
-					InstStore store = IrFactory.eINSTANCE.createInstStore(
-							storeTarget, Arrays.asList(index), target);
-					blockBasic.add(store);
-
-					// -- TokenIndex == 1
-					target = scheduler.getLocal(port.getName() + "TokenIndex");
-					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
-							target, 1);
-					blockBasic.add(assign);
-				} else {
-					// -- Load Value to a temporary variable
-					Var source = pattern.getPortToVarMap().get(port);
-					Expression index = IrFactory.eINSTANCE.createExprInt(0);
-					InstLoad load = IrFactory.eINSTANCE.createInstLoad(target,
-							source, Arrays.asList(index));
-					blockBasic.add(load);
-
-					// -- Write the temporary variable to output port
-					InstPortWrite portWrite = XronosIrFactory.eINSTANCE
-							.createInstPortWrite();
-					portWrite.setPort(port);
-					Expression value = IrFactory.eINSTANCE
-							.createExprVar(target);
-					portWrite.setValue(value);
-					blockBasic.add(portWrite);
-				}
-
-				// -- Add blockBasic to BlockIf then Blocks
-				blockIf.getThenBlocks().add(blockBasic);
-				// -- Add blockIf to Blocks
-				blocks.add(blockIf);
-
-			} else {
+			if (pattern.getNumTokens(port) > 1) {
 				// -- Create While Condition
 				Var tokenIndex = scheduler.getLocal(port.getName()
 						+ "TokenIndex");

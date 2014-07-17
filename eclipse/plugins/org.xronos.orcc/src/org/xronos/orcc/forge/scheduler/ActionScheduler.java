@@ -37,15 +37,12 @@ import java.util.List;
 
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.Port;
 import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockWhile;
-import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
@@ -68,7 +65,7 @@ import org.xronos.orcc.forge.mapping.TaskProcedure;
 public class ActionScheduler extends DfVisitor<Task> {
 
 	private Procedure scheduler;
-	
+
 	@Override
 	public Task caseActor(Actor actor) {
 
@@ -106,26 +103,7 @@ public class ActionScheduler extends DfVisitor<Task> {
 			initBlocks.add(storeSMStatesBlock);
 		}
 
-		BlockBasic assignInputTokenIndexBlock = IrFactory.eINSTANCE
-				.createBlockBasic();
-		for (Action action : actor.getActions()) {
-			for (Port port : action.getInputPattern().getPorts()) {
-				Var portIndex = null;
-				if (scheduler.getLocal(port.getName() + "TokenIndex") != null) {
-					portIndex = scheduler.getLocal(port.getName()
-							+ "TokenIndex");
-				} else {
-					portIndex = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeInt(), port.getName()
-									+ "TokenIndex", true, 0);
-					scheduler.addLocal(portIndex);
-				}
-				ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
-				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
-						portIndex, value);
-				assignInputTokenIndexBlock.add(assign);
-			}
-		}
+		Block assignInputTokenIndexBlock = new TokenIndexBlock(scheduler).doSwitch(actor);
 		initBlocks.add(assignInputTokenIndexBlock);
 
 		// -- call of initialize action
@@ -142,6 +120,9 @@ public class ActionScheduler extends DfVisitor<Task> {
 		// -- Create the isSchedulable Blocks
 		List<Block> isScedulableBlocks = new IsSchedulableBlocks(scheduler)
 				.doSwitch(actor);
+
+		// -- Create the Status Block
+		Block portStatusBlock = new PortStatusBlock(scheduler).doSwitch(actor);
 
 		// -- Create the hasTokens Block
 		Block hasTokensBlock = new HasTokensBlock(scheduler).doSwitch(actor);
@@ -161,6 +142,7 @@ public class ActionScheduler extends DfVisitor<Task> {
 		}
 
 		inifiniteWhile.getBlocks().addAll(isScedulableBlocks);
+		inifiniteWhile.getBlocks().add(portStatusBlock);
 		inifiniteWhile.getBlocks().add(hasTokensBlock);
 		inifiniteWhile.getBlocks().addAll(actionSelection);
 
@@ -185,12 +167,13 @@ public class ActionScheduler extends DfVisitor<Task> {
 		this.scheduler = scheduler;
 		new XronosDebug().printProcedure("/tmp", scheduler);
 		Task schedulerTask = new TaskProcedure(true).doSwitch(scheduler);
-		//Debug.depGraphTo(schedulerTask, "scheduler", "/tmp/schdeuler.dot", 1);
+		// Debug.depGraphTo(schedulerTask, "scheduler", "/tmp/schdeuler.dot",
+		// 1);
 		return schedulerTask;
 	}
 
-	public Procedure getScheduler(){
+	public Procedure getScheduler() {
 		return scheduler;
 	}
-	
+
 }
