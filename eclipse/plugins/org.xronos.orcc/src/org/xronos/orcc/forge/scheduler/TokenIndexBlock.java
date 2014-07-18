@@ -68,26 +68,26 @@ public class TokenIndexBlock extends DfVisitor<Block> {
 
 	@Override
 	public Block caseActor(Actor actor) {
-		Map<Port, Boolean> portHasReapet = new HashMap<Port, Boolean>();
+		Map<Port, Boolean> portHasRepeat = new HashMap<Port, Boolean>();
 
 		// -- Find if a port has repeats on an Action
 		for (Action action : actor.getActions()) {
 			for (Port port : action.getInputPattern().getPorts()) {
 				if (action.getInputPattern().getNumTokens(port) > 1) {
-					portHasReapet.put(port, true);
+					portHasRepeat.put(port, true);
 				} else {
-					if (!portHasReapet.containsKey(port)) {
-						portHasReapet.put(port, false);
+					if (!portHasRepeat.containsKey(port)) {
+						portHasRepeat.put(port, false);
 					}
 				}
 			}
 
 			for (Port port : action.getOutputPattern().getPorts()) {
 				if (action.getOutputPattern().getNumTokens(port) > 1) {
-					portHasReapet.put(port, true);
+					portHasRepeat.put(port, true);
 				} else {
-					if (!portHasReapet.containsKey(port)) {
-						portHasReapet.put(port, false);
+					if (!portHasRepeat.containsKey(port)) {
+						portHasRepeat.put(port, false);
 					}
 				}
 			}
@@ -101,7 +101,7 @@ public class TokenIndexBlock extends DfVisitor<Block> {
 
 		// -- Create an assign instruction for each TokenIndex
 		for (Port port : ports) {
-			if (portHasReapet.get(port)) {
+			if (portHasRepeat.get(port)) {
 				Var tokenIndex = IrFactory.eINSTANCE.createVar(
 						IrFactory.eINSTANCE.createTypeInt(), port.getName()
 								+ "TokenIndex", true, 0);

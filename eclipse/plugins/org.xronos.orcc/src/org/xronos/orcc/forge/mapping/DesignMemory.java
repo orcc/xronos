@@ -47,10 +47,12 @@ import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.ir.util.ValueUtil;
 
 import org.xronos.openforge.lim.Design;
@@ -136,7 +138,8 @@ public class DesignMemory extends DfVisitor<Void> {
 			mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
 			mem.createLogicalMemoryPort();
 			mem.setIDLogical("stateVar_" + var.getName());
-			Design design = (Design) actor.getAttribute("design").getObjectValue();
+			Design design = (Design) actor.getAttribute("design")
+					.getObjectValue();
 			design.addMemory(mem);
 		}
 		// Create a 'location' for the stateVar that is
@@ -205,7 +208,7 @@ public class DesignMemory extends DfVisitor<Void> {
 			Expression initConst = var.getInitialValue();
 			if (initConst == null) {
 				varValue = ValueUtil.createArray((TypeList) typeList);
-			}else{
+			} else {
 				varValue = exprEvaluator.doSwitch(initConst);
 			}
 			logicalValue = makeLogicalValueObject(varValue, listDimension, type);
@@ -337,31 +340,6 @@ public class DesignMemory extends DfVisitor<Void> {
 		MaxPortDepth maxPortDepth = new MaxPortDepth();
 		Map<Port, Integer> portDepth = maxPortDepth.doSwitch(actor);
 
-		for (Port port : portDepth.keySet()) {
-			int nbrElements = portDepth.get(port);
-			LogicalValue logicalValue = makeLogicalValue(port.getType(),
-					nbrElements);
-
-			port.setAttribute("logicalValue", logicalValue);
-			int stride = logicalValue.getAddressStridePolicy().getStride();
-			LogicalMemory mem = memories.get(stride);
-			if (mem == null) {
-				// 32 should be more than enough for max address
-				// width
-				mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
-				mem.createLogicalMemoryPort();
-				mem.setIDLogical("portVar_" + port.getName());
-				design.addMemory(mem);
-				if (colocateVars) {
-					memories.put(stride, mem);
-				}
-			}
-			// Create a 'location' for the stateVar that is
-			// appropriate for its type/size.
-			Allocation location = mem.allocate(logicalValue);
-			port.setAttribute("location", location);
-		}
-
 		for (Var var : actor.getStateVars()) {
 			// Create Logical Value for each
 			LogicalValue logicalValue = makeLogicalValue(var);
@@ -389,6 +367,36 @@ public class DesignMemory extends DfVisitor<Void> {
 			// appropriate for its type/size.
 			Allocation location = mem.allocate(logicalValue);
 			var.setAttribute("location", location);
+		}
+
+		for (Port port : portDepth.keySet()) {
+			int nbrElements = portDepth.get(port);
+			Var var = IrFactory.eINSTANCE.createVar(
+					IrFactory.eINSTANCE.createTypeList(nbrElements,
+							IrUtil.copy(port.getType())), port.getName(), true,
+					0);
+			LogicalValue logicalValue = makeLogicalValue(port.getType(),
+					nbrElements);
+			port.setAttribute("logicalValue", logicalValue);
+			int stride = logicalValue.getAddressStridePolicy().getStride();
+			LogicalMemory mem = memories.get(stride);
+			if (mem == null) {
+				// 32 should be more than enough for max address
+				// width
+				mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
+				mem.createLogicalMemoryPort();
+				mem.setIDLogical("portVar_" + port.getName());
+				design.addMemory(mem);
+				if (colocateVars) {
+					memories.put(stride, mem);
+				}
+			}
+			// Create a 'location' for the stateVar that is
+			// appropriate for its type/size.
+			Allocation location = mem.allocate(logicalValue);
+			port.setAttribute("location", location);
+			var.setAttribute("location", location);
+			actor.getStateVars().add(var);
 		}
 
 		// Actions local list Variables

@@ -80,32 +80,15 @@ import org.xronos.orcc.ir.XronosIrFactory;
  */
 public class ActionSelection extends DfVisitor<List<Block>> {
 
+	Map<Action, Pair<State, State>> actionStateToState;
+
 	/**
 	 * The Actions Scheduler procedure
 	 */
 	Procedure scheduler;
 
-	Map<Action, Pair<State, State>> actionStateToState;
-
 	public ActionSelection(Procedure scheduler) {
 		this.scheduler = scheduler;
-	}
-
-	@Override
-	public List<Block> caseActor(Actor actor) {
-		this.actor = actor;
-
-		List<Block> blocks = new ArrayList<Block>();
-		if (!actor.hasFsm()) {
-			actionStateToState = new HashMap<Action, Pair<State, State>>();
-			blocks.add(actionSelection(actor.getActionsOutsideFsm()));
-		} else {
-			BlockMutex blockMutex = XronosIrFactory.eINSTANCE
-					.createBlockMutex();
-			blockMutex.getBlocks().addAll(actionSelectionFSM(actor.getFsm()));
-			blocks.add(blockMutex);
-		}
-		return blocks;
 	}
 
 	private BlockIf actionSelection(List<Action> actions) {
@@ -223,18 +206,15 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
 							tokenIndex, value);
 					block.add(assign);
-					
+
 					// Get MaxTokenIndex for this action
 					Var maxTokenIndex = scheduler.getLocal(port.getName()
 							+ "MaxTokenIndex");
-					int numTokens = action.getInputPattern()
-							.getNumTokens(port);
-					value = IrFactory.eINSTANCE
-							.createExprInt(numTokens);
+					int numTokens = action.getInputPattern().getNumTokens(port);
+					value = IrFactory.eINSTANCE.createExprInt(numTokens);
 					assign = IrFactory.eINSTANCE.createInstAssign(
 							maxTokenIndex, value);
 					block.add(assign);
-					
 				}
 			}
 		}
@@ -245,19 +225,17 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				if (action.getOutputPattern().getNumTokens(port) > 1) {
 					Var portIndex = scheduler.getLocal(port.getName()
 							+ "TokenIndex");
-					ExprInt value = IrFactory.eINSTANCE
-							.createExprInt(0);
+					ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
 					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
 							portIndex, value);
 					block.add(assign);
-					
+
 					// Get MaxTokenIndex for this action
 					Var maxTokenIndex = scheduler.getLocal(port.getName()
 							+ "MaxTokenIndex");
 					int numTokens = action.getOutputPattern()
 							.getNumTokens(port);
-					value = IrFactory.eINSTANCE
-							.createExprInt(numTokens);
+					value = IrFactory.eINSTANCE.createExprInt(numTokens);
 					assign = IrFactory.eINSTANCE.createInstAssign(
 							maxTokenIndex, value);
 					block.add(assign);
@@ -278,6 +256,81 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				blocks.add(mutex);
 			}
 		}
+		return blocks;
+	}
+
+	@Override
+	public List<Block> caseActor(Actor actor) {
+		this.actor = actor;
+		Map<Port, Boolean> portHasRepeat = getPortWithRepeats(actor);
+
+		List<Block> blocks = new ArrayList<Block>();
+
+		BlockMutex blockMutex = XronosIrFactory.eINSTANCE.createBlockMutex();
+		blockMutex.getBlocks().addAll(actionSelectionFSM(actor.getFsm()));
+
+		// -- Create BlockIf for reading on ports with repeats
+		if (portsHaveRepeats(actor.getInputs(), portHasRepeat)) {
+			BlockMutex inputRepeats = XronosIrFactory.eINSTANCE
+					.createBlockMutex();
+
+			for (Port port : actor.getInputs()) {
+				if (portHasRepeat.get(port)) {
+					// -- Create blockIf condition
+					Var tokenIndex = scheduler.getLocal(port.getName()
+							+ "TokenIndex");
+					Var maxTokenIndex = scheduler.getLocal(port.getName()
+							+ "MaxTokenIndex");
+					Expression E1 = IrFactory.eINSTANCE
+							.createExprVar(tokenIndex);
+					Expression E2 = IrFactory.eINSTANCE
+							.createExprVar(maxTokenIndex);
+					
+					Expression condition = IrFactory.eINSTANCE
+							.createExprBinary(E1, OpBinary.LT, E2,
+									IrFactory.eINSTANCE.createTypeBool());
+					// -- Create blockIf
+					BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
+					blockIf.setCondition(condition);
+					
+					// --Create blockIf then block
+					BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
+					
+					Type type = IrUtil.copy(port.getType());
+					Var target = IrFactory.eINSTANCE.createVar(type, port.getName()
+							+ "Portvalue", true, 0);
+					Def def = IrFactory.eINSTANCE.createDef(target);
+					scheduler.addLocal(target);
+					
+					
+					// -- Read from the input port
+					InstPortRead portRead = XronosIrFactory.eINSTANCE
+							.createInstPortRead();
+					portRead.setPort(port);
+					portRead.setTarget(def);
+					block.add(portRead);
+
+					// -- Store the port value to the list var port
+					Var storeTarget = actor.getStateVar(port.getName());
+					Expression index = IrFactory.eINSTANCE
+							.createExprVar(tokenIndex);
+					
+					InstStore store = IrFactory.eINSTANCE.createInstStore(
+							storeTarget, Arrays.asList(index), target);
+					block.add(store);
+					
+					
+				}
+			}
+		}
+
+		// -- Create BlockIf for reading on ports with repeats
+		if (portsHaveRepeats(actor.getInputs(), portHasRepeat)) {
+			BlockMutex outputRepeats = XronosIrFactory.eINSTANCE
+					.createBlockMutex();
+		}
+
+		blocks.add(blockMutex);
 		return blocks;
 	}
 
@@ -399,5 +452,44 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		}
 
 		return blocks;
+	}
+
+	private Map<Port, Boolean> getPortWithRepeats(Actor actor) {
+		Map<Port, Boolean> portHasRepeat = new HashMap<Port, Boolean>();
+
+		// -- Find if a port has repeats on an Action
+		for (Action action : actor.getActions()) {
+			for (Port port : action.getInputPattern().getPorts()) {
+				if (action.getInputPattern().getNumTokens(port) > 1) {
+					portHasRepeat.put(port, true);
+				} else {
+					if (!portHasRepeat.containsKey(port)) {
+						portHasRepeat.put(port, false);
+					}
+				}
+			}
+
+			for (Port port : action.getOutputPattern().getPorts()) {
+				if (action.getOutputPattern().getNumTokens(port) > 1) {
+					portHasRepeat.put(port, true);
+				} else {
+					if (!portHasRepeat.containsKey(port)) {
+						portHasRepeat.put(port, false);
+					}
+				}
+			}
+		}
+		return portHasRepeat;
+	}
+
+	private Boolean portsHaveRepeats(List<Port> ports,
+			Map<Port, Boolean> portHasRepeat) {
+		Boolean have = false;
+		for (Port port : ports) {
+			if (portHasRepeat.containsKey(port)) {
+				have |= portHasRepeat.get(port);
+			}
+		}
+		return have;
 	}
 }
