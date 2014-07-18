@@ -159,9 +159,9 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 
 			for (Edge edge : state.getOutgoing()) {
 				Transition transition = ((Transition) edge);
-				State target = transition.getTarget();
 				State source = transition.getSource();
-				Pair<State, State> pair = Pair.of(target, source);
+				State target = transition.getTarget();
+				Pair<State, State> pair = Pair.of(source, target);
 				Action action = transition.getAction();
 				actions.add(action);
 				actionStateToState.put(action, pair);

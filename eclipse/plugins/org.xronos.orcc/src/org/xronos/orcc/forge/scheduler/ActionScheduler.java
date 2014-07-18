@@ -35,7 +35,6 @@ package org.xronos.orcc.forge.scheduler;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
@@ -68,7 +67,9 @@ public class ActionScheduler extends DfVisitor<Task> {
 
 	@Override
 	public Task caseActor(Actor actor) {
-
+		// -- Add an FSM to the actor if it doe not have one
+		new ActorAddFSM().doSwitch(actor);
+		
 		// -- The Actions Scheduler procedure
 		Procedure scheduler = IrFactory.eINSTANCE.createProcedure("scheduler",
 				0, IrFactory.eINSTANCE.createTypeVoid());
@@ -105,13 +106,6 @@ public class ActionScheduler extends DfVisitor<Task> {
 
 		Block assignInputTokenIndexBlock = new TokenIndexBlock(scheduler).doSwitch(actor);
 		initBlocks.add(assignInputTokenIndexBlock);
-
-		// -- call of initialize action
-		// TODO: Create call, input and output port resolution for each
-		// initialize action
-		for (@SuppressWarnings("unused")
-		Action action : actor.getInitializes()) {
-		}
 
 		// -- Create loads for each fsm state
 		Block assignFSMStatesBlock = actor.hasFsm() ? new LoadFsmStatesBlock(
