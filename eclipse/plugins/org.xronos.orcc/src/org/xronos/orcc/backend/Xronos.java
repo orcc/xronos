@@ -53,7 +53,6 @@ import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.OrccLogger;
 import net.sf.orcc.util.Result;
 
-import org.eclipse.core.resources.IFile;
 import org.xronos.orcc.analysis.XronosDynamicWeights;
 import org.xronos.orcc.analysis.XronosStaticWeight;
 import org.xronos.orcc.backend.transform.NetworkBufferSizeImporter;
@@ -188,11 +187,6 @@ public class Xronos extends AbstractBackend {
 	@Override
 	protected void doTransformActor(Actor actor) {
 		// Do not transform at this moment
-	}
-
-	@Override
-	protected void doVtlCodeGeneration(List<IFile> files) {
-		// do not generate VTL
 	}
 
 	@Override

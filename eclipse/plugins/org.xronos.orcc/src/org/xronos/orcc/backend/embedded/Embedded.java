@@ -54,8 +54,6 @@ import net.sf.orcc.ir.transform.RenameTransformation;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.OrccLogger;
 import net.sf.orcc.util.Result;
-
-import org.eclipse.core.resources.IFile;
 /**
  * The Xronos Embedded C++ backend.
  * 
@@ -119,13 +117,6 @@ public class Embedded extends AbstractBackend {
 		new Instantiator(false).doSwitch(network);
 		OrccLogger.traceRaw("done\n");
 		new NetworkFlattener().doSwitch(network);
-	}
-	
-	
-	@Override
-	protected void doVtlCodeGeneration(List<IFile> files) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
