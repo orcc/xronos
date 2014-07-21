@@ -69,7 +69,7 @@ public class SinglePortList extends DfVisitor<Void> {
 					PatternImpl.class);
 			if (pattern != null) {
 				Port port = (Port) pattern.getVarToPortMap().get(source);
-				if(newPortVar.containsKey(port)){
+				if (newPortVar.containsKey(port)) {
 					Var var = newPortVar.get(port);
 					Use use = IrFactory.eINSTANCE.createUse(var);
 					load.setSource(use);
@@ -85,7 +85,7 @@ public class SinglePortList extends DfVisitor<Void> {
 					PatternImpl.class);
 			if (pattern != null) {
 				Port port = (Port) pattern.getVarToPortMap().get(target);
-				if(newPortVar.containsKey(port)){
+				if (newPortVar.containsKey(port)) {
 					Var var = newPortVar.get(port);
 					Def def = IrFactory.eINSTANCE.createDef(var);
 					store.setTarget(def);
@@ -139,16 +139,16 @@ public class SinglePortList extends DfVisitor<Void> {
 
 	}
 
-	Map<Port,Var> newPortVar;
-	
+	Map<Port, Var> newPortVar;
+
 	@Override
 	public Void caseActor(Actor actor) {
-		
-		// -- Retrieve the port depth for each 
+
+		// -- Retrieve the port depth for each
 		Map<Port, Integer> portDepth = new MaxPortDepth().doSwitch(actor);
-		
+
 		newPortVar = new HashMap<Port, Var>();
-		for(Port port: portDepth.keySet()){
+		for (Port port : portDepth.keySet()) {
 			int nbrElements = portDepth.get(port);
 			Var var = IrFactory.eINSTANCE.createVar(
 					IrFactory.eINSTANCE.createTypeList(nbrElements,
@@ -157,9 +157,13 @@ public class SinglePortList extends DfVisitor<Void> {
 			actor.getStateVars().add(var);
 			newPortVar.put(port, var);
 		}
-		
+
 		// -- Now modify each Load and store associate to a Port
-		new ReplaceVar().doSwitch(actor);
+		for (Action action : actor.getActions()) {
+			new ReplaceVar().doSwitch(action.getBody());
+		}
+
+		actor.setAttribute("portDepth", portDepth);
 		
 		return null;
 	}

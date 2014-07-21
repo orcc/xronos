@@ -39,6 +39,7 @@ import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Procedure;
@@ -73,26 +74,42 @@ public class HasTokensBlock extends DfVisitor<Block> {
 				for (Port port : action.getInputPattern().getPorts()) {
 					if (action.getInputPattern().getNumTokens(port) == 1) {
 						Var status = scheduler.getLocal(port.getName()
-					+ "Status");
-						Expression E =  IrFactory.eINSTANCE
+								+ "Status");
+						Expression E = IrFactory.eINSTANCE
 								.createExprVar(status);
-						if(value == null){
+						if (value == null) {
 							value = E;
-						}else{
+						} else {
 							value = IrFactory.eINSTANCE.createExprBinary(value,
 									OpBinary.LOGIC_AND, E,
 									IrFactory.eINSTANCE.createTypeBool());
 						}
-						
+
 					} else {
-						Var portIndex = scheduler.getLocal(port.getName()
+						Var tmpMaxportIndex = scheduler.getLocal("tmp_"
+								+ port.getName() + "MaxTokenIndex");
+						Var maxPortIndrex = actor.getStateVar(port.getName()
+								+ "MaxTokenIndex");
+
+						InstLoad load = IrFactory.eINSTANCE.createInstLoad(
+								tmpMaxportIndex, maxPortIndrex);
+						block.add(load);
+
+						Var tmpPortIndex = scheduler.getLocal("tmp_"
+								+ port.getName() + "TokenIndex");
+
+						Var portIndrex = actor.getStateVar(port.getName()
 								+ "TokenIndex");
-						// -- NbrTokens minus 1
+
+						load = IrFactory.eINSTANCE.createInstLoad(tmpPortIndex,
+								portIndrex);
+						block.add(load);
+
 						int nbrTokens = action.getInputPattern().getNumTokens(
-								port) - 1;
+								port);
 
 						Expression E1 = IrFactory.eINSTANCE
-								.createExprVar(portIndex);
+								.createExprVar(tmpPortIndex);
 						Expression E2 = IrFactory.eINSTANCE
 								.createExprInt(nbrTokens);
 
@@ -128,6 +145,33 @@ public class HasTokensBlock extends DfVisitor<Block> {
 			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(hasTokens,
 					value);
 			block.add(assign);
+			
+			
+			if (action.getOutputPattern().getPorts().size() > 0) {
+				for (Port port : action.getOutputPattern().getPorts()) {
+					if (action.getOutputPattern().getNumTokens(port) > 1) {
+						Var tmpMaxportIndex = scheduler.getLocal("tmp_"
+								+ port.getName() + "MaxTokenIndex");
+						Var maxPortIndrex = actor.getStateVar(port.getName()
+								+ "MaxTokenIndex");
+
+						InstLoad load = IrFactory.eINSTANCE.createInstLoad(
+								tmpMaxportIndex, maxPortIndrex);
+						block.add(load);
+
+						Var tmpPortIndex = scheduler.getLocal("tmp_"
+								+ port.getName() + "TokenIndex");
+
+						Var portIndrex = actor.getStateVar(port.getName()
+								+ "TokenIndex");
+
+						load = IrFactory.eINSTANCE.createInstLoad(tmpPortIndex,
+								portIndrex);
+						block.add(load);
+					}
+				}
+			}
+			
 		}
 
 		return block;

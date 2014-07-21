@@ -34,8 +34,10 @@ package org.xronos.orcc.forge.scheduler;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
@@ -51,7 +53,6 @@ import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstStore;
@@ -87,7 +88,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		this.scheduler = scheduler;
 	}
 
-	private BlockIf actionSelection(List<Action> actions) {
+	private BlockIf actionSelection(List<Action> actions, State state) {
 		BlockIf firstBlockIf = null;
 		BlockIf lastBlockIf = null;
 		for (Action action : actions) {
@@ -118,6 +119,66 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				lastBlockIf = blockIf;
 			}
 		}
+
+		// -- Else Block for reading
+		if (SchedulerUtil.actorHasInputPortWithRepeats(actor)) {
+			BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
+
+			Map<Port, Integer> portDepth = new HashMap<Port, Integer>();
+			Set<Port> inPorts = new HashSet<Port>();
+			for (Action action : actions) {
+				for (Port port : action.getInputPattern().getPorts()) {
+					int numTokens = action.getInputPattern().getNumTokensMap()
+							.get(port);
+					if (portDepth.containsKey(port)) {
+						if (portDepth.get(port) < numTokens) {
+							portDepth.put(port, numTokens);
+						}
+					} else {
+						portDepth.put(port, numTokens);
+					}
+				}
+				inPorts.addAll(action.getInputPattern().getPorts());
+			}
+
+			for (Port port : inPorts) {
+				if (portDepth.containsKey(port)) {
+					int numTokens = portDepth.get(port);
+					if (numTokens > 1) {
+						Var portIndex = actor.getStateVar(port.getName()
+								+ "TokenIndex");
+						ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
+						InstStore store = IrFactory.eINSTANCE.createInstStore(
+								portIndex, value);
+						block.add(store);
+
+						// Get MaxTokenIndex for this action
+						Var maxTokenIndex = actor.getStateVar(port.getName()
+								+ "MaxTokenIndex");
+						value = IrFactory.eINSTANCE.createExprInt(numTokens);
+						store = IrFactory.eINSTANCE.createInstStore(
+								maxTokenIndex, value);
+						block.add(store);
+					}
+				}
+			}
+
+			// -- Store current state to the old state
+			Var stateVar = scheduler.getLocal("s_fsmState_" + state.getName());
+			Var target = actor.getStateVar("fsmOldState_" + actor.getName());
+			InstStore store = IrFactory.eINSTANCE.createInstStore(target,
+					stateVar);
+			block.add(store);
+
+			// -- Now store to the current state the read state
+			Var readVar = scheduler.getLocal("s_fsmState_read_"
+					+ actor.getName());
+			target = actor.getStateVar("fsmState_" + actor.getName());
+			store = IrFactory.eINSTANCE.createInstStore(target, readVar);
+			block.add(store);
+			lastBlockIf.getElseBlocks().add(block);
+		}
+
 		return firstBlockIf;
 	}
 
@@ -154,28 +215,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 
 			BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
 			blockIf.setCondition(condition);
-			blockIf.getThenBlocks().add(actionSelection(actions));
-
-			// -- Else Block for reading
-			if (SchedulerUtil.actorHasInputPortWithRepeats(actor)) {
-				BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
-				// -- Store current state to the old state
-				Var stateVar = scheduler.getLocal("s_fsmState_"
-						+ state.getName());
-				Var target = actor
-						.getStateVar("fsmOldState_" + actor.getName());
-				InstStore store = IrFactory.eINSTANCE.createInstStore(target,
-						stateVar);
-				block.add(store);
-
-				// -- Now store to the current state the read state
-				Var readVar = scheduler.getLocal("s_fsmState_read_"
-						+ actor.getName());
-				target = actor.getStateVar("fsmState_" + actor.getName());
-				store = IrFactory.eINSTANCE.createInstStore(target, readVar);
-				block.add(store);
-				blockIf.getElseBlocks().add(block);
-			}
+			blockIf.getThenBlocks().add(actionSelection(actions, state));
 
 			// -- Add blockIf to blocks
 			blocks.add(blockIf);
@@ -217,7 +257,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 						.getStateVar("fsmOldState_" + actor.getName());
 				InstStore store = IrFactory.eINSTANCE.createInstStore(target,
 						stateVar);
-				block.add(store); 
+				block.add(store);
 
 				// -- Now store to the current state the read state
 				Var readVar = scheduler.getLocal("s_fsmState_write_"
@@ -234,48 +274,40 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 
 			for (Port port : action.getInputPattern().getPorts()) {
 				if (action.getInputPattern().getNumTokens(port) > 1) {
-					Var tokenIndex = scheduler.getLocal(port.getName()
+					Var tokenIndex = actor.getStateVar(port.getName()
 							+ "TokenIndex");
 					ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
-					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+					InstStore store = IrFactory.eINSTANCE.createInstStore(
 							tokenIndex, value);
-					block.add(assign);
-
-					// Get MaxTokenIndex for this action
-					Var maxTokenIndex = scheduler.getLocal(port.getName()
-							+ "MaxTokenIndex");
-					int numTokens = action.getInputPattern().getNumTokens(port);
-					value = IrFactory.eINSTANCE.createExprInt(numTokens);
-					assign = IrFactory.eINSTANCE.createInstAssign(
-							maxTokenIndex, value);
-					block.add(assign);
+					block.add(store);
 				}
 			}
 		}
-
+		
 		// -- Create portTokenIndex for each port on the output pattern
 		if (action.getOutputPattern() != null) {
 			for (Port port : action.getOutputPattern().getPorts()) {
 				if (action.getOutputPattern().getNumTokens(port) > 1) {
-					Var portIndex = scheduler.getLocal(port.getName()
+					Var portIndex = actor.getStateVar(port.getName()
 							+ "TokenIndex");
 					ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
-					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+					InstStore store = IrFactory.eINSTANCE.createInstStore(
 							portIndex, value);
-					block.add(assign);
+					block.add(store);
 
 					// Get MaxTokenIndex for this action
-					Var maxTokenIndex = scheduler.getLocal(port.getName()
+					Var maxTokenIndex = actor.getStateVar(port.getName()
 							+ "MaxTokenIndex");
 					int numTokens = action.getOutputPattern()
 							.getNumTokens(port);
 					value = IrFactory.eINSTANCE.createExprInt(numTokens);
-					assign = IrFactory.eINSTANCE.createInstAssign(
-							maxTokenIndex, value);
-					block.add(assign);
+					store = IrFactory.eINSTANCE.createInstStore(maxTokenIndex,
+							value);
+					block.add(store);
 				}
 			}
 		}
+		
 
 		// -- Add block to blocks
 		blocks.add(block);
@@ -347,13 +379,14 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		for (Port port : ports) {
 			if (portHasRepeat.get(port)) {
 				// -- Create blockIf condition
-				Var tokenIndex = scheduler.getLocal(port.getName()
+				Var tmpTokenIndex = scheduler.getLocal("tmp_" + port.getName()
 						+ "TokenIndex");
-				Var maxTokenIndex = scheduler.getLocal(port.getName()
-						+ "MaxTokenIndex");
-				Expression E1 = IrFactory.eINSTANCE.createExprVar(tokenIndex);
+				Var tmpMaxTokenIndex = scheduler.getLocal("tmp_"
+						+ port.getName() + "MaxTokenIndex");
+				Expression E1 = IrFactory.eINSTANCE
+						.createExprVar(tmpTokenIndex);
 				Expression E2 = IrFactory.eINSTANCE
-						.createExprVar(maxTokenIndex);
+						.createExprVar(tmpMaxTokenIndex);
 
 				Expression condition = IrFactory.eINSTANCE.createExprBinary(E1,
 						OpBinary.LT, E2, IrFactory.eINSTANCE.createTypeBool());
@@ -386,7 +419,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 					// -- Store the port value to the list var port
 					Var storeTarget = actor.getStateVar(port.getName());
 					Expression index = IrFactory.eINSTANCE
-							.createExprVar(tokenIndex);
+							.createExprVar(tmpTokenIndex);
 
 					InstStore store = IrFactory.eINSTANCE.createInstStore(
 							storeTarget, Arrays.asList(index), target);
@@ -394,7 +427,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				} else {
 					Var source = actor.getStateVar(port.getName());
 					Expression index = IrFactory.eINSTANCE
-							.createExprVar(tokenIndex);
+							.createExprVar(tmpTokenIndex);
 					InstLoad load = IrFactory.eINSTANCE.createInstLoad(target,
 							source, Arrays.asList(index));
 					block.add(load);
@@ -410,16 +443,26 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				}
 
 				// -- TokenIndex++
+				Var tokenIndex = actor.getStateVar(port.getName()
+						+ "TokenIndex");
 				Expression indexPlusOne = IrFactory.eINSTANCE.createExprBinary(
-						IrFactory.eINSTANCE.createExprVar(tokenIndex),
+						IrFactory.eINSTANCE.createExprVar(tmpTokenIndex),
 						OpBinary.PLUS, IrFactory.eINSTANCE.createExprInt(1),
 						IrFactory.eINSTANCE.createTypeInt());
-				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+				InstStore store = IrFactory.eINSTANCE.createInstStore(
 						tokenIndex, indexPlusOne);
-				block.add(assign);
+				block.add(store);
 
-				// -- Add to then block
-				blockIf.getThenBlocks().add(block);
+				// -- Status If
+				Var portStatus = scheduler.getLocal(port.getName()
+					+ "Status");
+				condition = IrFactory.eINSTANCE.createExprVar(portStatus);
+				BlockIf statusIf = IrFactory.eINSTANCE.createBlockIf();
+				statusIf.setCondition(condition);
+				statusIf.getThenBlocks().add(block);
+				
+				// -- Add statusIf to then block
+				blockIf.getThenBlocks().add(statusIf);
 
 				// -- Construct Else Block
 
@@ -438,8 +481,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				block.add(load);
 
 				target = actor.getStateVar("fsmState_" + actor.getName());
-				InstStore store = IrFactory.eINSTANCE.createInstStore(target,
-						temp);
+				store = IrFactory.eINSTANCE.createInstStore(target, temp);
 				block.add(store);
 
 				// -- Add else block to if block

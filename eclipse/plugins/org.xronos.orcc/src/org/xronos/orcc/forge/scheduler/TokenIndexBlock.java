@@ -44,9 +44,12 @@ import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Var;
+
+import org.xronos.orcc.forge.mapping.DesignMemory;
 
 /**
  * This visitor will create a BlockBasic if an actor contains action that have
@@ -99,24 +102,44 @@ public class TokenIndexBlock extends DfVisitor<Block> {
 
 		BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
 
-		// -- Create an assign instruction for each TokenIndex
+		// -- Create a store instruction for each TokenIndex
 		for (Port port : ports) {
 			if (portHasRepeat.containsKey(port)) {
 				if (portHasRepeat.get(port)) {
 					Var tokenIndex = IrFactory.eINSTANCE.createVar(
 							IrFactory.eINSTANCE.createTypeInt(), port.getName()
 									+ "TokenIndex", true, 0);
-					scheduler.addLocal(tokenIndex);
-					Expression value = IrFactory.eINSTANCE.createExprInt(0);
-					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
-							tokenIndex, value);
-					block.add(assign);
+					actor.getStateVars().add(tokenIndex);
+					DesignMemory.addToMemory(actor, tokenIndex);
 
+					Expression value = IrFactory.eINSTANCE.createExprInt(0);
+					InstStore store = IrFactory.eINSTANCE.createInstStore(
+							tokenIndex, value);
+					block.add(store);
+
+					// -- Tmp TokenIndex
+					Var tmpTokenIndex = IrFactory.eINSTANCE.createVar(
+							IrFactory.eINSTANCE.createTypeInt(),
+							"tmp_" + port.getName() + "TokenIndex", true, 0);
+					scheduler.addLocal(tmpTokenIndex);
+					
 					// -- Create MaxTokenIndex variable for Input Ports
 					Var maxTokenIndex = IrFactory.eINSTANCE.createVar(
 							IrFactory.eINSTANCE.createTypeInt(), port.getName()
 									+ "MaxTokenIndex", true, 0);
-					scheduler.addLocal(maxTokenIndex);
+					actor.getStateVars().add(maxTokenIndex);
+					DesignMemory.addToMemory(actor, maxTokenIndex);
+
+					value = IrFactory.eINSTANCE.createExprInt(0);
+					store = IrFactory.eINSTANCE.createInstStore(maxTokenIndex,
+							value);
+					block.add(store);
+
+					// -- Tmp MaxTokenIndex
+					Var tmpMaxTokenIndex = IrFactory.eINSTANCE.createVar(
+							IrFactory.eINSTANCE.createTypeInt(),
+							"tmp_" + port.getName() + "MaxTokenIndex", true, 0);
+					scheduler.addLocal(tmpMaxTokenIndex);
 				}
 			}
 		}

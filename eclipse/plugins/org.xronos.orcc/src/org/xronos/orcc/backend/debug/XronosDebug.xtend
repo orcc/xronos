@@ -66,7 +66,7 @@ class XronosDebug extends InstancePrinter {
 
 		var outputs = new HashMap<Var, Bus>
 		if (blockMutex.hasAttribute("outputs")) {
-			outputs = blockMutex.getAttribute("inputs").objectValue as HashMap<Var,Bus>
+			outputs = blockMutex.getAttribute("outputs").objectValue as HashMap<Var,Bus>
 		}
 		'''
 			// -- Mutex Block
@@ -87,7 +87,7 @@ class XronosDebug extends InstancePrinter {
 
 		var outputs = new HashMap<Var, Bus>
 		if (block.hasAttribute("outputs")) {
-			outputs = block.getAttribute("inputs").objectValue as HashMap<Var,Bus>
+			outputs = block.getAttribute("outputs").objectValue as HashMap<Var,Bus>
 		}
 		'''
 			// -- Block Basic
@@ -106,7 +106,7 @@ class XronosDebug extends InstancePrinter {
 
 		var outputs = new HashMap<Var, Bus>
 		if (block.hasAttribute("outputs")) {
-			outputs = block.getAttribute("inputs").objectValue as HashMap<Var,Bus>
+			outputs = block.getAttribute("outputs").objectValue as HashMap<Var,Bus>
 		}
 		'''
 			// -- Block If
@@ -125,7 +125,7 @@ class XronosDebug extends InstancePrinter {
 
 		var outputs = new HashMap<Var, Bus>
 		if (block.hasAttribute("outputs")) {
-			outputs = block.getAttribute("inputs").objectValue as HashMap<Var,Bus>
+			outputs = block.getAttribute("outputs").objectValue as HashMap<Var,Bus>
 		}
 		'''
 			// -- Block While
@@ -159,11 +159,13 @@ class XronosDebug extends InstancePrinter {
 
 	override caseInstStore(InstStore inst) '''
 		// Store
+		«inst.target.variable.hashCode»
 		«super.caseInstStore(inst)»
 	'''
 
 	override caseInstLoad(InstLoad inst) '''
 		// Load
+		«inst.source.variable.hashCode»
 		«super.caseInstLoad(inst)»
 	'''
 
