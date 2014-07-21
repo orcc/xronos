@@ -441,12 +441,19 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 				NoOp noop = new NoOp(1, Exit.DONE);
 
-				Block block = new Block(Arrays.asList(noop, absMemRead));
+				CastOp cast = new CastOp(target.getType().getSizeInBits(),
+						target.getType().isInt());
 
-				// Data dependency absMemRead --> Noop
+				Block block = new Block(Arrays.asList(absMemRead, cast, noop));
+
+				// -- Data dependency absMemRead --> CastOp
+				ComponentUtil.connectDataDependency(resultBus,
+						cast.getDataPort());
+
+				// -- Data dependency CastOp --> Noop
 				Port dataPort = noop.getDataPorts().get(0);
-				ComponentUtil.connectDataDependency(resultBus, dataPort, 0);
-
+				ComponentUtil.connectDataDependency(cast.getResultBus(),
+						dataPort);
 				Type type = target.getType();
 				Bus blkResultBus = block.getExit(Exit.DONE).makeDataBus(
 						target.getName(), type.getSizeInBits(), type.isInt());
@@ -455,9 +462,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				Bus noopResultBus = noop.getResultBus();
 				ComponentUtil.connectDataDependency(noopResultBus,
 						blkResultBusPeer, 0);
-
-				ComponentUtil.connectControlDependency(absMemRead, block, 0);
-				ComponentUtil.connectControlDependency(noop, block, 0);
 
 				busDependecies.put(blkResultBus, target);
 				return block;
@@ -578,7 +582,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		busDependecies.put(resultBus, target);
 		return pinRead;
 	}
-	
+
 	public Component caseInstPortPeek(InstPortPeek instPortRead) {
 		Var target = instPortRead.getTarget().getVariable();
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortRead.getPort();
@@ -620,12 +624,16 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 	public Component caseInstPortWrite(InstPortWrite instPortWrite) {
 		List<Component> sequence = new ArrayList<Component>();
-		Component value = new ExprToComponent().doSwitch(instPortWrite
-				.getValue());
-		sequence.add(value);
+		Expression value = instPortWrite.getValue();
+		Component compValue = new ExprToComponent().doSwitch(value);
+		sequence.add(compValue);
 
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortWrite
 				.getPort();
+		CastOp cast = new CastOp(port.getType().getSizeInBits(), port
+				.getType().isInt());
+		sequence.add(cast);
+
 		ActionIOHandler ioHandler = (ActionIOHandler) port.getAttribute(
 				"ioHandler").getObjectValue();
 		Component pinWrite = ioHandler.getWriteAccess(false);
@@ -633,7 +641,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		sequence.add(pinWrite);
 
 		Block block = new Block(sequence);
-
+		
 		// -- Input Dependencies
 		@SuppressWarnings("unchecked")
 		Map<Var, Port> exprInput = (Map<Var, Port>) instPortWrite.getValue()
@@ -650,11 +658,14 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			portDependecies.put(blkDataPort, var);
 		}
 
-		// -- Value Component --> pinWrite dependency
-		Bus resultBus = value.getExit(Exit.DONE).getDataBuses().get(0);
+		// -- Value Component --> castOp
+		Bus resultBus = compValue.getExit(Exit.DONE).getDataBuses().get(0);
+		ComponentUtil.connectDataDependency(resultBus, cast.getDataPort());
+		
+		// -- Value castOp --> pinWrite dependency
 		Port dataPort = pinWrite.getDataPorts().get(0);
-		ComponentUtil.connectDataDependency(resultBus, dataPort, 0);
-
+		ComponentUtil.connectDataDependency(cast.getResultBus(), dataPort);
+		
 		return block;
 	}
 

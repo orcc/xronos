@@ -84,6 +84,8 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 	 */
 	Procedure scheduler;
 
+	static int tempIndex = 0;
+
 	public ActionSelection(Procedure scheduler) {
 		this.scheduler = scheduler;
 	}
@@ -283,7 +285,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				}
 			}
 		}
-		
+
 		// -- Create portTokenIndex for each port on the output pattern
 		if (action.getOutputPattern() != null) {
 			for (Port port : action.getOutputPattern().getPorts()) {
@@ -307,7 +309,6 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				}
 			}
 		}
-		
 
 		// -- Add block to blocks
 		blocks.add(block);
@@ -454,13 +455,12 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				block.add(store);
 
 				// -- Status If
-				Var portStatus = scheduler.getLocal(port.getName()
-					+ "Status");
+				Var portStatus = scheduler.getLocal(port.getName() + "Status");
 				condition = IrFactory.eINSTANCE.createExprVar(portStatus);
 				BlockIf statusIf = IrFactory.eINSTANCE.createBlockIf();
 				statusIf.setCondition(condition);
 				statusIf.getThenBlocks().add(block);
-				
+
 				// -- Add statusIf to then block
 				blockIf.getThenBlocks().add(statusIf);
 
@@ -469,13 +469,12 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				block = IrFactory.eINSTANCE.createBlockBasic();
 				Var source = actor
 						.getStateVar("fsmOldState_" + actor.getName());
-				Var temp = null;
-				if (scheduler.getLocal("temp_" + source.getName()) != null) {
-					temp = scheduler.getLocal("temp_" + source.getName());
-				} else {
-					temp = IrFactory.eINSTANCE.createVar(type,
-							"temp_" + source.getName(), true, 0);
-				}
+				Var temp = IrFactory.eINSTANCE.createVar(
+						IrFactory.eINSTANCE.createTypeInt(),
+						"temp_" + source.getName() + "_" + tempIndex, true, 0);
+				scheduler.addLocal(temp);
+				tempIndex++;
+
 				InstLoad load = IrFactory.eINSTANCE
 						.createInstLoad(temp, source);
 				block.add(load);

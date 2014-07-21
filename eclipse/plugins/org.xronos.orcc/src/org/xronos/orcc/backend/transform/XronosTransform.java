@@ -82,7 +82,7 @@ public class XronosTransform {
 
 		transformations.add(new UnitImporter());
 		transformations.add(new VarInitializer());
-		transformations.add(new DfVisitor<Void>(new SinglePortReadWrite()));
+		transformations.add(new SinglePortReadWrite());
 		transformations.add(new SinglePortList());
 		transformations.add(new CheckVarSize());
 		transformations.add(new ParameterArrayRemoval());

@@ -31,8 +31,11 @@
  */
 package org.xronos.orcc.forge.transform;
 
+import net.sf.orcc.df.Action;
+import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.impl.PatternImpl;
+import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.Expression;
@@ -48,56 +51,66 @@ import org.xronos.orcc.ir.InstPortRead;
 import org.xronos.orcc.ir.InstPortWrite;
 import org.xronos.orcc.ir.XronosIrFactory;
 
-public class SinglePortReadWrite extends AbstractIrVisitor<Void> {
+public class SinglePortReadWrite extends DfVisitor<Void> {
 
-	@Override
-	public Void caseInstLoad(InstLoad load) {
-		Var source = load.getSource().getVariable();
+	public class ReplaceLoadStore extends AbstractIrVisitor<Void> {
+		@Override
+		public Void caseInstLoad(InstLoad load) {
+			Var source = load.getSource().getVariable();
 
-		PatternImpl pattern = EcoreHelper.getContainerOfType(source,
-				PatternImpl.class);
-		if (pattern != null) {
-			Port port = pattern.getVarToPortMap().get(source);
-			if (pattern.getNumTokens(port) == 1) {
-				Def def = load.getTarget();
-				InstPortRead read = XronosIrFactory.eINSTANCE
-						.createInstPortRead();
-				read.setPort(port);
-				read.setTarget(def);
+			PatternImpl pattern = EcoreHelper.getContainerOfType(source,
+					PatternImpl.class);
+			if (pattern != null) {
+				Port port = pattern.getVarToPortMap().get(source);
+				if (pattern.getNumTokens(port) == 1) {
+					Def def = load.getTarget();
+					InstPortRead read = XronosIrFactory.eINSTANCE
+							.createInstPortRead();
+					read.setPort(port);
+					read.setTarget(def);
 
-				BlockBasic block = EcoreHelper.getContainerOfType(load,
-						BlockBasic.class);
-				int idx = block.getInstructions().indexOf(load);
-				IrUtil.delete(load);
+					BlockBasic block = EcoreHelper.getContainerOfType(load,
+							BlockBasic.class);
+					int idx = block.getInstructions().indexOf(load);
+					IrUtil.delete(load);
 
-				block.add(idx, read);
+					block.add(idx, read);
+				}
 			}
+			return null;
 		}
-		return null;
+
+		@Override
+		public Void caseInstStore(InstStore store) {
+			Var target = store.getTarget().getVariable();
+
+			PatternImpl pattern = EcoreHelper.getContainerOfType(target,
+					PatternImpl.class);
+			if (pattern != null) {
+				Port port = pattern.getVarToPortMap().get(target);
+				if (pattern.getNumTokens(port) == 1) {
+					Expression value = store.getValue();
+					InstPortWrite write = XronosIrFactory.eINSTANCE
+							.createInstPortWrite();
+					write.setPort(port);
+					write.setValue(value);
+
+					BlockBasic block = EcoreHelper.getContainerOfType(store,
+							BlockBasic.class);
+					int idx = block.getInstructions().indexOf(store);
+					IrUtil.delete(store);
+
+					block.add(idx, write);
+				}
+			}
+			return null;
+		}
 	}
 
 	@Override
-	public Void caseInstStore(InstStore store) {
-		Var target = store.getTarget().getVariable();
-
-		PatternImpl pattern = EcoreHelper.getContainerOfType(target,
-				PatternImpl.class);
-		if (pattern != null) {
-			Port port = pattern.getVarToPortMap().get(target);
-			if (pattern.getNumTokens(port) == 1) {
-				Expression value = store.getValue();
-				InstPortWrite write = XronosIrFactory.eINSTANCE
-						.createInstPortWrite();
-				write.setPort(port);
-				write.setValue(value);
-
-				BlockBasic block = EcoreHelper.getContainerOfType(store,
-						BlockBasic.class);
-				int idx = block.getInstructions().indexOf(store);
-				IrUtil.delete(store);
-
-				block.add(idx, write);
-			}
+	public Void caseActor(Actor actor) {
+		for (Action action : actor.getActions()) {
+			new ReplaceLoadStore().doSwitch(action.getBody());
 		}
 		return null;
 	}
