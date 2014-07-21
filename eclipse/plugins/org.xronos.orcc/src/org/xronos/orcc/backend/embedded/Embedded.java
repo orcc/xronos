@@ -161,7 +161,7 @@ public class Embedded extends AbstractBackend {
 	}
 	
 	@Override
-	protected Result extractLibraries() {
+	protected Result doLibrariesExtraction() {
 		String target = path + File.separator + "lib";
 		OrccLogger
 				.trace("Export libraries sources into " + target + "... ");
