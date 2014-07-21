@@ -31,7 +31,6 @@
  */
 package org.xronos.orcc.forge.scheduler;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,35 +38,22 @@ import java.util.Map;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
-import net.sf.orcc.df.util.DfVisitor;
-import net.sf.orcc.ir.Block;
-import net.sf.orcc.ir.BlockBasic;
-import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.InstAssign;
-import net.sf.orcc.ir.IrFactory;
-import net.sf.orcc.ir.Procedure;
-import net.sf.orcc.ir.Var;
 
 /**
- * This visitor will create a BlockBasic if an actor contains action that have
- * repeats on input and output.
+ * This utility class helps different classes on the scheduler construction
  * 
- * @author Endri Bezati
+ * @author endrix
  *
  */
-public class TokenIndexBlock extends DfVisitor<Block> {
+public class SchedulerUtil {
 
 	/**
-	 * The Actions Scheduler procedure
+	 * This method retrieves all ports that might have a repeat on a action
+	 * 
+	 * @param actor
+	 * @return
 	 */
-	Procedure scheduler;
-
-	public TokenIndexBlock(Procedure scheduler) {
-		this.scheduler = scheduler;
-	}
-
-	@Override
-	public Block caseActor(Actor actor) {
+	public static Map<Port, Boolean> getPortWithRepeats(Actor actor) {
 		Map<Port, Boolean> portHasRepeat = new HashMap<Port, Boolean>();
 
 		// -- Find if a port has repeats on an Action
@@ -92,36 +78,43 @@ public class TokenIndexBlock extends DfVisitor<Block> {
 				}
 			}
 		}
+		return portHasRepeat;
+	}
 
-		List<Port> ports = new ArrayList<Port>();
-		ports.addAll(actor.getInputs());
-		ports.addAll(actor.getOutputs());
-
-		BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
-
-		// -- Create an assign instruction for each TokenIndex
-		for (Port port : ports) {
+	/**
+	 * This method retrieves if an actor has a repeat on actor actions input
+	 * 
+	 * @param actor
+	 * @return
+	 */
+	public static Boolean actorHasInputPortWithRepeats(Actor actor) {
+		Boolean has = false;
+		Map<Port, Boolean> portHasRepeat = getPortWithRepeats(actor);
+		List<Port> inputs = actor.getInputs();
+		for (Port port : inputs) {
 			if (portHasRepeat.containsKey(port)) {
-				if (portHasRepeat.get(port)) {
-					Var tokenIndex = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeInt(), port.getName()
-									+ "TokenIndex", true, 0);
-					scheduler.addLocal(tokenIndex);
-					Expression value = IrFactory.eINSTANCE.createExprInt(0);
-					InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
-							tokenIndex, value);
-					block.add(assign);
-
-					// -- Create MaxTokenIndex variable for Input Ports
-					Var maxTokenIndex = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeInt(), port.getName()
-									+ "MaxTokenIndex", true, 0);
-					scheduler.addLocal(maxTokenIndex);
-				}
+				has |= portHasRepeat.get(port);
 			}
 		}
+		return has;
+	}
 
-		return block;
+	/**
+	 * This method retrieves if an actor has a repeat on actor actions output
+	 * 
+	 * @param actor
+	 * @return
+	 */
+	public static Boolean actorHasOutputPortWithRepeats(Actor actor) {
+		Boolean has = false;
+		Map<Port, Boolean> portHasRepeat = getPortWithRepeats(actor);
+		List<Port> outputs = actor.getOutputs();
+		for (Port port : outputs) {
+			if (portHasRepeat.containsKey(port)) {
+				has |= portHasRepeat.get(port);
+			}
+		}
+		return has;
 	}
 
 }

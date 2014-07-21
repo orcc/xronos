@@ -36,23 +36,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstReturn;
-import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
-import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.transform.BlockCombine;
 
 import org.xronos.openforge.lim.Task;
 import org.xronos.orcc.backend.debug.XronosDebug;
-import org.xronos.orcc.forge.mapping.DesignMemory;
 import org.xronos.orcc.forge.mapping.TaskProcedure;
 
 /**
@@ -69,47 +65,26 @@ public class ActionScheduler extends DfVisitor<Task> {
 	public Task caseActor(Actor actor) {
 		// -- Add an FSM to the actor if it doe not have one
 		new ActorAddFSM().doSwitch(actor);
-		
+
 		// -- The Actions Scheduler procedure
 		Procedure scheduler = IrFactory.eINSTANCE.createProcedure("scheduler",
 				0, IrFactory.eINSTANCE.createTypeVoid());
 
-		// Init Blocks
+		// Init Blocks, before executing the infinite while
 		List<Block> initBlocks = new ArrayList<Block>();
 
-		// -- Store FSM states
-		BlockBasic storeSMStatesBlock = IrFactory.eINSTANCE.createBlockBasic();
-		if (actor.hasFsm()) {
-			for (State state : actor.getFsm().getStates()) {
-				Type typeBool = IrFactory.eINSTANCE.createTypeBool();
-				Var fsmState = IrFactory.eINSTANCE.createVar(typeBool,
-						"fsmState_" + state.getName(), true, 0);
-				Expression value = null;
-				if (state == actor.getFsm().getInitialState()) {
-					fsmState.setValue(true);
-					value = IrFactory.eINSTANCE.createExprBool(true);
-				} else {
-					fsmState.setValue(false);
-					value = IrFactory.eINSTANCE.createExprBool(false);
-				}
-				actor.getStateVars().add(fsmState);
-				// Add to Design Memory
-				DesignMemory.addToMemory(actor, fsmState);
+		// -- Store initial value of the FSM states
+		Block enumerateFSMStates = new EnumerateFSMStatesBlock(scheduler).doSwitch(actor);
+		initBlocks.add(enumerateFSMStates);
 
-				// Create Store Instruction
-				InstStore store = IrFactory.eINSTANCE.createInstStore(fsmState,
-						value);
-				storeSMStatesBlock.add(store);
-			}
-			initBlocks.add(storeSMStatesBlock);
-		}
-
-		Block assignInputTokenIndexBlock = new TokenIndexBlock(scheduler).doSwitch(actor);
+		// -- Assign a initial value on TokenIndex
+		Block assignInputTokenIndexBlock = new TokenIndexBlock(scheduler)
+				.doSwitch(actor);
 		initBlocks.add(assignInputTokenIndexBlock);
 
 		// -- Create loads for each fsm state
-		Block assignFSMStatesBlock = actor.hasFsm() ? new LoadFsmStatesBlock(
-				scheduler).doSwitch(actor) : null;
+		Block assignFSMStatesBlock = new LoadCurrentStateBlock(scheduler)
+				.doSwitch(actor);
 
 		// -- Create the isSchedulable Blocks
 		List<Block> isScedulableBlocks = new IsSchedulableBlocks(scheduler)
@@ -131,10 +106,7 @@ public class ActionScheduler extends DfVisitor<Task> {
 		inifiniteWhile.setCondition(condition);
 
 		// -- Add isSchedulable, hasToken and action selection blocks
-		if (actor.hasFsm()) {
-			inifiniteWhile.getBlocks().add(assignFSMStatesBlock);
-		}
-
+		inifiniteWhile.getBlocks().add(assignFSMStatesBlock);
 		inifiniteWhile.getBlocks().addAll(isScedulableBlocks);
 		inifiniteWhile.getBlocks().add(portStatusBlock);
 		inifiniteWhile.getBlocks().add(hasTokensBlock);

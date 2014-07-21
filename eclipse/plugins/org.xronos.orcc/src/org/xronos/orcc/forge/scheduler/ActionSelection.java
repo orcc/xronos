@@ -40,7 +40,6 @@ import java.util.Map;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.FSM;
-import net.sf.orcc.df.Pattern;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.df.State;
 import net.sf.orcc.df.Transition;
@@ -49,7 +48,6 @@ import net.sf.orcc.graph.Edge;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
-import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.Expression;
@@ -63,12 +61,10 @@ import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.IrUtil;
-import net.sf.orcc.util.util.EcoreHelper;
 
 import org.xronos.orcc.generic.Pair;
 import org.xronos.orcc.ir.BlockMutex;
 import org.xronos.orcc.ir.InstPortRead;
-import org.xronos.orcc.ir.InstPortStatus;
 import org.xronos.orcc.ir.InstPortWrite;
 import org.xronos.orcc.ir.XronosIrFactory;
 
@@ -122,11 +118,6 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				lastBlockIf = blockIf;
 			}
 		}
-		// -- Handle Input pattern reading and add them to lastBlockIf
-		for (Action action : actions) {
-			Pattern pattern = action.getInputPattern();
-			lastBlockIf.getElseBlocks().addAll(doSwitch(pattern));
-		}
 		return firstBlockIf;
 	}
 
@@ -138,7 +129,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 			actionStateToState = new HashMap<Action, Pair<State, State>>();
 
 			// -- Put all actions outside FSM if any
-			actions.addAll(actor.getActionsOutsideFsm());
+			// actions.addAll(actor.getActionsOutsideFsm());
 
 			for (Edge edge : state.getOutgoing()) {
 				Transition transition = ((Transition) edge);
@@ -151,11 +142,40 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 			}
 
 			// -- Create if block of the state add all actions
+			Var currentState = scheduler.getLocal("fsmCurrentState_"
+					+ actor.getName());
+			Expression E1 = IrFactory.eINSTANCE.createExprVar(currentState);
+
 			Var sStateVar = scheduler.getLocal("s_fsmState_" + state.getName());
-			Expression condition = IrFactory.eINSTANCE.createExprVar(sStateVar);
+			Expression E2 = IrFactory.eINSTANCE.createExprVar(sStateVar);
+
+			Expression condition = IrFactory.eINSTANCE.createExprBinary(E1,
+					OpBinary.EQ, E2, IrFactory.eINSTANCE.createTypeBool());
+
 			BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
 			blockIf.setCondition(condition);
 			blockIf.getThenBlocks().add(actionSelection(actions));
+
+			// -- Else Block for reading
+			if (SchedulerUtil.actorHasInputPortWithRepeats(actor)) {
+				BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
+				// -- Store current state to the old state
+				Var stateVar = scheduler.getLocal("s_fsmState_"
+						+ state.getName());
+				Var target = actor
+						.getStateVar("fsmOldState_" + actor.getName());
+				InstStore store = IrFactory.eINSTANCE.createInstStore(target,
+						stateVar);
+				block.add(store);
+
+				// -- Now store to the current state the read state
+				Var readVar = scheduler.getLocal("s_fsmState_read_"
+						+ actor.getName());
+				target = actor.getStateVar("fsmState_" + actor.getName());
+				store = IrFactory.eINSTANCE.createInstStore(target, readVar);
+				block.add(store);
+				blockIf.getElseBlocks().add(block);
+			}
 
 			// -- Add blockIf to blocks
 			blocks.add(blockIf);
@@ -177,22 +197,36 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		// -- add store instruction from saving state if any
 		if (actionStateToState.containsKey(action)) {
 			// Get source and target states
-			State source = actionStateToState.get(action).getA();
-			State target = actionStateToState.get(action).getB();
+			State state = actionStateToState.get(action).getB();
 
-			if (source != target) {
-				Var sourceVar = actor.getStateVar("fsmState_"
-						+ source.getName());
-				InstStore storeSource = IrFactory.eINSTANCE.createInstStore(
-						sourceVar, IrFactory.eINSTANCE.createExprBool(false));
-				block.add(storeSource);
+			if (!SchedulerUtil.actorHasOutputPortWithRepeats(actor)) {
+				Var source = scheduler
+						.getLocal("s_fsmState_" + state.getName());
+				Expression value = IrFactory.eINSTANCE.createExprVar(source);
+
+				Var target = actor.getStateVar("fsmState_" + actor.getName());
+
+				InstStore store = IrFactory.eINSTANCE.createInstStore(target,
+						value);
+				block.add(store);
+			} else {
+				// -- Store current state to the old state
+				Var stateVar = scheduler.getLocal("s_fsmState_"
+						+ state.getName());
+				Var target = actor
+						.getStateVar("fsmOldState_" + actor.getName());
+				InstStore store = IrFactory.eINSTANCE.createInstStore(target,
+						stateVar);
+				block.add(store); 
+
+				// -- Now store to the current state the read state
+				Var readVar = scheduler.getLocal("s_fsmState_write_"
+						+ actor.getName());
+				target = actor.getStateVar("fsmState_" + actor.getName());
+				store = IrFactory.eINSTANCE.createInstStore(target, readVar);
+				block.add(store);
+
 			}
-
-			Var targetVar = actor.getStateVar("fsmState_" + target.getName());
-			// Create stores
-			InstStore targetSource = IrFactory.eINSTANCE.createInstStore(
-					targetVar, IrFactory.eINSTANCE.createExprBool(true));
-			block.add(targetSource);
 		}
 
 		// -- Initialize at Zero the portTokenIndex for the input pattern
@@ -246,23 +280,12 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		// -- Add block to blocks
 		blocks.add(block);
 
-		// -- Build output pattern while Block
-		if (!action.getOutputPattern().isEmpty()) {
-			if (action.getOutputPattern().getPorts().size() == 1) {
-				blocks.addAll(doSwitch(action.getOutputPattern()));
-			} else {
-				BlockMutex mutex = XronosIrFactory.eINSTANCE.createBlockMutex();
-				mutex.getBlocks().addAll(doSwitch(action.getOutputPattern()));
-				blocks.add(mutex);
-			}
-		}
 		return blocks;
 	}
 
 	@Override
 	public List<Block> caseActor(Actor actor) {
 		this.actor = actor;
-		Map<Port, Boolean> portHasRepeat = getPortWithRepeats(actor);
 
 		List<Block> blocks = new ArrayList<Block>();
 
@@ -270,39 +293,89 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		blockMutex.getBlocks().addAll(actionSelectionFSM(actor.getFsm()));
 
 		// -- Create BlockIf for reading on ports with repeats
-		if (portsHaveRepeats(actor.getInputs(), portHasRepeat)) {
-			BlockMutex inputRepeats = XronosIrFactory.eINSTANCE
-					.createBlockMutex();
+		if (SchedulerUtil.actorHasInputPortWithRepeats(actor)) {
+			BlockIf readIf = IrFactory.eINSTANCE.createBlockIf();
+			Var currentState = scheduler.getLocal("fsmCurrentState_"
+					+ actor.getName());
+			Expression E1 = IrFactory.eINSTANCE.createExprVar(currentState);
 
-			for (Port port : actor.getInputs()) {
-				if (portHasRepeat.get(port)) {
-					// -- Create blockIf condition
-					Var tokenIndex = scheduler.getLocal(port.getName()
-							+ "TokenIndex");
-					Var maxTokenIndex = scheduler.getLocal(port.getName()
-							+ "MaxTokenIndex");
-					Expression E1 = IrFactory.eINSTANCE
-							.createExprVar(tokenIndex);
-					Expression E2 = IrFactory.eINSTANCE
-							.createExprVar(maxTokenIndex);
-					
-					Expression condition = IrFactory.eINSTANCE
-							.createExprBinary(E1, OpBinary.LT, E2,
-									IrFactory.eINSTANCE.createTypeBool());
-					// -- Create blockIf
-					BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
-					blockIf.setCondition(condition);
-					
-					// --Create blockIf then block
-					BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
-					
-					Type type = IrUtil.copy(port.getType());
-					Var target = IrFactory.eINSTANCE.createVar(type, port.getName()
+			Var readState = scheduler.getLocal("s_fsmState_read_"
+					+ actor.getName());
+			Expression E2 = IrFactory.eINSTANCE.createExprVar(readState);
+
+			Expression condition = IrFactory.eINSTANCE.createExprBinary(E1,
+					OpBinary.EQ, E2, IrFactory.eINSTANCE.createTypeBool());
+
+			readIf.setCondition(condition);
+			readIf.getThenBlocks().add(
+					constructReadWriteBlock(actor.getInputs(), true));
+
+			blockMutex.getBlocks().add(readIf);
+		}
+
+		// -- Create BlockIf for writing on ports with repeats
+		if (SchedulerUtil.actorHasOutputPortWithRepeats(actor)) {
+			BlockIf writeIf = IrFactory.eINSTANCE.createBlockIf();
+			Var currentState = scheduler.getLocal("fsmCurrentState_"
+					+ actor.getName());
+			Expression E1 = IrFactory.eINSTANCE.createExprVar(currentState);
+
+			Var readState = scheduler.getLocal("s_fsmState_write_"
+					+ actor.getName());
+			Expression E2 = IrFactory.eINSTANCE.createExprVar(readState);
+
+			Expression condition = IrFactory.eINSTANCE.createExprBinary(E1,
+					OpBinary.EQ, E2, IrFactory.eINSTANCE.createTypeBool());
+
+			writeIf.setCondition(condition);
+			writeIf.getThenBlocks().add(
+					constructReadWriteBlock(actor.getOutputs(), false));
+
+			blockMutex.getBlocks().add(writeIf);
+		}
+
+		blocks.add(blockMutex);
+		return blocks;
+	}
+
+	private Block constructReadWriteBlock(List<Port> ports, Boolean isInput) {
+		BlockMutex mutex = XronosIrFactory.eINSTANCE.createBlockMutex();
+
+		// -- Get for all actors ports if it has repeats on inputs and outputs
+		Map<Port, Boolean> portHasRepeat = SchedulerUtil
+				.getPortWithRepeats(actor);
+		for (Port port : ports) {
+			if (portHasRepeat.get(port)) {
+				// -- Create blockIf condition
+				Var tokenIndex = scheduler.getLocal(port.getName()
+						+ "TokenIndex");
+				Var maxTokenIndex = scheduler.getLocal(port.getName()
+						+ "MaxTokenIndex");
+				Expression E1 = IrFactory.eINSTANCE.createExprVar(tokenIndex);
+				Expression E2 = IrFactory.eINSTANCE
+						.createExprVar(maxTokenIndex);
+
+				Expression condition = IrFactory.eINSTANCE.createExprBinary(E1,
+						OpBinary.LT, E2, IrFactory.eINSTANCE.createTypeBool());
+				// -- Create blockIf
+				BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
+				blockIf.setCondition(condition);
+
+				// --Create blockIf then block
+				BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
+
+				Type type = IrUtil.copy(port.getType());
+				Var target = null;
+				if (scheduler.getLocal(port.getName() + "Portvalue") != null) {
+					target = scheduler.getLocal(port.getName() + "Portvalue");
+				} else {
+					target = IrFactory.eINSTANCE.createVar(type, port.getName()
 							+ "Portvalue", true, 0);
+				}
+				scheduler.addLocal(target);
+
+				if (isInput) {
 					Def def = IrFactory.eINSTANCE.createDef(target);
-					scheduler.addLocal(target);
-					
-					
 					// -- Read from the input port
 					InstPortRead portRead = XronosIrFactory.eINSTANCE
 							.createInstPortRead();
@@ -314,182 +387,68 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 					Var storeTarget = actor.getStateVar(port.getName());
 					Expression index = IrFactory.eINSTANCE
 							.createExprVar(tokenIndex);
-					
+
 					InstStore store = IrFactory.eINSTANCE.createInstStore(
 							storeTarget, Arrays.asList(index), target);
 					block.add(store);
-					
-					
-				}
-			}
-		}
-
-		// -- Create BlockIf for reading on ports with repeats
-		if (portsHaveRepeats(actor.getInputs(), portHasRepeat)) {
-			BlockMutex outputRepeats = XronosIrFactory.eINSTANCE
-					.createBlockMutex();
-		}
-
-		blocks.add(blockMutex);
-		return blocks;
-	}
-
-	@Override
-	public List<Block> casePattern(Pattern pattern) {
-		// -- Check if this an inputPattern
-		Action action = EcoreHelper.getContainerOfType(pattern, Action.class);
-		if (action == null) {
-			throw (new NullPointerException(
-					"Pattern is not contained in an action!"));
-		}
-		boolean isInputPattern = action.getInputPattern() == pattern;
-
-		List<Block> blocks = new ArrayList<Block>();
-
-		for (Port port : pattern.getPorts()) {
-			if (pattern.getNumTokens(port) > 1) {
-				// -- Create While Condition
-				Var tokenIndex = scheduler.getLocal(port.getName()
-						+ "TokenIndex");
-				Expression E1 = IrFactory.eINSTANCE.createExprVar(tokenIndex);
-				Expression E2 = IrFactory.eINSTANCE.createExprInt(pattern
-						.getNumTokens(port));
-				Expression condition = IrFactory.eINSTANCE.createExprBinary(E1,
-						OpBinary.LE, E2, IrFactory.eINSTANCE.createTypeBool());
-
-				// -- Create While
-				BlockWhile blockWhile = IrFactory.eINSTANCE.createBlockWhile();
-				blockWhile.setCondition(condition);
-
-				// Create BlockBasic for PinStatus
-				BlockBasic blockBasic = IrFactory.eINSTANCE.createBlockBasic();
-				Var target = null;
-				if (scheduler.getLocal(port.getName() + "PortStatus") != null) {
-					target = scheduler.getLocal(port.getName() + "PortStatus");
 				} else {
-					target = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeBool(),
-							port.getName() + "PortStatus", true, 0);
-					scheduler.addLocal(target);
-				}
-				// -- Create Port Status
-				InstPortStatus portStatus = XronosIrFactory.eINSTANCE
-						.createInstPortStatus();
-				Def def = IrFactory.eINSTANCE.createDef(target);
-				portStatus.setTarget(def);
-				portStatus.setPort(port);
-				blockBasic.add(portStatus);
-				blockWhile.getBlocks().add(blockBasic);
-
-				// -- Create Block If
-				condition = IrFactory.eINSTANCE.createExprVar(target);
-				BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
-				blockIf.setCondition(condition);
-				// -- Create Block basic for the then Block
-				blockBasic = IrFactory.eINSTANCE.createBlockBasic();
-
-				// -- Create Load and then Port Write
-				if (scheduler.getLocal(port.getName() + "Portvalue") != null) {
-					target = scheduler.getLocal(port.getName() + "Portvalue");
-				} else {
-					Type type = IrUtil.copy(port.getType());
-					target = IrFactory.eINSTANCE.createVar(type, port.getName()
-							+ "Portvalue", true, 0);
-					scheduler.addLocal(target);
-				}
-
-				def = IrFactory.eINSTANCE.createDef(target);
-				Expression index = IrFactory.eINSTANCE
-						.createExprVar(tokenIndex);
-
-				if (isInputPattern) {
-					// -- Read from the input port
-					InstPortRead portRead = XronosIrFactory.eINSTANCE
-							.createInstPortRead();
-					portRead.setPort(port);
-					portRead.setTarget(def);
-					blockBasic.add(portRead);
-
-					// -- Store the port value to the list var port
-					Var storeTarget = pattern.getPortToVarMap().get(port);
-					InstStore store = IrFactory.eINSTANCE.createInstStore(
-							storeTarget, Arrays.asList(index), target);
-					blockBasic.add(store);
-				} else {
-					// -- Load the value from the list var port to temporary
-					// variable
-					Var source = pattern.getPortToVarMap().get(port);
+					Var source = actor.getStateVar(port.getName());
+					Expression index = IrFactory.eINSTANCE
+							.createExprVar(tokenIndex);
 					InstLoad load = IrFactory.eINSTANCE.createInstLoad(target,
 							source, Arrays.asList(index));
-					blockBasic.add(load);
+					block.add(load);
 
-					// -- Write the temporary variable to the output port
 					InstPortWrite portWrite = XronosIrFactory.eINSTANCE
 							.createInstPortWrite();
 					portWrite.setPort(port);
+
 					Expression value = IrFactory.eINSTANCE
 							.createExprVar(target);
 					portWrite.setValue(value);
-					blockBasic.add(portWrite);
+					block.add(portWrite);
 				}
-				// -- Increment the token index
-				E1 = IrFactory.eINSTANCE.createExprVar(tokenIndex);
-				E2 = IrFactory.eINSTANCE.createExprInt(1);
 
+				// -- TokenIndex++
+				Expression indexPlusOne = IrFactory.eINSTANCE.createExprBinary(
+						IrFactory.eINSTANCE.createExprVar(tokenIndex),
+						OpBinary.PLUS, IrFactory.eINSTANCE.createExprInt(1),
+						IrFactory.eINSTANCE.createTypeInt());
 				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
-						tokenIndex, IrFactory.eINSTANCE.createExprBinary(E1,
-								OpBinary.PLUS, E2,
-								IrFactory.eINSTANCE.createTypeInt()));
-				blockBasic.add(assign);
+						tokenIndex, indexPlusOne);
+				block.add(assign);
 
-				// -- Add blockBasic to BlockIf then Blocks
-				blockIf.getThenBlocks().add(blockBasic);
-				// -- Add to block while blocks
-				blockWhile.getBlocks().add(blockIf);
-				// -- Add to blocks the while block
-				blocks.add(blockWhile);
-			}
-		}
+				// -- Add to then block
+				blockIf.getThenBlocks().add(block);
 
-		return blocks;
-	}
+				// -- Construct Else Block
 
-	private Map<Port, Boolean> getPortWithRepeats(Actor actor) {
-		Map<Port, Boolean> portHasRepeat = new HashMap<Port, Boolean>();
-
-		// -- Find if a port has repeats on an Action
-		for (Action action : actor.getActions()) {
-			for (Port port : action.getInputPattern().getPorts()) {
-				if (action.getInputPattern().getNumTokens(port) > 1) {
-					portHasRepeat.put(port, true);
+				block = IrFactory.eINSTANCE.createBlockBasic();
+				Var source = actor
+						.getStateVar("fsmOldState_" + actor.getName());
+				Var temp = null;
+				if (scheduler.getLocal("temp_" + source.getName()) != null) {
+					temp = scheduler.getLocal("temp_" + source.getName());
 				} else {
-					if (!portHasRepeat.containsKey(port)) {
-						portHasRepeat.put(port, false);
-					}
+					temp = IrFactory.eINSTANCE.createVar(type,
+							"temp_" + source.getName(), true, 0);
 				}
-			}
+				InstLoad load = IrFactory.eINSTANCE
+						.createInstLoad(temp, source);
+				block.add(load);
 
-			for (Port port : action.getOutputPattern().getPorts()) {
-				if (action.getOutputPattern().getNumTokens(port) > 1) {
-					portHasRepeat.put(port, true);
-				} else {
-					if (!portHasRepeat.containsKey(port)) {
-						portHasRepeat.put(port, false);
-					}
-				}
+				target = actor.getStateVar("fsmState_" + actor.getName());
+				InstStore store = IrFactory.eINSTANCE.createInstStore(target,
+						temp);
+				block.add(store);
+
+				// -- Add else block to if block
+				blockIf.getElseBlocks().add(block);
+
+				// -- Add if block to the mutex
+				mutex.getBlocks().add(blockIf);
 			}
 		}
-		return portHasRepeat;
-	}
-
-	private Boolean portsHaveRepeats(List<Port> ports,
-			Map<Port, Boolean> portHasRepeat) {
-		Boolean have = false;
-		for (Port port : ports) {
-			if (portHasRepeat.containsKey(port)) {
-				have |= portHasRepeat.get(port);
-			}
-		}
-		return have;
+		return mutex;
 	}
 }

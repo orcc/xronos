@@ -87,9 +87,9 @@ public class HasTokensBlock extends DfVisitor<Block> {
 					} else {
 						Var portIndex = scheduler.getLocal(port.getName()
 								+ "TokenIndex");
-
+						// -- NbrTokens minus 1
 						int nbrTokens = action.getInputPattern().getNumTokens(
-								port);
+								port) - 1;
 
 						Expression E1 = IrFactory.eINSTANCE
 								.createExprVar(portIndex);
