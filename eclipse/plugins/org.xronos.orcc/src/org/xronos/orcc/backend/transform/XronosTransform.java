@@ -64,6 +64,8 @@ import org.xronos.orcc.backend.transform.pipelining.Pipelining;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.XronosScheduler;
 import org.xronos.orcc.forge.transform.RedundantLoadElimination;
+import org.xronos.orcc.forge.transform.SinglePortList;
+import org.xronos.orcc.forge.transform.SinglePortReadWrite;
 import org.xronos.orcc.forge.transform.VarInitializer;
 
 /**
@@ -77,19 +79,22 @@ public class XronosTransform {
 	public static void transformActor(Actor actor, Map<String, Object> options,
 			Boolean debugMode) {
 		List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
-		
+
 		transformations.add(new UnitImporter());
 		transformations.add(new VarInitializer());
+		transformations.add(new DfVisitor<Void>(new SinglePortReadWrite()));
+		transformations.add(new SinglePortList());
 		transformations.add(new CheckVarSize());
 		transformations.add(new ParameterArrayRemoval());
 		transformations.add(new DeadActionEliminaton(true));
 		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 		transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
 		transformations.add(new PrintRemoval());
-		//transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
-		transformations.add(new DfVisitor<Void>(new RedundantLoadElimination()));
+		// transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
+		transformations
+				.add(new DfVisitor<Void>(new RedundantLoadElimination()));
 		transformations.add(new XronosDivision());
-		
+
 		for (DfSwitch<?> transformation : transformations) {
 			try {
 				transformation.doSwitch(actor);
