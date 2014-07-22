@@ -62,7 +62,6 @@ import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.WhileBody;
 import org.xronos.openforge.lim.primitive.Reg;
-import org.xronos.openforge.util.Debug;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 
 /**
@@ -100,7 +99,8 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 					valueDataPorts);
 			// Propagate DataBuses
 			for (Bus dataBus : valueComponent.getExit(Exit.DONE).getDataBuses()) {
-				Bus blockDataBus = decisionBlock.getExit(Exit.DONE).makeDataBus();
+				Bus blockDataBus = decisionBlock.getExit(Exit.DONE)
+						.makeDataBus();
 				Port blockDataBuspeer = blockDataBus.getPeer();
 				ComponentUtil.connectDataDependency(dataBus, blockDataBuspeer,
 						0);
@@ -125,7 +125,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		// Construct Loop Body Block from the block while blocks
 		Map<Var, Port> blockDataPorts = new HashMap<Var, Port>();
 		Map<Var, Bus> blockDataBuses = new HashMap<Var, Bus>();
-		
+
 		Module body = (Module) new BlocksToBlock(blockDataPorts,
 				blockDataBuses, false).doSwitch(blockWhile.getBlocks());
 
@@ -300,11 +300,13 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
 		blockWhile.setAttribute("inputs", inputs);
 		blockWhile.setAttribute("outputs", outputs);
-		//Debug.depGraphTo(loop, "loop", "/tmp/loop.dot", 1);
-		
+
 		// IDSourceInfo
-		Procedure procedure = EcoreHelper.getContainerOfType(blockWhile, Procedure.class);
-		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(), blockWhile.getLineNumber());
+		Procedure procedure = EcoreHelper.getContainerOfType(blockWhile,
+				Procedure.class);
+		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
+				blockWhile.getLineNumber());
 		loop.setIDSourceInfo(sinfo);
 		return loop;
-	}}
+	}
+}

@@ -41,11 +41,11 @@ import java.util.Map;
 
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
+import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
@@ -60,6 +60,7 @@ import org.xronos.openforge.lim.memory.LogicalMemory;
 import org.xronos.openforge.lim.memory.LogicalValue;
 import org.xronos.openforge.lim.memory.Record;
 import org.xronos.openforge.lim.memory.Scalar;
+import org.xronos.orcc.backend.transform.XronosExprEvaluator;
 import org.xronos.orcc.preference.Constants;
 
 /**
@@ -70,49 +71,6 @@ import org.xronos.orcc.preference.Constants;
  * 
  */
 public class DesignMemory extends DfVisitor<Void> {
-
-	private class MaxPortDepth extends DfVisitor<Map<Port, Integer>> {
-
-		/**
-		 * Maximum number of the repeat depth for each port
-		 */
-		private Map<Port, Integer> portDepth;
-
-		@Override
-		public Map<Port, Integer> caseAction(Action action) {
-
-			for (Port port : action.getInputPattern().getPorts()) {
-				int numTokens = action.getInputPattern().getNumTokensMap()
-						.get(port);
-				maxDepth(port, numTokens);
-			}
-
-			for (Port port : action.getOutputPattern().getPorts()) {
-				int numTokens = action.getOutputPattern().getNumTokensMap()
-						.get(port);
-				maxDepth(port, numTokens);
-			}
-			return null;
-		}
-
-		@Override
-		public Map<Port, Integer> caseActor(Actor actor) {
-			portDepth = new HashMap<Port, Integer>();
-			super.caseActor(actor);
-			return portDepth;
-		}
-
-		private void maxDepth(Port port, int numTokens) {
-			if (portDepth.containsKey(port)) {
-				if (portDepth.get(port) < numTokens) {
-					portDepth.put(port, numTokens);
-				}
-			} else {
-				portDepth.put(port, numTokens);
-			}
-		}
-
-	}
 
 	public static void addToMemory(Actor actor, Var var) {
 		@SuppressWarnings("unchecked")
@@ -134,7 +92,8 @@ public class DesignMemory extends DfVisitor<Void> {
 			mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
 			mem.createLogicalMemoryPort();
 			mem.setIDLogical("stateVar_" + var.getName());
-			Design design = (Design) actor.getAttribute("design").getObjectValue();
+			Design design = (Design) actor.getAttribute("design")
+					.getObjectValue();
 			design.addMemory(mem);
 		}
 		// Create a 'location' for the stateVar that is
@@ -192,13 +151,20 @@ public class DesignMemory extends DfVisitor<Void> {
 	public static LogicalValue makeLogicalValue(Var var) {
 		LogicalValue logicalValue = null;
 		if (var.getType().isList()) {
-
+			XronosExprEvaluator exprEvaluator = new XronosExprEvaluator();
 			TypeList typeList = (TypeList) var.getType();
 			Type type = typeList.getInnermostType();
 
 			List<Integer> listDimension = new ArrayList<Integer>(
 					typeList.getDimensions());
-			Object varValue = var.getValue();
+			exprEvaluator.setType((TypeList) typeList);
+			Object varValue = null;
+			Expression initConst = var.getInitialValue();
+			if (initConst == null) {
+				varValue = ValueUtil.createArray((TypeList) typeList);
+			} else {
+				varValue = exprEvaluator.doSwitch(initConst);
+			}
 			logicalValue = makeLogicalValueObject(varValue, listDimension, type);
 		} else {
 			Type type = var.getType();
@@ -323,36 +289,6 @@ public class DesignMemory extends DfVisitor<Void> {
 	public Void caseActor(Actor actor) {
 		memories = new HashMap<Integer, LogicalMemory>();
 
-		// Find the max depth of each ports repeat and then allocate the memory
-		// for
-		MaxPortDepth maxPortDepth = new MaxPortDepth();
-		Map<Port, Integer> portDepth = maxPortDepth.doSwitch(actor);
-
-		for (Port port : portDepth.keySet()) {
-			int nbrElements = portDepth.get(port);
-			LogicalValue logicalValue = makeLogicalValue(port.getType(),
-					nbrElements);
-
-			port.setAttribute("logicalValue", logicalValue);
-			int stride = logicalValue.getAddressStridePolicy().getStride();
-			LogicalMemory mem = memories.get(stride);
-			if (mem == null) {
-				// 32 should be more than enough for max address
-				// width
-				mem = new LogicalMemory(Constants.MAX_ADDR_WIDTH);
-				mem.createLogicalMemoryPort();
-				mem.setIDLogical("portVar_" + port.getName());
-				design.addMemory(mem);
-				if (colocateVars) {
-					memories.put(stride, mem);
-				}
-			}
-			// Create a 'location' for the stateVar that is
-			// appropriate for its type/size.
-			Allocation location = mem.allocate(logicalValue);
-			port.setAttribute("location", location);
-		}
-
 		for (Var var : actor.getStateVars()) {
 			// Create Logical Value for each
 			LogicalValue logicalValue = makeLogicalValue(var);
@@ -381,6 +317,7 @@ public class DesignMemory extends DfVisitor<Void> {
 			Allocation location = mem.allocate(logicalValue);
 			var.setAttribute("location", location);
 		}
+
 
 		// Actions local list Variables
 		for (Action action : actor.getActions()) {

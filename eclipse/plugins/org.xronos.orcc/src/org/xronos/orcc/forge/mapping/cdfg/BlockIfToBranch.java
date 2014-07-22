@@ -55,7 +55,6 @@ import org.xronos.openforge.lim.Entry;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
-import org.xronos.openforge.util.Debug;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 
 /**
@@ -107,8 +106,6 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 		// Create decision
 		Decision decision = new Decision(decisionBlock, decisionComponent);
 
-		Debug.depGraphTo(decision, "decision", "/tmp/decision.dot", 1);
-		
 		// Propagate decisionBlockInputs to the decision one
 		Map<Var, Port> dDataPorts = new HashMap<Var, Port>();
 		ComponentUtil.propagateDataPorts(decision, dDataPorts, dBlockDataPorts);

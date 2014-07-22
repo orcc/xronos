@@ -128,20 +128,6 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 		this.target = target;
 	}
 
-	/**
-	 * Add to inputs if the variable has not been already added
-	 * 
-	 * @param var
-	 *            the variable
-	 * @param port
-	 *            the port
-	 */
-	private void addToInputs(Var var, Port port) {
-		if (!inputs.containsKey(var)) {
-			inputs.put(var, port);
-		}
-	}
-
 	@Override
 	public Component caseBlockBasic(BlockBasic block) {
 		Component component = new BlockBasicToBlock().doSwitch(block);
@@ -281,11 +267,14 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 				} else {
 					Type type = var.getType();
 
-					Port blkDataPort = block.makeDataPort(var.getName(),
-							type.getSizeInBits(), type.isInt());
-					// This is Port is an input, add to the list
-					addToInputs(var, blkDataPort);
-
+					Port blkDataPort = null;
+					if(inputs.containsKey(var)){
+						blkDataPort = inputs.get(var);
+					}else{
+						blkDataPort = block.makeDataPort(var.getName(),
+								type.getSizeInBits(), type.isInt());
+						inputs.put(var, blkDataPort);
+					}
 					Bus blkDataPortPeer = blkDataPort.getPeer();
 					ComponentUtil.connectDataDependency(blkDataPortPeer, port,
 							0);

@@ -47,11 +47,13 @@ import org.xronos.openforge.lim.io.SimplePinRead;
 public class ActionTokenPeek extends FifoAccess {
 
 	public ActionTokenPeek(ActorNativeScalarInput fifoIF) {
-		this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
+		this(fifoIF, fifoIF.getDataPin());
+		//this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
 	}
 
 	public ActionTokenPeek(ActorScalarInput fifoIF) {
-		this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
+		this(fifoIF, fifoIF.getDataPin());
+		//this(fifoIF, /* fifoIF.getIndexPin() */null, fifoIF.getDataPin());
 	}
 
 	private ActionTokenPeek(FifoIF fifoIF, SimplePin indexPin, SimplePin dataPin) {
@@ -91,6 +93,32 @@ public class ActionTokenPeek extends FifoAccess {
 		// Hook the peek pin read to the result bus.
 		result.getPeer().setBus(peek.getResultBus());
 	}
+	
+	private ActionTokenPeek(FifoIF fifoIF, SimplePin dataPin) {
+		super(fifoIF);
+
+		// Excluding 'sideband' ports/buses (those connecting to pins)
+		// there is a single index port and a single result bus on
+		// this module. Since the peek is always valid, the done
+		// is not needed. The Go is needed to drive the pin write.
+		// unused right now
+		Exit exit = makeExit(1);
+		Bus result = exit.getDataBuses().get(0);
+		// Bus done = exit.getDoneBus();
+		// done.setUsed(true);
+		result.setUsed(true);
+
+		// Is always combinational.
+		exit.setLatency(Latency.ZERO);
+		final SimplePinRead peek = new SimplePinRead(dataPin);
+		peek.getGoPort().setBus(getGoPort().getPeer());
+
+		addComponent(peek);
+
+		// Hook the peek pin read to the result bus.
+		result.getPeer().setBus(peek.getResultBus());
+	}
+	
 
 	// public ActionTokenPeek (ActorScalarOutput fifoIF)
 	// {

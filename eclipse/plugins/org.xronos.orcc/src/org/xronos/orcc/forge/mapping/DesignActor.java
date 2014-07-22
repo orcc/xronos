@@ -35,6 +35,7 @@ package org.xronos.orcc.forge.mapping;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.ir.util.IrUtil;
 
 import org.xronos.openforge.app.EngineThread;
 import org.xronos.openforge.app.GenericJob;
@@ -56,7 +57,12 @@ public class DesignActor extends DfVisitor<Design> {
 
 	@Override
 	public Design caseActor(Actor actor) {
-		String designName = actor.getName();
+		// Copy Actor and work to the copied actors
+		// Eliminate the given attributes once the
+		// transformation has finished
+		Actor cActor = IrUtil.copy(actor);
+
+		String designName = cActor.getName();
 
 		// Create a New Design
 		Design design = new Design();
@@ -68,34 +74,35 @@ public class DesignActor extends DfVisitor<Design> {
 
 		// Construct Design Ports
 		DesignPorts designPorts = new DesignPorts(design);
-		designPorts.doSwitch(actor);
+		designPorts.doSwitch(cActor);
 
 		// Allocate Memory
 		DesignMemory designMemory = new DesignMemory(design, false);
-		designMemory.doSwitch(actor);
+		designMemory.doSwitch(cActor);
 
 		// Build Initialize actions
-		for (Action action : actor.getInitializes()) {
+		for (Action action : cActor.getInitializes()) {
 			Task task = new DesignAction().doSwitch(action);
 			design.addTask(task);
 		}
 
 		// Build Tasks (Action to Tasks)
-		for (Action action : actor.getActions()) {
+		for (Action action : cActor.getActions()) {
 			Task task = new DesignAction().doSwitch(action);
 			design.addTask(task);
 		}
 
 		// Set attribute design to actor
-		actor.setAttribute("design", design);
+		cActor.setAttribute("design", design);
 
 		// Build Action Scheduler
 		ActionScheduler actionScheduler = new ActionScheduler();
-		Task scheduler = actionScheduler.doSwitch(actor);
-		//design.addTask(scheduler);
-		
-		new XronosDebug().printActor("/tmp", actor, null);
-		
+		Task scheduler = actionScheduler.doSwitch(cActor);
+		design.addTask(scheduler);
+
+		new XronosDebug().printActor("/tmp", cActor,
+				actionScheduler.getScheduler());
+
 		// Activate the production of GO/Done for each task
 		for (Task task : design.getTasks()) {
 			Call call = task.getCall();

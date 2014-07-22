@@ -32,7 +32,6 @@
 package org.xronos.orcc.forge.scheduler;
 
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.State;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
@@ -48,40 +47,30 @@ import net.sf.orcc.ir.Var;
  * @author Endri Bezati
  *
  */
-public class LoadFsmStatesBlock extends DfVisitor<Block> {
+public class LoadCurrentStateBlock extends DfVisitor<Block> {
 
 	/**
 	 * The Actions Scheduler procedure
 	 */
 	Procedure scheduler;
 
-	public LoadFsmStatesBlock(Procedure scheduler) {
+	public LoadCurrentStateBlock(Procedure scheduler) {
 		this.scheduler = scheduler;
 	}
 
 	@Override
 	public Block caseActor(Actor actor) {
 		BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
-
-		if (actor.hasFsm()) {
-			for (State state : actor.getFsm().getStates()) {
-				Var stateVar = actor.getStateVar("fsmState_" + state.getName());
-				Var tempState = null;
-				if (scheduler.getLocal("s_" + stateVar.getName()) != null) {
-					tempState = scheduler.getLocal("s_" + stateVar.getName());
-				} else {
-					tempState = IrFactory.eINSTANCE.createVar(
-							IrFactory.eINSTANCE.createTypeBool(), "s_"
-									+ stateVar.getName(), true, 0);
-					scheduler.addLocal(tempState);
-				}
-
-				InstLoad load = IrFactory.eINSTANCE.createInstLoad(tempState,
-						stateVar);
-				block.add(load);
-
-			}
-		}
+		
+		Var currentState = IrFactory.eINSTANCE.createVar(
+				IrFactory.eINSTANCE.createTypeInt(),
+				"fsmCurrentState_" + actor.getName(), true, 0);
+		scheduler.addLocal(currentState);
+		Var state = actor.getStateVar("fsmState_" + actor.getName());
+		
+		InstLoad load = IrFactory.eINSTANCE.createInstLoad(currentState, state);
+		block.add(load);
+		
 		return block;
 	}
 
