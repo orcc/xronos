@@ -92,6 +92,7 @@ public class IsSchedulableBlocks extends DfVisitor<List<Block>> {
 			Var isSchedulableVar = IrFactory.eINSTANCE.createVar(
 					IrFactory.eINSTANCE.createTypeBool(), procedure.getName(),
 					true, 0);
+			scheduler.addLocal(isSchedulableVar);
 			Expression value = IrUtil.copy(returnInstr.getValue());
 			// -- Create the new assign
 			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(

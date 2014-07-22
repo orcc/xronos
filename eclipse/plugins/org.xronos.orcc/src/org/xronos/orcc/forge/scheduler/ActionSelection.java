@@ -96,8 +96,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		for (Action action : actions) {
 			// -- Create the Fire-ability condition (isSchedulable &&
 			// hasTokens)
-			Var isSchedulable = scheduler.getLocal(action.getName()
-					+ "IsSchedulable");
+			Var isSchedulable = scheduler.getLocal("isSchedulable_"+action.getName());
 			Var hasTokens = scheduler.getLocal(action.getName() + "HasTokens");
 			Expression E1 = IrFactory.eINSTANCE.createExprVar(isSchedulable);
 			Expression E2 = IrFactory.eINSTANCE.createExprVar(hasTokens);
@@ -147,18 +146,11 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				if (portDepth.containsKey(port)) {
 					int numTokens = portDepth.get(port);
 					if (numTokens > 1) {
-						Var portIndex = actor.getStateVar(port.getName()
-								+ "TokenIndex");
-						ExprInt value = IrFactory.eINSTANCE.createExprInt(0);
-						InstStore store = IrFactory.eINSTANCE.createInstStore(
-								portIndex, value);
-						block.add(store);
-
 						// Get MaxTokenIndex for this action
 						Var maxTokenIndex = actor.getStateVar(port.getName()
 								+ "MaxTokenIndex");
-						value = IrFactory.eINSTANCE.createExprInt(numTokens);
-						store = IrFactory.eINSTANCE.createInstStore(
+						ExprInt value = IrFactory.eINSTANCE.createExprInt(numTokens);
+						InstStore store = IrFactory.eINSTANCE.createInstStore(
 								maxTokenIndex, value);
 						block.add(store);
 					}

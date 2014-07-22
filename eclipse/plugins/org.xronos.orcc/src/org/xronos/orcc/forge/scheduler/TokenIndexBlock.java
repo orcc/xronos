@@ -129,7 +129,7 @@ public class TokenIndexBlock extends DfVisitor<Block> {
 					actor.getStateVars().add(maxTokenIndex);
 					DesignMemory.addToMemory(actor, maxTokenIndex);
 
-					value = IrFactory.eINSTANCE.createExprInt(0);
+					value = IrFactory.eINSTANCE.createExprInt(-1);
 					store = IrFactory.eINSTANCE.createInstStore(maxTokenIndex,
 							value);
 					block.add(store);

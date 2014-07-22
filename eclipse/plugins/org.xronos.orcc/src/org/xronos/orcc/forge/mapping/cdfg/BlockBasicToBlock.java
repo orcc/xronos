@@ -45,7 +45,6 @@ import net.sf.orcc.df.impl.PatternImpl;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
-import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
@@ -195,139 +194,50 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 	@Override
 	public Component caseInstAssign(InstAssign assign) {
-		// TODO: simplify, too much complicated ExpVar now can create a
-		// component
 		Var target = assign.getTarget().getVariable();
-		Type targetType = target.getType();
+		Type type = target.getType();
 		Expression expr = assign.getValue();
 
-		if (!expr.isExprVar()) {
-			Type exprType = expr.getType();
-			Component comp = null;
+		Component value = new ExprToComponent().doSwitch(expr);
 
-			if (exprType.getSizeInBits() != targetType.getSizeInBits()) {
-				Component exprComp = new ExprToComponent().doSwitch(expr);
-				CastOp castOp = new CastOp(targetType.getSizeInBits(),
-						targetType.isInt());
+		CastOp castOp = new CastOp(type.getSizeInBits(), type.isInt());
 
-				comp = new Block(Arrays.asList(exprComp, castOp));
+		Block block = new Block(Arrays.asList(value, castOp));
 
-				// Now deal with dependencies
-				Bus compResultBus = exprComp.getExit(Exit.DONE).getDataBuses()
-						.get(0);
-				Port castDataPort = castOp.getDataPort();
-				ComponentUtil.connectDataDependency(compResultBus,
-						castDataPort, 0);
+		// -- Block inputs --> Value inputs
+		@SuppressWarnings("unchecked")
+		Map<Var, Port> exprInput = (Map<Var, Port>) expr.getAttribute("inputs")
+				.getObjectValue();
+		for (Var var : exprInput.keySet()) {
+			Port blkDataPort = block.makeDataPort(var.getName(), var.getType()
+					.getSizeInBits(), var.getType().isInt());
+			Bus blkDataPortPeer = blkDataPort.getPeer();
 
-				// Create a block data bus
-				Bus resultBus = comp.getExit(Exit.DONE).makeDataBus(
-						targetType.getSizeInBits(), targetType.isInt());
-				Port reslutPort = resultBus.getPeer();
-				Bus castResultBus = castOp.getResultBus();
-				ComponentUtil.connectDataDependency(castResultBus, reslutPort,
-						0);
+			// Connect it to this port
+			Port exprDataPort = exprInput.get(var);
+			ComponentUtil.connectDataDependency(blkDataPortPeer, exprDataPort,
+					0);
 
-				@SuppressWarnings("unchecked")
-				Map<Var, Port> exprInput = (Map<Var, Port>) expr.getAttribute(
-						"inputs").getObjectValue();
-				for (Var var : exprInput.keySet()) {
-					Type type = var.getType();
-					Port blkDataPort = comp.makeDataPort(var.getName(),
-							type.getSizeInBits(), type.isInt());
-					Bus blkDataPortPeer = blkDataPort.getPeer();
-
-					// Connect it to this port
-					Port exprDataPort = exprInput.get(var);
-					ComponentUtil.connectDataDependency(blkDataPortPeer,
-							exprDataPort, 0);
-
-					// Add to port dependencies
-					portDependecies.put(blkDataPort, var);
-				}
-
-			} else {
-				comp = new ExprToComponent().doSwitch(expr);
-				@SuppressWarnings("unchecked")
-				Map<Var, Port> exprInput = (Map<Var, Port>) expr.getAttribute(
-						"inputs").getObjectValue();
-				for (Var var : exprInput.keySet()) {
-					Port dataPort = exprInput.get(var);
-					portDependecies.put(dataPort, var);
-				}
-			}
-
-			Exit compExit = comp.getExit(Exit.DONE);
-			Bus resultBus = compExit.getDataBuses().get(0);
-			resultBus.setIDLogical(target.getName());
-
-			// Bus dependencies
-			busDependecies.put(resultBus, target);
-			return comp;
-		} else {
-			Var source = ((ExprVar) expr).getUse().getVariable();
-			Type sourceType = source.getType();
-			Component comp = null;
-			if (targetType.getSizeInBits() != sourceType.getSizeInBits()) {
-				List<Component> sequence = new ArrayList<Component>();
-				NoOp noop = new NoOp(1, Exit.DONE);
-				CastOp castOp = new CastOp(targetType.getSizeInBits(),
-						targetType.isInt());
-				sequence.add(noop);
-				sequence.add(castOp);
-				Block block = new Block(sequence);
-
-				// Resolve Dependencies
-				// -- Input
-
-				Type type = source.getType();
-				Port dataPort = block.makeDataPort(source.getName(),
-						type.getSizeInBits(), type.isInt());
-
-				// Port Dependencies
-				portDependecies.put(dataPort, source);
-
-				Bus dataBus = dataPort.getPeer();
-
-				// Between Block input data port and noop data Port
-				Port noopDataPort = noop.getDataPorts().get(0);
-				ComponentUtil.connectDataDependency(dataBus, noopDataPort, 0);
-				// addToInputs(source, dataPort);
-
-				// -- Between NoOp and CastOp
-				Bus noopDataBus = noop.getResultBus();
-				Port castDataPort = castOp.getDataPort();
-				ComponentUtil.connectDataDependency(noopDataBus, castDataPort,
-						0);
-
-				// -- Between CastOp and Output DataBus
-				Bus castDatBus = castOp.getResultBus();
-				Bus blockDataBus = block.getExit(Exit.DONE).makeDataBus(
-						target.getName(), targetType.getSizeInBits(),
-						targetType.isInt());
-				Port blockDataBusPeer = blockDataBus.getPeer();
-				ComponentUtil.connectDataDependency(castDatBus,
-						blockDataBusPeer, 0);
-				// addToLastDefined(target, blockDataBus);
-				busDependecies.put(blockDataBus, target);
-				comp = block;
-			} else {
-				// Dependencies, put port and bus dependencies on source and
-				// target
-				NoOp noop = new NoOp(1, Exit.DONE);
-				Port noopDatPort = noop.getDataPorts().get(0);
-				// Port Dependencies
-				portDependecies.put(noopDatPort, source);
-
-				// -- Output
-				Bus noopResultBus = noop.getResultBus();
-				noopResultBus.setIDLogical(target.getName());
-				busDependecies.put(noopResultBus, target);
-
-				comp = noop;
-			}
-
-			return comp;
+			// Add to port dependencies
+			portDependecies.put(blkDataPort, var);
 		}
+
+		// -- Value Component --> to CastOp
+		Bus compResultBus = value.getExit(Exit.DONE).getDataBuses().get(0);
+		ComponentUtil
+				.connectDataDependency(compResultBus, castOp.getDataPort());
+
+		// -- Create a dataBus for block
+		Bus resultBus = block.getExit(Exit.DONE).makeDataBus(target.getName(),
+				type.getSizeInBits(), type.isInt());
+		Port resultBusPeer = resultBus.getPeer();
+		ComponentUtil.connectDataDependency(castOp.getResultBus(),
+				resultBusPeer);
+
+		// Bus dependencies
+		busDependecies.put(resultBus, target);
+
+		return block;
 	}
 
 	@Override
@@ -630,8 +540,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortWrite
 				.getPort();
-		CastOp cast = new CastOp(port.getType().getSizeInBits(), port
-				.getType().isInt());
+		CastOp cast = new CastOp(port.getType().getSizeInBits(), port.getType()
+				.isInt());
 		sequence.add(cast);
 
 		ActionIOHandler ioHandler = (ActionIOHandler) port.getAttribute(
@@ -641,7 +551,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		sequence.add(pinWrite);
 
 		Block block = new Block(sequence);
-		
+
 		// -- Input Dependencies
 		@SuppressWarnings("unchecked")
 		Map<Var, Port> exprInput = (Map<Var, Port>) instPortWrite.getValue()
@@ -661,11 +571,11 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		// -- Value Component --> castOp
 		Bus resultBus = compValue.getExit(Exit.DONE).getDataBuses().get(0);
 		ComponentUtil.connectDataDependency(resultBus, cast.getDataPort());
-		
+
 		// -- Value castOp --> pinWrite dependency
 		Port dataPort = pinWrite.getDataPorts().get(0);
 		ComponentUtil.connectDataDependency(cast.getResultBus(), dataPort);
-		
+
 		return block;
 	}
 

@@ -98,7 +98,7 @@ public class EnumerateFSMStatesBlock extends DfVisitor<Block> {
 
 			// -- Create oldState variable
 			Var oldState = IrFactory.eINSTANCE.createVar(
-					IrFactory.eINSTANCE.createTypeInt(),
+					IrFactory.eINSTANCE.createTypeInt(32),
 					"fsmOldState_" + actor.getName(), true, 0);
 			actor.getStateVars().add(oldState);
 			DesignMemory.addToMemory(actor, oldState);
