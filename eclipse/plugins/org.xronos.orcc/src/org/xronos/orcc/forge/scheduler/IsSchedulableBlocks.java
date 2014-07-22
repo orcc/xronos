@@ -16,6 +16,7 @@ import net.sf.orcc.ir.Def;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
+import net.sf.orcc.ir.InstCall;
 import net.sf.orcc.ir.InstLoad;
 import net.sf.orcc.ir.InstReturn;
 import net.sf.orcc.ir.IrFactory;
@@ -85,6 +86,10 @@ public class IsSchedulableBlocks extends DfVisitor<List<Block>> {
 
 	private class SchedulerBlocks extends AbstractIrVisitor<List<Block>> {
 
+		private SchedulerBlocks(){
+			super(true);
+		}
+		
 		private Map<Var, Var> localsCopyMap;
 
 		@Override
@@ -142,6 +147,20 @@ public class IsSchedulableBlocks extends DfVisitor<List<Block>> {
 			}
 			return null;
 		}
+		
+		
+
+		@Override
+		public List<Block> caseInstCall(InstCall call) {
+			super.caseInstCall(call);
+			Var target = call.getTarget().getVariable();
+			if (localsCopyMap.containsKey(target)) {
+				Var copyTarget = localsCopyMap.get(target);
+				Def def = IrFactory.eINSTANCE.createDef(copyTarget);
+				call.setTarget(def);
+			}
+			return null;
+		}
 
 		@Override
 		public List<Block> caseProcedure(Procedure procedure) {
@@ -151,7 +170,7 @@ public class IsSchedulableBlocks extends DfVisitor<List<Block>> {
 			localsCopyMap = new HashMap<Var, Var>();
 			for (Var var : procedure.getLocals()) {
 				Var copyVar = IrUtil.copy(var);
-				copyVar.setName(currentAction.getName() + "IsSchedulable");
+				copyVar.setName(currentAction.getName() + "IsSchedulable_"+copyVar.getName());
 				scheduler.addLocal(copyVar);
 				localsCopyMap.put(var, copyVar);
 			}
