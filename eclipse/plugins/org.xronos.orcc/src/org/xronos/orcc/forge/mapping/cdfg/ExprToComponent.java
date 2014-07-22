@@ -47,6 +47,7 @@ import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
+import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.ir.util.TypeUtil;
 
 import org.xronos.openforge.lim.Block;
@@ -59,7 +60,6 @@ import org.xronos.openforge.lim.op.CastOp;
 import org.xronos.openforge.lim.op.NoOp;
 import org.xronos.openforge.lim.op.SimpleConstant;
 import org.xronos.openforge.lim.op.UnaryOp;
-import org.xronos.openforge.util.Debug;
 
 /**
  * This visitor transforms an Expression to a LIM Component
@@ -92,8 +92,12 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		List<Component> sequence = new ArrayList<Component>();
 
 		// Get Least Upper Bound of E1 and E2
-		Type castType = TypeUtil.getLub(E1.getType(), E2.getType());
-
+		Type castType = null;
+		if (expr.getType().isBool()) {
+			castType = TypeUtil.getLub(E1.getType(), E2.getType());
+		}else{
+			castType = IrUtil.copy(expr.getType());
+		}
 		// Add E1
 		sequence.add(compE1);
 		// Cast Operator input mix max size of the expression output
@@ -203,7 +207,6 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 		ComponentUtil.connectDataDependency(castResultBus, dataPortE2, 0);
 
 		expr.setAttribute("inputs", inputs);
-		Debug.depGraphTo(block, "binary", "/tmp/binary.dot", 1);
 		return block;
 	}
 

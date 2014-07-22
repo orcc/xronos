@@ -41,7 +41,10 @@ import net.sf.orcc.df.FSM;
 import net.sf.orcc.df.State;
 import net.sf.orcc.df.Transition;
 import net.sf.orcc.df.util.DfVisitor;
+import net.sf.orcc.graph.Edge;
 import net.sf.orcc.ir.util.IrUtil;
+
+import org.eclipse.emf.common.util.EList;
 
 /**
  * This visitor will add an FSM to an actor if it does not have one. Will also
@@ -60,42 +63,60 @@ public class ActorAddFSM extends DfVisitor<Void> {
 			FSM fsm = DfFactory.eINSTANCE.createFSM();
 			State sActor = DfFactory.eINSTANCE.createState(actor.getName());
 			fsm.getStates().add(sActor);
-			for(Action action: actor.getActionsOutsideFsm()){
-				Transition t = DfFactory.eINSTANCE.createTransition(sActor, action, sActor);
+			for (Action action : actor.getActionsOutsideFsm()) {
+				Transition t = DfFactory.eINSTANCE.createTransition(sActor,
+						action, sActor);
 				fsm.add(t);
 			}
 			fsm.setInitialState(sActor);
 			actor.setFsm(fsm);
 			actor.getActionsOutsideFsm().clear();
-		}
-		
-		
-		// -- Check if actor has initialize action, if yes add a state
-		if(!actor.getInitializes().isEmpty()){
+		} else {
 			FSM fsm = actor.getFsm();
-			State init = DfFactory.eINSTANCE.createState(actor.getName()+"Init");
+			for (State state : fsm.getStates()) {
+				int index = 0;
+				for (Action action : actor.getActionsOutsideFsm()) {
+					Transition t = DfFactory.eINSTANCE.createTransition(state,
+							action, state);
+					EList<Edge> edges = state.getOutgoing();
+					int oldIndex = edges.indexOf(t);
+					edges.move(index, oldIndex);
+					actor.getActions().move(index, action);
+					index++;
+				}
+			}
+			actor.getActionsOutsideFsm().clear();
+		}
+
+		// -- Check if actor has initialize action, if yes add a state
+		if (!actor.getInitializes().isEmpty()) {
+			FSM fsm = actor.getFsm();
+			State init = DfFactory.eINSTANCE.createState(actor.getName()
+					+ "Init");
 			fsm.getStates().add(init);
 			State oldInitState = fsm.getInitialState();
-			
+
 			Iterator<Action> iter = actor.getInitializes().listIterator();
-			
-			while(iter.hasNext()){
+
+			while (iter.hasNext()) {
 				Action action = iter.next();
 				Transition t = null;
 				Action cAction = IrUtil.copy(action);
-				if(iter.hasNext()){
-					 t = DfFactory.eINSTANCE.createTransition(init, cAction, init);
-				}else{
-					 t = DfFactory.eINSTANCE.createTransition(init, cAction, oldInitState);
+				if (iter.hasNext()) {
+					t = DfFactory.eINSTANCE.createTransition(init, cAction,
+							init);
+				} else {
+					t = DfFactory.eINSTANCE.createTransition(init, cAction,
+							oldInitState);
 				}
 				fsm.add(t);
 				actor.getActions().add(cAction);
 			}
-			
+
 			fsm.setInitialState(init);
 			actor.getInitializes().clear();
 		}
-		
+
 		return super.caseActor(actor);
 	}
 

@@ -50,6 +50,7 @@ import net.sf.orcc.ir.transform.BlockCombine;
 import org.xronos.openforge.lim.Task;
 import org.xronos.orcc.backend.debug.XronosDebug;
 import org.xronos.orcc.forge.mapping.TaskProcedure;
+import org.xronos.orcc.forge.transform.RedundantLoadElimination;
 
 /**
  * This visitor constructs the scheduling of actions in an actor
@@ -74,7 +75,8 @@ public class ActionScheduler extends DfVisitor<Task> {
 		List<Block> initBlocks = new ArrayList<Block>();
 
 		// -- Store initial value of the FSM states
-		Block enumerateFSMStates = new EnumerateFSMStatesBlock(scheduler).doSwitch(actor);
+		Block enumerateFSMStates = new EnumerateFSMStatesBlock(scheduler)
+				.doSwitch(actor);
 		initBlocks.add(enumerateFSMStates);
 
 		// -- Assign a initial value on TokenIndex
@@ -130,11 +132,13 @@ public class ActionScheduler extends DfVisitor<Task> {
 		// Scheduler transformations
 		// -- Combine blocks
 		new BlockCombine().doSwitch(scheduler);
+		// -- Remove redundant Loads
+		new RedundantLoadElimination().doSwitch(scheduler);
 		this.scheduler = scheduler;
+		
 		new XronosDebug().printProcedure("/tmp", scheduler);
+		
 		Task schedulerTask = new TaskProcedure(true).doSwitch(scheduler);
-		// Debug.depGraphTo(schedulerTask, "scheduler", "/tmp/schdeuler.dot",
-		// 1);
 		return schedulerTask;
 	}
 

@@ -41,18 +41,15 @@ import java.util.Map;
 
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.Port;
 import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.ir.ExprBool;
 import net.sf.orcc.ir.ExprInt;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
-import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Var;
-import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.ir.util.ValueUtil;
 
 import org.xronos.openforge.lim.Design;
@@ -74,49 +71,6 @@ import org.xronos.orcc.preference.Constants;
  * 
  */
 public class DesignMemory extends DfVisitor<Void> {
-
-	private class MaxPortDepth extends DfVisitor<Map<Port, Integer>> {
-
-		/**
-		 * Maximum number of the repeat depth for each port
-		 */
-		private Map<Port, Integer> portDepth;
-
-		@Override
-		public Map<Port, Integer> caseAction(Action action) {
-
-			for (Port port : action.getInputPattern().getPorts()) {
-				int numTokens = action.getInputPattern().getNumTokensMap()
-						.get(port);
-				maxDepth(port, numTokens);
-			}
-
-			for (Port port : action.getOutputPattern().getPorts()) {
-				int numTokens = action.getOutputPattern().getNumTokensMap()
-						.get(port);
-				maxDepth(port, numTokens);
-			}
-			return null;
-		}
-
-		@Override
-		public Map<Port, Integer> caseActor(Actor actor) {
-			portDepth = new HashMap<Port, Integer>();
-			super.caseActor(actor);
-			return portDepth;
-		}
-
-		private void maxDepth(Port port, int numTokens) {
-			if (portDepth.containsKey(port)) {
-				if (portDepth.get(port) < numTokens) {
-					portDepth.put(port, numTokens);
-				}
-			} else {
-				portDepth.put(port, numTokens);
-			}
-		}
-
-	}
 
 	public static void addToMemory(Actor actor, Var var) {
 		@SuppressWarnings("unchecked")
@@ -334,11 +288,6 @@ public class DesignMemory extends DfVisitor<Void> {
 	@Override
 	public Void caseActor(Actor actor) {
 		memories = new HashMap<Integer, LogicalMemory>();
-
-		// Find the max depth of each ports repeat and then allocate the memory
-		// for
-		MaxPortDepth maxPortDepth = new MaxPortDepth();
-		Map<Port, Integer> portDepth = maxPortDepth.doSwitch(actor);
 
 		for (Var var : actor.getStateVars()) {
 			// Create Logical Value for each
