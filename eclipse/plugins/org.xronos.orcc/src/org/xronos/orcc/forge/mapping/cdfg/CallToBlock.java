@@ -127,30 +127,35 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 					Var var = ((ExprVar) exprArg).getUse().getVariable();
 					if (paramVarToRefVar.containsKey(var)) {
 						Var replaceVar = paramVarToRefVar.get(var);
-						Expression expr = IrFactory.eINSTANCE.createExprVar(replaceVar);
+						Expression expr = IrFactory.eINSTANCE
+								.createExprVar(replaceVar);
 						Arg newArg = IrFactory.eINSTANCE.createArgByVal(expr);
 						oldNewArguments.put(arg, newArg);
 					}
 				} else {
-					ExprVar exprVar = (ExprVar) ((ArgByVal) arg).getValue();
-					Var var = exprVar.getUse().getVariable();
-					if (paramVarToExpr.containsKey(var)) {
-						Expression expr = IrUtil.copy(paramVarToExpr.get(var));
-						Arg newArg = IrFactory.eINSTANCE.createArgByVal(expr);
-						oldNewArguments.put(arg, newArg);
+					if (((ArgByVal) arg).getValue().isExprVar()) {
+						ExprVar exprVar = (ExprVar) ((ArgByVal) arg).getValue();
+						Var var = exprVar.getUse().getVariable();
+						if (paramVarToExpr.containsKey(var)) {
+							Expression expr = IrUtil.copy(paramVarToExpr
+									.get(var));
+							Arg newArg = IrFactory.eINSTANCE
+									.createArgByVal(expr);
+							oldNewArguments.put(arg, newArg);
+						}
 					}
 				}
 
 				nbArg++;
 			}
-			
+
 			// Replace with new arguments
-			for(Arg arg: oldNewArguments.keySet()){
+			for (Arg arg : oldNewArguments.keySet()) {
 				Integer index = call.getArguments().indexOf(arg);
 				call.getArguments().remove(arg);
 				call.getArguments().add(index, oldNewArguments.get(arg));
 			}
-			
+
 			return null;
 		}
 	}

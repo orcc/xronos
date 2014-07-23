@@ -41,7 +41,6 @@ import java.util.Map;
 
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.df.Action;
-import net.sf.orcc.df.impl.PatternImpl;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
@@ -300,177 +299,146 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Var target = load.getTarget().getVariable();
 		Var source = load.getSource().getVariable();
 
-		PatternImpl pattern = EcoreHelper.getContainerOfType(source,
-				PatternImpl.class);
-		Boolean isPortRead = false;
-		net.sf.orcc.df.Port dfPort = null;
-		Location location = null;
-		if (pattern != null) {
-			dfPort = pattern.getVarToPortMap().get(source);
-			location = (Location) dfPort.getAttribute("location")
-					.getObjectValue();
-			isPortRead = pattern.getNumTokens(dfPort) == 1;
-		} else {
-			location = (Location) source.getAttribute("location")
-					.getObjectValue();
-		}
+		Location location = (Location) source.getAttribute("location")
+				.getObjectValue();
 
-		if (isPortRead) {
-			// Construct ioHandler ReadAccess Component
-			ActionIOHandler ioHandler = (ActionIOHandler) dfPort.getAttribute(
-					"ioHandler").getObjectValue();
-			Component pinRead = ioHandler.getReadAccess(false);
-			pinRead.setNonRemovable();
+		// Check if it is scaler
+		if (!source.getType().isList()) {
+			boolean isSigned = source.getType().isInt();
 
-			// Get Exit and ResultBus
-			Exit exit = pinRead.getExit(Exit.DONE);
+			LogicalMemoryPort memPort = location.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
+			Component absMemRead = new AbsoluteMemoryRead(location,
+					Constants.MAX_ADDR_WIDTH, isSigned);
+			memPort.addAccess((LValue) absMemRead, location);
+			Procedure procedure = EcoreHelper.getContainerOfType(load,
+					Procedure.class);
+			absMemRead.setIDSourceInfo(new IDSourceInfo(procedure.getName(),
+					load.getLineNumber()));
+
+			Exit exit = absMemRead.getExit(Exit.DONE);
 			Bus resultBus = exit.getDataBuses().get(0);
+			resultBus.setIDLogical(target.getName());
+
+			NoOp noop = new NoOp(1, Exit.DONE);
+
+			CastOp cast = new CastOp(target.getType().getSizeInBits(), target
+					.getType().isInt());
+
+			Block block = new Block(Arrays.asList(absMemRead, cast, noop));
+
+			// -- Data dependency absMemRead --> CastOp
+			ComponentUtil.connectDataDependency(resultBus, cast.getDataPort());
+
+			// -- Data dependency CastOp --> Noop
+			Port dataPort = noop.getDataPorts().get(0);
+			ComponentUtil.connectDataDependency(cast.getResultBus(), dataPort);
+			Type type = target.getType();
+			Bus blkResultBus = block.getExit(Exit.DONE).makeDataBus(
+					target.getName(), type.getSizeInBits(), type.isInt());
+			Port blkResultBusPeer = blkResultBus.getPeer();
+
+			Bus noopResultBus = noop.getResultBus();
+			ComponentUtil.connectDataDependency(noopResultBus,
+					blkResultBusPeer, 0);
+
+			busDependecies.put(blkResultBus, target);
+			return block;
+		} else {
+			// Index Flattener has flatten all indexes only one expression
+			// possible
+			List<Component> sequence = new ArrayList<Component>();
+
+			Expression index = load.getIndexes().get(0);
+			Component indexComp = new ExprToComponent().doSwitch(index);
+			sequence.add(indexComp);
+
+			// Source is a List
+			// Get Type
+			TypeList typeList = (TypeList) source.getType();
+			Type innerType = typeList.getInnermostType();
+			int dataSize = innerType.getSizeInBits();
+			boolean isSigned = innerType.isInt();
+
+			// Target Type
+			Type targetType = target.getType();
+
+			LogicalMemoryPort memPort = location.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
+
+			AddressStridePolicy addrPolicy = location.getAbsoluteBase()
+					.getInitialValue().getAddressStridePolicy();
+
+			HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(), 32,
+					0, isSigned, addrPolicy);
+			memPort.addAccess(read, location);
+			Procedure procedure = EcoreHelper.getContainerOfType(load,
+					Procedure.class);
+			read.setIDSourceInfo(new IDSourceInfo(procedure.getName(), load
+					.getLineNumber()));
+
+			CastOp resultCastOp = new CastOp(targetType.getSizeInBits(),
+					targetType.isInt());
+
+			CastOp indexCast = new CastOp(32, false);
+			sequence.add(indexCast);
+
+			Block addressedBlock = buildAddressedBlock(read, location,
+					resultCastOp);
+			sequence.add(addressedBlock);
+
+			Block block = new Block(sequence);
+
+			// Build block input dependencies
+			@SuppressWarnings("unchecked")
+			Map<Var, Port> indexInput = (Map<Var, Port>) index.getAttribute(
+					"inputs").getObjectValue();
+
+			Map<Var, Port> blkDataPorts = new HashMap<Var, Port>();
+			for (Var var : indexInput.keySet()) {
+				Port dataPort = indexInput.get(var);
+
+				if (blkDataPorts.containsKey(var)) {
+					Port blkDataPort = blkDataPorts.get(var);
+					Bus blkDataPortPeer = blkDataPort.getPeer();
+					ComponentUtil.connectDataDependency(blkDataPortPeer,
+							dataPort, 0);
+				} else {
+					Type type = var.getType();
+					Port blkDataPort = block
+							.makeDataPort(var.getName(), type.getSizeInBits(),
+									type.isInt() || type.isBool());
+					Bus blkDataPortPeer = blkDataPort.getPeer();
+					ComponentUtil.connectDataDependency(blkDataPortPeer,
+							dataPort, 0);
+					blkDataPorts.put(var, blkDataPort);
+					portDependecies.put(blkDataPort, var);
+				}
+			}
+
+			// Index dependency --> addressedBlock
+			Bus compIndexResultBus = indexComp.getExit(Exit.DONE)
+					.getDataBuses().get(0);
+			ComponentUtil.connectDataDependency(compIndexResultBus,
+					indexCast.getDataPort());
+			ComponentUtil.connectDataDependency(indexCast.getResultBus(),
+					addressedBlock.getDataPorts().get(0));
+
+			// addressedBlock --> Block
+			Bus resultBus = block.getExit(Exit.DONE).makeDataBus(
+					target.getName(), targetType.getSizeInBits(),
+					targetType.isInt());
+
+			Port resultBusPeer = resultBus.getPeer();
+			ComponentUtil.connectDataDependency(
+					addressedBlock.getExit(Exit.DONE).getDataBuses().get(0),
+					resultBusPeer);
 
 			// Add to bus dependencies
 			busDependecies.put(resultBus, target);
-			return pinRead;
-		} else {
+			block.setNonRemovable();
+			return block;
 
-			// Check if it is scaler
-			if (!source.getType().isList()) {
-				boolean isSigned = source.getType().isInt();
-
-				LogicalMemoryPort memPort = location.getLogicalMemory()
-						.getLogicalMemoryPorts().iterator().next();
-				Component absMemRead = new AbsoluteMemoryRead(location,
-						Constants.MAX_ADDR_WIDTH, isSigned);
-				memPort.addAccess((LValue) absMemRead, location);
-				Procedure procedure = EcoreHelper.getContainerOfType(load,
-						Procedure.class);
-				absMemRead.setIDSourceInfo(new IDSourceInfo(
-						procedure.getName(), load.getLineNumber()));
-
-				Exit exit = absMemRead.getExit(Exit.DONE);
-				Bus resultBus = exit.getDataBuses().get(0);
-				resultBus.setIDLogical(target.getName());
-
-				NoOp noop = new NoOp(1, Exit.DONE);
-
-				CastOp cast = new CastOp(target.getType().getSizeInBits(),
-						target.getType().isInt());
-
-				Block block = new Block(Arrays.asList(absMemRead, cast, noop));
-
-				// -- Data dependency absMemRead --> CastOp
-				ComponentUtil.connectDataDependency(resultBus,
-						cast.getDataPort());
-
-				// -- Data dependency CastOp --> Noop
-				Port dataPort = noop.getDataPorts().get(0);
-				ComponentUtil.connectDataDependency(cast.getResultBus(),
-						dataPort);
-				Type type = target.getType();
-				Bus blkResultBus = block.getExit(Exit.DONE).makeDataBus(
-						target.getName(), type.getSizeInBits(), type.isInt());
-				Port blkResultBusPeer = blkResultBus.getPeer();
-
-				Bus noopResultBus = noop.getResultBus();
-				ComponentUtil.connectDataDependency(noopResultBus,
-						blkResultBusPeer, 0);
-
-				busDependecies.put(blkResultBus, target);
-				return block;
-			} else {
-				// Index Flattener has flatten all indexes only one expression
-				// possible
-				List<Component> sequence = new ArrayList<Component>();
-
-				Expression index = load.getIndexes().get(0);
-				Component indexComp = new ExprToComponent().doSwitch(index);
-				sequence.add(indexComp);
-
-				// Source is a List
-				// Get Type
-				TypeList typeList = (TypeList) source.getType();
-				Type innerType = typeList.getInnermostType();
-				int dataSize = innerType.getSizeInBits();
-				boolean isSigned = innerType.isInt();
-
-				// Target Type
-				Type targetType = target.getType();
-
-				LogicalMemoryPort memPort = location.getLogicalMemory()
-						.getLogicalMemoryPorts().iterator().next();
-
-				AddressStridePolicy addrPolicy = location.getAbsoluteBase()
-						.getInitialValue().getAddressStridePolicy();
-
-				HeapRead read = new HeapRead(dataSize / addrPolicy.getStride(),
-						32, 0, isSigned, addrPolicy);
-				memPort.addAccess(read, location);
-				Procedure procedure = EcoreHelper.getContainerOfType(load,
-						Procedure.class);
-				read.setIDSourceInfo(new IDSourceInfo(procedure.getName(), load
-						.getLineNumber()));
-
-				CastOp resultCastOp = new CastOp(targetType.getSizeInBits(),
-						targetType.isInt());
-
-				CastOp indexCast = new CastOp(32, false);
-				sequence.add(indexCast);
-
-				Block addressedBlock = buildAddressedBlock(read, location,
-						resultCastOp);
-				sequence.add(addressedBlock);
-
-				Block block = new Block(sequence);
-
-				// Build block input dependencies
-				@SuppressWarnings("unchecked")
-				Map<Var, Port> indexInput = (Map<Var, Port>) index
-						.getAttribute("inputs").getObjectValue();
-
-				Map<Var, Port> blkDataPorts = new HashMap<Var, Port>();
-				for (Var var : indexInput.keySet()) {
-					Port dataPort = indexInput.get(var);
-
-					if (blkDataPorts.containsKey(var)) {
-						Port blkDataPort = blkDataPorts.get(var);
-						Bus blkDataPortPeer = blkDataPort.getPeer();
-						ComponentUtil.connectDataDependency(blkDataPortPeer,
-								dataPort, 0);
-					} else {
-						Type type = var.getType();
-						Port blkDataPort = block.makeDataPort(var.getName(),
-								type.getSizeInBits(),
-								type.isInt() || type.isBool());
-						Bus blkDataPortPeer = blkDataPort.getPeer();
-						ComponentUtil.connectDataDependency(blkDataPortPeer,
-								dataPort, 0);
-						blkDataPorts.put(var, blkDataPort);
-						portDependecies.put(blkDataPort, var);
-					}
-				}
-
-				// Index dependency --> addressedBlock
-				Bus compIndexResultBus = indexComp.getExit(Exit.DONE)
-						.getDataBuses().get(0);
-				ComponentUtil.connectDataDependency(compIndexResultBus,
-						indexCast.getDataPort());
-				ComponentUtil.connectDataDependency(indexCast.getResultBus(),
-						addressedBlock.getDataPorts().get(0));
-
-				// addressedBlock --> Block
-				Bus resultBus = block.getExit(Exit.DONE).makeDataBus(
-						target.getName(), targetType.getSizeInBits(),
-						targetType.isInt());
-
-				Port resultBusPeer = resultBus.getPeer();
-				ComponentUtil
-						.connectDataDependency(addressedBlock
-								.getExit(Exit.DONE).getDataBuses().get(0),
-								resultBusPeer);
-
-				// Add to bus dependencies
-				busDependecies.put(resultBus, target);
-				block.setNonRemovable();
-				return block;
-			}
 		}
 	}
 
@@ -629,217 +597,166 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	public Component caseInstStore(InstStore store) {
 		Var target = store.getTarget().getVariable();
 		// Check if this store is related to a pattern
-		PatternImpl pattern = EcoreHelper.getContainerOfType(target,
-				PatternImpl.class);
-		Boolean isPortWrite = false;
-		net.sf.orcc.df.Port dfPort = null;
-		Location location = null;
-		if (pattern != null) {
-			dfPort = pattern.getVarToPortMap().get(target);
-			location = (Location) dfPort.getAttribute("location")
-					.getObjectValue();
-			isPortWrite = pattern.getNumTokens(dfPort) == 1;
+		Location location = (Location) target.getAttribute("location")
+				.getObjectValue();
+
+		List<Component> sequence = new ArrayList<Component>();
+		Expression value = store.getValue();
+		// Grab component from the expression
+		Component compValue = new ExprToComponent().doSwitch(value);
+		sequence.add(compValue);
+
+		if (!target.getType().isList()) {
+			boolean isSigned = target.getType().isInt();
+
+			LogicalMemoryPort memPort = location.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
+			AbsoluteMemoryWrite absoluteMemWrite = new AbsoluteMemoryWrite(
+					location, Constants.MAX_ADDR_WIDTH, isSigned);
+			memPort.addAccess((LValue) absoluteMemWrite, location);
+			sequence.add(absoluteMemWrite);
+
+			Procedure procedure = EcoreHelper.getContainerOfType(store,
+					Procedure.class);
+			absoluteMemWrite.setIDSourceInfo(new IDSourceInfo(procedure
+					.getName(), store.getLineNumber()));
+
+			// Create Block
+			Block block = new Block(sequence);
+
+			// Resolve inputs
+			@SuppressWarnings("unchecked")
+			Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
+					"inputs").getObjectValue();
+			for (Var var : exprInput.keySet()) {
+				Type type = var.getType();
+
+				Port dataPort = block.makeDataPort(var.getName(),
+						type.getSizeInBits(), type.isInt());
+				Bus dataPortPeer = dataPort.getPeer();
+				ComponentUtil.connectDataDependency(dataPortPeer,
+						exprInput.get(var), 0);
+				portDependecies.put(dataPort, var);
+			}
+
+			// Resolve Dependencies
+			Port dataPort = absoluteMemWrite.getDataPorts().get(0);
+			Bus compResultBus = compValue.getExit(Exit.DONE).getDataBuses()
+					.get(0);
+			ComponentUtil.connectDataDependency(compResultBus, dataPort, 0);
+
+			ComponentUtil.connectControlDependency(absoluteMemWrite, block, 0);
+			ComponentUtil.connectControlDependency(compValue, block, 0);
+			return block;
+
 		} else {
-			location = (Location) target.getAttribute("location")
-					.getObjectValue();
-		}
+			// Index Flattener has flatten all indexes only one expression
+			// possible
+			Expression index = store.getIndexes().get(0);
+			Component indexComp = new ExprToComponent().doSwitch(index);
+			sequence.add(indexComp);
 
-		if (isPortWrite) {
-			List<Component> sequence = new ArrayList<Component>();
-			Component value = new ExprToComponent().doSwitch(store.getValue());
-			sequence.add(value);
+			// Get Type
+			TypeList typeList = (TypeList) target.getType();
+			Type innerType = typeList.getInnermostType();
+			int dataSize = innerType.getSizeInBits();
+			boolean isSigned = innerType.isInt();
 
-			ActionIOHandler ioHandler = (ActionIOHandler) dfPort.getAttribute(
-					"ioHandler").getObjectValue();
-			Component pinWrite = ioHandler.getWriteAccess(false);
-			pinWrite.setNonRemovable();
-			sequence.add(pinWrite);
+			LogicalMemoryPort memPort = location.getLogicalMemory()
+					.getLogicalMemoryPorts().iterator().next();
+			AddressStridePolicy addrPolicy = location.getAbsoluteBase()
+					.getInitialValue().getAddressStridePolicy();
+			HeapWrite write = new HeapWrite(dataSize / addrPolicy.getStride(),
+					32, // max address width
+					0, // fixed offset
+					isSigned, // is signed?
+					addrPolicy); // addressing policy
+			memPort.addAccess(write, location);
+			Procedure procedure = EcoreHelper.getContainerOfType(store,
+					Procedure.class);
+			write.setIDSourceInfo(new IDSourceInfo(procedure.getName(), store
+					.getLineNumber()));
+
+			// Dependencies
+			// -- Input form Value
+			CastOp indexCast = new CastOp(32, false);
+			sequence.add(indexCast);
+
+			CastOp valueCast = new CastOp(innerType.getSizeInBits(),
+					innerType.isInt());
+			sequence.add(valueCast);
+
+			Block addressedBlock = buildAddressedBlock(write, location, null);
+			sequence.add(addressedBlock);
 
 			Block block = new Block(sequence);
 
-			// -- Input Dependencies
+			Map<Var, Port> blkDataPorts = new HashMap<Var, Port>();
+
 			@SuppressWarnings("unchecked")
-			Map<Var, Port> exprInput = (Map<Var, Port>) store.getValue()
-					.getAttribute("inputs").getObjectValue();
-			for (Var var : exprInput.keySet()) {
+			Map<Var, Port> indexInput = (Map<Var, Port>) index.getAttribute(
+					"inputs").getObjectValue();
+			for (Var var : indexInput.keySet()) {
 				Type type = var.getType();
-				Port dataPort = exprInput.get(var);
 
-				Port blkDataPort = block.makeDataPort(var.getName(),
-						type.getSizeInBits(), type.isInt());
-				Bus blkDataPortBus = blkDataPort.getPeer();
-
-				ComponentUtil
-						.connectDataDependency(blkDataPortBus, dataPort, 0);
-				portDependecies.put(blkDataPort, var);
-			}
-
-			// -- Value Component --> pinWrite dependency
-			Bus resultBus = value.getExit(Exit.DONE).getDataBuses().get(0);
-			Port dataPort = pinWrite.getDataPorts().get(0);
-			ComponentUtil.connectDataDependency(resultBus, dataPort, 0);
-
-			return block;
-		} else {
-			List<Component> sequence = new ArrayList<Component>();
-			Expression value = store.getValue();
-			// Grab component from the expression
-			Component compValue = new ExprToComponent().doSwitch(value);
-			sequence.add(compValue);
-
-			if (!target.getType().isList()) {
-				boolean isSigned = target.getType().isInt();
-
-				LogicalMemoryPort memPort = location.getLogicalMemory()
-						.getLogicalMemoryPorts().iterator().next();
-				AbsoluteMemoryWrite absoluteMemWrite = new AbsoluteMemoryWrite(
-						location, Constants.MAX_ADDR_WIDTH, isSigned);
-				memPort.addAccess((LValue) absoluteMemWrite, location);
-				sequence.add(absoluteMemWrite);
-
-				Procedure procedure = EcoreHelper.getContainerOfType(store,
-						Procedure.class);
-				absoluteMemWrite.setIDSourceInfo(new IDSourceInfo(procedure
-						.getName(), store.getLineNumber()));
-
-				// Create Block
-				Block block = new Block(sequence);
-
-				// Resolve inputs
-				@SuppressWarnings("unchecked")
-				Map<Var, Port> exprInput = (Map<Var, Port>) value.getAttribute(
-						"inputs").getObjectValue();
-				for (Var var : exprInput.keySet()) {
-					Type type = var.getType();
-
-					Port dataPort = block.makeDataPort(var.getName(),
+				Port dataPort = null;
+				if (blkDataPorts.containsKey(var)) {
+					dataPort = blkDataPorts.get(var);
+				} else {
+					dataPort = block.makeDataPort(var.getName(),
 							type.getSizeInBits(), type.isInt());
-					Bus dataPortPeer = dataPort.getPeer();
-					ComponentUtil.connectDataDependency(dataPortPeer,
-							exprInput.get(var), 0);
+
+					blkDataPorts.put(var, dataPort);
 					portDependecies.put(dataPort, var);
 				}
-
-				// Resolve Dependencies
-				Port dataPort = absoluteMemWrite.getDataPorts().get(0);
-				Bus compResultBus = compValue.getExit(Exit.DONE).getDataBuses()
-						.get(0);
-				ComponentUtil.connectDataDependency(compResultBus, dataPort, 0);
-
-				ComponentUtil.connectControlDependency(absoluteMemWrite, block,
-						0);
-				ComponentUtil.connectControlDependency(compValue, block, 0);
-				return block;
-
-			} else {
-				// Index Flattener has flatten all indexes only one expression
-				// possible
-				Expression index = store.getIndexes().get(0);
-				Component indexComp = new ExprToComponent().doSwitch(index);
-				sequence.add(indexComp);
-
-				// Get Type
-				TypeList typeList = (TypeList) target.getType();
-				Type innerType = typeList.getInnermostType();
-				int dataSize = innerType.getSizeInBits();
-				boolean isSigned = innerType.isInt();
-
-				LogicalMemoryPort memPort = location.getLogicalMemory()
-						.getLogicalMemoryPorts().iterator().next();
-				AddressStridePolicy addrPolicy = location.getAbsoluteBase()
-						.getInitialValue().getAddressStridePolicy();
-				HeapWrite write = new HeapWrite(dataSize
-						/ addrPolicy.getStride(), 32, // max address width
-						0, // fixed offset
-						isSigned, // is signed?
-						addrPolicy); // addressing policy
-				memPort.addAccess(write, location);
-				Procedure procedure = EcoreHelper.getContainerOfType(store,
-						Procedure.class);
-				write.setIDSourceInfo(new IDSourceInfo(procedure.getName(),
-						store.getLineNumber()));
-
-				// Dependencies
-				// -- Input form Value
-				CastOp indexCast = new CastOp(32, false);
-				sequence.add(indexCast);
-
-				CastOp valueCast = new CastOp(innerType.getSizeInBits(),
-						innerType.isInt());
-				sequence.add(valueCast);
-
-				Block addressedBlock = buildAddressedBlock(write, location,
-						null);
-				sequence.add(addressedBlock);
-
-				Block block = new Block(sequence);
-
-				Map<Var, Port> blkDataPorts = new HashMap<Var, Port>();
-
-				@SuppressWarnings("unchecked")
-				Map<Var, Port> indexInput = (Map<Var, Port>) index
-						.getAttribute("inputs").getObjectValue();
-				for (Var var : indexInput.keySet()) {
-					Type type = var.getType();
-
-					Port dataPort = null;
-					if (blkDataPorts.containsKey(var)) {
-						dataPort = blkDataPorts.get(var);
-					} else {
-						dataPort = block.makeDataPort(var.getName(),
-								type.getSizeInBits(), type.isInt());
-
-						blkDataPorts.put(var, dataPort);
-						portDependecies.put(dataPort, var);
-					}
-					Bus dataPortPeer = dataPort.getPeer();
-					ComponentUtil.connectDataDependency(dataPortPeer,
-							indexInput.get(var), 0);
-				}
-
-				@SuppressWarnings("unchecked")
-				Map<Var, Port> valueInput = (Map<Var, Port>) value
-						.getAttribute("inputs").getObjectValue();
-				for (Var var : valueInput.keySet()) {
-					Type type = var.getType();
-					// Create a Port on the storeBlock
-					Port dataPort = null;
-					if (blkDataPorts.containsKey(var)) {
-						dataPort = blkDataPorts.get(var);
-					} else {
-						dataPort = block.makeDataPort(var.getName(),
-								type.getSizeInBits(), type.isInt());
-
-						blkDataPorts.put(var, dataPort);
-						portDependecies.put(dataPort, var);
-					}
-					Bus dataPortPeer = dataPort.getPeer();
-
-					ComponentUtil.connectDataDependency(dataPortPeer,
-							valueInput.get(var), 0);
-				}
-
-				// index and value dependencies
-				Bus indexResultIBus = indexComp.getExit(Exit.DONE)
-						.getDataBuses().get(0);
-
-				ComponentUtil.connectDataDependency(indexResultIBus,
-						indexCast.getDataPort());
-
-				ComponentUtil.connectDataDependency(indexCast.getResultBus(),
-						addressedBlock.getDataPorts().get(0));
-
-				Bus compResultBus = compValue.getExit(Exit.DONE).getDataBuses()
-						.get(0);
-
-				ComponentUtil.connectDataDependency(compResultBus,
-						valueCast.getDataPort());
-
-				ComponentUtil.connectDataDependency(valueCast.getResultBus(),
-						addressedBlock.getDataPorts().get(1));
-				block.setNonRemovable();
-				return block;
+				Bus dataPortPeer = dataPort.getPeer();
+				ComponentUtil.connectDataDependency(dataPortPeer,
+						indexInput.get(var), 0);
 			}
+
+			@SuppressWarnings("unchecked")
+			Map<Var, Port> valueInput = (Map<Var, Port>) value.getAttribute(
+					"inputs").getObjectValue();
+			for (Var var : valueInput.keySet()) {
+				Type type = var.getType();
+				// Create a Port on the storeBlock
+				Port dataPort = null;
+				if (blkDataPorts.containsKey(var)) {
+					dataPort = blkDataPorts.get(var);
+				} else {
+					dataPort = block.makeDataPort(var.getName(),
+							type.getSizeInBits(), type.isInt());
+
+					blkDataPorts.put(var, dataPort);
+					portDependecies.put(dataPort, var);
+				}
+				Bus dataPortPeer = dataPort.getPeer();
+
+				ComponentUtil.connectDataDependency(dataPortPeer,
+						valueInput.get(var), 0);
+			}
+
+			// index and value dependencies
+			Bus indexResultIBus = indexComp.getExit(Exit.DONE).getDataBuses()
+					.get(0);
+
+			ComponentUtil.connectDataDependency(indexResultIBus,
+					indexCast.getDataPort());
+
+			ComponentUtil.connectDataDependency(indexCast.getResultBus(),
+					addressedBlock.getDataPorts().get(0));
+
+			Bus compResultBus = compValue.getExit(Exit.DONE).getDataBuses()
+					.get(0);
+
+			ComponentUtil.connectDataDependency(compResultBus,
+					valueCast.getDataPort());
+
+			ComponentUtil.connectDataDependency(valueCast.getResultBus(),
+					addressedBlock.getDataPorts().get(1));
+			block.setNonRemovable();
+			return block;
+
 		}
 	}
 

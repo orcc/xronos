@@ -128,6 +128,7 @@ public class IsSchedulableBlocks extends DfVisitor<List<Block>> {
 
 		@Override
 		public List<Block> caseInstLoad(InstLoad load) {
+			super.caseInstLoad(load);
 			Var target = load.getTarget().getVariable();
 			if (localsCopyMap.containsKey(target)) {
 				Var copyTarget = localsCopyMap.get(target);
@@ -170,7 +171,7 @@ public class IsSchedulableBlocks extends DfVisitor<List<Block>> {
 			localsCopyMap = new HashMap<Var, Var>();
 			for (Var var : procedure.getLocals()) {
 				Var copyVar = IrUtil.copy(var);
-				copyVar.setName(currentAction.getName() + "IsSchedulable_"+copyVar.getName());
+				copyVar.setName(currentAction.getName()+"_"+copyVar.getName());
 				scheduler.addLocal(copyVar);
 				localsCopyMap.put(var, copyVar);
 			}

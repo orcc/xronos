@@ -69,10 +69,12 @@ public class SinglePortList extends DfVisitor<Void> {
 					PatternImpl.class);
 			if (pattern != null) {
 				Port port = (Port) pattern.getVarToPortMap().get(source);
-				if (newPortVar.containsKey(port)) {
-					Var var = newPortVar.get(port);
-					Use use = IrFactory.eINSTANCE.createUse(var);
-					load.setSource(use);
+				if (pattern.getNumTokens(port) > 1) {
+					if (newPortVar.containsKey(port)) {
+						Var var = newPortVar.get(port);
+						Use use = IrFactory.eINSTANCE.createUse(var);
+						load.setSource(use);
+					}
 				}
 			}
 			return null;
@@ -160,11 +162,12 @@ public class SinglePortList extends DfVisitor<Void> {
 
 		// -- Now modify each Load and store associate to a Port
 		for (Action action : actor.getActions()) {
+			new ReplaceVar().doSwitch(action.getScheduler());
 			new ReplaceVar().doSwitch(action.getBody());
 		}
 
 		actor.setAttribute("portDepth", portDepth);
-		
+
 		return null;
 	}
 
