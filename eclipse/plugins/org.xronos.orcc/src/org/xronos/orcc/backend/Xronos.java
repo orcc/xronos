@@ -48,6 +48,7 @@ import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
 import net.sf.orcc.df.transform.TypeResizer;
+import net.sf.orcc.df.util.NetworkValidator;
 import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.OrccLogger;
@@ -76,13 +77,19 @@ public class Xronos extends AbstractBackend {
 	/** The used Xilinx FPGA Name **/
 	private String fpgaName;
 
-	/** Import buffer size file **/
-	private boolean importBufferSize;
-
 	/** Generate Verilog files with Go And Done signal on Top Module **/
 	private boolean generateGoDone;
 
 	private boolean generateWeights;
+
+	/** Import buffer size file **/
+	private boolean importBufferSize;
+
+	private boolean inputClockGating;
+
+	boolean newLimGen;
+
+	private boolean outputClockGating;
 
 	/** The path used for the RTL Go Done generation **/
 	private String rtlGoDonePath;
@@ -90,11 +97,16 @@ public class Xronos extends AbstractBackend {
 	/** The path used for the RTL generation **/
 	private String rtlPath;
 
+	boolean schedulerInformation;
+
 	/** The path used for the simulation generation **/
 	private String simPath;
 
 	/** One verilog contains all the design **/
 	private boolean singleFileGeneration;
+
+	/** The path where the VHDL tesbenches are placed */
+	private String tbVhdPath;
 
 	/** The path used for the testBench generation **/
 	private String testBenchPath;
@@ -102,19 +114,8 @@ public class Xronos extends AbstractBackend {
 	/** The path where the fifo traces should be placed **/
 	private String tracePath;
 
-	/** The path where the VHDL tesbenches are placed */
-	private String tbVhdPath;
-
 	/** Copy the Xilinx RAM/registers primitives **/
 	private boolean xilinxPrimitives;
-
-	private boolean outputClockGating;
-
-	private boolean inputClockGating;
-
-	boolean schedulerInformation;
-
-	boolean newLimGen;
 
 	@Override
 	protected void doInitializeOptions() {
@@ -185,13 +186,28 @@ public class Xronos extends AbstractBackend {
 	}
 
 	@Override
+	protected Result doLibrariesExtraction() {
+		Result result = FilesManager.extract("/bundle/README.txt", path);
+		String libPath = path + File.separator + "lib";
+		OrccLogger.traceln("Export libraries sources into " + libPath + "... ");
+		result.merge(FilesManager.extract("/bundle/lib", path));
+		return result;
+	}
+
+	@Override
 	protected void doTransformActor(Actor actor) {
 		// Do not transform at this moment
 	}
 
 	@Override
-	protected void doXdfCodeGeneration(Network network) {
+	protected void doValidate(Network network) {
 		Validator.checkMinimalFifoSize(network, fifoSize);
+
+		new NetworkValidator().doSwitch(network);
+	}
+
+	@Override
+	protected void doXdfCodeGeneration(Network network) {
 		// instantiate and flattens network
 		new Instantiator(true).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
@@ -231,15 +247,6 @@ public class Xronos extends AbstractBackend {
 					+ "report");
 		}
 
-	}
-
-	@Override
-	protected Result doLibrariesExtraction() {
-		Result result = FilesManager.extract("/bundle/README.txt", path);
-		String libPath = path + File.separator + "lib";
-		OrccLogger.traceln("Export libraries sources into " + libPath + "... ");
-		result.merge(FilesManager.extract("/bundle/lib", path));
-		return result;
 	}
 
 	public void generateInstances(Network network) {

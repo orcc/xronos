@@ -80,11 +80,16 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 	 * 
 	 */
 	public class PropagateReferences extends AbstractIrVisitor<Void> {
+
 		Map<Var, Var> paramVarToRefVar;
 
-		public PropagateReferences(Map<Var, Var> paramVarToRefVar) {
+		Map<Var, Expression> paramVarToExpr;
+
+		public PropagateReferences(Map<Var, Var> paramVarToRefVar,
+				Map<Var, Expression> paramVarToExpr) {
 			super(true);
 			this.paramVarToRefVar = paramVarToRefVar;
+			this.paramVarToExpr = paramVarToExpr;
 		}
 
 		@Override
@@ -109,6 +114,45 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 			return null;
 		}
 
+		@Override
+		public Void caseInstCall(InstCall call) {
+			int nbArg = 0;
+			Procedure proc = call.getProcedure();
+			// Propagate References on arguments
+			Map<Arg, Arg> oldNewArguments = new HashMap<Arg, Arg>();
+			for (Arg arg : call.getArguments()) {
+				Param param = proc.getParameters().get(nbArg);
+				if (param.getVariable().getType().isList()) {
+					Expression exprArg = ((ArgByVal) arg).getValue();
+					Var var = ((ExprVar) exprArg).getUse().getVariable();
+					if (paramVarToRefVar.containsKey(var)) {
+						Var replaceVar = paramVarToRefVar.get(var);
+						Expression expr = IrFactory.eINSTANCE.createExprVar(replaceVar);
+						Arg newArg = IrFactory.eINSTANCE.createArgByVal(expr);
+						oldNewArguments.put(arg, newArg);
+					}
+				} else {
+					ExprVar exprVar = (ExprVar) ((ArgByVal) arg).getValue();
+					Var var = exprVar.getUse().getVariable();
+					if (paramVarToExpr.containsKey(var)) {
+						Expression expr = IrUtil.copy(paramVarToExpr.get(var));
+						Arg newArg = IrFactory.eINSTANCE.createArgByVal(expr);
+						oldNewArguments.put(arg, newArg);
+					}
+				}
+
+				nbArg++;
+			}
+			
+			// Replace with new arguments
+			for(Arg arg: oldNewArguments.keySet()){
+				Integer index = call.getArguments().indexOf(arg);
+				call.getArguments().remove(arg);
+				call.getArguments().add(index, oldNewArguments.get(arg));
+			}
+			
+			return null;
+		}
 	}
 
 	public class PropagateReturnTarget extends AbstractIrVisitor<Void> {
@@ -195,8 +239,8 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 		Block callBlock = null;
 
 		// Propagate all reference if any
-		if (!byRefVar.isEmpty()) {
-			new PropagateReferences(byRefVar).doSwitch(proc);
+		if (!byRefVar.isEmpty() || !byValExpression.isEmpty()) {
+			new PropagateReferences(byRefVar, byValExpression).doSwitch(proc);
 		}
 
 		if (call.getTarget() != null) {
