@@ -67,7 +67,7 @@ public class VarInitializer extends DfVisitor<Void> {
 		for (Action action : actor.getActions()) {
 			Procedure body = action.getBody();
 			for (Var var : body.getLocals()) {
-				if (!var.isAssignable() || var.isInitialized()) {
+				if (!var.isAssignable() && var.isInitialized()) {
 					initializeVar(var);
 				}
 			}
@@ -76,7 +76,7 @@ public class VarInitializer extends DfVisitor<Void> {
 		// initialize procedures local variables
 		for (Procedure procedure : actor.getProcs()) {
 			for (Var var : procedure.getLocals()) {
-				if (!var.isAssignable() || var.isInitialized()) {
+				if (!var.isAssignable() && var.isInitialized()) {
 					initializeVar(var);
 				}
 			}

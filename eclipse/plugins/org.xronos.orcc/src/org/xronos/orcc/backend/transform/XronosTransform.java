@@ -86,7 +86,13 @@ public class XronosTransform {
 		transformations.add(new SinglePortList());
 		transformations.add(new CheckVarSize());
 		transformations.add(new ParameterArrayRemoval());
+		transformations.add(new DfVisitor<Object>(new XronosConstantFolding()));
+		transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
+		transformations
+				.add(new DfVisitor<Void>(new XronosConstantPropagation()));
 		transformations.add(new DeadActionEliminaton(true));
+		transformations.add(new DfVisitor<Void>(new XronosDeadCodeElimination(
+				true, false)));
 		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
 		transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
 		transformations.add(new PrintRemoval());
