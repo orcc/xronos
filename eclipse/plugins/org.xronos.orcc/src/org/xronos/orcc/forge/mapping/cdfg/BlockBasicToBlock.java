@@ -89,8 +89,8 @@ import org.xronos.orcc.ir.InstPortWrite;
 import org.xronos.orcc.preference.Constants;
 
 /**
- * This Visitor transforms a BlockBasic to a LIM Block, IndexFlattener should be
- * applied before creating the LIM Block
+ * This Visitor transforms a {@link BlockBasic} to a LIM {@link Block},
+ * IndexFlattener should be applied before creating the LIM Block
  * 
  * @author Endri Bezati
  * 
@@ -794,16 +794,51 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			}
 
 			if (useBlockIf != null) {
-				uses.put(use, true);
+				if (useBlockWhile != null) {
+					BlockIf useBlockIfBis = EcoreHelper.getContainerOfType(
+							useBlockWhile, BlockIf.class);
+					if (useBlockIf != useBlockIfBis) {
+						if (useBlockBasic == currentBlock
+								&& useBlockBasic.eContainer() == useBlockIf
+								&& !inputs.containsKey(var)) {
+							uses.put(use, false);
+						} else {
+							uses.put(use, true);
+						}
+					}
+				} else {
+
+					if (useBlockBasic == currentBlock
+							&& useBlockBasic.eContainer() == useBlockIf
+							&& !inputs.containsKey(var)) {
+						uses.put(use, false);
+					} else {
+						uses.put(use, true);
+					}
+				}
 			}
 
 			if (useBlockWhile != null) {
-				if (useBlockBasic == currentBlock
-						&& useBlockBasic.eContainer() == useBlockWhile
-						&& !inputs.containsKey(var)) {
-					uses.put(use, false);
+				if (useBlockIf != null) {
+					BlockWhile useBlockWhileBis = EcoreHelper
+							.getContainerOfType(useBlockIf, BlockWhile.class);
+					if (useBlockWhile != useBlockWhileBis) {
+						if (useBlockBasic == currentBlock
+								&& useBlockBasic.eContainer() == useBlockWhile
+								&& !inputs.containsKey(var)) {
+							uses.put(use, false);
+						} else {
+							uses.put(use, true);
+						}
+					}
 				} else {
-					uses.put(use, true);
+					if (useBlockBasic == currentBlock
+							&& useBlockBasic.eContainer() == useBlockWhile
+							&& !inputs.containsKey(var)) {
+						uses.put(use, false);
+					} else {
+						uses.put(use, true);
+					}
 				}
 			}
 
