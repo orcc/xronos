@@ -67,6 +67,7 @@ import org.xronos.orcc.forge.transform.RedundantLoadElimination;
 import org.xronos.orcc.forge.transform.SinglePortList;
 import org.xronos.orcc.forge.transform.SinglePortReadWrite;
 import org.xronos.orcc.forge.transform.VarInitializer;
+import org.xronos.orcc.forge.transform.XronosCFG;
 
 /**
  * This helper class transforms only a given procedure
@@ -100,6 +101,7 @@ public class XronosTransform {
 		transformations
 				.add(new DfVisitor<Void>(new RedundantLoadElimination()));
 		transformations.add(new XronosDivision());
+		transformations.add(new DfVisitor<CfgNode>(new XronosCFG()));
 
 		for (DfSwitch<?> transformation : transformations) {
 			try {
