@@ -63,6 +63,7 @@ import org.xronos.orcc.analysis.NativeProcedureFinder;
 import org.xronos.orcc.backend.transform.pipelining.Pipelining;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.XronosScheduler;
+import org.xronos.orcc.forge.transform.analysis.Liveness;
 import org.xronos.orcc.forge.transform.analysis.XronosCFG;
 import org.xronos.orcc.forge.transform.io.SinglePortList;
 import org.xronos.orcc.forge.transform.io.SinglePortReadWrite;
@@ -102,6 +103,7 @@ public class XronosTransform {
 				.add(new DfVisitor<Void>(new RedundantLoadElimination()));
 		transformations.add(new XronosDivision());
 		transformations.add(new DfVisitor<CfgNode>(new XronosCFG()));
+		transformations.add(new DfVisitor<Void>(new Liveness()));
 
 		for (DfSwitch<?> transformation : transformations) {
 			try {
