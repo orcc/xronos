@@ -172,29 +172,28 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 
 	@Override
 	public CfgNode caseBlockWhile(BlockWhile block) {
-		CfgNode join = addNode("join");
-
-		if (last != null) {
-			addEdge(join);
-		}
-
-		flag = true;
-		last = join;
 		CfgNode cfgNode = addNode(block);
 		cfgNode.setLabel("bW" + bWhileIndex);
 		bWhileIndex++;
-		addEdge(cfgNode);
-
-		last = join;
+		if (last != null) {
+			addEdge(cfgNode);
+		}
+		
+		CfgNode join = addNode("join");
+		
+		flag = true;
+		last = cfgNode;
+		
 		flag = true;
 		last = doSwitch(block.getBlocks());
-
+		
+		addEdge(cfgNode);
 		// reset flag (in case there are no block in "then" branch)
 		flag = false;
 		addEdge(join);
 		last = cfgNode;
 
-		return cfgNode;
+		return join;
 	}
 
 	@Override
@@ -225,6 +224,12 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 				FilesManager.writeFile(dota.dot(cfg), "/tmp/",
 						((Actor) action.eContainer()).getName() + "_"
 								+ procedure.getName() + "_cfg.dot");
+			}
+		}else{
+			if(procedure.hasAttribute("xronos_cfg")){
+				Dota dota = new Dota();
+				FilesManager.writeFile(dota.dot(cfg), "/tmp/",
+						procedure.getName() + "_cfg.dot");
 			}
 		}
 		return last;
