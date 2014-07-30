@@ -60,17 +60,35 @@ import net.sf.orcc.util.util.EcoreHelper;
  */
 public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 
+	/**
+	 * This procedure CFG
+	 */
 	protected Cfg cfg;
 
+	/**
+	 * Type of the edge (True or False)
+	 */
 	protected boolean flag;
 
+	/**
+	 * Last visited CFG Node
+	 */
 	protected CfgNode last;
 
-	private int bBasicIndex;
+	/**
+	 * Basic Block index
+	 */
+	protected int bBasicIndex;
 
-	private int bIfIndex;
+	/**
+	 * Block If index
+	 */
+	protected int bIfIndex;
 
-	private int bWhileIndex;
+	/**
+	 * Block While index
+	 */
+	protected int bWhileIndex;
 
 	/**
 	 * Creates an edge to this CFG
@@ -105,7 +123,7 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 	 * @param label
 	 * @return
 	 */
-	private CfgNode addNode(String label) {
+	protected CfgNode addNode(String label) {
 		CfgNode node = IrFactory.eINSTANCE.createCfgNode();
 		node.setLabel(label);
 		cfg.add(node);
@@ -189,11 +207,13 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 		procedure.setCfg(cfg);
 
 		CfgNode entry = addNode("entry");
+		cfg.setEntry(entry);
 		last = entry;
 
 		last = super.caseProcedure(procedure);
 
 		CfgNode exit = addNode("exit");
+		cfg.setExit(exit);
 		addEdge(exit);
 		removeJoins(cfg);
 		cfg.computeDominance();
