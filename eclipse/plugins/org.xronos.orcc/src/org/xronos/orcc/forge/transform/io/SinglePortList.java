@@ -29,7 +29,7 @@
  * for the parts of Eclipse libraries used as well as that of the  covered work.
  * 
  */
-package org.xronos.orcc.forge.transform;
+package org.xronos.orcc.forge.transform.io;
 
 import java.util.HashMap;
 import java.util.Map;

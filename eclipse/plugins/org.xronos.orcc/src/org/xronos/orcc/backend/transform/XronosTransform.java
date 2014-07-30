@@ -63,11 +63,11 @@ import org.xronos.orcc.analysis.NativeProcedureFinder;
 import org.xronos.orcc.backend.transform.pipelining.Pipelining;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.XronosScheduler;
-import org.xronos.orcc.forge.transform.RedundantLoadElimination;
-import org.xronos.orcc.forge.transform.SinglePortList;
-import org.xronos.orcc.forge.transform.SinglePortReadWrite;
-import org.xronos.orcc.forge.transform.VarInitializer;
-import org.xronos.orcc.forge.transform.XronosCFG;
+import org.xronos.orcc.forge.transform.analysis.XronosCFG;
+import org.xronos.orcc.forge.transform.io.SinglePortList;
+import org.xronos.orcc.forge.transform.io.SinglePortReadWrite;
+import org.xronos.orcc.forge.transform.memory.RedundantLoadElimination;
+import org.xronos.orcc.forge.transform.memory.VarInitializer;
 
 /**
  * This helper class transforms only a given procedure

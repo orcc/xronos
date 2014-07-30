@@ -50,7 +50,7 @@ import net.sf.orcc.ir.transform.BlockCombine;
 import org.xronos.openforge.lim.Task;
 import org.xronos.orcc.backend.debug.XronosDebug;
 import org.xronos.orcc.forge.mapping.TaskProcedure;
-import org.xronos.orcc.forge.transform.RedundantLoadElimination;
+import org.xronos.orcc.forge.transform.memory.RedundantLoadElimination;
 
 /**
  * This visitor constructs the scheduling of actions in an actor

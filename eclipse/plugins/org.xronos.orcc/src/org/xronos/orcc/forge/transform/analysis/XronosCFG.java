@@ -29,8 +29,9 @@
  * for the parts of Eclipse libraries used as well as that of the  covered work.
  * 
  */
-package org.xronos.orcc.forge.transform;
+package org.xronos.orcc.forge.transform.analysis;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.orcc.df.Action;
@@ -59,20 +60,23 @@ import net.sf.orcc.util.util.EcoreHelper;
  */
 public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 
+	protected Cfg cfg;
+
+	protected boolean flag;
+
+	protected CfgNode last;
+
 	private int bBasicIndex;
 
 	private int bIfIndex;
 
 	private int bWhileIndex;
 
-	protected Cfg cfg;
-
-	private IrFactory factory = IrFactory.eINSTANCE;
-
-	protected boolean flag;
-
-	protected CfgNode last;
-
+	/**
+	 * Creates an edge to this CFG
+	 * 
+	 * @param node
+	 */
 	protected void addEdge(CfgNode node) {
 		Edge edge = cfg.add(last, node);
 		if (flag) {
@@ -90,11 +94,17 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 	 * @return a newly-created node
 	 */
 	protected CfgNode addNode(Block block) {
-		CfgNode cfgNode = factory.createCfgNode(block);
+		CfgNode cfgNode = IrFactory.eINSTANCE.createCfgNode(block);
 		cfg.add(cfgNode);
 		return cfgNode;
 	}
 
+	/**
+	 * Creates an empty node with a label and adds it to this CFG
+	 * 
+	 * @param label
+	 * @return
+	 */
 	private CfgNode addNode(String label) {
 		CfgNode node = IrFactory.eINSTANCE.createCfgNode();
 		node.setLabel(label);
@@ -180,13 +190,14 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 
 		CfgNode entry = addNode("entry");
 		last = entry;
-		
+
 		last = super.caseProcedure(procedure);
 
 		CfgNode exit = addNode("exit");
 		addEdge(exit);
-		mergeJoins(cfg,entry);
-		
+		removeJoins(cfg);
+		cfg.computeDominance();
+
 		Action action = EcoreHelper.getContainerOfType(procedure, Action.class);
 		if (action != null) {
 			if (action.hasAttribute("xronos_cfg")) {
@@ -214,18 +225,32 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 		return last;
 	}
 
-	private void mergeJoins(Graph g, Vertex entry){
-		for(Vertex vertex : g.getVertices()){
-			if(vertex.getLabel().equals("join")){
-				List<Edge> inEdges = vertex.getIncoming();
-				List<Edge> outEdges = vertex.getOutgoing();
-				
-				for(Edge edge : inEdges){
-					// TODO: Create a New Edge to the outgoing!
+	/**
+	 * This method removes empty joins found on Block Ifs and Whiles
+	 * 
+	 * @param g
+	 */
+	private void removeJoins(Graph g) {
+		List<Vertex> nodesToDelete = new ArrayList<Vertex>();
+		for (Vertex vertex : g.getVertices()) {
+			List<Edge> edgeToDelete = new ArrayList<Edge>();
+			if (vertex.getLabel().equals("join")) {
+				for (Edge inEdge : vertex.getIncoming()) {
+					for (Edge outEdge : vertex.getOutgoing()) {
+						// Create a new Edge
+						Vertex source = inEdge.getSource();
+						Vertex target = outEdge.getTarget();
+						g.add(source, target);
+						edgeToDelete.add(inEdge);
+						edgeToDelete.add(outEdge);
+					}
 				}
-				
+				g.removeEdges(edgeToDelete);
+				nodesToDelete.add(vertex);
 			}
+
 		}
+		g.removeVertices(nodesToDelete);
 	}
-	
+
 }
