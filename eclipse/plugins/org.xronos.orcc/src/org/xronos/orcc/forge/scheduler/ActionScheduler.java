@@ -50,6 +50,8 @@ import net.sf.orcc.ir.transform.BlockCombine;
 import org.xronos.openforge.lim.Task;
 import org.xronos.orcc.backend.debug.XronosDebug;
 import org.xronos.orcc.forge.mapping.TaskProcedure;
+import org.xronos.orcc.forge.transform.analysis.Liveness;
+import org.xronos.orcc.forge.transform.analysis.XronosCFG;
 import org.xronos.orcc.forge.transform.memory.RedundantLoadElimination;
 
 /**
@@ -134,10 +136,15 @@ public class ActionScheduler extends DfVisitor<Task> {
 		new BlockCombine().doSwitch(scheduler);
 		// -- Remove redundant Loads
 		new RedundantLoadElimination().doSwitch(scheduler);
-		this.scheduler = scheduler;
+		// -- CFG of the scheduler
+		scheduler.setAttribute("xronos_cfg", true);
+		new XronosCFG().doSwitch(scheduler);
+		// -- Liveness for each block
+		new Liveness().doSwitch(scheduler);
 		
 		new XronosDebug().printProcedure("/tmp", scheduler);
 		
+		this.scheduler = scheduler;
 		Task schedulerTask = new TaskProcedure(true).doSwitch(scheduler);
 		return schedulerTask;
 	}

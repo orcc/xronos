@@ -34,6 +34,9 @@ package org.xronos.orcc.forge.transform.analysis;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.emf.ecore.EObject;
+import org.xronos.orcc.ir.BlockMutex;
+
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.graph.Edge;
@@ -170,6 +173,11 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 		return join;
 	}
 
+	public CfgNode caseBlockMutex(BlockMutex blockMutex) {
+		last = doSwitch(blockMutex.getBlocks());
+		return last;
+	}
+	
 	@Override
 	public CfgNode caseBlockWhile(BlockWhile block) {
 		CfgNode cfgNode = addNode(block);
@@ -215,7 +223,7 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 		cfg.setExit(exit);
 		addEdge(exit);
 		removeJoins(cfg);
-		cfg.computeDominance();
+		//cfg.computeDominance();
 
 		Action action = EcoreHelper.getContainerOfType(procedure, Action.class);
 		if (action != null) {
@@ -276,6 +284,14 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 
 		}
 		g.removeVertices(nodesToDelete);
+	}
+
+	@Override
+	public CfgNode defaultCase(EObject object) {
+		if(object instanceof BlockMutex){
+			return caseBlockMutex((BlockMutex) object);
+		}
+		return null;
 	}
 
 }

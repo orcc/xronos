@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.Procedure;
@@ -70,6 +71,9 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 	public Branch caseBlockIf(BlockIf blockIf) {
 		Map<Var, Port> inputs = new HashMap<Var, Port>();
 		Map<Var, Bus> outputs = new HashMap<Var, Bus>();
+
+		Set<Var> liveOut = (Set<Var>) blockIf.getAttribute("LiveOut")
+				.getObjectValue();
 
 		// -- Decision
 		// Construct decision from the block while condition
@@ -185,64 +189,69 @@ public class BlockIfToBranch extends AbstractIrVisitor<Branch> {
 
 		// Create a DataBus if we have a dependency from input to output
 		for (Var var : tDataBuses.keySet()) {
-			Type type = var.getType();
-			if (!eDataBuses.containsKey(var)) {
-				Port port = null;
-				Bus bDataBus = null;
-				if (inputs.containsKey(var)) {
-					port = inputs.get(var);
-				} else {
-					port = branch.makeDataPort(var.getName(),
-							type.getSizeInBits(), type.isInt());
-					inputs.put(var, port);
+			if (liveOut.contains(var)) {
+				Type type = var.getType();
+				if (!eDataBuses.containsKey(var)) {
+					Port port = null;
+					Bus bDataBus = null;
+					if (inputs.containsKey(var)) {
+						port = inputs.get(var);
+					} else {
+						port = branch.makeDataPort(var.getName(),
+								type.getSizeInBits(), type.isInt());
+						inputs.put(var, port);
 
-				}
-				if (outputs.containsKey(var)) {
-					bDataBus = outputs.get(var);
-				} else {
-					// Connect
-					bDataBus = branch.getExit(Exit.DONE).makeDataBus(
-							var.getName(), type.getSizeInBits(), type.isInt());
-					outputs.put(var, bDataBus);
-				}
+					}
+					if (outputs.containsKey(var)) {
+						bDataBus = outputs.get(var);
+					} else {
+						// Connect
+						bDataBus = branch.getExit(Exit.DONE).makeDataBus(
+								var.getName(), type.getSizeInBits(),
+								type.isInt());
+						outputs.put(var, bDataBus);
+					}
 
-				Port bDataBusPeer = bDataBus.getPeer();
-				Bus portPeer = port.getPeer();
-				ComponentUtil.connectDataDependency(portPeer, bDataBusPeer, 1);
+					Port bDataBusPeer = bDataBus.getPeer();
+					Bus portPeer = port.getPeer();
+					ComponentUtil.connectDataDependency(portPeer, bDataBusPeer,
+							1);
+				}
 			}
 		}
 
 		// Create a DataBus if we have a dependency from input to output
 		for (Var var : eDataBuses.keySet()) {
-			Type type = var.getType();
-			
-			
-			if (!tDataBuses.containsKey(var)) {
-				Port port = null;
-				Bus bDataBus = null;
-				if (inputs.containsKey(var)) {
-					port = inputs.get(var);
-				} else {
-					port = branch.makeDataPort(var.getName(),
-							type.getSizeInBits(), type.isInt());
-					inputs.put(var, port);
+			if (liveOut.contains(var)) {
+				Type type = var.getType();
+				if (!tDataBuses.containsKey(var)) {
+					Port port = null;
+					Bus bDataBus = null;
+					if (inputs.containsKey(var)) {
+						port = inputs.get(var);
+					} else {
+						port = branch.makeDataPort(var.getName(),
+								type.getSizeInBits(), type.isInt());
+						inputs.put(var, port);
 
-				}
-				if (outputs.containsKey(var)) {
-					bDataBus = outputs.get(var);
-				} else {
-					// Connect
-					bDataBus = branch.getExit(Exit.DONE).makeDataBus(
-							var.getName(), type.getSizeInBits(), type.isInt());
-					outputs.put(var, bDataBus);
-				}
+					}
+					if (outputs.containsKey(var)) {
+						bDataBus = outputs.get(var);
+					} else {
+						// Connect
+						bDataBus = branch.getExit(Exit.DONE).makeDataBus(
+								var.getName(), type.getSizeInBits(),
+								type.isInt());
+						outputs.put(var, bDataBus);
+					}
 
-				Port bDataBusPeer = bDataBus.getPeer();
-				Bus portPeer = port.getPeer();
-				ComponentUtil.connectDataDependency(portPeer, bDataBusPeer, 0);
+					Port bDataBusPeer = bDataBus.getPeer();
+					Bus portPeer = port.getPeer();
+					ComponentUtil.connectDataDependency(portPeer, bDataBusPeer,
+							0);
+				}
 			}
 		}
-
 		blockIf.setAttribute("inputs", inputs);
 		blockIf.setAttribute("outputs", outputs);
 

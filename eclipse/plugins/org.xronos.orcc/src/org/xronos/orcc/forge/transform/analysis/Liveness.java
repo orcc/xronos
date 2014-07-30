@@ -57,7 +57,9 @@ import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.Void;
 
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
+import org.xronos.orcc.ir.BlockMutex;
 
 /**
  * This visitor computes the liveness for each block, a procedure should have a
@@ -72,6 +74,8 @@ public class Liveness extends AbstractIrVisitor<Void> {
 	private Set<Var> ueVar;
 
 	private Set<Var> varKill;
+
+	private static boolean DEBUG = false;
 
 	public Liveness() {
 		super(true);
@@ -149,6 +153,11 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
+	public Void caseBlockMutex(BlockMutex blockMutex){
+		 doSwitch(blockMutex.getBlocks());
+		 return null;
+	}
+	
 	@Override
 	public Void caseBlockWhile(BlockWhile blockWhile) {
 		ueVar = new HashSet<Var>();
@@ -166,14 +175,15 @@ public class Liveness extends AbstractIrVisitor<Void> {
 
 	@Override
 	public Void caseProcedure(Procedure procedure) {
+
 		doSwitch(procedure.getBlocks());
 		Cfg cfg = procedure.getCfg();
 
-		EReference refEdges = GraphPackage.Literals.VERTEX__INCOMING;
-		EReference refVertex = GraphPackage.Literals.EDGE__SOURCE;
+		EReference refEdges = GraphPackage.Literals.VERTEX__OUTGOING;
+		EReference refVertex = GraphPackage.Literals.EDGE__TARGET;
 
 		Ordering rpo = new ReversePostOrder(cfg, refVertex.getEOpposite(),
-				refEdges.getEOpposite(), cfg.getEntry());
+				refEdges.getEOpposite(), cfg.getExit());
 
 		List<Vertex> vertices = rpo.getVertices();
 		Map<Vertex, Set<Var>> liveOuts = new HashMap<Vertex, Set<Var>>();
@@ -183,44 +193,81 @@ public class Liveness extends AbstractIrVisitor<Void> {
 			liveOuts.put(vertex, new HashSet<Var>());
 		}
 
+		if (DEBUG)
+			System.out.println("Procedure : " + procedure.getName());
+
 		boolean changed = true;
+		int passes = 0;
 		while (changed) {
 			changed = false;
 			for (int i = 1; i < vertices.size() - 2; i++) {
 				Set<Var> oldLiveOut = liveOuts.get(vertices.get(i));
-				Set<Var> newLiveOut = liveOut(vertices, liveOuts, i);
+				Set<Var> newLiveOut = liveOut(vertices.get(i), liveOuts);// liveOut(vertices,
+																			// liveOuts,
+																			// i);
 				liveOuts.put(vertices.get(i), newLiveOut);
 				if (!oldLiveOut.equals(newLiveOut)) {
 					changed = true;
 				}
 			}
+			if (DEBUG) {
+				// Debug Print
+				System.out.println("Pass : " + passes);
+				for (Vertex vertex : vertices) {
+					System.out.println("Vertex: " + vertex.getLabel());
+					for (Var var : liveOuts.get(vertex)) {
+						System.out.print("\t" + var.getName() + ", ");
+					}
+					System.out.print("\n");
+				}
+				passes++;
+			}
+		}
+
+		// Store liveness for each Block
+		for (Vertex vertex : vertices) {
+			CfgNode node = (CfgNode) vertex;
+			if(node.getNode() != null){
+				Block block = node.getNode();
+				block.setAttribute("LiveOut", liveOuts.get(vertex));
+			}
+		}
+
+		return null;
+	}
+	
+	@Override
+	public Void defaultCase(EObject object) {
+		if(object instanceof BlockMutex){
+			return caseBlockMutex((BlockMutex) object);
 		}
 		return null;
 	}
 
-	private Set<Var> liveOut(List<Vertex> vertices,
-			Map<Vertex, Set<Var>> liveOuts, int index) {
+	private Set<Var> liveOut(Vertex vertex, Map<Vertex, Set<Var>> liveOuts) {
 		Set<Var> newLiveOut = new HashSet<Var>();
-		for (int i = index; i < vertices.size() - 2; i++) {
-			Block block = ((CfgNode) vertices.get(i)).getNode();
-			@SuppressWarnings("unchecked")
-			Set<Var> ueVar = (Set<Var>) block.getAttribute("UEVar")
-					.getObjectValue();
-			@SuppressWarnings("unchecked")
-			Set<Var> varKill = (Set<Var>) block.getAttribute("VarKill")
-					.getObjectValue();
+		for (Vertex vx : vertex.getSuccessors()) {
+			if (!vx.getLabel().equals("exit")) {
+				Block block = ((CfgNode) vx).getNode();
+				@SuppressWarnings("unchecked")
+				Set<Var> ueVar = (Set<Var>) block.getAttribute("UEVar")
+						.getObjectValue();
+				@SuppressWarnings("unchecked")
+				Set<Var> varKill = (Set<Var>) block.getAttribute("VarKill")
+						.getObjectValue();
 
-			Set<Var> temp = new HashSet<Var>();
-			for (Var var : newLiveOut) {
-				if (!varKill.contains(var)) {
-					temp.add(var);
+				Set<Var> temp = new HashSet<Var>();
+				for (Var var : newLiveOut) {
+					if (!varKill.contains(var)) {
+						temp.add(var);
+					}
 				}
+				temp.addAll(ueVar);
+
+				newLiveOut.addAll(temp);
 			}
-			temp.addAll(ueVar);
-
-			newLiveOut.addAll(temp);
 		}
-
 		return newLiveOut;
 	}
+
 }

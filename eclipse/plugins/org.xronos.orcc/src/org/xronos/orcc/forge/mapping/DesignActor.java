@@ -60,7 +60,7 @@ public class DesignActor extends DfVisitor<Design> {
 		// Copy Actor and work to the copied actors
 		// Eliminate the given attributes once the
 		// transformation has finished
-		Actor cActor = IrUtil.copy(actor);
+		Actor cActor = actor;//IrUtil.copy(actor);
 
 		String designName = cActor.getName();
 
