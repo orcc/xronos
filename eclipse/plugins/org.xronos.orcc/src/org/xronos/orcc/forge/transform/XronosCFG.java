@@ -31,10 +31,13 @@
  */
 package org.xronos.orcc.forge.transform;
 
-import java.util.Iterator;
 import java.util.List;
 
+import net.sf.orcc.df.Action;
+import net.sf.orcc.df.Actor;
 import net.sf.orcc.graph.Edge;
+import net.sf.orcc.graph.Graph;
+import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.graph.util.Dota;
 import net.sf.orcc.ir.Block;
 import net.sf.orcc.ir.BlockBasic;
@@ -46,6 +49,7 @@ import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.FilesManager;
+import net.sf.orcc.util.util.EcoreHelper;
 
 /**
  * This visitor builds the {@link Cfg Control Flow Graph} of a {@link Procedure}
@@ -55,174 +59,173 @@ import net.sf.orcc.util.FilesManager;
  */
 public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 
-	/**
-	 * This procedure CFG
-	 */
-	private Cfg cfg;
-
-	/**
-	 * The last CFG Node
-	 */
-	private CfgNode last;
-
-	private int bBIndex;
+	private int bBasicIndex;
 
 	private int bIfIndex;
 
-	private int bWIndex;
+	private int bWhileIndex;
+
+	protected Cfg cfg;
+
+	private IrFactory factory = IrFactory.eINSTANCE;
+
+	protected boolean flag;
+
+	protected CfgNode last;
+
+	protected void addEdge(CfgNode node) {
+		Edge edge = cfg.add(last, node);
+		if (flag) {
+			edge.setLabel("true");
+			// reset flag to false (so it is only set for this edge)
+			flag = false;
+		}
+	}
+
+	/**
+	 * Creates a node and adds it to this CFG.
+	 * 
+	 * @param block
+	 *            the related block
+	 * @return a newly-created node
+	 */
+	protected CfgNode addNode(Block block) {
+		CfgNode cfgNode = factory.createCfgNode(block);
+		cfg.add(cfgNode);
+		return cfgNode;
+	}
 
 	private CfgNode addNode(String label) {
 		CfgNode node = IrFactory.eINSTANCE.createCfgNode();
 		node.setLabel(label);
 		cfg.add(node);
-		return node;
-	}
 
-	protected CfgNode addNode(Block block) {
-		CfgNode cfgNode = IrFactory.eINSTANCE.createCfgNode(block);
-		cfg.add(cfgNode);
-		return cfgNode;
+		return node;
 	}
 
 	@Override
 	public CfgNode caseBlockBasic(BlockBasic block) {
-		CfgNode node = addNode(block);
-		node.setLabel("bb" + bBIndex);
-		bBIndex++;
-		last = node;
-		return node;
+		CfgNode cfgNode = addNode(block);
+		cfgNode.setLabel("bB" + bBasicIndex);
+		bBasicIndex++;
+		if (last != null) {
+			addEdge(cfgNode);
+		}
+
+		return cfgNode;
 	}
 
 	@Override
-	public CfgNode caseBlockIf(BlockIf blockIf) {
-		CfgNode node = addNode(blockIf);
-		node.setLabel("bIf" + bIfIndex);
+	public CfgNode caseBlockIf(BlockIf block) {
+		CfgNode cfgNode = addNode(block);
+		cfgNode.setLabel("bIf" + bIfIndex);
 		bIfIndex++;
-		last = node;
-
-		if (!blockIf.getThenBlocks().isEmpty()) {
-			CfgNode lastThenNode = doSwitch(blockIf.getThenBlocks());
-			blockIf.setAttribute("lastThenNode", lastThenNode);
+		if (last != null) {
+			addEdge(cfgNode);
 		}
 
-		if (!blockIf.getElseBlocks().isEmpty()) {
-			CfgNode lastElseNode = doSwitch(blockIf.getElseBlocks());
-			blockIf.setAttribute("lastElseNode", lastElseNode);
-		}
-		last = node;
-		return node;
+		CfgNode join = addNode("join");
+
+		last = cfgNode;
+		flag = true;
+		last = doSwitch(block.getThenBlocks());
+
+		// reset flag (in case there are no nodes in "then" branch)
+		flag = false;
+		addEdge(join);
+
+		last = cfgNode;
+		last = doSwitch(block.getElseBlocks());
+		addEdge(join);
+		last = join;
+
+		return join;
 	}
 
 	@Override
-	public CfgNode caseBlockWhile(BlockWhile blockWhile) {
-		CfgNode node = addNode(blockWhile);
-		node.setLabel("bW" + bWIndex);
-		bWIndex++;
-		last = node;
+	public CfgNode caseBlockWhile(BlockWhile block) {
+		CfgNode join = addNode("join");
 
-		if (!blockWhile.getBlocks().isEmpty()) {
-			CfgNode lastBlockNode = doSwitch(blockWhile.getBlocks());
-			blockWhile.setAttribute("lastBlockNode", lastBlockNode);
+		if (last != null) {
+			addEdge(join);
 		}
-		last = node;
-		return node;
+
+		flag = true;
+		last = join;
+		CfgNode cfgNode = addNode(block);
+		cfgNode.setLabel("bW" + bWhileIndex);
+		bWhileIndex++;
+		addEdge(cfgNode);
+
+		last = join;
+		flag = true;
+		last = doSwitch(block.getBlocks());
+
+		// reset flag (in case there are no block in "then" branch)
+		flag = false;
+		addEdge(join);
+		last = cfgNode;
+
+		return cfgNode;
 	}
 
 	@Override
 	public CfgNode caseProcedure(Procedure procedure) {
-		this.procedure = procedure;
-		bBIndex = 0;
+		bBasicIndex = 0;
 		bIfIndex = 0;
-		bWIndex = 0;
+		bWhileIndex = 0;
 
 		cfg = IrFactory.eINSTANCE.createCfg();
 		procedure.setCfg(cfg);
 
 		CfgNode entry = addNode("entry");
-		cfg.setEntry(entry);
-
 		last = entry;
+		
+		last = super.caseProcedure(procedure);
 
-		CfgNode lastNode = doSwitch(procedure.getBlocks());
- 
 		CfgNode exit = addNode("exit");
-		cfg.setEntry(exit);
-
-		addEdge(lastNode, exit);
-		Dota dota = new Dota();
-		FilesManager.writeFile(dota.dot(cfg), "/tmp/", procedure.getName()
-				+ "_cfg.dot");
-
-		return null;
-	}
-
-	public CfgNode doSwitch(List<Block> blocks) {
-		CfgNode lastNode = last;
-
-		Iterator<Block> iter = blocks.listIterator();
-
-		while (iter.hasNext()) {
-			Block next = iter.next();
-			CfgNode node = doSwitch(next);
-			if (!lastNode.getLabel().equals("entry")) {
-				Block lastBlock = lastNode.getNode();
-				if (lastBlock instanceof BlockBasic) {
-					addEdge(lastNode, node);
-				} else if (lastBlock instanceof BlockIf) {
-					if (next.eContainer() != lastBlock) {
-						if (!((BlockIf) lastBlock).getThenBlocks().isEmpty()) {
-							CfgNode lastThenNode = (CfgNode) lastBlock
-									.getAttribute("lastThenNode")
-									.getReferencedValue();
-							Edge trueEdge = addEdge(lastThenNode, node);
-							trueEdge.setLabel("true");
-						} else {
-							Edge trueEdge = addEdge(lastNode, node);
-							trueEdge.setLabel("true");
-						}
-
-						if (!((BlockIf) lastBlock).getElseBlocks().isEmpty()) {
-							CfgNode lastElseNode = (CfgNode) lastBlock
-									.getAttribute("lastElseNode")
-									.getReferencedValue();
-							Edge falseEdge = addEdge(lastElseNode, node);
-							falseEdge.setLabel("false");
-						} else {
-							Edge falseEdge = addEdge(lastNode, node);
-							falseEdge.setLabel("false");
-						}
-					} else {
-						Edge trueEdge = addEdge(lastNode, node);
-						trueEdge.setLabel("true");
-					}
-				} else if (lastBlock instanceof BlockWhile) {
-					if (next.eContainer() != lastBlock) {
-						if (!((BlockWhile) lastBlock).getBlocks().isEmpty()) {
-							CfgNode lasteBlockNode = (CfgNode) lastBlock
-									.getAttribute("lastBlockNode")
-									.getReferencedValue();
-							Edge trueEdge = addEdge(lasteBlockNode, node);
-							trueEdge.setLabel("true");
-						}
-						Edge falseEdge = addEdge(lastNode, node);
-						falseEdge.setLabel("false");
-					}
-				} else {
-					Edge trueEdge = addEdge(lastNode, node);
-					trueEdge.setLabel("true");
-				}
-			} else {
-				addEdge(lastNode, node);
+		addEdge(exit);
+		mergeJoins(cfg,entry);
+		
+		Action action = EcoreHelper.getContainerOfType(procedure, Action.class);
+		if (action != null) {
+			if (action.hasAttribute("xronos_cfg")) {
+				Dota dota = new Dota();
+				FilesManager.writeFile(dota.dot(cfg), "/tmp/",
+						((Actor) action.eContainer()).getName() + "_"
+								+ procedure.getName() + "_cfg.dot");
 			}
-			lastNode = node;
 		}
-		last = lastNode;
-		return lastNode;
+		return last;
 	}
 
-	private Edge addEdge(CfgNode source, CfgNode target) {
-		Edge edge = cfg.add(source, target);
-		return edge;
+	/**
+	 * Visits the given block list.
+	 * 
+	 * @param blocks
+	 *            a list of blocks
+	 * @return the last block of the block list
+	 */
+	public CfgNode doSwitch(List<Block> blocks) {
+		for (Block block : blocks) {
+			last = doSwitch(block);
+		}
+
+		return last;
 	}
 
+	private void mergeJoins(Graph g, Vertex entry){
+		for(Vertex vertex : g.getVertices()){
+			if(vertex.getLabel().equals("join")){
+				List<Edge> inEdges = vertex.getIncoming();
+				List<Edge> outEdges = vertex.getOutgoing();
+				
+				for(Edge edge : inEdges){
+					// TODO: Create a New Edge to the outgoing!
+				}
+				
+			}
+		}
+	}
+	
 }
