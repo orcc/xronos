@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.df.Action;
@@ -100,27 +101,33 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	/**
 	 * The Bus variable for each dependency
 	 */
-	Map<Bus, Var> busDependecies;
+	private Map<Bus, Var> busDependecies;
 
 	/**
 	 * The current Block (Module) being created
 	 */
-	BlockBasic currentBlock;
+	private BlockBasic currentBlock;
 
 	/**
 	 * Set of Block inputs
 	 */
-	Map<Var, Port> inputs;
+	private Map<Var, Port> inputs;
 
 	/**
 	 * Set of Block outputs
 	 */
-	Map<Var, Bus> outputs;
+	private Map<Var, Bus> outputs;
 
 	/**
 	 * The port variable for each dependency
 	 */
-	Map<Port, Var> portDependecies;
+	private Map<Port, Var> portDependecies;
+	
+	/**
+	 * Procedure target
+	 */
+	
+	private Var procedureTarget;
 
 	public BlockBasicToBlock() {
 		super(true);
@@ -555,6 +562,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			Var target = (Var) returnInstr.getAttribute("returnTarget")
 					.getReferencedValue();
+			
+			procedureTarget = target;
 
 			CastOp cast = new CastOp(target.getType().getSizeInBits(), target
 					.getType().isInt());
@@ -867,7 +876,12 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Block block = new Block(sequence);
 
 		Map<Var, Bus> lastDefVarBus = new HashMap<Var, Bus>();
-
+		@SuppressWarnings("unchecked")
+		Set<Var> liveOut = (Set<Var>) currentBlock.getAttribute("LiveOut").getObjectValue();
+		if(procedureTarget!= null){
+			liveOut.add(procedureTarget);
+		}
+		
 		// Build the current block inputs and
 		// Set the dependencies for the rest of the components
 		for (Component component : sequence) {
@@ -913,7 +927,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
 			for (Bus bus : dataBuses) {
 				Var var = busDependecies.get(bus);
-				if (usedInOtherBlocks(currentBlock, var)) {
+				//if (usedInOtherBlocks(currentBlock, var)) {
+				if (liveOut.contains(var)){
 					if (!outputs.containsKey(var)) {
 						Type type = var.getType();
 						Bus blkOutputBus = block.getExit(Exit.DONE)

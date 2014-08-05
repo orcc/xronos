@@ -62,6 +62,7 @@ import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.WhileBody;
 import org.xronos.openforge.lim.primitive.Reg;
+import org.xronos.openforge.util.Debug;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 
 /**
@@ -117,6 +118,8 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		// Create decision
 		Decision decision = new Decision(decisionBlock, decisionComponent);
 
+		Debug.depGraphTo(decision, "deicions", "/tmp/decision1.dot", 1);
+		
 		// Propagate decisionBlockInputs to the decision one
 		Map<Var, Port> dDataPorts = new HashMap<Var, Port>();
 		ComponentUtil.propagateDataPorts(decision, dDataPorts, dBlockDataPorts);
