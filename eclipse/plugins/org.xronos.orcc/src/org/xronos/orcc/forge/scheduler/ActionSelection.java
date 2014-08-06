@@ -106,6 +106,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 					IrFactory.eINSTANCE.createTypeBool());
 			// -- Create BlockIf
 			BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
+			blockIf.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
 			blockIf.setCondition(condition);
 
 			// -- Add action call and output pattern resolution
@@ -208,6 +209,8 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 					OpBinary.EQ, E2, IrFactory.eINSTANCE.createTypeBool());
 
 			BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
+			blockIf.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
+			
 			blockIf.setCondition(condition);
 			blockIf.getThenBlocks().add(actionSelection(actions, state));
 
@@ -320,6 +323,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		// -- Create BlockIf for reading on ports with repeats
 		if (SchedulerUtil.actorHasInputPortWithRepeats(actor)) {
 			BlockIf readIf = IrFactory.eINSTANCE.createBlockIf();
+			readIf.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
 			Var currentState = scheduler.getLocal("fsmCurrentState_"
 					+ actor.getName());
 			Expression E1 = IrFactory.eINSTANCE.createExprVar(currentState);
@@ -341,6 +345,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		// -- Create BlockIf for writing on ports with repeats
 		if (SchedulerUtil.actorHasOutputPortWithRepeats(actor)) {
 			BlockIf writeIf = IrFactory.eINSTANCE.createBlockIf();
+			writeIf.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
 			Var currentState = scheduler.getLocal("fsmCurrentState_"
 					+ actor.getName());
 			Expression E1 = IrFactory.eINSTANCE.createExprVar(currentState);
@@ -385,6 +390,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 						OpBinary.LT, E2, IrFactory.eINSTANCE.createTypeBool());
 				// -- Create blockIf
 				BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
+				blockIf.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
 				blockIf.setCondition(condition);
 
 				// --Create blockIf then block
@@ -450,6 +456,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				Var portStatus = scheduler.getLocal(port.getName() + "Status");
 				condition = IrFactory.eINSTANCE.createExprVar(portStatus);
 				BlockIf statusIf = IrFactory.eINSTANCE.createBlockIf();
+				statusIf.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
 				statusIf.setCondition(condition);
 				statusIf.getThenBlocks().add(block);
 

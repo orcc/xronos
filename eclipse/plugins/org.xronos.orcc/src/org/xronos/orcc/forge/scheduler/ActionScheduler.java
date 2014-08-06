@@ -106,6 +106,7 @@ public class ActionScheduler extends DfVisitor<Task> {
 
 		// -- Create the infinite while block
 		BlockWhile inifiniteWhile = IrFactory.eINSTANCE.createBlockWhile();
+		inifiniteWhile.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
 		Expression condition = IrFactory.eINSTANCE.createExprBool(true);
 		inifiniteWhile.setCondition(condition);
 

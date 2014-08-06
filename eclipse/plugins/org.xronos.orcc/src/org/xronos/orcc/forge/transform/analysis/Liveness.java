@@ -77,14 +77,72 @@ import org.xronos.orcc.ir.InstPortWrite;
  */
 public class Liveness extends AbstractIrVisitor<Void> {
 
-	private static boolean DEBUG = true;
-
 	private Set<Var> ueVar;
 
 	private Set<Var> varKill;
 
+	private static boolean DEBUG = false;
+
 	public Liveness() {
 		super(true);
+	}
+
+	@Override
+	public Void caseInstAssign(InstAssign assign) {
+		doSwitch(assign.getValue());
+
+		Var target = assign.getTarget().getVariable();
+		varKill.add(target);
+
+		return null;
+	}
+
+	@Override
+	public Void caseInstLoad(InstLoad load) {
+		for (Expression expr : load.getIndexes()) {
+			doSwitch(expr);
+		}
+
+		Var target = load.getTarget().getVariable();
+		varKill.add(target);
+
+		return null;
+	}
+
+	@Override
+	public Void caseInstStore(InstStore store) {
+		doSwitch(store.getValue());
+
+		for (Expression expr : store.getIndexes()) {
+			doSwitch(expr);
+		}
+
+		Var target = store.getTarget().getVariable();
+		varKill.add(target);
+
+		return null;
+	}
+
+	@Override
+	public Void caseInstCall(InstCall call) {
+		for (Arg arg : call.getArguments()) {
+			doSwitch(arg);
+		}
+
+		if (call.getTarget() != null) {
+			Var target = call.getTarget().getVariable();
+			varKill.add(target);
+		}
+		return null;
+	}
+
+	@Override
+	public Void caseExprVar(ExprVar object) {
+		Var var = object.getUse().getVariable();
+		if (!varKill.contains(var)) {
+			ueVar.add(var);
+		}
+		return null;
 	}
 
 	@Override
@@ -99,8 +157,34 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		return null;
 	}
 
+	public Void caseInstPortRead(InstPortRead instPortRead) {
+		Var target = instPortRead.getTarget().getVariable();
+		varKill.add(target);
+
+		return null;
+	}
+
+	public Void caseInstPortPeek(InstPortPeek instPortPeek) {
+		Var target = instPortPeek.getTarget().getVariable();
+		varKill.add(target);
+
+		return null;
+	}
+
+	public Void caseInstPortStatus(InstPortStatus instPortStatus) {
+		Var target = instPortStatus.getTarget().getVariable();
+		varKill.add(target);
+		return null;
+	}
+
+	public Void caseInstPortWrite(InstPortWrite instPortWrite) {
+		doSwitch(instPortWrite.getValue());
+		return null;
+	}
+
 	@Override
 	public Void caseBlockIf(BlockIf blockIf) {
+		doSwitch(blockIf.getJoinBlock());
 		ueVar = new HashSet<Var>();
 		varKill = new HashSet<Var>();
 
@@ -121,6 +205,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 
 	@Override
 	public Void caseBlockWhile(BlockWhile blockWhile) {
+		doSwitch(blockWhile.getJoinBlock());
 		ueVar = new HashSet<Var>();
 		varKill = new HashSet<Var>();
 
@@ -130,89 +215,6 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		blockWhile.setAttribute("VarKill", varKill);
 
 		doSwitch(blockWhile.getBlocks());
-
-		return null;
-	}
-
-	@Override
-	public Void caseExprVar(ExprVar object) {
-		Var var = object.getUse().getVariable();
-		if (!varKill.contains(var)) {
-			ueVar.add(var);
-		}
-		return null;
-	}
-
-	@Override
-	public Void caseInstAssign(InstAssign assign) {
-		doSwitch(assign.getValue());
-
-		Var target = assign.getTarget().getVariable();
-		varKill.add(target);
-
-		return null;
-	}
-
-	@Override
-	public Void caseInstCall(InstCall call) {
-		for (Arg arg : call.getArguments()) {
-			doSwitch(arg);
-		}
-
-		if (call.getTarget() != null) {
-			Var target = call.getTarget().getVariable();
-			varKill.add(target);
-		}
-		return null;
-	}
-
-	@Override
-	public Void caseInstLoad(InstLoad load) {
-		for (Expression expr : load.getIndexes()) {
-			doSwitch(expr);
-		}
-
-		Var target = load.getTarget().getVariable();
-		varKill.add(target);
-
-		return null;
-	}
-
-	public Void caseInstPortPeek(InstPortPeek instPortPeek) {
-		Var target = instPortPeek.getTarget().getVariable();
-		varKill.add(target);
-
-		return null;
-	}
-
-	public Void caseInstPortRead(InstPortRead instPortRead) {
-		Var target = instPortRead.getTarget().getVariable();
-		varKill.add(target);
-
-		return null;
-	}
-
-	public Void caseInstPortStatus(InstPortStatus instPortStatus) {
-		Var target = instPortStatus.getTarget().getVariable();
-		varKill.add(target);
-		return null;
-	}
-
-	public Void caseInstPortWrite(InstPortWrite instPortWrite) {
-		doSwitch(instPortWrite.getValue());
-		return null;
-	}
-
-	@Override
-	public Void caseInstStore(InstStore store) {
-		doSwitch(store.getValue());
-
-		for (Expression expr : store.getIndexes()) {
-			doSwitch(expr);
-		}
-
-		Var target = store.getTarget().getVariable();
-		varKill.add(target);
 
 		return null;
 	}
@@ -300,7 +302,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		Set<Var> newLiveOut = new HashSet<Var>();
 		for (Vertex vx : vertex.getSuccessors()) {
 			Set<Var> newLiveOutSucc = liveOuts.get(vx);
-			if (!vx.getLabel().equals("exit") && !vx.getLabel().equals("join")) {
+			if (!vx.getLabel().equals("exit")) {
 				Block block = ((CfgNode) vx).getNode();
 				@SuppressWarnings("unchecked")
 				Set<Var> ueVar = (Set<Var>) block.getAttribute("UEVar")

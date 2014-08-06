@@ -155,7 +155,8 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 			addEdge(cfgNode);
 		}
 
-		CfgNode join = addNode("join");
+		CfgNode join = addNode(block.getJoinBlock());
+		join.setLabel("join");
 
 		last = cfgNode;
 		flag = true;
@@ -187,7 +188,8 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 			addEdge(cfgNode);
 		}
 		
-		CfgNode join = addNode("join");
+		CfgNode join = addNode(block.getJoinBlock());
+		join.setLabel("join");
 		
 		flag = true;
 		last = cfgNode;
@@ -222,7 +224,7 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 		CfgNode exit = addNode("exit");
 		cfg.setExit(exit);
 		addEdge(exit);
-		removeJoins(cfg);
+		//removeJoins(cfg);
 		//cfg.computeDominance();
 
 		Action action = EcoreHelper.getContainerOfType(procedure, Action.class);
@@ -263,6 +265,7 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 	 * 
 	 * @param g
 	 */
+	@SuppressWarnings("unused")
 	private void removeJoins(Graph g) {
 		List<Vertex> nodesToDelete = new ArrayList<Vertex>();
 		for (Vertex vertex : g.getVertices()) {
