@@ -81,11 +81,10 @@ public class XronosTransform {
 	public static void transformActor(Actor actor, Map<String, Object> options,
 			Boolean debugMode) {
 		List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
-
+		
 		transformations.add(new UnitImporter());
 		transformations.add(new VarInitializer());
 		transformations.add(new SinglePortReadWrite());
-		transformations.add(new SinglePortList());
 		transformations.add(new CheckVarSize());
 		transformations.add(new ParameterArrayRemoval());
 		transformations.add(new DfVisitor<Object>(new XronosConstantFolding()));
@@ -101,10 +100,10 @@ public class XronosTransform {
 		// transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
 		transformations
 				.add(new DfVisitor<Void>(new RedundantLoadElimination()));
+		transformations.add(new SinglePortList());
 		transformations.add(new XronosDivision());
 		transformations.add(new DfVisitor<CfgNode>(new XronosCFG()));
 		transformations.add(new DfVisitor<Void>(new Liveness()));
-
 		for (DfSwitch<?> transformation : transformations) {
 			try {
 				transformation.doSwitch(actor);

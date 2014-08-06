@@ -147,9 +147,25 @@ public class HasTokensBlock extends DfVisitor<Block> {
 			block.add(assign);
 			
 			
+			
+			
+			value = null;
 			if (action.getOutputPattern().getPorts().size() > 0) {
 				for (Port port : action.getOutputPattern().getPorts()) {
-					if (action.getOutputPattern().getNumTokens(port) > 1) {
+					if (action.getOutputPattern().getNumTokens(port) == 1) {
+						Var status = scheduler.getLocal(port.getName()
+								+ "Status");
+						Expression E = IrFactory.eINSTANCE
+								.createExprVar(status);
+						if (value == null) {
+							value = E;
+						} else {
+							value = IrFactory.eINSTANCE.createExprBinary(value,
+									OpBinary.LOGIC_AND, E,
+									IrFactory.eINSTANCE.createTypeBool());
+						}
+
+					} else {
 						Var tmpMaxportIndex = scheduler.getLocal("tmp_"
 								+ port.getName() + "MaxTokenIndex");
 						Var maxPortIndrex = actor.getStateVar(port.getName()
@@ -168,9 +184,47 @@ public class HasTokensBlock extends DfVisitor<Block> {
 						load = IrFactory.eINSTANCE.createInstLoad(tmpPortIndex,
 								portIndrex);
 						block.add(load);
+
+						int nbrTokens = action.getOutputPattern().getNumTokens(
+								port);
+
+						Expression E1 = IrFactory.eINSTANCE
+								.createExprVar(tmpPortIndex);
+						Expression E2 = IrFactory.eINSTANCE
+								.createExprInt(nbrTokens);
+
+						if (value == null) {
+							value = IrFactory.eINSTANCE.createExprBinary(E1,
+									OpBinary.EQ, E2,
+									IrFactory.eINSTANCE.createTypeBool());
+						} else {
+							Expression nextE2 = IrFactory.eINSTANCE
+									.createExprBinary(E1, OpBinary.EQ, E2,
+											IrFactory.eINSTANCE
+													.createTypeBool());
+							value = IrFactory.eINSTANCE.createExprBinary(value,
+									OpBinary.LOGIC_AND, nextE2,
+									IrFactory.eINSTANCE.createTypeBool());
+						}
 					}
 				}
+			} else {
+				value = IrFactory.eINSTANCE.createExprBool(true);
 			}
+
+			Var producedTokens = null;
+			if (scheduler.getLocal(action.getName() + "ProducedTokens") != null) {
+				producedTokens = scheduler.getLocal(action.getName() + "ProducedTokens");
+			} else {
+				producedTokens = IrFactory.eINSTANCE.createVar(
+						IrFactory.eINSTANCE.createTypeBool(), action.getName()
+								+ "ProducedTokens", true, 0);
+				scheduler.addLocal(producedTokens);
+			}
+
+			assign = IrFactory.eINSTANCE.createInstAssign(producedTokens,
+					value);
+			block.add(assign);
 			
 		}
 
