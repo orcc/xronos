@@ -35,7 +35,6 @@ package org.xronos.orcc.forge.mapping;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.util.DfVisitor;
-import net.sf.orcc.ir.util.IrUtil;
 
 import org.xronos.openforge.app.EngineThread;
 import org.xronos.openforge.app.GenericJob;

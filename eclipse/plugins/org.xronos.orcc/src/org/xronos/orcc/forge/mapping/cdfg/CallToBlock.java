@@ -61,6 +61,8 @@ import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.op.CastOp;
+import org.xronos.orcc.forge.transform.analysis.Liveness;
+import org.xronos.orcc.forge.transform.analysis.XronosCFG;
 
 /**
  * This class takes a call a transforms it to a LIM Block, arrays and reference
@@ -182,7 +184,8 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 
 		// Clone Procedure
 		Procedure proc = IrUtil.copy(call.getProcedure());
-
+		new XronosCFG().doSwitch(proc);
+		new Liveness().doSwitch(proc);
 		int nbArg = 0;
 		// Propagate References or create the necessary argument components
 		for (Arg arg : call.getArguments()) {

@@ -43,8 +43,6 @@ import java.util.Set;
 import net.sf.orcc.backends.ir.InstCast;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.ir.BlockBasic;
-import net.sf.orcc.ir.BlockIf;
-import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
@@ -55,7 +53,6 @@ import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
 import net.sf.orcc.ir.TypeList;
-import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.util.EcoreHelper;
@@ -122,11 +119,11 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	 * The port variable for each dependency
 	 */
 	private Map<Port, Var> portDependecies;
-	
+
 	/**
 	 * Procedure target
 	 */
-	
+
 	private Var procedureTarget;
 
 	public BlockBasicToBlock() {
@@ -449,25 +446,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		}
 	}
 
-	public Component caseInstPortRead(InstPortRead instPortRead) {
-		Var target = instPortRead.getTarget().getVariable();
-		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortRead.getPort();
-
-		// Construct ioHandler ReadAccess Component
-		ActionIOHandler ioHandler = (ActionIOHandler) port.getAttribute(
-				"ioHandler").getObjectValue();
-		Component pinRead = ioHandler.getReadAccess(false);
-		pinRead.setNonRemovable();
-
-		// Get Exit and ResultBus
-		Exit exit = pinRead.getExit(Exit.DONE);
-		Bus resultBus = exit.getDataBuses().get(0);
-
-		// Add to bus dependencies
-		busDependecies.put(resultBus, target);
-		return pinRead;
-	}
-
 	public Component caseInstPortPeek(InstPortPeek instPortRead) {
 		Var target = instPortRead.getTarget().getVariable();
 		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortRead.getPort();
@@ -485,6 +463,25 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		// Add to bus dependencies
 		busDependecies.put(resultBus, target);
 		return pinPeek;
+	}
+
+	public Component caseInstPortRead(InstPortRead instPortRead) {
+		Var target = instPortRead.getTarget().getVariable();
+		net.sf.orcc.df.Port port = (net.sf.orcc.df.Port) instPortRead.getPort();
+
+		// Construct ioHandler ReadAccess Component
+		ActionIOHandler ioHandler = (ActionIOHandler) port.getAttribute(
+				"ioHandler").getObjectValue();
+		Component pinRead = ioHandler.getReadAccess(false);
+		pinRead.setNonRemovable();
+
+		// Get Exit and ResultBus
+		Exit exit = pinRead.getExit(Exit.DONE);
+		Bus resultBus = exit.getDataBuses().get(0);
+
+		// Add to bus dependencies
+		busDependecies.put(resultBus, target);
+		return pinRead;
 	}
 
 	public Component caseInstPortStatus(InstPortStatus instPortStatus) {
@@ -562,7 +559,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 			Var target = (Var) returnInstr.getAttribute("returnTarget")
 					.getReferencedValue();
-			
+
 			procedureTarget = target;
 
 			CastOp cast = new CastOp(target.getType().getSizeInBits(), target
@@ -783,82 +780,6 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		return null;
 	}
 
-	private boolean usedInOtherBlocks(BlockBasic block, Var var) {
-
-		Map<Use, Boolean> uses = new HashMap<Use, Boolean>();
-
-		for (Use use : var.getUses()) {
-			uses.put(use, false);
-			BlockBasic useBlockBasic = EcoreHelper.getContainerOfType(use,
-					BlockBasic.class);
-			BlockIf useBlockIf = EcoreHelper.getContainerOfType(use,
-					BlockIf.class);
-			BlockWhile useBlockWhile = EcoreHelper.getContainerOfType(use,
-					BlockWhile.class);
-
-			if (useBlockBasic != null) {
-				if (block != useBlockBasic) {
-					uses.put(use, true);
-				}
-			}
-
-			if (useBlockIf != null) {
-				if (useBlockWhile != null) {
-					BlockIf useBlockIfBis = EcoreHelper.getContainerOfType(
-							useBlockWhile, BlockIf.class);
-					if (useBlockIf != useBlockIfBis) {
-						if (useBlockBasic == currentBlock
-								&& useBlockBasic.eContainer() == useBlockIf
-								&& !inputs.containsKey(var)) {
-							uses.put(use, false);
-						} else {
-							uses.put(use, true);
-						}
-					}
-				} else {
-
-					if (useBlockBasic == currentBlock
-							&& useBlockBasic.eContainer() == useBlockIf
-							&& !inputs.containsKey(var)) {
-						uses.put(use, false);
-					} else {
-						uses.put(use, true);
-					}
-				}
-			}
-
-			if (useBlockWhile != null) {
-				if (useBlockIf != null) {
-					BlockWhile useBlockWhileBis = EcoreHelper
-							.getContainerOfType(useBlockIf, BlockWhile.class);
-					if (useBlockWhile != useBlockWhileBis) {
-						if (useBlockBasic == currentBlock
-								&& useBlockBasic.eContainer() == useBlockWhile
-								&& !inputs.containsKey(var)) {
-							uses.put(use, false);
-						} else {
-							uses.put(use, true);
-						}
-					}
-				} else {
-					if (useBlockBasic == currentBlock
-							&& useBlockBasic.eContainer() == useBlockWhile
-							&& !inputs.containsKey(var)) {
-						uses.put(use, false);
-					} else {
-						uses.put(use, true);
-					}
-				}
-			}
-
-		}
-		boolean value = false;
-		for (Use use : uses.keySet()) {
-			value |= uses.get(use);
-		}
-		return value;
-	}
-
 	@Override
 	public Component visitInstructions(List<Instruction> instructions) {
 		int oldIndexInst = indexInst;
@@ -877,11 +798,12 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 		Map<Var, Bus> lastDefVarBus = new HashMap<Var, Bus>();
 		@SuppressWarnings("unchecked")
-		Set<Var> liveOut = (Set<Var>) currentBlock.getAttribute("LiveOut").getObjectValue();
-		if(procedureTarget!= null){
+		Set<Var> liveOut = (Set<Var>) currentBlock.getAttribute("LiveOut")
+				.getObjectValue();
+		if (procedureTarget != null) {
 			liveOut.add(procedureTarget);
 		}
-		
+
 		// Build the current block inputs and
 		// Set the dependencies for the rest of the components
 		for (Component component : sequence) {
@@ -927,8 +849,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			List<Bus> dataBuses = component.getExit(Exit.DONE).getDataBuses();
 			for (Bus bus : dataBuses) {
 				Var var = busDependecies.get(bus);
-				//if (usedInOtherBlocks(currentBlock, var)) {
-				if (liveOut.contains(var)){
+				// if (usedInOtherBlocks(currentBlock, var)) {
+				if (liveOut.contains(var)) {
 					if (!outputs.containsKey(var)) {
 						Type type = var.getType();
 						Bus blkOutputBus = block.getExit(Exit.DONE)
