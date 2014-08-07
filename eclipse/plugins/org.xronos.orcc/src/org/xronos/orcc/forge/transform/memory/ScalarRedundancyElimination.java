@@ -141,6 +141,7 @@ public class ScalarRedundancyElimination extends AbstractIrVisitor<Void> {
 					EcoreUtil.replace(expr, IrUtil.copy(repExpr));
 					IrUtil.delete(expr);
 				}
+				IrUtil.delete(load);
 			}
 			return null;
 		}
@@ -195,14 +196,37 @@ public class ScalarRedundancyElimination extends AbstractIrVisitor<Void> {
 
 		@Override
 		public Void caseInstLoad(InstLoad load) {
-			// TODO Auto-generated method stub
-			return super.caseInstLoad(load);
+			Var source = load.getSource().getVariable();
+			if (procStateVarUsed.contains(source)) {
+				EList<Use> targetUses = load.getTarget().getVariable()
+						.getUses();
+				while (!targetUses.isEmpty()) {
+					ExprVar expr = EcoreHelper.getContainerOfType(
+							targetUses.get(0), ExprVar.class);
+					ExprVar repExpr = IrFactory.eINSTANCE
+							.createExprVar(procedure.getLocal("temp_"
+									+ source.getName()));
+					EcoreUtil.replace(expr, IrUtil.copy(repExpr));
+					IrUtil.delete(expr);
+					
+				}
+				IrUtil.delete(load);
+			}
+			return null;
 		}
 
 		@Override
 		public Void caseInstStore(InstStore store) {
-			// TODO Auto-generated method stub
-			return super.caseInstStore(store);
+			Var target = store.getTarget().getVariable();
+			if (procStateVarUsed.contains(target)) {
+				Var tempVar = procedure.getLocal("temp_" + target.getName());
+				Expression value = IrUtil.copy(store.getValue());
+				InstAssign assign = IrFactory.eINSTANCE.createInstAssign(
+						tempVar, value);
+				IrUtil.addInstBeforeExpr(store.getValue(), assign);
+				IrUtil.delete(store);
+			}
+			return null;
 		}
 
 	}
@@ -214,15 +238,13 @@ public class ScalarRedundancyElimination extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseProcedure(Procedure procedure) {
 		// -- Initialize
+		this.procedure = procedure;
 		procStateVarUsed = new HashSet<Var>();
 		storedVars = new HashSet<Var>();
 		procedureStoreVarMap = new HashMap<Procedure, Set<Var>>();
 
 		// -- Retrieve state vars used by loads and stores
 		new RetrieveStateVars().doSwitch(procedure);
-
-		// -- Replace all intermediate store and loads
-		new ReplaceAndPropagate().doSwitch(procedure);
 
 		// -- Create a Load block with all the retrieved state vars
 		BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
@@ -234,6 +256,9 @@ public class ScalarRedundancyElimination extends AbstractIrVisitor<Void> {
 			InstLoad laod = IrFactory.eINSTANCE.createInstLoad(temp, var);
 			block.add(laod);
 		}
+
+		// -- Replace all intermediate store and loads
+		new ReplaceAndPropagate().doSwitch(procedure);
 
 		// -- Add load block
 		procedure.getBlocks().add(0, block);
