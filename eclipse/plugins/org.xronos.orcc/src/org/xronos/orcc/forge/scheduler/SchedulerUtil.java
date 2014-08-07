@@ -38,12 +38,11 @@ import java.util.Map;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Port;
-import net.sf.orcc.util.util.EcoreHelper;
 
 /**
  * This utility class helps different classes on the scheduler construction
  * 
- * @author endrix
+ * @author Endri Bezati
  *
  */
 public class SchedulerUtil {
@@ -117,7 +116,7 @@ public class SchedulerUtil {
 		}
 		return has;
 	}
-	
+
 	/**
 	 * This method retrieves if an actor has a repeat on an action output
 	 * 
@@ -126,14 +125,13 @@ public class SchedulerUtil {
 	 */
 	public static Boolean actionHasOutputPortWithRepeats(Action action) {
 		Boolean has = false;
-		for(Port port: action.getOutputPattern().getPorts()){
-			if (action.getOutputPattern().getNumTokens(port) > 1){
+		for (Port port : action.getOutputPattern().getPorts()) {
+			if (action.getOutputPattern().getNumTokens(port) > 1) {
 				has |= true;
 			}
 		}
 
 		return has;
 	}
-	
 
 }

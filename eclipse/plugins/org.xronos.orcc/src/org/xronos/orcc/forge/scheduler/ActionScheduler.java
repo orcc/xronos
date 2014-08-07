@@ -134,7 +134,7 @@ public class ActionScheduler extends DfVisitor<Task> {
 
 		// Scheduler transformations
 		// -- Combine blocks
-		new BlockCombine().doSwitch(scheduler);
+		new BlockCombine(false).doSwitch(scheduler);
 		// -- Remove redundant Loads
 		new RedundantLoadElimination().doSwitch(scheduler);
 		// -- CFG of the scheduler
