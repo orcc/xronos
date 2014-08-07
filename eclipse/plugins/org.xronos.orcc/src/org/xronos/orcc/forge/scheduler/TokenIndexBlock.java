@@ -139,6 +139,19 @@ public class TokenIndexBlock extends DfVisitor<Block> {
 							IrFactory.eINSTANCE.createTypeInt(),
 							"tmp_" + port.getName() + "MaxTokenIndex", true, 0);
 					scheduler.addLocal(tmpMaxTokenIndex);
+					
+					// -- Port Enable
+					Var portEnable = IrFactory.eINSTANCE.createVar(
+							IrFactory.eINSTANCE.createTypeBool(),
+							port.getName() + "PortEnable", true, 0);
+					actor.getStateVars().add(portEnable);
+					DesignMemory.addToMemory(actor, portEnable);
+					store = IrFactory.eINSTANCE
+							.createInstStore(portEnable,
+									IrFactory.eINSTANCE
+											.createExprBool(false));
+					block.add(store);
+					
 				}
 			}
 		}

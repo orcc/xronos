@@ -86,12 +86,31 @@ public class HasTokensBlock extends DfVisitor<Block> {
 						}
 
 					} else {
+						// -- Port Enable init
+						Var tmpPortEnable = null;
+						if (scheduler.getLocal( "tmp_"
+								+ port.getName() + "PortEnable") != null) {
+							tmpPortEnable = scheduler.getLocal( "tmp_"
+									+ port.getName() + "PortEnable");
+						} else {
+							tmpPortEnable = IrFactory.eINSTANCE.createVar(
+									IrFactory.eINSTANCE.createTypeBool(), "tmp_"
+											+ port.getName() + "PortEnable", true,
+									0);
+							scheduler.addLocal(tmpPortEnable);
+						}
+						
+						Var portEnable = actor.getStateVar(port.getName()+"PortEnable");
+						InstLoad load = IrFactory.eINSTANCE.createInstLoad(tmpPortEnable, portEnable);
+						block.add(load);
+						
+						
 						Var tmpMaxportIndex = scheduler.getLocal("tmp_"
 								+ port.getName() + "MaxTokenIndex");
 						Var maxPortIndrex = actor.getStateVar(port.getName()
 								+ "MaxTokenIndex");
 
-						InstLoad load = IrFactory.eINSTANCE.createInstLoad(
+						load = IrFactory.eINSTANCE.createInstLoad(
 								tmpMaxportIndex, maxPortIndrex);
 						block.add(load);
 
@@ -145,10 +164,7 @@ public class HasTokensBlock extends DfVisitor<Block> {
 			InstAssign assign = IrFactory.eINSTANCE.createInstAssign(hasTokens,
 					value);
 			block.add(assign);
-			
-			
-			
-			
+
 			value = null;
 			if (action.getOutputPattern().getPorts().size() > 0) {
 				for (Port port : action.getOutputPattern().getPorts()) {
@@ -166,12 +182,30 @@ public class HasTokensBlock extends DfVisitor<Block> {
 						}
 
 					} else {
+						// -- Port Enable init
+						Var tmpPortEnable = null;
+						if (scheduler.getLocal( "tmp_"
+								+ port.getName() + "PortEnable") != null) {
+							tmpPortEnable = scheduler.getLocal( "tmp_"
+									+ port.getName() + "PortEnable");
+						} else {
+							tmpPortEnable = IrFactory.eINSTANCE.createVar(
+									IrFactory.eINSTANCE.createTypeBool(), "tmp_"
+											+ port.getName() + "PortEnable", true,
+									0);
+							scheduler.addLocal(tmpPortEnable);
+						}
+						
+						Var portEnable = actor.getStateVar(port.getName()+"PortEnable");
+						InstLoad load = IrFactory.eINSTANCE.createInstLoad(tmpPortEnable, portEnable);
+						block.add(load);		
+								
 						Var tmpMaxportIndex = scheduler.getLocal("tmp_"
 								+ port.getName() + "MaxTokenIndex");
 						Var maxPortIndrex = actor.getStateVar(port.getName()
 								+ "MaxTokenIndex");
 
-						InstLoad load = IrFactory.eINSTANCE.createInstLoad(
+						load = IrFactory.eINSTANCE.createInstLoad(
 								tmpMaxportIndex, maxPortIndrex);
 						block.add(load);
 
@@ -214,7 +248,8 @@ public class HasTokensBlock extends DfVisitor<Block> {
 
 			Var producedTokens = null;
 			if (scheduler.getLocal(action.getName() + "ProducedTokens") != null) {
-				producedTokens = scheduler.getLocal(action.getName() + "ProducedTokens");
+				producedTokens = scheduler.getLocal(action.getName()
+						+ "ProducedTokens");
 			} else {
 				producedTokens = IrFactory.eINSTANCE.createVar(
 						IrFactory.eINSTANCE.createTypeBool(), action.getName()
@@ -222,10 +257,10 @@ public class HasTokensBlock extends DfVisitor<Block> {
 				scheduler.addLocal(producedTokens);
 			}
 
-			assign = IrFactory.eINSTANCE.createInstAssign(producedTokens,
-					value);
+			assign = IrFactory.eINSTANCE
+					.createInstAssign(producedTokens, value);
 			block.add(assign);
-			
+
 		}
 
 		return block;

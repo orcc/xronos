@@ -96,7 +96,8 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 		for (Action action : actions) {
 			// -- Create the Fire-ability condition (isSchedulable &&
 			// hasTokens)
-			Var isSchedulable = scheduler.getLocal("isSchedulable_"+action.getName());
+			Var isSchedulable = scheduler.getLocal("isSchedulable_"
+					+ action.getName());
 			Var hasTokens = scheduler.getLocal(action.getName() + "HasTokens");
 			Expression E1 = IrFactory.eINSTANCE.createExprVar(isSchedulable);
 			Expression E2 = IrFactory.eINSTANCE.createExprVar(hasTokens);
@@ -150,10 +151,19 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 						// Get MaxTokenIndex for this action
 						Var maxTokenIndex = actor.getStateVar(port.getName()
 								+ "MaxTokenIndex");
-						ExprInt value = IrFactory.eINSTANCE.createExprInt(numTokens);
+						ExprInt value = IrFactory.eINSTANCE
+								.createExprInt(numTokens);
 						InstStore store = IrFactory.eINSTANCE.createInstStore(
 								maxTokenIndex, value);
 						block.add(store);
+
+						// -- Activate Port Enable
+						Var portEnable = actor.getStateVar(port.getName()
+								+ "PortEnable");
+						store = IrFactory.eINSTANCE.createInstStore(portEnable,
+								IrFactory.eINSTANCE.createExprBool(true));
+						block.add(store);
+
 					}
 				}
 			}
@@ -210,7 +220,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 
 			BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
 			blockIf.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
-			
+
 			blockIf.setCondition(condition);
 			blockIf.getThenBlocks().add(actionSelection(actions, state));
 
@@ -236,7 +246,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 			// Get source and target states
 			State state = actionStateToState.get(action).getB();
 
-			if (!SchedulerUtil.actorHasOutputPortWithRepeats(actor)) {
+			if (!SchedulerUtil.actionHasOutputPortWithRepeats(action)) {
 				Var source = scheduler
 						.getLocal("s_fsmState_" + state.getName());
 				Expression value = IrFactory.eINSTANCE.createExprVar(source);
@@ -301,6 +311,14 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 					store = IrFactory.eINSTANCE.createInstStore(maxTokenIndex,
 							value);
 					block.add(store);
+
+					// -- Activate Port Enable
+					Var portEnable = actor.getStateVar(port.getName()
+							+ "PortEnable");
+					store = IrFactory.eINSTANCE.createInstStore(portEnable,
+							IrFactory.eINSTANCE.createExprBool(true));
+					block.add(store);
+
 				}
 			}
 		}
@@ -482,11 +500,39 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				store = IrFactory.eINSTANCE.createInstStore(target, temp);
 				block.add(store);
 
+				Var maxTokenIndex = actor.getStateVar(port.getName()
+						+ "MaxTokenIndex");
+				store = IrFactory.eINSTANCE.createInstStore(maxTokenIndex,
+						IrFactory.eINSTANCE.createExprInt(-1));
+				block.add(store);
+				
+				if(!isInput){
+					Var portEnable = actor.getStateVar(port.getName()+"PortEnable");
+					store = IrFactory.eINSTANCE.createInstStore(portEnable, IrFactory.eINSTANCE.createExprBool(false));
+					block.add(store);
+				}
+				
+
 				// -- Add else block to if block
 				blockIf.getElseBlocks().add(block);
 
-				// -- Add if block to the mutex
-				mutex.getBlocks().add(blockIf);
+				if (!isInput) {
+					// -- Enable If
+					BlockIf enableIf = IrFactory.eINSTANCE.createBlockIf();
+					enableIf.setJoinBlock(IrFactory.eINSTANCE
+							.createBlockBasic());
+					Var tmpPortEnable = scheduler.getLocal("tmp_"
+							+ port.getName() + "PortEnable");
+					condition = IrFactory.eINSTANCE
+							.createExprVar(tmpPortEnable);
+					enableIf.setCondition(condition);
+					enableIf.getThenBlocks().add(blockIf);
+
+					// -- Add enable if block to the mutex
+					mutex.getBlocks().add(enableIf);
+				}else{
+					mutex.getBlocks().add(blockIf);
+				}
 			}
 		}
 		return mutex;
