@@ -54,12 +54,14 @@ import org.xronos.orcc.forge.scheduler.ActionScheduler;
  */
 public class DesignActor extends DfVisitor<Design> {
 
+	private static boolean debug = false;
+
 	@Override
 	public Design caseActor(Actor actor) {
 		// Copy Actor and work to the copied actors
 		// Eliminate the given attributes once the
 		// transformation has finished
-		Actor cActor = actor;//IrUtil.copy(actor);
+		Actor cActor = actor;// IrUtil.copy(actor);
 
 		String designName = cActor.getName();
 
@@ -77,18 +79,25 @@ public class DesignActor extends DfVisitor<Design> {
 
 		// Allocate Memory
 		DesignMemory designMemory = new DesignMemory(design, false);
+		long t0 = System.currentTimeMillis();
 		designMemory.doSwitch(cActor);
-
-		// Build Initialize actions
-		for (Action action : cActor.getInitializes()) {
-			Task task = new DesignAction().doSwitch(action);
-			design.addTask(task);
+		long t1 = System.currentTimeMillis();
+		if (debug) {
+			System.out.println(("\t - DesignMemory took : " + (float) (t1 - t0)
+					/ 1000 + "s"));
 		}
 
 		// Build Tasks (Action to Tasks)
 		for (Action action : cActor.getActions()) {
+			t0 = System.currentTimeMillis();
 			Task task = new DesignAction().doSwitch(action);
+			t1 = System.currentTimeMillis();
 			design.addTask(task);
+			if (debug) {
+				System.out.println(("\t -Action: " + action.getName()
+						+ " LIMed in: " + (float) (t1 - t0) / 1000 + "s"));
+			}
+
 		}
 
 		// Set attribute design to actor
@@ -96,9 +105,14 @@ public class DesignActor extends DfVisitor<Design> {
 
 		// Build Action Scheduler
 		ActionScheduler actionScheduler = new ActionScheduler();
+		t0 = System.currentTimeMillis();
 		Task scheduler = actionScheduler.doSwitch(cActor);
 		design.addTask(scheduler);
-
+		t1 = System.currentTimeMillis();
+		if (debug) {
+			System.out.println(("\t -Action: LIMed in: " + (float) (t1 - t0)
+					/ 1000 + "s"));
+		}
 		new XronosDebug().printActor("/tmp", cActor,
 				actionScheduler.getScheduler());
 

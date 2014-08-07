@@ -78,6 +78,9 @@ import org.xronos.orcc.forge.transform.memory.VarInitializer;
  */
 public class XronosTransform {
 
+	
+	private static boolean debug = false;
+	
 	public static void transformActor(Actor actor, Map<String, Object> options,
 			Boolean debugMode) {
 		List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
@@ -86,6 +89,8 @@ public class XronosTransform {
 		transformations.add(new VarInitializer());
 		transformations.add(new SinglePortReadWrite());
 		transformations.add(new CheckVarSize());
+		//transformations.add(new DfVisitor<Void>(new Inliner(false, true,
+		//		true)));
 		transformations.add(new ParameterArrayRemoval());
 		transformations.add(new DfVisitor<Object>(new XronosConstantFolding()));
 		transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
@@ -106,8 +111,15 @@ public class XronosTransform {
 		transformations.add(new DfVisitor<Void>(new Liveness()));
 		for (DfSwitch<?> transformation : transformations) {
 			try {
+				long t0 = System.currentTimeMillis();
 				transformation.doSwitch(actor);
+				long t1 = System.currentTimeMillis();
+				if(debug){
+					System.out.println(("\t -Transformation: " + transformation.toString()
+							+ " took: " + (float) (t1 - t0) / 1000 + "s"));
+				}
 			} catch (NullPointerException ex) {
+				
 				OrccLogger
 						.severeln("\t - transformation failed: NullPointerException, "
 								+ ex.getMessage());
