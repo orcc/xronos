@@ -37,9 +37,15 @@ class XronosDebug extends InstancePrinter {
 
 	def printActor(Actor actor, Procedure scheduler) {
 		'''
+			// -- Procedures
+			«FOR procedure : actor.procs»
+				«print(procedure)»
+			«ENDFOR»
+			// -- Actions
 			«FOR action : actor.actions»
 				«print(action.body)»
 			«ENDFOR»
+			// -- Scheduler
 			«IF scheduler != null»
 				«print(scheduler)»
 			«ENDIF»

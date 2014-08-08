@@ -32,15 +32,20 @@
 
 package org.xronos.orcc.forge.transform.memory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
+import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.ir.Arg;
+import net.sf.orcc.ir.ArgByVal;
 import net.sf.orcc.ir.BlockBasic;
 import net.sf.orcc.ir.ExprVar;
 import net.sf.orcc.ir.Expression;
@@ -71,6 +76,8 @@ import net.sf.orcc.util.util.EcoreHelper;
  *
  */
 public class ScalarRedundancyElimination extends AbstractIrVisitor<Void> {
+
+	private static int procIndex = 0;
 
 	private class RetrieveStateVars extends AbstractIrVisitor<Void> {
 
@@ -142,6 +149,7 @@ public class ScalarRedundancyElimination extends AbstractIrVisitor<Void> {
 					IrUtil.delete(expr);
 				}
 				IrUtil.delete(load);
+				indexInst--;
 			}
 			return null;
 		}
@@ -170,25 +178,56 @@ public class ScalarRedundancyElimination extends AbstractIrVisitor<Void> {
 
 			if (procedureStoreVarMap.containsKey((procedure))) {
 				Procedure copy = IrUtil.copy(procedure);
-				copy.setName(procedure.getName() + "_copy");
+				copy.setName(procedure.getName() + "_copy" + procIndex);
+				procIndex++;
 				Actor actor = EcoreHelper.getContainerOfType(procedure,
 						Actor.class);
 				actor.getProcs().add(copy);
 
-				Set<Var> vars = procedureStoreVarMap.get(procedure);
+				// -- Give an order to to the vars for the creation of arguments
+				// later on
+				List<Var> inOrderVars = new ArrayList<Var>(
+						procedureStoreVarMap.get(procedure));
 				Map<Var, Var> storeParamMap = new HashMap<Var, Var>();
-				for (Var var : vars) {
+				List<Expression> argExpression = new ArrayList<Expression>();
+
+				for (Var var : inOrderVars) {
 					Var pVar = IrFactory.eINSTANCE.createVar(
 							IrUtil.copy(var.getType()),
 							"param_" + var.getName(), true, 0);
 					Param param = IrFactory.eINSTANCE.createParam(pVar);
 					copy.getParameters().add(param);
 					storeParamMap.put(var, pVar);
+
+					// -- For the new argument
+					Var temp = this.procedure.getLocal("temp_" + var.getName());
+					Expression expr = IrFactory.eINSTANCE.createExprVar(temp);
+					argExpression.add(expr);
 				}
 				// -- Now replace all stores/loads with the given pVar
 				new CalledReplaceAndPropagate(storeParamMap).doSwitch(copy);
 
 				// -- Create a new InstCall with the new procedure
+				List<Expression> newArguments = new ArrayList<Expression>();
+
+				for (Arg arg : new ArrayList<Arg>(call.getArguments())) {
+					if (arg.isByVal()) {
+						Expression copyExpr = IrUtil.copy(((ArgByVal) arg)
+								.getValue());
+						newArguments.add(copyExpr);
+					}
+				}
+				// -- Add the new param expressions
+				newArguments.addAll(argExpression);
+				Var target = null;
+				if (call.getTarget() != null)
+					target = call.getTarget().getVariable();
+
+				InstCall newCall = IrFactory.eINSTANCE.createInstCall(
+						call.getLineNumber(), target, copy, newArguments);
+				call.getBlock().add(indexInst, newCall);
+				IrUtil.delete(call);
+				return null;
 			}
 
 			return null;
@@ -208,9 +247,10 @@ public class ScalarRedundancyElimination extends AbstractIrVisitor<Void> {
 									+ source.getName()));
 					EcoreUtil.replace(expr, IrUtil.copy(repExpr));
 					IrUtil.delete(expr);
-					
+
 				}
 				IrUtil.delete(load);
+				indexInst--;
 			}
 			return null;
 		}
@@ -237,43 +277,54 @@ public class ScalarRedundancyElimination extends AbstractIrVisitor<Void> {
 
 	@Override
 	public Void caseProcedure(Procedure procedure) {
-		// -- Initialize
-		this.procedure = procedure;
-		procStateVarUsed = new HashSet<Var>();
-		storedVars = new HashSet<Var>();
-		procedureStoreVarMap = new HashMap<Procedure, Set<Var>>();
+		Action action = EcoreHelper.getContainerOfType(procedure, Action.class);
+		if (action != null) {
+			if (action.getBody() == procedure) {
+				// -- Initialize
+				this.procedure = procedure;
+				procStateVarUsed = new HashSet<Var>();
+				storedVars = new HashSet<Var>();
+				procedureStoreVarMap = new HashMap<Procedure, Set<Var>>();
 
-		// -- Retrieve state vars used by loads and stores
-		new RetrieveStateVars().doSwitch(procedure);
+				// -- Retrieve state vars used by loads and stores
+				new RetrieveStateVars().doSwitch(procedure);
 
-		// -- Create a Load block with all the retrieved state vars
-		BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
-		for (Var var : procStateVarUsed) {
-			Var temp = IrFactory.eINSTANCE.createVar(
-					IrUtil.copy(var.getType()), "temp_" + var.getName(), true,
-					0);
-			procedure.addLocal(temp);
-			InstLoad laod = IrFactory.eINSTANCE.createInstLoad(temp, var);
-			block.add(laod);
+				if (!procStateVarUsed.isEmpty()) {
+					// -- Create a Load block with all the retrieved state vars
+					BlockBasic block = IrFactory.eINSTANCE.createBlockBasic();
+					for (Var var : procStateVarUsed) {
+						Var temp = IrFactory.eINSTANCE.createVar(
+								IrUtil.copy(var.getType()),
+								"temp_" + var.getName(), true, 0);
+						procedure.addLocal(temp);
+						InstLoad laod = IrFactory.eINSTANCE.createInstLoad(
+								temp, var);
+						block.add(laod);
+					}
+
+					// -- Replace all intermediate store and loads
+					new ReplaceAndPropagate().doSwitch(procedure);
+
+					// -- Add load block
+					procedure.getBlocks().add(0, block);
+
+					// -- For all vars that needs a store add them to the last
+					// Block
+					// Basic
+					for (Var var : storedVars) {
+						Var temp = procedure.getLocal("temp_" + var.getName());
+						InstStore store = IrFactory.eINSTANCE.createInstStore(
+								var, temp);
+						block = procedure.getLast();
+						EList<Instruction> lastBlock = procedure.getLast()
+								.getInstructions();
+						int lastInstIndex = lastBlock.size() - 1;
+						lastBlock.add(lastInstIndex, store);
+
+					}
+				}
+			}
 		}
-
-		// -- Replace all intermediate store and loads
-		new ReplaceAndPropagate().doSwitch(procedure);
-
-		// -- Add load block
-		procedure.getBlocks().add(0, block);
-
-		// -- For all vars that needs a store add them to the lasr Block Basic
-		for (Var var : storedVars) {
-			Var temp = procedure.getLocal("temp_" + var.getName());
-			InstStore store = IrFactory.eINSTANCE.createInstStore(var, temp);
-			block = procedure.getLast();
-			EList<Instruction> lastBlock = procedure.getLast()
-					.getInstructions();
-			int lastInstIndex = lastBlock.size() - 1;
-			lastBlock.add(lastInstIndex, store);
-		}
-
 		return null;
 	}
 
