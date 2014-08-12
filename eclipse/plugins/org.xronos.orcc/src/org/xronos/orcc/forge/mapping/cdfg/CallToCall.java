@@ -32,6 +32,7 @@
 package org.xronos.orcc.forge.mapping.cdfg;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,25 +56,21 @@ import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.ir.util.IrUtil;
 
+import org.xronos.openforge.app.project.SearchLabel;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
+import org.xronos.openforge.lim.Call;
+import org.xronos.openforge.lim.CodeLabel;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Exit;
+import org.xronos.openforge.lim.IPCoreCall;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.op.CastOp;
+import org.xronos.openforge.util.Debug;
 import org.xronos.orcc.forge.transform.analysis.Liveness;
 import org.xronos.orcc.forge.transform.analysis.XronosCFG;
 
-/**
- * This class takes a call a transforms it to a LIM Block, arrays and reference
- * are being propagated.
- * 
- * TODO: Propagate constants to the copied procedure, and eliminate code
- * 
- * @author Endri Bezati
- *
- */
-public class CallToBlock extends AbstractIrVisitor<Component> {
+public class CallToCall extends AbstractIrVisitor<Component> {
 
 	/**
 	 * This inner class replaces the local list variables with a referenced one
@@ -168,13 +165,17 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 
 	@Override
 	public Component caseInstCall(InstCall call) {
+		// -- Can be a Call or IPCoreCall
+		Call limCall = null;
+		// -- Procedure has return value
+		boolean hasReturnValue = !call.getProcedure().getReturnType().isVoid();
 		// -- Block inputs
 		Map<Var, Port> inputs = new HashMap<Var, Port>();
 		// -- Block Outputs
 		Map<Var, Bus> outputs = new HashMap<Var, Bus>();
 
+		// -- Sequence of components
 		List<Component> sequence = new ArrayList<Component>();
-		// Construct the Block of the Procedure
 
 		Map<Var, Var> byRefVar = new HashMap<Var, Var>();
 		Map<Var, Component> byValComponent = new HashMap<Var, Component>();
@@ -231,24 +232,49 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 			nbArg++;
 		}
 
-		// Create call Block
-		Block callBlock = null;
-
 		// Propagate all reference if any
 		if (!byRefVar.isEmpty() || !byValExpression.isEmpty()) {
 			new PropagateReferences(byRefVar, byValExpression).doSwitch(proc);
 		}
 
-		if (call.getTarget() != null) {
-			// Call is a CAL function
-			Var target = call.getTarget().getVariable();
-			new PropagateReturnTarget(target).doSwitch(proc);
-			callBlock = new ProcedureToBlock(target).doSwitch(proc);
-			sequence.add(callBlock);
+		if (call.getProcedure().isNative()) {
+			limCall = new IPCoreCall(null);
+			Block block = new Block(Collections.<Component> emptyList(), true);
+			final org.xronos.openforge.lim.Procedure procedure = new org.xronos.openforge.lim.Procedure(
+					block);
+			limCall.setProcedure(procedure);
+			sequence.add(limCall);
+			SearchLabel sl = new CodeLabel(procedure, call.getProcedure()
+					.getName());
+			procedure.setSearchLabel(sl);
+			limCall.setSourceName(call.getProcedure().getName());
+			limCall.setIDLogical(call.getProcedure().getName());
 		} else {
-			// Call is a procedure
-			callBlock = new ProcedureToBlock(false).doSwitch(proc);
-			sequence.add(callBlock);
+			// Create call
+			Block callBody = null;
+			if (hasReturnValue) {
+				Var target = call.getTarget().getVariable();
+				new PropagateReturnTarget(target).doSwitch(proc);
+				callBody = new ProcedureToBlock(target).doSwitch(proc);
+			} else {
+				callBody = new ProcedureToBlock(true).doSwitch(proc);
+			}
+			org.xronos.openforge.lim.Procedure procedure = new org.xronos.openforge.lim.Procedure(
+					callBody, hasReturnValue);
+			limCall = procedure.makeCall();
+			SearchLabel sl = new CodeLabel(procedure, call.getProcedure()
+					.getName());
+			procedure.setSearchLabel(sl);
+			limCall.setSourceName(call.getProcedure().getName());
+			limCall.setIDLogical(call.getProcedure().getName());
+			// -- Port Dependencies
+
+			// -- Data Dependency
+			if (hasReturnValue) {
+
+			}
+
+			sequence.add(limCall);
 		}
 
 		// -- Single Data Bus on component Exit
@@ -316,7 +342,7 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 							.getAttribute("inputs").getObjectValue();
 					// Connect it if same resultVar
 					if (procInputs.containsKey(resultVar)) {
-						Port dataPort = procInputs.get(resultVar);
+						Port dataPort = limCall.getPortFromProcedurePort(procInputs.get(resultVar));
 						ComponentUtil.connectDataDependency(
 								cast.getResultBus(), dataPort, 0);
 					}
@@ -328,7 +354,7 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 							.getAttribute("inputs").getObjectValue();
 					// Connect it if same resultVar
 					if (procInputs.containsKey(resultVar)) {
-						Port dataPort = procInputs.get(resultVar);
+						Port dataPort = limCall.getPortFromProcedurePort(procInputs.get(resultVar));
 						ComponentUtil.connectDataDependency(resultBus,
 								dataPort, 0);
 					}
@@ -341,20 +367,22 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 		if (!proc.getReturnType().isVoid()) {
 			Var target = call.getTarget().getVariable();
 			Type type = target.getType();
-			Bus blockResultBus = component.getExit(Exit.RETURN).makeDataBus(
+			Bus blockResultBus = component.getExit(Exit.DONE).makeDataBus(
 					target.getName(), type.getSizeInBits(), type.isInt());
 			Port blockResultBusPeer = blockResultBus.getPeer();
 
 			Bus resultBus = null;
+			@SuppressWarnings("unchecked")
+			Map<Var, Bus> procOutpus = (Map<Var, Bus>) proc
+					.getAttribute("outputs").getObjectValue();
 			// -- Connect with Cast if any
 			if (castOp != null) {
-				Bus callBlockResultBus = callBlock.getExit(Exit.RETURN)
-						.getDataBuses().get(0);
-				ComponentUtil.connectDataDependency(callBlockResultBus,
+				Bus callResultBus = limCall.getBusFromProcedureBus(procOutpus.get(target));
+				ComponentUtil.connectDataDependency(callResultBus,
 						castOp.getDataPort(), 0);
 				resultBus = castOp.getResultBus();
 			} else {
-				resultBus = callBlock.getExit(Exit.RETURN).getDataBuses().get(0);
+				resultBus = limCall.getBusFromProcedureBus(procOutpus.get(target));
 			}
 
 			ComponentUtil.connectDataDependency(resultBus, blockResultBusPeer,
@@ -365,7 +393,7 @@ public class CallToBlock extends AbstractIrVisitor<Component> {
 		// -- Set inputs and outputs attribute
 		call.setAttribute("inputs", inputs);
 		call.setAttribute("outputs", outputs);
-
+		Debug.depGraphTo(component, "comp", "/tmp/comp.dot", 1);
 		return component;
 	}
 

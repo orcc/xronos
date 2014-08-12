@@ -58,12 +58,9 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.EObject;
-import org.xronos.openforge.app.project.SearchLabel;
 import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
-import org.xronos.openforge.lim.Call;
-import org.xronos.openforge.lim.CodeLabel;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.HeapRead;
@@ -82,6 +79,7 @@ import org.xronos.openforge.lim.memory.LogicalMemoryPort;
 import org.xronos.openforge.lim.op.AddOp;
 import org.xronos.openforge.lim.op.CastOp;
 import org.xronos.openforge.lim.op.NoOp;
+import org.xronos.openforge.util.Debug;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 import org.xronos.orcc.ir.InstPortPeek;
 import org.xronos.orcc.ir.InstPortRead;
@@ -129,7 +127,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 
 	private Var procedureTarget;
 
-	private static boolean inline = true;
+	private static boolean inline = false;
 
 	public BlockBasicToBlock() {
 		super(true);
@@ -274,24 +272,23 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 					busDependecies.put(blockOutputs.get(var), var);
 				}
 			} else {
-				// -- Create a LIM call
-				org.xronos.openforge.lim.Procedure proc = new ProcedureToProcedure()
-						.doSwitch(call.getProcedure());
-				Call limCall = proc.makeCall();
-				SearchLabel sl = new CodeLabel(proc, call.getProcedure()
-						.getName());
-				proc.setSearchLabel(sl);
-				limCall.setSourceName(call.getProcedure().getName());
-				limCall.setIDLogical(call.getProcedure().getName());
-				// Sets the sizes of the clock,reset and go ports of a call
-				limCall.getClockPort().setSize(1, false);
-				limCall.getResetPort().setSize(1, false);
-				limCall.getGoPort().setSize(1, false);
-
-				// -- Propagate inputs and outputs between the procedure and the
-				// call
-
-				component = limCall;
+				// -- Get Block from call
+				component = new CallToCall().doSwitch(call);
+				// Set port and bus dependencies
+				// -- Inputs
+				@SuppressWarnings("unchecked")
+				Map<Var, Port> blockInputs = (Map<Var, Port>) call
+						.getAttribute("inputs").getObjectValue();
+				for (Var var : blockInputs.keySet()) {
+					portDependecies.put(blockInputs.get(var), var);
+				}
+				// -- Outputs
+				@SuppressWarnings("unchecked")
+				Map<Var, Bus> blockOutputs = (Map<Var, Bus>) call.getAttribute(
+						"outputs").getObjectValue();
+				for (Var var : blockOutputs.keySet()) {
+					busDependecies.put(blockOutputs.get(var), var);
+				}
 			}
 		} else {
 			// Construct a LIM Call
@@ -893,6 +890,7 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 				}
 			}
 		}
+		Debug.depGraphTo(block, "comp", "/tmp/block.dot", 1);
 		return block;
 	}
 

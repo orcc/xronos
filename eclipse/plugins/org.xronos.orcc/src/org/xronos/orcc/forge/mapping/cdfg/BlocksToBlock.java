@@ -78,6 +78,9 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 	 */
 	private boolean isActionBody;
 
+	
+	private boolean isProcedureBody;
+	
 	/**
 	 * 
 	 */
@@ -110,6 +113,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 			boolean isActionBody) {
 		this.inputs = inputs;
 		this.outputs = outputs;
+		this.isProcedureBody = isActionBody;
 		this.isActionBody = isActionBody;
 		portDependecies = new HashMap<Port, Var>();
 		busDependecies = new HashMap<Bus, Var>();
@@ -125,6 +129,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 	public BlocksToBlock(Map<Var, Port> inputs, Map<Var, Bus> outputs,
 			Var target) {
 		this(inputs, outputs, false);
+		this.isProcedureBody = true;
 		this.target = target;
 	}
 
@@ -243,8 +248,8 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 		}
 
 		// Create a new Block with the sequence of the components
-		Block block = isBlockMutex ? new MutexBlock(sequence, isActionBody)
-				: new Block(sequence, isActionBody);
+		Block block = isBlockMutex ? new MutexBlock(sequence, isProcedureBody)
+				: new Block(sequence, isProcedureBody);
 
 		// A map that contains the last defined variable associated with a Bus
 
@@ -328,7 +333,7 @@ public class BlocksToBlock extends AbstractIrVisitor<Component> {
 						.get(0);
 
 				Type type = target.getType();
-				Bus blkOutputBus = block.getExit(Exit.DONE).makeDataBus(
+				Bus blkOutputBus = block.getExit(Exit.RETURN).makeDataBus(
 						target.getName(), type.getSizeInBits(), type.isInt());
 				Port blkOutputPort = blkOutputBus.getPeer();
 				// Add dependency

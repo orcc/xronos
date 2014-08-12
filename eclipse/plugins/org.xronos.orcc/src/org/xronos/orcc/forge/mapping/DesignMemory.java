@@ -33,6 +33,7 @@
 package org.xronos.orcc.forge.mapping;
 
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -234,30 +235,38 @@ public class DesignMemory extends DfVisitor<Void> {
 			logicalValue = new Record(subElements);
 		} else {
 			if (dimension.get(0).equals(1)) {
-				BigInteger value = BigInteger.valueOf(0);
+				String valueString = "0";
 				if (type.isBool()) {
 					int boolValue = ((Boolean) ValueUtil.get(type, obj, 0)) ? 1
 							: 0;
-					value = BigInteger.valueOf(boolValue);
-				} else {
-					value = (BigInteger) ValueUtil.get(type, obj, 0);
+					BigInteger value = BigInteger.valueOf(boolValue);
+					valueString = value.toString();
+				} else if(type.isInt() || type.isUint()){
+					BigInteger value = (BigInteger) ValueUtil.get(type, obj, 0);
+					valueString = value.toString();
+				}else if (type.isFloat()){
+					BigDecimal value = (BigDecimal) ValueUtil.get(type, obj, 0);
+					valueString = value.toString();
 				}
-				String valueString = value.toString();
 				logicalValue = makeLogicalValue(valueString, type);
 			} else {
 				List<LogicalValue> subElements = new ArrayList<LogicalValue>(
 						dimension.get(0));
 				for (int i = 0; i < dimension.get(0); i++) {
-					BigInteger value = BigInteger.valueOf(0);
+					String valueString = "0";
 					if (type.isBool()) {
 						int boolValue = ((Boolean) ValueUtil.get(type, obj, i)) ? 1
 								: 0;
-						value = BigInteger.valueOf(boolValue);
-					} else {
-						value = (BigInteger) ValueUtil.get(type, obj, i);
+						BigInteger value = BigInteger.valueOf(boolValue);
+						valueString = value.toString();
+					} else if(type.isInt() || type.isUint()){
+						BigInteger value = (BigInteger) ValueUtil.get(type, obj, i);
+						valueString = value.toString();
+					} else if (type.isFloat()){
+						BigDecimal value = (BigDecimal) ValueUtil.get(type, obj, i);
+						valueString = value.toString();
 					}
 
-					String valueString = value.toString();
 					subElements.add(makeLogicalValue(valueString, type));
 				}
 				logicalValue = new Record(subElements);
