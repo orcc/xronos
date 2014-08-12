@@ -58,9 +58,12 @@ import net.sf.orcc.ir.util.AbstractIrVisitor;
 import net.sf.orcc.util.util.EcoreHelper;
 
 import org.eclipse.emf.ecore.EObject;
+import org.xronos.openforge.app.project.SearchLabel;
 import org.xronos.openforge.frontend.slim.builder.ActionIOHandler;
 import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Bus;
+import org.xronos.openforge.lim.Call;
+import org.xronos.openforge.lim.CodeLabel;
 import org.xronos.openforge.lim.Component;
 import org.xronos.openforge.lim.Exit;
 import org.xronos.openforge.lim.HeapRead;
@@ -125,6 +128,8 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 	 */
 
 	private Var procedureTarget;
+
+	private static boolean inline = true;
 
 	public BlockBasicToBlock() {
 		super(true);
@@ -250,22 +255,43 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Action action = EcoreHelper.getContainerOfType(call.getProcedure(),
 				Action.class);
 		if (action == null) {
-			// -- Get Block from call
-			component = new CallToBlock().doSwitch(call);
-			// Set port and bus dependencies
-			// -- Inputs
-			@SuppressWarnings("unchecked")
-			Map<Var, Port> blockInputs = (Map<Var, Port>) call.getAttribute(
-					"inputs").getObjectValue();
-			for (Var var : blockInputs.keySet()) {
-				portDependecies.put(blockInputs.get(var), var);
-			}
-			// -- Outputs
-			@SuppressWarnings("unchecked")
-			Map<Var, Bus> blockOutputs = (Map<Var, Bus>) call.getAttribute(
-					"outputs").getObjectValue();
-			for (Var var : blockOutputs.keySet()) {
-				busDependecies.put(blockOutputs.get(var), var);
+			if (inline) {
+				// -- Get Block from call
+				component = new CallToBlock().doSwitch(call);
+				// Set port and bus dependencies
+				// -- Inputs
+				@SuppressWarnings("unchecked")
+				Map<Var, Port> blockInputs = (Map<Var, Port>) call
+						.getAttribute("inputs").getObjectValue();
+				for (Var var : blockInputs.keySet()) {
+					portDependecies.put(blockInputs.get(var), var);
+				}
+				// -- Outputs
+				@SuppressWarnings("unchecked")
+				Map<Var, Bus> blockOutputs = (Map<Var, Bus>) call.getAttribute(
+						"outputs").getObjectValue();
+				for (Var var : blockOutputs.keySet()) {
+					busDependecies.put(blockOutputs.get(var), var);
+				}
+			} else {
+				// -- Create a LIM call
+				org.xronos.openforge.lim.Procedure proc = new ProcedureToProcedure()
+						.doSwitch(call.getProcedure());
+				Call limCall = proc.makeCall();
+				SearchLabel sl = new CodeLabel(proc, call.getProcedure()
+						.getName());
+				proc.setSearchLabel(sl);
+				limCall.setSourceName(call.getProcedure().getName());
+				limCall.setIDLogical(call.getProcedure().getName());
+				// Sets the sizes of the clock,reset and go ports of a call
+				limCall.getClockPort().setSize(1, false);
+				limCall.getResetPort().setSize(1, false);
+				limCall.getGoPort().setSize(1, false);
+
+				// -- Propagate inputs and outputs between the procedure and the
+				// call
+
+				component = limCall;
 			}
 		} else {
 			// Construct a LIM Call

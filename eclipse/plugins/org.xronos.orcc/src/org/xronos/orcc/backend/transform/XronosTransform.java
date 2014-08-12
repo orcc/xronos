@@ -68,7 +68,6 @@ import org.xronos.orcc.forge.transform.analysis.XronosCFG;
 import org.xronos.orcc.forge.transform.io.SinglePortList;
 import org.xronos.orcc.forge.transform.io.SinglePortReadWrite;
 import org.xronos.orcc.forge.transform.memory.RedundantLoadElimination;
-import org.xronos.orcc.forge.transform.memory.ScalarRedundancyElimination;
 import org.xronos.orcc.forge.transform.memory.VarInitializer;
 
 /**
@@ -101,7 +100,7 @@ public class XronosTransform {
 		transformations.add(new DfVisitor<Void>(new XronosDeadCodeElimination(
 				true, false)));
 		transformations.add(new DfVisitor<Void>(new IndexFlattener()));
-		transformations.add(new DfVisitor<Void>(new ScalarRedundancyElimination()));
+		//transformations.add(new DfVisitor<Void>(new ScalarRedundancyElimination()));
 		transformations.add(new DfVisitor<Void>(new BlockCombine(false)));
 		transformations.add(new PrintRemoval());
 		// transformations.add(new DfVisitor<Void>(new DeadVariableRemoval()));
