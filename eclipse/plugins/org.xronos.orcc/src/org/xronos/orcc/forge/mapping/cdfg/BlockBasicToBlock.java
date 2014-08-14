@@ -203,10 +203,13 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 		Var target = assign.getTarget().getVariable();
 		Type type = target.getType();
 		Expression expr = assign.getValue();
-
+		boolean needsCast = expr.getType() != type;
 		Component value = new ExprToComponent().doSwitch(expr);
 
-		CastOp castOp = new CastOp(type.getSizeInBits(), type.isInt());
+		CastOp castOp = null;
+		if (needsCast) {
+			castOp = new CastOp(type.getSizeInBits(), type.isInt());
+		}
 
 		Block block = new Block(Arrays.asList(value, castOp));
 
@@ -228,18 +231,24 @@ public class BlockBasicToBlock extends AbstractIrVisitor<Component> {
 			portDependecies.put(blkDataPort, var);
 		}
 
-		// -- Value Component --> to CastOp
-		Bus compResultBus = value.getExit(Exit.DONE).getDataBuses().get(0);
-		ComponentUtil
-				.connectDataDependency(compResultBus, castOp.getDataPort());
-
 		// -- Create a dataBus for block
 		Bus resultBus = block.getExit(Exit.DONE).makeDataBus(target.getName(),
 				type.getSizeInBits(), type.isInt());
-		Port resultBusPeer = resultBus.getPeer();
-		ComponentUtil.connectDataDependency(castOp.getResultBus(),
-				resultBusPeer);
+		if (needsCast) {
+			// -- Value Component --> to CastOp
+			Bus compResultBus = value.getExit(Exit.DONE).getDataBuses().get(0);
+			ComponentUtil.connectDataDependency(compResultBus,
+					castOp.getDataPort());
 
+			Port resultBusPeer = resultBus.getPeer();
+			ComponentUtil.connectDataDependency(castOp.getResultBus(),
+					resultBusPeer);
+		}else{
+			Bus compResultBus = value.getExit(Exit.DONE).getDataBuses().get(0);
+			Port resultBusPeer = resultBus.getPeer();
+			ComponentUtil.connectDataDependency(compResultBus,
+					resultBusPeer);
+		}
 		// Bus dependencies
 		busDependecies.put(resultBus, target);
 
