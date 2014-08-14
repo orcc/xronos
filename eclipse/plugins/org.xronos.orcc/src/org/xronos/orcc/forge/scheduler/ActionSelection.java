@@ -323,9 +323,40 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 			}
 		}
 
-		// -- Add block to blocks
-		blocks.add(block);
+		// -- Check if there is any output so that we can put the status If
+		Set<Var> statusVar = new HashSet<Var>();
+		if (action.getOutputPattern() != null) {
+			for (Port port : action.getOutputPattern().getPorts()) {
+				if (action.getOutputPattern().getNumTokens(port) == 1) {
+					Var status = scheduler.getLocal(port.getName() + "Status");
+					statusVar.add(status);
+				}
+			}
+		}
+		if (!statusVar.isEmpty()) {
+			// -- Create Status condition
+			BlockIf blockIf = IrFactory.eINSTANCE.createBlockIf();
+			blockIf.setJoinBlock(IrFactory.eINSTANCE.createBlockBasic());
+			Expression expr = null;
+			for (Var var : statusVar) {
+				if (expr == null) {
+					expr = IrFactory.eINSTANCE.createExprVar(var);
+				} else {
+					expr = IrFactory.eINSTANCE.createExprBinary(expr,
+							OpBinary.LOGIC_AND,
+							IrFactory.eINSTANCE.createExprVar(var),
+							IrFactory.eINSTANCE.createTypeBool());
+				}
+			}
+			
+			blockIf.setCondition(expr);
+			blockIf.getThenBlocks().add(block);
+			blocks.add(blockIf);
 
+		} else {
+			// -- Add block to blocks
+			blocks.add(block);
+		}
 		return blocks;
 	}
 
@@ -505,13 +536,14 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 				store = IrFactory.eINSTANCE.createInstStore(maxTokenIndex,
 						IrFactory.eINSTANCE.createExprInt(-1));
 				block.add(store);
-				
-				if(!isInput){
-					Var portEnable = actor.getStateVar(port.getName()+"PortEnable");
-					store = IrFactory.eINSTANCE.createInstStore(portEnable, IrFactory.eINSTANCE.createExprBool(false));
+
+				if (!isInput) {
+					Var portEnable = actor.getStateVar(port.getName()
+							+ "PortEnable");
+					store = IrFactory.eINSTANCE.createInstStore(portEnable,
+							IrFactory.eINSTANCE.createExprBool(false));
 					block.add(store);
 				}
-				
 
 				// -- Add else block to if block
 				blockIf.getElseBlocks().add(block);
@@ -530,7 +562,7 @@ public class ActionSelection extends DfVisitor<List<Block>> {
 
 					// -- Add enable if block to the mutex
 					mutex.getBlocks().add(enableIf);
-				}else{
+				} else {
 					mutex.getBlocks().add(blockIf);
 				}
 			}

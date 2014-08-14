@@ -62,6 +62,7 @@ import org.xronos.openforge.lim.Module;
 import org.xronos.openforge.lim.Port;
 import org.xronos.openforge.lim.WhileBody;
 import org.xronos.openforge.lim.primitive.Reg;
+import org.xronos.openforge.util.Debug;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 
 /**
@@ -118,7 +119,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		Decision decision = new Decision(decisionBlock, decisionComponent);
 
 		//Debug.depGraphTo(decision, "deicions", "/tmp/decision1.dot", 1);
-		
+
 		// Propagate decisionBlockInputs to the decision one
 		Map<Var, Port> dDataPorts = new HashMap<Var, Port>();
 		ComponentUtil.propagateDataPorts(decision, dDataPorts, dBlockDataPorts);
@@ -135,7 +136,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		Map<Var, Port> lbDataPorts = new HashMap<Var, Port>();
 
 		LoopBody loopBody = new WhileBody(decision, body);
-
+		Debug.depGraphTo(loopBody, "loopBody", "/tmp/loopBody.dot", 1);
 		// Propagate decision and body inputs to the loopBody
 		// -- Propagate Decision data ports
 		ComponentUtil.propagateDataPorts(loopBody, lbDataPorts, dDataPorts);
@@ -164,16 +165,16 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
 		// -- Complete Exit
 		for (Var var : blockDataBuses.keySet()) {
-			Type type = var.getType();
-			Bus bus = blockDataBuses.get(var);
-			// -- Make an complete exit data bus
-			Bus cBus = loopBody.getLoopCompleteExit().makeDataBus(
-					var.getName(), type.getSizeInBits(), type.isInt());
-			// -- Connect
-			Port cBusPeer = cBus.getPeer();
-			ComponentUtil.connectDataDependency(bus, cBusPeer, 0);
-			// -- Save it to the feedbackBusVar
-			completeBusVar.put(cBus, var);
+				Type type = var.getType();
+				Bus bus = blockDataBuses.get(var);
+				// -- Make an complete exit data bus
+				Bus cBus = loopBody.getLoopCompleteExit().makeDataBus(
+						var.getName(), type.getSizeInBits(), type.isInt());
+				// -- Connect
+				Port cBusPeer = cBus.getPeer();
+				ComponentUtil.connectDataDependency(bus, cBusPeer, 0);
+				// -- Save it to the feedbackBusVar
+				completeBusVar.put(cBus, var);
 		}
 
 		// -- Dependency through input to the Done Exit
@@ -210,19 +211,6 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 
 		// Create Loop inner dependencies
 
-		// -- Init dependencies
-		Entry initEntry = loop.getBodyInitEntry();
-		for (Var var : inputs.keySet()) {
-			Port lPort = inputs.get(var);
-			if (lbDataPorts.containsKey(var)) {
-				Port lbPort = lbDataPorts.get(var);
-				Bus lPortPeer = lPort.getPeer();
-				Dependency dep = (lbPort == lbPort.getOwner().getGoPort()) ? new ControlDependency(
-						lPortPeer) : new DataDependency(lPortPeer);
-				initEntry.addDependency(lbPort, dep);
-			}
-		}
-
 		// -- Feedback dependencies
 		Entry fbEntry = loop.getBodyFeedbackEntry();
 		for (Bus fbBus : loopBody.getFeedbackExit().getDataBuses()) {
@@ -246,13 +234,28 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 			}
 		}
 
+		// -- Init dependencies
+		Entry initEntry = loop.getBodyInitEntry();
+		for (Var var : inputs.keySet()) {
+			if (feedbackBusVar.containsValue(var)) {
+				Port lPort = inputs.get(var);
+				if (lbDataPorts.containsKey(var)) {
+					Port lbPort = lbDataPorts.get(var);
+					Bus lPortPeer = lPort.getPeer();
+					Dependency dep = (lbPort == lbPort.getOwner().getGoPort()) ? new ControlDependency(
+							lPortPeer) : new DataDependency(lPortPeer);
+					initEntry.addDependency(lbPort, dep);
+				}
+			}
+		}
+
 		// -- Latch dependencies
 		Collection<Dependency> goInitDeps = initEntry.getDependencies(loop
 				.getBody().getGoPort());
 		Bus initDoneBus = goInitDeps.iterator().next().getLogicalBus();
 
-		for (Var var : blockDataPorts.keySet()) {
-			if (!blockDataBuses.containsKey(var)) {
+		for (Var var : inVars) {
+			if (!feedbackBusVar.containsValue(var)) {
 				Port lPort = inputs.get(var);
 				Bus lPortPeer = lPort.getPeer();
 
@@ -309,6 +312,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 				blockWhile.getLineNumber());
 		loop.setIDSourceInfo(sinfo);
+		//Debug.depGraphTo(loop, "loopBody", "/tmp/loop_new.dot", 1);
 		return loop;
 	}
 }
