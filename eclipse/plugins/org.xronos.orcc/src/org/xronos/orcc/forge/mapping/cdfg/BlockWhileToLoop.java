@@ -118,7 +118,7 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		// Create decision
 		Decision decision = new Decision(decisionBlock, decisionComponent);
 
-		//Debug.depGraphTo(decision, "deicions", "/tmp/decision1.dot", 1);
+		Debug.depGraphTo(decision, "deicions", "/tmp/decision1.dot", 1);
 
 		// Propagate decisionBlockInputs to the decision one
 		Map<Var, Port> dDataPorts = new HashMap<Var, Port>();
@@ -144,116 +144,103 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		// -- Propagate Body Blocks data ports
 		ComponentUtil.propagateDataPorts(loopBody, lbDataPorts, blockDataPorts);
 
-		// -- Propagate Body Blocks data Buses
-
-		// Propagate data buses to feedback and completed data buses
-		// -- Feedback Exit
-		for (Var var : blockDataBuses.keySet()) {
-			if (lbDataPorts.containsKey(var)) {
-				Type type = var.getType();
-				Bus bus = blockDataBuses.get(var);
-				// -- Make an feedback exit data bus
-				Bus fbBus = loopBody.getFeedbackExit().makeDataBus(
-						var.getName(), type.getSizeInBits(), type.isInt());
-				// -- Connect
-				Port fbBusPeer = fbBus.getPeer();
-				ComponentUtil.connectDataDependency(bus, fbBusPeer, 0);
-				// -- Save it to the feedbackBusVar
-				feedbackBusVar.put(fbBus, var);
-			}
-		}
-
 		// -- Complete Exit
 		for (Var var : blockDataBuses.keySet()) {
-				Type type = var.getType();
-				Bus bus = blockDataBuses.get(var);
-				// -- Make an complete exit data bus
-				Bus cBus = loopBody.getLoopCompleteExit().makeDataBus(
-						var.getName(), type.getSizeInBits(), type.isInt());
-				// -- Connect
-				Port cBusPeer = cBus.getPeer();
-				ComponentUtil.connectDataDependency(bus, cBusPeer, 0);
-				// -- Save it to the feedbackBusVar
-				completeBusVar.put(cBus, var);
+			Type type = var.getType();
+			Bus bus = blockDataBuses.get(var);
+			// -- Make an complete exit data bus
+			Bus cBus = loopBody.getLoopCompleteExit().makeDataBus(
+					var.getName() + "_fb", type.getSizeInBits(), type.isInt());
+			// -- Connect
+			Port cBusPeer = cBus.getPeer();
+			ComponentUtil.connectDataDependency(bus, cBusPeer);
+			// -- Save it to the feedbackBusVar
+			completeBusVar.put(cBus, var);
 		}
 
-		// -- Dependency through input to the Done Exit
-		for (Var lbVar : lbDataPorts.keySet())
-			for (Bus cBus : completeBusVar.keySet()) {
-				Var cVar = completeBusVar.get(cBus);
-				if (lbVar == cVar) {
-					Port lbDataPort = lbDataPorts.get(lbVar);
-					Bus lbDataportBus = lbDataPort.getPeer();
-
-					Port cBusPeer = cBus.getPeer();
-					ComponentUtil.connectDataDependency(lbDataportBus,
-							cBusPeer, 0);
-				}
+		// -- FeedBack Exit
+		for (Var var : blockDataBuses.keySet()) {
+			Type type = var.getType();
+			// -- If the input does not exist create one because this is a
+			// feedback
+			if (!lbDataPorts.containsKey(var)) {
+				Port lbPort = loopBody.makeDataPort(var.getName() + "_fb",
+						type.getSizeInBits(), type.isInt());
+				lbDataPorts.put(var, lbPort);
 			}
+			Bus bus = blockDataBuses.get(var);
+			// -- Make an feedback exit data bus
+			Bus fbBus = loopBody.getFeedbackExit().makeDataBus(
+					var.getName() + "_fb", type.getSizeInBits(), type.isInt());
+			// -- Connect
+			Port fbBusPeer = fbBus.getPeer();
+			ComponentUtil.connectDataDependency(bus, fbBusPeer);
+			// -- Save it to the feedbackBusVar
+			feedbackBusVar.put(fbBus, var);
+		}
+
+		// -- From input to Complete Exit dependency
+		for (Bus bus : completeBusVar.keySet()) {
+			Var var = completeBusVar.get(bus);
+			Port port = lbDataPorts.get(var);
+			// -- Connect it
+			Port busPeer = bus.getPeer();
+			Bus portpeer = port.getPeer();
+			ComponentUtil.connectDataDependency(portpeer, busPeer);
+		}
 
 		// Create Loop
 		Loop loop = new Loop(loopBody);
 
-		// Create Loop DataPorts
-
+		// -- Loop inputs comes from decision and body
 		Set<Var> inVars = new HashSet<Var>();
 		inVars.addAll(dDataPorts.keySet());
 		inVars.addAll(lbDataPorts.keySet());
 
 		for (Var var : inVars) {
-			if (!inputs.containsKey(var)) {
-				Type type = var.getType();
-				Port dataPort = loop.makeDataPort(var.getName(),
-						type.getSizeInBits(), type.isInt());
-				inputs.put(var, dataPort);
-			}
+			Type type = var.getType();
+			Port dataPort = loop.makeDataPort(var.getName(),
+					type.getSizeInBits(), type.isInt());
+			inputs.put(var, dataPort);
 		}
 
-		// Create Loop inner dependencies
-
-		// -- Feedback dependencies
-		Entry fbEntry = loop.getBodyFeedbackEntry();
-		for (Bus fbBus : loopBody.getFeedbackExit().getDataBuses()) {
-			Var var = feedbackBusVar.get(fbBus);
-			if (lbDataPorts.containsKey(var)) {
-				Exit lfbExit = loop.getBody().getFeedbackExit();
-				Port lbPort = lbDataPorts.get(var);
-
-				// -- Create a feedback register
-				Reg fbReg = loop.createDataRegister();
-				fbReg.setIDLogical("fbReg_" + var.getName());
-				// fbReg.getDataPort().setIDLogical(var.getName());
-				// fbReg.getResultBus().setIDLogical(var.getName());
-
-				// -- Dependencies
-				Entry entry = fbReg.makeEntry(lfbExit);
-				entry.addDependency(fbReg.getDataPort(), new DataDependency(
-						fbBus));
-				fbEntry.addDependency(lbPort,
-						new DataDependency(fbReg.getResultBus()));
-			}
-		}
-
-		// -- Init dependencies
+		// -- Init Dependencies
 		Entry initEntry = loop.getBodyInitEntry();
 		for (Var var : inputs.keySet()) {
 			if (feedbackBusVar.containsValue(var)) {
 				Port lPort = inputs.get(var);
-				if (lbDataPorts.containsKey(var)) {
-					Port lbPort = lbDataPorts.get(var);
-					Bus lPortPeer = lPort.getPeer();
-					Dependency dep = (lbPort == lbPort.getOwner().getGoPort()) ? new ControlDependency(
-							lPortPeer) : new DataDependency(lPortPeer);
-					initEntry.addDependency(lbPort, dep);
-				}
+				Port lbPort = lbDataPorts.get(var);
+				Bus lPortPeer = lPort.getPeer();
+				Dependency dep = (lbPort == lbPort.getOwner().getGoPort()) ? new ControlDependency(
+						lPortPeer) : new DataDependency(lPortPeer);
+				initEntry.addDependency(lbPort, dep);
 			}
 		}
 
-		// -- Latch dependencies
+		// -- Feedback Dependencies
+		Entry fbEntry = loop.getBodyFeedbackEntry();
+		for (Bus bus : feedbackBusVar.keySet()) {
+			Var var = feedbackBusVar.get(bus);
+			Exit lfbExit = loop.getBody().getFeedbackExit();
+			Port lbPort = lbDataPorts.get(var);
+
+			// -- Create a feedback register
+			Reg fbReg = loop.createDataRegister();
+			fbReg.setIDLogical("fbReg_" + var.getName());
+			// fbReg.getDataPort().setIDLogical(var.getName());
+			// fbReg.getResultBus().setIDLogical(var.getName());
+
+			// -- Dependencies
+			Entry entry = fbReg.makeEntry(lfbExit);
+			entry.addDependency(fbReg.getDataPort(), new DataDependency(bus));
+			fbEntry.addDependency(lbPort,
+					new DataDependency(fbReg.getResultBus()));
+		}
+
+		// -- Latch Dependencies
 		Collection<Dependency> goInitDeps = initEntry.getDependencies(loop
 				.getBody().getGoPort());
 		Bus initDoneBus = goInitDeps.iterator().next().getLogicalBus();
-
 		for (Var var : inVars) {
 			if (!feedbackBusVar.containsValue(var)) {
 				Port lPort = inputs.get(var);
@@ -282,10 +269,9 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 			}
 		}
 
-		// Create Loop Data buses
+		// -- Done Dependencies
 		Entry outbufEntry = loop.getExit(Exit.DONE).getPeer().getEntries()
 				.get(0);
-
 		for (Bus bus : loopBody.getLoopCompleteExit().getDataBuses()) {
 			Var var = completeBusVar.get(bus);
 			Type type = var.getType();
@@ -297,22 +283,24 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 			outputs.put(var, dataBus);
 		}
 
-		// Set control dependency
+		// -- Set control dependency
 		Port lbDonePort = loopBody.getLoopCompleteExit().getDoneBus().getPeer();
 		Bus lDoneBus = loop.getExit(Exit.DONE).getDoneBus();
 		Dependency dep = new ControlDependency(lDoneBus);
 		outbufEntry.addDependency(lbDonePort, dep);
 
-		blockWhile.setAttribute("inputs", inputs);
-		blockWhile.setAttribute("outputs", outputs);
-
-		// IDSourceInfo
+		// -- IDSourceInfo
 		Procedure procedure = EcoreHelper.getContainerOfType(blockWhile,
 				Procedure.class);
 		IDSourceInfo sinfo = new IDSourceInfo(procedure.getName(),
 				blockWhile.getLineNumber());
 		loop.setIDSourceInfo(sinfo);
-		//Debug.depGraphTo(loop, "loopBody", "/tmp/loop_new.dot", 1);
+		Debug.depGraphTo(loop, "loopBody", "/tmp/loop_new.dot", 1);
+
+		// -- Set attributes
+		blockWhile.setAttribute("inputs", inputs);
+		blockWhile.setAttribute("outputs", outputs);
+		new org.xronos.openforge.schedule.Normalizer().visit(loop);
 		return loop;
 	}
 }

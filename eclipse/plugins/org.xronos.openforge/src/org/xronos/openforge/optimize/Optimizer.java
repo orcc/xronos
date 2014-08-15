@@ -107,7 +107,7 @@ public class Optimizer {
 		runOpt(target, blockElementRemover);
 
 		// block unnesting - XXX
-		// runOpt(target,nestedBlock);
+		runOpt(target,nestedBlock);
 		// runOpt(target,loopUnrollingVisitor);
 
 		/*

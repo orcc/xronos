@@ -197,10 +197,11 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 		flag = true;
 		last = doSwitch(block.getBlocks());
 		
-		addEdge(cfgNode);
+		addEdge(join);
 		// reset flag (in case there are no block in "then" branch)
 		flag = false;
-		addEdge(join);
+		last = join;
+		addEdge(cfgNode);
 		last = cfgNode;
 
 		return join;

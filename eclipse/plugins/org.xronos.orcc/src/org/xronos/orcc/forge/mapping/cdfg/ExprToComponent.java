@@ -222,7 +222,6 @@ public class ExprToComponent extends AbstractIrVisitor<Component> {
 			ComponentUtil.connectDataDependency(opResultBus, dataPort, 0);
 		}
 		expr.setAttribute("inputs", inputs);
-		Debug.depGraphTo(block, "block", "/tmp/block1.dot", 1);
 		return block;
 	}
 

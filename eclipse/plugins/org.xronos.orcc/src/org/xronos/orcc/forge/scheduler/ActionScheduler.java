@@ -51,6 +51,7 @@ import org.xronos.openforge.lim.Task;
 import org.xronos.orcc.backend.debug.XronosDebug;
 import org.xronos.orcc.forge.mapping.TaskProcedure;
 import org.xronos.orcc.forge.transform.analysis.Liveness;
+import org.xronos.orcc.forge.transform.analysis.UninitializedVariable;
 import org.xronos.orcc.forge.transform.analysis.XronosCFG;
 import org.xronos.orcc.forge.transform.memory.RedundantLoadElimination;
 
@@ -142,6 +143,8 @@ public class ActionScheduler extends DfVisitor<Task> {
 		new XronosCFG().doSwitch(scheduler);
 		// -- Liveness for each block
 		new Liveness().doSwitch(scheduler);
+		// -- Find Uninitialized Variable 
+		new UninitializedVariable().doSwitch(scheduler);
 		
 		new XronosDebug().printProcedure("/tmp", scheduler);
 		

@@ -81,7 +81,9 @@ public class Liveness extends AbstractIrVisitor<Void> {
 
 	private Set<Var> varKill;
 
-	private static boolean DEBUG = false;
+	private Set<Var> definedVars;
+	
+	private static boolean DEBUG = true;
 
 	public Liveness() {
 		super(true);
@@ -152,6 +154,8 @@ public class Liveness extends AbstractIrVisitor<Void> {
 
 		visitInstructions(block.getInstructions());
 
+		definedVars.addAll(varKill);
+		
 		block.setAttribute("UEVar", ueVar);
 		block.setAttribute("VarKill", varKill);
 		return null;
@@ -221,7 +225,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 
 	@Override
 	public Void caseProcedure(Procedure procedure) {
-
+		definedVars = new HashSet<Var>();
 		doSwitch(procedure.getBlocks());
 		Cfg cfg = procedure.getCfg();
 
@@ -246,7 +250,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		int passes = 0;
 		while (changed) {
 			changed = false;
-			for (int i = 1; i < vertices.size() - 1; i++) {
+			for (int i = 0; i < vertices.size() ; i++) {
 				Set<Var> oldLiveOut = liveOuts.get(vertices.get(i));
 				Set<Var> newLiveOut = liveOut(vertices.get(i), liveOuts);// liveOut(vertices,
 																			// liveOuts,
@@ -266,7 +270,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 					}
 					System.out.print("\n");
 				}
-				passes++;
+				passes++; 
 			}
 		}
 
@@ -301,7 +305,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 	private Set<Var> liveOut(Vertex vertex, Map<Vertex, Set<Var>> liveOuts) {
 		Set<Var> newLiveOut = new HashSet<Var>();
 		for (Vertex vx : vertex.getSuccessors()) {
-			Set<Var> newLiveOutSucc = liveOuts.get(vx);
+			Set<Var> newLiveOutSucc = new HashSet<Var>(liveOuts.get(vx));
 			if (!vx.getLabel().equals("exit")) {
 				Block block = ((CfgNode) vx).getNode();
 				@SuppressWarnings("unchecked")
@@ -312,14 +316,18 @@ public class Liveness extends AbstractIrVisitor<Void> {
 						.getObjectValue();
 
 				Set<Var> temp = new HashSet<Var>();
-				for (Var var : newLiveOutSucc) {
-					if (!varKill.contains(var)) {
+				
+				for (Var var : definedVars) {
+					if(!varKill.contains(var)){
 						temp.add(var);
 					}
 				}
-				temp.addAll(ueVar);
-
-				newLiveOut.addAll(temp);
+				//temp = new HashSet<Var>(varKill);
+				temp.retainAll(ueVar);
+				newLiveOutSucc.addAll(temp);
+				
+				
+				newLiveOut.addAll(newLiveOutSucc);
 			}
 		}
 		return newLiveOut;
