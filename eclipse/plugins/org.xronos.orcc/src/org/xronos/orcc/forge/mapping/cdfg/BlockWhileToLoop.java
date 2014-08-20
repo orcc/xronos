@@ -300,7 +300,6 @@ public class BlockWhileToLoop extends AbstractIrVisitor<Loop> {
 		// -- Set attributes
 		blockWhile.setAttribute("inputs", inputs);
 		blockWhile.setAttribute("outputs", outputs);
-		new org.xronos.openforge.schedule.Normalizer().visit(loop);
 		return loop;
 	}
 }
