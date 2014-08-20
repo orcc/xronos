@@ -76,7 +76,7 @@ public class UninitializedVariable extends AbstractIrVisitor<Void> {
 				.getNode();
 		if (block.isBlockBasic()) {
 			@SuppressWarnings("unchecked")
-			Set<Var> varKill = (Set<Var>) block.getAttribute("VarKill")
+			Set<Var> varKill = (Set<Var>) block.getAttribute("Kill")
 					.getObjectValue();
 			@SuppressWarnings("unchecked")
 			Set<Var> liveOut = (Set<Var>) block.getAttribute("LiveOut")

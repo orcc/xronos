@@ -77,12 +77,12 @@ import org.xronos.orcc.ir.InstPortWrite;
  */
 public class Liveness extends AbstractIrVisitor<Void> {
 
-	private Set<Var> ueVar;
+	private Set<Var> gen;
 
-	private Set<Var> varKill;
+	private Set<Var> kill;
 
 	private Set<Var> definedVars;
-	
+
 	private static boolean DEBUG = true;
 
 	public Liveness() {
@@ -94,7 +94,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		doSwitch(assign.getValue());
 
 		Var target = assign.getTarget().getVariable();
-		varKill.add(target);
+		kill.add(target);
 
 		return null;
 	}
@@ -106,7 +106,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		}
 
 		Var target = load.getTarget().getVariable();
-		varKill.add(target);
+		kill.add(target);
 
 		return null;
 	}
@@ -120,7 +120,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		}
 
 		Var target = store.getTarget().getVariable();
-		varKill.add(target);
+		kill.add(target);
 
 		return null;
 	}
@@ -133,7 +133,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 
 		if (call.getTarget() != null) {
 			Var target = call.getTarget().getVariable();
-			varKill.add(target);
+			kill.add(target);
 		}
 		return null;
 	}
@@ -141,43 +141,42 @@ public class Liveness extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseExprVar(ExprVar object) {
 		Var var = object.getUse().getVariable();
-		if (!varKill.contains(var)) {
-			ueVar.add(var);
-		}
+		gen.add(var);
 		return null;
 	}
 
 	@Override
 	public Void caseBlockBasic(BlockBasic block) {
-		ueVar = new HashSet<Var>();
-		varKill = new HashSet<Var>();
+		gen = new HashSet<Var>();
+		kill = new HashSet<Var>();
 
 		visitInstructions(block.getInstructions());
 
-		definedVars.addAll(varKill);
-		
-		block.setAttribute("UEVar", ueVar);
-		block.setAttribute("VarKill", varKill);
+		definedVars.addAll(kill);
+
+		block.setAttribute("Gen", gen);
+		block.setAttribute("Kill", kill);
+		block.setAttribute("LiveIn", new HashSet<Var>());
 		return null;
 	}
 
 	public Void caseInstPortRead(InstPortRead instPortRead) {
 		Var target = instPortRead.getTarget().getVariable();
-		varKill.add(target);
+		kill.add(target);
 
 		return null;
 	}
 
 	public Void caseInstPortPeek(InstPortPeek instPortPeek) {
 		Var target = instPortPeek.getTarget().getVariable();
-		varKill.add(target);
+		kill.add(target);
 
 		return null;
 	}
 
 	public Void caseInstPortStatus(InstPortStatus instPortStatus) {
 		Var target = instPortStatus.getTarget().getVariable();
-		varKill.add(target);
+		kill.add(target);
 		return null;
 	}
 
@@ -189,13 +188,14 @@ public class Liveness extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseBlockIf(BlockIf blockIf) {
 		doSwitch(blockIf.getJoinBlock());
-		ueVar = new HashSet<Var>();
-		varKill = new HashSet<Var>();
+		gen = new HashSet<Var>();
+		kill = new HashSet<Var>();
 
 		doSwitch(blockIf.getCondition());
 
-		blockIf.setAttribute("UEVar", ueVar);
-		blockIf.setAttribute("VarKill", varKill);
+		blockIf.setAttribute("Gen", gen);
+		blockIf.setAttribute("Kill", kill);
+		blockIf.setAttribute("LiveIn", new HashSet<Var>());
 
 		doSwitch(blockIf.getThenBlocks());
 		doSwitch(blockIf.getElseBlocks());
@@ -210,13 +210,14 @@ public class Liveness extends AbstractIrVisitor<Void> {
 	@Override
 	public Void caseBlockWhile(BlockWhile blockWhile) {
 		doSwitch(blockWhile.getJoinBlock());
-		ueVar = new HashSet<Var>();
-		varKill = new HashSet<Var>();
+		gen = new HashSet<Var>();
+		kill = new HashSet<Var>();
 
 		doSwitch(blockWhile.getCondition());
 
-		blockWhile.setAttribute("UEVar", ueVar);
-		blockWhile.setAttribute("VarKill", varKill);
+		blockWhile.setAttribute("Gen", gen);
+		blockWhile.setAttribute("Kill", kill);
+		blockWhile.setAttribute("LiveIn", new HashSet<Var>());
 
 		doSwitch(blockWhile.getBlocks());
 
@@ -229,6 +230,20 @@ public class Liveness extends AbstractIrVisitor<Void> {
 		doSwitch(procedure.getBlocks());
 		Cfg cfg = procedure.getCfg();
 
+		// -- Give to the Entry and Exit, Gen, Kill, and LiveIn attributes
+		((CfgNode) cfg.getEntry()).getNode().setAttribute("Gen",
+				new HashSet<Var>());
+		((CfgNode) cfg.getEntry()).getNode().setAttribute("Kill",
+				new HashSet<Var>());
+		((CfgNode) cfg.getEntry()).getNode().setAttribute("LiveIn",
+				new HashSet<Var>());
+		((CfgNode) cfg.getExit()).getNode().setAttribute("Gen",
+				new HashSet<Var>());
+		((CfgNode) cfg.getExit()).getNode().setAttribute("Kill",
+				new HashSet<Var>());
+		((CfgNode) cfg.getExit()).getNode().setAttribute("LiveIn",
+				new HashSet<Var>());
+
 		EReference refEdges = GraphPackage.Literals.VERTEX__OUTGOING;
 		EReference refVertex = GraphPackage.Literals.EDGE__TARGET;
 
@@ -236,10 +251,14 @@ public class Liveness extends AbstractIrVisitor<Void> {
 				refEdges.getEOpposite(), cfg.getExit());
 
 		List<Vertex> vertices = rpo.getVertices();
+		Map<Vertex, Set<Var>> liveIns = new HashMap<Vertex, Set<Var>>();
 		Map<Vertex, Set<Var>> liveOuts = new HashMap<Vertex, Set<Var>>();
+		Map<Vertex, Set<Var>> liveInsP = new HashMap<Vertex, Set<Var>>();
+		Map<Vertex, Set<Var>> liveOutsP = new HashMap<Vertex, Set<Var>>();
 
 		// Initialize live out for each Vertex
 		for (Vertex vertex : vertices) {
+			liveIns.put(vertex, new HashSet<Var>());
 			liveOuts.put(vertex, new HashSet<Var>());
 		}
 
@@ -248,18 +267,40 @@ public class Liveness extends AbstractIrVisitor<Void> {
 
 		boolean changed = true;
 		int passes = 0;
+
 		while (changed) {
 			changed = false;
-			for (int i = 0; i < vertices.size() ; i++) {
-				Set<Var> oldLiveOut = liveOuts.get(vertices.get(i));
-				Set<Var> newLiveOut = liveOut(vertices.get(i), liveOuts);// liveOut(vertices,
-																			// liveOuts,
-																			// i);
-				liveOuts.put(vertices.get(i), newLiveOut);
-				if (!oldLiveOut.equals(newLiveOut)) {
-					changed = true;
+			for (Vertex vertex : vertices) {
+				liveInsP.put(vertex, liveIns.get(vertex));
+				liveOutsP.put(vertex, liveOuts.get(vertex));
+
+				@SuppressWarnings("unchecked")
+				Set<Var> gen = (Set<Var>) ((CfgNode) vertex).getNode()
+						.getAttribute("Gen").getObjectValue();
+				@SuppressWarnings("unchecked")
+				Set<Var> kill = (Set<Var>) ((CfgNode) vertex).getNode()
+						.getAttribute("Kill").getObjectValue();
+				Set<Var> liveOut = liveOuts.get(vertex);
+
+				// --Get Live In
+				Set<Var> calcIn = new HashSet<Var>(gen);
+				Set<Var> calcRemove = new HashSet<Var>(liveOut);
+				calcRemove.remove(kill);
+				calcIn.addAll(calcRemove);
+				liveIns.put(vertex, calcIn);
+				// -- Get Live Out
+				Set<Var> calcOut = new HashSet<Var>();
+				for (Vertex vx : vertex.getSuccessors()) {
+					Set<Var> in = liveIns.get(vx);
+					calcOut.addAll(in);
 				}
+				liveOuts.put(vertex, calcOut);
 			}
+
+			if (!liveIns.equals(liveInsP) && !liveOuts.equals(liveOutsP)) {
+				changed = true;
+			}
+
 			if (DEBUG) {
 				// Debug Print
 				System.out.println("Pass : " + passes);
@@ -270,7 +311,7 @@ public class Liveness extends AbstractIrVisitor<Void> {
 					}
 					System.out.print("\n");
 				}
-				passes++; 
+				passes++;
 			}
 		}
 
@@ -300,37 +341,6 @@ public class Liveness extends AbstractIrVisitor<Void> {
 			return caseInstPortPeek((InstPortPeek) object);
 		}
 		return null;
-	}
-
-	private Set<Var> liveOut(Vertex vertex, Map<Vertex, Set<Var>> liveOuts) {
-		Set<Var> newLiveOut = new HashSet<Var>();
-		for (Vertex vx : vertex.getSuccessors()) {
-			Set<Var> newLiveOutSucc = new HashSet<Var>(liveOuts.get(vx));
-			if (!vx.getLabel().equals("exit")) {
-				Block block = ((CfgNode) vx).getNode();
-				@SuppressWarnings("unchecked")
-				Set<Var> ueVar = (Set<Var>) block.getAttribute("UEVar")
-						.getObjectValue();
-				@SuppressWarnings("unchecked")
-				Set<Var> varKill = (Set<Var>) block.getAttribute("VarKill")
-						.getObjectValue();
-
-				Set<Var> temp = new HashSet<Var>();
-				
-				for (Var var : definedVars) {
-					if(!varKill.contains(var)){
-						temp.add(var);
-					}
-				}
-				//temp = new HashSet<Var>(varKill);
-				temp.retainAll(ueVar);
-				newLiveOutSucc.addAll(temp);
-				
-				
-				newLiveOut.addAll(newLiveOutSucc);
-			}
-		}
-		return newLiveOut;
 	}
 
 }
