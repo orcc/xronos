@@ -169,7 +169,7 @@ public class NetworkBufferSizeImporter extends DfVisitor<Void> {
 				targetPort = connection.getTargetPort().getName().toUpperCase();
 				int newSize = getConnectionSize(source, target, sourcePort,
 						targetPort);
-				connection.setAttribute("bufferSize", Integer.valueOf(newSize));
+				connection.setSize(newSize);
 			}
 		}
 
