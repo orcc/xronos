@@ -60,7 +60,6 @@ import org.xronos.openforge.lim.op.CastOp;
 import org.xronos.openforge.lim.op.NoOp;
 import org.xronos.openforge.lim.op.SimpleConstant;
 import org.xronos.openforge.lim.op.UnaryOp;
-import org.xronos.openforge.util.Debug;
 
 /**
  * This visitor transforms an Expression to a LIM Component
