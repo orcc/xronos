@@ -195,11 +195,6 @@ public class Xronos extends AbstractBackend {
 	}
 
 	@Override
-	protected void doTransformActor(Actor actor) {
-		// Do not transform at this moment
-	}
-
-	@Override
 	protected void doValidate(Network network) {
 		Validator.checkMinimalFifoSize(network, fifoSize);
 
@@ -207,7 +202,7 @@ public class Xronos extends AbstractBackend {
 	}
 
 	@Override
-	protected void doXdfCodeGeneration(Network network) {
+	protected Result doGenerateNetwork(Network network) {
 		// instantiate and flattens network
 		new Instantiator(true).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
@@ -246,7 +241,7 @@ public class Xronos extends AbstractBackend {
 			xronosDynamicWeights.getMeanWeights(rtlPath + File.separator
 					+ "report");
 		}
-
+		return super.doGenerateNetwork(network);
 	}
 
 	public void generateInstances(Network network) {
