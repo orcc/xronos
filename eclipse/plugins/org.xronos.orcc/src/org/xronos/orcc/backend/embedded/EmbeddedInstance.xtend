@@ -32,7 +32,6 @@
  
 package org.xronos.orcc.backend.embedded
 
-import java.io.File
 import java.util.Map
 import net.sf.orcc.df.Action
 import net.sf.orcc.df.Actor
@@ -56,7 +55,7 @@ import net.sf.orcc.ir.Procedure
 import net.sf.orcc.ir.Type
 import net.sf.orcc.ir.TypeList
 import net.sf.orcc.ir.Var
-import net.sf.orcc.util.OrccUtil
+import net.sf.orcc.util.FilesManager
 
 class EmbeddedInstance extends ExprAndTypePrinter {
 	
@@ -67,16 +66,8 @@ class EmbeddedInstance extends ExprAndTypePrinter {
 	}
 	
 	def print(String targetFolder) {
-		
 		val content = compileInstance
-		val file = new File(targetFolder + File::separator + instance.name + ".h")
-		
-		if(needToWriteFile(content, file)) {
-			OrccUtil::printFile(content, file)
-			return 0
-		} else {
-			return 1
-		}
+		FilesManager.writeFile(content, targetFolder, instance.name + ".h")
 	}
 	
 	def compileInstance()  {

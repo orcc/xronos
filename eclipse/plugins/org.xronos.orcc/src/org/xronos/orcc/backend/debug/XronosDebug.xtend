@@ -1,6 +1,5 @@
 package org.xronos.orcc.backend.debug
 
-import java.io.File
 import java.util.HashMap
 import net.sf.orcc.backends.c.InstancePrinter
 import net.sf.orcc.df.Actor
@@ -12,27 +11,21 @@ import net.sf.orcc.ir.InstLoad
 import net.sf.orcc.ir.InstStore
 import net.sf.orcc.ir.Procedure
 import net.sf.orcc.ir.Var
-import net.sf.orcc.util.OrccUtil
+import net.sf.orcc.util.FilesManager
 import org.eclipse.emf.ecore.EObject
 import org.xronos.openforge.lim.Bus
 import org.xronos.openforge.lim.Port
 import org.xronos.orcc.ir.BlockMutex
+import org.xronos.orcc.ir.InstPortPeek
 import org.xronos.orcc.ir.InstPortRead
 import org.xronos.orcc.ir.InstPortStatus
 import org.xronos.orcc.ir.InstPortWrite
-import org.xronos.orcc.ir.InstPortPeek
 
 class XronosDebug extends InstancePrinter {
 
 	def printProcedure(String targetFolder, Procedure procedure) {
-		val file = new File(targetFolder + File::separator + procedure.name + ".c")
 		val content = print(procedure)
-		if (needToWriteFile(content, file)) {
-			OrccUtil::printFile(content, file)
-			return 0
-		} else {
-			return 1
-		}
+		FilesManager.writeFile(content, targetFolder, procedure.name + ".c")
 	}
 
 	def printActor(Actor actor, Procedure scheduler) {
@@ -53,15 +46,8 @@ class XronosDebug extends InstancePrinter {
 	}
 
 	def printActor(String targetFolder, Actor actor, Procedure scheduler) {
-		val file = new File(targetFolder + File::separator + actor.name + ".c")
 		val content = printActor(actor, scheduler);
-
-		if (needToWriteFile(content, file)) {
-			OrccUtil::printFile(content, file)
-			return 0
-		} else {
-			return 1
-		}
+		FilesManager.writeFile(content, targetFolder, actor.name + ".c")
 	}
 
 	def caseBlockMutex(BlockMutex blockMutex) {

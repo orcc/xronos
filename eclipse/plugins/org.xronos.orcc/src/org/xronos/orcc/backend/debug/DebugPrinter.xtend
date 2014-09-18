@@ -31,10 +31,10 @@
  */
 package org.xronos.orcc.backend.debug
 
-import java.io.File
 import java.util.List
 import net.sf.orcc.backends.c.InstancePrinter
 import net.sf.orcc.backends.ir.InstCast
+import net.sf.orcc.df.Action
 import net.sf.orcc.df.Actor
 import net.sf.orcc.df.Port
 import net.sf.orcc.ir.BlockIf
@@ -44,7 +44,7 @@ import net.sf.orcc.ir.Expression
 import net.sf.orcc.ir.InstPhi
 import net.sf.orcc.ir.Procedure
 import net.sf.orcc.ir.Var
-import net.sf.orcc.util.OrccUtil
+import net.sf.orcc.util.FilesManager
 import org.eclipse.emf.ecore.EObject
 import org.xronos.orcc.design.ResourceCache
 import org.xronos.orcc.design.visitors.stmIO.BranchIO
@@ -55,7 +55,6 @@ import org.xronos.orcc.ir.InstPortRead
 import org.xronos.orcc.ir.InstPortStatus
 import org.xronos.orcc.ir.InstPortWrite
 import org.xronos.orcc.ir.InstSimplePortWrite
-import net.sf.orcc.df.Action
 
 class DebugPrinter extends InstancePrinter {
 	
@@ -63,27 +62,14 @@ class DebugPrinter extends InstancePrinter {
 	
 	def printProcedure(String targetFolder, Procedure procedure, String name) {
 		val content = print(procedure)
-		val file = new File(targetFolder + File::separator + name + ".c")
-		
-		if(needToWriteFile(content, file)) {
-			OrccUtil::printFile(content, file)
-			return 0
-		} else {
-			return 1
-		}
+		FilesManager.writeFile(content, targetFolder, name + ".c")
 	}
 	
 	
 	def printActor(String targetFolder, Actor actor, Procedure scheduler, String name, ResourceCache resourceCache){
 		this.resourceCache = resourceCache;
-		val file = new File(targetFolder + File::separator + name + ".c")
 		val content = printActorBody(actor,scheduler);
-		if(needToWriteFile(content, file)) {
-			OrccUtil::printFile(content, file)
-			return 0
-		} else {
-			return 1
-		}
+		FilesManager.writeFile(content, targetFolder, name + ".c")
 	}
 	
 	def printActorBody(Actor actor, Procedure scheduler){
