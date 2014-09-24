@@ -65,14 +65,14 @@ public class Embedded extends AbstractBackend {
 	protected void doInitializeOptions() {
 		
 		// Source Paths
-		srcPath = path + File.separator + "src";
+		srcPath = outputPath + File.separator + "src";
 		File srcDir = new File(srcPath);
 		if (!srcDir.exists()) {
 			srcDir.mkdir();
 		}
 
 		// Build Path
-		String buildPath = path + File.separator + "build";
+		String buildPath = outputPath + File.separator + "build";
 		File buildDir = new File(buildPath);
 		if (!buildDir.exists()) {
 			buildDir.mkdir();
@@ -124,7 +124,7 @@ public class Embedded extends AbstractBackend {
 
 		printer.printMain(srcPath);
 		printer.printNetwork(srcPath);
-		printer.printCMakeLists(path);
+		printer.printCMakeLists(outputPath);
 		return super.doGenerateNetwork(network);
 	}
 	
@@ -138,7 +138,7 @@ public class Embedded extends AbstractBackend {
 
 	@Override
 	protected Result doLibrariesExtraction() {
-		String target = path + File.separator + "lib";
+		String target = outputPath + File.separator + "lib";
 		OrccLogger
 				.trace("Export libraries sources into " + target + "... ");
 		Result result = FilesManager.extract("/bundle/embedded", target);
