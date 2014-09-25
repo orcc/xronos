@@ -48,30 +48,31 @@ public class AddressableUnit {
 	public static BigInteger getCompositeValue(AddressableUnit[] units,
 			AddressStridePolicy policy) {
 		BigInteger composite = BigInteger.ZERO;
-		BigInteger mask = BigInteger.ZERO;
-		for (int i = 0; i < policy.getStride(); i++) {
-			mask = mask.shiftLeft(1).or(BigInteger.ONE);
-		}
-		for (int i = 0; i < units.length; i++) {
-			BigInteger value = units[i].getValue();
-			value = value.and(mask);
-			composite = composite.or(value.shiftLeft(policy.getStride() * i));
-		}
+		if(units.length == 1){
+			if(!units[0].initValue.equals(BigInteger.ZERO)){
+				BigInteger mask =  BigInteger.ONE.shiftLeft(policy.getStride()+1).subtract(BigInteger.ONE);
+				
+				for (int i = 0; i < units.length; i++) {
+					BigInteger value = units[i].getValue();
+					value = value.and(mask);
+					composite = composite.or(value.shiftLeft(policy.getStride() * i));
+				}
 
-		// Now ensure the sign is correct. It is the most significant
-		// bit we have set.
-		int numBits = units.length * policy.getStride();
-		if (composite.testBit(numBits - 1)) {
-			mask = BigInteger.ZERO;
-			for (int i = 0; i < numBits; i++) {
-				mask = mask.shiftLeft(1).or(BigInteger.ONE);
+				// Now ensure the sign is correct. It is the most significant
+				// bit we have set.
+				int numBits = units.length * policy.getStride();
+				if (composite.testBit(numBits - 1)) {
+					mask = BigInteger.ZERO;
+					for (int i = 0; i < numBits; i++) {
+						mask = mask.shiftLeft(1).or(BigInteger.ONE);
+					}
+					BigInteger fixed = BigInteger.ZERO.subtract(BigInteger.ONE);
+					fixed = fixed.andNot(mask); // clear the lowest bits
+					fixed = fixed.or(composite);
+					composite = fixed;
+				}
 			}
-			BigInteger fixed = BigInteger.ZERO.subtract(BigInteger.ONE);
-			fixed = fixed.andNot(mask); // clear the lowest bits
-			fixed = fixed.or(composite);
-			composite = fixed;
 		}
-
 		return composite;
 	}
 
