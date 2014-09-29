@@ -32,27 +32,26 @@
 package org.xronos.orcc.backend.cal
 
 import net.sf.orcc.backends.CommonPrinter
+import net.sf.orcc.backends.ir.InstCast
+import net.sf.orcc.df.Action
 import net.sf.orcc.df.Actor
-import java.io.File
-import net.sf.orcc.util.OrccUtil
+import net.sf.orcc.df.Pattern
 import net.sf.orcc.df.Port
+import net.sf.orcc.ir.BlockBasic
+import net.sf.orcc.ir.InstAssign
+import net.sf.orcc.ir.InstLoad
+import net.sf.orcc.ir.InstStore
+import net.sf.orcc.ir.Procedure
 import net.sf.orcc.ir.TypeBool
 import net.sf.orcc.ir.TypeFloat
 import net.sf.orcc.ir.TypeInt
-import net.sf.orcc.ir.TypeUint
-import net.sf.orcc.ir.TypeString
 import net.sf.orcc.ir.TypeList
-import net.sf.orcc.df.Action
-import net.sf.orcc.df.Pattern
+import net.sf.orcc.ir.TypeString
+import net.sf.orcc.ir.TypeUint
 import net.sf.orcc.ir.Var
-import net.sf.orcc.ir.Procedure
-import net.sf.orcc.ir.BlockBasic
-import net.sf.orcc.ir.InstLoad
-import net.sf.orcc.ir.InstStore
-import net.sf.orcc.ir.InstAssign
-import org.eclipse.emf.ecore.EObject
-import net.sf.orcc.backends.ir.InstCast
+import net.sf.orcc.util.FilesManager
 import org.eclipse.emf.common.util.EMap
+import org.eclipse.emf.ecore.EObject
 
 class ActorPrinter extends CommonPrinter {
 
@@ -71,15 +70,7 @@ class ActorPrinter extends CommonPrinter {
 
 	def printActor(String targetFolder) {
 		val content = compileActor
-		val file = new File(targetFolder + File::separator + actor.simpleName + ".cal")
-
-		if (needToWriteFile(content, file)) {
-			OrccUtil::printFile(content, file)
-			return 0
-		} else {
-			return 1
-		}
-
+		FilesManager.writeFile(content, targetFolder, actor.simpleName + ".cal")
 	}
 
 	def compileActor() '''

@@ -32,13 +32,11 @@
 package org.xronos.orcc.backend.embedded;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.backends.AbstractBackend;
-import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.Entity;
 import net.sf.orcc.df.Instance;
@@ -48,7 +46,6 @@ import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
 import net.sf.orcc.df.transform.TypeResizer;
 import net.sf.orcc.df.transform.UnitImporter;
-import net.sf.orcc.df.util.DfSwitch;
 import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.ir.transform.RenameTransformation;
 import net.sf.orcc.util.FilesManager;
@@ -62,30 +59,25 @@ import net.sf.orcc.util.Result;
  */
 public class Embedded extends AbstractBackend {
 
-	
 	private String srcPath;
-	
+
 	@Override
 	protected void doInitializeOptions() {
 		
 		// Source Paths
-		srcPath = path + File.separator + "src";
+		srcPath = outputPath + File.separator + "src";
 		File srcDir = new File(srcPath);
 		if (!srcDir.exists()) {
 			srcDir.mkdir();
 		}
-		
+
 		// Build Path
-		String buildPath = path + File.separator + "build";
+		String buildPath = outputPath + File.separator + "build";
 		File buildDir = new File(buildPath);
 		if (!buildDir.exists()) {
 			buildDir.mkdir();
 		}
 
-	}
-
-	@Override
-	protected void doTransformActor(Actor actor) {
 		Map<String, String> replacementMap = new HashMap<String, String>();
 		replacementMap.put("abs", "abs_");
 		replacementMap.put("getw", "getw_");
@@ -102,27 +94,16 @@ public class Embedded extends AbstractBackend {
 		replacementMap.put("DEBUG", "DEBUG_");
 		replacementMap.put("INT_MIN", "INT_MIN_");
 
-		List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
-		transformations.add(new UnitImporter());
-		transformations.add(new TypeResizer(false, false, false, false));
-		transformations.add(new RenameTransformation(replacementMap));
+		networkTransfos.add(new Instantiator(false));
+		networkTransfos.add(new NetworkFlattener());
 		
-		for (DfSwitch<?> transformation : transformations) {
-			transformation.doSwitch(actor);
-		}
-	}
-
-	private void doTransformNetwork(Network network) {
-		OrccLogger.trace("Instantiating... ");
-		new Instantiator(false).doSwitch(network);
-		OrccLogger.traceRaw("done\n");
-		new NetworkFlattener().doSwitch(network);
+		childrenTransfos.add(new UnitImporter());
+		childrenTransfos.add(new TypeResizer(false, false, false, false));
+		childrenTransfos.add(new RenameTransformation(replacementMap));
 	}
 
 	@Override
-	protected void doXdfCodeGeneration(Network network) {
-		doTransformNetwork(network);
-		transformActors(network.getAllActors());
+	protected Result doGenerateNetwork(Network network) {
 
 		network.computeTemplateMaps();
 
@@ -137,37 +118,30 @@ public class Embedded extends AbstractBackend {
 			}
 		}
 
-		printChildren(network);
 		// print network
 		OrccLogger.traceln("Printing network...");
-		printNetwork(network);
-
-	}
-	
-	@Override
-	public boolean printInstance(Instance instance) {
-		if(!instance.getActor().isNative()){
-			return new EmbeddedInstance(instance, getOptions()).print(srcPath) > 1;
-		}
-		return false;
-	}
-	
-	public void printNetwork(Network network) {
 		EmbeddedNetwork printer = new EmbeddedNetwork(network, getOptions());
-		
+
 		printer.printMain(srcPath);
 		printer.printNetwork(srcPath);
-		printer.printCMakeLists(path);
+		printer.printCMakeLists(outputPath);
+		return super.doGenerateNetwork(network);
 	}
 	
 	@Override
+	protected Result doGenerateInstance(Instance instance) {
+		if(!instance.getActor().isNative()){
+			new EmbeddedInstance(instance, getOptions()).print(srcPath);
+		}
+		return super.doGenerateInstance(instance);
+	}
+
+	@Override
 	protected Result doLibrariesExtraction() {
-		String target = path + File.separator + "lib";
+		String target = outputPath + File.separator + "lib";
 		OrccLogger
 				.trace("Export libraries sources into " + target + "... ");
 		Result result = FilesManager.extract("/bundle/embedded", target);
 		return result;
 	}
-	
-	
 }

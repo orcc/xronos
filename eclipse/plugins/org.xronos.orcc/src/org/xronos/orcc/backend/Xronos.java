@@ -139,7 +139,7 @@ public class Xronos extends AbstractBackend {
 		newLimGen = getOption("org.xronos.orcc.newLimGen", false);
 
 		// Set Paths for RTL
-		rtlPath = path + File.separator + "rtl";
+		rtlPath = outputPath + File.separator + "rtl";
 		File rtlDir = new File(rtlPath);
 		if (!rtlDir.exists()) {
 			rtlDir.mkdir();
@@ -154,14 +154,14 @@ public class Xronos extends AbstractBackend {
 		}
 
 		// Set Paths for simulation
-		simPath = path + File.separator + "sim";
+		simPath = outputPath + File.separator + "sim";
 		File simDir = new File(simPath);
 		if (!simDir.exists()) {
 			simDir.mkdir();
 		}
 
 		// Set Paths for testBenches
-		testBenchPath = path + File.separator + "testbench";
+		testBenchPath = outputPath + File.separator + "testbench";
 		File testBenchDir = new File(testBenchPath);
 		if (!testBenchDir.exists()) {
 			testBenchDir.mkdir();
@@ -187,16 +187,11 @@ public class Xronos extends AbstractBackend {
 
 	@Override
 	protected Result doLibrariesExtraction() {
-		Result result = FilesManager.extract("/bundle/README.txt", path);
-		String libPath = path + File.separator + "lib";
+		Result result = FilesManager.extract("/bundle/README.txt", outputPath);
+		String libPath = outputPath + File.separator + "lib";
 		OrccLogger.traceln("Export libraries sources into " + libPath + "... ");
-		result.merge(FilesManager.extract("/bundle/lib", path));
+		result.merge(FilesManager.extract("/bundle/lib", outputPath));
 		return result;
-	}
-
-	@Override
-	protected void doTransformActor(Actor actor) {
-		// Do not transform at this moment
 	}
 
 	@Override
@@ -207,7 +202,7 @@ public class Xronos extends AbstractBackend {
 	}
 
 	@Override
-	protected void doXdfCodeGeneration(Network network) {
+	protected Result doGenerateNetwork(Network network) {
 		// instantiate and flattens network
 		new Instantiator(true).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
@@ -246,7 +241,7 @@ public class Xronos extends AbstractBackend {
 			xronosDynamicWeights.getMeanWeights(rtlPath + File.separator
 					+ "report");
 		}
-
+		return super.doGenerateNetwork(network);
 	}
 
 	public void generateInstances(Network network) {

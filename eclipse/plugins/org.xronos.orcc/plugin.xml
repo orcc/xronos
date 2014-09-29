@@ -133,5 +133,31 @@
             class="org.xronos.orcc.ir.XronosIrPackage"
             genModel="model/XronosIr.genmodel"/>
    </extension>
+   <extension
+         id="verilog"
+         name="Xronos Verilog"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="org.xronos.orcc.backend.Xronos">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="embeded"
+         name="Xronos Embedded C++"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="org.xronos.orcc.backend.embedded.Embedded">
+         </run>
+      </application>
+   </extension>
 
 </plugin>

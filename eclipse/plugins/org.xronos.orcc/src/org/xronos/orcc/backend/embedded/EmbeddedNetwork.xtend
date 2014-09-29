@@ -31,11 +31,10 @@
  */
 package org.xronos.orcc.backend.embedded
 
-import java.io.File
 import java.util.Map
 import net.sf.orcc.df.Instance
 import net.sf.orcc.df.Network
-import net.sf.orcc.util.OrccUtil
+import net.sf.orcc.util.FilesManager
 
 class EmbeddedNetwork extends ExprAndTypePrinter {
 
@@ -47,26 +46,12 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 
 	def printNetwork(String targetFolder) {
 		val content = compileNetwork
-		val file = new File(targetFolder + File::separator + network.simpleName + ".h")
-
-		if (needToWriteFile(content, file)) {
-			OrccUtil::printFile(content, file)
-			return 0
-		} else {
-			return 1
-		}
+		FilesManager.writeFile(content, targetFolder, network.simpleName + ".h")
 	}
 
 	def printMain(String targetFolder) {
 		val content = compileMain
-		val file = new File(targetFolder + File::separator + "main.cpp")
-
-		if (!file.exists) {
-			OrccUtil::printFile(content, file)
-			return 0
-		} else {
-			return 1
-		}
+		FilesManager.writeFile(content, targetFolder, "main.cpp")
 	}
 
 	def compileMain() '''
@@ -188,14 +173,7 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 
 	def printCMakeLists(String targetFolder) {
 		val content = compileCmakeLists
-		val file = new File(targetFolder + File::separator + "CMakeLists.txt")
-
-		if (needToWriteFile(content, file)) {
-			OrccUtil::printFile(content, file)
-			return 0
-		} else {
-			return 1
-		}
+		FilesManager.writeFile(content, targetFolder, "CMakeLists.txt")
 	}
 
 }

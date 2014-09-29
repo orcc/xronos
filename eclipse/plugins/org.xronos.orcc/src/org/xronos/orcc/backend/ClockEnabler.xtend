@@ -32,7 +32,6 @@
  
 package org.xronos.orcc.backend
 
-import java.io.File
 import java.util.HashMap
 import java.util.Map
 import net.sf.orcc.df.Actor
@@ -41,7 +40,7 @@ import net.sf.orcc.df.Network
 import net.sf.orcc.df.Port
 import net.sf.orcc.df.util.DfVisitor
 import net.sf.orcc.graph.Vertex
-import net.sf.orcc.util.OrccUtil
+import net.sf.orcc.util.FilesManager
 
 /**
  * A simple clock enable circuit 
@@ -66,8 +65,7 @@ class ClockEnabler extends DfVisitor<CharSequence> {
 	override caseActor(Actor actor) {
 		if(actor.outputs.size > 0 ){
 			val content = printActorClockEnabler(actor)
-			val file = new File(path + File::separator + actor.simpleName+"_clock_controller" + ".v")
-			OrccUtil::printFile(content, file)
+			FilesManager.writeFile(content, path, actor.simpleName+"_clock_controller" + ".v")
 		}
 		'''
 		'''
