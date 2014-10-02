@@ -55,7 +55,7 @@ class NetworkPrinter extends SystemCTemplate {
 			//  >  <| | | (_) | | | | (_) \__ \
 			// /_/\_\_|  \___/|_| |_|\___/|___/
 			// ----------------------------------------------------------------------------
-			// Xronos SystemC Generator
+			// Xronos SystemC, Network Generator
 			// Top level Network: «network.simpleName» 
 			// Date: «dateFormat.format(date)»
 			// ----------------------------------------------------------------------------

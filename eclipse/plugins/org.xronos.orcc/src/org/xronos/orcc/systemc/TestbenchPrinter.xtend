@@ -59,7 +59,7 @@ class TestbenchPrinter extends DfVisitor<Void> {
 			//  >  <| | | (_) | | | | (_) \__ \
 			// /_/\_\_|  \___/|_| |_|\___/|___/
 			// ----------------------------------------------------------------------------
-			// Xronos SystemC Generator
+			// Xronos SystemC, Testbench Generator
 			// Top level Network: «network.simpleName» 
 			// Date: «dateFormat.format(date)»
 			// ----------------------------------------------------------------------------
@@ -74,5 +74,11 @@ class TestbenchPrinter extends DfVisitor<Void> {
 
 	def private getContent()'''
 		«header»
+		int sc_main (int argc , char *argv[]) {
+			sc_report_handler::set_actions("/IEEE_Std_1666/deprecated", SC_DO_NOTHING);
+			sc_report_handler::set_actions( SC_ID_LOGIC_X_TO_BOOL_, SC_LOG);
+			sc_report_handler::set_actions( SC_ID_VECTOR_CONTAINS_LOGIC_VALUE_, SC_LOG);
+			sc_report_handler::set_actions( SC_ID_OBJECT_EXISTS_, SC_LOG);
+		}
 	'''	
 }

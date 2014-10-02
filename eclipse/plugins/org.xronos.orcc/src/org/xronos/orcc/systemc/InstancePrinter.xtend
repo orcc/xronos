@@ -32,9 +32,12 @@
  
 package org.xronos.orcc.systemc
 
-import net.sf.orcc.df.Instance
 import java.text.SimpleDateFormat
 import java.util.Date
+import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Instance
+import net.sf.orcc.df.Port
+import net.sf.orcc.ir.Procedure
 
 /**
  * SystemC Instance Printer
@@ -43,8 +46,22 @@ import java.util.Date
  */
 class InstancePrinter extends SystemCTemplate {
 	
-	protected var Instance instance
+	private var Instance instance
 	
+	private var Actor actor
+	
+	private var Procedure scheduler
+	
+	def setInstance(Instance instance){
+		this.instance = instance
+		
+		this.actor = instance.getActor()	
+	}
+	
+	def getContent()'''
+		«header»
+		«instanceContent»
+	'''
 	
 	def getHeader() {
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -56,20 +73,76 @@ class InstancePrinter extends SystemCTemplate {
 			//  >  <| | | (_) | | | | (_) \__ \
 			// /_/\_\_|  \___/|_| |_|\___/|___/
 			// ----------------------------------------------------------------------------
-			// Xronos SystemC Generator
+			// Xronos SystemC, Instance Generator
 			// Top level Network: «instance.simpleName» 
 			// Date: «dateFormat.format(date)»
 			// ----------------------------------------------------------------------------
 		'''
 	}
 	
-	def setInstance(Instance instance){
-		this.instance = instance	
+	
+	def getInstanceContent()'''
+	#ifndef SC_«instance.name»_H
+	#define SC_«instance.name»_H
+	
+	SC_MODULE(«instance.name»){
+	
+		// -- Control Ports
+		sc_in <bool>  clock;
+		sc_in <bool>  reset;
+		sc_in <bool>  start;
+		sc_out<bool>  done;
+	
+		// -- Instance Input Ports
+		«FOR port: actor.inputs»
+			«getPortDeclaration("in", port)»
+		«ENDFOR»
+	
+		// -- Instance Output Ports
+		«FOR port: actor.outputs»
+			«getPortDeclaration("out", port)»
+		«ENDFOR»
+		
+		// -- Constructor
+		SC_CTOR(«instance.name»)
+			:clock("clock")
+			,reset("reset")
+			,start("start")
+			,done("done")
+		{	
+			// Scheduler Registration
+			SC_CTHREAD(scheduler, clock.pos());
+			reset_signal_is(reset, true);
+		}
+	
+		// -- State Variable Declaration
+		«stateVariableContent»
+		
+		// -- Procedure / Functions
+		
+		// -- Actions Body
+		«FOR action: actor.actions»
+			«getProcedureContent(action.body)»
+		«ENDFOR»
+	
+		// -- Scheduler
+		«schedulerContent»
 	}
 	
-
-
-	def getContent()'''
-		«header»
+	#endif //SC_«instance.name»_H
 	'''
+	def getPortDeclaration(String direction, Port port)'''
+		sc_fifo_«direction»<«port.type»> «port.name»;
+	'''	
+	
+	def getStateVariableContent()'''
+	'''
+
+	def getProcedureContent(Procedure procedure)'''
+	'''
+	
+	def getSchedulerContent()'''
+	'''
+
+
 }

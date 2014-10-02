@@ -58,7 +58,7 @@ class TclPrinter extends DfVisitor<Void> {
 			##  >  <| | | (_) | | | | (_) \__ \
 			## /_/\_\_|  \___/|_| |_|\___/|___/
 			## ############################################################################
-			## Xronos SystemC Generator
+			## Xronos SystemC, TCL Script Generator
 			«IF object instanceof Network»
 				## «string» TCL Script file for Network: «(object as Network).simpleName» 
 			«ELSEIF object instanceof Instance»
