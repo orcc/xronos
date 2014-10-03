@@ -51,4 +51,18 @@
   <eClassifiers xsi:type="ecore:EClass" name="DfgEdge" eSuperTypes="../../net.sf.orcc.models/model/Graph.ecore#//Edge">
     <eStructuralFeatures xsi:type="ecore:EReference" name="line" eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Expression"/>
   </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="BlockSwitch" eSuperTypes="../../net.sf.orcc.core/model/Ir.ecore#//Block">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="predicate" eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Expression"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="cases" upperBound="-1"
+        eType="#//BlockCase" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lineNumber" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="BlockCase" eSuperTypes="../../net.sf.orcc.core/model/Ir.ecore#//Block">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="case" eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Expression"
+        containment="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="blocks" upperBound="-1"
+        eType="ecore:EClass ../../net.sf.orcc.core/model/Ir.ecore#//Block" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lineNumber" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
 </ecore:EPackage>

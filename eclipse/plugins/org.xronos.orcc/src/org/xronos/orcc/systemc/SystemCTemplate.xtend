@@ -47,9 +47,9 @@ class SystemCTemplate extends CTemplate {
 	/////////////////////////////////
 	override caseTypeBool(TypeBool type) '''sc_bool'''
 
-	override caseTypeInt(TypeInt type) '''«IF type.sizeInBits <= 64 »sc_int«ELSE»sc_bigint«ENDIF»«type.size»'''
+	override caseTypeInt(TypeInt type) '''«IF type.sizeInBits <= 64 »sc_int«ELSE»sc_bigint«ENDIF»<«type.size»>'''
 
-	override caseTypeUint(TypeUint type) '''«IF type.sizeInBits <= 64 »sc_uint«ELSE»sc_biguint«ENDIF»«type.size»'''
+	override caseTypeUint(TypeUint type) '''«IF type.sizeInBits <= 64 »sc_uint«ELSE»sc_biguint«ENDIF»<«type.size»>'''
 
 	override caseTypeString(TypeString type) '''string'''
 

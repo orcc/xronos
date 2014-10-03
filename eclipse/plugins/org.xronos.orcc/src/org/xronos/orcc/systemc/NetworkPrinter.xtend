@@ -29,12 +29,13 @@
  * for the parts of Eclipse libraries used as well as that of the  covered work.
  * 
  */
- 
 package org.xronos.orcc.systemc
 
-import net.sf.orcc.df.Network
 import java.text.SimpleDateFormat
 import java.util.Date
+import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Network
+import net.sf.orcc.df.Port
 
 /**
  * SystemC Network Printer
@@ -43,8 +44,20 @@ import java.util.Date
  */
 class NetworkPrinter extends SystemCTemplate {
 
-	protected var Network network
-	
+	var Network network
+
+	var String name
+
+	def setNetwork(Network network) {
+		this.network = network
+		this.name = network.simpleName
+	}
+
+	def getContent() '''
+		«header»
+		«networkContent»
+	'''
+
 	def getHeader() {
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
@@ -55,21 +68,83 @@ class NetworkPrinter extends SystemCTemplate {
 			//  >  <| | | (_) | | | | (_) \__ \
 			// /_/\_\_|  \___/|_| |_|\___/|___/
 			// ----------------------------------------------------------------------------
+			// This file is generated automatically by Xronos HLS
+			// ----------------------------------------------------------------------------
 			// Xronos SystemC, Network Generator
 			// Top level Network: «network.simpleName» 
 			// Date: «dateFormat.format(date)»
 			// ----------------------------------------------------------------------------
 		'''
 	}
-	
-	
-	def setNetwork(Network network){
-		this.network = network
-	}
 
+	def getNetworkContent() '''
+		#ifndef SC_«this.name»_H
+		#define SC_«this.name»_H
+		
+		#include"systemc.h"
+		
+		SC_MODULE(«this.name»){
+		
+			// -- Control Ports
+			
+			sc_in<bool>   clock;
+			sc_in<bool>   reset;
+			sc_in<bool>   start;
+			sc_out<bool>  done;
+		
+			// -- Network Input Ports
+			«FOR port : network.inputs»
+				«getPortDeclaration("in", port)»
+			«ENDFOR»
+			
+			// -- Network Output Ports
+			«FOR port : network.outputs»
+				«getPortDeclaration("out", port)»
+			«ENDFOR»
+			
+			// -- Queues
+			«getQueuesDeclarationContent()»
+			
+			«IF !network.parameters.empty»
+			// -- Network Parameters 
+			// -- TBD
+			«ENDIF»
+			
+			// -- Actors
+			«FOR child : network.children»
+				«child.label» i_«child.label»;
+			«ENDFOR»
+			
+			// -- Constructor
+			SC_CTOR(«this.name»)
+				:clock("clock")
+				,reset("reset")
+				,start("start")
+				,done("done")
+			{
 
-	def getContent()'''
-		«header»
+			}
 	'''
-	
+
+	def getPortDeclaration(String direction, Port port) '''
+		sc_fifo_«direction»<«port.type.doSwitch»> «port.name»;
+	'''
+
+	// -- TODO: Name to be calculated before printing
+	def getQueuesDeclarationContent()'''
+		«FOR connection : network.connections»
+			«IF connection.source instanceof Port»
+				«IF connection.target instanceof Actor»
+					sc_fifo<«(connection.source as Port).type.doSwitch»> q_«(connection.source as Port).name»_«(connection.target as Actor).name»_«connection.targetPort.name»(«connection.size»);
+				«ENDIF»
+			«ELSEIF connection.source instanceof Actor»
+				«IF connection.target instanceof Port»
+					sc_fifo<«(connection.sourcePort as Port).type.doSwitch»> q_«(connection.source as Actor).name»_«connection.sourcePort.name»_«(connection.target as Port).name»(«connection.size»);
+				«ELSEIF connection.target instanceof Actor»
+					sc_fifo<«(connection.sourcePort as Port).type.doSwitch»> q_«(connection.source as Actor).name»_«connection.sourcePort.name»_«(connection.target as Actor).name»_«connection.targetPort.name»(«connection.size»);
+				«ENDIF»
+			«ENDIF»
+		«ENDFOR»
+	'''
+
 }

@@ -37,10 +37,19 @@ import static net.sf.orcc.backends.BackendsConstants.IMPORT_BXDF;
 import java.io.File;
 
 import net.sf.orcc.backends.AbstractBackend;
+import net.sf.orcc.backends.transform.BlockForAdder;
+import net.sf.orcc.backends.transform.DisconnectedOutputPortRemoval;
 import net.sf.orcc.backends.util.Validator;
+import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.df.transform.Instantiator;
+import net.sf.orcc.df.transform.NetworkFlattener;
+import net.sf.orcc.df.transform.UnitImporter;
+import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.df.util.NetworkValidator;
+import net.sf.orcc.ir.CfgNode;
+import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 import net.sf.orcc.tools.mapping.XmlBufferSizeConfiguration;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.Result;
@@ -66,16 +75,23 @@ public class XronosSystemC extends AbstractBackend {
 	/** Path for the RTL to be populated by HLS tools **/
 	private String rtlPath;
 
-	/** Path that contains the SystemC testbench files **/
+	/** Path that contains the SystemC Testbench files **/
 	private String tbPath;
 
+	
+	public XronosSystemC(){
+		nPrinter = new NetworkPrinter();
+		iPrinter = new InstancePrinter();
+		tbPrinter = new TestbenchPrinter();
+		tclPrinter = new TclPrinter();
+	}
+	
 	@Override
 	protected void doInitializeOptions() {
 
 		// Create Folders
-
 		// -- Source folder
-		srcPath = outputPath + File.separator + "rtl";
+		srcPath = outputPath + File.separator + "src";
 		File srcDir = new File(srcPath);
 		if (!srcDir.exists()) {
 			srcDir.mkdir();
@@ -94,6 +110,17 @@ public class XronosSystemC extends AbstractBackend {
 		if (!tbDir.exists()) {
 			tbDir.mkdir();
 		}
+		
+		// Network Transformations
+		networkTransfos.add(new Instantiator(true));
+		networkTransfos.add(new NetworkFlattener());
+		networkTransfos.add(new UnitImporter());
+		networkTransfos.add(new DisconnectedOutputPortRemoval());
+		
+		// Child Transformations
+		
+		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
+		childrenTransfos.add(new BlockForAdder());
 	}
 
 	@Override
@@ -138,6 +165,13 @@ public class XronosSystemC extends AbstractBackend {
 	protected Result doAdditionalGeneration(Instance instance) {
 		// TODO Auto-generated method stub
 		return super.doAdditionalGeneration(instance);
+	}
+
+	@Override
+	protected Result doGenerateActor(Actor actor) {
+		iPrinter.setActor(actor);
+		return FilesManager.writeFile(iPrinter.getContent(), srcPath,
+				actor.getSimpleName() + ".h");
 	}
 	
 	
