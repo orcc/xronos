@@ -118,23 +118,23 @@ class InstancePrinter extends SystemCTemplate {
 			sc_in<bool>   reset;
 			sc_in<bool>   start;
 			sc_out<bool>  done;
-		
+	
 			// -- Actor Input Ports
 			«FOR port : actor.inputs»
 				«getPortDeclaration("in", port)»
 			«ENDFOR»
-		
+	
 			// -- Actor Output Ports
 			«FOR port : actor.outputs»
 				«getPortDeclaration("out", port)»
 			«ENDFOR»
-			
+	
 			// -- Start / Done Actions signals
 			«FOR action: actor.actions SEPARATOR "\n"»
 				sc_signal<bool> start_«action.name»;
 				sc_signal<bool> done_«action.name»;
 			«ENDFOR»
-			
+	
 			// -- Constructor
 			SC_CTOR(«this.name»)
 				:clock("clock")
@@ -152,28 +152,28 @@ class InstancePrinter extends SystemCTemplate {
 					reset_signal_is(reset, true);
 				«ENDFOR»
 			}
-		
+	
 			// -- State Variable Declaration
 			«FOR variable : actor.stateVars»
 				«getStateVariableDeclarationContent(variable)»
 			«ENDFOR»
-			
+	
 			// -- Procedure / Functions
 			«FOR procedure : actor.procs»
 				«getProcedureContent(procedure)»
 			«ENDFOR»
-		
+	
 			// -- Actions Body
 			«FOR action : actor.actions»
 				«IF !action.body.blocks.empty»
 					«getActionBodyContent(action.body)»
 				«ENDIF»
 			«ENDFOR»
-		
+	
 			// -- Action(s) Scheduler
 			//getProcedureContent(scheduler)
 		};
-		
+	
 		#endif //SC_«this.name»_H
 	'''
 
@@ -315,7 +315,6 @@ class InstancePrinter extends SystemCTemplate {
 		val end = if(variable.global) ";"
 
 		'''«global»«const»«type.doSwitch» «variable.name»«dims»«init»«end»'''
-
 	}
 
 }
