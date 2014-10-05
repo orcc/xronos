@@ -33,12 +33,14 @@ package org.xronos.orcc.systemc
 
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.HashMap
+import java.util.Map
 import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Connection
 import net.sf.orcc.df.Network
 import net.sf.orcc.df.Port
-import net.sf.orcc.df.Connection
-import java.util.Map
-import java.util.HashMap
+import net.sf.orcc.ir.Type
+import net.sf.orcc.ir.util.IrUtil
 
 /**
  * SystemC Network Printer
@@ -50,22 +52,24 @@ class NetworkPrinter extends SystemCTemplate {
 	var Network network
 
 	var String name
-	
+
 	var Map<Connection, String> queueNames
-	
+
+	var Map<Connection, Type> queueTypes
+
 	var Integer defaultQueueSize
 
 	def setNetwork(Network network) {
 		this.network = network
 		this.name = network.simpleName
 		retrieveQueueNames
-		
+
 	}
 
 	override setOptions(Map<String, Object> options) {
 		super.setOptions(options)
-		if (options.containsKey("fifoSize")) {
-			defaultQueueSize = options.get("fifoSize") as Integer;
+		if (options.containsKey("net.sf.orcc.fifoSize")) {
+			defaultQueueSize = options.get("net.sf.orcc.fifoSize") as Integer;
 		}
 	}
 
@@ -102,7 +106,6 @@ class NetworkPrinter extends SystemCTemplate {
 		SC_MODULE(«this.name»){
 		
 			// -- Control Ports
-			
 			sc_in<bool>   clock;
 			sc_in<bool>   reset;
 			sc_in<bool>   start;
@@ -122,8 +125,8 @@ class NetworkPrinter extends SystemCTemplate {
 			«getQueuesDeclarationContent()»
 			
 			«IF !network.parameters.empty»
-			// -- Network Parameters 
-			// -- TBD
+				// -- Network Parameters 
+				// -- TBD
 			«ENDIF»
 			
 			// -- Actors
@@ -143,38 +146,64 @@ class NetworkPrinter extends SystemCTemplate {
 				«ENDFOR»
 				// -- Queues
 				«FOR connection : network.connections»
-					,«queueNames.get(connection)»("«queueNames.get(connection)»", «IF connection.size == null»«defaultQueueSize»«ELSE»«connection.size»«ENDIF»)
+					,«queueNames.get(connection)»("«queueNames.get(connection)»", «IF connection.size == null»«defaultQueueSize»«ELSE»«connection.
+			size»«ENDIF»)
 				«ENDFOR»
 			{
-
+				// -- Connnections
+				«contructorConnections»
 			}
+		};
 	'''
 
 	def getPortDeclaration(String direction, Port port) '''
 		sc_fifo_«direction»<«port.type.doSwitch»> «port.name»;
 	'''
 
-	def getQueuesDeclarationContent()'''
+	def getQueuesDeclarationContent() '''
 		«FOR connection : network.connections»
-			sc_fifo<«(connection.source as Port).type.doSwitch»> «queueNames.get(connection)»;
+			sc_fifo<«queueTypes.get(connection).doSwitch»> «queueNames.get(connection)»;
+		«ENDFOR»
+	'''
+
+	def getContructorConnections()'''
+		«FOR child : network.children»
+			«child.label».clock(clock);
+			«child.label».reset(reset);
+			«FOR connection: child.incoming»
+				«child.label».«(connection as Connection).targetPort.name»(«queueNames.get(connection)»);
+			«ENDFOR»
+			«FOR connection: child.outgoing»
+				«child.label».«(connection as Connection).sourcePort.name»(«queueNames.get(connection)»);
+			«ENDFOR»
 		«ENDFOR»
 	'''
 
 	// -- Helper Methods
-	def retrieveQueueNames(){
+	def retrieveQueueNames() {
 		queueNames = new HashMap<Connection, String>
-		for (connection : network.connections){
-			if(connection.source instanceof Port){
-				if(connection.target instanceof Actor){
-					queueNames.put(connection, "q_" + (connection.source as Port).name+ "_"+ (connection.target as Actor).name + "_" + connection.targetPort.name)
+		queueTypes = new HashMap<Connection, Type>
+		for (connection : network.connections) {
+			if (connection.source instanceof Port) {
+				if (connection.target instanceof Actor) {
+					queueNames.put(connection,
+						"q_" + (connection.source as Port).name + "_" + (connection.target as Actor).name + "_" +
+							connection.targetPort.name)
+					queueTypes.put(connection, IrUtil.copy((connection.source as Port).type))
 				}
-			}else if(connection.source instanceof Actor){
-				if(connection.target instanceof Port){
-					queueNames.put(connection, "q_"+ (connection.source as Actor).name+"_"+ connection.sourcePort.name + "_" + (connection.target as Port).name)
-				}else if(connection.target instanceof Actor){
-					queueNames.put(connection, "q_"+ (connection.source as Actor).name+"_"+ connection.sourcePort.name + "_" + (connection.target as Actor).name + "_" + connection.targetPort.name)
+			} else if (connection.source instanceof Actor) {
+				if (connection.target instanceof Port) {
+					queueNames.put(connection,
+						"q_" + (connection.source as Actor).name + "_" + connection.sourcePort.name + "_" +
+							(connection.target as Port).name)
+					queueTypes.put(connection, IrUtil.copy((connection.sourcePort as Port).type))
+				} else if (connection.target instanceof Actor) {
+					queueNames.put(connection,
+						"q_" + (connection.source as Actor).name + "_" + connection.sourcePort.name + "_" +
+							(connection.target as Actor).name + "_" + connection.targetPort.name)
+					queueTypes.put(connection, IrUtil.copy((connection.sourcePort as Port).type))
 				}
-				
+
 			}
 		}
 	}

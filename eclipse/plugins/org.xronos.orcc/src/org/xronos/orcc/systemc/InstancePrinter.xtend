@@ -106,75 +106,75 @@ class InstancePrinter extends SystemCTemplate {
 	}
 
 	def getInstanceContent() '''
-		#ifndef SC_«this.name»_H
-		#define SC_«this.name»_H
-		
-		#include"systemc.h"
-		
-		SC_MODULE(«this.name»){
-		
-			// -- Control Ports
-			sc_in<bool>   clock;
-			sc_in<bool>   reset;
-			sc_in<bool>   start;
-			sc_out<bool>  done;
+	#ifndef SC_«this.name»_H
+	#define SC_«this.name»_H
 	
-			// -- Actor Input Ports
-			«FOR port : actor.inputs»
-				«getPortDeclaration("in", port)»
-			«ENDFOR»
+	#include"systemc.h"
 	
-			// -- Actor Output Ports
-			«FOR port : actor.outputs»
-				«getPortDeclaration("out", port)»
-			«ENDFOR»
+	SC_MODULE(«this.name»){
 	
-			// -- Start / Done Actions signals
+		// -- Control Ports
+		sc_in<bool>   clock;
+		sc_in<bool>   reset;
+		sc_in<bool>   start;
+		sc_out<bool>  done;
+
+		// -- Actor Input Ports
+		«FOR port : actor.inputs»
+			«getPortDeclaration("in", port)»
+		«ENDFOR»
+
+		// -- Actor Output Ports
+		«FOR port : actor.outputs»
+			«getPortDeclaration("out", port)»
+		«ENDFOR»
+
+		// -- Start / Done Actions signals
+		«FOR action: actor.actions SEPARATOR "\n"»
+			sc_signal<bool> start_«action.name»;
+			sc_signal<bool> done_«action.name»;
+		«ENDFOR»
+
+		// -- Constructor
+		SC_CTOR(«this.name»)
+			:clock("clock")
+			,reset("reset")
+			,start("start")
+			,done("done")
+		{
+			// Actions Scheduler Registration
+			SC_CTHREAD(scheduler, clock.pos());
+			reset_signal_is(reset, true);
+			
+			// Actions Registration
 			«FOR action: actor.actions SEPARATOR "\n"»
-				sc_signal<bool> start_«action.name»;
-				sc_signal<bool> done_«action.name»;
-			«ENDFOR»
-	
-			// -- Constructor
-			SC_CTOR(«this.name»)
-				:clock("clock")
-				,reset("reset")
-				,start("start")
-				,done("done")
-			{
-				// Actions Scheduler Registration
-				SC_CTHREAD(scheduler, clock.pos());
+				SC_CTHREAD(«action.name», clock.pos());
 				reset_signal_is(reset, true);
-				
-				// Actions Registration
-				«FOR action: actor.actions SEPARATOR "\n"»
-					SC_CTHREAD(«action.name», clock.pos());
-					reset_signal_is(reset, true);
-				«ENDFOR»
-			}
-	
-			// -- State Variable Declaration
-			«FOR variable : actor.stateVars»
-				«getStateVariableDeclarationContent(variable)»
 			«ENDFOR»
-	
-			// -- Procedure / Functions
-			«FOR procedure : actor.procs»
-				«getProcedureContent(procedure)»
-			«ENDFOR»
-	
-			// -- Actions Body
-			«FOR action : actor.actions»
-				«IF !action.body.blocks.empty»
-					«getActionBodyContent(action.body)»
-				«ENDIF»
-			«ENDFOR»
-	
-			// -- Action(s) Scheduler
-			//getProcedureContent(scheduler)
-		};
-	
-		#endif //SC_«this.name»_H
+		}
+
+		// -- State Variable Declaration
+		«FOR variable : actor.stateVars»
+			«getStateVariableDeclarationContent(variable)»
+		«ENDFOR»
+
+		// -- Procedure / Functions
+		«FOR procedure : actor.procs»
+			«getProcedureContent(procedure)»
+		«ENDFOR»
+
+		// -- Actions Body
+		«FOR action : actor.actions»
+			«IF !action.body.blocks.empty»
+				«getActionBodyContent(action.body)»
+			«ENDIF»
+		«ENDFOR»
+
+		// -- Action(s) Scheduler
+		//getProcedureContent(scheduler)
+	};
+
+	#endif //SC_«this.name»_H
 	'''
 
 	def getPortDeclaration(String direction, Port port) '''
@@ -186,7 +186,7 @@ class InstancePrinter extends SystemCTemplate {
 	'''
 
 	def getActionBodyContent(Procedure procedure)'''
-		«procedure.returnType.doSwitch» «procedure.name»(«procedure.parameters.join(", ")[declare]») {
+		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
 			«FOR variable : procedure.locals»
 				«variable.declare»;
 			«ENDFOR»
@@ -266,7 +266,11 @@ class InstancePrinter extends SystemCTemplate {
 				cout<< «call.arguments.printfArgs.join(", ")» <<endl;
 			#endif
 		«ELSE»
-			«IF call.target != null»«call.target.variable.name» = «ENDIF»«call.procedure.name»(«call.arguments.join(", ")[print]»);
+			«IF !call.hasAttribute("memberCall")»
+				«IF call.target != null»«call.target.variable.name» = «ENDIF»«call.procedure.name»(«call.arguments.join(", ")[print]»);
+			«ELSE»
+				«call.arguments.get(0).print».«call.procedure.name»();
+			«ENDIF»
 		«ENDIF»
 	'''
 

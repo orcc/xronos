@@ -36,6 +36,9 @@ import static net.sf.orcc.backends.BackendsConstants.IMPORT_BXDF;
 
 import java.io.File;
 
+import org.xronos.orcc.backend.transform.CheckVarSize;
+import org.xronos.orcc.forge.transform.memory.VarInitializer;
+
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.transform.BlockForAdder;
 import net.sf.orcc.backends.transform.DisconnectedOutputPortRemoval;
@@ -88,7 +91,6 @@ public class XronosSystemC extends AbstractBackend {
 	
 	@Override
 	protected void doInitializeOptions() {
-
 		// Create Folders
 		// -- Source folder
 		srcPath = outputPath + File.separator + "src";
@@ -111,6 +113,12 @@ public class XronosSystemC extends AbstractBackend {
 			tbDir.mkdir();
 		}
 		
+		// Set Printer Options
+		nPrinter.setOptions(getOptions());
+		iPrinter.setOptions(getOptions());
+		//tbPrinter.setOptions(getOptions());
+		//tclPrinter.setOptions(getOptions());
+		
 		// Network Transformations
 		networkTransfos.add(new Instantiator(true));
 		networkTransfos.add(new NetworkFlattener());
@@ -118,9 +126,11 @@ public class XronosSystemC extends AbstractBackend {
 		networkTransfos.add(new DisconnectedOutputPortRemoval());
 		
 		// Child Transformations
-		
+		childrenTransfos.add(new VarInitializer());
+		childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
 		childrenTransfos.add(new BlockForAdder());
+		
 	}
 
 	@Override

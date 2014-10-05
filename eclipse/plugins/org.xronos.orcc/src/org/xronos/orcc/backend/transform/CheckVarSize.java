@@ -129,7 +129,7 @@ public class CheckVarSize extends DfVisitor<Void> {
 					int innerSize = typeList.getInnermostType().getSizeInBits();
 					int newInnerSize = checkAndModifySize(varValue,
 							listDimension, innerType);
-					if (innerSize < newInnerSize) {
+					if (innerSize != newInnerSize) {
 						OrccLogger.warnln("Variable: " + var.getName()
 								+ " has a wrong size, its correct size is: "
 								+ newInnerSize + " instead of: " + innerSize);
@@ -141,7 +141,7 @@ public class CheckVarSize extends DfVisitor<Void> {
 					BigInteger value = (BigInteger) var.getValue();
 					int size = type.getSizeInBits();
 					int newSize = value.bitLength();
-					if (size < newSize) {
+					if (size != newSize) {
 						OrccLogger.warnln("Variable: " + var.getName()
 								+ " has a wrong size, its correct size is: "
 								+ newSize + " instead of: " + newSize);
