@@ -109,7 +109,7 @@ class InstancePrinter extends SystemCTemplate {
 	#ifndef SC_«this.name»_H
 	#define SC_«this.name»_H
 	
-	#include"systemc.h"
+	#include "systemc.h"
 	
 	SC_MODULE(«this.name»){
 	

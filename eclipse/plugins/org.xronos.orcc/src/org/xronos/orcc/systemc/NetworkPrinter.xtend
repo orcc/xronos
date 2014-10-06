@@ -63,7 +63,6 @@ class NetworkPrinter extends SystemCTemplate {
 		this.network = network
 		this.name = network.simpleName
 		retrieveQueueNames
-
 	}
 
 	override setOptions(Map<String, Object> options) {
@@ -101,7 +100,7 @@ class NetworkPrinter extends SystemCTemplate {
 		#ifndef SC_«this.name»_H
 		#define SC_«this.name»_H
 		
-		#include"systemc.h"
+		#include "systemc.h"
 		
 		SC_MODULE(«this.name»){
 		
@@ -154,6 +153,8 @@ class NetworkPrinter extends SystemCTemplate {
 				«contructorConnections»
 			}
 		};
+		
+		#endif //SC_«this.name»_H
 	'''
 
 	def getPortDeclaration(String direction, Port port) '''

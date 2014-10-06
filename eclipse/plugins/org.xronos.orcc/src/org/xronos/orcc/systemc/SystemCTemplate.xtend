@@ -32,25 +32,38 @@
 package org.xronos.orcc.systemc
 
 import net.sf.orcc.backends.c.CTemplate
+import net.sf.orcc.ir.ExprInt
 import net.sf.orcc.ir.TypeBool
 import net.sf.orcc.ir.TypeInt
 import net.sf.orcc.ir.TypeString
 import net.sf.orcc.ir.TypeUint
+import java.math.BigInteger
 
 /**
  * @author Endri Bezati
  */
-
 class SystemCTemplate extends CTemplate {
+
 	/////////////////////////////////
 	// Types
 	/////////////////////////////////
 	override caseTypeBool(TypeBool type) '''sc_bool'''
 
-	override caseTypeInt(TypeInt type) '''«IF type.sizeInBits <= 64 »sc_int«ELSE»sc_bigint«ENDIF»<«type.size»>'''
+	override caseTypeInt(TypeInt type) '''«IF type.sizeInBits <= 64»sc_int«ELSE»sc_bigint«ENDIF»<«type.size»>'''
 
-	override caseTypeUint(TypeUint type) '''«IF type.sizeInBits <= 64 »sc_uint«ELSE»sc_biguint«ENDIF»<«type.size»>'''
+	override caseTypeUint(TypeUint type) '''«IF type.sizeInBits <= 64»sc_uint«ELSE»sc_biguint«ENDIF»<«type.size»>'''
 
 	override caseTypeString(TypeString type) '''string'''
+
+	override caseExprInt(ExprInt object) {
+		val value = object.value
+
+		if (value.compareTo(BigInteger.valueOf(Integer::MIN_VALUE)) < 0 ||
+			value.compareTo(BigInteger.valueOf(Integer::MAX_VALUE)) > 0) {
+			'''«value»L'''
+		} else {
+			'''«value»'''
+		}
+	}
 
 }

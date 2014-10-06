@@ -31,11 +31,12 @@
  */
 package org.xronos.orcc.systemc
 
-import net.sf.orcc.df.util.DfVisitor
 import java.text.SimpleDateFormat
 import java.util.Date
+import net.sf.orcc.df.Actor
 import net.sf.orcc.df.Network
-import net.sf.orcc.df.Instance
+import net.sf.orcc.df.util.DfVisitor
+import java.util.Map
 
 /**
  * SystemC TCL Script Printer for Network and Actor
@@ -46,9 +47,29 @@ class TclPrinter extends DfVisitor<Void> {
 	
 	private var Network network
 
-	private var Instance instance
+	private var Actor actor
 
-	def private getHeader(Object object, String string) {
+	private String name
+
+	private Map<String, Object> options
+
+	def setActor(Actor actor){
+		this.actor = actor
+		this.name = actor.simpleName
+		this.network  =null
+	}
+	
+	def setNetwork(Network network){
+		this.network = network
+		name = network.simpleName
+		actor = null
+	}
+	
+	def setOptions(Map<String, Object> options) {
+		this.options = options 
+	}
+	
+	def private getHeader() {
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
 		'''
@@ -61,14 +82,22 @@ class TclPrinter extends DfVisitor<Void> {
 			## This file is generated automatically by Xronos HLS
 			## ############################################################################
 			## Xronos SystemC, TCL Script Generator
-			«IF object instanceof Network»
-				## «string» TCL Script file for Network: «(object as Network).simpleName» 
-			«ELSEIF object instanceof Instance»
-				## «string» TCL Script file for Actor: «(object as Instance).simpleName» 
+			«IF network != null»
+				## TCL Script file for Network: «this.name» 
+			«ELSE»
+				## TCL Script file for Actor: «this.name» 
 			«ENDIF»
 			## Date: «dateFormat.format(date)»
 			## ############################################################################
 		'''
 	}
+
+	def getContentForVivado()'''
+		«header»
+	'''
+
+	def getContentForCatapult()'''
+		«header»
+	'''
 
 }

@@ -114,6 +114,7 @@ import org.xronos.openforge.lim.op.SubtractOp;
 import org.xronos.openforge.lim.op.XorOp;
 import org.xronos.openforge.lim.primitive.And;
 import org.xronos.openforge.lim.primitive.Or;
+import org.xronos.openforge.util.Debug;
 import org.xronos.openforge.util.MathStuff;
 import org.xronos.openforge.util.naming.IDSourceInfo;
 import org.xronos.orcc.design.ResourceCache;
@@ -435,6 +436,7 @@ public class ComponentCreator extends AbstractIrVisitor<List<Component>> {
 		componentList.addAll(oldComponents);
 		componentList.add(loop);
 		blockToComponent.put(blockWhile, loop);
+		Debug.depGraphTo(loop, "whileBody", "/tmp/loop.dot", 1);
 		return null;
 	}
 

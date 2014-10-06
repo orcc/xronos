@@ -36,9 +36,6 @@ import static net.sf.orcc.backends.BackendsConstants.IMPORT_BXDF;
 
 import java.io.File;
 
-import org.xronos.orcc.backend.transform.CheckVarSize;
-import org.xronos.orcc.forge.transform.memory.VarInitializer;
-
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.transform.BlockForAdder;
 import net.sf.orcc.backends.transform.DisconnectedOutputPortRemoval;
@@ -57,6 +54,9 @@ import net.sf.orcc.tools.mapping.XmlBufferSizeConfiguration;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.Result;
 
+import org.xronos.orcc.backend.transform.CheckVarSize;
+import org.xronos.orcc.forge.transform.memory.VarInitializer;
+
 /**
  * A synthesizable SystemC backend based on Xronos principles
  * 
@@ -69,9 +69,10 @@ public class XronosSystemC extends AbstractBackend {
 	private NetworkPrinter nPrinter;
 	private InstancePrinter iPrinter;
 	private TestbenchPrinter tbPrinter;
+	private TestBenchUtilityPrinter tbutilityPrinter;
 	private TclPrinter tclPrinter;
-	
-	
+	private ReadMePrinter readMePrinter;
+
 	/** Path for generated SystemC Actor and Network source file **/
 	private String srcPath;
 
@@ -80,15 +81,18 @@ public class XronosSystemC extends AbstractBackend {
 
 	/** Path that contains the SystemC Testbench files **/
 	private String tbPath;
+	private String tbSrcPath;
+	private String tbHeaderPath;
 
-	
-	public XronosSystemC(){
+	public XronosSystemC() {
 		nPrinter = new NetworkPrinter();
 		iPrinter = new InstancePrinter();
 		tbPrinter = new TestbenchPrinter();
+		tbutilityPrinter = new TestBenchUtilityPrinter();
 		tclPrinter = new TclPrinter();
+		readMePrinter = new ReadMePrinter();
 	}
-	
+
 	@Override
 	protected void doInitializeOptions() {
 		// Create Folders
@@ -112,25 +116,46 @@ public class XronosSystemC extends AbstractBackend {
 		if (!tbDir.exists()) {
 			tbDir.mkdir();
 		}
-		
+
+		// -- Testbench source path
+		tbSrcPath = tbPath + File.separator + "src";
+		File tbSrcDir = new File(tbSrcPath);
+		if (!tbSrcDir.exists()) {
+			tbSrcDir.mkdir();
+		}
+
+		// -- Testbench header path
+		tbHeaderPath = tbPath + File.separator + "header";
+		File tbHeaderDir = new File(tbHeaderPath);
+		if (!tbHeaderDir.exists()) {
+			tbHeaderDir.mkdir();
+		}
+
+		// -- Testbench queue traces folder
+		String tracesPath = tbPath + File.separator + "traces";
+		File tracesDir = new File(tracesPath);
+		if (!tracesDir.exists()) {
+			tracesDir.mkdir();
+		}
+
 		// Set Printer Options
 		nPrinter.setOptions(getOptions());
 		iPrinter.setOptions(getOptions());
-		//tbPrinter.setOptions(getOptions());
-		//tclPrinter.setOptions(getOptions());
-		
+		tbPrinter.setOptions(getOptions());
+		tclPrinter.setOptions(getOptions());
+
 		// Network Transformations
 		networkTransfos.add(new Instantiator(true));
 		networkTransfos.add(new NetworkFlattener());
 		networkTransfos.add(new UnitImporter());
 		networkTransfos.add(new DisconnectedOutputPortRemoval());
-		
+
 		// Child Transformations
 		childrenTransfos.add(new VarInitializer());
 		childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
 		childrenTransfos.add(new BlockForAdder());
-		
+
 	}
 
 	@Override
@@ -143,8 +168,8 @@ public class XronosSystemC extends AbstractBackend {
 	@Override
 	protected Result doGenerateNetwork(Network network) {
 		nPrinter.setNetwork(network);
-		return FilesManager.writeFile(nPrinter.getContent(),
-				srcPath, network.getSimpleName() + ".h");
+		return FilesManager.writeFile(nPrinter.getContent(), srcPath,
+				network.getSimpleName() + ".h");
 	}
 
 	@Override
@@ -167,14 +192,56 @@ public class XronosSystemC extends AbstractBackend {
 
 	@Override
 	protected Result doAdditionalGeneration(Network network) {
-		// TODO Auto-generated method stub
-		return super.doAdditionalGeneration(network);
+		final Result result = Result.newInstance();
+
+		// -- README File
+		readMePrinter.setNetwork(network);
+		result.merge(FilesManager.writeFile(readMePrinter.getContent(),
+				outputPath, "README.txt"));
+
+		// -- Testbench Utility Printers
+		result.merge(FilesManager.writeFile(tbutilityPrinter.getKickerModule(),
+				tbHeaderPath, "tb_kicker.h"));
+
+		if (!network.getInputs().isEmpty()) {
+			result.merge(FilesManager.writeFile(
+					tbutilityPrinter.getDriverModule(), tbHeaderPath,
+					"tb_driver.h"));
+		}
+
+		if (!network.getOutputs().isEmpty()) {
+			result.merge(FilesManager.writeFile(
+					tbutilityPrinter.getCompareModule(), tbHeaderPath,
+					"tb_compare.h"));
+		}
+
+		// -- Testbench for Network
+		tbPrinter.setNetwork(network);
+		result.merge(FilesManager.writeFile(tbPrinter.getContent(),tbHeaderPath,
+				"tb_" + network.getSimpleName() + ".cpp"));
+
+		// -- TCL scripts for actor
+		tclPrinter.setNetwork(network);
+		result.merge(FilesManager.writeFile(tclPrinter.getContentForVivado(),
+				tbPath, "tcl_" + network.getSimpleName() + ".tcl"));
+
+		return result;
 	}
 
 	@Override
-	protected Result doAdditionalGeneration(Instance instance) {
-		// TODO Auto-generated method stub
-		return super.doAdditionalGeneration(instance);
+	protected Result doAdditionalGeneration(Actor actor) {
+		final Result result = Result.newInstance();
+		// -- TestBench for actor
+		tbPrinter.setActor(actor);
+		result.merge(FilesManager.writeFile(tbPrinter.getContent(), tbSrcPath,
+				"tb_" + actor.getSimpleName() + ".cpp"));
+
+		// -- TCL scripts for actor
+		tclPrinter.setActor(actor);
+		result.merge(FilesManager.writeFile(tclPrinter.getContentForVivado(),
+				tbPath, "tcl_" + actor.getSimpleName() + ".tcl"));
+
+		return result;
 	}
 
 	@Override
@@ -183,7 +250,5 @@ public class XronosSystemC extends AbstractBackend {
 		return FilesManager.writeFile(iPrinter.getContent(), srcPath,
 				actor.getSimpleName() + ".h");
 	}
-	
-	
 
 }

@@ -31,22 +31,10 @@
  */
 package org.xronos.orcc.forge.transform.analysis;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
-import org.eclipse.emf.common.notify.Adapter;
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.common.util.TreeIterator;
-import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EOperation;
-import org.eclipse.emf.ecore.EReference;
-import org.eclipse.emf.ecore.EStructuralFeature;
-import org.eclipse.emf.ecore.resource.Resource;
 import org.xronos.orcc.ir.BlockMutex;
 
 import net.sf.orcc.df.Action;
@@ -61,11 +49,9 @@ import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.Cfg;
 import net.sf.orcc.ir.CfgNode;
-import net.sf.orcc.ir.Instruction;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.util.AbstractIrVisitor;
-import net.sf.orcc.util.Attribute;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.util.EcoreHelper;
 
@@ -202,23 +188,16 @@ public class XronosCFG extends AbstractIrVisitor<CfgNode> {
 			addEdge(cfgNode);
 		}
 		
-		CfgNode join = addNode(block.getJoinBlock());
-		join.setLabel("join");
 		
-		flag = true;
 		last = cfgNode;
-		
 		flag = true;
 		last = doSwitch(block.getBlocks());
-		
-		addEdge(join);
-		// reset flag (in case there are no block in "then" branch)
-		flag = false;
-		last = join;
+		flag = true;
 		addEdge(cfgNode);
 		last = cfgNode;
-
-		return join;
+		
+		
+		return cfgNode;
 	}
 
 	@Override
