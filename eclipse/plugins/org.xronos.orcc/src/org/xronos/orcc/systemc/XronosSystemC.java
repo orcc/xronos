@@ -50,6 +50,7 @@ import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.df.util.NetworkValidator;
 import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
+import net.sf.orcc.ir.transform.DeadGlobalElimination;
 import net.sf.orcc.tools.mapping.XmlBufferSizeConfiguration;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.Result;
@@ -151,6 +152,7 @@ public class XronosSystemC extends AbstractBackend {
 		networkTransfos.add(new DisconnectedOutputPortRemoval());
 
 		// Child Transformations
+		childrenTransfos.add(new DeadGlobalElimination());
 		childrenTransfos.add(new VarInitializer());
 		childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));

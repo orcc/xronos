@@ -151,8 +151,28 @@ class NetworkPrinter extends SystemCTemplate {
 			{
 				// -- Connnections
 				«contructorConnections»
+				«IF !network.inputs.empty || !network.outputs.empty»
+					// -- Port Readers/Writers Process Registration
+					«FOR port: network.inputs»
+						SC_CTHREAD(port_«port.name»_reader,clock.pos());
+						reset_signal_is(reset,true);
+					«ENDFOR»
+					«FOR port: network.outputs»
+						SC_CTHREAD(port_«port.name»_writer,clock.pos());
+						reset_signal_is(reset,true);
+					«ENDFOR»
+				«ENDIF»
 			}
+			
+			«IF !network.inputs.empty || !network.outputs.empty»
+				// -- Queue Readers / Writers Processes
+				«inputQueueReaders»
+				
+				«outputQueueWriters»
+			«ENDIF»
+			
 		};
+		
 		
 		#endif //SC_«this.name»_H
 	'''
@@ -166,7 +186,45 @@ class NetworkPrinter extends SystemCTemplate {
 			sc_fifo<«queueTypes.get(connection).doSwitch»> «queueNames.get(connection)»;
 		«ENDFOR»
 	'''
-
+	
+	def getInputQueueReaders()'''
+		«FOR port: network.inputs SEPARATOR "\n"»
+			«FOR connection: network.connections»
+				«IF connection.source.equals(port)»
+					void «this.name»::port_«port.name»_reader(){
+						wait();
+						while(true){
+							do { wait(); } while ( !start.read() );
+							wait();
+							for(;;;){
+								«queueNames.get(connection)».write(«port.name».read());
+							}
+						}
+					}
+				 «ENDIF»
+			«ENDFOR»	
+		«ENDFOR»
+	'''
+	
+		def getOutputQueueWriters()'''
+		«FOR port: network.outputs SEPARATOR "\n"»
+			«FOR connection: network.connections»
+				«IF connection.target.equals(port)»
+					void «this.name»::port_«port.name»_writer(){
+						wait();
+						while(true){
+							do { wait(); } while ( !start.read() );
+							wait();
+							for(;;;){
+								«port.name».write(«queueNames.get(connection)».read());
+							}
+						}
+					}
+				 «ENDIF»
+			«ENDFOR»	
+		«ENDFOR»
+	'''
+	
 	def getContructorConnections()'''
 		«FOR child : network.children»
 			«child.label».clock(clock);
