@@ -33,10 +33,14 @@ package org.xronos.orcc.systemc
 
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.HashMap
+import java.util.Map
 import net.sf.orcc.backends.ir.BlockFor
 import net.sf.orcc.df.Actor
 import net.sf.orcc.df.Instance
 import net.sf.orcc.df.Port
+import net.sf.orcc.df.State
+import net.sf.orcc.df.Transition
 import net.sf.orcc.ir.Arg
 import net.sf.orcc.ir.ArgByRef
 import net.sf.orcc.ir.ArgByVal
@@ -51,31 +55,23 @@ import net.sf.orcc.ir.InstStore
 import net.sf.orcc.ir.Param
 import net.sf.orcc.ir.Procedure
 import net.sf.orcc.ir.Var
+import org.eclipse.emf.common.util.EMap
 
-/**
- * SystemC Instance Printer
- * 
- * @author Endri Bezati
- */
 class InstancePrinter extends SystemCTemplate {
-
-	private var Instance instance
 
 	private var Actor actor
 
-	private var Procedure scheduler
-	
+	private var Instance instance
+
 	private String name
 
 	def setInstance(Instance instance) {
 		this.instance = instance
-
 		this.actor = instance.getActor()
-		
 		this.name = instance.simpleName
 	}
-	
-	def setActor(Actor actor){
+
+	def setActor(Actor actor) {
 		this.actor = actor
 		this.name = actor.simpleName
 	}
@@ -113,67 +109,94 @@ class InstancePrinter extends SystemCTemplate {
 	
 	SC_MODULE(«this.name»){
 	
+		// --------------------------------------------------------------------------
 		// -- Control Ports
 		sc_in<bool>   clock;
 		sc_in<bool>   reset;
 		sc_in<bool>   start;
 		sc_out<bool>  done;
-
+		
+		// --------------------------------------------------------------------------
 		// -- Actor Input Ports
 		«FOR port : actor.inputs»
 			«getPortDeclaration("in", port)»
 		«ENDFOR»
-
+	
+		// --------------------------------------------------------------------------
 		// -- Actor Output Ports
 		«FOR port : actor.outputs»
 			«getPortDeclaration("out", port)»
 		«ENDFOR»
-
+		
+		// --------------------------------------------------------------------------
 		// -- Start / Done Actions signals
-		«FOR action: actor.actions SEPARATOR "\n"»
+		«FOR action : actor.actions SEPARATOR "\n"»
 			sc_signal<bool> start_«action.name»;
 			sc_signal<bool> done_«action.name»;
 		«ENDFOR»
-
-		// -- Constructor
-		SC_CTOR(«this.name»)
-			:clock("clock")
-			,reset("reset")
-			,start("start")
-			,done("done")
-		{
-			// Actions Scheduler Registration
-			SC_CTHREAD(scheduler, clock.pos());
-			reset_signal_is(reset, true);
-			
-			// Actions Registration
-			«FOR action: actor.actions SEPARATOR "\n"»
-				SC_CTHREAD(«action.name», clock.pos());
-				reset_signal_is(reset, true);
-			«ENDFOR»
-		}
-
+	
+		// --------------------------------------------------------------------------
 		// -- State Variable Declaration
 		«FOR variable : actor.stateVars»
 			«getStateVariableDeclarationContent(variable)»
 		«ENDFOR»
-
+		
+		// -- Scheduler States
+		enum state_t { // enumerate states
+			«FOR state : actor.fsm.states SEPARATOR ", "»«state.label»«ENDFOR»«IF !actor.inputs.empty», sREAD«ENDIF»«IF !actor.
+	outputs.empty», sWRITE«ENDIF»
+		};
+		sc_signal<state_t> state, old_state;
+	
+		// --------------------------------------------------------------------------
+		// -- Constructor
+		SC_CTOR(«this.name»)
+		:clock("clock")
+		,reset("reset")
+		,start("start")
+		,done("done")
+		{
+			// -- Actions Scheduler Registration
+			SC_CTHREAD(scheduler, clock.pos());
+			reset_signal_is(reset, true);
+			
+			// -- Actions Registration
+			«FOR action : actor.actions SEPARATOR "\n"»
+				SC_CTHREAD(«action.name», clock.pos());
+				reset_signal_is(reset, true);
+			«ENDFOR»
+		}
+		
+		«IF !actor.procs.empty»
+		// --------------------------------------------------------------------------
 		// -- Procedure / Functions
 		«FOR procedure : actor.procs»
-			«getProcedureContent(procedure)»
-		«ENDFOR»
-
+				«getProcedureContent(procedure)»
+			«ENDFOR»
+		«ENDIF»
+	
+		// --------------------------------------------------------------------------
 		// -- Actions Body
 		«FOR action : actor.actions SEPARATOR "\n"»
 			«IF !action.body.blocks.empty»
 				«getActionBodyContent(action.body)»
 			«ENDIF»
 		«ENDFOR»
-
+	
+		// --------------------------------------------------------------------------
+		// -- Actions isSchedulable
+		«FOR action : actor.actions SEPARATOR "\n"»
+			«IF !action.body.blocks.empty»
+				«getProcedureContent(action.scheduler)»
+			«ENDIF»
+		«ENDFOR»
+	
+		// --------------------------------------------------------------------------
 		// -- Action(s) Scheduler
-		//getProcedureContent(scheduler)
+		«schedulerContent»
+	
 	};
-
+	
 	#endif //SC_«this.name»_H
 	'''
 
@@ -185,7 +208,7 @@ class InstancePrinter extends SystemCTemplate {
 		«declare(variable)»
 	'''
 
-	def getActionBodyContent(Procedure procedure)'''
+	def getActionBodyContent(Procedure procedure) '''
 		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
 			«FOR variable : procedure.locals»
 				«variable.declare»;
@@ -207,16 +230,153 @@ class InstancePrinter extends SystemCTemplate {
 	'''
 
 	def getProcedureContent(Procedure procedure) '''
-		«procedure.returnType.doSwitch» «procedure.name»(«procedure.parameters.join(", ")[declare]») {
+		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
 			«FOR variable : procedure.locals»
 				«variable.declare»;
 			«ENDFOR»
-
+		
 			«FOR block : procedure.blocks»
 				«block.doSwitch»
 			«ENDFOR»
 		}
 	'''
+
+	def getSchedulerContent() '''
+		void «this.name»::scheduler(){
+			// -- Ports indexes
+			«FOR port : actor.inputs»
+				sc_uint<32> p_«port.name»_token_index = 0;
+				sc_uint<32> p_«port.name»_token_index_read = 0;
+				sc_bool p_«port.name»_consume = false;
+			«ENDFOR»
+			«FOR port : actor.outputs»
+				sc_uint<32> p_«port.name»_token_index = 0;
+				sc_uint<32> p_«port.name»_token_index_write = 0;
+				sc_bool p_«port.name»_produce = false;
+			«ENDFOR»
+			
+			// -- Action guards
+			«FOR action : actor.actions»
+				sc_bool guard_«action.name»;
+			«ENDFOR»
+			
+			done = false; 
+			wait();
+			
+			state = «actor.fsm.initialState.label»;
+			
+			// -- Wait For Start singal
+			do { wait(); } while ( !start.read() );
+			
+			while(true){
+				// -- Calculate all guards
+				«FOR action : actor.actions»
+					guard_«action.name» = «action.scheduler.name»();
+				«ENDFOR»
+		
+				switch (state){
+					«IF !actor.inputs.empty»
+						case (sREAD):
+							«FOR port : actor.inputs»
+								if(p_«port.name»_consume){
+									do { wait(); } while ( !«port.name».empty() );
+									for(int i = 0; i < p_«port.name»_token_index_read; i++){
+										p_«port.name»[i] := «port.name».read();
+										p_«port.name»_token_index++;
+										p_«port.name»_consume = false;
+									}
+								}
+							«ENDFOR»
+							state = old_state;
+						break;
+					«ENDIF»
+					
+					«IF !actor.outputs.empty»
+						case (sWRITE)
+							«FOR port : actor.outputs»
+								if(p_«port.name»_produce){
+									do { wait(); } while ( !«port.name».full() );
+									for(int i = 0; i < p_«port.name»_token_index_write; i++){
+										«port.name».write(p_«port.name»[i]);
+										p_«port.name»_token_index++;
+									}
+									p_«port.name»_produce = false;
+								}
+							«ENDFOR»
+							state = old_state;
+						break;
+					«ENDIF»
+					
+					«FOR state : actor.fsm.states SEPARATOR "\n"»
+						«getStateContent(state)»
+					«ENDFOR»
+				}
+			}
+		
+			wait();
+			done = true;
+		}
+	'''
+
+	// -- Scheduler helper methods
+	def getStateContent(State state){ 
+		var Map<Port, Integer> maxPortTokens = new HashMap
+		var Boolean actionsHaveInputPrts = false
+		for(edge : state.outgoing){
+			var action = (edge as Transition).action
+			if(!action.inputPattern.ports.empty){
+				var EMap<Port, Integer> inputNumTokens = action.inputPattern.numTokensMap
+				for(port : inputNumTokens.keySet){
+					if(maxPortTokens.containsKey(port)){
+						var oldValue = maxPortTokens.get(port)
+						if(oldValue < inputNumTokens.get(port)){
+							maxPortTokens.put(port,inputNumTokens.get(port))
+						}
+					}else{
+						maxPortTokens.put(port,inputNumTokens.get(port))
+					}
+				}
+				actionsHaveInputPrts = true;
+			}
+		}
+	'''
+		case(«state.label»):
+			«FOR edge : state.outgoing SEPARATOR " else"»
+			«getTransitionContent(edge as Transition)»
+			}«ENDFOR»«IF actionsHaveInputPrts» else {
+				«FOR port: maxPortTokens.keySet»
+					p_«port.name»_token_index_read = «maxPortTokens.get(port)»;
+					p_«port.name»_consume = true;
+				«ENDFOR»
+				old_state = «state.label»;
+				state = sREAD;
+			}«ENDIF»
+		break;
+	'''
+	}
+	def getTransitionContent(Transition transition) {
+		var action = transition.action
+		var sSTate = transition.source
+		var tState = transition.target
+		var EMap<Port, Integer> inputNumTokens = action.inputPattern.numTokensMap
+		var EMap<Port, Integer> outputNumTokens = action.outputPattern.numTokensMap
+		'''
+			if(guard_«action.scheduler.name»«IF !inputNumTokens.empty» && «FOR port : inputNumTokens.keySet SEPARATOR " && "»p_«port.
+				name»_token_index == «inputNumTokens.get(port)»«ENDFOR»«ENDIF»){
+				«action.name»_start = true;
+				do { wait(); } while ( !«action.name».done );
+				«IF outputNumTokens.empty»
+					state = «tState.label»;
+				«ELSE»
+					«FOR port : outputNumTokens.keySet»
+						p_«port.name»_token_index_write = «outputNumTokens.get(port)»
+						p_«port.name»_produce = true;
+					«ENDFOR»
+					old_state = «sSTate.label»;
+					state = sWRITE;
+				«ENDIF»
+		'''
+	}
 
 	// -- Ir Blocks
 	override caseBlockBasic(BlockBasic block) '''
@@ -234,7 +394,7 @@ class InstancePrinter extends SystemCTemplate {
 			«FOR elseBlock : block.elseBlocks»
 				«elseBlock.doSwitch»
 			«ENDFOR»
-		}
+				}
 		«ENDIF»
 	'''
 

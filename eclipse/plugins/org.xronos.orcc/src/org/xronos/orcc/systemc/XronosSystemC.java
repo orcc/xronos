@@ -50,13 +50,14 @@ import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.df.util.NetworkValidator;
 import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
-import net.sf.orcc.ir.transform.DeadGlobalElimination;
 import net.sf.orcc.tools.mapping.XmlBufferSizeConfiguration;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.Result;
 
 import org.xronos.orcc.backend.transform.CheckVarSize;
+import org.xronos.orcc.forge.scheduler.ActorAddFSM;
 import org.xronos.orcc.forge.transform.memory.VarInitializer;
+import org.xronos.orcc.systemc.transform.UniquePortMemory;
 
 /**
  * A synthesizable SystemC backend based on Xronos principles
@@ -149,20 +150,22 @@ public class XronosSystemC extends AbstractBackend {
 			tracesDir.mkdir();
 		}
 
-		// Set Printer Options
+		// -- Set Printer Options
 		nPrinter.setOptions(getOptions());
 		iPrinter.setOptions(getOptions());
 		tbPrinter.setOptions(getOptions());
 		tclPrinter.setOptions(getOptions());
 
-		// Network Transformations
+		// -- Network Transformations
 		networkTransfos.add(new Instantiator(true));
 		networkTransfos.add(new NetworkFlattener());
 		networkTransfos.add(new UnitImporter());
 		networkTransfos.add(new DisconnectedOutputPortRemoval());
 
-		// Child Transformations
-		childrenTransfos.add(new DeadGlobalElimination());
+		// -- Child Transformations
+		childrenTransfos.add(new UniquePortMemory(fifoSize));
+		//childrenTransfos.add(new DeadGlobalElimination());
+		childrenTransfos.add(new ActorAddFSM());
 		childrenTransfos.add(new VarInitializer());
 		childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
