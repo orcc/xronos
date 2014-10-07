@@ -143,10 +143,11 @@ class InstancePrinter extends SystemCTemplate {
 		
 		// -- Scheduler States
 		enum state_t { // enumerate states
-			«FOR state : actor.fsm.states SEPARATOR ", "»«state.label»«ENDFOR»«IF !actor.inputs.empty», sREAD«ENDIF»«IF !actor.
-	outputs.empty», sWRITE«ENDIF»
+			«FOR state : actor.fsm.states SEPARATOR ", "»s_«state.label»«ENDFOR»«IF !actor.inputs.empty», s_READ«ENDIF»«IF !actor.
+	outputs.empty», s_WRITE«ENDIF»
 		};
-		sc_signal<state_t> state, old_state;
+		
+		state_t state, old_state;
 	
 		// --------------------------------------------------------------------------
 		// -- Constructor
@@ -201,7 +202,7 @@ class InstancePrinter extends SystemCTemplate {
 	'''
 
 	def getPortDeclaration(String direction, Port port) '''
-		sc_fifo_«direction»<«port.type.doSwitch»> «port.name»;
+		sc_fifo_«direction»< «port.type.doSwitch» > «port.name»;
 	'''
 
 	def getStateVariableDeclarationContent(Var variable) '''
@@ -247,17 +248,17 @@ class InstancePrinter extends SystemCTemplate {
 			«FOR port : actor.inputs»
 				sc_uint<32> p_«port.name»_token_index = 0;
 				sc_uint<32> p_«port.name»_token_index_read = 0;
-				sc_bool p_«port.name»_consume = false;
+				bool p_«port.name»_consume = false;
 			«ENDFOR»
 			«FOR port : actor.outputs»
 				sc_uint<32> p_«port.name»_token_index = 0;
 				sc_uint<32> p_«port.name»_token_index_write = 0;
-				sc_bool p_«port.name»_produce = false;
+				bool p_«port.name»_produce = false;
 			«ENDFOR»
 			
 			// -- Action guards
 			«FOR action : actor.actions»
-				sc_bool guard_«action.name»;
+				bool guard_«action.name»;
 			«ENDFOR»
 			
 			done = false; 
@@ -276,12 +277,11 @@ class InstancePrinter extends SystemCTemplate {
 		
 				switch (state){
 					«IF !actor.inputs.empty»
-						case (sREAD):
+						case (s_READ):
 							«FOR port : actor.inputs»
 								if(p_«port.name»_consume){
-									do { wait(); } while ( !«port.name».empty() );
 									for(int i = 0; i < p_«port.name»_token_index_read; i++){
-										p_«port.name»[i] := «port.name».read();
+										p_«port.name»[i] = «port.name».read();
 										p_«port.name»_token_index++;
 										p_«port.name»_consume = false;
 									}
@@ -292,10 +292,9 @@ class InstancePrinter extends SystemCTemplate {
 					«ENDIF»
 					
 					«IF !actor.outputs.empty»
-						case (sWRITE)
+						case (s_WRITE):
 							«FOR port : actor.outputs»
 								if(p_«port.name»_produce){
-									do { wait(); } while ( !«port.name».full() );
 									for(int i = 0; i < p_«port.name»_token_index_write; i++){
 										«port.name».write(p_«port.name»[i]);
 										p_«port.name»_token_index++;
@@ -310,6 +309,10 @@ class InstancePrinter extends SystemCTemplate {
 					«FOR state : actor.fsm.states SEPARATOR "\n"»
 						«getStateContent(state)»
 					«ENDFOR»
+					
+					default:
+						state = «actor.fsm.initialState.label»;
+					break;
 				}
 			}
 		
@@ -349,7 +352,7 @@ class InstancePrinter extends SystemCTemplate {
 					p_«port.name»_consume = true;
 				«ENDFOR»
 				old_state = «state.label»;
-				state = sREAD;
+				state = s_READ;
 			}«ENDIF»
 		break;
 	'''
@@ -361,19 +364,19 @@ class InstancePrinter extends SystemCTemplate {
 		var EMap<Port, Integer> inputNumTokens = action.inputPattern.numTokensMap
 		var EMap<Port, Integer> outputNumTokens = action.outputPattern.numTokensMap
 		'''
-			if(guard_«action.scheduler.name»«IF !inputNumTokens.empty» && «FOR port : inputNumTokens.keySet SEPARATOR " && "»p_«port.
+			if(guard_«action.name»«IF !inputNumTokens.empty» && «FOR port : inputNumTokens.keySet SEPARATOR " && "»p_«port.
 				name»_token_index == «inputNumTokens.get(port)»«ENDFOR»«ENDIF»){
-				«action.name»_start = true;
-				do { wait(); } while ( !«action.name».done );
+				start_«action.name» = true;
+				do { wait(); } while ( !done_«action.name».read() );
 				«IF outputNumTokens.empty»
-					state = «tState.label»;
+					state = s_«tState.label»;
 				«ELSE»
 					«FOR port : outputNumTokens.keySet»
-						p_«port.name»_token_index_write = «outputNumTokens.get(port)»
+						p_«port.name»_token_index_write = «outputNumTokens.get(port)»;
 						p_«port.name»_produce = true;
 					«ENDFOR»
-					old_state = «sSTate.label»;
-					state = sWRITE;
+					old_state = s_«sSTate.label»;
+					state = s_WRITE;
 				«ENDIF»
 		'''
 	}
