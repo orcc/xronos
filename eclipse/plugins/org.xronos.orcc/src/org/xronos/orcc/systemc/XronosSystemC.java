@@ -80,10 +80,13 @@ public class XronosSystemC extends AbstractBackend {
 	/** Path for the RTL to be populated by HLS tools **/
 	private String rtlPath;
 
-	/** Path that contains the SystemC Testbench files **/
+	/** Path that contains the SystemC TestBench files **/
 	private String tbPath;
 	private String tbSrcPath;
 	private String tbHeaderPath;
+	
+	/** Path for TCL scripts **/
+	private String scriptsPath;
 
 	public XronosSystemC() {
 		nPrinter = new NetworkPrinter();
@@ -111,28 +114,35 @@ public class XronosSystemC extends AbstractBackend {
 			rtlDir.mkdir();
 		}
 
-		// -- Testbench folder
+		// -- TestBench folder
 		tbPath = outputPath + File.separator + "testbench";
 		File tbDir = new File(tbPath);
 		if (!tbDir.exists()) {
 			tbDir.mkdir();
 		}
 
-		// -- Testbench source path
+		// -- TestBench source path
 		tbSrcPath = tbPath + File.separator + "src";
 		File tbSrcDir = new File(tbSrcPath);
 		if (!tbSrcDir.exists()) {
 			tbSrcDir.mkdir();
 		}
 
-		// -- Testbench header path
+		// -- TestBench header path
 		tbHeaderPath = tbPath + File.separator + "header";
 		File tbHeaderDir = new File(tbHeaderPath);
 		if (!tbHeaderDir.exists()) {
 			tbHeaderDir.mkdir();
 		}
-
-		// -- Testbench queue traces folder
+		
+		// -- Scripts path
+		scriptsPath = outputPath + File.separator + "scripts";
+		File scriptsDir = new File(scriptsPath);
+		if (!scriptsDir.exists()) {
+			scriptsDir.mkdir();
+		}
+		
+		// -- TestBench queue traces folder
 		String tracesPath = tbPath + File.separator + "traces";
 		File tracesDir = new File(tracesPath);
 		if (!tracesDir.exists()) {
@@ -201,7 +211,7 @@ public class XronosSystemC extends AbstractBackend {
 		result.merge(FilesManager.writeFile(readMePrinter.getContent(),
 				outputPath, "README.txt"));
 
-		// -- Testbench Utility Printers
+		// -- TestBench Utility Printers
 		result.merge(FilesManager.writeFile(tbutilityPrinter.getKickerModule(),
 				tbHeaderPath, "tb_kicker.h"));
 
@@ -217,7 +227,7 @@ public class XronosSystemC extends AbstractBackend {
 					"tb_compare.h"));
 		}
 
-		// -- Testbench for Network
+		// -- TestBench for Network
 		tbPrinter.setNetwork(network);
 		result.merge(FilesManager.writeFile(tbPrinter.getContent(),tbHeaderPath,
 				"tb_" + network.getSimpleName() + ".cpp"));
@@ -225,7 +235,7 @@ public class XronosSystemC extends AbstractBackend {
 		// -- TCL scripts for actor
 		tclPrinter.setNetwork(network);
 		result.merge(FilesManager.writeFile(tclPrinter.getContentForVivado(),
-				tbPath, "tcl_" + network.getSimpleName() + ".tcl"));
+				scriptsPath, "tcl_" + network.getSimpleName() + ".tcl"));
 
 		return result;
 	}
@@ -241,7 +251,7 @@ public class XronosSystemC extends AbstractBackend {
 		// -- TCL scripts for actor
 		tclPrinter.setActor(actor);
 		result.merge(FilesManager.writeFile(tclPrinter.getContentForVivado(),
-				tbPath, "tcl_" + actor.getSimpleName() + ".tcl"));
+				scriptsPath, "tcl_" + actor.getSimpleName() + ".tcl"));
 
 		return result;
 	}

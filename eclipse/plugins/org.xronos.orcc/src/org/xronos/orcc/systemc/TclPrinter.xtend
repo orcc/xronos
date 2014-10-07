@@ -44,7 +44,7 @@ import java.util.Map
  * @author Endri Bezati
  */
 class TclPrinter extends DfVisitor<Void> {
-	
+
 	private var Network network
 
 	private var Actor actor
@@ -53,23 +53,23 @@ class TclPrinter extends DfVisitor<Void> {
 
 	private Map<String, Object> options
 
-	def setActor(Actor actor){
+	def setActor(Actor actor) {
 		this.actor = actor
 		this.name = actor.simpleName
-		this.network  =null
+		this.network = null
 	}
-	
-	def setNetwork(Network network){
+
+	def setNetwork(Network network) {
 		this.network = network
-		name = network.simpleName
-		actor = null
+		this.name = network.simpleName
+		this.actor = null
 	}
-	
+
 	def setOptions(Map<String, Object> options) {
-		this.options = options 
+		this.options = options
 	}
-	
-	def private getHeader() {
+
+	def private getHeader(String hlsTool) {
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
 		'''
@@ -81,7 +81,7 @@ class TclPrinter extends DfVisitor<Void> {
 			## ############################################################################
 			## This file is generated automatically by Xronos HLS
 			## ############################################################################
-			## Xronos SystemC, TCL Script Generator
+			## Xronos SystemC, «hlsTool» TCL Script Generator
 			«IF network != null»
 				## TCL Script file for Network: «this.name» 
 			«ELSE»
@@ -92,12 +92,74 @@ class TclPrinter extends DfVisitor<Void> {
 		'''
 	}
 
-	def getContentForVivado()'''
-		«header»
+	def getContentForVivado() '''
+		«getHeader("Vivado")»
+		set SrcPath "../src/"
+		set TbPath "../testbench"
+		set SrcTbPath "../testbench/src"
+		set HeaderTbPath "../testbench/header"
+		
+		## -- Create Project
+		open_project -reset proj_«this.name»
+		
+		## -- Add Design Files
+		«IF network != null»
+			## -- Actor Modules
+			«FOR child : network.children»
+				add_files «child.label».h
+			«ENDFOR»
+			## -- Network Top Modeule
+			add_files «this.name».h
+		«ELSE»
+			add_files «this.name».h
+		«ENDIF»
+		
+		## -- Add TestBench Files
+		«IF network != null»
+			«IF !network.inputs.empty»
+				add_files -tb {$HeaderTbPath/tb_driver.h}
+			«ENDIF»
+			«IF !network.outputs.empty»
+				add_files -tb {$HeaderTbPath/tb_compare.h}
+			«ENDIF»
+		«ELSE»
+			«IF !actor.inputs.empty»
+				add_files -tb {$HeaderTbPath/tb_driver.h}
+			«ENDIF»
+			«IF !actor.outputs.empty»
+				add_files -tb {$HeaderTbPath/tb_compare.h}
+			«ENDIF»
+		«ENDIF»
+		add_files -tb {$SrcTbPath/tb_«this.name».h}
+		
+		## -- Set Top Level
+		set_top «this.name»
+		
+		## -- Create Solution
+		open_solution -reset xronos_solution_1
+		
+		## -- Define Xilinx Technology (TBD: add option of FPGA technology)
+		set_part  {xc7z020clg484-1}
+		
+		## -- Define Clock period
+		create_clock -period 100 -name clock
+		
+		## -- Compilation and Pre Synthesis
+		csim_design
+		
+		# -- Run Synthesis
+		csynth_design
+		
+		## -- RTL Simulation
+		cosim_design -rtl systemc
+		
+		## -- Export RTL implementation
+		export_design -format ip_catalog
+		
 	'''
 
-	def getContentForCatapult()'''
-		«header»
+	def getContentForCatapult() '''
+		«getHeader("Catapult")»
 	'''
 
 }

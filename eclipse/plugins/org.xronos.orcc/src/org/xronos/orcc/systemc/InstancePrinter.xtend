@@ -164,7 +164,7 @@ class InstancePrinter extends SystemCTemplate {
 		«ENDFOR»
 
 		// -- Actions Body
-		«FOR action : actor.actions»
+		«FOR action : actor.actions SEPARATOR "\n"»
 			«IF !action.body.blocks.empty»
 				«getActionBodyContent(action.body)»
 			«ENDIF»

@@ -61,11 +61,11 @@ public class CheckVarSize extends DfVisitor<Void> {
 		@Override
 		public Void caseProcedure(Procedure procedure) {
 			for (Var var : procedure.getLocals()) {
-				if (!var.isAssignable() || var.isInitialized()) {
+				if (!var.isAssignable() && var.isInitialized()) {
 					checkAndModifySize(var);
 				}
 			}
-			return super.caseProcedure(procedure);
+			return null;
 		}
 
 	}
@@ -78,9 +78,11 @@ public class CheckVarSize extends DfVisitor<Void> {
 	@Override
 	public Void caseActor(Actor actor) {
 		for (Var var : actor.getStateVars()) {
-			checkAndModifySize(var);
+			if (!var.isAssignable() && var.isInitialized()) {
+				checkAndModifySize(var);
+			}
 		}
-		return super.caseActor(actor);
+		return null;
 	}
 
 	private Integer checkAndModifySize(Object obj, List<Integer> dimension,
