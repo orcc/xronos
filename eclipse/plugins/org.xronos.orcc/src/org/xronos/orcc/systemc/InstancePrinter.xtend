@@ -264,7 +264,7 @@ class InstancePrinter extends SystemCTemplate {
 			done = false; 
 			wait();
 			
-			state = «actor.fsm.initialState.label»;
+			state = s_«actor.fsm.initialState.label»;
 			
 			// -- Wait For Start singal
 			do { wait(); } while ( !start.read() );
@@ -311,7 +311,7 @@ class InstancePrinter extends SystemCTemplate {
 					«ENDFOR»
 					
 					default:
-						state = «actor.fsm.initialState.label»;
+						state = s_«actor.fsm.initialState.label»;
 					break;
 				}
 			}
@@ -343,7 +343,7 @@ class InstancePrinter extends SystemCTemplate {
 			}
 		}
 	'''
-		case(«state.label»):
+		case(s_«state.label»):
 			«FOR edge : state.outgoing SEPARATOR " else"»
 			«getTransitionContent(edge as Transition)»
 			}«ENDFOR»«IF actionsHaveInputPrts» else {
@@ -351,7 +351,7 @@ class InstancePrinter extends SystemCTemplate {
 					p_«port.name»_token_index_read = «maxPortTokens.get(port)»;
 					p_«port.name»_consume = true;
 				«ENDFOR»
-				old_state = «state.label»;
+				old_state = s_«state.label»;
 				state = s_READ;
 			}«ENDIF»
 		break;

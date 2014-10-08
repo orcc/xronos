@@ -178,7 +178,7 @@ class NetworkPrinter extends SystemCTemplate {
 	'''
 
 	def getPortDeclaration(String direction, Port port) '''
-		sc_fifo_«direction»<«port.type.doSwitch»> «port.name»;
+		sc_fifo_«direction»< «port.type.doSwitch» > «port.name»;
 	'''
 
 	def getQueuesDeclarationContent() '''
