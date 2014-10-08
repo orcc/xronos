@@ -155,12 +155,12 @@ class InstancePrinter extends SystemCTemplate {
 		,done("done")
 		{
 			// -- Actions Scheduler Registration
-			SC_CTHREAD(scheduler, clock.pos());
+			SC_CTHREAD(scheduler, clk.pos());
 			reset_signal_is(reset, true);
 			
 			// -- Actions Registration
 			«FOR action : actor.actions SEPARATOR "\n"»
-				SC_CTHREAD(«action.name», clock.pos());
+				SC_CTHREAD(«action.name», clk.pos());
 				reset_signal_is(reset, true);
 			«ENDFOR»
 		}

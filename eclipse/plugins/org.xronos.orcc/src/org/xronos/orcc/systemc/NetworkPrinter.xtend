@@ -105,7 +105,7 @@ class NetworkPrinter extends SystemCTemplate {
 		SC_MODULE(«this.name»){
 		
 			// -- Control Ports
-			sc_in<bool>   clock;
+			sc_in<bool>   clk;
 			sc_in<bool>   reset;
 			sc_in<bool>   start;
 			sc_out<bool>  done;
@@ -154,11 +154,11 @@ class NetworkPrinter extends SystemCTemplate {
 				«IF !network.inputs.empty || !network.outputs.empty»
 					// -- Port Readers/Writers Process Registration
 					«FOR port: network.inputs»
-						SC_CTHREAD(port_«port.name»_reader,clock.pos());
+						SC_CTHREAD(port_«port.name»_reader, clk.pos());
 						reset_signal_is(reset,true);
 					«ENDFOR»
 					«FOR port: network.outputs»
-						SC_CTHREAD(port_«port.name»_writer,clock.pos());
+						SC_CTHREAD(port_«port.name»_writer, clk.pos());
 						reset_signal_is(reset,true);
 					«ENDFOR»
 				«ENDIF»

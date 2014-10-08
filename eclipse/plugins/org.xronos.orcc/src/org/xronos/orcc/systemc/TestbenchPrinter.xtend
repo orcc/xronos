@@ -50,6 +50,8 @@ class TestbenchPrinter extends SystemCTemplate {
 	private var Actor actor
 
 	private var String name
+	
+	private var String prefix
 
 	def getHeader() {
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -73,12 +75,14 @@ class TestbenchPrinter extends SystemCTemplate {
 	def setNetwork(Network network) {
 		this.network = network
 		name = network.simpleName
+		prefix = "n"
 		actor = null
 	}
 
 	def setActor(Actor actor) {
 		this.actor = actor
 		name = actor.simpleName
+		prefix = "a"
 		network = null
 	}
 
@@ -97,6 +101,7 @@ class TestbenchPrinter extends SystemCTemplate {
 			#include "systemc.h"
 			
 			#include "«name».h"
+			#include "tb_kicker.h"
 			«IF !inputs.empty»
 				#include "tb_driver.h"
 			«ENDIF»
@@ -127,16 +132,16 @@ class TestbenchPrinter extends SystemCTemplate {
 				«ENDIF»
 				
 				// -- Create a 100ns period clock signal
-				sc_clock s_clk1("s_clk1", 10, SC_NS);
+				sc_clock s_clk("s_clk", 10, SC_NS);
 				
 				«IF network != null»
 					// -- Network module
 					«this.name» n_«this.name»("n_«this.name»");
-					sc_signal<bool> done_«this.name»;
+					sc_signal<bool> done_n_«this.name»;
 				«ELSE»
 					// -- Actor module
 					«this.name» a_«this.name»("a_«this.name»");
-					sc_signal<bool> done_«this.name»;
+					sc_signal<bool> done_a_«this.name»;
 				«ENDIF»
 				
 				// -- Testbench Utilities Modules
@@ -145,7 +150,7 @@ class TestbenchPrinter extends SystemCTemplate {
 				«IF !inputs.empty»
 					// -- Input Drivers
 					«FOR port : inputs»
-						tb_driver i_tb_driver_«port.name»("i_tb_driver_«port.name»");
+						tb_driver< «port.type.doSwitch» > i_tb_driver_«port.name»("i_tb_driver_«port.name»");
 						i_tb_driver_«port.name».set_file_name("«IF actor != null»«actor.simpleName»_«ENDIF»«port.name».txt");
 						sc_signal<bool> done_i_tb_driver_«port.name»;
 					«ENDFOR»
@@ -154,7 +159,7 @@ class TestbenchPrinter extends SystemCTemplate {
 				«IF !outputs.empty»
 					// -- Compare output with golden reference
 					«FOR port : outputs»
-						tb_compare i_tb_compare_«port.name»("i_tb_compare_«port.name»");
+						tb_compare< «port.type.doSwitch» > i_tb_compare_«port.name»("i_tb_compare_«port.name»");
 						i_tb_compare_«port.name».set_file_name("«IF actor != null»«actor.simpleName»_«ENDIF»«port.name».txt");
 						i_tb_compare_«port.name».set_port_name("«port.name»");
 						sc_signal<bool> done_i_tb_compare_«port.name»;
@@ -168,7 +173,7 @@ class TestbenchPrinter extends SystemCTemplate {
 				i_tb_kicker.reset(reset);
 				i_tb_kicker.start(start);
 				
-				«IF inputs.empty»
+				«IF !inputs.empty»
 					// -- Driver Connections
 					«FOR port : inputs»
 						i_tb_driver_«port.name».clk(s_clk);
@@ -179,30 +184,30 @@ class TestbenchPrinter extends SystemCTemplate {
 					«ENDFOR»
 				«ENDIF»
 				
-				«IF outputs.empty»
+				«IF !outputs.empty»
 					// -- Compare Connections
 					«FOR port : outputs»
 						i_tb_compare_«port.name».clk(s_clk);
 						i_tb_compare_«port.name».reset(s_clk);
 						i_tb_compare_«port.name».start(s_clk);
-						i_tb_compare_«port.name».done(done_i_tb_driver_«port.name»);
+						i_tb_compare_«port.name».done(done_i_tb_compare_«port.name»);
 						i_tb_compare_«port.name».din(q_«port.name»);
 					«ENDFOR»
 				«ENDIF»			
 				
 				// -- «this.name» Connections
-				i_«this.name».clk(s_clk);
-				i_«this.name».reset(s_clk);
-				i_«this.name».start(s_clk);
-				i_«this.name».done(done_i_«this.name»);
-				«IF inputs.empty»
+				«prefix»_«this.name».clk(s_clk);
+				«prefix»_«this.name».reset(s_clk);
+				«prefix»_«this.name».start(s_clk);
+				«prefix»_«this.name».done(done_«prefix»_«this.name»);
+				«IF !inputs.empty»
 					«FOR port : inputs»
-					i_«this.name».«port.name»(q_«port.name»);
+						«prefix»_«this.name».«port.name»(q_«port.name»);
 					«ENDFOR»
 				«ENDIF»
-				«IF outputs.empty»
+				«IF !outputs.empty»
 					«FOR port : outputs»
-					i_«this.name».«port.name»(q_«port.name»);
+						«prefix»_«this.name».«port.name»(q_«port.name»);
 					«ENDFOR»
 				«ENDIF»
 				
@@ -216,10 +221,11 @@ class TestbenchPrinter extends SystemCTemplate {
 				cout << "\nINFO: Start of Simulating \n" << endl;
 				
 				// -- Start Simulation 
-				sc_start(end_time, SC_NS);
+				sc_start();
 				
 				cout << "\nINFO: End of Simulating " << endl;
-			
+				
+				return 0;
 			}
 		'''
 	}
