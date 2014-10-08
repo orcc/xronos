@@ -39,7 +39,6 @@ import net.sf.orcc.df.util.DfVisitor;
 import org.xronos.openforge.app.EngineThread;
 import org.xronos.openforge.app.GenericJob;
 import org.xronos.openforge.app.OptionRegistry;
-import org.xronos.openforge.lim.Block;
 import org.xronos.openforge.lim.Call;
 import org.xronos.openforge.lim.Design;
 import org.xronos.openforge.lim.Exit;
@@ -127,7 +126,7 @@ public class DesignActor extends DfVisitor<Design> {
 				call.getProcedure().getBody().setConsumesGo(true);
 			}
 		}
-		new org.xronos.openforge.schedule.Normalizer().visit(design);
+		//new org.xronos.openforge.schedule.Normalizer().visit(design);
 		return design;
 	}
 

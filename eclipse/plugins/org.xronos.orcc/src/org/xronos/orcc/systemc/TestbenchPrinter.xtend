@@ -177,8 +177,8 @@ class TestbenchPrinter extends SystemCTemplate {
 					// -- Driver Connections
 					«FOR port : inputs»
 						i_tb_driver_«port.name».clk(s_clk);
-						i_tb_driver_«port.name».reset(s_clk);
-						i_tb_driver_«port.name».start(s_clk);
+						i_tb_driver_«port.name».reset(reset);
+						i_tb_driver_«port.name».start(start);
 						i_tb_driver_«port.name».done(done_i_tb_driver_«port.name»);
 						i_tb_driver_«port.name».dout(q_«port.name»);
 					«ENDFOR»
@@ -188,8 +188,8 @@ class TestbenchPrinter extends SystemCTemplate {
 					// -- Compare Connections
 					«FOR port : outputs»
 						i_tb_compare_«port.name».clk(s_clk);
-						i_tb_compare_«port.name».reset(s_clk);
-						i_tb_compare_«port.name».start(s_clk);
+						i_tb_compare_«port.name».reset(reset);
+						i_tb_compare_«port.name».start(start);
 						i_tb_compare_«port.name».done(done_i_tb_compare_«port.name»);
 						i_tb_compare_«port.name».din(q_«port.name»);
 					«ENDFOR»
@@ -197,8 +197,8 @@ class TestbenchPrinter extends SystemCTemplate {
 				
 				// -- «this.name» Connections
 				«prefix»_«this.name».clk(s_clk);
-				«prefix»_«this.name».reset(s_clk);
-				«prefix»_«this.name».start(s_clk);
+				«prefix»_«this.name».reset(reset);
+				«prefix»_«this.name».start(start);
 				«prefix»_«this.name».done(done_«prefix»_«this.name»);
 				«IF !inputs.empty»
 					«FOR port : inputs»
