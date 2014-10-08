@@ -77,12 +77,7 @@ class InstancePrinter extends SystemCTemplate {
 	}
 
 	// -- Get Content For each Top Level
-	def getContent() '''
-		«header»
-		«instanceContent»
-	'''
-
-	def getHeader() {
+	def getFileHeader() {
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
 		'''
@@ -101,7 +96,9 @@ class InstancePrinter extends SystemCTemplate {
 		'''
 	}
 
-	def getInstanceContent() '''
+	def getActorHeaderContent() '''
+	«fileHeader»
+	
 	#ifndef SC_«this.name»_H
 	#define SC_«this.name»_H
 	
@@ -111,7 +108,7 @@ class InstancePrinter extends SystemCTemplate {
 	
 		// --------------------------------------------------------------------------
 		// -- Control Ports
-		sc_in<bool>   clock;
+		sc_in<bool>   clk;
 		sc_in<bool>   reset;
 		sc_in<bool>   start;
 		sc_out<bool>  done;
@@ -138,7 +135,7 @@ class InstancePrinter extends SystemCTemplate {
 		// --------------------------------------------------------------------------
 		// -- State Variable Declaration
 		«FOR variable : actor.stateVars»
-			«getStateVariableDeclarationContent(variable)»
+			«declareNoInit(variable)»
 		«ENDFOR»
 		
 		// -- Scheduler States
@@ -152,7 +149,7 @@ class InstancePrinter extends SystemCTemplate {
 		// --------------------------------------------------------------------------
 		// -- Constructor
 		SC_CTOR(«this.name»)
-		:clock("clock")
+		:clk("clk")
 		,reset("reset")
 		,start("start")
 		,done("done")
@@ -172,7 +169,7 @@ class InstancePrinter extends SystemCTemplate {
 		// --------------------------------------------------------------------------
 		// -- Procedure / Functions
 		«FOR procedure : actor.procs»
-				«getProcedureContent(procedure)»
+				«declare(procedure)»
 			«ENDFOR»
 		«ENDIF»
 	
@@ -180,7 +177,7 @@ class InstancePrinter extends SystemCTemplate {
 		// -- Actions Body
 		«FOR action : actor.actions SEPARATOR "\n"»
 			«IF !action.body.blocks.empty»
-				«getActionBodyContent(action.body)»
+				«declare(action.body)»
 			«ENDIF»
 		«ENDFOR»
 	
@@ -188,19 +185,61 @@ class InstancePrinter extends SystemCTemplate {
 		// -- Actions isSchedulable
 		«FOR action : actor.actions SEPARATOR "\n"»
 			«IF !action.body.blocks.empty»
-				«getProcedureContent(action.scheduler)»
+				«declare(action.scheduler)»
 			«ENDIF»
 		«ENDFOR»
 	
 		// --------------------------------------------------------------------------
 		// -- Action(s) Scheduler
-		«schedulerContent»
+		void scheduler();
 	
 	};
 	
 	#endif //SC_«this.name»_H
 	'''
-
+	
+	
+	def getActorSourceContent() 
+	'''
+		«fileHeader»
+		#include "«this.name».h"
+		
+		
+		// --------------------------------------------------------------------------
+		// -- State Variable Declaration
+		«FOR variable : actor.stateVars»
+			«declareSource(variable)»
+		«ENDFOR»
+		
+		«IF !actor.procs.empty»
+		// --------------------------------------------------------------------------
+		// -- Procedure / Functions
+		«FOR procedure : actor.procs»
+			«getProcedureContent(procedure)»
+		«ENDFOR»
+		«ENDIF»
+		
+		// --------------------------------------------------------------------------
+		// -- Actions Body
+		«FOR action : actor.actions SEPARATOR "\n"»
+			«IF !action.body.blocks.empty»
+				«getActionBodyContent(action.body)»
+			«ENDIF»
+		«ENDFOR»
+		
+		// --------------------------------------------------------------------------
+		// -- Actions isSchedulable
+		«FOR action : actor.actions SEPARATOR "\n"»
+			«IF !action.body.blocks.empty»
+			«getProcedureContent(action.scheduler)»
+			«ENDIF»
+		«ENDFOR»
+		
+		// --------------------------------------------------------------------------
+		// -- Action(s) Scheduler
+		«schedulerContent»
+	'''
+	
 	def getPortDeclaration(String direction, Port port) '''
 		sc_fifo_«direction»< «port.type.doSwitch» > «port.name»;
 	'''
@@ -219,7 +258,6 @@ class InstancePrinter extends SystemCTemplate {
 			wait();
 			while(true){
 				do { wait(); } while ( !start_«procedure.name».read() );
-				
 				«FOR block : procedure.blocks»
 					«block.doSwitch»
 				«ENDFOR»
@@ -265,6 +303,7 @@ class InstancePrinter extends SystemCTemplate {
 			wait();
 			
 			state = s_«actor.fsm.initialState.label»;
+			old_state = s_«actor.fsm.initialState.label»;
 			
 			// -- Wait For Start singal
 			do { wait(); } while ( !start.read() );
@@ -366,11 +405,17 @@ class InstancePrinter extends SystemCTemplate {
 		'''
 			if(guard_«action.name»«IF !inputNumTokens.empty» && «FOR port : inputNumTokens.keySet SEPARATOR " && "»p_«port.
 				name»_token_index == «inputNumTokens.get(port)»«ENDFOR»«ENDIF»){
+				// -- Start action : «action.name»
 				start_«action.name» = true;
 				do { wait(); } while ( !done_«action.name».read() );
+				// -- Reset start
+				start_«action.name» = true;
 				«IF outputNumTokens.empty»
 					state = s_«tState.label»;
 				«ELSE»
+					«FOR port : inputNumTokens.keySet»
+						p_«port.name»_token_index = 0;
+					«ENDFOR»
 					«FOR port : outputNumTokens.keySet»
 						p_«port.name»_token_index_write = «outputNumTokens.get(port)»;
 						p_«port.name»_produce = true;
@@ -475,13 +520,39 @@ class InstancePrinter extends SystemCTemplate {
 
 	override declare(Var variable) {
 		val const = if(!variable.assignable && variable.global) "const "
-		val global = if(variable.global) "static "
 		val type = variable.type
 		val dims = variable.type.dimensionsExpr.printArrayIndexes
 		val init = if(variable.initialized) " = " + variable.initialValue.doSwitch
 		val end = if(variable.global) ";"
 
-		'''«global»«const»«type.doSwitch» «variable.name»«dims»«init»«end»'''
+		'''«const»«type.doSwitch» «variable.name»«dims»«init»«end»'''
 	}
+	
+	def declareSource(Var variable) {
+		val const = if(!variable.assignable && variable.global) "const "
+		val type = variable.type
+		val dims = variable.type.dimensionsExpr.printArrayIndexes
+		val init = if(variable.initialized) " = " + variable.initialValue.doSwitch
+		val end = if(variable.global) ";"
+		if(variable.initialized){
+			'''«const»«type.doSwitch» «variable.name»«dims»«init»«end»'''
+		}
+	}
+	
+	
+	def declareNoInit(Var variable) {
+		val const = if(!variable.assignable && variable.global) "const "
+		val type = variable.type
+		val dims = variable.type.dimensionsExpr.printArrayIndexes
+		val end = if(variable.global) ";"
 
+		'''«const»«type.doSwitch» «variable.name»«dims»«end»'''
+	}
+	
+	
+	
+	def declare(Procedure procedure)'''
+		«procedure.returnType.doSwitch» «procedure.name»(«procedure.parameters.join(", ")[declare]»);
+	'''
+	
 }

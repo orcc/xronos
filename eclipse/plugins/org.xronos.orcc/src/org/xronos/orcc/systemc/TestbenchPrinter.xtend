@@ -33,12 +33,9 @@ package org.xronos.orcc.systemc
 
 import java.text.SimpleDateFormat
 import java.util.Date
-import net.sf.orcc.df.Actor
-import net.sf.orcc.df.Instance
-import net.sf.orcc.df.Network
-import net.sf.orcc.df.util.DfVisitor
-import net.sf.orcc.graph.Vertex
 import java.util.List
+import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Network
 import net.sf.orcc.df.Port
 
 /**
@@ -49,8 +46,6 @@ import net.sf.orcc.df.Port
 class TestbenchPrinter extends SystemCTemplate {
 
 	private var Network network
-
-	private var Instance instance
 
 	private var Actor actor
 
@@ -102,40 +97,129 @@ class TestbenchPrinter extends SystemCTemplate {
 			#include "systemc.h"
 			
 			#include "«name».h"
+			«IF !inputs.empty»
+				#include "tb_driver.h"
+			«ENDIF»
+			«IF !outputs.empty»
+				#include "tb_compare.h"
+			«ENDIF»
 			
 			int sc_main (int argc , char *argv[]) {
 				sc_report_handler::set_actions("/IEEE_Std_1666/deprecated", SC_DO_NOTHING);
 				sc_report_handler::set_actions( SC_ID_LOGIC_X_TO_BOOL_, SC_LOG);
 				sc_report_handler::set_actions( SC_ID_VECTOR_CONTAINS_LOGIC_VALUE_, SC_LOG);
-				sc_report_handler::set_actions( SC_ID_OBJECT_EXISTS_, SC_LOG);
+				// sc_report_handler::set_actions( SC_ID_OBJECT_EXISTS_, SC_LOG);
 				
 				// -- Control Signals
 				sc_signal<bool>    reset;
 				sc_signal<bool>    start;
 				
-				// Create a 100ns period clock signal
-				sc_clock s_clk1("s_clk1", 50, SC_NS);
+				// -- Queues
+				«IF !inputs.empty»
+					«FOR port : inputs»
+						sc_fifo< «port.type.doSwitch» > q_«port.name»;
+					«ENDFOR»
+				«ENDIF»
+				«IF !outputs.empty»
+					«FOR port : outputs»
+						sc_fifo< «port.type.doSwitch» > q_«port.name»;
+					«ENDFOR»
+				«ENDIF»
+				
+				// -- Create a 100ns period clock signal
+				sc_clock s_clk1("s_clk1", 10, SC_NS);
 				
 				«IF network != null»
 					// -- Network module
 					«this.name» n_«this.name»("n_«this.name»");
+					sc_signal<bool> done_«this.name»;
 				«ELSE»
 					// -- Actor module
 					«this.name» a_«this.name»("a_«this.name»");
+					sc_signal<bool> done_«this.name»;
 				«ENDIF»
 				
-				// Testbench utilities Modules
+				// -- Testbench Utilities Modules
 				tb_kicker i_tb_kicker("i_tb_icker");
+				
 				«IF !inputs.empty»
+					// -- Input Drivers
 					«FOR port : inputs»
 						tb_driver i_tb_driver_«port.name»("i_tb_driver_«port.name»");
+						i_tb_driver_«port.name».set_file_name("«IF actor != null»«actor.simpleName»_«ENDIF»«port.name».txt");
+						sc_signal<bool> done_i_tb_driver_«port.name»;
 					«ENDFOR»
 				«ENDIF»
+				
 				«IF !outputs.empty»
-					«FOR port : inputs»
+					// -- Compare output with golden reference
+					«FOR port : outputs»
 						tb_compare i_tb_compare_«port.name»("i_tb_compare_«port.name»");
+						i_tb_compare_«port.name».set_file_name("«IF actor != null»«actor.simpleName»_«ENDIF»«port.name».txt");
+						i_tb_compare_«port.name».set_port_name("«port.name»");
+						sc_signal<bool> done_i_tb_compare_«port.name»;
 					«ENDFOR»
 				«ENDIF»
+			
+				// -- Connection of Modules
+				
+				// -- Generate a reset & start
+				i_tb_kicker.clk(s_clk);
+				i_tb_kicker.reset(reset);
+				i_tb_kicker.start(start);
+				
+				«IF inputs.empty»
+					// -- Driver Connections
+					«FOR port : inputs»
+						i_tb_driver_«port.name».clk(s_clk);
+						i_tb_driver_«port.name».reset(s_clk);
+						i_tb_driver_«port.name».start(s_clk);
+						i_tb_driver_«port.name».done(done_i_tb_driver_«port.name»);
+						i_tb_driver_«port.name».dout(q_«port.name»);
+					«ENDFOR»
+				«ENDIF»
+				
+				«IF outputs.empty»
+					// -- Compare Connections
+					«FOR port : outputs»
+						i_tb_compare_«port.name».clk(s_clk);
+						i_tb_compare_«port.name».reset(s_clk);
+						i_tb_compare_«port.name».start(s_clk);
+						i_tb_compare_«port.name».done(done_i_tb_driver_«port.name»);
+						i_tb_compare_«port.name».din(q_«port.name»);
+					«ENDFOR»
+				«ENDIF»			
+				
+				// -- «this.name» Connections
+				i_«this.name».clk(s_clk);
+				i_«this.name».reset(s_clk);
+				i_«this.name».start(s_clk);
+				i_«this.name».done(done_i_«this.name»);
+				«IF inputs.empty»
+					«FOR port : inputs»
+					i_«this.name».«port.name»(q_«port.name»);
+					«ENDFOR»
+				«ENDIF»
+				«IF outputs.empty»
+					«FOR port : outputs»
+					i_«this.name».«port.name»(q_«port.name»);
+					«ENDFOR»
+				«ENDIF»
+				
+				cout <<"        __  ___ __ ___  _ __   ___  ___ " << endl;
+				cout <<"        \\ \\/ / '__/ _ \\| '_ \\ / _ \\/ __|" << endl;
+				cout <<"         >  <| | | (_) | | | | (_) \\__ \\" << endl;
+				cout <<"        /_/\\_\\_|  \\___/|_| |_|\\___/|___/" << endl;
+				cout <<"        CAL to SystemC Code Generator" << endl;
+				cout <<"        Copyright (c) 2012-2014 EPFL SCI-STI-MM" << endl;
+				
+				cout << "\nINFO: Start of Simulating \n" << endl;
+				
+				// -- Start Simulation 
+				sc_start(end_time, SC_NS);
+				
+				cout << "\nINFO: End of Simulating " << endl;
+			
 			}
 		'''
 	}

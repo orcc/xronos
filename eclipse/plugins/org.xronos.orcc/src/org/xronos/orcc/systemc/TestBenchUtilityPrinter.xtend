@@ -95,7 +95,7 @@ class TestBenchUtilityPrinter {
 	
 	#include <systemc.h>
 	#include <iostream>
-	#include "string"
+	
 	using namespace std;
 	
 	SC_MODULE(tb_kicker) {
@@ -103,14 +103,13 @@ class TestBenchUtilityPrinter {
 		sc_out<bool> reset;
 		sc_out<bool> start;
 	
-		void prc_reset();
-	
 	  SC_CTOR(tb_kicker)
 		{
 	    SC_CTHREAD(prc_reset, clk.pos());
+			//reset_signal_is(reset,true);
 		}
 	
-		void tb_kicker::prc_reset() {
+		void prc_reset() {
 			reset = true;
 			start = false;
 			wait();
@@ -118,7 +117,7 @@ class TestBenchUtilityPrinter {
 		
 			reset = false;
 		#ifndef __SYNTHESIS__
-			cout << "Reset Off =" << reset <<" : "<< sc_time_stamp() << endl;
+			cout << "INFO: @" << sc_time_stamp() << ", " << "Reset Off = " << reset << endl;
 		#endif
 		
 			wait();
@@ -126,10 +125,11 @@ class TestBenchUtilityPrinter {
 			wait();
 		
 		#ifndef __SYNTHESIS__
-			cout << "Start On   =" << start << " : " << sc_time_stamp() << endl;
+			cout << "INFO: @" << sc_time_stamp() << ", " << "Start On  = " << start << endl;
 			cout << " " << endl;
 		#endif
 			start = true;
+			
 			wait(2);
 			start = false;
 		}
@@ -146,29 +146,65 @@ class TestBenchUtilityPrinter {
 	
 	#include <systemc.h>
 	#include <iostream>
-	#include "string"
+	#include <fstream>
+	#include <sstream>
+	
 	using namespace std;
 	
-	SC_MODULE(tb_kicker) {
+	template<class T>
+	SC_MODULE(tb_driver) {
 		sc_in<bool> clk;
-		sc_out<bool> reset;
+		sc_in<bool> reset;
 		sc_in<bool> start;
 		sc_out<bool> done;
 	
-		void prc_read();
-	
-	  SC_CTOR(tb_driver)
+		sc_fifo_out< T > dout;
+		
+		string file_name;
+		
+		SC_CTOR(tb_driver):
+			file_name("")
 		{
-	    SC_CTHREAD(prc_read, clk.pos());
+			SC_CTHREAD(prc_read, clk.pos());
+			reset_signal_is(reset,true);
 		}
-
-		void tb_driver::prc_read() {
+	
+		void set_file_name(string file_name){
+			this->file_name = file_name;
 		}	
+	
+		void prc_read() {
+			done = false;
+			
+			do { wait(); } while ( !start.read() );
+			wait();
+			
+			ifstream in_file;
+			in_file.open(file_name.c_str());
+			if (in_file.fail()) {
+				cerr << "unable to open file " << file_name <<" for reading" << endl;
+				exit(1);
+			}
+			
+			T n;
+			while(!in_file.eof()){
+				string line;
+				getline(in_file, line);
+				if(line != ""){
+					istringstream iss(line);
+					iss >> n;
+					dout.write(n);
+				}
+			}
+	
+			in_file.close();
+	
+			done = true;
+	  }
 	};
 	
 	#endif // TB_DRIVER_H
 	'''
-	
 	
 	def getCompareModule()'''
 	«header»
@@ -178,26 +214,78 @@ class TestBenchUtilityPrinter {
 	
 	#include <systemc.h>
 	#include <iostream>
-	#include "string"
+	#include <fstream>
+	#include <sstream>
+	
 	using namespace std;
 	
+	template<class T>
 	SC_MODULE(tb_compare) {
 		sc_in<bool> clk;
-		sc_out<bool> reset;
+		sc_in<bool> reset;
 		sc_in<bool> start;
 		sc_out<bool> done;
 	
-		void prc_compare();
+		sc_fifo_in< T > din;
 	
-	  SC_CTOR(tb_compare)
+		string file_name;
+	
+		string port_name;
+	
+		SC_CTOR(tb_compare)
 		{
-	    SC_CTHREAD(prc_compare, clk.pos());
+	    	SC_CTHREAD(prc_compare, clk.pos());
+	 		reset_signal_is(reset,true);
 		}
+	
+		void set_file_name(string file_name){
+			this->file_name = file_name;
+		}
+	
+		void set_port_name(string port_name){
+			this->port_name = port_name;
+		}
+	
+		void prc_compare() {
+			done = false;
 
-		void tb_driver::prc_compare() {
-		}	
+			do { wait(); } while ( !start.read() );
+	
+			ifstream in_file;
+			in_file.open(file_name.c_str());
+		  	if (in_file.fail()) {
+	    		cerr << "Unable to open file " << file_name <<" for reading" << endl;
+	    		exit(1);
+			}
+	
+			T golden;
+			T sim;
+			int line_counter = 0;
+			while(!in_file.eof()){
+				string line;
+				getline(in_file, line);
+				if(line != ""){
+					// -- Read golden reference
+					istringstream iss(line);
+					iss >> golden;	
+					
+					// -- Read from the input
+					sim = din.read();
+					if( sim != golden){
+						cout  << "WARNING: @" << sc_time_stamp() << ", " << "On port " << port_name << " incorrect value computed " << sim << " instead of " << golden << ", sequence " << line_counter << endl; 
+					}else{
+						cout  << "INFO: @" << sc_time_stamp() << ", " << "On port " << port_name << " correct value computed (" << sim << "), sequence " << line_counter << endl;
+					}
+					line_counter++;	
+				}	
+			}
+	
+	 		in_file.close();
+			done = true;
+		}
 	};
 	
 	#endif // TB_CAPTURE_H
 	'''
+	
 }

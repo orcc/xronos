@@ -135,7 +135,7 @@ class NetworkPrinter extends SystemCTemplate {
 			
 			// -- Constructor
 			SC_CTOR(«this.name»)
-				:clock("clock")
+				:clk("clk")
 				,reset("reset")
 				,start("start")
 				,done("done")

@@ -95,9 +95,10 @@ class TclPrinter extends DfVisitor<Void> {
 	def getContentForVivado() '''
 		«getHeader("Vivado")»
 		set SrcPath "../src/"
+		set SrcHeaderPath "../src/header"
 		set TbPath "../testbench"
 		set SrcTbPath "../testbench/src"
-		set HeaderTbPath "../testbench/header"
+		set HeaderTbPath "$SrcTbPath/header"
 		
 		## -- Create Project
 		open_project -reset proj_«this.name»
@@ -106,10 +107,12 @@ class TclPrinter extends DfVisitor<Void> {
 		«IF network != null»
 			## -- Actor Modules
 			«FOR child : network.children»
-				add_files «child.label».h
+				add_files $SrcPath/«child.label».cpp
+				add_files $SrcHeaderPath/«child.label».h
 			«ENDFOR»
 			## -- Network Top Modeule
-			add_files «this.name».h
+			add_files $SrcPath/«this.name».cpp
+			add_files $SrcHeaderPath/«this.name».h
 		«ELSE»
 			add_files «this.name».h
 		«ENDIF»
@@ -130,7 +133,7 @@ class TclPrinter extends DfVisitor<Void> {
 				add_files -tb {$HeaderTbPath/tb_compare.h}
 			«ENDIF»
 		«ENDIF»
-		add_files -tb {$SrcTbPath/tb_«this.name».h}
+		add_files -tb {$SrcTbPath/tb_«this.name».cpp}
 		
 		## -- Set Top Level
 		set_top «this.name»
@@ -142,7 +145,7 @@ class TclPrinter extends DfVisitor<Void> {
 		set_part  {xc7z020clg484-1}
 		
 		## -- Define Clock period
-		create_clock -period 100 -name clock
+		create_clock -period 100 -name clk
 		
 		## -- Compilation and Pre Synthesis
 		csim_design
