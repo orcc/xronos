@@ -135,7 +135,7 @@ public class CheckVarSize extends DfVisitor<Void> {
 						OrccLogger.warnln("Variable: " + var.getName()
 								+ " has a wrong size, its correct size is: "
 								+ newInnerSize + " instead of: " + innerSize);
-						typeList.getType().setSize(newInnerSize);
+						typeList.getInnermostType().setSize(newInnerSize);
 					}
 				}
 			} else {

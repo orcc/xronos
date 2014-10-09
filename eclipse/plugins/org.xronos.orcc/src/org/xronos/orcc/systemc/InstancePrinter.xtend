@@ -56,6 +56,7 @@ import net.sf.orcc.ir.Param
 import net.sf.orcc.ir.Procedure
 import net.sf.orcc.ir.Var
 import org.eclipse.emf.common.util.EMap
+import net.sf.orcc.util.util.EcoreHelper
 
 class InstancePrinter extends SystemCTemplate {
 
@@ -128,8 +129,8 @@ class InstancePrinter extends SystemCTemplate {
 		// --------------------------------------------------------------------------
 		// -- Start / Done Actions signals
 		«FOR action : actor.actions SEPARATOR "\n"»
-			sc_signal<bool> start_«action.name»;
-			sc_signal<bool> done_«action.name»;
+			sc_signal<bool> start_«action.body.name»;
+			sc_signal<bool> done_«action.body.name»;
 		«ENDFOR»
 	
 		// --------------------------------------------------------------------------
@@ -160,7 +161,7 @@ class InstancePrinter extends SystemCTemplate {
 			
 			// -- Actions Registration
 			«FOR action : actor.actions SEPARATOR "\n"»
-				SC_CTHREAD(«action.name», clk.pos());
+				SC_CTHREAD(«action.body.name», clk.pos());
 				reset_signal_is(reset, true);
 			«ENDFOR»
 		}
@@ -407,10 +408,10 @@ class InstancePrinter extends SystemCTemplate {
 			if(guard_«action.name»«IF !inputNumTokens.empty» && «FOR port : inputNumTokens.keySet SEPARATOR " && "»p_«port.
 				name»_token_index == «inputNumTokens.get(port)»«ENDFOR»«ENDIF»){
 				// -- Start action : «action.name»
-				start_«action.name» = true;
-				do { wait(); } while ( !done_«action.name».read() );
+				start_«action.body.name» = true;
+				do { wait(); } while ( !done_«action.body.name».read() );
 				// -- Reset start
-				start_«action.name» = false;
+				start_«action.body.name» = false;
 				«IF outputNumTokens.empty»
 					«FOR port : inputNumTokens.keySet»
 							p_«port.name»_token_index = 0;
@@ -493,12 +494,16 @@ class InstancePrinter extends SystemCTemplate {
 		'''
 	}
 
-	override caseInstReturn(InstReturn ret) '''
-		«IF ret.value != null»
-			return «ret.value.doSwitch»;
-		«ENDIF»
-	'''
-
+	override caseInstReturn(InstReturn ret){ 
+		var procedure = EcoreHelper.getContainerOfType(ret, Procedure)
+		var type = procedure.returnType
+		'''
+			«IF ret.value != null»
+				return ( «type.doSwitch» ) «ret.value.doSwitch»;
+			«ENDIF»
+		'''
+	}
+	
 	override caseInstStore(InstStore store) {
 		val target = store.target.variable
 		'''

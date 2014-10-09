@@ -35,6 +35,8 @@ import static net.sf.orcc.backends.BackendsConstants.BXDF_FILE;
 import static net.sf.orcc.backends.BackendsConstants.IMPORT_BXDF;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.transform.BlockForAdder;
@@ -50,6 +52,7 @@ import net.sf.orcc.df.util.DfVisitor;
 import net.sf.orcc.df.util.NetworkValidator;
 import net.sf.orcc.ir.CfgNode;
 import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
+import net.sf.orcc.ir.transform.RenameTransformation;
 import net.sf.orcc.tools.mapping.XmlBufferSizeConfiguration;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.Result;
@@ -169,6 +172,7 @@ public class XronosSystemC extends AbstractBackend {
 		networkTransfos.add(new NetworkFlattener());
 		networkTransfos.add(new UnitImporter());
 		networkTransfos.add(new DisconnectedOutputPortRemoval());
+		networkTransfos.add(new RenameTransformation(getRenameMap()));
 
 		// -- Child Transformations
 		childrenTransfos.add(new UniquePortMemory(fifoSize));
@@ -277,6 +281,25 @@ public class XronosSystemC extends AbstractBackend {
 				srcPath, actor.getSimpleName() + ".cpp"));
 
 		return result;
+	}
+
+	protected Map<String, String> getRenameMap() {
+		Map<String, String> renameMap = new HashMap<String, String>();
+		renameMap.put("abs", "abs_replaced");
+		renameMap.put("getw", "getw_replaced");
+		renameMap.put("exit", "exit_replaced");
+		renameMap.put("index", "index_replaced");
+		renameMap.put("log2", "log2_replaced");
+		renameMap.put("max", "max_replaced");
+		renameMap.put("min", "min_replaced");
+		renameMap.put("select", "select_replaced");
+		renameMap.put("OUT", "OUT_REPLACED");
+		renameMap.put("IN", "IN_REPLACED");
+		renameMap.put("SIZE", "SIZE_REPLACED");
+		renameMap.put("done", "done_replaced");
+		renameMap.put("start", "start_replaced");
+
+		return renameMap;
 	}
 
 }
