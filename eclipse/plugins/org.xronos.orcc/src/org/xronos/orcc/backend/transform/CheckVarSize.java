@@ -103,6 +103,9 @@ public class CheckVarSize extends DfVisitor<Void> {
 			if (dimension.get(0).equals(1)) {
 				BigInteger value = BigInteger.valueOf(0);
 				size = value.bitLength();
+				if(type.isInt()){
+					size++;
+				}
 			} else {
 				BigInteger max = BigInteger.ZERO;
 				for (int i = 0; i < dimension.get(0); i++) {
@@ -112,6 +115,9 @@ public class CheckVarSize extends DfVisitor<Void> {
 					}
 				}
 				size = max.bitLength();
+				if(type.isInt()){
+					size++;
+				}
 			}
 		}
 

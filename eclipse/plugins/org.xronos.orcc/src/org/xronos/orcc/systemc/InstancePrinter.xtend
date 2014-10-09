@@ -133,12 +133,6 @@ class InstancePrinter extends SystemCTemplate {
 			sc_signal<bool> done_«action.body.name»;
 		«ENDFOR»
 	
-		// --------------------------------------------------------------------------
-		// -- State Variable Declaration
-		«FOR variable : actor.stateVars»
-			«declareNoInit(variable)»
-		«ENDFOR»
-		
 		// -- Scheduler States
 		enum state_t { // enumerate states
 			«FOR state : actor.fsm.states SEPARATOR ", "»s_«state.label»«ENDFOR»«IF !actor.inputs.empty», s_READ«ENDIF»«IF !actor.
@@ -209,7 +203,7 @@ class InstancePrinter extends SystemCTemplate {
 		// --------------------------------------------------------------------------
 		// -- State Variable Declaration
 		«FOR variable : actor.stateVars»
-			«declareSource(variable)»
+			«declare(variable)»
 		«ENDFOR»
 		
 		«IF !actor.procs.empty»
@@ -400,7 +394,6 @@ class InstancePrinter extends SystemCTemplate {
 	}
 	def getTransitionContent(Transition transition) {
 		var action = transition.action
-		var sSTate = transition.source
 		var tState = transition.target
 		var EMap<Port, Integer> inputNumTokens = action.inputPattern.numTokensMap
 		var EMap<Port, Integer> outputNumTokens = action.outputPattern.numTokensMap
@@ -424,7 +417,7 @@ class InstancePrinter extends SystemCTemplate {
 						p_«port.name»_token_index_write = «outputNumTokens.get(port)»;
 						p_«port.name»_produce = true;
 					«ENDFOR»
-					old_state = s_«sSTate.label»;
+					old_state = s_«tState.label»;
 					state = s_WRITE;
 				«ENDIF»
 		'''
@@ -528,12 +521,13 @@ class InstancePrinter extends SystemCTemplate {
 
 	override declare(Var variable) {
 		val const = if(!variable.assignable && variable.global) "const "
+		val global = if(variable.global) "static "
 		val type = variable.type
 		val dims = variable.type.dimensionsExpr.printArrayIndexes
 		val init = if(variable.initialized) " = " + variable.initialValue.doSwitch
 		val end = if(variable.global) ";"
-
-		'''«const»«type.doSwitch» «variable.name»«dims»«init»«end»'''
+			
+			'''«global»«const»«type.doSwitch» «variable.name»«dims»«init»«end»'''
 	}
 	
 	def declareSource(Var variable) {
