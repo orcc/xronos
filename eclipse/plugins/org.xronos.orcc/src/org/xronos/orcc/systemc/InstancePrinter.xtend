@@ -353,9 +353,10 @@ class InstancePrinter extends SystemCTemplate {
 						state = s_«actor.fsm.initialState.label»;
 					break;
 				}
+				
+				wait();
 			}
 		
-			wait();
 			done = true;
 		}
 	'''
@@ -409,13 +410,15 @@ class InstancePrinter extends SystemCTemplate {
 				start_«action.name» = true;
 				do { wait(); } while ( !done_«action.name».read() );
 				// -- Reset start
-				start_«action.name» = true;
+				start_«action.name» = false;
+				«IF outputNumTokens.empty»
+					«FOR port : inputNumTokens.keySet»
+							p_«port.name»_token_index = 0;
+					«ENDFOR»
+				«ENDIF»
 				«IF outputNumTokens.empty»
 					state = s_«tState.label»;
 				«ELSE»
-					«FOR port : inputNumTokens.keySet»
-						p_«port.name»_token_index = 0;
-					«ENDFOR»
 					«FOR port : outputNumTokens.keySet»
 						p_«port.name»_token_index_write = «outputNumTokens.get(port)»;
 						p_«port.name»_produce = true;

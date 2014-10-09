@@ -151,7 +151,7 @@ class TestbenchPrinter extends SystemCTemplate {
 					// -- Input Drivers
 					«FOR port : inputs»
 						tb_driver< «port.type.doSwitch» > i_tb_driver_«port.name»("i_tb_driver_«port.name»");
-						i_tb_driver_«port.name».set_file_name("«IF actor != null»«actor.simpleName»_«ENDIF»«port.name».txt");
+						i_tb_driver_«port.name».set_file_name("../testbench/traces/«IF actor != null»«actor.simpleName»_«ENDIF»«port.name».txt");
 						sc_signal<bool> done_i_tb_driver_«port.name»;
 					«ENDFOR»
 				«ENDIF»
@@ -160,7 +160,7 @@ class TestbenchPrinter extends SystemCTemplate {
 					// -- Compare output with golden reference
 					«FOR port : outputs»
 						tb_compare< «port.type.doSwitch» > i_tb_compare_«port.name»("i_tb_compare_«port.name»");
-						i_tb_compare_«port.name».set_file_name("«IF actor != null»«actor.simpleName»_«ENDIF»«port.name».txt");
+						i_tb_compare_«port.name».set_file_name("../testbench/traces/«IF actor != null»«actor.simpleName»_«ENDIF»«port.name».txt");
 						i_tb_compare_«port.name».set_port_name("«port.name»");
 						sc_signal<bool> done_i_tb_compare_«port.name»;
 					«ENDFOR»

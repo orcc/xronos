@@ -272,7 +272,8 @@ class TestBenchUtilityPrinter {
 					// -- Read from the input
 					sim = din.read();
 					if( sim != golden){
-						cout  << "WARNING: @" << sc_time_stamp() << ", " << "On port " << port_name << " incorrect value computed " << sim << " instead of " << golden << ", sequence " << line_counter << endl; 
+						cout  << "ERROR: @" << sc_time_stamp() << ", " << "On port " << port_name << " incorrect value computed " << sim << " instead of " << golden << ", sequence " << line_counter << endl; 
+						sc_stop();
 					}else{
 						cout  << "INFO: @" << sc_time_stamp() << ", " << "On port " << port_name << " correct value computed (" << sim << "), sequence " << line_counter << endl;
 					}

@@ -86,7 +86,7 @@ public class XronosSystemC extends AbstractBackend {
 	private String tbPath;
 	private String tbSrcPath;
 	private String tbHeaderPath;
-	
+
 	/** Path for TCL scripts **/
 	private String scriptsPath;
 
@@ -115,7 +115,7 @@ public class XronosSystemC extends AbstractBackend {
 		if (!srcHeaderDir.exists()) {
 			srcHeaderDir.mkdir();
 		}
-		
+
 		// -- RTL folder
 		rtlPath = outputPath + File.separator + "rtl";
 		File rtlDir = new File(rtlPath);
@@ -143,14 +143,14 @@ public class XronosSystemC extends AbstractBackend {
 		if (!tbHeaderDir.exists()) {
 			tbHeaderDir.mkdir();
 		}
-		
+
 		// -- Scripts path
 		scriptsPath = outputPath + File.separator + "scripts";
 		File scriptsDir = new File(scriptsPath);
 		if (!scriptsDir.exists()) {
 			scriptsDir.mkdir();
 		}
-		
+
 		// -- TestBench queue traces folder
 		String tracesPath = tbPath + File.separator + "traces";
 		File tracesDir = new File(tracesPath);
@@ -172,7 +172,7 @@ public class XronosSystemC extends AbstractBackend {
 
 		// -- Child Transformations
 		childrenTransfos.add(new UniquePortMemory(fifoSize));
-		//childrenTransfos.add(new DeadGlobalElimination());
+		// childrenTransfos.add(new DeadGlobalElimination());
 		childrenTransfos.add(new ActorAddFSM());
 		childrenTransfos.add(new VarInitializer());
 		childrenTransfos.add(new CheckVarSize());
@@ -199,10 +199,10 @@ public class XronosSystemC extends AbstractBackend {
 	protected Result doGenerateInstance(Instance instance) {
 		final Result result = Result.newInstance();
 		iPrinter.setInstance(instance);
-		result.merge(FilesManager.writeFile(iPrinter.getActorHeaderContent(), srcHeaderPath,
-				instance.getSimpleName() + ".h"));
-		result.merge(FilesManager.writeFile(iPrinter.getActorSourceContent(), srcPath,
-				instance.getSimpleName() + ".cpp"));
+		result.merge(FilesManager.writeFile(iPrinter.getActorHeaderContent(),
+				srcHeaderPath, instance.getSimpleName() + ".h"));
+		result.merge(FilesManager.writeFile(iPrinter.getActorSourceContent(),
+				srcPath, instance.getSimpleName() + ".cpp"));
 		return result;
 	}
 
@@ -230,21 +230,16 @@ public class XronosSystemC extends AbstractBackend {
 		result.merge(FilesManager.writeFile(tbutilityPrinter.getKickerModule(),
 				tbHeaderPath, "tb_kicker.h"));
 
-		if (!network.getInputs().isEmpty()) {
-			result.merge(FilesManager.writeFile(
-					tbutilityPrinter.getDriverModule(), tbHeaderPath,
-					"tb_driver.h"));
-		}
+		result.merge(FilesManager.writeFile(tbutilityPrinter.getDriverModule(),
+				tbHeaderPath, "tb_driver.h"));
 
-		if (!network.getOutputs().isEmpty()) {
-			result.merge(FilesManager.writeFile(
-					tbutilityPrinter.getCompareModule(), tbHeaderPath,
-					"tb_compare.h"));
-		}
+		result.merge(FilesManager.writeFile(
+				tbutilityPrinter.getCompareModule(), tbHeaderPath,
+				"tb_compare.h"));
 
 		// -- TestBench for Network
 		tbPrinter.setNetwork(network);
-		result.merge(FilesManager.writeFile(tbPrinter.getContent(),tbSrcPath,
+		result.merge(FilesManager.writeFile(tbPrinter.getContent(), tbSrcPath,
 				"tb_" + network.getSimpleName() + ".cpp"));
 
 		// -- TCL scripts for actor
@@ -274,13 +269,13 @@ public class XronosSystemC extends AbstractBackend {
 	@Override
 	protected Result doGenerateActor(Actor actor) {
 		final Result result = Result.newInstance();
-		
+
 		iPrinter.setActor(actor);
-		result.merge(FilesManager.writeFile(iPrinter.getActorHeaderContent(), srcHeaderPath,
-				actor.getSimpleName() + ".h"));
-		result.merge(FilesManager.writeFile(iPrinter.getActorSourceContent(), srcPath,
-				actor.getSimpleName() + ".cpp"));
-		
+		result.merge(FilesManager.writeFile(iPrinter.getActorHeaderContent(),
+				srcHeaderPath, actor.getSimpleName() + ".h"));
+		result.merge(FilesManager.writeFile(iPrinter.getActorSourceContent(),
+				srcPath, actor.getSimpleName() + ".cpp"));
+
 		return result;
 	}
 
