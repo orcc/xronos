@@ -492,7 +492,7 @@ class InstancePrinter extends SystemCTemplate {
 		var type = procedure.returnType
 		'''
 			«IF ret.value != null»
-				return ( «type.doSwitch» ) «ret.value.doSwitch»;
+				return ( «type.doSwitch» ) («ret.value.doSwitch»);
 			«ENDIF»
 		'''
 	}
