@@ -405,7 +405,7 @@ class InstancePrinter extends SystemCTemplate {
 				do { wait(); } while ( !done_«action.body.name».read() );
 				// -- Reset start
 				start_«action.body.name» = false;
-				«IF outputNumTokens.empty»
+				«IF !inputNumTokens.empty»
 					«FOR port : inputNumTokens.keySet»
 							p_«port.name»_token_index = 0;
 					«ENDFOR»

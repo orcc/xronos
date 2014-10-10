@@ -179,11 +179,11 @@ public class XronosSystemC extends AbstractBackend {
 		// childrenTransfos.add(new DeadGlobalElimination());
 		childrenTransfos.add(new ActorAddFSM());
 		childrenTransfos.add(new VarInitializer());
-		childrenTransfos.add(new CheckVarSize());
+		//childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
 		childrenTransfos.add(new BlockForAdder());
 
-	}
+	} 
 
 	@Override
 	protected void doValidate(Network network) {
@@ -298,6 +298,7 @@ public class XronosSystemC extends AbstractBackend {
 		renameMap.put("SIZE", "SIZE_REPLACED");
 		renameMap.put("done", "done_replaced");
 		renameMap.put("start", "start_replaced");
+		renameMap.put("round", "round_replaced");
 
 		return renameMap;
 	}
