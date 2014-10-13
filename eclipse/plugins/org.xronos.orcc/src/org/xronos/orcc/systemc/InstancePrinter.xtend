@@ -315,7 +315,7 @@ class InstancePrinter extends SystemCTemplate {
 					«IF !actor.inputs.empty»
 						case (s_READ):
 							«FOR port : actor.inputs»
-								if(p_«port.name»_consume){
+								if(p_«port.name»_consume && ( «port.name».num_available() > 0 ) ){
 									for(int i = 0; i < p_«port.name»_token_index_read; i++){
 										p_«port.name»[i] = «port.name».read();
 										p_«port.name»_token_index++;

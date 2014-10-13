@@ -135,7 +135,6 @@ class NetworkPrinter extends SystemCTemplate {
 			
 			// -- Actors Start / Done signals
 			«FOR child : network.children»
-				sc_signal<bool> start_«child.label»;
 				sc_signal<bool> done_«child.label»;
 			«ENDFOR»
 			
@@ -277,7 +276,7 @@ class NetworkPrinter extends SystemCTemplate {
 		«FOR child : network.children»
 			i_«child.label».clk(clk);
 			i_«child.label».reset(reset);
-			i_«child.label».start(start_«child.label»);
+			i_«child.label».start(start);
 			i_«child.label».done(done_«child.label»);
 			«FOR connection: child.incoming»
 				i_«child.label».«(connection as Connection).targetPort.name»(«queueNames.get(connection)»);

@@ -182,7 +182,7 @@ public class XronosSystemC extends AbstractBackend {
 		childrenTransfos.add(new VarInitializer());
 		childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
-		//childrenTransfos.add(new BlockForAdder());
+		childrenTransfos.add(new BlockForAdder());
 		childrenTransfos.add(new LoopLabeler());
 	}
 
