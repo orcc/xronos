@@ -47,16 +47,18 @@ import net.sf.orcc.ir.ArgByVal
 import net.sf.orcc.ir.BlockBasic
 import net.sf.orcc.ir.BlockIf
 import net.sf.orcc.ir.BlockWhile
+import net.sf.orcc.ir.ExprBinary
 import net.sf.orcc.ir.InstAssign
 import net.sf.orcc.ir.InstCall
 import net.sf.orcc.ir.InstLoad
 import net.sf.orcc.ir.InstReturn
 import net.sf.orcc.ir.InstStore
+import net.sf.orcc.ir.OpBinary
 import net.sf.orcc.ir.Param
 import net.sf.orcc.ir.Procedure
 import net.sf.orcc.ir.Var
-import org.eclipse.emf.common.util.EMap
 import net.sf.orcc.util.util.EcoreHelper
+import org.eclipse.emf.common.util.EMap
 
 class InstancePrinter extends SystemCTemplate {
 
@@ -511,6 +513,29 @@ class InstancePrinter extends SystemCTemplate {
 			«target.name»«store.indexes.printArrayIndexes» = «store.value.doSwitch»;
 		'''
 	}
+	
+	
+	
+	override caseExprBinary(ExprBinary expr) {
+		val op = expr.op
+		var nextPrec = if (op == OpBinary::SHIFT_LEFT || op == OpBinary::SHIFT_RIGHT) {
+
+				// special case, for shifts always put parentheses because compilers
+				// often issue warnings
+				Integer::MIN_VALUE;
+			} else {
+				op.precedence;
+			}
+		val nextOpBin = if (expr.e2 instanceof ExprBinary) { true } else {false} 
+		val resultingExpr = '''«expr.e1.printExpr(nextPrec, 0)» «op.stringRepresentation» «IF nextOpBin»(«expr.e2.type.doSwitch») («ENDIF»«expr.e2.printExpr(nextPrec, 1)»«IF nextOpBin» )«ENDIF»'''
+
+		if (op.needsParentheses(precedence, branch)) {
+			'''(«resultingExpr»)'''
+		} else {
+			resultingExpr
+		}
+	}
+	
 
 	// -- Helper Methods
 	def private print(Arg arg) {

@@ -180,9 +180,9 @@ public class XronosSystemC extends AbstractBackend {
 		// childrenTransfos.add(new DeadGlobalElimination());
 		childrenTransfos.add(new ActorAddFSM());
 		childrenTransfos.add(new VarInitializer());
-		// childrenTransfos.add(new CheckVarSize());
+		childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
-		childrenTransfos.add(new BlockForAdder());
+		//childrenTransfos.add(new BlockForAdder());
 		childrenTransfos.add(new LoopLabeler());
 	}
 
@@ -195,9 +195,13 @@ public class XronosSystemC extends AbstractBackend {
 
 	@Override
 	protected Result doGenerateNetwork(Network network) {
+		final Result result = Result.newInstance();
 		nPrinter.setNetwork(network);
-		return FilesManager.writeFile(nPrinter.getContent(), srcHeaderPath,
-				network.getSimpleName() + ".h");
+		result.merge(FilesManager.writeFile(nPrinter.getContent(),
+				srcHeaderPath, network.getSimpleName() + ".h"));
+		result.merge(FilesManager.writeFile(nPrinter.getNetworkContentSource(),
+				srcPath, network.getSimpleName() + ".cpp"));
+		return result;
 	}
 
 	@Override

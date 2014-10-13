@@ -102,6 +102,10 @@ class NetworkPrinter extends SystemCTemplate {
 		
 		#include "systemc.h"
 		
+		«FOR child : network.children»
+				#include "«child.label».h" 
+		«ENDFOR»
+		
 		SC_MODULE(«this.name»){
 		
 			// -- Control Ports
@@ -128,11 +132,42 @@ class NetworkPrinter extends SystemCTemplate {
 				// -- TBD
 			«ENDIF»
 			
+			
+			// -- Actors Start / Done signals
+			«FOR child : network.children»
+				sc_signal<bool> start_«child.label»;
+				sc_signal<bool> done_«child.label»;
+			«ENDFOR»
+			
 			// -- Actors
 			«FOR child : network.children»
 				«child.label» i_«child.label»;
 			«ENDFOR»
 			
+			
+			«IF !network.inputs.empty || !network.outputs.empty»
+				// Queue processes
+			«ENDIF»
+			«IF !network.inputs.empty»
+				«FOR port: network.inputs SEPARATOR "\n"»
+					«FOR connection: network.connections»
+						«IF connection.source.equals(port)»
+							void port_«port.name»_reader();
+						«ENDIF»
+					«ENDFOR»
+				«ENDFOR»
+			«ENDIF»
+		
+			«IF !network.outputs.empty»
+				«FOR port: network.outputs SEPARATOR "\n"»
+					«FOR connection: network.connections»
+						«IF connection.target.equals(port)»
+							void port_«port.name»_writer();
+						«ENDIF»
+					«ENDFOR»
+				«ENDFOR»
+			«ENDIF»
+		
 			// -- Constructor
 			SC_CTOR(«this.name»)
 				:clk("clk")
@@ -164,18 +199,29 @@ class NetworkPrinter extends SystemCTemplate {
 				«ENDIF»
 			}
 			
-			«IF !network.inputs.empty || !network.outputs.empty»
-				// -- Queue Readers / Writers Processes
-				«inputQueueReaders»
-				
-				«outputQueueWriters»
-			«ENDIF»
-			
 		};
 		
 		
 		#endif //SC_«this.name»_H
 	'''
+
+	def getNetworkContentSource() '''
+		«header»
+		
+		#include "«this.name».h"
+		
+		«IF !network.inputs.empty || !network.outputs.empty»
+			// -- Queue Readers / Writers Processes
+		«ENDIF»
+		«IF !network.inputs.empty»
+			«inputQueueReaders»
+		«ENDIF»
+		
+		«IF !network.outputs.empty»
+			«outputQueueWriters»
+		«ENDIF»
+	''' 
+
 
 	def getPortDeclaration(String direction, Port port) '''
 		sc_fifo_«direction»< «port.type.doSwitch» > «port.name»;
@@ -183,7 +229,7 @@ class NetworkPrinter extends SystemCTemplate {
 
 	def getQueuesDeclarationContent() '''
 		«FOR connection : network.connections»
-			sc_fifo<«queueTypes.get(connection).doSwitch»> «queueNames.get(connection)»;
+			sc_fifo< «queueTypes.get(connection).doSwitch» > «queueNames.get(connection)»;
 		«ENDFOR»
 	'''
 	
@@ -196,8 +242,9 @@ class NetworkPrinter extends SystemCTemplate {
 						while(true){
 							do { wait(); } while ( !start.read() );
 							wait();
-							for(;;;){
+							while(true){
 								«queueNames.get(connection)».write(«port.name».read());
+								wait();
 							}
 						}
 					}
@@ -215,8 +262,9 @@ class NetworkPrinter extends SystemCTemplate {
 						while(true){
 							do { wait(); } while ( !start.read() );
 							wait();
-							for(;;;){
+							while(true){
 								«port.name».write(«queueNames.get(connection)».read());
+								wait();
 							}
 						}
 					}
@@ -227,13 +275,15 @@ class NetworkPrinter extends SystemCTemplate {
 	
 	def getContructorConnections()'''
 		«FOR child : network.children»
-			«child.label».clock(clock);
-			«child.label».reset(reset);
+			i_«child.label».clk(clk);
+			i_«child.label».reset(reset);
+			i_«child.label».start(start_«child.label»);
+			i_«child.label».done(done_«child.label»);
 			«FOR connection: child.incoming»
-				«child.label».«(connection as Connection).targetPort.name»(«queueNames.get(connection)»);
+				i_«child.label».«(connection as Connection).targetPort.name»(«queueNames.get(connection)»);
 			«ENDFOR»
 			«FOR connection: child.outgoing»
-				«child.label».«(connection as Connection).sourcePort.name»(«queueNames.get(connection)»);
+				i_«child.label».«(connection as Connection).sourcePort.name»(«queueNames.get(connection)»);
 			«ENDFOR»
 		«ENDFOR»
 	'''
