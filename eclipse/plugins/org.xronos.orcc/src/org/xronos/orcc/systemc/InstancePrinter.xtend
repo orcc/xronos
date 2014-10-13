@@ -443,23 +443,29 @@ class InstancePrinter extends SystemCTemplate {
 		«ENDIF»
 	'''
 
-	override caseBlockWhile(BlockWhile blockWhile) '''
-		loop_«blockWhile.lineNumber»: while («blockWhile.condition.doSwitch») {
+	override caseBlockWhile(BlockWhile blockWhile){ 
+		val Integer loopIndex = blockWhile.getAttribute("loopLabel").objectValue as Integer 
+	'''
+		loop_«loopIndex»: while («blockWhile.condition.doSwitch») {
 			«FOR block : blockWhile.blocks»
 				«block.doSwitch»
 			«ENDFOR»
 		}
 	'''
+	
+	}
 
-	override caseBlockFor(BlockFor blockFor) '''
-		loop_«blockFor.lineNumber»: for («blockFor.init.join(", ")['''«toExpression»''']» ; «blockFor.condition.doSwitch» ; «blockFor.
+	override caseBlockFor(BlockFor blockFor){ 
+		val Integer loopIndex = blockFor.getAttribute("loopLabel").objectValue as Integer
+	'''
+		loop_«loopIndex»: for («blockFor.init.join(", ")['''«toExpression»''']» ; «blockFor.condition.doSwitch» ; «blockFor.
 			step.join(", ")['''«toExpression»''']») {
 			«FOR contentBlock : blockFor.blocks»
 				«contentBlock.doSwitch»
 			«ENDFOR»
 		}
 	'''
-
+	}
 	// -- Ir Instructions
 	override caseInstAssign(InstAssign inst) '''
 		«inst.target.variable.name» = «inst.value.doSwitch»;

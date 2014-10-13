@@ -195,6 +195,7 @@ class TestBenchUtilityPrinter {
 					iss >> n;
 					dout.write(n);
 				}
+				wait();
 			}
 	
 			in_file.close();
@@ -278,7 +279,8 @@ class TestBenchUtilityPrinter {
 						cout  << "INFO: @" << sc_time_stamp() << ", " << "On port " << port_name << " correct value computed (" << sim << "), sequence " << line_counter << endl;
 					}
 					line_counter++;	
-				}	
+				}
+				wait();	
 			}
 	
 	 		in_file.close();

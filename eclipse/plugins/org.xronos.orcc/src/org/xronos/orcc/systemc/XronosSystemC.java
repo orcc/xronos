@@ -60,6 +60,7 @@ import net.sf.orcc.util.Result;
 import org.xronos.orcc.backend.transform.CheckVarSize;
 import org.xronos.orcc.forge.scheduler.ActorAddFSM;
 import org.xronos.orcc.forge.transform.memory.VarInitializer;
+import org.xronos.orcc.systemc.transform.LoopLabeler;
 import org.xronos.orcc.systemc.transform.UniquePortMemory;
 
 /**
@@ -179,11 +180,11 @@ public class XronosSystemC extends AbstractBackend {
 		// childrenTransfos.add(new DeadGlobalElimination());
 		childrenTransfos.add(new ActorAddFSM());
 		childrenTransfos.add(new VarInitializer());
-		//childrenTransfos.add(new CheckVarSize());
+		// childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
 		childrenTransfos.add(new BlockForAdder());
-
-	} 
+		childrenTransfos.add(new LoopLabeler());
+	}
 
 	@Override
 	protected void doValidate(Network network) {
