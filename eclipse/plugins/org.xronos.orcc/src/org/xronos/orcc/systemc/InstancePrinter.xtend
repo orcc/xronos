@@ -383,8 +383,10 @@ class InstancePrinter extends SystemCTemplate {
 			«getTransitionContent(edge as Transition)»
 			}«ENDFOR»«IF actionsHaveInputPrts» else {
 				«FOR port: maxPortTokens.keySet»
-					p_«port.name»_token_index_read = «maxPortTokens.get(port)»;
-					p_«port.name»_consume = true;
+					if( p_«port.name»_token_index < «maxPortTokens.get(port)» ){
+						p_«port.name»_token_index_read = «maxPortTokens.get(port)» - p_«port.name»_token_index;
+						p_«port.name»_consume = true;
+					}
 				«ENDFOR»
 				old_state = s_«state.label»;
 				state = s_READ;
