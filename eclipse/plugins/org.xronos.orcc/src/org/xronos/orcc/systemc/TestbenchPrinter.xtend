@@ -100,7 +100,13 @@ class TestbenchPrinter extends SystemCTemplate {
 			«header»
 			#include "systemc.h"
 			
+			#ifdef __RTL_SIMULATION__
+			#include "«name»_rtl_wrapper.h"
+			#define «name» «name»_rtl_wrapper 
+			#else
 			#include "«name».h"
+			#endif
+			
 			#include "tb_kicker.h"
 			#include "tb_endsim«IF network != null»_n«ELSE»_a«ENDIF»_«this.name».h"
 			«IF !inputs.empty»

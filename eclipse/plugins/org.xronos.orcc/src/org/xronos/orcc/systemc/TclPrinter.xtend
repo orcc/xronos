@@ -109,10 +109,10 @@ class TclPrinter extends DfVisitor<Void> {
 			«FOR child : network.children»
 				add_files $SrcPath/«child.label».cpp -cflags "-I$SrcHeaderPath"
 			«ENDFOR»
-			## -- Network Top Modeule
+			## -- Network Top Module
 			add_files $SrcPath/«this.name».cpp -cflags "-I$SrcHeaderPath"
 		«ELSE»
-			add_files «this.name».h
+			add_files «this.name».cpp -cflags "-I$SrcHeaderPath"
 		«ENDIF»
 		
 		## -- Add TestBench File
