@@ -102,6 +102,7 @@ class TestbenchPrinter extends SystemCTemplate {
 			
 			#include "«name».h"
 			#include "tb_kicker.h"
+			#include "tb_endsim«IF network != null»_n«ELSE»_a«ENDIF»_«this.name».h"
 			«IF !inputs.empty»
 				#include "tb_driver.h"
 			«ENDIF»
@@ -146,6 +147,9 @@ class TestbenchPrinter extends SystemCTemplate {
 				
 				// -- Testbench Utilities Modules
 				tb_kicker i_tb_kicker("i_tb_icker");
+				
+				tb_endsim«IF network != null»_n«ELSE»_a«ENDIF»_«this.name» i_tb_endsim("i_tb_endsim");
+				sc_signal<bool> done_i_tb_endsim;
 				
 				«IF !inputs.empty»
 					// -- Input Drivers
@@ -193,7 +197,15 @@ class TestbenchPrinter extends SystemCTemplate {
 						i_tb_compare_«port.name».done(done_i_tb_compare_«port.name»);
 						i_tb_compare_«port.name».din(q_«port.name»);
 					«ENDFOR»
-				«ENDIF»			
+				«ENDIF»	
+				
+				i_tb_endsim.clk(s_clk);
+				i_tb_endsim.reset(reset);
+				i_tb_endsim.start(start);
+				i_tb_endsim.done(done_i_tb_endsim);
+				«FOR port : outputs»
+						i_tb_endsim.done_«port.name»(done_i_tb_compare_«port.name»);
+				«ENDFOR»
 				
 				// -- «this.name» Connections
 				«prefix»_«this.name».clk(s_clk);

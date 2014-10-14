@@ -33,8 +33,36 @@ package org.xronos.orcc.systemc
 
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.List
+import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Network
+import net.sf.orcc.df.Port
 
 class TestBenchUtilityPrinter {
+	
+	private var Network network
+
+	private var Actor actor
+
+	private var String name
+	
+	private var String prefix
+	
+	def setNetwork(Network network) {
+		this.network = network
+		name = network.simpleName
+		prefix = "n"
+		actor = null
+	}
+
+	def setActor(Actor actor) {
+		this.actor = actor
+		name = actor.simpleName
+		prefix = "a"
+		network = null
+	}
+	
+	
 	
 	def getHeader() {
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -290,5 +318,55 @@ class TestBenchUtilityPrinter {
 	
 	#endif // TB_CAPTURE_H
 	'''
-	
+	def getEndSimModule(){
+		var List<Port> outputs = null
+		if (network != null) {
+			outputs = network.outputs
+		} else {
+			outputs = actor.outputs
+		}
+		'''
+		«header»
+		#ifndef TB_ENDSIM«IF network != null»_N«ELSE»_A«ENDIF»_«this.name.toUpperCase»_H
+		#define TB_ENDSIM«IF network != null»_N«ELSE»_A«ENDIF»_«this.name.toUpperCase»_H
+
+		#include <systemc.h>
+
+		using namespace std;
+
+		SC_MODULE(tb_endsim«IF network != null»_n«ELSE»_a«ENDIF»_«this.name») {
+			sc_in<bool> clk;
+			sc_in<bool> reset;
+			sc_in<bool> start;
+			sc_out<bool> done;
+			
+			«FOR port: outputs SEPARATOR "\n"»
+				sc_in<bool> done_«port.name»;
+			«ENDFOR»
+					
+			SC_CTOR(tb_endsim«IF network != null»_n«ELSE»_a«ENDIF»_«this.name»)
+			{
+				SC_CTHREAD(prc_stop, clk.pos());
+				reset_signal_is(reset,true);
+			}
+
+			void prc_stop() {
+				done = false;
+			
+				do { wait(); } while ( !start.read() );
+
+				«FOR port: outputs SEPARATOR "\n"»
+					do { wait(); } while ( !done_«port.name».read() );
+				«ENDFOR»
+
+				wait();
+				cout << "INFO: Finishing reading from Golden reference !!!" << endl;
+				sc_stop();
+				done = true;
+			}
+		};
+
+		#endif // TB_ENDSIM«IF network != null»_N«ELSE»_I«ENDIF»_«this.name.toUpperCase»_H
+		'''
+	}
 }

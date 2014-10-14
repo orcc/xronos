@@ -245,6 +245,11 @@ public class XronosSystemC extends AbstractBackend {
 		result.merge(FilesManager.writeFile(
 				tbutilityPrinter.getCompareModule(), tbHeaderPath,
 				"tb_compare.h"));
+		
+		tbutilityPrinter.setNetwork(network);
+		result.merge(FilesManager.writeFile(
+				tbutilityPrinter.getEndSimModule(), tbHeaderPath,
+				"tb_endsim_n_"+network.getSimpleName()+".h"));
 
 		// -- TestBench for Network
 		tbPrinter.setNetwork(network);
@@ -266,7 +271,13 @@ public class XronosSystemC extends AbstractBackend {
 		tbPrinter.setActor(actor);
 		result.merge(FilesManager.writeFile(tbPrinter.getContent(), tbSrcPath,
 				"tb_" + actor.getSimpleName() + ".cpp"));
-
+		
+		// -- End Simulation for Actor
+		tbutilityPrinter.setActor(actor);
+		result.merge(FilesManager.writeFile(
+				tbutilityPrinter.getEndSimModule(), tbHeaderPath,
+				"tb_endsim_a_"+actor.getSimpleName()+".h"));
+		
 		// -- TCL scripts for actor
 		tclPrinter.setActor(actor);
 		result.merge(FilesManager.writeFile(tclPrinter.getContentForVivado(),

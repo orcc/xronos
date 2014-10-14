@@ -70,10 +70,11 @@ class ReadMePrinter {
 			after HLS synthesis(Catapult, Cynthesizer, Vivado HLS, ...)
 		
 		- tesbench, 
-			is the place where all SystemC testbenches are stored also
-				- queueTraces,
+			is the place where all SystemC testbenches are stored
+				- traces,
 					where you should put all the traces, golden references
-					provided by Orcc C backend
+					provided by Orcc C backend or the Orcc simulator, a 
+					refactoring of the traces name should be given 
 				- network,
 					where the network testbench is located
 				- actors,
@@ -81,6 +82,32 @@ class ReadMePrinter {
 					
 		- scripts,
 			where all tcl scipts for launching the HLS synthesis and simulation
+		
+		Tools that you need:
+			- G++ or Clnag
+			- SystemC 2.3.1 or later, for abstract simulation of the generated code
+			- Vivado HLS 2014.3 or later for HLS synthesis (Vivado System Edition or
+			   Web Edition)
+			- Calypto Catapult, Cynthesizer, CyberWorkBench, C-To-Verilog or other Tool
+		
+		We provide scripts only for Vivado HLS for the moment, if other tool tested, 
+		we are going to add the necessary tcl scripts.
+		
+		
+		HowTo Vivado HLS :
+
+		Launch Vivado HLS from command line
+			- On Linux : Open the command prompt
+			- On Windows : On start menu choose Vivado HLS "Version" Command Prompt
+		
+		On the terminal type
+			> vivado_hls tcl_"name of the top or actor".tcl
+		
+		This script will launch the SystemC simulation for verification, Synthesis, 
+		Co-Simulation and will export the design.
+		
+		If you would like another clk period than 10ns, and not all the steps described 
+		above you can comment with "#" the necessary lines. 
 		
 		
 		For all questions on SystemC code generator please contact :
