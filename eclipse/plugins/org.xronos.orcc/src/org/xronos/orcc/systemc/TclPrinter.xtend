@@ -98,7 +98,7 @@ class TclPrinter extends DfVisitor<Void> {
 		set SrcHeaderPath "../src/header"
 		set TbPath "../testbench"
 		set SrcTbPath "../testbench/src"
-		set HeaderTbPath "$SrcTbPath/header"
+		set HeaderTbPath "../testbench/src/header"
 		
 		## -- Create Project
 		open_project -reset proj_«this.name»
@@ -107,33 +107,16 @@ class TclPrinter extends DfVisitor<Void> {
 		«IF network != null»
 			## -- Actor Modules
 			«FOR child : network.children»
-				add_files $SrcPath/«child.label».cpp
-				add_files $SrcHeaderPath/«child.label».h
+				add_files $SrcPath/«child.label».cpp -cflags "-I$SrcHeaderPath"
 			«ENDFOR»
 			## -- Network Top Modeule
-			add_files $SrcPath/«this.name».cpp
-			add_files $SrcHeaderPath/«this.name».h
+			add_files $SrcPath/«this.name».cpp -cflags "-I$SrcHeaderPath"
 		«ELSE»
 			add_files «this.name».h
 		«ENDIF»
 		
-		## -- Add TestBench Files
-		«IF network != null»
-			«IF !network.inputs.empty»
-				add_files -tb {$HeaderTbPath/tb_driver.h}
-			«ENDIF»
-			«IF !network.outputs.empty»
-				add_files -tb {$HeaderTbPath/tb_compare.h}
-			«ENDIF»
-		«ELSE»
-			«IF !actor.inputs.empty»
-				add_files -tb {$HeaderTbPath/tb_driver.h}
-			«ENDIF»
-			«IF !actor.outputs.empty»
-				add_files -tb {$HeaderTbPath/tb_compare.h}
-			«ENDIF»
-		«ENDIF»
-		add_files -tb {$SrcTbPath/tb_«this.name».cpp}
+		## -- Add TestBench File
+		add_files -tb $SrcTbPath/tb_«this.name».cpp -cflags "-IHeaderTbPath/"
 		
 		## -- Set Top Level
 		set_top «this.name»
