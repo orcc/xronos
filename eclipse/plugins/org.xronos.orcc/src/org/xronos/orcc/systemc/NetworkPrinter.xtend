@@ -34,9 +34,11 @@ package org.xronos.orcc.systemc
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.HashMap
+import java.util.List
 import java.util.Map
 import net.sf.orcc.df.Actor
 import net.sf.orcc.df.Connection
+import net.sf.orcc.df.Entity
 import net.sf.orcc.df.Network
 import net.sf.orcc.df.Port
 import net.sf.orcc.ir.Type
@@ -56,6 +58,7 @@ class NetworkPrinter extends SystemCTemplate {
 	var Map<Connection, String> queueNames
 
 	var Map<Connection, Type> queueTypes
+	
 
 	var Integer defaultQueueSize
 
@@ -184,7 +187,9 @@ class NetworkPrinter extends SystemCTemplate {
 				«ENDFOR»
 			{
 				// -- Connnections
-				«contructorConnections»
+				«FOR child : network.children SEPARATOR "\n"»
+					«getChildConnections(child as Actor)»
+				«ENDFOR»
 				«IF !network.inputs.empty || !network.outputs.empty»
 					// -- Port Readers/Writers Process Registration
 					«FOR port: network.inputs»
@@ -237,14 +242,12 @@ class NetworkPrinter extends SystemCTemplate {
 			«FOR connection: network.connections»
 				«IF connection.source.equals(port)»
 					void «this.name»::port_«port.name»_reader(){
-						wait();
-						while(true){
-							do { wait(); } while ( !start.read() );
+						do {
 							wait();
-							while(true){
-								«queueNames.get(connection)».write(«port.name».read());
-								wait();
-							}
+						} while (!start.read());
+						while (true) {
+							«queueNames.get(connection)».write(«port.name».read());
+							wait();
 						}
 					}
 				 «ENDIF»
@@ -252,28 +255,29 @@ class NetworkPrinter extends SystemCTemplate {
 		«ENDFOR»
 	'''
 	
-		def getOutputQueueWriters()'''
+		def getOutputQueueWriters(){
+		'''
 		«FOR port: network.outputs SEPARATOR "\n"»
 			«FOR connection: network.connections»
 				«IF connection.target.equals(port)»
 					void «this.name»::port_«port.name»_writer(){
-						wait();
-						while(true){
-							do { wait(); } while ( !start.read() );
+						do {
 							wait();
-							while(true){
-								«port.name».write(«queueNames.get(connection)».read());
-								wait();
-							}
+						} while (!start.read());
+						while (true) {
+							«port.name».write(«queueNames.get(connection)».read());
+							wait();
 						}
 					}
 				 «ENDIF»
 			«ENDFOR»	
 		«ENDFOR»
-	'''
+		'''
+	}
 	
-	def getContructorConnections()'''
-		«FOR child : network.children»
+	def getChildConnections(Actor child){
+		var Map<Port, List<Connection>> portConnection = child.getAdapter((typeof(Entity))).getOutgoingPortMap()
+		'''
 			i_«child.label».clk(clk);
 			i_«child.label».reset(reset);
 			i_«child.label».start(start);
@@ -281,12 +285,21 @@ class NetworkPrinter extends SystemCTemplate {
 			«FOR connection: child.incoming»
 				i_«child.label».«(connection as Connection).targetPort.name»(«queueNames.get(connection)»);
 			«ENDFOR»
-			«FOR connection: child.outgoing»
-				i_«child.label».«(connection as Connection).sourcePort.name»(«queueNames.get(connection)»);
+			«FOR port: child.outputs»
+				«IF portConnection.get(port).size > 1»
+					«FOR connection: portConnection.get(port)»
+						«IF connection.target instanceof Actor»
+							i_«child.label».«port.name»_f_«(connection.target as Actor).name»(«queueNames.get(connection)»);
+						«ELSE»
+							i_«child.label».«port.name»_f_«(connection.target as Port).name»(«queueNames.get(connection)»);
+						«ENDIF»
+					«ENDFOR»
+				«ELSE»
+					i_«child.label».«port.name»(«queueNames.get(portConnection.get(port).get(0))»);
+				«ENDIF»
 			«ENDFOR»
-		«ENDFOR»
-	'''
-
+		'''
+	}
 	// -- Helper Methods
 	def retrieveQueueNames() {
 		queueNames = new HashMap<Connection, String>
@@ -315,4 +328,5 @@ class NetworkPrinter extends SystemCTemplate {
 			}
 		}
 	}
+	
 }

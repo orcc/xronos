@@ -32,11 +32,16 @@
 package org.xronos.orcc.systemc
 
 import java.text.SimpleDateFormat
+import java.util.ArrayList
+import java.util.Arrays
 import java.util.Date
 import java.util.HashMap
+import java.util.List
 import java.util.Map
 import net.sf.orcc.backends.ir.BlockFor
 import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Connection
+import net.sf.orcc.df.Entity
 import net.sf.orcc.df.Instance
 import net.sf.orcc.df.Port
 import net.sf.orcc.df.State
@@ -67,6 +72,9 @@ class InstancePrinter extends SystemCTemplate {
 	private var Instance instance
 
 	private String name
+	
+	
+	private var Map<Port, List<String>> fanoutPortConenction
 
 	def setInstance(Instance instance) {
 		this.instance = instance
@@ -77,6 +85,7 @@ class InstancePrinter extends SystemCTemplate {
 	def setActor(Actor actor) {
 		this.actor = actor
 		this.name = actor.simpleName
+		getFanoutPortNames
 	}
 
 	// -- Get Content For each Top Level
@@ -238,7 +247,13 @@ class InstancePrinter extends SystemCTemplate {
 	'''
 	
 	def getPortDeclaration(String direction, Port port) '''
-		sc_fifo_«direction»< «port.type.doSwitch» > «port.name»;
+		«IF fanoutPortConenction.containsKey(port)»
+			«FOR name: fanoutPortConenction.get(port)»
+				sc_fifo_«direction»< «port.type.doSwitch» > «name»;
+			«ENDFOR»
+		«ELSE»
+			sc_fifo_«direction»< «port.type.doSwitch» > «port.name»;
+		«ENDIF»
 	'''
 
 	def getStateVariableDeclarationContent(Var variable) '''
@@ -332,7 +347,9 @@ class InstancePrinter extends SystemCTemplate {
 							«FOR port : actor.outputs»
 								if(p_«port.name»_produce){
 									for(int i = 0; i < p_«port.name»_token_index_write; i++){
-										«port.name».write(p_«port.name»[i]);
+										«FOR name : fanoutPortConenction.get(port)»
+											«name».write(p_«port.name»[i]);
+										«ENDFOR»
 										p_«port.name»_token_index++;
 									}
 									p_«port.name»_produce = false;
@@ -589,5 +606,25 @@ class InstancePrinter extends SystemCTemplate {
 	def declare(Procedure procedure)'''
 		«procedure.returnType.doSwitch» «procedure.name»(«procedure.parameters.join(", ")[declare]»);
 	'''
+	
+	def getFanoutPortNames(){
+		var Map<Port, List<Connection>> portConnection = actor.getAdapter((typeof(Entity))).getOutgoingPortMap()
+		fanoutPortConenction = new HashMap
+		for(port : actor.outputs){
+			if (portConnection.get(port).size > 1 ){
+				var List<String> portNames = new ArrayList
+				for(connection: portConnection.get(port)){
+					if(connection.target instanceof Actor){
+						portNames.add(port.name+"_f_"+ (connection.target as Actor).name);
+					}else{
+						portNames.add(port.name+"_f_"+ (connection.target as Port).name);
+					}					
+				}
+				fanoutPortConenction.put(port,portNames)
+			}else{
+				fanoutPortConenction.put(port, Arrays.asList(port.name))
+			}
+		}
+	}
 	
 }
