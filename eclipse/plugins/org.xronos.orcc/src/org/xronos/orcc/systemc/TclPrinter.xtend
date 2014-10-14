@@ -116,7 +116,7 @@ class TclPrinter extends DfVisitor<Void> {
 		«ENDIF»
 		
 		## -- Add TestBench File
-		add_files -tb $SrcTbPath/tb_«this.name».cpp -cflags "-IHeaderTbPath/"
+		add_files -tb $SrcTbPath/tb_«this.name».cpp -cflags "-I$SrcHeaderPath -I$HeaderTbPath/"
 		
 		## -- Set Top Level
 		set_top «this.name»
