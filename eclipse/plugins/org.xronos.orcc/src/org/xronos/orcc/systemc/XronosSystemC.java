@@ -180,7 +180,7 @@ public class XronosSystemC extends AbstractBackend {
 		// childrenTransfos.add(new DeadGlobalElimination());
 		childrenTransfos.add(new ActorAddFSM());
 		childrenTransfos.add(new VarInitializer());
-		//childrenTransfos.add(new CheckVarSize());
+		childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
 		childrenTransfos.add(new BlockForAdder());
 		childrenTransfos.add(new LoopLabeler());
@@ -309,7 +309,9 @@ public class XronosSystemC extends AbstractBackend {
 		renameMap.put("max", "max_replaced");
 		renameMap.put("min", "min_replaced");
 		renameMap.put("select", "select_replaced");
+		renameMap.put("Out", "Out_replaced");
 		renameMap.put("OUT", "OUT_REPLACED");
+		renameMap.put("In", "In_replaced");
 		renameMap.put("IN", "IN_REPLACED");
 		renameMap.put("SIZE", "SIZE_REPLACED");
 		renameMap.put("done", "done_replaced");

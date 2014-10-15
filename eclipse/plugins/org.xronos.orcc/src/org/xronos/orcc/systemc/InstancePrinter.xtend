@@ -73,6 +73,8 @@ class InstancePrinter extends SystemCTemplate {
 
 	private String name
 	
+	private static Boolean actionAsProcess = false;
+	
 	
 	private var Map<Port, List<String>> fanoutPortConenction
 
@@ -163,12 +165,14 @@ class InstancePrinter extends SystemCTemplate {
 			// -- Actions Scheduler Registration
 			SC_CTHREAD(scheduler, clk.pos());
 			reset_signal_is(reset, true);
+			«IF actionAsProcess»
 			
 			// -- Actions Registration
-			«FOR action : actor.actions SEPARATOR "\n"»
-				SC_CTHREAD(«action.body.name», clk.pos());
-				reset_signal_is(reset, true);
-			«ENDFOR»
+				«FOR action : actor.actions SEPARATOR "\n"»
+					SC_CTHREAD(«action.body.name», clk.pos());
+					reset_signal_is(reset, true);
+				«ENDFOR»
+			«ENDIF»
 		}
 		
 		«IF !actor.procs.empty»
@@ -228,7 +232,11 @@ class InstancePrinter extends SystemCTemplate {
 		// --------------------------------------------------------------------------
 		// -- Actions Body
 		«FOR action : actor.actions SEPARATOR "\n"»
-			«IF !action.body.blocks.empty»
+			«IF actionAsProcess»
+				«IF !action.body.blocks.empty»
+					«getActionBodyContentAsProcess(action.body)»
+				«ENDIF»
+			«ELSE»
 				«getActionBodyContent(action.body)»
 			«ENDIF»
 		«ENDFOR»
@@ -260,7 +268,7 @@ class InstancePrinter extends SystemCTemplate {
 		«declare(variable)»
 	'''
 
-	def getActionBodyContent(Procedure procedure) '''
+	def getActionBodyContentAsProcess(Procedure procedure) '''
 		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
 			«FOR variable : procedure.locals»
 				«variable.declare»;
@@ -279,6 +287,23 @@ class InstancePrinter extends SystemCTemplate {
 			}
 		}
 	'''
+	
+		def getActionBodyContent(Procedure procedure) '''
+		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
+			«FOR variable : procedure.locals»
+				«variable.declare»;
+			«ENDFOR»
+			// -- Reset Done
+			done_«procedure.name» = false; 
+			«FOR block : procedure.blocks»
+				«block.doSwitch»
+			«ENDFOR»
+	
+			done_«procedure.name» = true;
+			}
+		}
+	'''
+
 
 	def getProcedureContent(Procedure procedure) '''
 		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
@@ -423,7 +448,11 @@ class InstancePrinter extends SystemCTemplate {
 				name»_token_index == «inputNumTokens.get(port)»«ENDFOR»«ENDIF»){
 				// -- Start action : «action.name»
 				start_«action.body.name» = true;
-				do { wait(); } while ( !done_«action.body.name».read() );
+				«IF actionAsProcess»
+					do { wait(); } while ( !done_«action.body.name».read() );
+				«ELSE»
+					«action.body.name»();
+				«ENDIF»
 				// -- Reset start
 				start_«action.body.name» = false;
 				«IF !inputNumTokens.empty»
