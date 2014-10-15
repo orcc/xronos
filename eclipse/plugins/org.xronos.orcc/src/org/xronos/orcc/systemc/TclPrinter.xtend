@@ -101,7 +101,7 @@ class TclPrinter extends DfVisitor<Void> {
 		set HeaderTbPath "../testbench/src/header"
 		
 		## -- Create Project
-		open_project -reset proj_«this.name»
+		open_project proj_«this.name»
 		
 		## -- Add Design Files
 		«IF network != null»
@@ -112,10 +112,14 @@ class TclPrinter extends DfVisitor<Void> {
 			## -- Network Top Module
 			add_files $SrcPath/«this.name».cpp -cflags "-I$SrcHeaderPath"
 		«ELSE»
-			add_files «this.name».cpp -cflags "-I$SrcHeaderPath"
+			add_files $SrcPath/«this.name».cpp -cflags "-I$SrcHeaderPath"
 		«ENDIF»
 		
 		## -- Add TestBench File
+		add_files -tb $HeaderTbPath/tb_kicker.h
+		add_files -tb $HeaderTbPath/tb_driver.h
+		add_files -tb $HeaderTbPath/tb_compare.h
+		add_files -tb $HeaderTbPath/tb_endsim«IF network != null»_n«ELSE»_a«ENDIF»_«this.name».h
 		add_files -tb $SrcTbPath/tb_«this.name».cpp -cflags "-I$SrcHeaderPath -I$HeaderTbPath/"
 		
 		## -- Set Top Level
@@ -128,7 +132,7 @@ class TclPrinter extends DfVisitor<Void> {
 		set_part  {xc7z020clg484-1}
 		
 		## -- Define Clock period
-		create_clock -period 100 -name clk
+		create_clock -period 10 -name clk
 		
 		## -- Compilation and Pre Synthesis
 		csim_design
