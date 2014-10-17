@@ -300,7 +300,6 @@ class InstancePrinter extends SystemCTemplate {
 			«ENDFOR»
 	
 			done_«procedure.name» = true;
-			}
 		}
 	'''
 
