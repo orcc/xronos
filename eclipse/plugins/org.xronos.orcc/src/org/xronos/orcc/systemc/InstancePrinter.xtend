@@ -520,20 +520,27 @@ class InstancePrinter extends SystemCTemplate {
 		«inst.target.variable.name» = «inst.value.doSwitch»;
 	'''
 
-	override caseInstCall(InstCall call) '''
+	override caseInstCall(InstCall call) {
+		var Map<Param,Arg> paramArg = new HashMap
+		var int i = 0
+		for (param : call.procedure.parameters){
+			paramArg.put(param,call.arguments.get(i))
+			i++
+		}
+	'''
 		«IF call.print»
 			#ifndef __SYNTHESIS__
-				cout<< «call.arguments.printfArgs.join(", ")» <<endl;
+				std::cout << «FOR arg : call.arguments SEPARATOR " << "»«arg.coutArg»«ENDFOR»;
 			#endif
 		«ELSE»
 			«IF !call.hasAttribute("memberCall")»
-				«IF call.target != null»«call.target.variable.name» = «ENDIF»«call.procedure.name»(«call.arguments.join(", ")[print]»);
+				«IF call.target != null»«call.target.variable.name» = «ENDIF»«call.procedure.name»(«FOR param: paramArg.keySet SEPARATOR ", "»«printWithCast(param,paramArg.get(param))»«ENDFOR»);
 			«ELSE»
 				«call.arguments.get(0).print».«call.procedure.name»();
 			«ENDIF»
 		«ENDIF»
 	'''
-
+	}
 	override caseInstLoad(InstLoad load) {
 		val target = load.target.variable
 		val source = load.source.variable
@@ -589,6 +596,22 @@ class InstancePrinter extends SystemCTemplate {
 		} else {
 			(arg as ArgByVal).value.doSwitch
 		}
+	}
+	
+	def printWithCast(Param param, Arg arg){
+		val variable = param.variable	
+		if (arg.byRef) {
+			'''(«variable.type.doSwitch») &«(arg as ArgByRef).use.variable.name»«(arg as ArgByRef).indexes.printArrayIndexes»'''
+		} else {
+			'''(«variable.type.doSwitch») «(arg as ArgByVal).value.doSwitch»'''
+		}
+	}
+	def dispatch coutArg(ArgByRef arg) {
+		'''&«arg.use.variable.doSwitch»«FOR index : arg.indexes»[«index.doSwitch»]«ENDFOR»'''
+	}
+	
+	def dispatch coutArg(ArgByVal arg) {
+		arg.value.doSwitch
 	}
 
 	// -- Declaration Methods

@@ -180,7 +180,7 @@ public class XronosSystemC extends AbstractBackend {
 		// childrenTransfos.add(new DeadGlobalElimination());
 		childrenTransfos.add(new ActorAddFSM());
 		childrenTransfos.add(new VarInitializer());
-		childrenTransfos.add(new CheckVarSize());
+		//childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
 		childrenTransfos.add(new BlockForAdder());
 		childrenTransfos.add(new LoopLabeler());
