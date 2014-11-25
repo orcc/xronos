@@ -213,7 +213,7 @@ public class Xronos extends AbstractBackend {
 			new NetworkBufferSizeImporter(bufferSzeFile).doSwitch(network);
 		}
 
-		new TypeResizer(false, true, false, false).doSwitch(network);
+		new TypeResizer(false, false, false, false).doSwitch(network);
 		// Compute the Network Template
 		network.computeTemplateMaps();
 

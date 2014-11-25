@@ -89,7 +89,7 @@ public class XronosTransform {
 		transformations.add(new UnitImporter());
 		transformations.add(new VarInitializer());
 		transformations.add(new SinglePortReadWrite());
-		transformations.add(new CheckVarSize());
+		//transformations.add(new CheckVarSize());
 		//transformations.add(new DfVisitor<Void>(new Inliner(false, true,
 		//		true)));
 		transformations.add(new ParameterArrayRemoval());
@@ -145,7 +145,7 @@ public class XronosTransform {
 				transformations.add(new ArraySizeToPowerOfTwo());
 			}
 			transformations.add(new XronosVarInitializer());
-			transformations.add(new CheckVarSize());
+			//transformations.add(new CheckVarSize());
 			transformations.add(new ParameterArrayRemoval());
 			transformations.add(new DfVisitor<Void>(
 					new XronosConstantPropagation()));
