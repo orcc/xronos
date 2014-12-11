@@ -210,6 +210,10 @@ public class XronosDeadCodeElimination extends AbstractIrVisitor<Void> {
 	public Void caseBlockWhile(BlockWhile blockWhile) {
 		// Visit the loop to find if there is another branch or loop to be
 		// eliminated
+		if (blockWhile.hasAttribute("removableCopy")){
+			IrUtil.delete(blockWhile);
+			return null;
+		}
 		doSwitch(blockWhile.getBlocks());
 
 		// Now do the work

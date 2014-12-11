@@ -48,6 +48,7 @@ import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
 import net.sf.orcc.df.transform.TypeResizer;
+import net.sf.orcc.df.transform.UnitImporter;
 import net.sf.orcc.df.util.NetworkValidator;
 import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.util.FilesManager;
@@ -57,6 +58,7 @@ import net.sf.orcc.util.Result;
 import org.xronos.orcc.analysis.XronosDynamicWeights;
 import org.xronos.orcc.analysis.XronosStaticWeight;
 import org.xronos.orcc.backend.transform.NetworkBufferSizeImporter;
+import org.xronos.orcc.backend.transform.XronosStats;
 import org.xronos.orcc.design.ResourceCache;
 
 /**
@@ -116,6 +118,60 @@ public class Xronos extends AbstractBackend {
 
 	/** Copy the Xilinx RAM/registers primitives **/
 	private boolean xilinxPrimitives;
+
+	@Override
+	protected void beforeGeneration(Network network) {
+		// Import Units
+		for (Vertex vertex : network.getChildren()) {
+			final Actor actor = vertex.getAdapter(Actor.class);
+			new UnitImporter().doSwitch(actor);
+		}
+	}
+
+	@Override
+	protected Result doGenerateNetwork(Network network) {
+		// instantiate and flattens network
+		new Instantiator(true).doSwitch(network);
+		new NetworkFlattener().doSwitch(network);
+
+		if (importBufferSize) {
+			String bufferSzeFile = getOption(
+					"org.xronos.orcc.bufferSizeFile", "");
+			new NetworkBufferSizeImporter(bufferSzeFile).doSwitch(network);
+		}
+		// -- Xronos Stats
+		new XronosStats().doSwitch(network);
+		
+		new TypeResizer(false, false, false, false).doSwitch(network);
+		// Compute the Network Template
+		network.computeTemplateMaps();
+
+		if (singleFileGeneration) {
+			// Generate Network Design
+			generateNetwork(network);
+		} else {
+			// Print Instances
+			generateInstances(network);
+
+			// Print Network
+			printNetwork(network);
+		}
+		// Print Testbenches
+		printTestbenches(network);
+
+		// Weight Static Analysis
+		XronosStaticWeight staticWeight = new XronosStaticWeight("weights_"
+				+ network.getSimpleName(), rtlPath + File.separator + "report");
+		staticWeight.createStaticWeight();
+
+		if (generateWeights) {
+			XronosDynamicWeights xronosDynamicWeights = new XronosDynamicWeights(
+					network, testBenchPath);
+			xronosDynamicWeights.getMeanWeights(rtlPath + File.separator
+					+ "report");
+		}
+		return super.doGenerateNetwork(network);
+	}
 
 	@Override
 	protected void doInitializeOptions() {
@@ -199,49 +255,6 @@ public class Xronos extends AbstractBackend {
 		Validator.checkMinimalFifoSize(network, fifoSize);
 
 		new NetworkValidator().doSwitch(network);
-	}
-
-	@Override
-	protected Result doGenerateNetwork(Network network) {
-		// instantiate and flattens network
-		new Instantiator(true).doSwitch(network);
-		new NetworkFlattener().doSwitch(network);
-
-		if (importBufferSize) {
-			String bufferSzeFile = getOption(
-					"org.xronos.orcc.bufferSizeFile", "");
-			new NetworkBufferSizeImporter(bufferSzeFile).doSwitch(network);
-		}
-
-		new TypeResizer(false, false, false, false).doSwitch(network);
-		// Compute the Network Template
-		network.computeTemplateMaps();
-
-		if (singleFileGeneration) {
-			// Generate Network Design
-			generateNetwork(network);
-		} else {
-			// Print Instances
-			generateInstances(network);
-
-			// Print Network
-			printNetwork(network);
-		}
-		// Print Testbenches
-		printTestbenches(network);
-
-		// Weight Static Analysis
-		XronosStaticWeight staticWeight = new XronosStaticWeight("weights_"
-				+ network.getSimpleName(), rtlPath + File.separator + "report");
-		staticWeight.createStaticWeight();
-
-		if (generateWeights) {
-			XronosDynamicWeights xronosDynamicWeights = new XronosDynamicWeights(
-					network, testBenchPath);
-			xronosDynamicWeights.getMeanWeights(rtlPath + File.separator
-					+ "report");
-		}
-		return super.doGenerateNetwork(network);
 	}
 
 	public void generateInstances(Network network) {

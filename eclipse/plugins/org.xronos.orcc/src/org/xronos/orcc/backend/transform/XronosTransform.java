@@ -85,8 +85,7 @@ public class XronosTransform {
 	public static void transformActor(Actor actor, Map<String, Object> options,
 			Boolean debugMode) {
 		List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
-		
-		transformations.add(new UnitImporter());
+
 		transformations.add(new VarInitializer());
 		transformations.add(new SinglePortReadWrite());
 		//transformations.add(new CheckVarSize());
@@ -136,7 +135,9 @@ public class XronosTransform {
 			boolean schedulerInformation, Boolean debugMode) {
 		if (!actor.hasAttribute("xronos_no_generation")) {
 			List<DfSwitch<?>> transformations = new ArrayList<DfSwitch<?>>();
-			transformations.add(new UnitImporter());
+			
+			
+			
 			// transformations.add(new DfVisitor<Void>(new Liveness()));
 			Boolean sizeArrayOfPowerOfTwo = options
 					.get("org.xronos.orcc.arraySizeToPowerOfTwo") != null ? (Boolean) options
@@ -154,7 +155,7 @@ public class XronosTransform {
 			transformations.add(new DeadActionEliminaton(true));
 
 			if (!actor.hasAttribute("xronos_no_store_once")) {
-				transformations.add(new StoreOnceTransformation());
+				//transformations.add(new StoreOnceTransformation());
 			}
 			transformations.add(new DfVisitor<Void>(new LoopUnrolling()));
 			transformations.add(new XronosDivision());
