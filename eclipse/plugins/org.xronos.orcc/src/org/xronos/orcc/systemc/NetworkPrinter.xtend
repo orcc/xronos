@@ -152,21 +152,13 @@ class NetworkPrinter extends SystemCTemplate {
 			«ENDIF»
 			«IF !network.inputs.empty»
 				«FOR port: network.inputs SEPARATOR "\n"»
-					«FOR connection: network.connections»
-						«IF connection.source.equals(port)»
-							void port_«port.name»_reader();
-						«ENDIF»
-					«ENDFOR»
+					void port_«port.name»_reader();
 				«ENDFOR»
 			«ENDIF»
 		
 			«IF !network.outputs.empty»
 				«FOR port: network.outputs SEPARATOR "\n"»
-					«FOR connection: network.connections»
-						«IF connection.target.equals(port)»
-							void port_«port.name»_writer();
-						«ENDIF»
-					«ENDFOR»
+					void port_«port.name»_writer();
 				«ENDFOR»
 			«ENDIF»
 		
@@ -237,25 +229,28 @@ class NetworkPrinter extends SystemCTemplate {
 		«ENDFOR»
 	'''
 	
-	def getInputQueueReaders()'''
+	def getInputQueueReaders(){
+		'''
 		«FOR port: network.inputs SEPARATOR "\n"»
-			«FOR connection: network.connections»
-				«IF connection.source.equals(port)»
-					void «this.name»::port_«port.name»_reader(){
-						do {
-							wait();
-						} while (!start.read());
-						while (true) {
-							«queueNames.get(connection)».write(«port.name».read());
-							wait();
-						}
-					}
-				 «ENDIF»
-			«ENDFOR»	
+			void «this.name»::port_«port.name»_reader(){
+				do {
+					wait();
+				} while (!start.read());
+				while (true) {
+					«port.type.doSwitch» data = «port.name».read();
+					«FOR connection: network.connections»
+						«IF connection.source.equals(port)»
+							«queueNames.get(connection)».write(data);				
+					 	«ENDIF»
+					«ENDFOR»
+					wait();
+				}
+			}
 		«ENDFOR»
-	'''
+		'''
+	}
 	
-		def getOutputQueueWriters(){
+	def getOutputQueueWriters(){
 		'''
 		«FOR port: network.outputs SEPARATOR "\n"»
 			«FOR connection: network.connections»
@@ -328,5 +323,8 @@ class NetworkPrinter extends SystemCTemplate {
 			}
 		}
 	}
+	
+	
+	
 	
 }
