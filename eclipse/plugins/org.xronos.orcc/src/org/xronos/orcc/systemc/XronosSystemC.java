@@ -55,6 +55,7 @@ import net.sf.orcc.ir.transform.ControlFlowAnalyzer;
 import net.sf.orcc.ir.transform.RenameTransformation;
 import net.sf.orcc.tools.mapping.XmlBufferSizeConfiguration;
 import net.sf.orcc.util.FilesManager;
+import net.sf.orcc.util.OrccLogger;
 import net.sf.orcc.util.Result;
 
 import org.xronos.orcc.backend.transform.CheckVarSize;
@@ -76,6 +77,7 @@ public class XronosSystemC extends AbstractBackend {
 	private InstancePrinter iPrinter;
 	private TestbenchPrinter tbPrinter;
 	private TestBenchUtilityPrinter tbutilityPrinter;
+	private VHDLTestbenchPrinter tbVHDLPrinter;
 	private TclPrinter tclPrinter;
 	private ReadMePrinter readMePrinter;
 
@@ -90,15 +92,19 @@ public class XronosSystemC extends AbstractBackend {
 	private String tbPath;
 	private String tbSrcPath;
 	private String tbHeaderPath;
+	private String tbVHDLPath;
 
 	/** Path for TCL scripts **/
 	private String scriptsPath;
+	private String scriptsSynthesisPath;
+	private String scriptsSimulationPath;
 
 	public XronosSystemC() {
 		nPrinter = new NetworkPrinter();
 		iPrinter = new InstancePrinter();
 		tbPrinter = new TestbenchPrinter();
 		tbutilityPrinter = new TestBenchUtilityPrinter();
+		tbVHDLPrinter = new VHDLTestbenchPrinter();
 		tclPrinter = new TclPrinter();
 		readMePrinter = new ReadMePrinter();
 	}
@@ -148,11 +154,31 @@ public class XronosSystemC extends AbstractBackend {
 			tbHeaderDir.mkdir();
 		}
 
+		// -- TestBench vhdl path
+		tbVHDLPath = tbPath + File.separator + "vhdl";
+		File tbVHDLDir = new File(tbVHDLPath);
+		if (!tbVHDLDir.exists()) {
+			tbVHDLDir.mkdir();
+		}
+
 		// -- Scripts path
 		scriptsPath = outputPath + File.separator + "scripts";
 		File scriptsDir = new File(scriptsPath);
 		if (!scriptsDir.exists()) {
 			scriptsDir.mkdir();
+		}
+		// -- Scripts path Synthesis
+		scriptsSynthesisPath = scriptsPath + File.separator + "synthesis";
+		File scriptsSynthesisDir = new File(scriptsSynthesisPath);
+		if (!scriptsSynthesisDir.exists()) {
+			scriptsSynthesisDir.mkdir();
+		}
+
+		// -- Scripts path Simualtion
+		scriptsSimulationPath = scriptsPath + File.separator + "simulation";
+		File scriptsSimulationDir = new File(scriptsSimulationPath);
+		if (!scriptsSimulationDir.exists()) {
+			scriptsSimulationDir.mkdir();
 		}
 
 		// -- TestBench queue traces folder
@@ -166,6 +192,7 @@ public class XronosSystemC extends AbstractBackend {
 		nPrinter.setOptions(getOptions());
 		iPrinter.setOptions(getOptions());
 		tbPrinter.setOptions(getOptions());
+		tbVHDLPrinter.setOptions(getOptions());
 		tclPrinter.setOptions(getOptions());
 
 		// -- Network Transformations
@@ -180,10 +207,17 @@ public class XronosSystemC extends AbstractBackend {
 		// childrenTransfos.add(new DeadGlobalElimination());
 		childrenTransfos.add(new ActorAddFSM());
 		childrenTransfos.add(new VarInitializer());
-		//childrenTransfos.add(new CheckVarSize());
+		// childrenTransfos.add(new CheckVarSize());
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
 		childrenTransfos.add(new BlockForAdder());
 		childrenTransfos.add(new LoopLabeler());
+	}
+
+	@Override
+	protected Result doLibrariesExtraction() {
+		Result result = FilesManager.extract(
+				"/bundle/lib/simulation/sim_package.vhd", tbVHDLPath);
+		return result;
 	}
 
 	@Override
@@ -245,21 +279,30 @@ public class XronosSystemC extends AbstractBackend {
 		result.merge(FilesManager.writeFile(
 				tbutilityPrinter.getCompareModule(), tbHeaderPath,
 				"tb_compare.h"));
-		
+
 		tbutilityPrinter.setNetwork(network);
-		result.merge(FilesManager.writeFile(
-				tbutilityPrinter.getEndSimModule(), tbHeaderPath,
-				"tb_endsim_n_"+network.getSimpleName()+".h"));
+		result.merge(FilesManager.writeFile(tbutilityPrinter.getEndSimModule(),
+				tbHeaderPath, "tb_endsim_n_" + network.getSimpleName() + ".h"));
 
 		// -- TestBench for Network
 		tbPrinter.setNetwork(network);
 		result.merge(FilesManager.writeFile(tbPrinter.getContent(), tbSrcPath,
 				"tb_" + network.getSimpleName() + ".cpp"));
 
+		// -- VHDL Testbench for Network
+		tbVHDLPrinter.setNetwork(network);
+		result.merge(FilesManager.writeFile(tbVHDLPrinter.getContent(),
+				tbVHDLPath, network.getSimpleName() + "_tb" + ".vhd"));
+
 		// -- TCL scripts for actor
 		tclPrinter.setNetwork(network);
 		result.merge(FilesManager.writeFile(tclPrinter.getContentForVivado(),
-				scriptsPath, "tcl_" + network.getSimpleName() + ".tcl"));
+				scriptsSynthesisPath, "tcl_" + network.getSimpleName() + ".tcl"));
+
+		tclPrinter.setNetwork(network);
+		result.merge(FilesManager.writeFile(tclPrinter.getContentForModelSim(),
+				scriptsSimulationPath, "tcl_" + network.getSimpleName()
+						+ ".tcl"));
 
 		return result;
 	}
@@ -271,18 +314,25 @@ public class XronosSystemC extends AbstractBackend {
 		tbPrinter.setActor(actor);
 		result.merge(FilesManager.writeFile(tbPrinter.getContent(), tbSrcPath,
 				"tb_" + actor.getSimpleName() + ".cpp"));
-		
+
 		// -- End Simulation for Actor
 		tbutilityPrinter.setActor(actor);
-		result.merge(FilesManager.writeFile(
-				tbutilityPrinter.getEndSimModule(), tbHeaderPath,
-				"tb_endsim_a_"+actor.getSimpleName()+".h"));
-		
+		result.merge(FilesManager.writeFile(tbutilityPrinter.getEndSimModule(),
+				tbHeaderPath, "tb_endsim_a_" + actor.getSimpleName() + ".h"));
+
+		// -- VHDL Testbench for Network
+		tbVHDLPrinter.setActor(actor);
+		result.merge(FilesManager.writeFile(tbVHDLPrinter.getContent(),
+				tbVHDLPath, actor.getSimpleName() + "_tb" + ".vhd"));
+
 		// -- TCL scripts for actor
 		tclPrinter.setActor(actor);
 		result.merge(FilesManager.writeFile(tclPrinter.getContentForVivado(),
-				scriptsPath, "tcl_" + actor.getSimpleName() + ".tcl"));
+				scriptsSynthesisPath, "tcl_" + actor.getSimpleName() + ".tcl"));
 
+		tclPrinter.setActor(actor);
+		result.merge(FilesManager.writeFile(tclPrinter.getContentForModelSim(),
+				scriptsSimulationPath, "tcl_" + actor.getSimpleName() + ".tcl"));
 		return result;
 	}
 

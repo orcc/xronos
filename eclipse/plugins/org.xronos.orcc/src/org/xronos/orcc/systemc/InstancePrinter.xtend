@@ -138,13 +138,6 @@ class InstancePrinter extends SystemCTemplate {
 		«FOR port : actor.outputs»
 			«getPortDeclaration("out", port)»
 		«ENDFOR»
-		
-		// --------------------------------------------------------------------------
-		// -- Start / Done Actions signals
-		«FOR action : actor.actions SEPARATOR "\n"»
-			sc_signal<bool> start_«action.body.name»;
-			sc_signal<bool> done_«action.body.name»;
-		«ENDFOR»
 	
 		// -- Scheduler States
 		enum state_t { // enumerate states
@@ -290,16 +283,13 @@ class InstancePrinter extends SystemCTemplate {
 	
 		def getActionBodyContent(Procedure procedure) '''
 		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
+		#pragma HLS inline off
 			«FOR variable : procedure.locals»
 				«variable.declare»;
 			«ENDFOR»
-			// -- Reset Done
-			done_«procedure.name» = false; 
 			«FOR block : procedure.blocks»
 				«block.doSwitch»
 			«ENDFOR»
-	
-			done_«procedure.name» = true;
 		}
 	'''
 
@@ -445,15 +435,13 @@ class InstancePrinter extends SystemCTemplate {
 		'''
 			if(guard_«action.name»«IF !inputNumTokens.empty» && «FOR port : inputNumTokens.keySet SEPARATOR " && "»p_«port.
 				name»_token_index == «inputNumTokens.get(port)»«ENDFOR»«ENDIF»){
-				// -- Start action : «action.name»
-				start_«action.body.name» = true;
+							
 				«IF actionAsProcess»
 					do { wait(); } while ( !done_«action.body.name».read() );
 				«ELSE»
 					«action.body.name»();
 				«ENDIF»
-				// -- Reset start
-				start_«action.body.name» = false;
+				
 				«IF !inputNumTokens.empty»
 					«FOR port : inputNumTokens.keySet»
 							p_«port.name»_token_index = 0;
