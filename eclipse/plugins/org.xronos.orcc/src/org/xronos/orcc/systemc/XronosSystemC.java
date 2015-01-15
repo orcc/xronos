@@ -200,7 +200,7 @@ public class XronosSystemC extends AbstractBackend {
 		networkTransfos.add(new NetworkFlattener());
 		networkTransfos.add(new UnitImporter());
 		networkTransfos.add(new DisconnectedOutputPortRemoval());
-		networkTransfos.add(new RenameTransformation(getRenameMap()));
+		networkTransfos.add(new RenameTransformation(getRenameMap(), false));
 
 		// -- Child Transformations
 		childrenTransfos.add(new UniquePortMemory(fifoSize));
@@ -363,6 +363,8 @@ public class XronosSystemC extends AbstractBackend {
 		renameMap.put("OUT", "OUT_REPLACED");
 		renameMap.put("In", "In_replaced");
 		renameMap.put("IN", "IN_REPLACED");
+		renameMap.put("Bit", "Bit_replaced");
+		renameMap.put("BIT", "BIT_REPLACED");
 		renameMap.put("SIZE", "SIZE_REPLACED");
 		renameMap.put("done", "done_replaced");
 		renameMap.put("start", "start_replaced");
