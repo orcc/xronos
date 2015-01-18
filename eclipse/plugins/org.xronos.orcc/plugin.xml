@@ -44,16 +44,6 @@
                id="org.xronos.orcc.importBufferSize">
          </option>
       </backend>
-      <backend
-            class="org.xronos.orcc.systemc.XronosSystemC"
-            name="Xronos SystemC">
-         <option
-               id="net.sf.orcc.plugins.compileXDF">
-         </option>
-         <option
-               id="org.xronos.orcc.importBufferSize">
-         </option>
-      </backend>
    </extension>
    <extension
          point="net.sf.orcc.core.options">
