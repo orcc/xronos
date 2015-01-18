@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Systemc
+Bundle-SymbolicName: org.xronos.systemc;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: org.xronos.systemc.Activator
+Bundle-Vendor: EPFL
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ net.sf.orcc.core;bundle-version="2.3.1",
+ net.sf.orcc.backends;bundle-version="2.3.1",
+ org.xronos.orcc;bundle-version="2.1.2",
+ com.google.guava,
+ org.eclipse.xtext.xbase.lib,
+ org.eclipse.xtend.lib,
+ org.eclipse.xtend.lib.macro
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-ActivationPolicy: lazy
+

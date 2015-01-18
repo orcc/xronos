@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="net.sf.orcc.backends.backends">
+      <backend
+            class="org.xronos.systemc.XronosSystemC"
+            name="Xronos SystemC">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.backends.importBXDF">
+         </option>
+      </backend>
+   </extension>
+
+</plugin>
