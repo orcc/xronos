@@ -71,31 +71,31 @@ import org.xronos.systemc.transform.UniquePortMemory;
 public class XronosSystemC extends AbstractBackend {
 
 	/** Printers **/
-	private NetworkPrinter nPrinter;
-	private InstancePrinter iPrinter;
-	private TestbenchPrinter tbPrinter;
-	private TestBenchUtilityPrinter tbutilityPrinter;
-	private VHDLTestbenchPrinter tbVHDLPrinter;
-	private TclPrinter tclPrinter;
-	private ReadMePrinter readMePrinter;
+	protected NetworkPrinter nPrinter;
+	protected InstancePrinter iPrinter;
+	protected TestbenchPrinter tbPrinter;
+	protected TestBenchUtilityPrinter tbutilityPrinter;
+	protected VHDLTestbenchPrinter tbVHDLPrinter;
+	protected TclPrinter tclPrinter;
+	protected ReadMePrinter readMePrinter;
 
 	/** Path for generated SystemC Actor and Network source file **/
-	private String srcPath;
-	private String srcHeaderPath;
+	protected String srcPath;
+	protected String srcHeaderPath;
 
 	/** Path for the RTL to be populated by HLS tools **/
-	private String rtlPath;
+	protected String rtlPath;
 
 	/** Path that contains the SystemC TestBench files **/
-	private String tbPath;
-	private String tbSrcPath;
-	private String tbHeaderPath;
-	private String tbVHDLPath;
+	protected String tbPath;
+	protected String tbSrcPath;
+	protected String tbHeaderPath;
+	protected String tbVHDLPath;
 
 	/** Path for TCL scripts **/
-	private String scriptsPath;
-	private String scriptsSynthesisPath;
-	private String scriptsSimulationPath;
+	protected String scriptsPath;
+	protected String scriptsSynthesisPath;
+	protected String scriptsSimulationPath;
 
 	public XronosSystemC() {
 		nPrinter = new NetworkPrinter();
@@ -109,6 +109,35 @@ public class XronosSystemC extends AbstractBackend {
 
 	@Override
 	protected void doInitializeOptions() {
+		// -- Create Paths
+		doCreatePaths();
+		
+		// -- Set Printer Options
+		nPrinter.setOptions(getOptions());
+		iPrinter.setOptions(getOptions());
+		tbPrinter.setOptions(getOptions());
+		tbVHDLPrinter.setOptions(getOptions());
+		tclPrinter.setOptions(getOptions());
+
+		// -- Network Transformations
+		networkTransfos.add(new Instantiator(true));
+		networkTransfos.add(new NetworkFlattener());
+		networkTransfos.add(new UnitImporter());
+		networkTransfos.add(new DisconnectedOutputPortRemoval());
+		networkTransfos.add(new RenameTransformation(getRenameMap(), false));
+
+		// -- Child Transformations
+		childrenTransfos.add(new UniquePortMemory(fifoSize));
+		// childrenTransfos.add(new DeadGlobalElimination());
+		childrenTransfos.add(new ActorAddFSM());
+		childrenTransfos.add(new VarInitializer());
+		// childrenTransfos.add(new CheckVarSize());
+		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
+		childrenTransfos.add(new BlockForAdder());
+		childrenTransfos.add(new LoopLabeler());
+	}
+
+	protected void doCreatePaths() {
 		// Create Folders
 		// -- Source folder
 		srcPath = outputPath + File.separator + "src";
@@ -185,30 +214,6 @@ public class XronosSystemC extends AbstractBackend {
 		if (!tracesDir.exists()) {
 			tracesDir.mkdir();
 		}
-
-		// -- Set Printer Options
-		nPrinter.setOptions(getOptions());
-		iPrinter.setOptions(getOptions());
-		tbPrinter.setOptions(getOptions());
-		tbVHDLPrinter.setOptions(getOptions());
-		tclPrinter.setOptions(getOptions());
-
-		// -- Network Transformations
-		networkTransfos.add(new Instantiator(true));
-		networkTransfos.add(new NetworkFlattener());
-		networkTransfos.add(new UnitImporter());
-		networkTransfos.add(new DisconnectedOutputPortRemoval());
-		networkTransfos.add(new RenameTransformation(getRenameMap(), false));
-
-		// -- Child Transformations
-		childrenTransfos.add(new UniquePortMemory(fifoSize));
-		// childrenTransfos.add(new DeadGlobalElimination());
-		childrenTransfos.add(new ActorAddFSM());
-		childrenTransfos.add(new VarInitializer());
-		// childrenTransfos.add(new CheckVarSize());
-		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
-		childrenTransfos.add(new BlockForAdder());
-		childrenTransfos.add(new LoopLabeler());
 	}
 
 	@Override

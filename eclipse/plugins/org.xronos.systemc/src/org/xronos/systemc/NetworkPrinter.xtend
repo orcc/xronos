@@ -51,17 +51,18 @@ import net.sf.orcc.ir.util.IrUtil
  */
 class NetworkPrinter extends SystemCTemplate {
 
-	var Network network
+	protected var Network network
 
-	var String name
+	protected var String name
 
-	var Map<Connection, String> queueNames
+	protected var Map<Connection, String> queueNames
 
-	var Map<Connection, Type> queueTypes
+	protected var Map<Connection, Type> queueTypes
 	
+	protected var Integer defaultQueueSize
 
-	var Integer defaultQueueSize
-
+	protected var Boolean addScope = true
+	
 	def setNetwork(Network network) {
 		this.network = network
 		this.name = network.simpleName
@@ -232,7 +233,7 @@ class NetworkPrinter extends SystemCTemplate {
 	def getInputQueueReaders(){
 		'''
 		«FOR port: network.inputs SEPARATOR "\n"»
-			void «this.name»::port_«port.name»_reader(){
+			void «IF addScope»«this.name»::«ENDIF»port_«port.name»_reader(){
 				do {
 					wait();
 				} while (!start.read());
@@ -255,7 +256,7 @@ class NetworkPrinter extends SystemCTemplate {
 		«FOR port: network.outputs SEPARATOR "\n"»
 			«FOR connection: network.connections»
 				«IF connection.target.equals(port)»
-					void «this.name»::port_«port.name»_writer(){
+					void «IF addScope»«this.name»::«ENDIF»port_«port.name»_writer(){
 						do {
 							wait();
 						} while (!start.read());

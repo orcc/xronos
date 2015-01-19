@@ -57,15 +57,17 @@ import org.xronos.systemc.SystemCTemplate;
  */
 @SuppressWarnings("all")
 public class NetworkPrinter extends SystemCTemplate {
-  private Network network;
+  protected Network network;
   
-  private String name;
+  protected String name;
   
-  private Map<Connection, String> queueNames;
+  protected Map<Connection, String> queueNames;
   
-  private Map<Connection, Type> queueTypes;
+  protected Map<Connection, Type> queueTypes;
   
-  private Integer defaultQueueSize;
+  protected Integer defaultQueueSize;
+  
+  protected Boolean addScope = Boolean.valueOf(true);
   
   public void setNetwork(final Network network) {
     this.network = network;
@@ -588,8 +590,13 @@ public class NetworkPrinter extends SystemCTemplate {
           _builder.appendImmediate("\n", "");
         }
         _builder.append("void ");
-        _builder.append(this.name, "");
-        _builder.append("::port_");
+        {
+          if ((this.addScope).booleanValue()) {
+            _builder.append(this.name, "");
+            _builder.append("::");
+          }
+        }
+        _builder.append("port_");
         String _name = port.getName();
         _builder.append(_name, "");
         _builder.append("_reader(){");
@@ -663,8 +670,13 @@ public class NetworkPrinter extends SystemCTemplate {
               boolean _equals = _target.equals(port);
               if (_equals) {
                 _builder.append("void ");
-                _builder.append(this.name, "");
-                _builder.append("::port_");
+                {
+                  if ((this.addScope).booleanValue()) {
+                    _builder.append(this.name, "");
+                    _builder.append("::");
+                  }
+                }
+                _builder.append("port_");
                 String _name = port.getName();
                 _builder.append(_name, "");
                 _builder.append("_writer(){");

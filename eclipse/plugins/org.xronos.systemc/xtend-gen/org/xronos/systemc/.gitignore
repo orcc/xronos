@@ -6,3 +6,11 @@
 /.TestBenchUtilityPrinter.java._trace
 /.TestbenchPrinter.java._trace
 /.VHDLTestbenchPrinter.java._trace
+/InstancePrinter.java
+/NetworkPrinter.java
+/ReadMePrinter.java
+/SystemCTemplate.java
+/TclPrinter.java
+/TestBenchUtilityPrinter.java
+/TestbenchPrinter.java
+/VHDLTestbenchPrinter.java

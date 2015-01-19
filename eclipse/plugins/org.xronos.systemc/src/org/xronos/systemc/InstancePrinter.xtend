@@ -67,13 +67,15 @@ import org.eclipse.emf.common.util.EMap
 
 class InstancePrinter extends SystemCTemplate {
 
-	private var Actor actor
+	protected var Actor actor
 
-	private var Instance instance
+	protected var Instance instance
 
-	private String name
+	protected String name
 	
-	private static Boolean actionAsProcess = false;
+	protected static Boolean actionAsProcess = false
+	
+	protected static boolean addScope = true
 	
 	
 	private var Map<Port, List<String>> fanoutPortConenction
@@ -262,7 +264,7 @@ class InstancePrinter extends SystemCTemplate {
 	'''
 
 	def getActionBodyContentAsProcess(Procedure procedure) '''
-		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
+		«procedure.returnType.doSwitch» «IF addScope»«this.name»::«ENDIF»«procedure.name»(«procedure.parameters.join(", ")[declare]») {
 			«FOR variable : procedure.locals»
 				«variable.declare»;
 			«ENDFOR»
@@ -282,7 +284,7 @@ class InstancePrinter extends SystemCTemplate {
 	'''
 	
 		def getActionBodyContent(Procedure procedure) '''
-		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
+		«procedure.returnType.doSwitch» «IF addScope»«this.name»::«ENDIF»«procedure.name»(«procedure.parameters.join(", ")[declare]») {
 		#pragma HLS inline off
 			«FOR variable : procedure.locals»
 				«variable.declare»;
@@ -295,7 +297,7 @@ class InstancePrinter extends SystemCTemplate {
 
 
 	def getProcedureContent(Procedure procedure) '''
-		«procedure.returnType.doSwitch» «this.name»::«procedure.name»(«procedure.parameters.join(", ")[declare]») {
+		«procedure.returnType.doSwitch» «IF addScope»«this.name»::«ENDIF»«procedure.name»(«procedure.parameters.join(", ")[declare]») {
 			«FOR variable : procedure.locals»
 				«variable.declare»;
 			«ENDFOR»
@@ -307,7 +309,7 @@ class InstancePrinter extends SystemCTemplate {
 	'''
 
 	def getSchedulerContent() '''
-		void «this.name»::scheduler(){
+		void «IF addScope»«this.name»::«ENDIF»scheduler(){
 			// -- Ports indexes
 			«FOR port : actor.inputs»
 				sc_uint<32> p_«port.name»_token_index = 0;

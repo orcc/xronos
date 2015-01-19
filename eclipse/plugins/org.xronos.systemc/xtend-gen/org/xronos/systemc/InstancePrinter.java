@@ -85,13 +85,15 @@ import org.xronos.systemc.SystemCTemplate;
 
 @SuppressWarnings("all")
 public class InstancePrinter extends SystemCTemplate {
-  private Actor actor;
+  protected Actor actor;
   
-  private Instance instance;
+  protected Instance instance;
   
-  private String name;
+  protected String name;
   
-  private static Boolean actionAsProcess = Boolean.valueOf(false);
+  protected static Boolean actionAsProcess = Boolean.valueOf(false);
+  
+  protected static boolean addScope = true;
   
   private Map<Port, List<String>> fanoutPortConenction;
   
@@ -623,8 +625,12 @@ public class InstancePrinter extends SystemCTemplate {
     CharSequence _doSwitch = this.doSwitch(_returnType);
     _builder.append(_doSwitch, "");
     _builder.append(" ");
-    _builder.append(this.name, "");
-    _builder.append("::");
+    {
+      if (InstancePrinter.addScope) {
+        _builder.append(this.name, "");
+        _builder.append("::");
+      }
+    }
     String _name = procedure.getName();
     _builder.append(_name, "");
     _builder.append("(");
@@ -702,8 +708,12 @@ public class InstancePrinter extends SystemCTemplate {
     CharSequence _doSwitch = this.doSwitch(_returnType);
     _builder.append(_doSwitch, "");
     _builder.append(" ");
-    _builder.append(this.name, "");
-    _builder.append("::");
+    {
+      if (InstancePrinter.addScope) {
+        _builder.append(this.name, "");
+        _builder.append("::");
+      }
+    }
     String _name = procedure.getName();
     _builder.append(_name, "");
     _builder.append("(");
@@ -749,8 +759,12 @@ public class InstancePrinter extends SystemCTemplate {
     CharSequence _doSwitch = this.doSwitch(_returnType);
     _builder.append(_doSwitch, "");
     _builder.append(" ");
-    _builder.append(this.name, "");
-    _builder.append("::");
+    {
+      if (InstancePrinter.addScope) {
+        _builder.append(this.name, "");
+        _builder.append("::");
+      }
+    }
     String _name = procedure.getName();
     _builder.append(_name, "");
     _builder.append("(");
@@ -792,8 +806,13 @@ public class InstancePrinter extends SystemCTemplate {
   public CharSequence getSchedulerContent() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("void ");
-    _builder.append(this.name, "");
-    _builder.append("::scheduler(){");
+    {
+      if (InstancePrinter.addScope) {
+        _builder.append(this.name, "");
+        _builder.append("::");
+      }
+    }
+    _builder.append("scheduler(){");
     _builder.newLineIfNotEmpty();
     _builder.append("\t");
     _builder.append("// -- Ports indexes");

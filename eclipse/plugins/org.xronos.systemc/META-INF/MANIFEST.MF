@@ -16,4 +16,6 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.xtend.lib.macro
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
+Export-Package: org.xronos.systemc,
+ org.xronos.systemc.transform
 
