@@ -31,6 +31,8 @@
 package org.xronos.systemc;
 
 import com.google.common.base.Objects;
+import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,13 +74,16 @@ import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.Param;
 import net.sf.orcc.ir.Procedure;
 import net.sf.orcc.ir.Type;
+import net.sf.orcc.ir.TypeList;
 import net.sf.orcc.ir.Use;
 import net.sf.orcc.ir.Var;
+import net.sf.orcc.ir.util.ValueUtil;
 import net.sf.orcc.util.Attribute;
 import net.sf.orcc.util.util.EcoreHelper;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.EMap;
 import org.eclipse.xtend2.lib.StringConcatenation;
+import org.eclipse.xtext.xbase.lib.ExclusiveRange;
 import org.eclipse.xtext.xbase.lib.Functions.Function1;
 import org.eclipse.xtext.xbase.lib.IterableExtensions;
 import org.xronos.systemc.SystemCTemplate;
@@ -277,6 +282,17 @@ public class InstancePrinter extends SystemCTemplate {
     _builder.append("\t");
     _builder.append("state_t state, old_state;");
     _builder.newLine();
+    _builder.append("\t");
+    _builder.newLine();
+    {
+      EList<Var> _stateVars = this.actor.getStateVars();
+      for(final Var stateVar : _stateVars) {
+        _builder.append("\t");
+        CharSequence _declareStateVar = this.declareStateVar(stateVar);
+        _builder.append(_declareStateVar, "\t");
+        _builder.newLineIfNotEmpty();
+      }
+    }
     _builder.newLine();
     _builder.append("\t");
     _builder.append("// --------------------------------------------------------------------------");
@@ -434,6 +450,18 @@ public class InstancePrinter extends SystemCTemplate {
         }
       }
     }
+    _builder.append("\t");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("// --------------------------------------------------------------------------");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("// -- Initialize Members");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("void intializeMembers();");
+    _builder.newLine();
+    _builder.append("\t");
     _builder.newLine();
     _builder.append("\t");
     _builder.append("// --------------------------------------------------------------------------");
@@ -464,20 +492,6 @@ public class InstancePrinter extends SystemCTemplate {
     _builder.append(this.name, "");
     _builder.append(".h\"");
     _builder.newLineIfNotEmpty();
-    _builder.newLine();
-    _builder.newLine();
-    _builder.append("// --------------------------------------------------------------------------");
-    _builder.newLine();
-    _builder.append("// -- State Variable Declaration");
-    _builder.newLine();
-    {
-      EList<Var> _stateVars = this.actor.getStateVars();
-      for(final Var variable : _stateVars) {
-        CharSequence _declare = this.declare(variable);
-        _builder.append(_declare, "");
-        _builder.newLineIfNotEmpty();
-      }
-    }
     _builder.newLine();
     {
       EList<Procedure> _procs = this.actor.getProcs();
@@ -563,6 +577,14 @@ public class InstancePrinter extends SystemCTemplate {
         }
       }
     }
+    _builder.newLine();
+    _builder.append("// --------------------------------------------------------------------------");
+    _builder.newLine();
+    _builder.append("// -- Initialize Members");
+    _builder.newLine();
+    CharSequence _memberIntializaion = this.getMemberIntializaion();
+    _builder.append(_memberIntializaion, "");
+    _builder.newLineIfNotEmpty();
     _builder.newLine();
     _builder.append("// --------------------------------------------------------------------------");
     _builder.newLine();
@@ -803,6 +825,153 @@ public class InstancePrinter extends SystemCTemplate {
     return _builder;
   }
   
+  public CharSequence getMemberIntializaion() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("void ");
+    {
+      if (InstancePrinter.addScope) {
+        _builder.append(this.name, "");
+        _builder.append("::");
+      }
+    }
+    _builder.append("intializeMembers(){");
+    _builder.newLineIfNotEmpty();
+    {
+      EList<Var> _stateVars = this.actor.getStateVars();
+      for(final Var variable : _stateVars) {
+        {
+          boolean _isInitialized = variable.isInitialized();
+          if (_isInitialized) {
+            {
+              Type _type = variable.getType();
+              boolean _isList = _type.isList();
+              if (_isList) {
+                _builder.append("\t");
+                CharSequence _memberInitializationArray = this.getMemberInitializationArray(variable);
+                _builder.append(_memberInitializationArray, "\t");
+                _builder.newLineIfNotEmpty();
+              } else {
+                _builder.append("\t");
+                String _name = variable.getName();
+                _builder.append(_name, "\t");
+                _builder.append(" = ");
+                Expression _initialValue = variable.getInitialValue();
+                CharSequence _doSwitch = this.doSwitch(_initialValue);
+                _builder.append(_doSwitch, "\t");
+                _builder.append("; ");
+                _builder.newLineIfNotEmpty();
+              }
+            }
+          }
+        }
+      }
+    }
+    _builder.append("}");
+    _builder.newLine();
+    return _builder;
+  }
+  
+  public CharSequence getMemberInitializationArray(final Var v) {
+    CharSequence _xblockexpression = null;
+    {
+      List<String> array = new ArrayList<String>();
+      Type _type = v.getType();
+      TypeList typeList = ((TypeList) _type);
+      Type type = typeList.getInnermostType();
+      List<Integer> _dimensions = typeList.getDimensions();
+      List<Integer> listDimension = new ArrayList<Integer>(_dimensions);
+      Object obj = v.getValue();
+      String varName = v.getName();
+      if (InstancePrinter.addScope) {
+        String _name = v.getName();
+        String _plus = ((this.name + "::") + _name);
+        varName = _plus;
+      }
+      this.makeArray(varName, "", array, obj, listDimension, type);
+      StringConcatenation _builder = new StringConcatenation();
+      {
+        for(final String value : array) {
+          _builder.append(value, "");
+          _builder.newLineIfNotEmpty();
+        }
+      }
+      _xblockexpression = _builder;
+    }
+    return _xblockexpression;
+  }
+  
+  @SuppressWarnings("Object")
+  public Boolean makeArray(final String name, final String prefix, final List<String> array, final Object obj, final List<Integer> dimension, final Type type) {
+    boolean _xifexpression = false;
+    int _size = dimension.size();
+    boolean _greaterThan = (_size > 1);
+    if (_greaterThan) {
+      List<Integer> newListDimension = new ArrayList<Integer>(dimension);
+      Integer firstDim = dimension.get(0);
+      newListDimension.remove(0);
+      ExclusiveRange _doubleDotLessThan = new ExclusiveRange(0, (firstDim).intValue(), true);
+      for (final int i : _doubleDotLessThan) {
+        {
+          String newPrefix = (((prefix + "[") + Integer.valueOf(i)) + "]");
+          Object _get = Array.get(obj, i);
+          this.makeArray(name, newPrefix, array, _get, newListDimension, type);
+        }
+      }
+    } else {
+      boolean _xifexpression_1 = false;
+      Integer _get = dimension.get(0);
+      boolean _equals = _get.equals(Integer.valueOf(1));
+      if (_equals) {
+        boolean _xblockexpression = false;
+        {
+          BigInteger value = BigInteger.valueOf(0);
+          boolean _isBool = type.isBool();
+          if (_isBool) {
+            Object _get_1 = ValueUtil.get(type, obj, Integer.valueOf(0));
+            if ((((Boolean) _get_1)).booleanValue()) {
+              BigInteger _valueOf = BigInteger.valueOf(1);
+              value = _valueOf;
+            } else {
+              BigInteger _valueOf_1 = BigInteger.valueOf(0);
+              value = _valueOf_1;
+            }
+          }
+          String valueString = value.toString();
+          _xblockexpression = array.add(valueString);
+        }
+        _xifexpression_1 = _xblockexpression;
+      } else {
+        Integer _get_1 = dimension.get(0);
+        ExclusiveRange _doubleDotLessThan_1 = new ExclusiveRange(0, (_get_1).intValue(), true);
+        for (final int i_1 : _doubleDotLessThan_1) {
+          {
+            BigInteger value = BigInteger.valueOf(0);
+            boolean _isBool = type.isBool();
+            if (_isBool) {
+              Object _get_2 = ValueUtil.get(type, obj, Integer.valueOf(0));
+              if ((((Boolean) _get_2)).booleanValue()) {
+                BigInteger _valueOf = BigInteger.valueOf(1);
+                value = _valueOf;
+              } else {
+                BigInteger _valueOf_1 = BigInteger.valueOf(0);
+                value = _valueOf_1;
+              }
+            } else {
+              Object _get_3 = ValueUtil.get(type, obj, Integer.valueOf(i_1));
+              value = ((BigInteger) _get_3);
+            }
+            String _string = value.toString();
+            String _plus = ((((((name + prefix) + "[") + Integer.valueOf(i_1)) + "]") + " = ") + _string);
+            String valueString = (_plus + ";");
+            array.add(valueString);
+          }
+        }
+      }
+      _xifexpression = _xifexpression_1;
+    }
+    return Boolean.valueOf(_xifexpression);
+  }
+  
   public CharSequence getSchedulerContent() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("void ");
@@ -882,7 +1051,17 @@ public class InstancePrinter extends SystemCTemplate {
     _builder.append("\t");
     _builder.newLine();
     _builder.append("\t");
-    _builder.append("done = false; ");
+    _builder.append("done = false;");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("// -- Initialize Members");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("intializeMembers();");
+    _builder.newLine();
+    _builder.append("\t ");
     _builder.newLine();
     _builder.append("\t");
     _builder.append("wait();");
@@ -1660,6 +1839,12 @@ public class InstancePrinter extends SystemCTemplate {
       String _name = target.getName();
       _builder.append(_name, "");
       _builder.append(" = ");
+      {
+        if (InstancePrinter.addScope) {
+          _builder.append(this.name, "");
+          _builder.append("::");
+        }
+      }
       String _name_1 = source.getName();
       _builder.append(_name_1, "");
       EList<Expression> _indexes = load.getIndexes();
@@ -1704,6 +1889,12 @@ public class InstancePrinter extends SystemCTemplate {
       Def _target = store.getTarget();
       final Var target = _target.getVariable();
       StringConcatenation _builder = new StringConcatenation();
+      {
+        if (InstancePrinter.addScope) {
+          _builder.append(this.name, "");
+          _builder.append("::");
+        }
+      }
       String _name = target.getName();
       _builder.append(_name, "");
       EList<Expression> _indexes = store.getIndexes();
@@ -1998,6 +2189,32 @@ public class InstancePrinter extends SystemCTemplate {
         _xifexpression_3 = _builder;
       }
       _xblockexpression = _xifexpression_3;
+    }
+    return _xblockexpression;
+  }
+  
+  public CharSequence declareStateVar(final Var variable) {
+    CharSequence _xblockexpression = null;
+    {
+      final Type type = variable.getType();
+      Type _type = variable.getType();
+      List<Expression> _dimensionsExpr = _type.getDimensionsExpr();
+      final String dims = this.printArrayIndexes(_dimensionsExpr);
+      String _xifexpression = null;
+      boolean _isGlobal = variable.isGlobal();
+      if (_isGlobal) {
+        _xifexpression = ";";
+      }
+      final String end = _xifexpression;
+      StringConcatenation _builder = new StringConcatenation();
+      CharSequence _doSwitch = this.doSwitch(type);
+      _builder.append(_doSwitch, "");
+      _builder.append(" ");
+      String _name = variable.getName();
+      _builder.append(_name, "");
+      _builder.append(dims, "");
+      _builder.append(end, "");
+      _xblockexpression = _builder;
     }
     return _xblockexpression;
   }

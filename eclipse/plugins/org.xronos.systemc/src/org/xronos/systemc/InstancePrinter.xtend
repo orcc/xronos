@@ -64,6 +64,11 @@ import net.sf.orcc.ir.Procedure
 import net.sf.orcc.ir.Var
 import net.sf.orcc.util.util.EcoreHelper
 import org.eclipse.emf.common.util.EMap
+import net.sf.orcc.ir.TypeList
+import net.sf.orcc.ir.Type
+import java.lang.reflect.Array
+import net.sf.orcc.ir.util.ValueUtil
+import java.math.BigInteger
 
 class InstancePrinter extends SystemCTemplate {
 
@@ -148,6 +153,10 @@ class InstancePrinter extends SystemCTemplate {
 		};
 		
 		state_t state, old_state;
+		
+		«FOR stateVar: actor.stateVars»
+			«declareStateVar(stateVar)»
+		«ENDFOR»
 	
 		// --------------------------------------------------------------------------
 		// -- Constructor
@@ -193,7 +202,11 @@ class InstancePrinter extends SystemCTemplate {
 				«declare(action.scheduler)»
 			«ENDIF»
 		«ENDFOR»
-	
+		
+		// --------------------------------------------------------------------------
+		// -- Initialize Members
+		void intializeMembers();
+		
 		// --------------------------------------------------------------------------
 		// -- Action(s) Scheduler
 		void scheduler();
@@ -208,13 +221,6 @@ class InstancePrinter extends SystemCTemplate {
 	'''
 		«fileHeader»
 		#include "«this.name».h"
-		
-		
-		// --------------------------------------------------------------------------
-		// -- State Variable Declaration
-		«FOR variable : actor.stateVars»
-			«declare(variable)»
-		«ENDFOR»
 		
 		«IF !actor.procs.empty»
 		// --------------------------------------------------------------------------
@@ -243,6 +249,10 @@ class InstancePrinter extends SystemCTemplate {
 			«getProcedureContent(action.scheduler)»
 			«ENDIF»
 		«ENDFOR»
+		
+		// --------------------------------------------------------------------------
+		// -- Initialize Members
+		«getMemberIntializaion»
 		
 		// --------------------------------------------------------------------------
 		// -- Action(s) Scheduler
@@ -308,6 +318,86 @@ class InstancePrinter extends SystemCTemplate {
 		}
 	'''
 
+	def getMemberIntializaion(){
+		'''
+		void «IF addScope»«this.name»::«ENDIF»intializeMembers(){
+			«FOR variable : actor.stateVars»
+				«IF variable.initialized»
+					«IF variable.type.list»
+					«getMemberInitializationArray(variable)»
+					«ELSE»
+						«variable.name» = «variable.initialValue.doSwitch»; 
+					«ENDIF»
+				«ENDIF»
+			«ENDFOR»
+		}
+		'''
+	}
+	
+	def getMemberInitializationArray(Var v){
+		var List<String> array = new ArrayList<String>
+		var TypeList typeList = (v.type as TypeList);
+		var Type type = typeList.getInnermostType();
+		var List<Integer> listDimension = new ArrayList<Integer>(
+					typeList.getDimensions());
+		var Object obj = v.getValue();
+		var String varName = v.name
+		if(addScope){
+			varName = this.name + "::" + v.name 
+		}
+		makeArray(varName, "", array,obj, listDimension,type)
+		'''
+			«FOR value: array»
+				«value»
+			«ENDFOR»
+		'''
+	}
+	
+	@SuppressWarnings("Object")
+	def makeArray(String name, String prefix, List<String> array, Object obj, List<Integer> dimension, Type type){
+		if(dimension.size() > 1){
+			
+			var List<Integer> newListDimension = new ArrayList<Integer>(dimension);
+			var Integer firstDim = dimension.get(0);
+			newListDimension.remove(0);
+			for(int i : 0 ..< firstDim ){
+				var String newPrefix = prefix + "[" + i + "]";
+				makeArray(name, newPrefix, array, Array.get(obj, i), newListDimension,type);
+			}
+		}else{
+			if (dimension.get(0).equals(1)) {
+				var BigInteger value = BigInteger.valueOf(0);
+				if (type.isBool()) {
+					if ( ValueUtil.get(type, obj, 0) as Boolean){
+						value = BigInteger.valueOf(1);
+					}else{
+						value =  BigInteger.valueOf(0);
+					}
+				}
+				var String valueString = value.toString();
+				array.add(valueString);
+			}else{
+				for(int i : 0 ..< dimension.get(0) ){
+					var BigInteger value = BigInteger.valueOf(0);
+					if (type.isBool()) {
+						if ( ValueUtil.get(type, obj, 0) as Boolean){
+							value = BigInteger.valueOf(1);
+						}else{
+							value =  BigInteger.valueOf(0);
+						}
+					}else{
+						value = ValueUtil.get(type, obj, i) as BigInteger;
+					}
+					var String valueString = name + prefix+ "["+ i+ "]" + " = " +value.toString() +";";
+					array.add(valueString);	
+				}
+			}
+		}
+		
+	}
+
+	
+
 	def getSchedulerContent() '''
 		void «IF addScope»«this.name»::«ENDIF»scheduler(){
 			// -- Ports indexes
@@ -327,7 +417,11 @@ class InstancePrinter extends SystemCTemplate {
 				bool guard_«action.name»;
 			«ENDFOR»
 			
-			done = false; 
+			done = false;
+			
+			// -- Initialize Members
+			intializeMembers();
+			 
 			wait();
 			
 			state = s_«actor.fsm.initialState.label»;
@@ -535,7 +629,7 @@ class InstancePrinter extends SystemCTemplate {
 		val target = load.target.variable
 		val source = load.source.variable
 		'''
-			«target.name» = «source.name»«load.indexes.printArrayIndexes»;
+			«target.name» = «IF addScope»«this.name»::«ENDIF»«source.name»«load.indexes.printArrayIndexes»;
 		'''
 	}
 
@@ -552,7 +646,7 @@ class InstancePrinter extends SystemCTemplate {
 	override caseInstStore(InstStore store) {
 		val target = store.target.variable
 		'''
-			«target.name»«store.indexes.printArrayIndexes» = «store.value.doSwitch»;
+			«IF addScope»«this.name»::«ENDIF»«target.name»«store.indexes.printArrayIndexes» = «store.value.doSwitch»;
 		'''
 	}
 	
@@ -632,6 +726,12 @@ class InstancePrinter extends SystemCTemplate {
 		}
 	}
 	
+	def declareStateVar(Var variable){
+		val type = variable.type
+		val dims = variable.type.dimensionsExpr.printArrayIndexes
+		val end = if(variable.global) ";"
+		'''«type.doSwitch» «variable.name»«dims»«end»'''
+	}
 	
 	def declareNoInit(Var variable) {
 		val const = if(!variable.assignable && variable.global) "const "

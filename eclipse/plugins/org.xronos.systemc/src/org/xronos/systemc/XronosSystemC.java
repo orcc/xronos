@@ -113,11 +113,7 @@ public class XronosSystemC extends AbstractBackend {
 		doCreatePaths();
 		
 		// -- Set Printer Options
-		nPrinter.setOptions(getOptions());
-		iPrinter.setOptions(getOptions());
-		tbPrinter.setOptions(getOptions());
-		tbVHDLPrinter.setOptions(getOptions());
-		tclPrinter.setOptions(getOptions());
+		doSetOptions();
 
 		// -- Network Transformations
 		networkTransfos.add(new Instantiator(true));
@@ -135,6 +131,14 @@ public class XronosSystemC extends AbstractBackend {
 		childrenTransfos.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
 		childrenTransfos.add(new BlockForAdder());
 		childrenTransfos.add(new LoopLabeler());
+	}
+	
+	protected void doSetOptions(){
+		nPrinter.setOptions(getOptions());
+		iPrinter.setOptions(getOptions());
+		tbPrinter.setOptions(getOptions());
+		tbVHDLPrinter.setOptions(getOptions());
+		tclPrinter.setOptions(getOptions());
 	}
 
 	protected void doCreatePaths() {
