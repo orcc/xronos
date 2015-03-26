@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.orcc.backends.AbstractBackend;
+import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.Entity;
 import net.sf.orcc.df.Instance;
@@ -94,10 +95,10 @@ public class Embedded extends AbstractBackend {
 		replacementMap.put("DEBUG", "DEBUG_");
 		replacementMap.put("INT_MIN", "INT_MIN_");
 
-		networkTransfos.add(new Instantiator(false));
+		networkTransfos.add(new Instantiator(true));
 		networkTransfos.add(new NetworkFlattener());
+		networkTransfos.add(new UnitImporter());
 		
-		childrenTransfos.add(new UnitImporter());
 		childrenTransfos.add(new TypeResizer(false, false, false, false));
 		childrenTransfos.add(new RenameTransformation(replacementMap));
 	}
@@ -134,6 +135,12 @@ public class Embedded extends AbstractBackend {
 			new EmbeddedInstance(instance, getOptions()).print(srcPath);
 		}
 		return super.doGenerateInstance(instance);
+	}
+	
+	protected Result doGenerateActor(Actor actor) {
+		new EmbeddedActor(actor, getOptions()).print(srcPath);
+		return super.doGenerateActor(actor);
+	
 	}
 
 	@Override

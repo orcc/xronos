@@ -32,6 +32,7 @@
 package org.xronos.orcc.backend.embedded
 
 import java.util.Map
+import net.sf.orcc.df.Actor
 import net.sf.orcc.df.Instance
 import net.sf.orcc.df.Network
 import net.sf.orcc.util.FilesManager
@@ -78,7 +79,7 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 		#undef OUT
 		#endif
 	
-		«FOR instance : network.children.filter(typeof(Instance))»
+		«FOR instance : network.children.filter(typeof(Actor))»
 		#include "«instance.name».h"
 		«ENDFOR»
 	
@@ -99,25 +100,25 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 			«ENDFOR»
 	
 			«FOR e : network.connections»
-				inst_«(e.source as Instance).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
-				inst_«(e.target as Instance).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+				inst_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+				inst_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
 			«ENDFOR»
 	
 			EStatus status = None;
 			do{
 		status = None;
-		«FOR instance : network.children.filter(typeof(Instance))»
+		«FOR instance : network.children.filter(typeof(Actor))»
 			inst_«instance.name»->schedule(status);
 		«ENDFOR»
 			}while(status != None);
 	
 		// Clean Actors
-		«FOR instance : network.children.filter(typeof(Instance))»
+		«FOR instance : network.children.filter(typeof(Actor))»
 		delete «instance.name»;
 		«ENDFOR»
 	
 		// Clean FIFOs
-		«FOR instance : network.children.filter(typeof(Instance))»
+		«FOR instance : network.children.filter(typeof(Actor))»
 		«FOR edges : instance.outgoingPortMap.values»
 			delete fifo_«edges.get(0).getAttribute("idNoBcast").objectValue»;
 		«ENDFOR»
@@ -159,7 +160,7 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 		add_executable ( «network.simpleName»
 		src/main.cpp
 		src/«network.simpleName».h
-		«FOR instance : network.children.filter(typeof(Instance))»
+		«FOR instance : network.children.filter(typeof(Actor))»
 			src/«instance.name».h
 		«ENDFOR»
 		)
