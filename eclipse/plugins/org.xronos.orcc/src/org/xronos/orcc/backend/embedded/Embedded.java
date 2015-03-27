@@ -148,7 +148,7 @@ public class Embedded extends AbstractBackend {
 		String target = outputPath + File.separator + "lib";
 		OrccLogger
 				.trace("Export libraries sources into " + target + "... ");
-		Result result = FilesManager.extract("/bundle/embedded", target);
+		Result result = FilesManager.extract("/bundle/embedded/lib", outputPath);
 		return result;
 	}
 }

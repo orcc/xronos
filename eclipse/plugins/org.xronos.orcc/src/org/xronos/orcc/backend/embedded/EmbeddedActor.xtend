@@ -32,6 +32,8 @@
  
 package org.xronos.orcc.backend.embedded
 
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Map
 import net.sf.orcc.df.Action
 import net.sf.orcc.df.Actor
@@ -69,9 +71,32 @@ class EmbeddedActor extends ExprAndTypePrinter {
 		FilesManager.writeFile(content, targetFolder, actor.name + ".h")
 	}
 	
+	
+	// -- Get Content For each Top Level
+	def getFileHeader() {
+		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		var date = new Date();
+		'''
+			// ----------------------------------------------------------------------------
+			// __  ___ __ ___  _ __   ___  ___ 
+			// \ \/ / '__/ _ \| '_ \ / _ \/ __|
+			//  >  <| | | (_) | | | | (_) \__ \
+			// /_/\_\_|  \___/|_| |_|\___/|___/
+			// ----------------------------------------------------------------------------
+			// This file is generated automatically by Xronos C++ 
+			// ----------------------------------------------------------------------------
+			// Xronos C++, Actor Generator
+			// Actor: «actor.simpleName» 
+			// Date: «dateFormat.format(date)»
+			// ----------------------------------------------------------------------------
+		'''
+	}
+	
+	
 	def compileInstance()  {
 		val connectedOutput = [ Port port | actor.outgoingPortMap.get(port) != null ]
 		'''
+		«getFileHeader»
 		#ifndef __«actor.name.toUpperCase»_H__
 		#define __«actor.name.toUpperCase»_H__
 		
@@ -279,7 +304,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	}
 	
 	def compileScheduler(Actor actor) '''	
-		void schedule(EStatus& status)
+		void action_selection(EStatus& status)
 		{	
 			«FOR port : actor.inputs»
 				«IF actor.incomingPortMap.get(port) != null»

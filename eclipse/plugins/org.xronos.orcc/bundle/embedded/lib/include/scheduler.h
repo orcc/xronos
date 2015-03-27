@@ -74,7 +74,7 @@ public:
 			EStatus status = None;
 			for(it = actors.begin(); it != actors.end(); it++)
 			{
-				(*it)->schedule(status);
+				(*it)->action_selection(status);
 			}
 			if(status == None)
 				yield();

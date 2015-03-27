@@ -50,7 +50,7 @@ class Actor
 public:
 	virtual void initialize() = 0;
 
-	virtual void schedule(EStatus&) = 0;
+	virtual void action_selection(EStatus&) = 0;
 };
 
 #endif

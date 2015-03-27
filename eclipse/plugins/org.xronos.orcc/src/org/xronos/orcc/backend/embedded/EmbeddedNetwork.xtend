@@ -31,9 +31,10 @@
  */
 package org.xronos.orcc.backend.embedded
 
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Map
 import net.sf.orcc.df.Actor
-import net.sf.orcc.df.Instance
 import net.sf.orcc.df.Network
 import net.sf.orcc.util.FilesManager
 
@@ -46,7 +47,7 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 	}
 
 	def printNetwork(String targetFolder) {
-		val content = compileNetwork
+		val content = compileNetworkClass
 		FilesManager.writeFile(content, targetFolder, network.simpleName + ".h")
 	}
 
@@ -63,70 +64,122 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 				Your Code Goes Here
 			*/
 			
+			«network.simpleName» *network = new «network.simpleName»();
+			network->run();
+			
 			return 0;
 		}
 	'''
 
-	def compileNetwork() '''
+
+	// -- Get Content For each Top Level
+	def getFileHeader() {
+		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		var date = new Date();
+		'''
+			// ----------------------------------------------------------------------------
+			// __  ___ __ ___  _ __   ___  ___ 
+			// \ \/ / '__/ _ \| '_ \ / _ \/ __|
+			//  >  <| | | (_) | | | | (_) \__ \
+			// /_/\_\_|  \___/|_| |_|\___/|___/
+			// ----------------------------------------------------------------------------
+			// This file is generated automatically by Xronos C++ 
+			// ----------------------------------------------------------------------------
+			// Xronos C++, Network Generator
+			// Network: «network.simpleName» 
+			// Date: «dateFormat.format(date)»
+			// ----------------------------------------------------------------------------
+		'''
+	}
+
+
+	def compileNetworkClass(){
+		'''
+		«getFileHeader»
+		
+		#ifndef __«network.simpleName.toUpperCase»_H__
+		#define __«network.simpleName.toUpperCase»_H__
 		#include <map>
 		#include <string>
 		
 		#include "fifo.h"
-		#include "actor.h"
 		
-		#ifdef _WIN32	
-		#undef IN
-		#undef OUT
-		#endif
-	
-		«FOR instance : network.children.filter(typeof(Actor))»
-		#include "«instance.name».h"
+		«FOR actor : network.children.filter(typeof(Actor))»
+		#include "«actor.name».h"
 		«ENDFOR»
-	
-		int «network.simpleName»(«compileParameters»);
 		
-		int «network.simpleName»(«compileParameters»){
-		«FOR instance : network.children.filter(typeof(Instance))»
-			«instance.name» *inst_«instance.name» = new «instance.name»(«FOR arg : instance.arguments SEPARATOR ", "»«arg.value.
-		doSwitch»«ENDFOR»);
-		«ENDFOR»
-	
-			«FOR instance : network.children.filter(typeof(Instance))»
-				«FOR edges : instance.outgoingPortMap.values»
-					Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»> *fifo_«edges.
-		get(0).getAttribute("idNoBcast").objectValue» = new Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).
-		getAttribute("nbReaders").objectValue»>«IF edges.get(0).size != null»(«edges.get(0).size»)«ENDIF»;
+		class «network.simpleName»{
+		
+		private:
+			// Actors
+			«FOR actor : network.children.filter(typeof(Actor))»
+				«actor.name» *act_«actor.name»;
+			«ENDFOR»
+			
+			// FIFO Queues
+			«FOR actor : network.children.filter(typeof(Actor))»
+				«FOR edges : actor.outgoingPortMap.values»
+					Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»> *fifo_«edges.get(0).getAttribute("idNoBcast").objectValue»;
 				«ENDFOR»
 			«ENDFOR»
-	
-			«FOR e : network.connections»
-				inst_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
-				inst_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+		
+		public:
+			«network.simpleName»(){
+				«FOR actor : network.children.filter(typeof(Actor))»
+					act_«actor.name» = new «actor.name»(«FOR variable : actor.parameters SEPARATOR ", "»«variable.initialValue.doSwitch»«ENDFOR»);
+				«ENDFOR»
+				
+				«FOR actor : network.children.filter(typeof(Actor))»
+					«FOR edges : actor.outgoingPortMap.values»
+						fifo_«edges.get(0).getAttribute("idNoBcast").objectValue» = new Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»>«IF edges.get(0).size != null»(«edges.get(0).size»)«ENDIF»;
+					«ENDFOR»
+				«ENDFOR»
+				
+				«FOR e : network.connections»
+					act_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+					act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+				«ENDFOR»
+				
+				
+			}
+			
+			~«network.simpleName»(){
+				«FOR actor : network.children.filter(typeof(Actor))»
+					delete act_«actor.name»;
+				«ENDFOR»
+				
+				«FOR actor : network.children.filter(typeof(Actor))»
+					«FOR edges : actor.outgoingPortMap.values»
+						delete fifo_«edges.get(0).getAttribute("idNoBcast").objectValue»;
+					«ENDFOR»
+				«ENDFOR»
+			}
+			
+			«IF !network.inputs.empty || !network.outputs.empty»// Network«ENDIF»«IF !network.inputs.empty» Input«ENDIF»«IF !network.outputs.empty» «IF !network.inputs.empty»/«ENDIF»Output«ENDIF»
+			«FOR port: network.inputs»
+				Fifo<«port.type.doSwitch», «port.getAttribute("nbReaders").objectValue»> *fifo_«port.name»;
 			«ENDFOR»
-	
-			EStatus status = None;
-			do{
-		status = None;
-		«FOR instance : network.children.filter(typeof(Actor))»
-			inst_«instance.name»->schedule(status);
-		«ENDFOR»
-			}while(status != None);
-	
-		// Clean Actors
-		«FOR instance : network.children.filter(typeof(Actor))»
-		delete «instance.name»;
-		«ENDFOR»
-	
-		// Clean FIFOs
-		«FOR instance : network.children.filter(typeof(Actor))»
-		«FOR edges : instance.outgoingPortMap.values»
-			delete fifo_«edges.get(0).getAttribute("idNoBcast").objectValue»;
-		«ENDFOR»
-		«ENDFOR»
-	
-		return 0; 
-		}
-	'''
+			«FOR port: network.outputs»
+				Fifo<«port.type.doSwitch», «port.getAttribute("nbReaders").objectValue»> *fifo_«port.name»;
+			«ENDFOR»
+			
+			void run(){
+				EStatus status = None;
+				do{
+					status = None;
+					«FOR actor : network.children.filter(typeof(Actor))»
+						act_«actor.name»->action_selection(status);
+					«ENDFOR»
+				}while (status != None);
+			}
+		
+		};
+		#endif //__«network.simpleName.toUpperCase»_H__
+		
+		
+		'''
+	}
+
 
 	def compileParameters() 
 		'''«FOR param : network.parameters SEPARATOR ", "»«param.type.doSwitch» «FOR dim : param.
