@@ -42,8 +42,13 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 
 	protected Network network
 
+	private Boolean v7Profiling
+	
 	new(Network network, Map<String, Object> options) {
 		this.network = network
+		if(options.containsKey("org.xronos.orcc.ARMv7Profiling")){
+			v7Profiling = options.get("org.xronos.orcc.ARMv7Profiling") as Boolean
+		}
 	}
 
 	def printNetwork(String targetFolder) {
@@ -103,6 +108,9 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 		#include <string>
 		
 		#include "fifo.h"
+		«IF v7Profiling»
+			#include "v7_pmu.h"
+		«ENDIF»
 		
 		«FOR actor : network.children.filter(typeof(Actor))»
 		#include "«actor.name».h"
@@ -139,8 +147,6 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 					act_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
 					act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
 				«ENDFOR»
-				
-				
 			}
 			
 			~«network.simpleName»(){
@@ -163,7 +169,13 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 				Fifo<«port.type.doSwitch», «port.getAttribute("nbReaders").objectValue»> *fifo_«port.name»;
 			«ENDFOR»
 			
+			
+			
 			void run(){
+				«IF v7Profiling»
+					enable_pmu();              // Enable the PMU
+					ccnt_divider(0);           // Cycle Accurate without Divider
+				«ENDIF»
 				EStatus status = None;
 				do{
 					status = None;
@@ -171,6 +183,17 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 						act_«actor.name»->action_selection(status);
 					«ENDFOR»
 				}while (status != None);
+			
+			}
+			
+			void printProfiling(){
+				«IF v7Profiling»
+					// Print Profiling
+					std::cout << "Actor; Action; Cycles; Execution" << std::endl;
+					«FOR actor : network.children.filter(typeof(Actor))»
+						act_«actor.name»->printActorProfilingCSV();
+					«ENDFOR»
+				«ENDIF»
 			}
 		
 		};

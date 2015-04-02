@@ -61,7 +61,7 @@ import net.sf.orcc.util.Result;
 public class Embedded extends AbstractBackend {
 
 	private String srcPath;
-
+	
 	@Override
 	protected void doInitializeOptions() {
 		
@@ -98,9 +98,9 @@ public class Embedded extends AbstractBackend {
 		networkTransfos.add(new Instantiator(true));
 		networkTransfos.add(new NetworkFlattener());
 		networkTransfos.add(new UnitImporter());
-		
 		childrenTransfos.add(new TypeResizer(false, false, false, false));
 		childrenTransfos.add(new RenameTransformation(replacementMap));
+		
 	}
 
 	@Override

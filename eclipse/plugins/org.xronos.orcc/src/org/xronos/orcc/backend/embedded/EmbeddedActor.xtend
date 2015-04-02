@@ -62,8 +62,14 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	
 	Actor actor
 	
+	Boolean v7Profiling = false
+	
 	new (Actor actor, Map<String, Object> options) {
 		this.actor = actor
+		if(options.containsKey("org.xronos.orcc.ARMv7Profiling")){
+			v7Profiling = options.get("org.xronos.orcc.ARMv7Profiling") as Boolean
+		}
+		
 	}
 	
 	def print(String targetFolder) {
@@ -103,19 +109,38 @@ class EmbeddedActor extends ExprAndTypePrinter {
 		#include <iostream>
 		#include "actor.h"
 		#include "fifo.h"
-				
+		#include "fifo.h"
+		«IF v7Profiling»
+			#include "v7_pmu.h"
+		«ENDIF»
+		
 		«FOR proc : actor.procs.filter(p | p.native && !"print".equals(p.name))»
 			«proc.compileNativeProc»
 		«ENDFOR»
 		
 		class «actor.name»: public Actor
 		{
-		public:	
+		public:
+			«IF v7Profiling»
+				// ARM v7 Profiling
+				unsigned int v7_cycles[«actor.actions.size»];
+				unsigned int v7_overflows[«actor.actions.size»];
+				unsigned int v7_executions[«actor.actions.size»];
+			«ENDIF»
 			«actor.name»(«FOR variable : actor.parameters SEPARATOR ", "»«variable.type.doSwitch» «variable.name»«FOR dim : variable.type.dimensions»[«dim»]«ENDFOR»«ENDFOR»)
 				«FOR variable : actor.parameters BEFORE ":" SEPARATOR "\n,"»  «variable.name»(«variable.name»)«ENDFOR»
 			{
 				«FOR v : actor.stateVars.filter(v|v.initialValue != null)»«compileArg(v.type, v.name, v.initialValue)»«ENDFOR»
 				«IF actor.fsm != null»state_ = state_«actor.fsm.initialState.name»;«ENDIF»
+				
+				«IF v7Profiling»
+					«FOR i : 0 .. actor.actions.size»
+						v7_executions[«i»] = 0;
+					«ENDFOR»
+					«FOR i : 0 .. actor.actions.size»
+						v7_cycles[«i»] = 0;
+					«ENDFOR»
+				«ENDIF»
 			}
 		
 			«FOR port : actor.inputs»
@@ -134,17 +159,36 @@ class EmbeddedActor extends ExprAndTypePrinter {
 			
 			«actor.initializes.map[compileAction].join»
 		
+			
 			void initialize()
 			{
 				«FOR action : actor.initializes»
 					«action.name»();
 				«ENDFOR»
 			}
-		
+	
 			«actor.actions.map[compileAction].join»
 		
 			«actor.compileScheduler»
 			
+			
+			«IF v7Profiling»
+			void printActorProfiling(){
+				std::cout << "Profiling for Actor: «actor.simpleName» " << std::endl;
+				std::cout << "Actions : "<< std::endl;
+				«FOR action: actor.actions»
+					std::cout << "\t- «action.name», Mean Cycles:" <<  v7_cycles[«actor.actions.indexOf(action)»] / v7_executions[«actor.actions.indexOf(action)»] <<", Executions: " << v7_executions[«actor.actions.indexOf(action)»] << std::endl; 
+				«ENDFOR»
+			}
+			
+			void printActorProfilingCSV(){
+				«FOR action: actor.actions»
+					std::cout << "«actor.simpleName»; «action.name»; " << v7_cycles[«actor.actions.indexOf(action)»] / v7_executions[«actor.actions.indexOf(action)»] << "; " << v7_executions[«actor.actions.indexOf(action)»] << std::endl;
+				«ENDFOR»
+			}
+			
+			
+			«ENDIF»
 		
 		private:	
 			«FOR param : actor.parameters SEPARATOR "\n"»«param.varDecl»;«ENDFOR»
@@ -341,13 +385,31 @@ class EmbeddedActor extends ExprAndTypePrinter {
 		{
 			«IF !action.outputPattern.empty»
 			if(«FOR e : action.outputPattern.numTokensMap SEPARATOR " && "»status_«e.key.name»_ >= «e.value»«ENDFOR») {
-				«action.body.name»();
+				«IF v7Profiling»
+					reset_ccnt();                   // Reset the CCNT (cycle counter)
+					reset_pmn();                    // Reset the configurable counters
+					«action.body.name»();
+					v7_cycles[«actor.actions.indexOf(action)»] += read_ccnt();     // Read CCNT
+					v7_overflows[«actor.actions.indexOf(action)»] = read_flags(); // Check for overflow flag
+					v7_executions[«actor.actions.indexOf(action)»]++;
+				«ELSE»
+					«action.body.name»();
+				«ENDIF»
 				res = true;
 				status = hasExecuted;
 				«IF state != null»state_ = state_«state.name»;«ENDIF»
 			}
 			«ELSE»
-			«action.body.name»();
+			«IF v7Profiling»
+					reset_ccnt();                   // Reset the CCNT (cycle counter)
+					reset_pmn();                    // Reset the configurable counters
+					«action.body.name»();
+					v7_cycles[«actor.actions.indexOf(action)»] += read_ccnt();     // Read CCNT
+					v7_overflows[«actor.actions.indexOf(action)»] = read_flags(); // Check for overflow flag
+					v7_executions[«actor.actions.indexOf(action)»]++;
+				«ELSE»
+					«action.body.name»();
+			«ENDIF»
 			res = true;
 			status = hasExecuted;
 			«IF state != null»state_ = state_«state.name»;«ENDIF»

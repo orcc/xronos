@@ -9,6 +9,9 @@
          <option
                id="net.sf.orcc.plugins.compileXDF">
          </option>
+         <option
+               id="org.xronos.orcc.ARMv7Profiling">
+         </option>
       </backend>
       <backend
             class="org.xronos.orcc.backend.Xronos"
@@ -122,6 +125,13 @@
             description="New LIM generation with non introusive modifications on the ORCC IR."
             id="org.xronos.orcc.newLimGen"
             name="New LIM Generation (Beta)">
+         <checkBox></checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            description="Cycle Profiing for each action, Cycles retrieved from CCNT Register"
+            id="org.xronos.orcc.ARMv7Profiling"
+            name="ARM v7 Profiling">
          <checkBox></checkBox>
       </option>
    </extension>
