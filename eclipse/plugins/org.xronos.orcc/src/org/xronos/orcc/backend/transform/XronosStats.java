@@ -32,6 +32,9 @@
 
 package org.xronos.orcc.backend.transform;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
@@ -41,7 +44,10 @@ import net.sf.orcc.ir.BlockIf;
 import net.sf.orcc.ir.BlockWhile;
 import net.sf.orcc.ir.ExprBinary;
 import net.sf.orcc.ir.ExprUnary;
+import net.sf.orcc.ir.InstAssign;
 import net.sf.orcc.ir.InstCall;
+import net.sf.orcc.ir.InstLoad;
+import net.sf.orcc.ir.InstStore;
 import net.sf.orcc.ir.OpBinary;
 import net.sf.orcc.ir.OpUnary;
 import net.sf.orcc.ir.Procedure;
@@ -76,16 +82,26 @@ public class XronosStats extends DfVisitor<Void> {
 
 	private int arrayStatCounter;
 
+	private int storeCounter;
+
+	private int loadCounter;
+
+	private int callCounter;
+
+	private int assignCounter;
+
 	private static boolean debug = true;
-	
+
 	private ActorStats stats;
+	
+	private Set<Procedure> procs;
 
 	public class ActorStats extends AbstractIrVisitor<Void> {
 
-		 public ActorStats() {
+		public ActorStats() {
 			super(true);
 		}
-		
+
 		@Override
 		public Void caseVar(Var var) {
 			if (var.isGlobal()) {
@@ -96,6 +112,24 @@ public class XronosStats extends DfVisitor<Void> {
 				}
 			}
 			return null;
+		}
+
+		@Override
+		public Void caseInstAssign(InstAssign assign) {
+			assignCounter++;
+			return super.caseInstAssign(assign);
+		}
+
+		@Override
+		public Void caseInstLoad(InstLoad load) {
+			loadCounter++;
+			return super.caseInstLoad(load);
+		}
+
+		@Override
+		public Void caseInstStore(InstStore store) {
+			storeCounter++;
+			return super.caseInstStore(store);
 		}
 
 		@Override
@@ -168,7 +202,12 @@ public class XronosStats extends DfVisitor<Void> {
 
 		@Override
 		public Void caseInstCall(InstCall call) {
-			functionCounter++;
+			callCounter++;
+			if(!procs.contains(call.getProcedure())){
+				functionCounter++;
+				procs.add(call.getProcedure());
+			}
+			doSwitch(call.getProcedure());
 			return super.caseInstCall(call);
 		}
 
@@ -199,13 +238,21 @@ public class XronosStats extends DfVisitor<Void> {
 		whileCounter = 0;
 
 		scalarStateCounter = 0;
-		
+
 		arrayStatCounter = 0;
-		
+
+		loadCounter = 0;
+
+		storeCounter = 0;
+		callCounter = 0;
+		assignCounter = 0;
+		procs = new HashSet<Procedure>();
 		stats = new ActorStats();
 
 		for (Vertex vertex : network.getVertices()) {
-			doSwitch(vertex);
+			if (vertex instanceof Actor) {
+				doSwitch(vertex);
+			}
 		}
 
 		if (debug) {
@@ -221,7 +268,11 @@ public class XronosStats extends DfVisitor<Void> {
 			System.out.println("Shift: " + shiftCounter);
 			System.out.println("Comparators: " + compareCounter);
 			System.out.println("Branches: " + ifCounter);
+			System.out.println("Calls " + callCounter);
 			System.out.println("While: " + whileCounter);
+			System.out.println("Assign: " + assignCounter);
+			System.out.println("Load: " + loadCounter);
+			System.out.println("Store: " + storeCounter);
 		}
 
 		return null;
@@ -232,17 +283,18 @@ public class XronosStats extends DfVisitor<Void> {
 
 		actorCounter++;
 
-		
-
 		for (Var stateVar : actor.getStateVars()) {
 			stats.doSwitch(stateVar);
 		}
 
 		for (Procedure procedure : actor.getProcs()) {
-			stats.doSwitch(procedure);
+			if(!procedure.getName().contains("scheduler"))
+				stats.doSwitch(procedure);
 		}
 
 		for (Action action : actor.getActions()) {
+			if (!action.getName().contains("fillBuffers"))
+				actionCounter++;
 			doSwitch(action);
 		}
 
@@ -251,7 +303,6 @@ public class XronosStats extends DfVisitor<Void> {
 
 	@Override
 	public Void caseAction(Action action) {
-		actionCounter++;
 
 		stats.doSwitch(action.getScheduler());
 		stats.doSwitch(action.getBody());

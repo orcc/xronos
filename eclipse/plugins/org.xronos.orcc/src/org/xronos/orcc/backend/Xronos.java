@@ -154,6 +154,7 @@ public class Xronos extends AbstractBackend {
 			generateInstances(network);
 
 			// Print Network
+			new XronosStats().doSwitch(network);
 			printNetwork(network);
 		}
 		// Print Testbenches
