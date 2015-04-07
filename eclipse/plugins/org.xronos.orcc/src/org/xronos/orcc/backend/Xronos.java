@@ -170,6 +170,8 @@ public class Xronos extends AbstractBackend {
 					network, testBenchPath);
 			xronosDynamicWeights.getMeanWeights(rtlPath + File.separator
 					+ "report");
+			xronosDynamicWeights.getMeanWeightsCSV(rtlPath + File.separator
+					+ "report");
 		}
 		return super.doGenerateNetwork(network);
 	}

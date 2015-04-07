@@ -134,10 +134,10 @@ class EmbeddedActor extends ExprAndTypePrinter {
 				«IF actor.fsm != null»state_ = state_«actor.fsm.initialState.name»;«ENDIF»
 				
 				«IF v7Profiling»
-					«FOR i : 0 .. actor.actions.size»
+					«FOR i : 0 .. actor.actions.size-1»
 						v7_executions[«i»] = 0;
 					«ENDFOR»
-					«FOR i : 0 .. actor.actions.size»
+					«FOR i : 0 .. actor.actions.size-1»
 						v7_cycles[«i»] = 0;
 					«ENDFOR»
 				«ENDIF»

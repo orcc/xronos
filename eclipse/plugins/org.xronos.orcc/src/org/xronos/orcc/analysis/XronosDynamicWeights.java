@@ -94,11 +94,15 @@ public class XronosDynamicWeights {
 								.getVariance()) ? 0 : actionWeight.get(action)
 								.getVariance();
 
+						long nbrExec = actionWeight.get(action).getN();
+
 						writer.writeAttribute("min", Double.toString(min));
 						writer.writeAttribute("mean", Double.toString(mean));
 						writer.writeAttribute("max", Double.toString(max));
 						writer.writeAttribute("variance",
 								Double.toString(variance));
+						writer.writeAttribute("executions",
+								Long.toString(nbrExec));
 
 						writer.writeEndElement();
 					}
@@ -117,6 +121,40 @@ public class XronosDynamicWeights {
 			}
 		}
 
+	}
+
+	public void getMeanWeightsCSV(String outputPath) {
+		try {
+			FileWriter writer = new FileWriter(outputPath + File.separator
+					+ network.getSimpleName() + "_dynamicWeights.csv");
+
+			writer.append("Actor; Action; Execution; Cycles;");
+			writer.append("\n");
+			for (Actor actor : statistics.keySet()) {
+				Map<Action, SummaryStatistics> actionWeight = statistics
+						.get(actor);
+				for (Action action : actionWeight.keySet()) {
+
+					double mean = Double.isNaN(actionWeight.get(action)
+							.getMean()) ? 0 : actionWeight.get(action)
+							.getMean();
+
+					long nbrExec = actionWeight.get(action).getN();
+
+					writer.append(actor.getSimpleName() + "; ");
+					writer.append(action.getName() + "; ");
+					writer.append(nbrExec + "; ");
+					writer.append(mean + "; ");
+					writer.append('\n');
+				}
+			}
+
+			writer.flush();
+			writer.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public boolean getModelsimWeights() {
