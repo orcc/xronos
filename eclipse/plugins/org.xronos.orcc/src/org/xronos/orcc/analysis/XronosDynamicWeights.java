@@ -66,20 +66,18 @@ public class XronosDynamicWeights {
 				XMLStreamWriter writer = factory
 						.createXMLStreamWriter(new FileWriter(outputPath
 								+ File.separator + network.getSimpleName()
-								+ "_dynamicWeights.xml"));
+								+ "_dynamicWeights.exdf"));
 				writer.writeStartDocument();
 				writer.writeStartElement("actors");
 				for (Actor actor : statistics.keySet()) {
 					writer.writeStartElement("actor");
-					writer.writeAttribute("name", actor.getSimpleName()
-							.toLowerCase());
+					writer.writeAttribute("id", actor.getSimpleName());
 					Map<Action, SummaryStatistics> actionWeight = statistics
 							.get(actor);
 					writer.writeStartElement("actions");
 					for (Action action : actionWeight.keySet()) {
-						writer.writeStartElement("action");
-						writer.writeAttribute("name", action.getName()
-								.toLowerCase());
+						writer.writeEmptyElement("action");
+						writer.writeAttribute("id", action.getName());
 
 						double min = Double.isNaN(actionWeight.get(action)
 								.getMin()) ? 0 : actionWeight.get(action)
@@ -96,15 +94,13 @@ public class XronosDynamicWeights {
 
 						long nbrExec = actionWeight.get(action).getN();
 
-						writer.writeAttribute("min", Double.toString(min));
-						writer.writeAttribute("mean", Double.toString(mean));
-						writer.writeAttribute("max", Double.toString(max));
-						writer.writeAttribute("variance",
+						writer.writeAttribute("clockcycles-min", Double.toString(min));
+						writer.writeAttribute("clockcycles", Double.toString(mean));
+						writer.writeAttribute("clockcycles-max", Double.toString(max));
+						writer.writeAttribute("clockcycles-variance",
 								Double.toString(variance));
 						writer.writeAttribute("executions",
 								Long.toString(nbrExec));
-
-						writer.writeEndElement();
 					}
 					writer.writeEndElement();
 					writer.writeEndElement();
@@ -124,36 +120,38 @@ public class XronosDynamicWeights {
 	}
 
 	public void getMeanWeightsCSV(String outputPath) {
-		try {
-			FileWriter writer = new FileWriter(outputPath + File.separator
-					+ network.getSimpleName() + "_dynamicWeights.csv");
+		if (getModelsimWeights()) {
+			try {
+				FileWriter writer = new FileWriter(outputPath + File.separator
+						+ network.getSimpleName() + "_dynamicWeights.csv");
 
-			writer.append("Actor; Action; Execution; Cycles;");
-			writer.append("\n");
-			for (Actor actor : statistics.keySet()) {
-				Map<Action, SummaryStatistics> actionWeight = statistics
-						.get(actor);
-				for (Action action : actionWeight.keySet()) {
+				writer.append("Actor; Action; Execution; Cycles;");
+				writer.append("\n");
+				for (Actor actor : statistics.keySet()) {
+					Map<Action, SummaryStatistics> actionWeight = statistics
+							.get(actor);
+					for (Action action : actionWeight.keySet()) {
 
-					double mean = Double.isNaN(actionWeight.get(action)
-							.getMean()) ? 0 : actionWeight.get(action)
-							.getMean();
+						double mean = Double.isNaN(actionWeight.get(action)
+								.getMean()) ? 0 : actionWeight.get(action)
+								.getMean();
 
-					long nbrExec = actionWeight.get(action).getN();
+						long nbrExec = actionWeight.get(action).getN();
 
-					writer.append(actor.getSimpleName() + "; ");
-					writer.append(action.getName() + "; ");
-					writer.append(nbrExec + "; ");
-					writer.append(mean + "; ");
-					writer.append('\n');
+						writer.append(actor.getSimpleName() + "; ");
+						writer.append(action.getName() + "; ");
+						writer.append(nbrExec + "; ");
+						writer.append(mean + "; ");
+						writer.append('\n');
+					}
 				}
+
+				writer.flush();
+				writer.close();
+
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-
-			writer.flush();
-			writer.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 	}
 
