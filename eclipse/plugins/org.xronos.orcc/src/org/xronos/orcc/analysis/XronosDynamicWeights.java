@@ -43,6 +43,7 @@ import javax.xml.stream.XMLStreamWriter;
 import net.sf.orcc.df.Action;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.util.OrccUtil;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
@@ -68,13 +69,14 @@ public class XronosDynamicWeights {
 								+ File.separator + network.getSimpleName()
 								+ "_dynamicWeights.exdf"));
 				writer.writeStartDocument();
-				writer.writeStartElement("actors");
+				writer.writeStartElement("network");
+				writer.writeAttribute("name",
+						OrccUtil.getQualifiedName(network.getFile()));
 				for (Actor actor : statistics.keySet()) {
 					writer.writeStartElement("actor");
 					writer.writeAttribute("id", actor.getSimpleName());
 					Map<Action, SummaryStatistics> actionWeight = statistics
 							.get(actor);
-					writer.writeStartElement("actions");
 					for (Action action : actionWeight.keySet()) {
 						writer.writeEmptyElement("action");
 						writer.writeAttribute("id", action.getName());
@@ -94,15 +96,17 @@ public class XronosDynamicWeights {
 
 						long nbrExec = actionWeight.get(action).getN();
 
-						writer.writeAttribute("clockcycles-min", Double.toString(min));
-						writer.writeAttribute("clockcycles", Double.toString(mean));
-						writer.writeAttribute("clockcycles-max", Double.toString(max));
+						writer.writeAttribute("clockcycles-min",
+								Double.toString(min));
+						writer.writeAttribute("clockcycles",
+								Double.toString(mean));
+						writer.writeAttribute("clockcycles-max",
+								Double.toString(max));
 						writer.writeAttribute("clockcycles-variance",
 								Double.toString(variance));
 						writer.writeAttribute("executions",
 								Long.toString(nbrExec));
 					}
-					writer.writeEndElement();
 					writer.writeEndElement();
 				}
 				writer.writeEndElement();
