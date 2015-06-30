@@ -25,6 +25,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
 Export-Package: org.xronos.orcc.analysis,
  org.xronos.orcc.backend,
+ org.xronos.orcc.backend.embedded,
  org.xronos.orcc.forge.scheduler,
  org.xronos.orcc.forge.transform.memory,
  org.xronos.orcc.ir,

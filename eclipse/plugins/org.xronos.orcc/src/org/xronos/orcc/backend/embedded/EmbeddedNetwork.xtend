@@ -37,12 +37,13 @@ import java.util.Map
 import net.sf.orcc.df.Actor
 import net.sf.orcc.df.Network
 import net.sf.orcc.util.FilesManager
+import net.sf.orcc.df.Port
 
 class EmbeddedNetwork extends ExprAndTypePrinter {
 
 	protected Network network
 
-	private Boolean v7Profiling
+	private Boolean v7Profiling = false
 	
 	new(Network network, Map<String, Object> options) {
 		this.network = network
@@ -144,8 +145,15 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 				«ENDFOR»
 				
 				«FOR e : network.connections»
-					act_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
-					act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+					«IF (e.source instanceof Actor)»
+						act_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+						act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+					«ELSEIF (e.source instanceof Port)»
+						act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("id").objectValue»;
+					«ENDIF»
+					
+					
+					
 				«ENDFOR»
 			}
 			
@@ -166,7 +174,7 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 				Fifo<«port.type.doSwitch», «port.getAttribute("nbReaders").objectValue»> *fifo_«port.name»;
 			«ENDFOR»
 			«FOR port: network.outputs»
-				Fifo<«port.type.doSwitch», «port.getAttribute("nbReaders").objectValue»> *fifo_«port.name»;
+				Fifo<«port.type.doSwitch», 1> *fifo_«port.name»;
 			«ENDFOR»
 			
 			

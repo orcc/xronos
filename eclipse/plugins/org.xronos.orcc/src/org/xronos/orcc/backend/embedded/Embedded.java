@@ -33,21 +33,20 @@ package org.xronos.orcc.backend.embedded;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import org.xronos.orcc.backend.embedded.transform.ConnectionReaders;
+
 import net.sf.orcc.backends.AbstractBackend;
+import net.sf.orcc.backends.util.Validator;
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.Connection;
-import net.sf.orcc.df.Entity;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
-import net.sf.orcc.df.Port;
 import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
 import net.sf.orcc.df.transform.TypeResizer;
 import net.sf.orcc.df.transform.UnitImporter;
-import net.sf.orcc.graph.Vertex;
+import net.sf.orcc.df.util.NetworkValidator;
 import net.sf.orcc.ir.transform.RenameTransformation;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.OrccLogger;
@@ -97,6 +96,7 @@ public class Embedded extends AbstractBackend {
 
 		networkTransfos.add(new Instantiator(true));
 		networkTransfos.add(new NetworkFlattener());
+		networkTransfos.add(new ConnectionReaders());
 		networkTransfos.add(new UnitImporter());
 		childrenTransfos.add(new TypeResizer(false, false, false, false));
 		childrenTransfos.add(new RenameTransformation(replacementMap));
@@ -107,17 +107,6 @@ public class Embedded extends AbstractBackend {
 	protected Result doGenerateNetwork(Network network) {
 
 		network.computeTemplateMaps();
-
-		// hack, should be done in the method just above
-		for (Vertex vertex : network.getChildren()) {
-			Entity entity = vertex.getAdapter(Entity.class);
-			Map<Port, List<Connection>> map = entity.getOutgoingPortMap();
-			for (List<Connection> connections : map.values()) {
-				for (Connection connection : connections) {
-					connection.setAttribute("nbReaders", connections.size());
-				}
-			}
-		}
 
 		// print network
 		OrccLogger.traceln("Printing network...");
@@ -151,4 +140,12 @@ public class Embedded extends AbstractBackend {
 		Result result = FilesManager.extract("/bundle/embedded/lib", outputPath);
 		return result;
 	}
+	
+	@Override
+	protected void doValidate(Network network) {
+		Validator.checkMinimalFifoSize(network, fifoSize);
+
+		new NetworkValidator().doSwitch(network);
+	}
+	
 }

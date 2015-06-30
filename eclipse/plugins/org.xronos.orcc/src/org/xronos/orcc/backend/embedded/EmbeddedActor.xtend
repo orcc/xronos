@@ -145,7 +145,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 		
 			«FOR port : actor.inputs»
 				«IF actor.incomingPortMap.get(port) != null»
-				«port.compilePort(actor.incomingPortMap.get(port).getAttribute("nbReaders").objectValue)»
+					«port.compilePort(actor.incomingPortMap.get(port).getAttribute("nbReaders").objectValue)»
 				«ENDIF»
 			«ENDFOR»			
 			
