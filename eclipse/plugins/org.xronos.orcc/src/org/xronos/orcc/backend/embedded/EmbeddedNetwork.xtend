@@ -145,15 +145,14 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 				«ENDFOR»
 				
 				«FOR e : network.connections»
-					«IF (e.source instanceof Actor)»
+					«IF (e.source instanceof Actor && e.target instanceof Actor)»
 						act_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
 						act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
-					«ELSEIF (e.source instanceof Port)»
-						act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("id").objectValue»;
+					«ELSEIF (e.source instanceof Port && e.target instanceof Actor)»
+						act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«(e.source as Port).name»;
+					«ELSEIF (e.source instanceof Actor && e.target instanceof Port)»
+						act_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«(e.target as Port).name»;
 					«ENDIF»
-					
-					
-					
 				«ENDFOR»
 			}
 			

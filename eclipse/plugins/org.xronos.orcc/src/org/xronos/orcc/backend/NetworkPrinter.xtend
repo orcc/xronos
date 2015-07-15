@@ -491,44 +491,42 @@ class NetworkPrinter {
 	def printArchitectureComponents() {
 		'''
 			«FOR actor : network.children.filter(typeof(Actor)) SEPARATOR "\n"»
-				«IF !actor.native»
-					component «actor.simpleName» is
-					port(
-					     -- Instance «actor.simpleName» Input(s)
-					     «FOR port : actor.inputs»
-					     	«addDeclarationPort(port, "in", "out", false)»
-					     «ENDFOR»
-					     -- Instance «actor.simpleName» Output(s)
-					     «FOR port : actor.outputs»
-					     	«addDeclarationPort(port, "out", "in", true)»
-					     «ENDFOR»
-					     «IF options.containsKey("generateGoDone")»
-					     	-- Instance «actor.simpleName» Actions Go and Done
-					     	«FOR action : actor.actions SEPARATOR "\n"»
-					     		«action.name»_go : out std_logic;
-					     		«action.name»_done : out std_logic;
-					     	«ENDFOR»
-					     «ENDIF»
-					     clk: in std_logic;
-					     reset: in std_logic);
-					end component «actor.simpleName»;
-					«IF doubleBuffering»
-						
-						«IF actor.outputs.size > 0»
-							component «actor.simpleName»_clock_controller is
-							port(
-								«FOR port : actor.outputs»
-									«port.name»_almost_full : in «printLogicOrVector(
-				actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
-									«port.name»_full : in «printLogicOrVector(
-				actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
-								«ENDFOR»
-								en : in std_logic;
-								clk : in std_logic;
-								reset : in std_logic;
-								clk_out : out std_logic);
-							end component «actor.simpleName»_clock_controller;
-						«ENDIF»
+				component «actor.simpleName» is
+				port(
+				     -- Instance «actor.simpleName» Input(s)
+				     «FOR port : actor.inputs»
+				     	«addDeclarationPort(port, "in", "out", false)»
+				     «ENDFOR»
+				     -- Instance «actor.simpleName» Output(s)
+				     «FOR port : actor.outputs»
+				     	«addDeclarationPort(port, "out", "in", true)»
+				     «ENDFOR»
+				     «IF options.containsKey("generateGoDone")»
+				     	-- Instance «actor.simpleName» Actions Go and Done
+				     	«FOR action : actor.actions SEPARATOR "\n"»
+				     		«action.name»_go : out std_logic;
+				     		«action.name»_done : out std_logic;
+				     	«ENDFOR»
+				     «ENDIF»
+				     clk: in std_logic;
+				     reset: in std_logic);
+				end component «actor.simpleName»;
+				«IF doubleBuffering»
+					
+					«IF actor.outputs.size > 0»
+						component «actor.simpleName»_clock_controller is
+						port(
+							«FOR port : actor.outputs»
+								«port.name»_almost_full : in «printLogicOrVector(
+			actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
+								«port.name»_full : in «printLogicOrVector(
+			actor.getAdapter((typeof(Entity))).getOutgoingPortMap().get(port).size)»;
+							«ENDFOR»
+							en : in std_logic;
+							clk : in std_logic;
+							reset : in std_logic;
+							clk_out : out std_logic);
+						end component «actor.simpleName»_clock_controller;
 					«ENDIF»
 				«ENDIF»
 			«ENDFOR»
