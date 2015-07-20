@@ -166,7 +166,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 					«action.name»();
 				«ENDFOR»
 			}
-	
+		
 			«actor.actions.map[compileAction].join»
 		
 			«actor.compileScheduler»
@@ -205,7 +205,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 			«ENDIF»
 		};
 		#endif
-	'''
+		'''
 	}
 	
 	def dispatch compileArg(Type type, String name, Expression expr) '''
