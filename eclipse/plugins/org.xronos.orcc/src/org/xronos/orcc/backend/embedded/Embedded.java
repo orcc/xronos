@@ -51,6 +51,7 @@ import net.sf.orcc.ir.transform.RenameTransformation;
 import net.sf.orcc.util.FilesManager;
 import net.sf.orcc.util.OrccLogger;
 import net.sf.orcc.util.Result;
+
 /**
  * The Xronos Embedded C++ backend.
  * 
@@ -59,25 +60,14 @@ import net.sf.orcc.util.Result;
  */
 public class Embedded extends AbstractBackend {
 
-	private String srcPath;
-	
+	protected String srcPath;
+
 	@Override
 	protected void doInitializeOptions() {
 		
-		// Source Paths
-		srcPath = outputPath + File.separator + "src";
-		File srcDir = new File(srcPath);
-		if (!srcDir.exists()) {
-			srcDir.mkdir();
-		}
-
-		// Build Path
-		String buildPath = outputPath + File.separator + "build";
-		File buildDir = new File(buildPath);
-		if (!buildDir.exists()) {
-			buildDir.mkdir();
-		}
-
+		// -- Create Folders
+		createFolder();
+		
 		Map<String, String> replacementMap = new HashMap<String, String>();
 		replacementMap.put("abs", "abs_");
 		replacementMap.put("getw", "getw_");
@@ -100,7 +90,7 @@ public class Embedded extends AbstractBackend {
 		networkTransfos.add(new UnitImporter());
 		childrenTransfos.add(new TypeResizer(false, false, false, false));
 		childrenTransfos.add(new RenameTransformation(replacementMap));
-		
+
 	}
 
 	@Override
@@ -117,35 +107,49 @@ public class Embedded extends AbstractBackend {
 		printer.printCMakeLists(outputPath);
 		return super.doGenerateNetwork(network);
 	}
-	
+
 	@Override
 	protected Result doGenerateInstance(Instance instance) {
-		if(!instance.getActor().isNative()){
+		if (!instance.getActor().isNative()) {
 			new EmbeddedInstance(instance, getOptions()).print(srcPath);
 		}
 		return super.doGenerateInstance(instance);
 	}
-	
+
 	protected Result doGenerateActor(Actor actor) {
 		new EmbeddedActor(actor, getOptions()).print(srcPath);
 		return super.doGenerateActor(actor);
-	
 	}
 
 	@Override
 	protected Result doLibrariesExtraction() {
 		String target = outputPath + File.separator + "lib";
-		OrccLogger
-				.trace("Export libraries sources into " + target + "... ");
+		OrccLogger.trace("Export libraries sources into " + target + "... ");
 		Result result = FilesManager.extract("/bundle/embedded/lib", outputPath);
 		return result;
 	}
-	
+
 	@Override
 	protected void doValidate(Network network) {
 		Validator.checkMinimalFifoSize(network, fifoSize);
 
 		new NetworkValidator().doSwitch(network);
 	}
-	
+
+	protected void createFolder() {
+		// Source Paths
+		srcPath = outputPath + File.separator + "src";
+		File srcDir = new File(srcPath);
+		if (!srcDir.exists()) {
+			srcDir.mkdir();
+		}
+
+		// Build Path
+		String buildPath = outputPath + File.separator + "build";
+		File buildDir = new File(buildPath);
+		if (!buildDir.exists()) {
+			buildDir.mkdir();
+		}
+	}
+
 }
