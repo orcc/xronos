@@ -128,7 +128,7 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 			// FIFO Queues
 			«FOR actor : network.children.filter(typeof(Actor))»
 				«FOR edges : actor.outgoingPortMap.values»
-					Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»> *fifo_«edges.get(0).getAttribute("idNoBcast").objectValue»;
+					Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»> *fifo_«edges.get(0).getAttribute("fifoName").stringValue»;
 				«ENDFOR»
 			«ENDFOR»
 		
@@ -140,14 +140,14 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 				
 				«FOR actor : network.children.filter(typeof(Actor))»
 					«FOR edges : actor.outgoingPortMap.values»
-						fifo_«edges.get(0).getAttribute("idNoBcast").objectValue» = new Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»>«IF edges.get(0).size != null»(«edges.get(0).size»)«ENDIF»;
+						fifo_«edges.get(0).getAttribute("fifoName").stringValue» = new Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»>«IF edges.get(0).size != null»(«edges.get(0).size»)«ENDIF»;
 					«ENDFOR»
 				«ENDFOR»
 				
 				«FOR e : network.connections»
 					«IF (e.source instanceof Actor && e.target instanceof Actor)»
-						act_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
-						act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+						act_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("fifoName").stringValue»;
+						act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("fifoName").stringValue»;
 					«ELSEIF (e.source instanceof Port && e.target instanceof Actor)»
 						act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«(e.source as Port).name»;
 					«ELSEIF (e.source instanceof Actor && e.target instanceof Port)»
@@ -163,7 +163,7 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 				
 				«FOR actor : network.children.filter(typeof(Actor))»
 					«FOR edges : actor.outgoingPortMap.values»
-						delete fifo_«edges.get(0).getAttribute("idNoBcast").objectValue»;
+						delete fifo_«edges.get(0).getAttribute("fifoName").stringValue»;
 					«ENDFOR»
 				«ENDFOR»
 			}

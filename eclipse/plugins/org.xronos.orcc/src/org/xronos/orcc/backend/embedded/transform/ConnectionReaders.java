@@ -46,7 +46,7 @@ public class ConnectionReaders extends DfVisitor<Void> {
 
 	@Override
 	public Void caseNetwork(Network network) {
-		
+
 		// -- Actor Output Ports
 		for (Vertex vertex : network.getChildren()) {
 			Entity entity = vertex.getAdapter(Entity.class);
@@ -54,21 +54,46 @@ public class ConnectionReaders extends DfVisitor<Void> {
 			for (List<Connection> connections : map.values()) {
 				for (Connection connection : connections) {
 					connection.setAttribute("nbReaders", connections.size());
+
+					Vertex src = connection.getSource();
+					Port srcPort = connection.getSourcePort();
+					Vertex tgt = connection.getTarget();
+					Vertex tgtPort = connection.getTargetPort();
+
+					String fifoName = "";
+
+					if (srcPort != null && tgtPort != null) {
+						fifoName = src.getLabel() + "_" + srcPort.getLabel() + "_" + tgt.getLabel() + "_"
+								+ tgtPort.getLabel();
+					} else if (srcPort != null && tgtPort == null) {
+						fifoName = src.getLabel() + "_" + srcPort.getLabel() + "_" + tgt.getLabel();
+					} else if (srcPort == null && tgtPort != null) {
+						fifoName = src.getLabel() + "_" + tgt.getLabel() + "_" + tgtPort.getLabel();
+					}
+					connection.setAttribute("fifoName", fifoName);
 				}
 			}
 		}
-		
+
 		// -- Network Input Ports
-		for(Port port:network.getInputs()){
+		for (Port port : network.getInputs()) {
 			port.setAttribute("nbReaders", port.getOutgoing().size());
 			int j = 0;
-			for(Edge edge : port.getOutgoing()){
+			for (Edge edge : port.getOutgoing()) {
 				edge.setAttribute("nbReaders", port.getOutgoing().size());
 				edge.setAttribute("fifoId", j);
+				if (edge instanceof Connection) {
+					Connection connection = (Connection) edge;
+					Vertex src = connection.getSource();
+					Vertex tgt = connection.getTarget();
+					Vertex tgtPort = connection.getTargetPort();
+					String fifoName = src.getLabel() + "_" + tgt.getLabel() + "_" + tgtPort.getLabel();
+					connection.setAttribute("fifoName", fifoName);
+				}
 				j++;
 			}
 		}
-	
+
 		return null;
 	}
 
