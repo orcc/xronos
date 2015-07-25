@@ -71,53 +71,53 @@ import org.xronos.orcc.design.ResourceCache;
 public class Xronos extends AbstractBackend {
 
 	/** The clock Domains Map **/
-	private Map<String, String> clkDomains;
+	protected Map<String, String> clkDomains;
 
 	/** Debug Mode, no caching, generating always **/
-	private boolean debugMode;
+	protected boolean debugMode;
 
 	/** The used Xilinx FPGA Name **/
-	private String fpgaName;
+	protected String fpgaName;
 
 	/** Generate Verilog files with Go And Done signal on Top Module **/
-	private boolean generateGoDone;
+	protected boolean generateGoDone;
 
-	private boolean generateWeights;
+	protected boolean generateWeights;
 
 	/** Import buffer size file **/
-	private boolean importBufferSize;
+	protected boolean importBufferSize;
 
-	private boolean inputClockGating;
+	protected boolean inputClockGating;
 
-	boolean newLimGen;
+	protected boolean newLimGen;
 
-	private boolean outputClockGating;
+	protected boolean outputClockGating;
 
 	/** The path used for the RTL Go Done generation **/
-	private String rtlGoDonePath;
+	protected String rtlGoDonePath;
 
 	/** The path used for the RTL generation **/
-	private String rtlPath;
+	protected String rtlPath;
 
-	boolean schedulerInformation;
+	protected boolean schedulerInformation;
 
 	/** The path used for the simulation generation **/
-	private String simPath;
+	protected String simPath;
 
 	/** One verilog contains all the design **/
-	private boolean singleFileGeneration;
+	protected boolean singleFileGeneration;
 
 	/** The path where the VHDL tesbenches are placed */
-	private String tbVhdPath;
+	protected String tbVhdPath;
 
 	/** The path used for the testBench generation **/
-	private String testBenchPath;
+	protected String testBenchPath;
 
 	/** The path where the fifo traces should be placed **/
-	private String tracePath;
+	protected String tracePath;
 
 	/** Copy the Xilinx RAM/registers primitives **/
-	private boolean xilinxPrimitives;
+	protected boolean xilinxPrimitives;
 
 	@Override
 	protected void beforeGeneration(Network network) {
@@ -135,13 +135,12 @@ public class Xronos extends AbstractBackend {
 		new NetworkFlattener().doSwitch(network);
 
 		if (importBufferSize) {
-			String bufferSzeFile = getOption(
-					"org.xronos.orcc.bufferSizeFile", "");
+			String bufferSzeFile = getOption("org.xronos.orcc.bufferSizeFile", "");
 			new NetworkBufferSizeImporter(bufferSzeFile).doSwitch(network);
 		}
 		// -- Xronos Stats
 		new XronosStats().doSwitch(network);
-		
+
 		new TypeResizer(false, false, false, false).doSwitch(network);
 		// Compute the Network Template
 		network.computeTemplateMaps();
@@ -161,17 +160,14 @@ public class Xronos extends AbstractBackend {
 		printTestbenches(network);
 
 		// Weight Static Analysis
-		XronosStaticWeight staticWeight = new XronosStaticWeight("weights_"
-				+ network.getSimpleName(), rtlPath + File.separator + "report");
+		XronosStaticWeight staticWeight = new XronosStaticWeight("weights_" + network.getSimpleName(),
+				rtlPath + File.separator + "report");
 		staticWeight.createStaticWeight();
 
 		if (generateWeights) {
-			XronosDynamicWeights xronosDynamicWeights = new XronosDynamicWeights(
-					network, testBenchPath);
-			xronosDynamicWeights.getMeanWeights(rtlPath + File.separator
-					+ "report");
-			xronosDynamicWeights.getMeanWeightsCSV(rtlPath + File.separator
-					+ "report");
+			XronosDynamicWeights xronosDynamicWeights = new XronosDynamicWeights(network, testBenchPath);
+			xronosDynamicWeights.getMeanWeights(rtlPath + File.separator + "report");
+			xronosDynamicWeights.getMeanWeightsCSV(rtlPath + File.separator + "report");
 		}
 		return super.doGenerateNetwork(network);
 	}
@@ -182,19 +178,13 @@ public class Xronos extends AbstractBackend {
 		debugMode = getOption(DEBUG_MODE, true);
 		generateGoDone = getOption("org.xronos.orcc.generateGoDone", false);
 		generateWeights = getOption("org.xronos.orcc.generateWeights", false);
-		xilinxPrimitives = getOption("org.xronos.orcc.xilinxPrimitives",
-				false);
-		singleFileGeneration = getOption(
-				"org.xronos.orcc.singleFileGeneration", false);
-		importBufferSize = getOption("org.xronos.orcc.importBufferSize",
-				false);
+		xilinxPrimitives = getOption("org.xronos.orcc.xilinxPrimitives", false);
+		singleFileGeneration = getOption("org.xronos.orcc.singleFileGeneration", false);
+		importBufferSize = getOption("org.xronos.orcc.importBufferSize", false);
 		fifoSize = getOption("net.sf.orcc.fifoSize", 1);
-		outputClockGating = getOption("org.xronos.orcc.outputClockGating",
-				false);
-		inputClockGating = getOption("org.xronos.orcc.inputClockGating",
-				false);
-		schedulerInformation = getOption(
-				"org.xronos.orcc.schedulingInformation", false);
+		outputClockGating = getOption("org.xronos.orcc.outputClockGating", false);
+		inputClockGating = getOption("org.xronos.orcc.inputClockGating", false);
+		schedulerInformation = getOption("org.xronos.orcc.schedulingInformation", false);
 		newLimGen = getOption("org.xronos.orcc.newLimGen", false);
 
 		// Set Paths for RTL
@@ -262,8 +252,7 @@ public class Xronos extends AbstractBackend {
 
 	public void generateInstances(Network network) {
 		OrccLogger.traceln("Generating Instances...");
-		OrccLogger
-				.traceln("-------------------------------------------------------------------------------");
+		OrccLogger.traceln("-------------------------------------------------------------------------------");
 		long t0 = System.currentTimeMillis();
 
 		List<Actor> instanceToBeCompiled = new ArrayList<Actor>();
@@ -281,20 +270,16 @@ public class Xronos extends AbstractBackend {
 			if (actor != null) {
 				if (!actor.isNative()) {
 					if (!debugMode) {
-						long sourceLastModified = XronosPrinter
-								.getLastModifiedHierarchy(actor);
-						String file = rtlPath + File.separator
-								+ actor.getSimpleName() + ".v";
+						long sourceLastModified = XronosPrinter.getLastModifiedHierarchy(actor);
+						String file = rtlPath + File.separator + actor.getSimpleName() + ".v";
 						File targetFile = new File(file);
 						long targetLastModified = targetFile.lastModified();
 						if (sourceLastModified > targetLastModified) {
 							if (!actor.hasAttribute("no_generation")) {
 								instanceToBeCompiled.add(actor);
 							} else {
-								OrccLogger
-										.warnln("Instance: "
-												+ actor.getSimpleName()
-												+ " contains @no_generation tag, it will not be generated!");
+								OrccLogger.warnln("Instance: " + actor.getSimpleName()
+										+ " contains @no_generation tag, it will not be generated!");
 							}
 						} else {
 							cachedInstances++;
@@ -303,13 +288,13 @@ public class Xronos extends AbstractBackend {
 						if (!actor.hasAttribute("no_generation")) {
 							instanceToBeCompiled.add(actor);
 						} else {
-							OrccLogger
-									.warnln("Actor: "
-											+ actor.getSimpleName()
-											+ " contains @no_generation tag, it will not be generated!");
+							OrccLogger.warnln("Actor: " + actor.getSimpleName()
+									+ " contains @no_generation tag, it will not be generated!");
 						}
 					}
 
+				} else {
+					generateNativeActor(actor);
 				}
 
 			}
@@ -323,8 +308,7 @@ public class Xronos extends AbstractBackend {
 		if (toBeCompiled > 0) {
 			OrccLogger.traceln("NOTE: Actors to be generated: " + toBeCompiled);
 		}
-		OrccLogger
-				.traceln("-------------------------------------------------------------------------------");
+		OrccLogger.traceln("-------------------------------------------------------------------------------");
 
 		int numInstance = 1;
 		int failedToCompile = 0;
@@ -337,20 +321,16 @@ public class Xronos extends AbstractBackend {
 			XronosFlags flags = new XronosFlags(rtlPath, actor.getSimpleName());
 			if (actor.hasAttribute("xronos_pipeline")) {
 				if (actor.getAttribute("xronos_pipeline").hasAttribute("gd")) {
-					Integer gateDepth = Integer.parseInt(actor
-							.getAttribute("xronos_pipeline").getAttribute("gd")
-							.getStringValue());
+					Integer gateDepth = Integer
+							.parseInt(actor.getAttribute("xronos_pipeline").getAttribute("gd").getStringValue());
 					flags.activatePipelining(gateDepth);
 				} else {
-					OrccLogger
-							.warnln("PIPELINING: gd attribute missing, example: @xronos_pipeline(gd=\"100\")");
+					OrccLogger.warnln("PIPELINING: gd attribute missing, example: @xronos_pipeline(gd=\"100\")");
 				}
 			}
 
-			boolean failed = printer.printInstance(flags.getStringFlag(),
-					rtlPath, testBenchPath, tbVhdPath, actor, getOptions(),
-					resourceCache, numInstance, toBeCompiled,
-					schedulerInformation, newLimGen, debugMode);
+			boolean failed = printer.printInstance(flags.getStringFlag(), rtlPath, testBenchPath, tbVhdPath, actor,
+					getOptions(), resourceCache, numInstance, toBeCompiled, schedulerInformation, newLimGen, debugMode);
 			if (failed) {
 				failedToCompile++;
 			}
@@ -358,25 +338,24 @@ public class Xronos extends AbstractBackend {
 		}
 
 		if (failedToCompile > 0) {
-			OrccLogger
-					.severeln("-------------------------------------------------------------------------------");
-			OrccLogger.severeln("NOTE: " + failedToCompile + " actor"
-					+ (failedToCompile > 1 ? "s" : "") + " failed to compile");
-			OrccLogger
-					.severeln("-------------------------------------------------------------------------------");
+			OrccLogger.severeln("-------------------------------------------------------------------------------");
+			OrccLogger.severeln(
+					"NOTE: " + failedToCompile + " actor" + (failedToCompile > 1 ? "s" : "") + " failed to compile");
+			OrccLogger.severeln("-------------------------------------------------------------------------------");
 		}
 
-		OrccLogger
-				.traceln("*******************************************************************************");
+		OrccLogger.traceln("*******************************************************************************");
 		long t1 = System.currentTimeMillis();
-		OrccLogger.traceln("Xronos done in " + (float) (t1 - t0) / (float) 1000
-				+ "s");
+		OrccLogger.traceln("Xronos done in " + (float) (t1 - t0) / (float) 1000 + "s");
+	}
+
+	protected void generateNativeActor(Actor Actor) {
+		// -- Do Nothing
 	}
 
 	private void generateNetwork(Network network) {
 		OrccLogger.traceln("Generating Network...");
-		OrccLogger
-				.traceln("-------------------------------------------------------------------------------");
+		OrccLogger.traceln("-------------------------------------------------------------------------------");
 
 		ResourceCache resourceCache = new ResourceCache();
 		XronosPrinter printer = new XronosPrinter(!debugMode);
@@ -385,18 +364,14 @@ public class Xronos extends AbstractBackend {
 		printer.getOptions().put("doubleBuffering", outputClockGating);
 		printer.getOptions().put("inputClockGating", inputClockGating);
 		XronosFlags flags = new XronosFlags(rtlPath, network.getSimpleName());
-		boolean schedulerInformation = getOption(
-				"org.xronos.orcc.schedulingInformation", false);
-		boolean failed = printer.printNetwork(flags.getStringFlag(), rtlPath,
-				network, getOptions(), resourceCache, schedulerInformation);
+		boolean schedulerInformation = getOption("org.xronos.orcc.schedulingInformation", false);
+		boolean failed = printer.printNetwork(flags.getStringFlag(), rtlPath, network, getOptions(), resourceCache,
+				schedulerInformation);
 
 		if (failed) {
-			OrccLogger
-					.severeln("-------------------------------------------------------------------------------");
-			OrccLogger.severeln("Network:" + network.getName()
-					+ " failed to compile");
-			OrccLogger
-					.severeln("-------------------------------------------------------------------------------");
+			OrccLogger.severeln("-------------------------------------------------------------------------------");
+			OrccLogger.severeln("Network:" + network.getName() + " failed to compile");
+			OrccLogger.severeln("-------------------------------------------------------------------------------");
 		}
 
 	}
@@ -408,7 +383,7 @@ public class Xronos extends AbstractBackend {
 		xronosPrinter.getOptions().put("clkDomains", clkDomains);
 		xronosPrinter.getOptions().put("doubleBuffering", outputClockGating);
 		xronosPrinter.getOptions().put("inputClockGating", inputClockGating);
-		xronosPrinter.getOptions().put("fifoSize",fifoSize);
+		xronosPrinter.getOptions().put("fifoSize", fifoSize);
 		xronosPrinter.printNetwork(rtlPath, network);
 		if (generateGoDone) {
 			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
@@ -430,23 +405,18 @@ public class Xronos extends AbstractBackend {
 		xronosPrinter.getOptions().put("xilinxPrimitives", xilinxPrimitives);
 		xronosPrinter.getOptions().put("doubleBuffering", outputClockGating);
 		xronosPrinter.getOptions().put("inputClockGating", inputClockGating);
-		xronosPrinter.getOptions().put("schedulerInformation",
-				schedulerInformation);
+		xronosPrinter.getOptions().put("schedulerInformation", schedulerInformation);
 
 		// Print the network TCL ModelSim simulation script
 		xronosPrinter.printSimTclScript(simPath, false, network);
 		if (generateGoDone) {
 			xronosPrinter.getOptions().put("generateGoDone", generateGoDone);
 			xronosPrinter.getOptions().put("generateWeights", generateWeights);
-			xronosPrinter.getOptions()
-					.put("doubleBuffering", outputClockGating);
-			xronosPrinter.getOptions()
-					.put("inputClockGating", inputClockGating);
-			xronosPrinter.getOptions().put("schedulerInformation",
-					schedulerInformation);
+			xronosPrinter.getOptions().put("doubleBuffering", outputClockGating);
+			xronosPrinter.getOptions().put("inputClockGating", inputClockGating);
+			xronosPrinter.getOptions().put("schedulerInformation", schedulerInformation);
 			// Create the weights path
-			File weightsPath = new File(testBenchPath + File.separator
-					+ "weights");
+			File weightsPath = new File(testBenchPath + File.separator + "weights");
 			if (!weightsPath.exists()) {
 				weightsPath.mkdir();
 			}

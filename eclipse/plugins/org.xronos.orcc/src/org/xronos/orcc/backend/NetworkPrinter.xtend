@@ -246,16 +246,9 @@ class NetworkPrinter {
 	}
 
 	def printLibrary() {
-		var Boolean systemActors = false;
-		for (Actor actor : network.children.filter(typeof(Actor))) {
-			if (actor.native) {
-				systemActors = true;
-			}
-		}
 		'''
 			library ieee;
 			library SystemBuilder;
-			«IF systemActors»library SystemActors;«ENDIF»
 			
 			use ieee.std_logic_1164.all;
 		'''
@@ -554,18 +547,8 @@ class NetworkPrinter {
 
 	def printInstanceConnection() {
 		'''
-			«FOR actor : network.children.filter(typeof(Actor)) SEPARATOR "\n"»
-				«IF actor.native»
-					-- «actor.simpleName» (System Actor)
-					i_«actor.simpleName» : entity SystemActors.«actor.simpleName»(behavioral)
-					«IF !actor.parameters.empty»
-						generic map(
-							-- Not currently supported
-						)
-					«ENDIF»
-				«ELSE»
-					i_«actor.simpleName» : component «actor.simpleName»
-				«ENDIF»
+			«FOR actor : network.children.filter(typeof(Actor)) SEPARATOR "\n"»				
+				i_«actor.simpleName» : component «actor.simpleName»
 				port map(
 					-- Instance «actor.simpleName» Input(s)
 					«FOR port : actor.inputs SEPARATOR "\n"»
