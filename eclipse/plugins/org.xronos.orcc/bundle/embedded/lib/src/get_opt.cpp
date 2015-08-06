@@ -40,7 +40,8 @@ std::string config_file;
 std::string input_file;
 std::string write_file;
 
-int nbLoops = -1;
+int nbLoops=-1;
+int nbFrames=-1;
 
 GetOpt::GetOpt(int argc, char* argv[])
 {

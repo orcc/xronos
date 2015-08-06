@@ -38,6 +38,7 @@ import java.util.Map;
 import org.xronos.orcc.backend.embedded.transform.ConnectionReaders;
 
 import net.sf.orcc.backends.AbstractBackend;
+import net.sf.orcc.backends.transform.DisconnectedOutputPortRemoval;
 import net.sf.orcc.backends.util.Validator;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Instance;
@@ -88,6 +89,7 @@ public class Embedded extends AbstractBackend {
 		networkTransfos.add(new NetworkFlattener());
 		networkTransfos.add(new ConnectionReaders());
 		networkTransfos.add(new UnitImporter());
+		networkTransfos.add(new DisconnectedOutputPortRemoval());
 		childrenTransfos.add(new TypeResizer(false, false, false, false));
 		childrenTransfos.add(new RenameTransformation(replacementMap));
 

@@ -63,17 +63,70 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 	}
 
 	def compileMain() '''
-		#include "«network.simpleName».h"
+		// -- CPP Lib Headers
+		#include "get_opt.h"
+		#include "actor.h"
+		#include "fifo.h"
+		
+		// -- Actors Headers
+		«FOR actor : network.children.filter(typeof(Actor))»
+			#include "«actor.name».h"
+		«ENDFOR»
+		
+		
 		
 		int main(int argc, char *argv[]){
-			/*
-				Your Code Goes Here
-			*/
 			
-			«network.simpleName» *network = new «network.simpleName»();
-			network->run();
+			// Actors
+			«FOR actor : network.children.filter(typeof(Actor))»
+				«actor.name» *act_«actor.name» = new «actor.name»(«FOR variable : actor.parameters SEPARATOR ", "»«variable.initialValue.doSwitch»«ENDFOR»);
+			«ENDFOR»
 			
+			// FIFO Queues
+			«FOR actor : network.children.filter(typeof(Actor))»
+				«FOR edges : actor.outgoingPortMap.values»
+					Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»> *fifo_«edges.get(0).getAttribute("idNoBcast").objectValue» = new Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»>«IF edges.get(0).size != null»(«edges.get(0).size»)«ENDIF»;
+				«ENDFOR»
+			«ENDFOR»
+			
+			// Connections
+			«FOR e : network.connections»
+				act_«(e.source as Actor).name»->port_«e.sourcePort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+				act_«(e.target as Actor).name»->port_«e.targetPort.name» = fifo_«e.getAttribute("idNoBcast").objectValue»;
+			«ENDFOR»
+			
+			// -- Get Input Arguments
+			GetOpt options = GetOpt(argc, argv);
+			options.getOptions();
+		
+			// -- Initialize Actors
+			«FOR actor : network.children.filter(typeof(Actor))»
+				act_«actor.name»->initialize();
+			«ENDFOR»
+		
+			// -- Run 
+			EStatus status = None;
+			do{
+				status = None;
+				«FOR actor : network.children.filter(typeof(Actor))»
+					act_«actor.name»->action_selection(status);
+				«ENDFOR»
+			}while (status != None);
+		
+		
+			«FOR actor : network.children.filter(typeof(Actor))»
+				delete act_«actor.name»;
+			«ENDFOR»
+			
+			«FOR actor : network.children.filter(typeof(Actor))»
+				«FOR edges : actor.outgoingPortMap.values»
+					delete fifo_«edges.get(0).getAttribute("idNoBcast").objectValue»;
+				«ENDFOR»
+			«ENDFOR»
+		
 			return 0;
+		
+			//EOF
 		}
 	'''
 
@@ -221,6 +274,12 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 		project («network.simpleName»)
 	
 		find_package(Threads REQUIRED)
+		if(NOT NO_DISPLAY)
+			find_package(SDL REQUIRED)	
+		endif()
+	
+	
+		find_package(Threads REQUIRED)
 	
 		if(MSVC)
 		set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /MTd /ZI /Ob0 /Od /RTC1")
@@ -233,12 +292,16 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 		endif()
 		
 		# Use this flag if unsigned / signed conversions produces errors
-		# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
 	
 		set(EMBEDDEDCPP_INCLUDE_DIR ./lib/include)
 		subdirs(./lib)
 	
 		include_directories(${EMBEDDEDCPP_INCLUDE_DIR})
+	
+		if(NOT NO_DISPLAY)
+			include_directories(${SDL_INCLUDE_DIR})
+		endif()
 	
 		add_executable ( «network.simpleName»
 		src/main.cpp
@@ -249,8 +312,11 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 		)
 	
 		set(libraries EmbeddedCPP)
-		
-		
+	
+		if(NOT NO_DISPLAY)
+			set(libraries ${libraries} ${SDL_LIBRARY})
+		endif()
+	
 		set(libraries ${libraries} ${CMAKE_THREAD_LIBS_INIT})
 		target_link_libraries(«network.simpleName» ${libraries})
 	'''

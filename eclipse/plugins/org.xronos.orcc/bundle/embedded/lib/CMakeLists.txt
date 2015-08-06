@@ -1,5 +1,14 @@
+if(NO_DISPLAY)
+add_definitions(-DNO_DISPLAY)
+else()
+find_package(SDL)
+endif()
+
 include_directories(
 ${EMBEDDEDCPP_INCLUDE_DIR}
+if(NOT NO_DISPLAY)
+${SDL_INCLUDE_DIR}
+endif()
 )
 
 add_library(EmbeddedCPP STATIC
@@ -27,5 +36,5 @@ src/timer.cpp
 src/thread.cpp
 src/writer.cpp
 src/ddr.cpp
+src/display.cpp
 )
-

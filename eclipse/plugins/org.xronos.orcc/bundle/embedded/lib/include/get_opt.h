@@ -48,8 +48,9 @@ typedef std::map<std::string, std::vector<std::string> >::const_iterator TokensI
 extern std::string input_file;
 extern std::string write_file;
 extern std::string config_file;
-extern int nbLoops;
 
+extern int nbLoops;
+extern int nbFrames;
 
 template<typename T>
 inline void convert(const std::string& s, T& res)
@@ -158,5 +159,6 @@ private:
 	const GetOpt* options;
 
 };
+
 
 #endif

@@ -48,10 +48,32 @@ import net.sf.orcc.ir.TypeList
 import net.sf.orcc.ir.TypeString
 import net.sf.orcc.ir.TypeUint
 import net.sf.orcc.ir.TypeVoid
+import net.sf.orcc.ir.OpBinary
+import net.sf.orcc.util.util.EcoreHelper
+import net.sf.orcc.ir.Expression
 
 class ExprAndTypePrinter extends CommonPrinter {
 		
-	override caseExprBinary(ExprBinary expr) '''(«expr.getE1.doSwitch» «expr.op.text» «expr.getE2.doSwitch»)'''
+	override caseExprBinary(ExprBinary expr) {
+		val op = expr.op
+		val container = EcoreHelper.getContainerOfType(expr, typeof(Expression))
+		var nextPrec = if (op == OpBinary::SHIFT_LEFT || op == OpBinary::SHIFT_RIGHT) {
+
+				// special case, for shifts always put parentheses because compilers
+				// often issue warnings
+				Integer::MIN_VALUE;
+			} else {
+				op.precedence;
+			}
+
+		val resultingExpr = '''«expr.e1.printExpr(nextPrec, 0)» «op.stringRepresentation» «expr.e2.printExpr(nextPrec, 1)»'''
+
+		if (op.needsParentheses(precedence, branch) || (container != null && op.logical)) {
+			'''(«resultingExpr»)'''
+		} else {
+			resultingExpr
+		}
+	}
 
 	override caseExprBool(ExprBool expr) '''«IF expr.value»true«ELSE»false«ENDIF»'''
 	
@@ -108,4 +130,10 @@ class ExprAndTypePrinter extends CommonPrinter {
 		}
 	}
 	
+	override protected stringRepresentation(OpBinary op) {
+		if (op == OpBinary::DIV_INT)
+			"/"
+		else
+			super.stringRepresentation(op)
+	}
 }
