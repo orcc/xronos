@@ -57,6 +57,8 @@ import net.sf.orcc.ir.Type
 import net.sf.orcc.ir.TypeList
 import net.sf.orcc.ir.Var
 import net.sf.orcc.util.FilesManager
+import java.util.List
+import java.util.ArrayList
 
 class EmbeddedActor extends ExprAndTypePrinter {
 	
@@ -101,6 +103,12 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	
 	def compileInstance()  {
 		val connectedOutput = [ Port port | actor.outgoingPortMap.get(port) != null ]
+		var List<Var> sharedStateVars = new ArrayList
+		for(Var v : actor.stateVars){
+			if(v.hasAttribute("shared")){
+				sharedStateVars.add(v)
+			}	
+		}
 		'''
 		«getFileHeader»
 		#ifndef __«actor.name.toUpperCase»_H__
@@ -127,11 +135,15 @@ class EmbeddedActor extends ExprAndTypePrinter {
 				unsigned int v7_overflows[«actor.actions.size»];
 				unsigned int v7_executions[«actor.actions.size»];
 			«ENDIF»
-			«actor.name»(«FOR variable : actor.parameters SEPARATOR ", "»«variable.type.doSwitch» «variable.name»«FOR dim : variable.type.dimensions»[«dim»]«ENDFOR»«ENDFOR»)
+			«actor.name»(«FOR variable : sharedStateVars SEPARATOR ", "»«variable.type.doSwitch»«IF variable.type.list»«FOR dim : variable.type.dimensions»*«ENDFOR»«ELSE»*«ENDIF» «variable.getAttribute("shared").getValueAsString("id")»«ENDFOR»«FOR variable : actor.parameters SEPARATOR ", "»«variable.type.doSwitch» «variable.name»«FOR dim : variable.type.dimensions»[«dim»]«ENDFOR»«ENDFOR»)
 				«FOR variable : actor.parameters BEFORE ":" SEPARATOR "\n,"»  «variable.name»(«variable.name»)«ENDFOR»
 			{
 				«FOR v : actor.stateVars.filter(v|v.initialValue != null)»«compileArg(v.type, v.name, v.initialValue)»«ENDFOR»
 				«IF actor.fsm != null»state_ = state_«actor.fsm.initialState.name»;«ENDIF»
+				
+				«FOR variable : sharedStateVars»
+					this->«variable.name» = «variable.getAttribute("shared").getValueAsString("id")»;
+				«ENDFOR»
 				
 				«IF v7Profiling»
 					«FOR i : 0 .. actor.actions.size-1»
@@ -254,7 +266,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	override caseInstCall(InstCall inst) {
 	if(inst.print) {
 	'''
-		std::cout << «FOR arg : inst.arguments SEPARATOR " << "»«arg.compileArg»«ENDFOR»;
+		std::cout << «FOR arg : inst.arguments SEPARATOR " << "»(«arg.compileArg»)«ENDFOR»;
 	'''
 	} else {
 	'''
@@ -263,7 +275,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	}
 }
 	override caseInstLoad(InstLoad inst) '''
-		«inst.target.variable.name» = «inst.source.variable.name»«FOR index : inst.indexes»[«index.doSwitch»]«ENDFOR»;
+		«inst.target.variable.name» = «IF inst.source.variable.hasAttribute("shared") && !inst.source.variable.type.list»*«ENDIF»«inst.source.variable.name»«FOR index : inst.indexes»[«index.doSwitch»]«ENDFOR»;
 	'''
 
 	override caseInstReturn(InstReturn inst) '''
@@ -271,7 +283,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	'''
 
 	override caseInstStore(InstStore inst) '''
-		«inst.target.variable.name»«FOR index : inst.indexes»[«index.doSwitch»]«ENDFOR» = «inst.value.doSwitch»;
+		«IF inst.target.variable.hasAttribute("shared") && !inst.target.variable.type.list»*«ENDIF»«inst.target.variable.name»«FOR index : inst.indexes»[«index.doSwitch»]«ENDFOR» = «inst.value.doSwitch»;
 	'''
 	
 	def compilePort(Port port, Object nbReaders) '''
@@ -332,7 +344,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	'''
 	
 	def private varDecl(Var v) {
-		'''«v.type.doSwitch» «v.name»«FOR dim : v.type.dimensions»[«dim»]«ENDFOR»'''
+		'''«v.type.doSwitch» «IF v.global && v.hasAttribute("shared")»«IF v.type.list»«FOR dim : v.type.dimensions»*«ENDFOR»«ELSE»*«ENDIF»«ENDIF»«v.name»«IF !(v.global && v.hasAttribute("shared"))»«FOR dim : v.type.dimensions»[«dim»]«ENDFOR»«ENDIF»'''
 	}
 	
 	def private varDeclWithInit(Var v) {

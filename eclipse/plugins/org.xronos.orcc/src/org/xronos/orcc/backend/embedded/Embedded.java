@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.xronos.orcc.backend.embedded.transform.ConnectionReaders;
+import org.xronos.orcc.backend.embedded.transform.SharedVariableDetection;
 
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.transform.DisconnectedOutputPortRemoval;
@@ -90,6 +91,7 @@ public class Embedded extends AbstractBackend {
 		networkTransfos.add(new ConnectionReaders());
 		networkTransfos.add(new UnitImporter());
 		networkTransfos.add(new DisconnectedOutputPortRemoval());
+		networkTransfos.add(new SharedVariableDetection());
 		childrenTransfos.add(new TypeResizer(false, false, false, false));
 		childrenTransfos.add(new RenameTransformation(replacementMap));
 
