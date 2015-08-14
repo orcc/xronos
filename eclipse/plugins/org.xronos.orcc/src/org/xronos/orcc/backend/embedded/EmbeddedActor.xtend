@@ -254,7 +254,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	override caseInstCall(InstCall inst) {
 	if(inst.print) {
 	'''
-		std::cout << «FOR arg : inst.arguments SEPARATOR " << "»«arg.compileArg»«ENDFOR»;
+		std::cout << «FOR arg : inst.arguments SEPARATOR " << "»(«arg.compileArg»)«ENDFOR»;
 	'''
 	} else {
 	'''
