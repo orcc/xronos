@@ -33,14 +33,13 @@ package org.xronos.orcc.backend.embedded
 
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.HashSet
 import java.util.Map
 import net.sf.orcc.df.Actor
 import net.sf.orcc.df.Network
-import net.sf.orcc.util.FilesManager
 import net.sf.orcc.df.Port
-import java.util.ArrayList
 import net.sf.orcc.ir.Var
-import java.util.HashSet
+import net.sf.orcc.util.FilesManager
 
 class EmbeddedNetwork extends ExprAndTypePrinter {
 

@@ -92,7 +92,7 @@ public class Embedded extends AbstractBackend {
 		networkTransfos.add(new UnitImporter());
 		networkTransfos.add(new DisconnectedOutputPortRemoval());
 		networkTransfos.add(new SharedVariableDetection());
-		childrenTransfos.add(new TypeResizer(false, false, false, false));
+		childrenTransfos.add(new TypeResizer(true, false, true, false));
 		childrenTransfos.add(new RenameTransformation(replacementMap));
 
 	}
