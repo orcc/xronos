@@ -57,6 +57,7 @@ import net.sf.orcc.ir.Type
 import net.sf.orcc.ir.TypeList
 import net.sf.orcc.ir.Var
 import net.sf.orcc.util.FilesManager
+import java.util.HashSet
 
 class EmbeddedActor extends ExprAndTypePrinter {
 	
@@ -112,6 +113,13 @@ class EmbeddedActor extends ExprAndTypePrinter {
 		#include "fifo.h"
 		«IF v7Profiling»
 			#include "v7_pmu.h"
+		«ENDIF»
+		
+		«IF actor.hasAttribute("actor_shared_variables")»
+			// -- Shared Variables
+			«FOR v : actor.getAttribute("actor_shared_variables").objectValue as HashSet<Var>»
+				extern «v.type.doSwitch» «v.name»«FOR dim : v.type.dimensions»[«dim»]«ENDFOR»;
+			«ENDFOR»
 		«ENDIF»
 		
 		«FOR proc : actor.procs.filter(p | p.native && !"print".equals(p.name))»
@@ -192,7 +200,7 @@ class EmbeddedActor extends ExprAndTypePrinter {
 		
 		private:	
 			«FOR param : actor.parameters SEPARATOR "\n"»«param.varDecl»;«ENDFOR»
-			«FOR variable: actor.stateVars SEPARATOR "\n"»«variable.varDecl»;«ENDFOR»
+			«FOR variable: actor.stateVars SEPARATOR "\n"»«IF !variable.hasAttribute("shared")»«variable.varDecl»;«ENDIF»«ENDFOR»
 			«FOR port : actor.inputs SEPARATOR "\n"»int status_«port.name»_;«ENDFOR»
 			«FOR port : actor.outputs SEPARATOR "\n"»int status_«port.name»_;«ENDFOR»
 			«IF actor.fsm != null»

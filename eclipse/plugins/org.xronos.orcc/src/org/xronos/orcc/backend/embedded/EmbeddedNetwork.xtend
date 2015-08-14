@@ -38,6 +38,9 @@ import net.sf.orcc.df.Actor
 import net.sf.orcc.df.Network
 import net.sf.orcc.util.FilesManager
 import net.sf.orcc.df.Port
+import java.util.ArrayList
+import net.sf.orcc.ir.Var
+import java.util.HashSet
 
 class EmbeddedNetwork extends ExprAndTypePrinter {
 
@@ -73,7 +76,12 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 			#include "«actor.name».h"
 		«ENDFOR»
 		
-		
+		«IF network.hasAttribute("network_shared_variables")»
+			// -- Shared Variables
+			«FOR v : network.getAttribute("network_shared_variables").objectValue as HashSet<Var>»
+				«v.type.doSwitch» «v.name»«FOR dim : v.type.dimensions»[«dim»]«ENDFOR»;
+			«ENDFOR»
+		«ENDIF»
 		
 		int main(int argc, char *argv[]){
 			

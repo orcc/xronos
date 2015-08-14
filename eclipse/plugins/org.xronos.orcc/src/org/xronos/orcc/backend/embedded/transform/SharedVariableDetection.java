@@ -58,6 +58,7 @@ public class SharedVariableDetection extends DfVisitor<Void> {
 			for(Var var : actor.getStateVars()){
 				if (var.hasAttribute("shared")){
 					String id = var.getAttribute("shared").getAttribute("id").getStringValue();
+					var.setName(id);
 					Type type = EcoreUtil.copy(var.getType());
 					Var sharedVar = getNetworkSharedVar(id);
 					if (sharedVar !=null){
