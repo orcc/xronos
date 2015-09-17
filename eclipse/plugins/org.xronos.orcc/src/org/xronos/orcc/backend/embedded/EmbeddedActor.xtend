@@ -61,7 +61,7 @@ import java.util.HashSet
 
 class EmbeddedActor extends ExprAndTypePrinter {
 	
-	Actor actor
+	protected Actor actor
 	
 	Boolean v7Profiling = false
 	
@@ -101,7 +101,6 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	
 	
 	def compileInstance()  {
-		val connectedOutput = [ Port port | actor.outgoingPortMap.get(port) != null ]
 		'''
 		«getFileHeader»
 		#ifndef __«actor.name.toUpperCase»_H__
@@ -151,20 +150,9 @@ class EmbeddedActor extends ExprAndTypePrinter {
 				«ENDIF»
 			}
 		
-			«FOR port : actor.inputs»
-				«IF actor.incomingPortMap.get(port) != null»
-					«port.compilePort(actor.incomingPortMap.get(port).getAttribute("nbReaders").objectValue)»
-				«ENDIF»
-			«ENDFOR»			
-			
-			«FOR port : actor.outputs.filter(connectedOutput)»
-				«IF actor.outgoingPortMap.get(port) != null»
-					«port.compilePort(actor.outgoingPortMap.get(port).size)»
-				«ENDIF»
-			«ENDFOR»
-			
+			«getPorts»
+
 			«actor.procs.filter(p | !p.native).map[compileProcedure].join»
-			
 			«actor.initializes.map[compileAction].join»
 		
 			
@@ -196,8 +184,24 @@ class EmbeddedActor extends ExprAndTypePrinter {
 			}
 			
 			
+			
 			«ENDIF»
 		
+			void getState()
+			{
+				«IF actor.hasFsm»
+					switch(state_) {
+					«FOR state : actor.fsm.states»
+						case state_«state.name»:
+							std::cout << "Actor :«actor.simpleName», Last State: «state.name»" << std::endl;
+							break;
+					«ENDFOR»
+					}
+				«ELSE»
+					std::cout << "Actor :«actor.simpleName» has no state" << std::endl;
+				«ENDIF»
+			}
+			
 		private:	
 			«FOR param : actor.parameters SEPARATOR "\n"»«param.varDecl»;«ENDFOR»
 			«FOR variable: actor.stateVars SEPARATOR "\n"»«IF !variable.hasAttribute("shared")»«variable.varDecl»;«ENDIF»«ENDFOR»
@@ -214,6 +218,24 @@ class EmbeddedActor extends ExprAndTypePrinter {
 		};
 		#endif
 		'''
+	}
+	
+	
+	def getPorts(){
+		val connectedOutput = [ Port port | actor.outgoingPortMap.get(port) != null ]
+		'''
+			«FOR port : actor.inputs»
+				«IF actor.incomingPortMap.get(port) != null»
+					«port.compilePort(actor.incomingPortMap.get(port).getAttribute("nbReaders").objectValue)»
+				«ENDIF»
+			«ENDFOR»			
+			
+			«FOR port : actor.outputs.filter(connectedOutput)»
+				«IF actor.outgoingPortMap.get(port) != null»
+					«port.compilePort(actor.outgoingPortMap.get(port).size)»
+				«ENDIF»
+			«ENDFOR»
+		'''		
 	}
 	
 	def dispatch compileArg(Type type, String name, Expression expr) '''
@@ -322,7 +344,9 @@ class EmbeddedActor extends ExprAndTypePrinter {
 					«port.type.doSwitch» «port.name»«port.type»«FOR dim:port.type.dimensions»[«dim»]«ENDFOR»;
 				«ENDIF»
 			«ENDFOR»
+			
 			«action.body.doSwitch»
+			//std::cout<<"«actor.simpleName»:«action.body.name»"<<std::endl;
 			«FOR e : action.inputPattern.numTokensMap»
 				«IF actor.incomingPortMap.get(e.key) != null»
 					port_«e.key.name»->read_advance(«actor.incomingPortMap.get(e.key).getAttribute("fifoId").objectValue»«IF e.value > 1», «e.value»«ENDIF»);
