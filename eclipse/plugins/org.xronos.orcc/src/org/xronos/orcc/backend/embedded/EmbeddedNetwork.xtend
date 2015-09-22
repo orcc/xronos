@@ -92,7 +92,7 @@ class EmbeddedNetwork extends ExprAndTypePrinter {
 			// FIFO Queues
 			«FOR actor : network.children.filter(typeof(Actor))»
 				«FOR edges : actor.outgoingPortMap.values»
-					Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»> *fifo_«edges.get(0).getAttribute("idNoBcast").objectValue» = new Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»>«IF edges.get(0).size != null»(«edges.get(0).size»)«ENDIF»;
+					Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»> *fifo_«edges.get(0).getAttribute("idNoBcast").objectValue» = new Fifo<«edges.get(0).sourcePort.type.doSwitch», «edges.get(0).getAttribute("nbReaders").objectValue»>«IF edges.get(0).size == null»(«fifoSize»)«ELSE»(«edges.get(0).size»)«ENDIF»;
 				«ENDFOR»
 			«ENDFOR»
 			

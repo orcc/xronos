@@ -85,6 +85,10 @@ public class Embedded extends AbstractBackend {
 		replacementMap.put("IN", "IN_");
 		replacementMap.put("DEBUG", "DEBUG_");
 		replacementMap.put("INT_MIN", "INT_MIN_");
+		replacementMap.put("INT_MAX", "INT_MAX_");
+		replacementMap.put("SHORT_MIN", "SHORT_MIN_");
+		replacementMap.put("SHORT_MAX", "SHORT_MAX_");
+
 
 		networkTransfos.add(new Instantiator(true));
 		networkTransfos.add(new NetworkFlattener());
@@ -105,7 +109,7 @@ public class Embedded extends AbstractBackend {
 		// print network
 		OrccLogger.traceln("Printing network...");
 		EmbeddedNetwork printer = new EmbeddedNetwork(network, getOptions());
-
+		printer.setOptions(getOptions());
 		printer.printMain(srcPath);
 		printer.printNetwork(srcPath);
 		printer.printCMakeLists(outputPath);
