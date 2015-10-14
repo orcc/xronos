@@ -382,6 +382,17 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	def compileScheduler(Actor actor) '''	
 		void action_selection(EStatus& status)
 		{	
+			«FOR port : actor.inputs»
+				«IF actor.incomingPortMap.get(port) != null»
+					status_«port.name»_ = port_«port.name»->count(«actor.incomingPortMap.get(port).getAttribute("fifoId").objectValue»);
+				«ENDIF»
+			«ENDFOR»
+			«FOR port : actor.outputs»
+				«IF actor.outgoingPortMap.get(port) != null»
+					status_«port.name»_ = port_«port.name»->rooms();
+				«ENDIF»
+			«ENDFOR»
+		
 			bool res = true;
 			while (res) {
 				«IF actor.fsm!=null»
@@ -402,10 +413,10 @@ class EmbeddedActor extends ExprAndTypePrinter {
 	'''
 	
 	def compileScheduler(Action action, State state) '''
-		(«FOR e : action.inputPattern.numTokensMap»«IF actor.incomingPortMap.get(e.key) != null»port_«e.key.name»->count(«actor.incomingPortMap.get(e.key).getAttribute("fifoId").objectValue») >= «e.value» && «ENDIF»«ENDFOR»«action.scheduler.name»())
+		(«FOR e : action.inputPattern.numTokensMap»«IF actor.incomingPortMap.get(e.key) != null»status_«e.key.name»_ >= «e.value» && «ENDIF»«ENDFOR»«action.scheduler.name»())
 		{
 			«IF !action.outputPattern.empty»
-			if(«FOR e : action.outputPattern.numTokensMap SEPARATOR " &&" »«IF actor.outgoingPortMap.get(e.key) != null»port_«e.key.name»->rooms() >= «e.value» «ENDIF»«ENDFOR») {
+			if(«FOR e : action.outputPattern.numTokensMap SEPARATOR " &&" »«IF actor.outgoingPortMap.get(e.key) != null»status_«e.key.name»_ >= «e.value» «ENDIF»«ENDFOR») {
 				«IF v7Profiling»
 					reset_ccnt();                   // Reset the CCNT (cycle counter)
 					reset_pmn();                    // Reset the configurable counters
