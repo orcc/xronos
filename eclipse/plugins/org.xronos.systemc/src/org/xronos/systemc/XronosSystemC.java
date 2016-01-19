@@ -263,7 +263,7 @@ public class XronosSystemC extends AbstractBackend {
 		// if required, load the buffer size from the mapping file
 		if (getOption(IMPORT_BXDF, false)) {
 			File f = new File(getOption(BXDF_FILE, ""));
-			new XmlBufferSizeConfiguration().load(f, network);
+			new XmlBufferSizeConfiguration(true,false).load(f, network);
 		}
 	}
 
