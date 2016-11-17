@@ -1,22 +1,22 @@
 /* 
- * XRONOS, High Level Synthesis of Streaming Applications
+ * XRONOS-EXELIXI
  * 
- * Copyright (C) 2014 EPFL SCI STI MM
+ * Copyright (C) 2011-2016 EPFL SCI STI MM
  *
- * This file is part of XRONOS.
+ * This file is part of XRONOS-EXELIXI.
  *
- * XRONOS is free software: you can redistribute it and/or modify
+ * XRONOS-EXELIXI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * XRONOS is distributed in the hope that it will be useful,
+ * XRONOS-EXELIXI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with XRONOS.  If not, see <http://www.gnu.org/licenses/>.
+ * along with XRONOS-EXELIXI. If not, see <http://www.gnu.org/licenses/>.
  * 
  * Additional permission under GNU GPL version 3 section 7
  * 
@@ -26,7 +26,7 @@
  * Eclipse Public License (EPL), the licensors of this Program grant you 
  * additional permission to convey the resulting work.  Corresponding Source 
  * for a non-source form of such a combination shall include the source code 
- * for the parts of Eclipse libraries used as well as that of the  covered work.
+ * for the parts of Eclipse libraries used as well as that of the covered work.
  * 
  */
  
@@ -207,12 +207,12 @@ class TestbenchPrinter {
 		var List<Port> outputPorts;
 		if(vertex instanceof Actor){
 			name = (vertex as Actor).simpleName;
-			traceName = (vertex as Actor).name;
+			traceName = (vertex as Actor).name + "_";
 			inputPorts = (vertex as Actor).inputs;
 			outputPorts = (vertex as Actor).outputs;
 		}else if(vertex instanceof Network){
 			name = (vertex as Network).simpleName;
-			traceName = (vertex as Network).simpleName;
+			traceName = "";
 			inputPorts = (vertex as Network).inputs;
 			outputPorts = (vertex as Network).outputs;
 		}
@@ -238,7 +238,7 @@ class TestbenchPrinter {
 		-- Component input(s) signals
 		«FOR port: inputPorts»
 		signal tb_FSM_«port.name» : tb_type;
-		file sim_file_«name»_«port.name» : text is "fifoTraces/«traceName»_«port.name».txt";
+		file sim_file_«name»_«port.name» : text is "fifoTraces/«traceName»«port.name».txt";
 		«IF port.type.bool || port.type.sizeInBits == 1»
 		signal «port.name»_data : std_logic := '0';
 		«ELSE»
@@ -263,7 +263,7 @@ class TestbenchPrinter {
 		-- Component Output(s) signals
 		«FOR port: outputPorts»
 		signal tb_FSM_«port.name» : tb_type;
-		file sim_file_«name»_«port.name» : text is "fifoTraces/«traceName»_«port.name».txt";
+		file sim_file_«name»_«port.name» : text is "fifoTraces/«traceName»«port.name».txt";
 		«IF port.type.bool || port.type.sizeInBits == 1»
 		signal «port.name»_data : std_logic := '0';
 		«ELSE»
