@@ -63,6 +63,7 @@ import org.xronos.orcc.analysis.NativeProcedureFinder;
 import org.xronos.orcc.backend.transform.pipelining.Pipelining;
 import org.xronos.orcc.design.ResourceCache;
 import org.xronos.orcc.design.visitors.XronosScheduler;
+import org.xronos.orcc.forge.scheduler.ActorAddFSM;
 import org.xronos.orcc.forge.transform.analysis.Liveness;
 import org.xronos.orcc.forge.transform.analysis.UninitializedVariable;
 import org.xronos.orcc.forge.transform.analysis.XronosCFG;
@@ -107,6 +108,7 @@ public class XronosTransform {
 		transformations.add(new DfVisitor<CfgNode>(new XronosCFG()));
 		transformations.add(new DfVisitor<Void>(new Liveness()));
 		transformations.add(new DfVisitor<Void>(new UninitializedVariable(true)));
+		transformations.add(new ActorFSMStates());
 		for (DfSwitch<?> transformation : transformations) {
 			try {
 				long t0 = System.currentTimeMillis();
@@ -132,8 +134,8 @@ public class XronosTransform {
 			transformations.add(new UnitImporter());
 
 			// transformations.add(new DfVisitor<Void>(new Liveness()));
-			Boolean sizeArrayOfPowerOfTwo = options.get("org.xronos.orcc.arraySizeToPowerOfTwo") != null ? (Boolean) options
-					.get("org.xronos.orcc.arraySizeToPowerOfTwo") : false;
+			Boolean sizeArrayOfPowerOfTwo = options.get("org.xronos.orcc.arraySizeToPowerOfTwo") != null
+					? (Boolean) options.get("org.xronos.orcc.arraySizeToPowerOfTwo") : false;
 			if (sizeArrayOfPowerOfTwo) {
 				transformations.add(new ArraySizeToPowerOfTwo());
 			}
@@ -159,6 +161,8 @@ public class XronosTransform {
 			transformations.add(new DfVisitor<Void>(new LocalArrayRemoval()));
 			transformations.add(new GlobalArrayInitializer(true));
 
+			transformations.add(new ActorFSMStates());
+			
 			transformations.add(new XronosScheduler(resourceCache, schedulerInformation));
 
 			transformations.add(new PrintRemoval());
@@ -198,6 +202,8 @@ public class XronosTransform {
 
 			transformations.add(new DfVisitor<CfgNode>(new ControlFlowAnalyzer()));
 
+			
+
 			for (DfSwitch<?> transformation : transformations) {
 				try {
 					transformation.doSwitch(actor);
@@ -233,8 +239,8 @@ public class XronosTransform {
 		}
 	}
 
-	public static void transformNetworkActors(Network network, Map<String, Object> options,
-			ResourceCache resourceCache, boolean schedulerInformation) {
+	public static void transformNetworkActors(Network network, Map<String, Object> options, ResourceCache resourceCache,
+			boolean schedulerInformation) {
 		for (Actor actor : network.getAllActors()) {
 			transformActor(actor, options, resourceCache, false, schedulerInformation, false);
 		}

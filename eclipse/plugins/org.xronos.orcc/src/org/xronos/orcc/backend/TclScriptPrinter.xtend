@@ -185,7 +185,8 @@ class TclScriptPrinter {
 		'''
 			## Start VSIM
 			«IF (xilinxPrimitives)»
-				vsim -voptargs="+acc" -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
+				#vsim -voptargs="+acc" -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
+				vsim -novopt -L xilinxPrimitives -t ns «workName».glbl «workName».«simName»
 			«ELSE»
 				vsim -voptargs="+acc" -L unisims_ver -L simprims_ver -t ns «workName».glbl «workName».«simName»
 			«ENDIF»	

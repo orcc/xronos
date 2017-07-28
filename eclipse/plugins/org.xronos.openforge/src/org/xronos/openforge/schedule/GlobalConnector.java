@@ -614,7 +614,7 @@ public class GlobalConnector extends FilteredVisitor {
 				kicker = kickers.get(kickerKey);
 				// if we didn't find it, construct a new one
 				if (kicker == null) {
-					kicker = new Kicker();
+					kicker = new Kicker.KickerContinuous();
 				}
 			}
 			if (!kickers.containsKey(kickerKey)) {

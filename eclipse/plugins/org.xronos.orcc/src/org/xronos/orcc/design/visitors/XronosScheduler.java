@@ -374,21 +374,6 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 			actor.getStateVars().add(idleAction);
 		}
 
-		if (actor.getFsm() != null) {
-			// Add state Vars
-			for (State state : actor.getFsm().getStates()) {
-				Type typeBool = IrFactory.eINSTANCE.createTypeBool();
-				Var fsmState = IrFactory.eINSTANCE.createVar(typeBool, "state_"
-						+ state.getName(), true, 0);
-				if (state == actor.getFsm().getInitialState()) {
-					fsmState.setValue(true);
-				} else {
-					fsmState.setValue(false);
-				}
-				actor.getStateVars().add(fsmState);
-			}
-		}
-
 		// Initialize input/output circularBuffer
 		inputCircularBuffer = resourceCache.getActorInputCircularBuffer(actor);
 
@@ -403,10 +388,10 @@ public class XronosScheduler extends DfVisitor<Procedure> {
 		List<Block> blockWhileBody = new ArrayList<Block>();
 
 		// Initialize circular Buffer variables
-		BlockBasic initBlock = createSchedulerInitBlock(actor, xronosScheduler);
-		if (!initBlock.getInstructions().isEmpty()) {
-			xronosScheduler.getBlocks().add(initBlock);
-		}
+		//BlockBasic initBlock = createSchedulerInitBlock(actor, xronosScheduler);
+		//if (!initBlock.getInstructions().isEmpty()) {
+		//	xronosScheduler.getBlocks().add(initBlock);
+		//}
 
 		// Loads of states
 		if (actor.hasFsm()) {
